@@ -48,12 +48,12 @@ class RestrictionsApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.terms_of_use_retrieve_endpoint = _Endpoint(
+        self.retrieve_terms_of_use_endpoint = _Endpoint(
             settings={
                 "response_type": None,
                 "auth": [],
                 "endpoint_path": "/api/restrictions/terms-of-use",
-                "operation_id": "terms_of_use_retrieve",
+                "operation_id": "retrieve_terms_of_use",
                 "http_method": "GET",
                 "servers": None,
             },
@@ -94,12 +94,12 @@ class RestrictionsApi(object):
             },
             api_client=api_client,
         )
-        self.user_agreements_retrieve_endpoint = _Endpoint(
+        self.retrieve_user_agreements_endpoint = _Endpoint(
             settings={
                 "response_type": (UserAgreement,),
                 "auth": [],
                 "endpoint_path": "/api/restrictions/user-agreements",
-                "operation_id": "user_agreements_retrieve",
+                "operation_id": "retrieve_user_agreements",
                 "http_method": "GET",
                 "servers": None,
             },
@@ -142,7 +142,7 @@ class RestrictionsApi(object):
         )
 
     @overload
-    def terms_of_use_retrieve(
+    def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
@@ -151,7 +151,7 @@ class RestrictionsApi(object):
         ...
 
     @overload
-    def terms_of_use_retrieve(
+    def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -160,19 +160,19 @@ class RestrictionsApi(object):
         ...
 
     @overload
-    def terms_of_use_retrieve(
+    def retrieve_terms_of_use(
         self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def terms_of_use_retrieve(
+    def retrieve_terms_of_use(
         self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def terms_of_use_retrieve(
+    def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -181,7 +181,7 @@ class RestrictionsApi(object):
         ...
 
     @overload
-    def terms_of_use_retrieve(
+    def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -189,7 +189,7 @@ class RestrictionsApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def terms_of_use_retrieve(
+    def retrieve_terms_of_use(
         self, **kwargs
     ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method provides CVAT terms of use  # noqa: E501
@@ -197,7 +197,7 @@ class RestrictionsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.terms_of_use_retrieve(async_req=True)
+        >>> thread = api.retrieve_terms_of_use(async_req=True)
         >>> result = thread.get()
 
 
@@ -256,12 +256,12 @@ class RestrictionsApi(object):
         kwargs["_content_type"] = kwargs.get("_content_type")
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        return self.terms_of_use_retrieve_endpoint.call_with_http_info(**kwargs)
+        return self.retrieve_terms_of_use_endpoint.call_with_http_info(**kwargs)
 
-    def terms_of_use_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def retrieve_terms_of_use_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as terms_of_use_retrieve(), but returns the response unprocessed.
-        Equivalent to calling terms_of_use_retrieve with
+        The same as retrieve_terms_of_use(), but returns the response unprocessed.
+        Equivalent to calling retrieve_terms_of_use with
         _preload_content = False and _check_status=False
 
         Method provides CVAT terms of use  # noqa: E501
@@ -269,7 +269,7 @@ class RestrictionsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.terms_of_use_retrieve(async_req=True)
+        >>> thread = api.retrieve_terms_of_use(async_req=True)
         >>> result = thread.get()
 
 
@@ -305,12 +305,12 @@ class RestrictionsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.terms_of_use_retrieve(
+        return self.retrieve_terms_of_use(
             *args, **kwargs, _preload_content=False, _check_status=False
         )
 
     @overload
-    def user_agreements_retrieve(
+    def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
@@ -319,7 +319,7 @@ class RestrictionsApi(object):
         ...
 
     @overload
-    def user_agreements_retrieve(
+    def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -328,19 +328,19 @@ class RestrictionsApi(object):
         ...
 
     @overload
-    def user_agreements_retrieve(
+    def retrieve_user_agreements(
         self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[UserAgreement, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def user_agreements_retrieve(
+    def retrieve_user_agreements(
         self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def user_agreements_retrieve(
+    def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -349,7 +349,7 @@ class RestrictionsApi(object):
         ...
 
     @overload
-    def user_agreements_retrieve(
+    def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -357,7 +357,7 @@ class RestrictionsApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def user_agreements_retrieve(
+    def retrieve_user_agreements(
         self, **kwargs
     ) -> typing.Union[
         typing.Tuple[UserAgreement, int, typing.Dict[str, str]], urllib3.HTTPResponse, UserAgreement
@@ -367,7 +367,7 @@ class RestrictionsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.user_agreements_retrieve(async_req=True)
+        >>> thread = api.retrieve_user_agreements(async_req=True)
         >>> result = thread.get()
 
 
@@ -426,12 +426,12 @@ class RestrictionsApi(object):
         kwargs["_content_type"] = kwargs.get("_content_type")
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        return self.user_agreements_retrieve_endpoint.call_with_http_info(**kwargs)
+        return self.retrieve_user_agreements_endpoint.call_with_http_info(**kwargs)
 
-    def user_agreements_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def retrieve_user_agreements_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as user_agreements_retrieve(), but returns the response unprocessed.
-        Equivalent to calling user_agreements_retrieve with
+        The same as retrieve_user_agreements(), but returns the response unprocessed.
+        Equivalent to calling retrieve_user_agreements with
         _preload_content = False and _check_status=False
 
         Method provides user agreements that the user must accept to register  # noqa: E501
@@ -439,7 +439,7 @@ class RestrictionsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.user_agreements_retrieve(async_req=True)
+        >>> thread = api.retrieve_user_agreements(async_req=True)
         >>> result = thread.get()
 
 
@@ -475,6 +475,6 @@ class RestrictionsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.user_agreements_retrieve(
+        return self.retrieve_user_agreements(
             *args, **kwargs, _preload_content=False, _check_status=False
         )

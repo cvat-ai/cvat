@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import re
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.extensions import OpenApiFilterExtension, OpenApiAuthenticationExtension
 from drf_spectacular.plumbing import build_parameter_type
@@ -71,3 +72,21 @@ class CustomAutoSchema(AutoSchema):
                 location=OpenApiParameter.HEADER
             ),
         ]
+
+    def get_operation_id(self):
+        tokenized_path = self._tokenize_path()
+        # replace dashes as they can be problematic later in code generation
+        tokenized_path = [t.replace('-', '_') for t in tokenized_path]
+
+        if self.method == 'GET' and self._is_list_view():
+            action = 'list'
+        else:
+            action = self.method_mapping[self.method.lower()]
+
+        if not tokenized_path:
+            tokenized_path.append('root')
+
+        if re.search(r'<drf_format_suffix\w*:\w+>', self.path_regex):
+            tokenized_path.append('formatted')
+
+        return '_'.join([tokenized_path[0]] + [action] + tokenized_path[1:])

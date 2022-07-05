@@ -110,10 +110,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     org_id = 1 # int | Organization identifier (optional)
 
     try:
-        api_response = api_instance.auth_login_create(login_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.auth_create_login(login_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling AuthApi->auth_login_create: %s\n" % e)
+        print("Exception when calling AuthApi->auth_create_login: %s\n" % e)
 ```
 
 ## Documentation for API Endpoints
@@ -122,22 +122,22 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*AuthApi* | [**auth_login_create**](docs/AuthApi.md#auth_login_create) | **POST** /api/auth/login | 
-*AuthApi* | [**auth_logout_create**](docs/AuthApi.md#auth_logout_create) | **POST** /api/auth/logout | 
-*AuthApi* | [**auth_password_change_create**](docs/AuthApi.md#auth_password_change_create) | **POST** /api/auth/password/change | 
-*AuthApi* | [**auth_password_reset_confirm_create**](docs/AuthApi.md#auth_password_reset_confirm_create) | **POST** /api/auth/password/reset/confirm | 
-*AuthApi* | [**auth_password_reset_create**](docs/AuthApi.md#auth_password_reset_create) | **POST** /api/auth/password/reset | 
-*AuthApi* | [**auth_register_create**](docs/AuthApi.md#auth_register_create) | **POST** /api/auth/register | 
-*AuthApi* | [**auth_signing_create**](docs/AuthApi.md#auth_signing_create) | **POST** /api/auth/signing | This method signs URL for access to the server
-*CloudStoragesApi* | [**cloudstorages_actions_retrieve**](docs/CloudStoragesApi.md#cloudstorages_actions_retrieve) | **GET** /api/cloudstorages/{id}/actions | Method returns allowed actions for the cloud storage
-*CloudStoragesApi* | [**cloudstorages_content_retrieve**](docs/CloudStoragesApi.md#cloudstorages_content_retrieve) | **GET** /api/cloudstorages/{id}/content | Method returns a manifest content
+*AuthApi* | [**auth_create_login**](docs/AuthApi.md#auth_create_login) | **POST** /api/auth/login | 
+*AuthApi* | [**auth_create_logout**](docs/AuthApi.md#auth_create_logout) | **POST** /api/auth/logout | 
+*AuthApi* | [**auth_create_password_change**](docs/AuthApi.md#auth_create_password_change) | **POST** /api/auth/password/change | 
+*AuthApi* | [**auth_create_password_reset**](docs/AuthApi.md#auth_create_password_reset) | **POST** /api/auth/password/reset | 
+*AuthApi* | [**auth_create_password_reset_confirm**](docs/AuthApi.md#auth_create_password_reset_confirm) | **POST** /api/auth/password/reset/confirm | 
+*AuthApi* | [**auth_create_register**](docs/AuthApi.md#auth_create_register) | **POST** /api/auth/register | 
+*AuthApi* | [**auth_create_signing**](docs/AuthApi.md#auth_create_signing) | **POST** /api/auth/signing | This method signs URL for access to the server
 *CloudStoragesApi* | [**cloudstorages_create**](docs/CloudStoragesApi.md#cloudstorages_create) | **POST** /api/cloudstorages | Method creates a cloud storage with a specified characteristics
 *CloudStoragesApi* | [**cloudstorages_destroy**](docs/CloudStoragesApi.md#cloudstorages_destroy) | **DELETE** /api/cloudstorages/{id} | Method deletes a specific cloud storage
 *CloudStoragesApi* | [**cloudstorages_list**](docs/CloudStoragesApi.md#cloudstorages_list) | **GET** /api/cloudstorages | Returns a paginated list of storages according to query parameters
 *CloudStoragesApi* | [**cloudstorages_partial_update**](docs/CloudStoragesApi.md#cloudstorages_partial_update) | **PATCH** /api/cloudstorages/{id} | Methods does a partial update of chosen fields in a cloud storage instance
-*CloudStoragesApi* | [**cloudstorages_preview_retrieve**](docs/CloudStoragesApi.md#cloudstorages_preview_retrieve) | **GET** /api/cloudstorages/{id}/preview | Method returns a preview image from a cloud storage
 *CloudStoragesApi* | [**cloudstorages_retrieve**](docs/CloudStoragesApi.md#cloudstorages_retrieve) | **GET** /api/cloudstorages/{id} | Method returns details of a specific cloud storage
-*CloudStoragesApi* | [**cloudstorages_status_retrieve**](docs/CloudStoragesApi.md#cloudstorages_status_retrieve) | **GET** /api/cloudstorages/{id}/status | Method returns a cloud storage status
+*CloudStoragesApi* | [**cloudstorages_retrieve_actions**](docs/CloudStoragesApi.md#cloudstorages_retrieve_actions) | **GET** /api/cloudstorages/{id}/actions | Method returns allowed actions for the cloud storage
+*CloudStoragesApi* | [**cloudstorages_retrieve_content**](docs/CloudStoragesApi.md#cloudstorages_retrieve_content) | **GET** /api/cloudstorages/{id}/content | Method returns a manifest content
+*CloudStoragesApi* | [**cloudstorages_retrieve_preview**](docs/CloudStoragesApi.md#cloudstorages_retrieve_preview) | **GET** /api/cloudstorages/{id}/preview | Method returns a preview image from a cloud storage
+*CloudStoragesApi* | [**cloudstorages_retrieve_status**](docs/CloudStoragesApi.md#cloudstorages_retrieve_status) | **GET** /api/cloudstorages/{id}/status | Method returns a cloud storage status
 *CommentsApi* | [**comments_create**](docs/CommentsApi.md#comments_create) | **POST** /api/comments | Method creates a comment
 *CommentsApi* | [**comments_destroy**](docs/CommentsApi.md#comments_destroy) | **DELETE** /api/comments/{id} | Method deletes a comment
 *CommentsApi* | [**comments_list**](docs/CommentsApi.md#comments_list) | **GET** /api/comments | Method returns a paginated list of comments according to query parameters
@@ -148,33 +148,33 @@ Class | Method | HTTP request | Description
 *InvitationsApi* | [**invitations_list**](docs/InvitationsApi.md#invitations_list) | **GET** /api/invitations | Method returns a paginated list of invitations according to query parameters
 *InvitationsApi* | [**invitations_partial_update**](docs/InvitationsApi.md#invitations_partial_update) | **PATCH** /api/invitations/{key} | Methods does a partial update of chosen fields in an invitation
 *InvitationsApi* | [**invitations_retrieve**](docs/InvitationsApi.md#invitations_retrieve) | **GET** /api/invitations/{key} | Method returns details of an invitation
-*IssuesApi* | [**issues_comments_list**](docs/IssuesApi.md#issues_comments_list) | **GET** /api/issues/{id}/comments | The action returns all comments of a specific issue
 *IssuesApi* | [**issues_create**](docs/IssuesApi.md#issues_create) | **POST** /api/issues | Method creates an issue
 *IssuesApi* | [**issues_destroy**](docs/IssuesApi.md#issues_destroy) | **DELETE** /api/issues/{id} | Method deletes an issue
 *IssuesApi* | [**issues_list**](docs/IssuesApi.md#issues_list) | **GET** /api/issues | Method returns a paginated list of issues according to query parameters
+*IssuesApi* | [**issues_list_comments**](docs/IssuesApi.md#issues_list_comments) | **GET** /api/issues/{id}/comments | The action returns all comments of a specific issue
 *IssuesApi* | [**issues_partial_update**](docs/IssuesApi.md#issues_partial_update) | **PATCH** /api/issues/{id} | Methods does a partial update of chosen fields in an issue
 *IssuesApi* | [**issues_retrieve**](docs/IssuesApi.md#issues_retrieve) | **GET** /api/issues/{id} | Method returns details of an issue
-*JobsApi* | [**jobs_annotations_create**](docs/JobsApi.md#jobs_annotations_create) | **POST** /api/jobs/{id}/annotations/ | Method allows to upload job annotations
-*JobsApi* | [**jobs_annotations_destroy**](docs/JobsApi.md#jobs_annotations_destroy) | **DELETE** /api/jobs/{id}/annotations/ | Method deletes all annotations for a specific job
-*JobsApi* | [**jobs_annotations_file_partial_update**](docs/JobsApi.md#jobs_annotations_file_partial_update) | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-*JobsApi* | [**jobs_annotations_partial_update**](docs/JobsApi.md#jobs_annotations_partial_update) | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
-*JobsApi* | [**jobs_annotations_retrieve**](docs/JobsApi.md#jobs_annotations_retrieve) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
-*JobsApi* | [**jobs_annotations_update**](docs/JobsApi.md#jobs_annotations_update) | **PUT** /api/jobs/{id}/annotations/ | Method performs an update of all annotations in a specific job
-*JobsApi* | [**jobs_commits_list**](docs/JobsApi.md#jobs_commits_list) | **GET** /api/jobs/{id}/commits | The action returns the list of tracked changes for the job
-*JobsApi* | [**jobs_data_meta_retrieve**](docs/JobsApi.md#jobs_data_meta_retrieve) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
-*JobsApi* | [**jobs_data_retrieve**](docs/JobsApi.md#jobs_data_retrieve) | **GET** /api/jobs/{id}/data | Method returns data for a specific job
-*JobsApi* | [**jobs_dataset_retrieve**](docs/JobsApi.md#jobs_dataset_retrieve) | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
-*JobsApi* | [**jobs_issues_list**](docs/JobsApi.md#jobs_issues_list) | **GET** /api/jobs/{id}/issues | Method returns list of issues for the job
+*JobsApi* | [**jobs_create_annotations**](docs/JobsApi.md#jobs_create_annotations) | **POST** /api/jobs/{id}/annotations/ | Method allows to upload job annotations
+*JobsApi* | [**jobs_destroy_annotations**](docs/JobsApi.md#jobs_destroy_annotations) | **DELETE** /api/jobs/{id}/annotations/ | Method deletes all annotations for a specific job
 *JobsApi* | [**jobs_list**](docs/JobsApi.md#jobs_list) | **GET** /api/jobs | Method returns a paginated list of jobs according to query parameters
+*JobsApi* | [**jobs_list_commits**](docs/JobsApi.md#jobs_list_commits) | **GET** /api/jobs/{id}/commits | The action returns the list of tracked changes for the job
+*JobsApi* | [**jobs_list_issues**](docs/JobsApi.md#jobs_list_issues) | **GET** /api/jobs/{id}/issues | Method returns list of issues for the job
 *JobsApi* | [**jobs_partial_update**](docs/JobsApi.md#jobs_partial_update) | **PATCH** /api/jobs/{id} | Methods does a partial update of chosen fields in a job
+*JobsApi* | [**jobs_partial_update_annotations**](docs/JobsApi.md#jobs_partial_update_annotations) | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
+*JobsApi* | [**jobs_partial_update_annotations_file**](docs/JobsApi.md#jobs_partial_update_annotations_file) | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 *JobsApi* | [**jobs_retrieve**](docs/JobsApi.md#jobs_retrieve) | **GET** /api/jobs/{id} | Method returns details of a job
+*JobsApi* | [**jobs_retrieve_annotations**](docs/JobsApi.md#jobs_retrieve_annotations) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
+*JobsApi* | [**jobs_retrieve_data**](docs/JobsApi.md#jobs_retrieve_data) | **GET** /api/jobs/{id}/data | Method returns data for a specific job
+*JobsApi* | [**jobs_retrieve_data_meta**](docs/JobsApi.md#jobs_retrieve_data_meta) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
+*JobsApi* | [**jobs_retrieve_dataset**](docs/JobsApi.md#jobs_retrieve_dataset) | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
 *JobsApi* | [**jobs_update**](docs/JobsApi.md#jobs_update) | **PUT** /api/jobs/{id} | Method updates a job by id
-*LambdaApi* | [**lambda_functions_create**](docs/LambdaApi.md#lambda_functions_create) | **POST** /api/lambda/functions/{func_id} | 
-*LambdaApi* | [**lambda_functions_list**](docs/LambdaApi.md#lambda_functions_list) | **GET** /api/lambda/functions | Method returns a list of functions
-*LambdaApi* | [**lambda_functions_retrieve**](docs/LambdaApi.md#lambda_functions_retrieve) | **GET** /api/lambda/functions/{func_id} | Method returns the information about the function
-*LambdaApi* | [**lambda_requests_create**](docs/LambdaApi.md#lambda_requests_create) | **POST** /api/lambda/requests | Method calls the function
-*LambdaApi* | [**lambda_requests_list**](docs/LambdaApi.md#lambda_requests_list) | **GET** /api/lambda/requests | Method returns a list of requests
-*LambdaApi* | [**lambda_requests_retrieve**](docs/LambdaApi.md#lambda_requests_retrieve) | **GET** /api/lambda/requests/{id} | Method returns the status of the request
+*JobsApi* | [**jobs_update_annotations**](docs/JobsApi.md#jobs_update_annotations) | **PUT** /api/jobs/{id}/annotations/ | Method performs an update of all annotations in a specific job
+*LambdaApi* | [**lambda_create_functions**](docs/LambdaApi.md#lambda_create_functions) | **POST** /api/lambda/functions/{func_id} | 
+*LambdaApi* | [**lambda_create_requests**](docs/LambdaApi.md#lambda_create_requests) | **POST** /api/lambda/requests | Method calls the function
+*LambdaApi* | [**lambda_list_functions**](docs/LambdaApi.md#lambda_list_functions) | **GET** /api/lambda/functions | Method returns a list of functions
+*LambdaApi* | [**lambda_list_requests**](docs/LambdaApi.md#lambda_list_requests) | **GET** /api/lambda/requests | Method returns a list of requests
+*LambdaApi* | [**lambda_retrieve_functions**](docs/LambdaApi.md#lambda_retrieve_functions) | **GET** /api/lambda/functions/{func_id} | Method returns the information about the function
+*LambdaApi* | [**lambda_retrieve_requests**](docs/LambdaApi.md#lambda_retrieve_requests) | **GET** /api/lambda/requests/{id} | Method returns the status of the request
 *MembershipsApi* | [**memberships_destroy**](docs/MembershipsApi.md#memberships_destroy) | **DELETE** /api/memberships/{id} | Method deletes a membership
 *MembershipsApi* | [**memberships_list**](docs/MembershipsApi.md#memberships_list) | **GET** /api/memberships | Method returns a paginated list of memberships according to query parameters
 *MembershipsApi* | [**memberships_partial_update**](docs/MembershipsApi.md#memberships_partial_update) | **PATCH** /api/memberships/{id} | Methods does a partial update of chosen fields in a membership
@@ -184,57 +184,57 @@ Class | Method | HTTP request | Description
 *OrganizationsApi* | [**organizations_list**](docs/OrganizationsApi.md#organizations_list) | **GET** /api/organizations | Method returns a paginated list of organizatins according to query parameters
 *OrganizationsApi* | [**organizations_partial_update**](docs/OrganizationsApi.md#organizations_partial_update) | **PATCH** /api/organizations/{id} | Methods does a partial update of chosen fields in an organization
 *OrganizationsApi* | [**organizations_retrieve**](docs/OrganizationsApi.md#organizations_retrieve) | **GET** /api/organizations/{id} | Method returns details of an organization
-*ProjectsApi* | [**projects_annotations_retrieve**](docs/ProjectsApi.md#projects_annotations_retrieve) | **GET** /api/projects/{id}/annotations | Method allows to download project annotations
-*ProjectsApi* | [**projects_backup_create**](docs/ProjectsApi.md#projects_backup_create) | **POST** /api/projects/backup/ | Methods create a project from a backup
-*ProjectsApi* | [**projects_backup_partial_update**](docs/ProjectsApi.md#projects_backup_partial_update) | **PATCH** /api/projects/backup/{file_id} | 
-*ProjectsApi* | [**projects_backup_retrieve**](docs/ProjectsApi.md#projects_backup_retrieve) | **GET** /api/projects/{id}/backup | Methods creates a backup copy of a project
 *ProjectsApi* | [**projects_create**](docs/ProjectsApi.md#projects_create) | **POST** /api/projects | Method creates a new project
-*ProjectsApi* | [**projects_dataset_create**](docs/ProjectsApi.md#projects_dataset_create) | **POST** /api/projects/{id}/dataset/ | Import dataset in specific format as a project
-*ProjectsApi* | [**projects_dataset_partial_update**](docs/ProjectsApi.md#projects_dataset_partial_update) | **PATCH** /api/projects/{id}/dataset/{file_id} | 
-*ProjectsApi* | [**projects_dataset_retrieve**](docs/ProjectsApi.md#projects_dataset_retrieve) | **GET** /api/projects/{id}/dataset/ | Export project as a dataset in a specific format
+*ProjectsApi* | [**projects_create_backup**](docs/ProjectsApi.md#projects_create_backup) | **POST** /api/projects/backup/ | Methods create a project from a backup
+*ProjectsApi* | [**projects_create_dataset**](docs/ProjectsApi.md#projects_create_dataset) | **POST** /api/projects/{id}/dataset/ | Import dataset in specific format as a project
 *ProjectsApi* | [**projects_destroy**](docs/ProjectsApi.md#projects_destroy) | **DELETE** /api/projects/{id} | Method deletes a specific project
 *ProjectsApi* | [**projects_list**](docs/ProjectsApi.md#projects_list) | **GET** /api/projects | Returns a paginated list of projects according to query parameters (12 projects per page)
+*ProjectsApi* | [**projects_list_tasks**](docs/ProjectsApi.md#projects_list_tasks) | **GET** /api/projects/{id}/tasks | Method returns information of the tasks of the project with the selected id
 *ProjectsApi* | [**projects_partial_update**](docs/ProjectsApi.md#projects_partial_update) | **PATCH** /api/projects/{id} | Methods does a partial update of chosen fields in a project
+*ProjectsApi* | [**projects_partial_update_backup**](docs/ProjectsApi.md#projects_partial_update_backup) | **PATCH** /api/projects/backup/{file_id} | 
+*ProjectsApi* | [**projects_partial_update_dataset**](docs/ProjectsApi.md#projects_partial_update_dataset) | **PATCH** /api/projects/{id}/dataset/{file_id} | 
 *ProjectsApi* | [**projects_retrieve**](docs/ProjectsApi.md#projects_retrieve) | **GET** /api/projects/{id} | Method returns details of a specific project
-*ProjectsApi* | [**projects_tasks_list**](docs/ProjectsApi.md#projects_tasks_list) | **GET** /api/projects/{id}/tasks | Method returns information of the tasks of the project with the selected id
-*RestrictionsApi* | [**restrictions_terms_of_use_retrieve**](docs/RestrictionsApi.md#restrictions_terms_of_use_retrieve) | **GET** /api/restrictions/terms-of-use | Method provides CVAT terms of use
-*RestrictionsApi* | [**restrictions_user_agreements_retrieve**](docs/RestrictionsApi.md#restrictions_user_agreements_retrieve) | **GET** /api/restrictions/user-agreements | Method provides user agreements that the user must accept to register
+*ProjectsApi* | [**projects_retrieve_annotations**](docs/ProjectsApi.md#projects_retrieve_annotations) | **GET** /api/projects/{id}/annotations | Method allows to download project annotations
+*ProjectsApi* | [**projects_retrieve_backup**](docs/ProjectsApi.md#projects_retrieve_backup) | **GET** /api/projects/{id}/backup | Methods creates a backup copy of a project
+*ProjectsApi* | [**projects_retrieve_dataset**](docs/ProjectsApi.md#projects_retrieve_dataset) | **GET** /api/projects/{id}/dataset/ | Export project as a dataset in a specific format
+*RestrictionsApi* | [**restrictions_retrieve_terms_of_use**](docs/RestrictionsApi.md#restrictions_retrieve_terms_of_use) | **GET** /api/restrictions/terms-of-use | Method provides CVAT terms of use
+*RestrictionsApi* | [**restrictions_retrieve_user_agreements**](docs/RestrictionsApi.md#restrictions_retrieve_user_agreements) | **GET** /api/restrictions/user-agreements | Method provides user agreements that the user must accept to register
 *SchemaApi* | [**schema_retrieve**](docs/SchemaApi.md#schema_retrieve) | **GET** /api/schema/ | 
-*ServerApi* | [**server_about_retrieve**](docs/ServerApi.md#server_about_retrieve) | **GET** /api/server/about | Method provides basic CVAT information
-*ServerApi* | [**server_annotation_formats_retrieve**](docs/ServerApi.md#server_annotation_formats_retrieve) | **GET** /api/server/annotation/formats | Method provides the list of supported annotations formats
-*ServerApi* | [**server_exception_create**](docs/ServerApi.md#server_exception_create) | **POST** /api/server/exception | Method saves an exception from a client on the server
-*ServerApi* | [**server_logs_create**](docs/ServerApi.md#server_logs_create) | **POST** /api/server/logs | Method saves logs from a client on the server
-*ServerApi* | [**server_plugins_retrieve**](docs/ServerApi.md#server_plugins_retrieve) | **GET** /api/server/plugins | Method provides allowed plugins
-*ServerApi* | [**server_share_list**](docs/ServerApi.md#server_share_list) | **GET** /api/server/share | Returns all files and folders that are on the server along specified path
-*TasksApi* | [**jobs_data_meta_partial_update**](docs/TasksApi.md#jobs_data_meta_partial_update) | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
-*TasksApi* | [**tasks_annotations_create**](docs/TasksApi.md#tasks_annotations_create) | **POST** /api/tasks/{id}/annotations/ | Method allows to upload task annotations from storage
-*TasksApi* | [**tasks_annotations_destroy**](docs/TasksApi.md#tasks_annotations_destroy) | **DELETE** /api/tasks/{id}/annotations/ | Method deletes all annotations for a specific task
-*TasksApi* | [**tasks_annotations_file_partial_update**](docs/TasksApi.md#tasks_annotations_file_partial_update) | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-*TasksApi* | [**tasks_annotations_partial_update**](docs/TasksApi.md#tasks_annotations_partial_update) | **PATCH** /api/tasks/{id}/annotations/ | Method performs a partial update of annotations in a specific task
-*TasksApi* | [**tasks_annotations_retrieve**](docs/TasksApi.md#tasks_annotations_retrieve) | **GET** /api/tasks/{id}/annotations/ | Method allows to download task annotations
-*TasksApi* | [**tasks_annotations_update**](docs/TasksApi.md#tasks_annotations_update) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
-*TasksApi* | [**tasks_backup_create**](docs/TasksApi.md#tasks_backup_create) | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
-*TasksApi* | [**tasks_backup_file_partial_update**](docs/TasksApi.md#tasks_backup_file_partial_update) | **PATCH** /api/tasks/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
-*TasksApi* | [**tasks_backup_retrieve**](docs/TasksApi.md#tasks_backup_retrieve) | **GET** /api/tasks/{id}/backup | Method backup a specified task
+*ServerApi* | [**server_create_exception**](docs/ServerApi.md#server_create_exception) | **POST** /api/server/exception | Method saves an exception from a client on the server
+*ServerApi* | [**server_create_logs**](docs/ServerApi.md#server_create_logs) | **POST** /api/server/logs | Method saves logs from a client on the server
+*ServerApi* | [**server_list_share**](docs/ServerApi.md#server_list_share) | **GET** /api/server/share | Returns all files and folders that are on the server along specified path
+*ServerApi* | [**server_retrieve_about**](docs/ServerApi.md#server_retrieve_about) | **GET** /api/server/about | Method provides basic CVAT information
+*ServerApi* | [**server_retrieve_annotation_formats**](docs/ServerApi.md#server_retrieve_annotation_formats) | **GET** /api/server/annotation/formats | Method provides the list of supported annotations formats
+*ServerApi* | [**server_retrieve_plugins**](docs/ServerApi.md#server_retrieve_plugins) | **GET** /api/server/plugins | Method provides allowed plugins
+*TasksApi* | [**jobs_partial_update_data_meta**](docs/TasksApi.md#jobs_partial_update_data_meta) | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 *TasksApi* | [**tasks_create**](docs/TasksApi.md#tasks_create) | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
-*TasksApi* | [**tasks_data_create**](docs/TasksApi.md#tasks_data_create) | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
-*TasksApi* | [**tasks_data_file_partial_update**](docs/TasksApi.md#tasks_data_file_partial_update) | **PATCH** /api/tasks/{id}/data/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
-*TasksApi* | [**tasks_data_meta_partial_update**](docs/TasksApi.md#tasks_data_meta_partial_update) | **PATCH** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
-*TasksApi* | [**tasks_data_meta_retrieve**](docs/TasksApi.md#tasks_data_meta_retrieve) | **GET** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
-*TasksApi* | [**tasks_data_retrieve**](docs/TasksApi.md#tasks_data_retrieve) | **GET** /api/tasks/{id}/data/ | Method returns data for a specific task
-*TasksApi* | [**tasks_dataset_retrieve**](docs/TasksApi.md#tasks_dataset_retrieve) | **GET** /api/tasks/{id}/dataset | Export task as a dataset in a specific format
+*TasksApi* | [**tasks_create_annotations**](docs/TasksApi.md#tasks_create_annotations) | **POST** /api/tasks/{id}/annotations/ | Method allows to upload task annotations from storage
+*TasksApi* | [**tasks_create_backup**](docs/TasksApi.md#tasks_create_backup) | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
+*TasksApi* | [**tasks_create_data**](docs/TasksApi.md#tasks_create_data) | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
 *TasksApi* | [**tasks_destroy**](docs/TasksApi.md#tasks_destroy) | **DELETE** /api/tasks/{id} | Method deletes a specific task, all attached jobs, annotations, and data
-*TasksApi* | [**tasks_jobs_list**](docs/TasksApi.md#tasks_jobs_list) | **GET** /api/tasks/{id}/jobs | Method returns a list of jobs for a specific task
+*TasksApi* | [**tasks_destroy_annotations**](docs/TasksApi.md#tasks_destroy_annotations) | **DELETE** /api/tasks/{id}/annotations/ | Method deletes all annotations for a specific task
 *TasksApi* | [**tasks_list**](docs/TasksApi.md#tasks_list) | **GET** /api/tasks | Returns a paginated list of tasks according to query parameters (10 tasks per page)
+*TasksApi* | [**tasks_list_jobs**](docs/TasksApi.md#tasks_list_jobs) | **GET** /api/tasks/{id}/jobs | Method returns a list of jobs for a specific task
 *TasksApi* | [**tasks_partial_update**](docs/TasksApi.md#tasks_partial_update) | **PATCH** /api/tasks/{id} | Methods does a partial update of chosen fields in a task
+*TasksApi* | [**tasks_partial_update_annotations**](docs/TasksApi.md#tasks_partial_update_annotations) | **PATCH** /api/tasks/{id}/annotations/ | Method performs a partial update of annotations in a specific task
+*TasksApi* | [**tasks_partial_update_annotations_file**](docs/TasksApi.md#tasks_partial_update_annotations_file) | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
+*TasksApi* | [**tasks_partial_update_backup_file**](docs/TasksApi.md#tasks_partial_update_backup_file) | **PATCH** /api/tasks/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
+*TasksApi* | [**tasks_partial_update_data_file**](docs/TasksApi.md#tasks_partial_update_data_file) | **PATCH** /api/tasks/{id}/data/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
+*TasksApi* | [**tasks_partial_update_data_meta**](docs/TasksApi.md#tasks_partial_update_data_meta) | **PATCH** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
 *TasksApi* | [**tasks_retrieve**](docs/TasksApi.md#tasks_retrieve) | **GET** /api/tasks/{id} | Method returns details of a specific task
-*TasksApi* | [**tasks_status_retrieve**](docs/TasksApi.md#tasks_status_retrieve) | **GET** /api/tasks/{id}/status | When task is being created the method returns information about a status of the creation process
+*TasksApi* | [**tasks_retrieve_annotations**](docs/TasksApi.md#tasks_retrieve_annotations) | **GET** /api/tasks/{id}/annotations/ | Method allows to download task annotations
+*TasksApi* | [**tasks_retrieve_backup**](docs/TasksApi.md#tasks_retrieve_backup) | **GET** /api/tasks/{id}/backup | Method backup a specified task
+*TasksApi* | [**tasks_retrieve_data**](docs/TasksApi.md#tasks_retrieve_data) | **GET** /api/tasks/{id}/data/ | Method returns data for a specific task
+*TasksApi* | [**tasks_retrieve_data_meta**](docs/TasksApi.md#tasks_retrieve_data_meta) | **GET** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
+*TasksApi* | [**tasks_retrieve_dataset**](docs/TasksApi.md#tasks_retrieve_dataset) | **GET** /api/tasks/{id}/dataset | Export task as a dataset in a specific format
+*TasksApi* | [**tasks_retrieve_status**](docs/TasksApi.md#tasks_retrieve_status) | **GET** /api/tasks/{id}/status | When task is being created the method returns information about a status of the creation process
 *TasksApi* | [**tasks_update**](docs/TasksApi.md#tasks_update) | **PUT** /api/tasks/{id} | Method updates a task by id
+*TasksApi* | [**tasks_update_annotations**](docs/TasksApi.md#tasks_update_annotations) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 *UsersApi* | [**users_destroy**](docs/UsersApi.md#users_destroy) | **DELETE** /api/users/{id} | Method deletes a specific user from the server
 *UsersApi* | [**users_list**](docs/UsersApi.md#users_list) | **GET** /api/users | Method provides a paginated list of users registered on the server
 *UsersApi* | [**users_partial_update**](docs/UsersApi.md#users_partial_update) | **PATCH** /api/users/{id} | Method updates chosen fields of a user
 *UsersApi* | [**users_retrieve**](docs/UsersApi.md#users_retrieve) | **GET** /api/users/{id} | Method provides information of a specific user
-*UsersApi* | [**users_self_retrieve**](docs/UsersApi.md#users_self_retrieve) | **GET** /api/users/self | Method returns an instance of a user who is currently authorized
+*UsersApi* | [**users_retrieve_self**](docs/UsersApi.md#users_retrieve_self) | **GET** /api/users/self | Method returns an instance of a user who is currently authorized
 
 
 ## Documentation For Models

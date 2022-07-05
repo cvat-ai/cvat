@@ -8,6 +8,7 @@ DST_DIR="."
 TEMPLATE_DIR="gen"
 PYTHON_POST_PROCESS_FILE="${TEMPLATE_DIR}/postprocess.py"
 
+mkdir -p "${DST_DIR}/"
 rm -f -r "${DST_DIR}/docs/" "${DST_DIR}/${LIB_NAME}"
 cp "${TEMPLATE_DIR}/templates/openapi-generator/.openapi-generator-ignore" "${DST_DIR}/"
 
@@ -24,6 +25,7 @@ sudo chown -R "$(id -u)":"$(id -g)" "${DST_DIR}/"
 
 sed -e "s|{{packageVersion}}|${VERSION}|g" "${TEMPLATE_DIR}/templates/version.py.template" > "${DST_DIR}/${LIB_NAME}/version.py"
 cp -r "${TEMPLATE_DIR}/templates/requirements/" "${DST_DIR}/"
+cp -r "${TEMPLATE_DIR}/templates/MANIFEST.in" "${DST_DIR}/"
 
 # Do custom postprocessing
 "${PYTHON_POST_PROCESS_FILE}" --schema "schema/schema.yml" --input-path "${DST_DIR}/${LIB_NAME}"

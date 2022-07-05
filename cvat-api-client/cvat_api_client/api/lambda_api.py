@@ -47,12 +47,12 @@ class LambdaApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.functions_create_endpoint = _Endpoint(
+        self.create_functions_endpoint = _Endpoint(
             settings={
                 "response_type": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/lambda/functions/{func_id}",
-                "operation_id": "functions_create",
+                "operation_id": "create_functions",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -107,12 +107,58 @@ class LambdaApi(object):
             },
             api_client=api_client,
         )
-        self.functions_list_endpoint = _Endpoint(
+        self.create_requests_endpoint = _Endpoint(
+            settings={
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/requests",
+                "operation_id": "create_requests",
+                "http_method": "POST",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
+                ],
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
+            },
+            root_map={
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                },
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
+                },
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": [],
+                "content_type": [],
+            },
+            api_client=api_client,
+        )
+        self.list_functions_endpoint = _Endpoint(
             settings={
                 "response_type": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/lambda/functions",
-                "operation_id": "functions_list",
+                "operation_id": "list_functions",
                 "http_method": "GET",
                 "servers": None,
             },
@@ -153,14 +199,60 @@ class LambdaApi(object):
             },
             api_client=api_client,
         )
-        self.functions_retrieve_endpoint = _Endpoint(
+        self.list_requests_endpoint = _Endpoint(
+            settings={
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/requests",
+                "operation_id": "list_requests",
+                "http_method": "GET",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
+                ],
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
+            },
+            root_map={
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                },
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
+                },
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": [],
+                "content_type": [],
+            },
+            api_client=api_client,
+        )
+        self.retrieve_functions_endpoint = _Endpoint(
             settings={
                 "response_type": (
                     {str: (bool, date, datetime, dict, float, int, list, str, none_type)},
                 ),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/lambda/functions/{func_id}",
-                "operation_id": "functions_retrieve",
+                "operation_id": "retrieve_functions",
                 "http_method": "GET",
                 "servers": None,
             },
@@ -215,104 +307,12 @@ class LambdaApi(object):
             },
             api_client=api_client,
         )
-        self.requests_create_endpoint = _Endpoint(
-            settings={
-                "response_type": None,
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/lambda/requests",
-                "operation_id": "requests_create",
-                "http_method": "POST",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "x_organization",
-                    "org",
-                    "org_id",
-                ],
-                "required": [],
-                "nullable": [],
-                "enum": [],
-                "validation": [],
-            },
-            root_map={
-                "validations": {},
-                "allowed_values": {},
-                "openapi_types": {
-                    "x_organization": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                },
-                "attribute_map": {
-                    "x_organization": "X-Organization",
-                    "org": "org",
-                    "org_id": "org_id",
-                },
-                "location_map": {
-                    "x_organization": "header",
-                    "org": "query",
-                    "org_id": "query",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": [],
-                "content_type": [],
-            },
-            api_client=api_client,
-        )
-        self.requests_list_endpoint = _Endpoint(
-            settings={
-                "response_type": None,
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/lambda/requests",
-                "operation_id": "requests_list",
-                "http_method": "GET",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "x_organization",
-                    "org",
-                    "org_id",
-                ],
-                "required": [],
-                "nullable": [],
-                "enum": [],
-                "validation": [],
-            },
-            root_map={
-                "validations": {},
-                "allowed_values": {},
-                "openapi_types": {
-                    "x_organization": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                },
-                "attribute_map": {
-                    "x_organization": "X-Organization",
-                    "org": "org",
-                    "org_id": "org_id",
-                },
-                "location_map": {
-                    "x_organization": "header",
-                    "org": "query",
-                    "org_id": "query",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": [],
-                "content_type": [],
-            },
-            api_client=api_client,
-        )
-        self.requests_retrieve_endpoint = _Endpoint(
+        self.retrieve_requests_endpoint = _Endpoint(
             settings={
                 "response_type": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/lambda/requests/{id}",
-                "operation_id": "requests_retrieve",
+                "operation_id": "retrieve_requests",
                 "http_method": "GET",
                 "servers": None,
             },
@@ -361,7 +361,7 @@ class LambdaApi(object):
         )
 
     @overload
-    def functions_create(
+    def create_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True] = True,
@@ -371,7 +371,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_create(
+    def create_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
@@ -381,19 +381,19 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_create(
+    def create_functions(
         self, func_id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def functions_create(
+    def create_functions(
         self, func_id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def functions_create(
+    def create_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True],
@@ -403,7 +403,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_create(
+    def create_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
@@ -412,15 +412,15 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def functions_create(
+    def create_functions(
         self, func_id, **kwargs
     ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """functions_create  # noqa: E501
+        """create_functions  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.functions_create(func_id, async_req=True)
+        >>> thread = api.create_functions(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -482,20 +482,20 @@ class LambdaApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["func_id"] = func_id
-        return self.functions_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_functions_endpoint.call_with_http_info(**kwargs)
 
-    def functions_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_functions_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as functions_create(), but returns the response unprocessed.
-        Equivalent to calling functions_create with
+        The same as create_functions(), but returns the response unprocessed.
+        Equivalent to calling create_functions with
         _preload_content = False and _check_status=False
 
-        functions_create  # noqa: E501
+        create_functions  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.functions_create(func_id, async_req=True)
+        >>> thread = api.create_functions(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -533,10 +533,10 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.functions_create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_functions(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def functions_list(
+    def create_requests(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
@@ -545,7 +545,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_list(
+    def create_requests(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -554,19 +554,19 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_list(
+    def create_requests(
         self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def functions_list(
+    def create_requests(
         self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def functions_list(
+    def create_requests(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -575,7 +575,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_list(
+    def create_requests(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -583,15 +583,15 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def functions_list(
+    def create_requests(
         self, **kwargs
     ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """Method returns a list of functions  # noqa: E501
+        """Method calls the function  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.functions_list(async_req=True)
+        >>> thread = api.create_requests(async_req=True)
         >>> result = thread.get()
 
 
@@ -650,20 +650,20 @@ class LambdaApi(object):
         kwargs["_content_type"] = kwargs.get("_content_type")
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        return self.functions_list_endpoint.call_with_http_info(**kwargs)
+        return self.create_requests_endpoint.call_with_http_info(**kwargs)
 
-    def functions_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_requests_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as functions_list(), but returns the response unprocessed.
-        Equivalent to calling functions_list with
+        The same as create_requests(), but returns the response unprocessed.
+        Equivalent to calling create_requests with
         _preload_content = False and _check_status=False
 
-        Method returns a list of functions  # noqa: E501
+        Method calls the function  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.functions_list(async_req=True)
+        >>> thread = api.create_requests(async_req=True)
         >>> result = thread.get()
 
 
@@ -699,10 +699,342 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.functions_list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_requests(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def functions_retrieve(
+    def list_functions(
+        self,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @overload
+    def list_functions(
+        self,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def list_functions(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def list_functions(
+        self, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def list_functions(
+        self,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def list_functions(
+        self,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def list_functions(
+        self, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+        """Method returns a list of functions  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.list_functions(async_req=True)
+        >>> result = thread.get()
+
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.list_functions_endpoint.call_with_http_info(**kwargs)
+
+    def list_functions_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as list_functions(), but returns the response unprocessed.
+        Equivalent to calling list_functions with
+        _preload_content = False and _check_status=False
+
+        Method returns a list of functions  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.list_functions(async_req=True)
+        >>> result = thread.get()
+
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.list_functions(*args, **kwargs, _preload_content=False, _check_status=False)
+
+    @overload
+    def list_requests(
+        self,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @overload
+    def list_requests(
+        self,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def list_requests(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def list_requests(
+        self, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def list_requests(
+        self,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def list_requests(
+        self,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def list_requests(
+        self, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+        """Method returns a list of requests  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.list_requests(async_req=True)
+        >>> result = thread.get()
+
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.list_requests_endpoint.call_with_http_info(**kwargs)
+
+    def list_requests_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as list_requests(), but returns the response unprocessed.
+        Equivalent to calling list_requests with
+        _preload_content = False and _check_status=False
+
+        Method returns a list of requests  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.list_requests(async_req=True)
+        >>> result = thread.get()
+
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.list_requests(*args, **kwargs, _preload_content=False, _check_status=False)
+
+    @overload
+    def retrieve_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True] = True,
@@ -712,7 +1044,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_retrieve(
+    def retrieve_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
@@ -724,7 +1056,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_retrieve(
+    def retrieve_functions(
         self, func_id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[
         typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
@@ -732,13 +1064,13 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_retrieve(
+    def retrieve_functions(
         self, func_id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def functions_retrieve(
+    def retrieve_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True],
@@ -748,7 +1080,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def functions_retrieve(
+    def retrieve_functions(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
@@ -757,7 +1089,7 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def functions_retrieve(
+    def retrieve_functions(
         self, func_id, **kwargs
     ) -> typing.Union[
         typing.Tuple[
@@ -771,7 +1103,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.functions_retrieve(func_id, async_req=True)
+        >>> thread = api.retrieve_functions(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -833,12 +1165,12 @@ class LambdaApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["func_id"] = func_id
-        return self.functions_retrieve_endpoint.call_with_http_info(**kwargs)
+        return self.retrieve_functions_endpoint.call_with_http_info(**kwargs)
 
-    def functions_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def retrieve_functions_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as functions_retrieve(), but returns the response unprocessed.
-        Equivalent to calling functions_retrieve with
+        The same as retrieve_functions(), but returns the response unprocessed.
+        Equivalent to calling retrieve_functions with
         _preload_content = False and _check_status=False
 
         Method returns the information about the function  # noqa: E501
@@ -846,7 +1178,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.functions_retrieve(func_id, async_req=True)
+        >>> thread = api.retrieve_functions(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -884,342 +1216,10 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.functions_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_functions(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def requests_create(
-        self,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def requests_create(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def requests_create(
-        self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def requests_create(
-        self, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def requests_create(
-        self,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def requests_create(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def requests_create(
-        self, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """Method calls the function  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.requests_create(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        return self.requests_create_endpoint.call_with_http_info(**kwargs)
-
-    def requests_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as requests_create(), but returns the response unprocessed.
-        Equivalent to calling requests_create with
-        _preload_content = False and _check_status=False
-
-        Method calls the function  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.requests_create(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.requests_create(*args, **kwargs, _preload_content=False, _check_status=False)
-
-    @overload
-    def requests_list(
-        self,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def requests_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def requests_list(
-        self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def requests_list(
-        self, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def requests_list(
-        self,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def requests_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def requests_list(
-        self, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """Method returns a list of requests  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.requests_list(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        return self.requests_list_endpoint.call_with_http_info(**kwargs)
-
-    def requests_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as requests_list(), but returns the response unprocessed.
-        Equivalent to calling requests_list with
-        _preload_content = False and _check_status=False
-
-        Method returns a list of requests  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.requests_list(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.requests_list(*args, **kwargs, _preload_content=False, _check_status=False)
-
-    @overload
-    def requests_retrieve(
+    def retrieve_requests(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
@@ -1229,7 +1229,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def requests_retrieve(
+    def retrieve_requests(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
@@ -1239,19 +1239,19 @@ class LambdaApi(object):
         ...
 
     @overload
-    def requests_retrieve(
+    def retrieve_requests(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def requests_retrieve(
+    def retrieve_requests(
         self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def requests_retrieve(
+    def retrieve_requests(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
@@ -1261,7 +1261,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def requests_retrieve(
+    def retrieve_requests(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
@@ -1270,7 +1270,7 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def requests_retrieve(
+    def retrieve_requests(
         self, id, **kwargs
     ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method returns the status of the request  # noqa: E501
@@ -1278,7 +1278,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.requests_retrieve(id, async_req=True)
+        >>> thread = api.retrieve_requests(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1340,12 +1340,12 @@ class LambdaApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["id"] = id
-        return self.requests_retrieve_endpoint.call_with_http_info(**kwargs)
+        return self.retrieve_requests_endpoint.call_with_http_info(**kwargs)
 
-    def requests_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def retrieve_requests_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as requests_retrieve(), but returns the response unprocessed.
-        Equivalent to calling requests_retrieve with
+        The same as retrieve_requests(), but returns the response unprocessed.
+        Equivalent to calling retrieve_requests with
         _preload_content = False and _check_status=False
 
         Method returns the status of the request  # noqa: E501
@@ -1353,7 +1353,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.requests_retrieve(id, async_req=True)
+        >>> thread = api.retrieve_requests(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1391,4 +1391,4 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.requests_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_requests(*args, **kwargs, _preload_content=False, _check_status=False)

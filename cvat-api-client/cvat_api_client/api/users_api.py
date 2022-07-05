@@ -280,12 +280,12 @@ class UsersApi(object):
             },
             api_client=api_client,
         )
-        self.self_retrieve_endpoint = _Endpoint(
+        self.retrieve_self_endpoint = _Endpoint(
             settings={
                 "response_type": (MetaUser,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/users/self",
-                "operation_id": "self_retrieve",
+                "operation_id": "retrieve_self",
                 "http_method": "GET",
                 "servers": None,
             },
@@ -1037,7 +1037,7 @@ class UsersApi(object):
         return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def self_retrieve(
+    def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
@@ -1046,7 +1046,7 @@ class UsersApi(object):
         ...
 
     @overload
-    def self_retrieve(
+    def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -1055,19 +1055,19 @@ class UsersApi(object):
         ...
 
     @overload
-    def self_retrieve(
+    def retrieve_self(
         self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def self_retrieve(
+    def retrieve_self(
         self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def self_retrieve(
+    def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -1076,7 +1076,7 @@ class UsersApi(object):
         ...
 
     @overload
-    def self_retrieve(
+    def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -1084,7 +1084,7 @@ class UsersApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def self_retrieve(
+    def retrieve_self(
         self, **kwargs
     ) -> typing.Union[
         typing.Tuple[MetaUser, int, typing.Dict[str, str]], urllib3.HTTPResponse, MetaUser
@@ -1095,7 +1095,7 @@ class UsersApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.self_retrieve(async_req=True)
+        >>> thread = api.retrieve_self(async_req=True)
         >>> result = thread.get()
 
 
@@ -1154,12 +1154,12 @@ class UsersApi(object):
         kwargs["_content_type"] = kwargs.get("_content_type")
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        return self.self_retrieve_endpoint.call_with_http_info(**kwargs)
+        return self.retrieve_self_endpoint.call_with_http_info(**kwargs)
 
-    def self_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def retrieve_self_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as self_retrieve(), but returns the response unprocessed.
-        Equivalent to calling self_retrieve with
+        The same as retrieve_self(), but returns the response unprocessed.
+        Equivalent to calling retrieve_self with
         _preload_content = False and _check_status=False
 
         Method returns an instance of a user who is currently authorized  # noqa: E501
@@ -1168,7 +1168,7 @@ class UsersApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.self_retrieve(async_req=True)
+        >>> thread = api.retrieve_self(async_req=True)
         >>> result = thread.get()
 
 
@@ -1204,4 +1204,4 @@ class UsersApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.self_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_self(*args, **kwargs, _preload_content=False, _check_status=False)

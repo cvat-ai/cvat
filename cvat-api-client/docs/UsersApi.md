@@ -8,7 +8,7 @@ Method | HTTP request | Description
 [**users_list**](UsersApi.md#users_list) | **GET** /api/users | Method provides a paginated list of users registered on the server
 [**users_partial_update**](UsersApi.md#users_partial_update) | **PATCH** /api/users/{id} | Method updates chosen fields of a user
 [**users_retrieve**](UsersApi.md#users_retrieve) | **GET** /api/users/{id} | Method provides information of a specific user
-[**users_self_retrieve**](UsersApi.md#users_self_retrieve) | **GET** /api/users/self | Method returns an instance of a user who is currently authorized
+[**users_retrieve_self**](UsersApi.md#users_retrieve_self) | **GET** /api/users/self | Method returns an instance of a user who is currently authorized
 
 
 # **users_destroy**
@@ -470,8 +470,8 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **users_self_retrieve**
-> MetaUser users_self_retrieve()
+# **users_retrieve_self**
+> MetaUser users_retrieve_self()
 
 Method returns an instance of a user who is currently authorized
 
@@ -537,10 +537,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns an instance of a user who is currently authorized
-        api_response = api_instance.users_self_retrieve(x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.users_retrieve_self(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling UsersApi->users_self_retrieve: %s\n" % e)
+        print("Exception when calling UsersApi->users_retrieve_self: %s\n" % e)
 ```
 
 

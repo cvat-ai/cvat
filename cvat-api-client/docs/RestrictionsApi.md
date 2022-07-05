@@ -4,12 +4,12 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**restrictions_terms_of_use_retrieve**](RestrictionsApi.md#restrictions_terms_of_use_retrieve) | **GET** /api/restrictions/terms-of-use | Method provides CVAT terms of use
-[**restrictions_user_agreements_retrieve**](RestrictionsApi.md#restrictions_user_agreements_retrieve) | **GET** /api/restrictions/user-agreements | Method provides user agreements that the user must accept to register
+[**restrictions_retrieve_terms_of_use**](RestrictionsApi.md#restrictions_retrieve_terms_of_use) | **GET** /api/restrictions/terms-of-use | Method provides CVAT terms of use
+[**restrictions_retrieve_user_agreements**](RestrictionsApi.md#restrictions_retrieve_user_agreements) | **GET** /api/restrictions/user-agreements | Method provides user agreements that the user must accept to register
 
 
-# **restrictions_terms_of_use_retrieve**
-> restrictions_terms_of_use_retrieve()
+# **restrictions_retrieve_terms_of_use**
+> restrictions_retrieve_terms_of_use()
 
 Method provides CVAT terms of use
 
@@ -40,9 +40,9 @@ with cvat_api_client.ApiClient() as api_client:
     # and optional values
     try:
         # Method provides CVAT terms of use
-        api_instance.restrictions_terms_of_use_retrieve(x_organization=x_organization, org=org, org_id=org_id)
+        api_instance.restrictions_retrieve_terms_of_use(x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling RestrictionsApi->restrictions_terms_of_use_retrieve: %s\n" % e)
+        print("Exception when calling RestrictionsApi->restrictions_retrieve_terms_of_use: %s\n" % e)
 ```
 
 
@@ -76,8 +76,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **restrictions_user_agreements_retrieve**
-> UserAgreement restrictions_user_agreements_retrieve()
+# **restrictions_retrieve_user_agreements**
+> UserAgreement restrictions_retrieve_user_agreements()
 
 Method provides user agreements that the user must accept to register
 
@@ -109,10 +109,10 @@ with cvat_api_client.ApiClient() as api_client:
     # and optional values
     try:
         # Method provides user agreements that the user must accept to register
-        api_response = api_instance.restrictions_user_agreements_retrieve(x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.restrictions_retrieve_user_agreements(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling RestrictionsApi->restrictions_user_agreements_retrieve: %s\n" % e)
+        print("Exception when calling RestrictionsApi->restrictions_retrieve_user_agreements: %s\n" % e)
 ```
 
 

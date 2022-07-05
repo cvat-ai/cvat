@@ -58,12 +58,12 @@ class AuthApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.login_create_endpoint = _Endpoint(
+        self.create_login_endpoint = _Endpoint(
             settings={
                 "response_type": (Token,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/login",
-                "operation_id": "login_create",
+                "operation_id": "create_login",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -114,12 +114,12 @@ class AuthApi(object):
             },
             api_client=api_client,
         )
-        self.logout_create_endpoint = _Endpoint(
+        self.create_logout_endpoint = _Endpoint(
             settings={
                 "response_type": (RestAuthDetail,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/logout",
-                "operation_id": "logout_create",
+                "operation_id": "create_logout",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -160,12 +160,12 @@ class AuthApi(object):
             },
             api_client=api_client,
         )
-        self.password_change_create_endpoint = _Endpoint(
+        self.create_password_change_endpoint = _Endpoint(
             settings={
                 "response_type": (RestAuthDetail,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/password/change",
-                "operation_id": "password_change_create",
+                "operation_id": "create_password_change",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -216,68 +216,12 @@ class AuthApi(object):
             },
             api_client=api_client,
         )
-        self.password_reset_confirm_create_endpoint = _Endpoint(
-            settings={
-                "response_type": (RestAuthDetail,),
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/auth/password/reset/confirm",
-                "operation_id": "password_reset_confirm_create",
-                "http_method": "POST",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "password_reset_confirm_request",
-                    "x_organization",
-                    "org",
-                    "org_id",
-                ],
-                "required": [
-                    "password_reset_confirm_request",
-                ],
-                "nullable": [],
-                "enum": [],
-                "validation": [],
-            },
-            root_map={
-                "validations": {},
-                "allowed_values": {},
-                "openapi_types": {
-                    "password_reset_confirm_request": (PasswordResetConfirmRequest,),
-                    "x_organization": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                },
-                "attribute_map": {
-                    "x_organization": "X-Organization",
-                    "org": "org",
-                    "org_id": "org_id",
-                },
-                "location_map": {
-                    "password_reset_confirm_request": "body",
-                    "x_organization": "header",
-                    "org": "query",
-                    "org_id": "query",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": ["application/vnd.cvat+json"],
-                "content_type": [
-                    "application/json",
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data",
-                    "application/offset+octet-stream",
-                ],
-            },
-            api_client=api_client,
-        )
-        self.password_reset_create_endpoint = _Endpoint(
+        self.create_password_reset_endpoint = _Endpoint(
             settings={
                 "response_type": (RestAuthDetail,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/password/reset",
-                "operation_id": "password_reset_create",
+                "operation_id": "create_password_reset",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -328,12 +272,68 @@ class AuthApi(object):
             },
             api_client=api_client,
         )
-        self.register_create_endpoint = _Endpoint(
+        self.create_password_reset_confirm_endpoint = _Endpoint(
+            settings={
+                "response_type": (RestAuthDetail,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/password/reset/confirm",
+                "operation_id": "create_password_reset_confirm",
+                "http_method": "POST",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "password_reset_confirm_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                ],
+                "required": [
+                    "password_reset_confirm_request",
+                ],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
+            },
+            root_map={
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "password_reset_confirm_request": (PasswordResetConfirmRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                },
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
+                },
+                "location_map": {
+                    "password_reset_confirm_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
+                ],
+            },
+            api_client=api_client,
+        )
+        self.create_register_endpoint = _Endpoint(
             settings={
                 "response_type": (RestrictedRegister,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/register",
-                "operation_id": "register_create",
+                "operation_id": "create_register",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -384,12 +384,12 @@ class AuthApi(object):
             },
             api_client=api_client,
         )
-        self.signing_create_endpoint = _Endpoint(
+        self.create_signing_endpoint = _Endpoint(
             settings={
                 "response_type": (str,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/signing",
-                "operation_id": "signing_create",
+                "operation_id": "create_signing",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -442,7 +442,7 @@ class AuthApi(object):
         )
 
     @overload
-    def login_create(
+    def create_login(
         self,
         login_request,
         _return_http_data_only: typing.Literal[True] = True,
@@ -452,7 +452,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def login_create(
+    def create_login(
         self,
         login_request,
         _return_http_data_only: typing.Literal[False],
@@ -462,19 +462,19 @@ class AuthApi(object):
         ...
 
     @overload
-    def login_create(
+    def create_login(
         self, login_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[Token, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def login_create(
+    def create_login(
         self, login_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def login_create(
+    def create_login(
         self,
         login_request,
         _return_http_data_only: typing.Literal[True],
@@ -484,7 +484,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def login_create(
+    def create_login(
         self,
         login_request,
         _return_http_data_only: typing.Literal[False],
@@ -493,16 +493,16 @@ class AuthApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def login_create(
+    def create_login(
         self, login_request, **kwargs
     ) -> typing.Union[typing.Tuple[Token, int, typing.Dict[str, str]], urllib3.HTTPResponse, Token]:
-        """login_create  # noqa: E501
+        """create_login  # noqa: E501
 
         Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework  Accept the following POST parameters: username, password Return the REST Framework Token Object's key.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.login_create(login_request, async_req=True)
+        >>> thread = api.create_login(login_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -564,21 +564,21 @@ class AuthApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["login_request"] = login_request
-        return self.login_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_login_endpoint.call_with_http_info(**kwargs)
 
-    def login_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_login_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as login_create(), but returns the response unprocessed.
-        Equivalent to calling login_create with
+        The same as create_login(), but returns the response unprocessed.
+        Equivalent to calling create_login with
         _preload_content = False and _check_status=False
 
-        login_create  # noqa: E501
+        create_login  # noqa: E501
 
         Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework  Accept the following POST parameters: username, password Return the REST Framework Token Object's key.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.login_create(login_request, async_req=True)
+        >>> thread = api.create_login(login_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -616,10 +616,10 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.login_create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_login(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def logout_create(
+    def create_logout(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
@@ -628,7 +628,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def logout_create(
+    def create_logout(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -637,19 +637,19 @@ class AuthApi(object):
         ...
 
     @overload
-    def logout_create(
+    def create_logout(
         self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def logout_create(
+    def create_logout(
         self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def logout_create(
+    def create_logout(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -658,7 +658,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def logout_create(
+    def create_logout(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -666,20 +666,20 @@ class AuthApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def logout_create(
+    def create_logout(
         self, **kwargs
     ) -> typing.Union[
         typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
         urllib3.HTTPResponse,
         RestAuthDetail,
     ]:
-        """logout_create  # noqa: E501
+        """create_logout  # noqa: E501
 
         Calls Django logout method and delete the Token object assigned to the current User object.  Accepts/Returns nothing.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.logout_create(async_req=True)
+        >>> thread = api.create_logout(async_req=True)
         >>> result = thread.get()
 
 
@@ -738,21 +738,21 @@ class AuthApi(object):
         kwargs["_content_type"] = kwargs.get("_content_type")
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        return self.logout_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_logout_endpoint.call_with_http_info(**kwargs)
 
-    def logout_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_logout_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as logout_create(), but returns the response unprocessed.
-        Equivalent to calling logout_create with
+        The same as create_logout(), but returns the response unprocessed.
+        Equivalent to calling create_logout with
         _preload_content = False and _check_status=False
 
-        logout_create  # noqa: E501
+        create_logout  # noqa: E501
 
         Calls Django logout method and delete the Token object assigned to the current User object.  Accepts/Returns nothing.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.logout_create(async_req=True)
+        >>> thread = api.create_logout(async_req=True)
         >>> result = thread.get()
 
 
@@ -788,10 +788,10 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.logout_create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_logout(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def password_change_create(
+    def create_password_change(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[True] = True,
@@ -801,7 +801,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_change_create(
+    def create_password_change(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[False],
@@ -811,19 +811,19 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_change_create(
+    def create_password_change(
         self, password_change_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def password_change_create(
+    def create_password_change(
         self, password_change_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def password_change_create(
+    def create_password_change(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[True],
@@ -833,7 +833,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_change_create(
+    def create_password_change(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[False],
@@ -842,20 +842,20 @@ class AuthApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def password_change_create(
+    def create_password_change(
         self, password_change_request, **kwargs
     ) -> typing.Union[
         typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
         urllib3.HTTPResponse,
         RestAuthDetail,
     ]:
-        """password_change_create  # noqa: E501
+        """create_password_change  # noqa: E501
 
         Calls Django Auth SetPasswordForm save method.  Accepts the following POST parameters: new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.password_change_create(password_change_request, async_req=True)
+        >>> thread = api.create_password_change(password_change_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -917,21 +917,21 @@ class AuthApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["password_change_request"] = password_change_request
-        return self.password_change_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_password_change_endpoint.call_with_http_info(**kwargs)
 
-    def password_change_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_password_change_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as password_change_create(), but returns the response unprocessed.
-        Equivalent to calling password_change_create with
+        The same as create_password_change(), but returns the response unprocessed.
+        Equivalent to calling create_password_change with
         _preload_content = False and _check_status=False
 
-        password_change_create  # noqa: E501
+        create_password_change  # noqa: E501
 
         Calls Django Auth SetPasswordForm save method.  Accepts the following POST parameters: new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.password_change_create(password_change_request, async_req=True)
+        >>> thread = api.create_password_change(password_change_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -969,198 +969,12 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.password_change_create(
+        return self.create_password_change(
             *args, **kwargs, _preload_content=False, _check_status=False
         )
 
     @overload
-    def password_reset_confirm_create(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> RestAuthDetail:
-        ...
-
-    @overload
-    def password_reset_confirm_create(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def password_reset_confirm_create(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def password_reset_confirm_create(
-        self, password_reset_confirm_request, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def password_reset_confirm_create(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def password_reset_confirm_create(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def password_reset_confirm_create(
-        self, password_reset_confirm_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        RestAuthDetail,
-    ]:
-        """password_reset_confirm_create  # noqa: E501
-
-        Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.password_reset_confirm_create(password_reset_confirm_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            password_reset_confirm_request (PasswordResetConfirmRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RestAuthDetail
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        kwargs["password_reset_confirm_request"] = password_reset_confirm_request
-        return self.password_reset_confirm_create_endpoint.call_with_http_info(**kwargs)
-
-    def password_reset_confirm_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as password_reset_confirm_create(), but returns the response unprocessed.
-        Equivalent to calling password_reset_confirm_create with
-        _preload_content = False and _check_status=False
-
-        password_reset_confirm_create  # noqa: E501
-
-        Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.password_reset_confirm_create(password_reset_confirm_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            password_reset_confirm_request (PasswordResetConfirmRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RestAuthDetail
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.password_reset_confirm_create(
-            *args, **kwargs, _preload_content=False, _check_status=False
-        )
-
-    @overload
-    def password_reset_create(
+    def create_password_reset(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[True] = True,
@@ -1170,7 +984,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_reset_create(
+    def create_password_reset(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
@@ -1180,7 +994,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_reset_create(
+    def create_password_reset(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
@@ -1189,7 +1003,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_reset_create(
+    def create_password_reset(
         self,
         password_reset_serializer_ex_request,
         _preload_content: typing.Literal[False],
@@ -1198,7 +1012,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_reset_create(
+    def create_password_reset(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[True],
@@ -1208,7 +1022,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def password_reset_create(
+    def create_password_reset(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
@@ -1217,20 +1031,20 @@ class AuthApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def password_reset_create(
+    def create_password_reset(
         self, password_reset_serializer_ex_request, **kwargs
     ) -> typing.Union[
         typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
         urllib3.HTTPResponse,
         RestAuthDetail,
     ]:
-        """password_reset_create  # noqa: E501
+        """create_password_reset  # noqa: E501
 
         Calls Django Auth PasswordResetForm save method.  Accepts the following POST parameters: email Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.password_reset_create(password_reset_serializer_ex_request, async_req=True)
+        >>> thread = api.create_password_reset(password_reset_serializer_ex_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1292,21 +1106,21 @@ class AuthApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["password_reset_serializer_ex_request"] = password_reset_serializer_ex_request
-        return self.password_reset_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_password_reset_endpoint.call_with_http_info(**kwargs)
 
-    def password_reset_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_password_reset_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as password_reset_create(), but returns the response unprocessed.
-        Equivalent to calling password_reset_create with
+        The same as create_password_reset(), but returns the response unprocessed.
+        Equivalent to calling create_password_reset with
         _preload_content = False and _check_status=False
 
-        password_reset_create  # noqa: E501
+        create_password_reset  # noqa: E501
 
         Calls Django Auth PasswordResetForm save method.  Accepts the following POST parameters: email Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.password_reset_create(password_reset_serializer_ex_request, async_req=True)
+        >>> thread = api.create_password_reset(password_reset_serializer_ex_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1344,12 +1158,198 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.password_reset_create(
+        return self.create_password_reset(
             *args, **kwargs, _preload_content=False, _check_status=False
         )
 
     @overload
-    def register_create(
+    def create_password_reset_confirm(
+        self,
+        password_reset_confirm_request,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> RestAuthDetail:
+        ...
+
+    @overload
+    def create_password_reset_confirm(
+        self,
+        password_reset_confirm_request,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def create_password_reset_confirm(
+        self,
+        password_reset_confirm_request,
+        _return_http_data_only: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def create_password_reset_confirm(
+        self, password_reset_confirm_request, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def create_password_reset_confirm(
+        self,
+        password_reset_confirm_request,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def create_password_reset_confirm(
+        self,
+        password_reset_confirm_request,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def create_password_reset_confirm(
+        self, password_reset_confirm_request, **kwargs
+    ) -> typing.Union[
+        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        RestAuthDetail,
+    ]:
+        """create_password_reset_confirm  # noqa: E501
+
+        Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.create_password_reset_confirm(password_reset_confirm_request, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            password_reset_confirm_request (PasswordResetConfirmRequest):
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            RestAuthDetail
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["password_reset_confirm_request"] = password_reset_confirm_request
+        return self.create_password_reset_confirm_endpoint.call_with_http_info(**kwargs)
+
+    def create_password_reset_confirm_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as create_password_reset_confirm(), but returns the response unprocessed.
+        Equivalent to calling create_password_reset_confirm with
+        _preload_content = False and _check_status=False
+
+        create_password_reset_confirm  # noqa: E501
+
+        Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.create_password_reset_confirm(password_reset_confirm_request, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            password_reset_confirm_request (PasswordResetConfirmRequest):
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            RestAuthDetail
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.create_password_reset_confirm(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
+
+    @overload
+    def create_register(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[True] = True,
@@ -1359,7 +1359,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def register_create(
+    def create_register(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[False],
@@ -1369,19 +1369,19 @@ class AuthApi(object):
         ...
 
     @overload
-    def register_create(
+    def create_register(
         self, restricted_register_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def register_create(
+    def create_register(
         self, restricted_register_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def register_create(
+    def create_register(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[True],
@@ -1391,7 +1391,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def register_create(
+    def create_register(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[False],
@@ -1400,19 +1400,19 @@ class AuthApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def register_create(
+    def create_register(
         self, restricted_register_request, **kwargs
     ) -> typing.Union[
         typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]],
         urllib3.HTTPResponse,
         RestrictedRegister,
     ]:
-        """register_create  # noqa: E501
+        """create_register  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.register_create(restricted_register_request, async_req=True)
+        >>> thread = api.create_register(restricted_register_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1474,20 +1474,20 @@ class AuthApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["restricted_register_request"] = restricted_register_request
-        return self.register_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_register_endpoint.call_with_http_info(**kwargs)
 
-    def register_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_register_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as register_create(), but returns the response unprocessed.
-        Equivalent to calling register_create with
+        The same as create_register(), but returns the response unprocessed.
+        Equivalent to calling create_register with
         _preload_content = False and _check_status=False
 
-        register_create  # noqa: E501
+        create_register  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.register_create(restricted_register_request, async_req=True)
+        >>> thread = api.create_register(restricted_register_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1525,10 +1525,10 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.register_create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_register(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def signing_create(
+    def create_signing(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[True] = True,
@@ -1538,7 +1538,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def signing_create(
+    def create_signing(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[False],
@@ -1548,19 +1548,19 @@ class AuthApi(object):
         ...
 
     @overload
-    def signing_create(
+    def create_signing(
         self, signing_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def signing_create(
+    def create_signing(
         self, signing_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def signing_create(
+    def create_signing(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[True],
@@ -1570,7 +1570,7 @@ class AuthApi(object):
         ...
 
     @overload
-    def signing_create(
+    def create_signing(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[False],
@@ -1579,7 +1579,7 @@ class AuthApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def signing_create(
+    def create_signing(
         self, signing_request, **kwargs
     ) -> typing.Union[typing.Tuple[str, int, typing.Dict[str, str]], urllib3.HTTPResponse, str]:
         """This method signs URL for access to the server  # noqa: E501
@@ -1588,7 +1588,7 @@ class AuthApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.signing_create(signing_request, async_req=True)
+        >>> thread = api.create_signing(signing_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1650,12 +1650,12 @@ class AuthApi(object):
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         kwargs["signing_request"] = signing_request
-        return self.signing_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_signing_endpoint.call_with_http_info(**kwargs)
 
-    def signing_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_signing_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as signing_create(), but returns the response unprocessed.
-        Equivalent to calling signing_create with
+        The same as create_signing(), but returns the response unprocessed.
+        Equivalent to calling create_signing with
         _preload_content = False and _check_status=False
 
         This method signs URL for access to the server  # noqa: E501
@@ -1664,7 +1664,7 @@ class AuthApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.signing_create(signing_request, async_req=True)
+        >>> thread = api.create_signing(signing_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1702,4 +1702,4 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.signing_create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_signing(*args, **kwargs, _preload_content=False, _check_status=False)

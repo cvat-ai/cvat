@@ -518,11 +518,10 @@ SPECTACULAR_SETTINGS = {
         'name': 'MIT License',
         'url': 'https://en.wikipedia.org/wiki/MIT_License',
     },
+
     'SERVE_PUBLIC': True,
-    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-    'SCHEMA_PATH_PREFIX': '/api',
-    'SCHEMA_PATH_PREFIX_TRIM': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+
     # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
@@ -558,5 +557,12 @@ SPECTACULAR_SETTINGS = {
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
     },
+
+    # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
+    # some libraries (e.g. drf-nested-routers) use "_pk" suffixed path variables.
+    # This setting globally coerces path variables like "{user_pk}" to "{user_id}".
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SCHEMA_PATH_PREFIX_TRIM': False,
 }
 

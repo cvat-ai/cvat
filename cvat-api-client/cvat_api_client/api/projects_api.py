@@ -54,95 +54,68 @@ class ProjectsApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.annotations_retrieve_endpoint = _Endpoint(
+        self.create_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_type": (ProjectWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/projects/{id}/annotations",
-                "operation_id": "annotations_retrieve",
-                "http_method": "GET",
+                "endpoint_path": "/api/projects",
+                "operation_id": "create",
+                "http_method": "POST",
                 "servers": None,
             },
             params_map={
                 "all": [
-                    "format",
-                    "id",
+                    "project_write_request",
                     "x_organization",
-                    "action",
-                    "cloud_storage_id",
-                    "filename",
-                    "location",
                     "org",
                     "org_id",
-                    "use_default_location",
                 ],
                 "required": [
-                    "format",
-                    "id",
+                    "project_write_request",
                 ],
                 "nullable": [],
-                "enum": [
-                    "action",
-                    "location",
-                ],
+                "enum": [],
                 "validation": [],
             },
             root_map={
                 "validations": {},
-                "allowed_values": {
-                    ("action",): {"DOWNLOAD": "download"},
-                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
-                },
+                "allowed_values": {},
                 "openapi_types": {
-                    "format": (str,),
-                    "id": (int,),
+                    "project_write_request": (ProjectWriteRequest,),
                     "x_organization": (str,),
-                    "action": (str,),
-                    "cloud_storage_id": (float,),
-                    "filename": (str,),
-                    "location": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "use_default_location": (bool,),
                 },
                 "attribute_map": {
-                    "format": "format",
-                    "id": "id",
                     "x_organization": "X-Organization",
-                    "action": "action",
-                    "cloud_storage_id": "cloud_storage_id",
-                    "filename": "filename",
-                    "location": "location",
                     "org": "org",
                     "org_id": "org_id",
-                    "use_default_location": "use_default_location",
                 },
                 "location_map": {
-                    "format": "query",
-                    "id": "path",
+                    "project_write_request": "body",
                     "x_organization": "header",
-                    "action": "query",
-                    "cloud_storage_id": "query",
-                    "filename": "query",
-                    "location": "query",
                     "org": "query",
                     "org_id": "query",
-                    "use_default_location": "query",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": [],
-                "content_type": [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
+                ],
             },
             api_client=api_client,
         )
-        self.backup_create_endpoint = _Endpoint(
+        self.create_backup_endpoint = _Endpoint(
             settings={
                 "response_type": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects/backup/",
-                "operation_id": "backup_create",
+                "operation_id": "create_backup",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -209,214 +182,12 @@ class ProjectsApi(object):
             },
             api_client=api_client,
         )
-        self.backup_partial_update_endpoint = _Endpoint(
-            settings={
-                "response_type": (ProjectWrite,),
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/projects/backup/{file_id}",
-                "operation_id": "backup_partial_update",
-                "http_method": "PATCH",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "file_id",
-                    "x_organization",
-                    "org",
-                    "org_id",
-                    "patched_project_write_request",
-                ],
-                "required": [
-                    "file_id",
-                ],
-                "nullable": [],
-                "enum": [],
-                "validation": [
-                    "file_id",
-                ],
-            },
-            root_map={
-                "validations": {
-                    ("file_id",): {
-                        "regex": {
-                            "pattern": r"^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$",  # noqa: E501
-                        },
-                    },
-                },
-                "allowed_values": {},
-                "openapi_types": {
-                    "file_id": (str,),
-                    "x_organization": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                    "patched_project_write_request": (PatchedProjectWriteRequest,),
-                },
-                "attribute_map": {
-                    "file_id": "file_id",
-                    "x_organization": "X-Organization",
-                    "org": "org",
-                    "org_id": "org_id",
-                },
-                "location_map": {
-                    "file_id": "path",
-                    "x_organization": "header",
-                    "org": "query",
-                    "org_id": "query",
-                    "patched_project_write_request": "body",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": ["application/vnd.cvat+json"],
-                "content_type": [
-                    "application/json",
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data",
-                    "application/offset+octet-stream",
-                ],
-            },
-            api_client=api_client,
-        )
-        self.backup_retrieve_endpoint = _Endpoint(
-            settings={
-                "response_type": None,
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/projects/{id}/backup",
-                "operation_id": "backup_retrieve",
-                "http_method": "GET",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "id",
-                    "x_organization",
-                    "action",
-                    "cloud_storage_id",
-                    "filename",
-                    "location",
-                    "org",
-                    "org_id",
-                    "use_default_location",
-                ],
-                "required": [
-                    "id",
-                ],
-                "nullable": [],
-                "enum": [
-                    "action",
-                    "location",
-                ],
-                "validation": [],
-            },
-            root_map={
-                "validations": {},
-                "allowed_values": {
-                    ("action",): {"DOWNLOAD": "download"},
-                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
-                },
-                "openapi_types": {
-                    "id": (int,),
-                    "x_organization": (str,),
-                    "action": (str,),
-                    "cloud_storage_id": (float,),
-                    "filename": (str,),
-                    "location": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                    "use_default_location": (bool,),
-                },
-                "attribute_map": {
-                    "id": "id",
-                    "x_organization": "X-Organization",
-                    "action": "action",
-                    "cloud_storage_id": "cloud_storage_id",
-                    "filename": "filename",
-                    "location": "location",
-                    "org": "org",
-                    "org_id": "org_id",
-                    "use_default_location": "use_default_location",
-                },
-                "location_map": {
-                    "id": "path",
-                    "x_organization": "header",
-                    "action": "query",
-                    "cloud_storage_id": "query",
-                    "filename": "query",
-                    "location": "query",
-                    "org": "query",
-                    "org_id": "query",
-                    "use_default_location": "query",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": [],
-                "content_type": [],
-            },
-            api_client=api_client,
-        )
-        self.create_endpoint = _Endpoint(
-            settings={
-                "response_type": (ProjectWrite,),
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/projects",
-                "operation_id": "create",
-                "http_method": "POST",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "project_write_request",
-                    "x_organization",
-                    "org",
-                    "org_id",
-                ],
-                "required": [
-                    "project_write_request",
-                ],
-                "nullable": [],
-                "enum": [],
-                "validation": [],
-            },
-            root_map={
-                "validations": {},
-                "allowed_values": {},
-                "openapi_types": {
-                    "project_write_request": (ProjectWriteRequest,),
-                    "x_organization": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                },
-                "attribute_map": {
-                    "x_organization": "X-Organization",
-                    "org": "org",
-                    "org_id": "org_id",
-                },
-                "location_map": {
-                    "project_write_request": "body",
-                    "x_organization": "header",
-                    "org": "query",
-                    "org_id": "query",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": ["application/vnd.cvat+json"],
-                "content_type": [
-                    "application/json",
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data",
-                    "application/offset+octet-stream",
-                ],
-            },
-            api_client=api_client,
-        )
-        self.dataset_create_endpoint = _Endpoint(
+        self.create_dataset_endpoint = _Endpoint(
             settings={
                 "response_type": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects/{id}/dataset/",
-                "operation_id": "dataset_create",
+                "operation_id": "create_dataset",
                 "http_method": "POST",
                 "servers": None,
             },
@@ -494,162 +265,6 @@ class ProjectsApi(object):
                     "multipart/form-data",
                     "application/offset+octet-stream",
                 ],
-            },
-            api_client=api_client,
-        )
-        self.dataset_partial_update_endpoint = _Endpoint(
-            settings={
-                "response_type": (ProjectWrite,),
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/projects/{id}/dataset/{file_id}",
-                "operation_id": "dataset_partial_update",
-                "http_method": "PATCH",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "file_id",
-                    "id",
-                    "x_organization",
-                    "org",
-                    "org_id",
-                    "patched_project_write_request",
-                ],
-                "required": [
-                    "file_id",
-                    "id",
-                ],
-                "nullable": [],
-                "enum": [],
-                "validation": [
-                    "file_id",
-                ],
-            },
-            root_map={
-                "validations": {
-                    ("file_id",): {
-                        "regex": {
-                            "pattern": r"^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$",  # noqa: E501
-                        },
-                    },
-                },
-                "allowed_values": {},
-                "openapi_types": {
-                    "file_id": (str,),
-                    "id": (int,),
-                    "x_organization": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                    "patched_project_write_request": (PatchedProjectWriteRequest,),
-                },
-                "attribute_map": {
-                    "file_id": "file_id",
-                    "id": "id",
-                    "x_organization": "X-Organization",
-                    "org": "org",
-                    "org_id": "org_id",
-                },
-                "location_map": {
-                    "file_id": "path",
-                    "id": "path",
-                    "x_organization": "header",
-                    "org": "query",
-                    "org_id": "query",
-                    "patched_project_write_request": "body",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": ["application/vnd.cvat+json"],
-                "content_type": [
-                    "application/json",
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data",
-                    "application/offset+octet-stream",
-                ],
-            },
-            api_client=api_client,
-        )
-        self.dataset_retrieve_endpoint = _Endpoint(
-            settings={
-                "response_type": None,
-                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/projects/{id}/dataset/",
-                "operation_id": "dataset_retrieve",
-                "http_method": "GET",
-                "servers": None,
-            },
-            params_map={
-                "all": [
-                    "format",
-                    "id",
-                    "x_organization",
-                    "action",
-                    "cloud_storage_id",
-                    "filename",
-                    "location",
-                    "org",
-                    "org_id",
-                    "use_default_location",
-                ],
-                "required": [
-                    "format",
-                    "id",
-                ],
-                "nullable": [],
-                "enum": [
-                    "action",
-                    "location",
-                ],
-                "validation": [],
-            },
-            root_map={
-                "validations": {},
-                "allowed_values": {
-                    ("action",): {"DOWNLOAD": "download", "IMPORT_STATUS": "import_status"},
-                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
-                },
-                "openapi_types": {
-                    "format": (str,),
-                    "id": (int,),
-                    "x_organization": (str,),
-                    "action": (str,),
-                    "cloud_storage_id": (float,),
-                    "filename": (str,),
-                    "location": (str,),
-                    "org": (str,),
-                    "org_id": (int,),
-                    "use_default_location": (bool,),
-                },
-                "attribute_map": {
-                    "format": "format",
-                    "id": "id",
-                    "x_organization": "X-Organization",
-                    "action": "action",
-                    "cloud_storage_id": "cloud_storage_id",
-                    "filename": "filename",
-                    "location": "location",
-                    "org": "org",
-                    "org_id": "org_id",
-                    "use_default_location": "use_default_location",
-                },
-                "location_map": {
-                    "format": "query",
-                    "id": "path",
-                    "x_organization": "header",
-                    "action": "query",
-                    "cloud_storage_id": "query",
-                    "filename": "query",
-                    "location": "query",
-                    "org": "query",
-                    "org_id": "query",
-                    "use_default_location": "query",
-                },
-                "collection_format_map": {},
-            },
-            headers_map={
-                "accept": [],
-                "content_type": [],
             },
             api_client=api_client,
         )
@@ -771,6 +386,78 @@ class ProjectsApi(object):
             },
             api_client=api_client,
         )
+        self.list_tasks_endpoint = _Endpoint(
+            settings={
+                "response_type": (PaginatedTaskReadList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/tasks",
+                "operation_id": "list_tasks",
+                "http_method": "GET",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "id",
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
+                ],
+                "required": [
+                    "id",
+                ],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
+            },
+            root_map={
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
+                },
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
+                },
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
+            },
+            api_client=api_client,
+        )
         self.partial_update_endpoint = _Endpoint(
             settings={
                 "response_type": (ProjectWrite,),
@@ -812,6 +499,147 @@ class ProjectsApi(object):
                     "org_id": "org_id",
                 },
                 "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_project_write_request": "body",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
+                ],
+            },
+            api_client=api_client,
+        )
+        self.partial_update_backup_endpoint = _Endpoint(
+            settings={
+                "response_type": (ProjectWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/backup/{file_id}",
+                "operation_id": "partial_update_backup",
+                "http_method": "PATCH",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "file_id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_project_write_request",
+                ],
+                "required": [
+                    "file_id",
+                ],
+                "nullable": [],
+                "enum": [],
+                "validation": [
+                    "file_id",
+                ],
+            },
+            root_map={
+                "validations": {
+                    ("file_id",): {
+                        "regex": {
+                            "pattern": r"^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$",  # noqa: E501
+                        },
+                    },
+                },
+                "allowed_values": {},
+                "openapi_types": {
+                    "file_id": (str,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_project_write_request": (PatchedProjectWriteRequest,),
+                },
+                "attribute_map": {
+                    "file_id": "file_id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
+                },
+                "location_map": {
+                    "file_id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_project_write_request": "body",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
+                ],
+            },
+            api_client=api_client,
+        )
+        self.partial_update_dataset_endpoint = _Endpoint(
+            settings={
+                "response_type": (ProjectWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/dataset/{file_id}",
+                "operation_id": "partial_update_dataset",
+                "http_method": "PATCH",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "file_id",
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_project_write_request",
+                ],
+                "required": [
+                    "file_id",
+                    "id",
+                ],
+                "nullable": [],
+                "enum": [],
+                "validation": [
+                    "file_id",
+                ],
+            },
+            root_map={
+                "validations": {
+                    ("file_id",): {
+                        "regex": {
+                            "pattern": r"^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$",  # noqa: E501
+                        },
+                    },
+                },
+                "allowed_values": {},
+                "openapi_types": {
+                    "file_id": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_project_write_request": (PatchedProjectWriteRequest,),
+                },
+                "attribute_map": {
+                    "file_id": "file_id",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
+                },
+                "location_map": {
+                    "file_id": "path",
                     "id": "path",
                     "x_organization": "header",
                     "org": "query",
@@ -883,12 +711,95 @@ class ProjectsApi(object):
             },
             api_client=api_client,
         )
-        self.tasks_list_endpoint = _Endpoint(
+        self.retrieve_annotations_endpoint = _Endpoint(
             settings={
-                "response_type": (PaginatedTaskReadList,),
+                "response_type": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
-                "endpoint_path": "/api/projects/{id}/tasks",
-                "operation_id": "tasks_list",
+                "endpoint_path": "/api/projects/{id}/annotations",
+                "operation_id": "retrieve_annotations",
+                "http_method": "GET",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "format",
+                    "id",
+                    "x_organization",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
+                ],
+                "required": [
+                    "format",
+                    "id",
+                ],
+                "nullable": [],
+                "enum": [
+                    "action",
+                    "location",
+                ],
+                "validation": [],
+            },
+            root_map={
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
+                },
+                "openapi_types": {
+                    "format": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
+                },
+                "attribute_map": {
+                    "format": "format",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
+                },
+                "location_map": {
+                    "format": "query",
+                    "id": "path",
+                    "x_organization": "header",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": [],
+                "content_type": [],
+            },
+            api_client=api_client,
+        )
+        self.retrieve_backup_endpoint = _Endpoint(
+            settings={
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/backup",
+                "operation_id": "retrieve_backup",
                 "http_method": "GET",
                 "servers": None,
             },
@@ -896,806 +807,154 @@ class ProjectsApi(object):
                 "all": [
                     "id",
                     "x_organization",
-                    "filter",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
                     "org",
                     "org_id",
-                    "page",
-                    "page_size",
-                    "search",
-                    "sort",
+                    "use_default_location",
                 ],
                 "required": [
                     "id",
                 ],
                 "nullable": [],
-                "enum": [],
+                "enum": [
+                    "action",
+                    "location",
+                ],
                 "validation": [],
             },
             root_map={
                 "validations": {},
-                "allowed_values": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
+                },
                 "openapi_types": {
                     "id": (int,),
                     "x_organization": (str,),
-                    "filter": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "page": (int,),
-                    "page_size": (int,),
-                    "search": (str,),
-                    "sort": (str,),
+                    "use_default_location": (bool,),
                 },
                 "attribute_map": {
                     "id": "id",
                     "x_organization": "X-Organization",
-                    "filter": "filter",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
                     "org": "org",
                     "org_id": "org_id",
-                    "page": "page",
-                    "page_size": "page_size",
-                    "search": "search",
-                    "sort": "sort",
+                    "use_default_location": "use_default_location",
                 },
                 "location_map": {
                     "id": "path",
                     "x_organization": "header",
-                    "filter": "query",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
                     "org": "query",
                     "org_id": "query",
-                    "page": "query",
-                    "page_size": "query",
-                    "search": "query",
-                    "sort": "query",
+                    "use_default_location": "query",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": ["application/vnd.cvat+json"],
+                "accept": [],
                 "content_type": [],
             },
             api_client=api_client,
         )
-
-    @overload
-    def annotations_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def annotations_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def annotations_retrieve(
-        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def annotations_retrieve(
-        self, format, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def annotations_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def annotations_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def annotations_retrieve(
-        self, format, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """Method allows to download project annotations  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.annotations_retrieve(format, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Desired output file name. [optional]
-            location (str): Where need to save downloaded dataset. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in project to export annotation. [optional] if omitted the server will use the default value of True
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        kwargs["format"] = format
-        kwargs["id"] = id
-        return self.annotations_retrieve_endpoint.call_with_http_info(**kwargs)
-
-    def annotations_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as annotations_retrieve(), but returns the response unprocessed.
-        Equivalent to calling annotations_retrieve with
-        _preload_content = False and _check_status=False
-
-        Method allows to download project annotations  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.annotations_retrieve(format, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Desired output file name. [optional]
-            location (str): Where need to save downloaded dataset. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in project to export annotation. [optional] if omitted the server will use the default value of True
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.annotations_retrieve(
-            *args, **kwargs, _preload_content=False, _check_status=False
+        self.retrieve_dataset_endpoint = _Endpoint(
+            settings={
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/dataset/",
+                "operation_id": "retrieve_dataset",
+                "http_method": "GET",
+                "servers": None,
+            },
+            params_map={
+                "all": [
+                    "format",
+                    "id",
+                    "x_organization",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
+                ],
+                "required": [
+                    "format",
+                    "id",
+                ],
+                "nullable": [],
+                "enum": [
+                    "action",
+                    "location",
+                ],
+                "validation": [],
+            },
+            root_map={
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download", "IMPORT_STATUS": "import_status"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
+                },
+                "openapi_types": {
+                    "format": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
+                },
+                "attribute_map": {
+                    "format": "format",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
+                },
+                "location_map": {
+                    "format": "query",
+                    "id": "path",
+                    "x_organization": "header",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
+                },
+                "collection_format_map": {},
+            },
+            headers_map={
+                "accept": [],
+                "content_type": [],
+            },
+            api_client=api_client,
         )
-
-    @overload
-    def backup_create(
-        self,
-        project_file_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def backup_create(
-        self,
-        project_file_request,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def backup_create(
-        self, project_file_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def backup_create(
-        self, project_file_request, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def backup_create(
-        self,
-        project_file_request,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def backup_create(
-        self,
-        project_file_request,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def backup_create(
-        self, project_file_request, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """Methods create a project from a backup  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.backup_create(project_file_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            project_file_request (ProjectFileRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Backup file name. [optional]
-            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        kwargs["project_file_request"] = project_file_request
-        return self.backup_create_endpoint.call_with_http_info(**kwargs)
-
-    def backup_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as backup_create(), but returns the response unprocessed.
-        Equivalent to calling backup_create with
-        _preload_content = False and _check_status=False
-
-        Methods create a project from a backup  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.backup_create(project_file_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            project_file_request (ProjectFileRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Backup file name. [optional]
-            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.backup_create(*args, **kwargs, _preload_content=False, _check_status=False)
-
-    @overload
-    def backup_partial_update(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> ProjectWrite:
-        ...
-
-    @overload
-    def backup_partial_update(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def backup_partial_update(
-        self, file_id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def backup_partial_update(
-        self, file_id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def backup_partial_update(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def backup_partial_update(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def backup_partial_update(
-        self, file_id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
-    ]:
-        """backup_partial_update  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.backup_partial_update(file_id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_project_write_request (PatchedProjectWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            ProjectWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        kwargs["file_id"] = file_id
-        return self.backup_partial_update_endpoint.call_with_http_info(**kwargs)
-
-    def backup_partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as backup_partial_update(), but returns the response unprocessed.
-        Equivalent to calling backup_partial_update with
-        _preload_content = False and _check_status=False
-
-        backup_partial_update  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.backup_partial_update(file_id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_project_write_request (PatchedProjectWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            ProjectWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.backup_partial_update(
-            *args, **kwargs, _preload_content=False, _check_status=False
-        )
-
-    @overload
-    def backup_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def backup_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def backup_retrieve(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def backup_retrieve(
-        self, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def backup_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def backup_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def backup_retrieve(
-        self, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """Methods creates a backup copy of a project  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.backup_retrieve(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Backup file name. [optional]
-            location (str): Where need to save downloaded backup. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in project to export backup. [optional] if omitted the server will use the default value of True
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        kwargs["id"] = id
-        return self.backup_retrieve_endpoint.call_with_http_info(**kwargs)
-
-    def backup_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as backup_retrieve(), but returns the response unprocessed.
-        Equivalent to calling backup_retrieve with
-        _preload_content = False and _check_status=False
-
-        Methods creates a backup copy of a project  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.backup_retrieve(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Backup file name. [optional]
-            location (str): Where need to save downloaded backup. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in project to export backup. [optional] if omitted the server will use the default value of True
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.backup_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
     def create(
@@ -1875,7 +1134,188 @@ class ProjectsApi(object):
         return self.create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def dataset_create(
+    def create_backup(
+        self,
+        project_file_request,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @overload
+    def create_backup(
+        self,
+        project_file_request,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def create_backup(
+        self, project_file_request, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def create_backup(
+        self, project_file_request, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def create_backup(
+        self,
+        project_file_request,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def create_backup(
+        self,
+        project_file_request,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def create_backup(
+        self, project_file_request, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+        """Methods create a project from a backup  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.create_backup(project_file_request, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            project_file_request (ProjectFileRequest):
+
+        Keyword Args:
+            x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["project_file_request"] = project_file_request
+        return self.create_backup_endpoint.call_with_http_info(**kwargs)
+
+    def create_backup_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as create_backup(), but returns the response unprocessed.
+        Equivalent to calling create_backup with
+        _preload_content = False and _check_status=False
+
+        Methods create a project from a backup  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.create_backup(project_file_request, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            project_file_request (ProjectFileRequest):
+
+        Keyword Args:
+            x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.create_backup(*args, **kwargs, _preload_content=False, _check_status=False)
+
+    @overload
+    def create_dataset(
         self,
         format,
         id,
@@ -1887,7 +1327,7 @@ class ProjectsApi(object):
         ...
 
     @overload
-    def dataset_create(
+    def create_dataset(
         self,
         format,
         id,
@@ -1899,7 +1339,7 @@ class ProjectsApi(object):
         ...
 
     @overload
-    def dataset_create(
+    def create_dataset(
         self,
         format,
         id,
@@ -1910,13 +1350,13 @@ class ProjectsApi(object):
         ...
 
     @overload
-    def dataset_create(
+    def create_dataset(
         self, format, id, project_write_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def dataset_create(
+    def create_dataset(
         self,
         format,
         id,
@@ -1928,7 +1368,7 @@ class ProjectsApi(object):
         ...
 
     @overload
-    def dataset_create(
+    def create_dataset(
         self,
         format,
         id,
@@ -1939,7 +1379,7 @@ class ProjectsApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def dataset_create(
+    def create_dataset(
         self, format, id, project_write_request, **kwargs
     ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Import dataset in specific format as a project  # noqa: E501
@@ -1947,7 +1387,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.dataset_create(format, id, project_write_request, async_req=True)
+        >>> thread = api.create_dataset(format, id, project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2017,12 +1457,12 @@ class ProjectsApi(object):
         kwargs["format"] = format
         kwargs["id"] = id
         kwargs["project_write_request"] = project_write_request
-        return self.dataset_create_endpoint.call_with_http_info(**kwargs)
+        return self.create_dataset_endpoint.call_with_http_info(**kwargs)
 
-    def dataset_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def create_dataset_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as dataset_create(), but returns the response unprocessed.
-        Equivalent to calling dataset_create with
+        The same as create_dataset(), but returns the response unprocessed.
+        Equivalent to calling create_dataset with
         _preload_content = False and _check_status=False
 
         Import dataset in specific format as a project  # noqa: E501
@@ -2030,7 +1470,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.dataset_create(format, id, project_write_request, async_req=True)
+        >>> thread = api.create_dataset(format, id, project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2074,387 +1514,7 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.dataset_create(*args, **kwargs, _preload_content=False, _check_status=False)
-
-    @overload
-    def dataset_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> ProjectWrite:
-        ...
-
-    @overload
-    def dataset_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def dataset_partial_update(
-        self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def dataset_partial_update(
-        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def dataset_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def dataset_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def dataset_partial_update(
-        self, file_id, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
-    ]:
-        """dataset_partial_update  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.dataset_partial_update(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_project_write_request (PatchedProjectWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            ProjectWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        kwargs["file_id"] = file_id
-        kwargs["id"] = id
-        return self.dataset_partial_update_endpoint.call_with_http_info(**kwargs)
-
-    def dataset_partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as dataset_partial_update(), but returns the response unprocessed.
-        Equivalent to calling dataset_partial_update with
-        _preload_content = False and _check_status=False
-
-        dataset_partial_update  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.dataset_partial_update(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_project_write_request (PatchedProjectWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            ProjectWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.dataset_partial_update(
-            *args, **kwargs, _preload_content=False, _check_status=False
-        )
-
-    @overload
-    def dataset_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def dataset_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def dataset_retrieve(
-        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def dataset_retrieve(
-        self, format, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def dataset_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def dataset_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def dataset_retrieve(
-        self, format, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
-        """Export project as a dataset in a specific format  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.dataset_retrieve(format, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after annotation file had been created. [optional]
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Desired output file name. [optional]
-            location (str): Where need to save downloaded dataset. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in project to import dataset. [optional] if omitted the server will use the default value of True
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
-        kwargs["format"] = format
-        kwargs["id"] = id
-        return self.dataset_retrieve_endpoint.call_with_http_info(**kwargs)
-
-    def dataset_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as dataset_retrieve(), but returns the response unprocessed.
-        Equivalent to calling dataset_retrieve with
-        _preload_content = False and _check_status=False
-
-        Export project as a dataset in a specific format  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.dataset_retrieve(format, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
-            id (int): A unique integer value identifying this project.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after annotation file had been created. [optional]
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Desired output file name. [optional]
-            location (str): Where need to save downloaded dataset. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in project to import dataset. [optional] if omitted the server will use the default value of True
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.dataset_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_dataset(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
     def destroy(
@@ -2810,6 +1870,195 @@ class ProjectsApi(object):
         return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
+    def list_tasks(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> PaginatedTaskReadList:
+        ...
+
+    @overload
+    def list_tasks(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def list_tasks(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def list_tasks(
+        self, id, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def list_tasks(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def list_tasks(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def list_tasks(
+        self, id, **kwargs
+    ) -> typing.Union[
+        typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedTaskReadList,
+    ]:
+        """Method returns information of the tasks of the project with the selected id  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.list_tasks(id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            filter (str): A filter term. Avaliable filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            page (int): A page number within the paginated result set.. [optional]
+            page_size (int): Number of results to return per page.. [optional]
+            search (str): A search term. Avaliable search_fields: ('name', 'owner', 'assignee', 'status'). [optional]
+            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            PaginatedTaskReadList
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.list_tasks_endpoint.call_with_http_info(**kwargs)
+
+    def list_tasks_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as list_tasks(), but returns the response unprocessed.
+        Equivalent to calling list_tasks with
+        _preload_content = False and _check_status=False
+
+        Method returns information of the tasks of the project with the selected id  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.list_tasks(id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            filter (str): A filter term. Avaliable filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            page (int): A page number within the paginated result set.. [optional]
+            page_size (int): Number of results to return per page.. [optional]
+            search (str): A search term. Avaliable search_fields: ('name', 'owner', 'assignee', 'status'). [optional]
+            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            PaginatedTaskReadList
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.list_tasks(*args, **kwargs, _preload_content=False, _check_status=False)
+
+    @overload
     def partial_update(
         self,
         id,
@@ -2989,6 +2238,375 @@ class ProjectsApi(object):
         return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
+    def partial_update_backup(
+        self,
+        file_id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> ProjectWrite:
+        ...
+
+    @overload
+    def partial_update_backup(
+        self,
+        file_id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def partial_update_backup(
+        self, file_id, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def partial_update_backup(
+        self, file_id, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def partial_update_backup(
+        self,
+        file_id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def partial_update_backup(
+        self,
+        file_id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def partial_update_backup(
+        self, file_id, **kwargs
+    ) -> typing.Union[
+        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
+    ]:
+        """partial_update_backup  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.partial_update_backup(file_id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            ProjectWrite
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["file_id"] = file_id
+        return self.partial_update_backup_endpoint.call_with_http_info(**kwargs)
+
+    def partial_update_backup_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as partial_update_backup(), but returns the response unprocessed.
+        Equivalent to calling partial_update_backup with
+        _preload_content = False and _check_status=False
+
+        partial_update_backup  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.partial_update_backup(file_id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            ProjectWrite
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.partial_update_backup(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
+
+    @overload
+    def partial_update_dataset(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> ProjectWrite:
+        ...
+
+    @overload
+    def partial_update_dataset(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def partial_update_dataset(
+        self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def partial_update_dataset(
+        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def partial_update_dataset(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def partial_update_dataset(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def partial_update_dataset(
+        self, file_id, id, **kwargs
+    ) -> typing.Union[
+        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
+    ]:
+        """partial_update_dataset  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.partial_update_dataset(file_id, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            ProjectWrite
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["file_id"] = file_id
+        kwargs["id"] = id
+        return self.partial_update_dataset_endpoint.call_with_http_info(**kwargs)
+
+    def partial_update_dataset_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as partial_update_dataset(), but returns the response unprocessed.
+        Equivalent to calling partial_update_dataset with
+        _preload_content = False and _check_status=False
+
+        partial_update_dataset  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.partial_update_dataset(file_id, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            ProjectWrite
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.partial_update_dataset(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
+
+    @overload
     def retrieve(
         self,
         id,
@@ -3166,40 +2784,43 @@ class ProjectsApi(object):
         return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def tasks_list(
+    def retrieve_annotations(
         self,
+        format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> PaginatedTaskReadList:
+    ) -> None:
         ...
 
     @overload
-    def tasks_list(
+    def retrieve_annotations(
         self,
+        format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def tasks_list(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
+    def retrieve_annotations(
+        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def tasks_list(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+    def retrieve_annotations(
+        self, format, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def tasks_list(
+    def retrieve_annotations(
         self,
+        format,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -3208,8 +2829,9 @@ class ProjectsApi(object):
         ...
 
     @overload
-    def tasks_list(
+    def retrieve_annotations(
         self,
+        format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -3217,33 +2839,30 @@ class ProjectsApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def tasks_list(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        PaginatedTaskReadList,
-    ]:
-        """Method returns information of the tasks of the project with the selected id  # noqa: E501
+    def retrieve_annotations(
+        self, format, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+        """Method allows to download project annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_list(id, async_req=True)
+        >>> thread = api.retrieve_annotations(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
             id (int): A unique integer value identifying this project.
 
         Keyword Args:
             x_organization (str): [optional]
-            filter (str): A filter term. Avaliable filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            page (int): A page number within the paginated result set.. [optional]
-            page_size (int): Number of results to return per page.. [optional]
-            search (str): A search term. Avaliable search_fields: ('name', 'owner', 'assignee', 'status'). [optional]
-            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            use_default_location (bool): Use the location that was configured in project to export annotation. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3280,7 +2899,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            PaginatedTaskReadList
+            None
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3295,35 +2914,37 @@ class ProjectsApi(object):
         kwargs["_content_type"] = kwargs.get("_content_type")
         kwargs["_host_index"] = kwargs.get("_host_index")
         kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["format"] = format
         kwargs["id"] = id
-        return self.tasks_list_endpoint.call_with_http_info(**kwargs)
+        return self.retrieve_annotations_endpoint.call_with_http_info(**kwargs)
 
-    def tasks_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+    def retrieve_annotations_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as tasks_list(), but returns the response unprocessed.
-        Equivalent to calling tasks_list with
+        The same as retrieve_annotations(), but returns the response unprocessed.
+        Equivalent to calling retrieve_annotations with
         _preload_content = False and _check_status=False
 
-        Method returns information of the tasks of the project with the selected id  # noqa: E501
+        Method allows to download project annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_list(id, async_req=True)
+        >>> thread = api.retrieve_annotations(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
             id (int): A unique integer value identifying this project.
 
         Keyword Args:
             x_organization (str): [optional]
-            filter (str): A filter term. Avaliable filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            page (int): A page number within the paginated result set.. [optional]
-            page_size (int): Number of results to return per page.. [optional]
-            search (str): A search term. Avaliable search_fields: ('name', 'owner', 'assignee', 'status'). [optional]
-            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
+            use_default_location (bool): Use the location that was configured in project to export annotation. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3348,8 +2969,387 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            PaginatedTaskReadList
+            None
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.tasks_list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_annotations(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
+
+    @overload
+    def retrieve_backup(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @overload
+    def retrieve_backup(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def retrieve_backup(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def retrieve_backup(
+        self, id, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def retrieve_backup(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def retrieve_backup(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def retrieve_backup(
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+        """Methods creates a backup copy of a project  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.retrieve_backup(id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where need to save downloaded backup. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to export backup. [optional] if omitted the server will use the default value of True
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.retrieve_backup_endpoint.call_with_http_info(**kwargs)
+
+    def retrieve_backup_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as retrieve_backup(), but returns the response unprocessed.
+        Equivalent to calling retrieve_backup with
+        _preload_content = False and _check_status=False
+
+        Methods creates a backup copy of a project  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.retrieve_backup(id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where need to save downloaded backup. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to export backup. [optional] if omitted the server will use the default value of True
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.retrieve_backup(*args, **kwargs, _preload_content=False, _check_status=False)
+
+    @overload
+    def retrieve_dataset(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @overload
+    def retrieve_dataset(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def retrieve_dataset(
+        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def retrieve_dataset(
+        self, format, id, _preload_content: typing.Literal[False], **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def retrieve_dataset(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def retrieve_dataset(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs,
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def retrieve_dataset(
+        self, format, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+        """Export project as a dataset in a specific format  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.retrieve_dataset(format, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to import dataset. [optional] if omitted the server will use the default value of True
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["format"] = format
+        kwargs["id"] = id
+        return self.retrieve_dataset_endpoint.call_with_http_info(**kwargs)
+
+    def retrieve_dataset_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
+        """
+        The same as retrieve_dataset(), but returns the response unprocessed.
+        Equivalent to calling retrieve_dataset with
+        _preload_content = False and _check_status=False
+
+        Export project as a dataset in a specific format  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.retrieve_dataset(format, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
+            id (int): A unique integer value identifying this project.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to import dataset. [optional] if omitted the server will use the default value of True
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.retrieve_dataset(*args, **kwargs, _preload_content=False, _check_status=False)
