@@ -1914,7 +1914,8 @@ const ObjectState = require('./object-state');
 
         _saveRotation(rotation, frame) {
             const undoSkeletonPoints = this.elements.map((element) => element.points);
-            const redoSkeletonPoints = [];
+            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
+
             const bbox = computeWrappingBox(undoSkeletonPoints.flat());
             const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
             for (const element of this.elements) {
@@ -1925,35 +1926,35 @@ const ObjectState = require('./object-state');
                     rotatedPoints.push(...rotatePoint(x, y, rotation, cx, cy));
                 }
 
-                redoSkeletonPoints.push(rotatedPoints);
+                element.source = Source.MANUAL;
                 element.points = rotatedPoints;
             }
+            this.source = Source.MANUAL;
 
-            const undoSource = this.source;
-            const redoSource = Source.MANUAL;
+            const redoSkeletonPoints = this.elements.map((element) => element.points);
+            const redoSources = [this.source, ...this.elements.map((element) => element.source)];
 
             this.history.do(
                 HistoryActions.CHANGED_ROTATION,
                 () => {
                     for (let i = 0; i < this.elements.length; i++) {
                         this.elements[i].points = undoSkeletonPoints[i];
+                        this.elements[i].source = undoSources[i + 1];
+                        this.elements[i].updated = Date.now();
                     }
-                    this.source = undoSource;
                     this.updated = Date.now();
                 },
                 () => {
                     for (let i = 0; i < this.elements.length; i++) {
                         this.elements[i].points = redoSkeletonPoints[i];
+                        this.elements[i].source = redoSources[i + 1];
+                        this.elements[i].updated = Date.now();
                     }
-                    this.source = redoSource;
                     this.updated = Date.now();
                 },
                 [this.clientID, ...this.elements.map((element) => element.clientID)],
                 frame,
             );
-
-            this.source = Source.MANUAL;
-            this.rotation = rotation;
         }
 
         save(frame, data) {
@@ -2429,7 +2430,7 @@ const ObjectState = require('./object-state');
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.SKELETON;
-            this.readOnlyFields = ['points', 'label', 'occluded', 'outside', 'pinned'];
+            this.readOnlyFields = ['points', 'label'];
             this.pinned = false;
             this.shapes = {};
 
@@ -2487,25 +2488,70 @@ const ObjectState = require('./object-state');
         }
 
         _saveRotation(rotation, frame) {
+            const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
             const elementsData = this.elements.map((element) => element.get(frame));
-            const skeletonPoints = elementsData.map((_data) => _data.points).flat();
-            const bbox = computeWrappingBox(skeletonPoints);
+            const skeletonPoints = elementsData.map((data) => data.points);
+            const bbox = computeWrappingBox(skeletonPoints.flat());
             const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
+
             for (let i = 0; i < this.elements.length; i++) {
                 const element = this.elements[i];
                 const { points } = elementsData[i];
+
                 const rotatedPoints = [];
                 for (let j = 0; j < points.length; j += 2) {
                     const [x, y] = [points[j], points[j + 1]];
                     rotatedPoints.push(...rotatePoint(x, y, rotation, cx, cy));
                 }
-                const shape = {
-                    ...copyShape(elementsData[i]),
-                    points: rotatedPoints,
-                };
 
-                element.shapes[frame] = shape;
+                if (undoSkeletonShapes[i]) {
+                    element.shapes[frame] = {
+                        ...undoSkeletonShapes[i],
+                        points: rotatedPoints,
+                    };
+                } else {
+                    element.shapes[frame] = {
+                        ...copyShape(elementsData[i]),
+                        points: rotatedPoints,
+                    };
+                }
+                element.source = Source.MANUAL;
             }
+            this.source = Source.MANUAL;
+
+            const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const redoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+            this.history.do(
+                HistoryActions.CHANGED_ROTATION,
+                () => {
+                    for (let i = 0; i < this.elements.length; i++) {
+                        const element = this.elements[i];
+                        if (undoSkeletonShapes[i]) {
+                            element.shapes[frame] = undoSkeletonShapes[i];
+                        } else {
+                            delete element.shapes[frame];
+                        }
+                        element.source = undoSources[i + 1];
+                        this.updated = Date.now();
+                    }
+                    [this.source] = undoSources;
+                    this.updated = Date.now();
+                },
+                () => {
+                    for (let i = 0; i < this.elements.length; i++) {
+                        const element = this.elements[i];
+                        element.shapes[frame] = redoSkeletonShapes[i];
+                        element.source = redoSources[i + 1];
+                        this.updated = Date.now();
+                    }
+                    [this.source] = redoSources;
+                    this.updated = Date.now();
+                },
+                [this.clientID, ...this.elements.map((element) => element.clientID)],
+                frame,
+            );
         }
 
         // Method is used to export data to the server
@@ -2585,10 +2631,66 @@ const ObjectState = require('./object-state');
         }
 
         save(frame, data) {
-            data.elements.forEach((element, idx) => {
-                const annotationContext = this.elements[idx];
-                annotationContext.save(frame, element);
-            });
+            if (this.lock && data.lock) {
+                return new ObjectState(this.get(frame));
+            }
+
+            const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+            try {
+                this.history.freeze(true);
+                data.elements.forEach((element, idx) => {
+                    const annotationContext = this.elements[idx];
+                    annotationContext.save(frame, element);
+                });
+            } finally {
+                this.history.freeze(false);
+            }
+
+            const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const affectedElements = this.elements.filter((_, idx) => (
+                undoSkeletonShapes[idx] !== redoSkeletonShapes[idx]
+            ));
+
+            if (affectedElements.length) {
+                this.source = Source.MANUAL;
+                const redoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+                this.history.do(
+                    HistoryActions.CHANGED_POINTS,
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            if (undoSkeletonShapes[i]) {
+                                this.elements[i].shapes[frame] = undoSkeletonShapes[i];
+                            } else if (redoSkeletonShapes[i]) {
+                                delete this.elements[i].shapes[frame];
+                            }
+
+                            [this.elements[i].source] = undoSources;
+                            this.elements[i].updated = Date.now();
+                        }
+                        [this.source] = undoSources;
+                        this.updated = Date.now();
+                    },
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            if (redoSkeletonShapes[i]) {
+                                this.elements[i].shapes[frame] = redoSkeletonShapes[i];
+                            } else if (undoSkeletonShapes[i]) {
+                                delete this.elements[i].shapes[frame];
+                            }
+
+                            [this.elements[i].source] = redoSources;
+                            this.elements[i].updated = Date.now();
+                        }
+                        [this.source] = redoSources;
+                        this.updated = Date.now();
+                    },
+                    [this.clientID, ...affectedElements.map((element) => element.clientID)],
+                    frame,
+                );
+            }
 
             const result = Track.prototype.save.call(this, frame, data);
             return result;
