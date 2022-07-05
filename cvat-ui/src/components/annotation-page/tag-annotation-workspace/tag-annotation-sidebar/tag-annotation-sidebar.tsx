@@ -7,16 +7,17 @@ import { connect } from 'react-redux';
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Row, Col } from 'antd/lib/grid';
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import {
+    MenuFoldOutlined, MenuUnfoldOutlined, PlusOutlined,
+} from '@ant-design/icons';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Button from 'antd/lib/button/button';
 import Text from 'antd/lib/typography/Text';
-import Tag from 'antd/lib/tag';
 
 import {
     createAnnotationsAsync,
-    removeObjectAsync,
+    removeObject as removeObjectAction,
     changeFrameAsync,
     rememberObject,
 } from 'actions/annotation-actions';
@@ -44,7 +45,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    removeObject(jobInstance: any, objectState: any): void;
+    removeObject(objectState: any): void;
     createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void;
     changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onRememberObject(labelID: number): void;
@@ -67,7 +68,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         labels,
         states,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas | Canvas3d,
         frameNumber,
         keyMap,
         normalizedKeyMap,
@@ -83,8 +84,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
         createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void {
             dispatch(createAnnotationsAsync(jobInstance, frame, objectStates));
         },
-        removeObject(jobInstance: any, objectState: any): void {
-            dispatch(removeObjectAsync(jobInstance, objectState, true));
+        removeObject(objectState: any): void {
+            dispatch(removeObjectAction(objectState, false));
         },
         onRememberObject(labelID: number): void {
             dispatch(rememberObject({ activeObjectType: ObjectType.TAG, activeLabelID: labelID }));
@@ -148,7 +149,8 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     }, []);
 
     useEffect(() => {
-        setFrameTags(states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG));
+        const tags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
+        setFrameTags(tags);
     }, [states]);
 
     const siderProps: SiderProps = {
@@ -166,8 +168,9 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         setSelectedLabelID(value.id);
     };
 
-    const onRemoveState = (objectState: any): void => {
-        removeObject(jobInstance, objectState);
+    const onRemoveState = (labelID: number): void => {
+        const objectState = frameTags.find((tag: any): boolean => tag.label.id === labelID);
+        if (objectState) removeObject(objectState);
     };
 
     const onChangeFrame = (): void => {
@@ -179,17 +182,26 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     };
 
     const onAddTag = (labelID: number): void => {
-        onRememberObject(labelID);
+        if (frameTags.every((objectState: any): boolean => objectState.label.id !== labelID)) {
+            onRememberObject(labelID);
 
-        const objectState = new cvat.classes.ObjectState({
-            objectType: ObjectType.TAG,
-            label: labels.filter((label: any) => label.id === labelID)[0],
-            frame: frameNumber,
-        });
+            const objectState = new cvat.classes.ObjectState({
+                objectType: ObjectType.TAG,
+                label: labels.filter((label: any) => label.id === labelID)[0],
+                frame: frameNumber,
+            });
+            createAnnotations(jobInstance, frameNumber, [objectState]);
 
-        createAnnotations(jobInstance, frameNumber, [objectState]);
+            if (skipFrame) onChangeFrame();
+        }
+    };
 
-        if (skipFrame) onChangeFrame();
+    const onShortcutPress = (event: KeyboardEvent | undefined, labelID: number): void => {
+        if (event?.shiftKey) {
+            onRemoveState(labelID);
+        } else {
+            onAddTag(labelID);
+        }
     };
 
     const subKeyMap = {
@@ -199,7 +211,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     const handlers = {
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
-            onAddTag(selectedLabelID);
+            onShortcutPress(event, selectedLabelID);
         },
     };
 
@@ -239,18 +251,25 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 >
                     {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
                 </span>
-                <Row justify='start' className='cvat-tag-annotation-sidebar-label-select'>
+                <Row justify='start' className='cvat-tag-annotation-sidebar-tag-label'>
                     <Col>
-                        <Text strong>Tag label</Text>
-                        <LabelSelector labels={labels} value={selectedLabelID} onChange={onChangeLabel} />
+                        <Text strong>Tag label:</Text>
                     </Col>
                 </Row>
-                <Row justify='space-around' className='cvat-tag-annotation-sidebar-buttons'>
-                    <Col span={8}>
-                        <Button onClick={() => onAddTag(selectedLabelID)}>Add tag</Button>
-                    </Col>
-                    <Col span={8}>
-                        <Button onClick={onChangeFrame}>Skip frame</Button>
+                <Row justify='start' className='cvat-tag-annotation-sidebar-label-select'>
+                    <Col>
+                        <LabelSelector
+                            labels={labels}
+                            value={selectedLabelID}
+                            onChange={onChangeLabel}
+                            onEnterPress={onAddTag}
+                        />
+                        <Button
+                            type='primary'
+                            className='cvat-add-tag-button'
+                            onClick={() => onAddTag(selectedLabelID)}
+                            icon={<PlusOutlined />}
+                        />
                     </Col>
                 </Row>
                 <Row className='cvat-tag-annotation-sidebar-checkbox-skip-frame'>
@@ -265,27 +284,9 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         </Checkbox>
                     </Col>
                 </Row>
-                <Row justify='start' className='cvat-tag-annotation-sidebar-frame-tags'>
-                    <Col>
-                        <Text strong>Frame tags:&nbsp;</Text>
-                        {frameTags.map((tag: any) => (
-                            <Tag
-                                className='cvat-tag-annotation-sidebar-frame-tag-label'
-                                color={tag.label.color}
-                                onClose={() => {
-                                    onRemoveState(tag);
-                                }}
-                                key={tag.clientID}
-                                closable
-                            >
-                                {tag.label.name}
-                            </Tag>
-                        ))}
-                    </Col>
-                </Row>
                 <Row>
                     <Col>
-                        <ShortcutsSelect onAddTag={onAddTag} />
+                        <ShortcutsSelect onShortcutPress={onShortcutPress} />
                     </Col>
                 </Row>
                 <Row justify='center' className='cvat-tag-annotation-sidebar-shortcut-help'>
@@ -295,11 +296,10 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                             <Text code>N</Text>
                             &nbsp;or digits&nbsp;
                             <Text code>0-9</Text>
-                            &nbsp;to add selected tag
-                            <br />
-                            or&nbsp;
-                            <Text code>→</Text>
-                            &nbsp;to skip frame
+                            &nbsp;to add selected tag.&nbsp;
+                            Add&nbsp;
+                            <Text code>Shift</Text>
+                            &nbsp;modifier to remove selected tag.
                         </Text>
                     </Col>
                 </Row>

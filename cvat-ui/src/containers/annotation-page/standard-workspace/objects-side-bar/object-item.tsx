@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,12 +11,12 @@ import {
     collapseObjectItems,
     updateAnnotationsAsync,
     changeFrameAsync,
-    removeObjectAsync,
     changeGroupColorAsync,
     pasteShapeAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
+    removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
@@ -55,7 +55,7 @@ interface DispatchToProps {
     updateState(objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
-    removeObject: (sessionInstance: any, objectState: any) => void;
+    removeObject: (objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeGroupColor(group: number, color: string): void;
@@ -120,8 +120,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         activateObject(activatedStateID: number | null): void {
             dispatch(activateObjectAction(activatedStateID, null));
         },
-        removeObject(sessionInstance: any, objectState: any): void {
-            dispatch(removeObjectAsync(sessionInstance, objectState, true));
+        removeObject(objectState: any): void {
+            dispatch(removeObjectAction(objectState, false));
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
@@ -154,11 +154,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private remove = (): void => {
         const {
-            objectState, jobInstance, readonly, removeObject,
+            objectState, readonly, removeObject,
         } = this.props;
 
         if (!readonly) {
-            removeObject(jobInstance, objectState);
+            removeObject(objectState);
         }
     };
 

@@ -78,6 +78,8 @@ context('New organization pipeline.', () => {
     }
 
     before(() => {
+        cy.visit('/');
+        cy.login();
         cy.imageGenerator(
             imagesFolder,
             imageFileName,
@@ -90,8 +92,8 @@ context('New organization pipeline.', () => {
             imagesCount,
         );
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.logout();
 
-        cy.visit('/');
         cy.goToRegisterPage();
         cy.userRegistration(
             secondUser.firstName,

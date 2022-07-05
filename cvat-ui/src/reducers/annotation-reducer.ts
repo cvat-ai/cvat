@@ -103,6 +103,10 @@ const defaultState: AnnotationState = {
         objectState: null,
         frames: 50,
     },
+    remove: {
+        objectState: null,
+        force: false,
+    },
     statistics: {
         visible: false,
         collecting: false,
@@ -466,7 +470,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
+        case AnnotationActionTypes.REMEMBER_OBJECT: {
             const { payload } = action;
 
             let { activeControl } = state.canvas;
@@ -719,6 +723,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REMOVE_OBJECT: {
+            const { objectState, force } = action.payload;
+            return {
+                ...state,
+                remove: {
+                    ...state.remove,
+                    objectState,
+                    force,
+                },
+            };
+        }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
             const contextMenuClientID = state.canvas.contextMenu.clientID;
@@ -741,6 +756,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         clientID: objectState.clientID === contextMenuClientID ? null : contextMenuClientID,
                         visible: objectState.clientID === contextMenuClientID ? false : contextMenuVisible,
                     },
+                },
+                remove: {
+                    objectState: null,
+                    force: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_OBJECT_FAILED: {
+            return {
+                ...state,
+                remove: {
+                    objectState: null,
+                    force: false,
                 },
             };
         }
