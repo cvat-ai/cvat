@@ -1261,6 +1261,13 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
+
+            const withSkeletonElements = states.some((state: any) => state.parentID !== null);
+            if (withSkeletonElements) {
+                dispatch(fetchAnnotationsAsync());
+                return;
+            }
+
             const history = await jobInstance.actions.get();
             const [minZ, maxZ] = computeZRange(states);
 

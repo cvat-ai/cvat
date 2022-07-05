@@ -206,7 +206,7 @@ const ObjectState = require('./object-state');
                     },
                 },
             );
-            this.isSkeletonElement = injection.isSkeletonElement || false;
+            this.parentID = injection.parentID || null;
 
             this.appendDefaultAttributes(this.label);
             injection.groups.max = Math.max(injection.groups.max, this.group);
@@ -499,11 +499,11 @@ const ObjectState = require('./object-state');
         }
 
         _fitPoints(points, rotation, maxX, maxY) {
-            const { shapeType, isSkeletonElement } = this;
+            const { shapeType, parentID } = this;
             checkObjectType('rotation', rotation, 'number', null);
             points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
 
-            if (isSkeletonElement || shapeType === ObjectShape.CUBOID ||
+            if (parentID !== null || shapeType === ObjectShape.CUBOID ||
                 shapeType === ObjectShape.ELLIPSE || !!rotation) {
                 // cuboids and rotated bounding boxes cannot be fitted
                 return points;
@@ -611,6 +611,7 @@ const ObjectState = require('./object-state');
                 shapeType: this.shapeType,
                 clientID: this.clientID,
                 serverID: this.serverID,
+                parentID: this.parentID,
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
@@ -898,6 +899,7 @@ const ObjectState = require('./object-state');
                 shapeType: this.shapeType,
                 clientID: this.clientID,
                 serverID: this.serverID,
+                parentID: this.parentID,
                 lock: this.lock,
                 color: this.color,
                 hidden: this.hidden,
@@ -1820,7 +1822,7 @@ const ObjectState = require('./object-state');
                 source: this.source,
                 rotation: 0,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            }, injection.nextClientID(), { ...injection, isSkeletonElement: true }));
+            }, injection.nextClientID(), { ...injection, parentID: this.clientID }));
         }
 
         static distance(points, x, y) {
@@ -1904,7 +1906,7 @@ const ObjectState = require('./object-state');
                 group: this.groupObject,
                 color: this.color,
                 hidden: this.hidden,
-                updated: this.updated,
+                updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
                 pinned: this.pinned,
                 frame,
                 source: this.source,
@@ -2483,7 +2485,7 @@ const ObjectState = require('./object-state');
 
             /* eslint-disable-next-line no-use-before-define */
             this.elements = Object.values(tracks).map((track) => trackFactory(
-                track, injection.nextClientID(), { ...injection, isSkeletonElement: true },
+                track, injection.nextClientID(), { ...injection, parentID: this.clientID },
             ));
         }
 
@@ -2583,7 +2585,7 @@ const ObjectState = require('./object-state');
                 lock: this.lock,
                 color: this.color,
                 hidden: this.hidden,
-                updated: this.updated,
+                updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
                 label: this.label,
                 pinned: this.pinned,
                 keyframes: this.deepBoundedKeyframes(frame),

@@ -17,7 +17,7 @@ const { Source, ObjectShape } = require('./enums');
          * @param {Object} serialized - is an dictionary which contains
          * initial information about an ObjectState;
          * </br> Necessary fields: objectType, shapeType, frame, updated, group
-         * </br> Optional fields: keyframes, clientID, serverID
+         * </br> Optional fields: keyframes, clientID, serverID, parentID
          * </br> Optional fields which can be set later: points, zOrder, outside,
          * occluded, hidden, attributes, lock, label, color, keyframe, source
          */
@@ -47,6 +47,7 @@ const { Source, ObjectShape } = require('./enums');
 
                 clientID: serialized.clientID,
                 serverID: serialized.serverID,
+                parentID: serialized.parentID,
 
                 frame: serialized.frame,
                 objectType: serialized.objectType,
@@ -145,6 +146,16 @@ const { Source, ObjectShape } = require('./enums');
                          * @instance
                          */
                         get: () => data.serverID,
+                    },
+                    parentID: {
+                        /**
+                         * @name parentID
+                         * @type {number | null}
+                         * @memberof module:API.cvat.classes.ObjectState
+                         * @readonly
+                         * @instance
+                         */
+                        get: () => data.parentID,
                     },
                     label: {
                         /**
