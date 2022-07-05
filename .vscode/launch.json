@@ -185,6 +185,11 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
+                "tests/rest_api/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
         {
             "name": "Postprocess generator output",
             "type": "python",
