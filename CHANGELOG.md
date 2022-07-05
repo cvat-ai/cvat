@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Progressbars in CLI for file uploading and downloading (<https://github.com/cvat-ai/cvat/pull/46>)
 - `utils/cli` changed to `cvat-cli` package (<https://github.com/cvat-ai/cvat/pull/59>)
 - Support custom file name for backup (<https://github.com/cvat-ai/cvat/pull/91>)
+- Support source and target storages (server part) (<https://github.com/cvat-ai/cvat/pull/28>)
+- Tests for import/export annotation, dataset, backup from/to cloud storage (<https://github.com/cvat-ai/cvat/pull/56>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)

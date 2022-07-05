@@ -625,9 +625,8 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
-            'bug_tracker', 'task_subsets', # 'owner_id', 'assignee_id',
-            'created_date', 'updated_date', 'status', 'dimension', 'organization',
-            'target_storage', 'source_storage',
+            'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
+            'dimension', 'organization', 'target_storage', 'source_storage',
         )
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
             'assignee', 'task_subsets', 'dimension', 'organization', 'tasks',

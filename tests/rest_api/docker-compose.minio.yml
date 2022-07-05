@@ -37,6 +37,7 @@ services:
       PRIVATE_BUCKET: "private"
       PUBLIC_BUCKET: "public"
       TEST_BUCKET: "test"
+      IMPORT_EXPORT_BUCKET: "importexportbucket"
     volumes:
       - ./tests/cypress/integration/actions_tasks/assets/case_65_manifest/:/storage
     networks:
@@ -44,8 +45,8 @@ services:
     entrypoint: >
       /bin/sh -c "
       $${MC_PATH} config host add --quiet --api s3v4 $${MINIO_ALIAS} $${MINIO_HOST} $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
-      $${MC_PATH} mb $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET};
-      for BUCKET in $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET};
+      $${MC_PATH} mb $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
+      for BUCKET in $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
       do
           $${MC_PATH} cp --recursive /storage/ $${BUCKET};
           for i in 1 2;
