@@ -217,7 +217,6 @@ const ObjectState = require('./object-state');
                 __internal: {
                     save: this.save.bind(this, frame),
                     delete: this.delete.bind(this),
-                    context: this,
                 },
             };
         }
@@ -2439,12 +2438,13 @@ const ObjectState = require('./object-state');
             const tracks = {};
             data.shapes.forEach((shape) => {
                 this.shapes[shape.frame] = ({
+                    serverID: shape.id,
                     type: shape.type,
                     occluded: shape.occluded,
                     outside: shape.outside,
                     attributes: shape.attributes,
                     rotation: shape.rotation,
-                    z_order: shape.z_order,
+                    zOrder: shape.z_order,
                     id: shape.id,
                 });
 
@@ -2457,6 +2457,7 @@ const ObjectState = require('./object-state');
                             source: data.source,
                             readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
                             shapes: [{
+                                id: element.id,
                                 type: element.type,
                                 occluded: false,
                                 z_order: shape.z_order,
@@ -2470,6 +2471,7 @@ const ObjectState = require('./object-state');
                         };
                     } else {
                         tracks[idx].shapes.push({
+                            id: element.id,
                             type: element.type,
                             occluded: false,
                             z_order: shape.z_order,
@@ -2748,6 +2750,7 @@ const ObjectState = require('./object-state');
                 const skeletonShape = this.get(keyframe);
                 result[keyframe] = {
                     type: this.shapeType,
+                    id: this.shapes[keyframe]?.serverID,
                     occluded: skeletonShape.occluded,
                     z_order: skeletonShape.zOrder,
                     rotation: skeletonShape.rotation,
@@ -2757,6 +2760,7 @@ const ObjectState = require('./object-state');
                     elements: this.elements.map((element) => {
                         const elementData = element.get(+keyframe);
                         return ({
+                            id: element.shapes[keyframe]?.serverID,
                             type: elementData.shapeType,
                             label_id: elementData.label.id,
                             occluded: elementData.occluded,

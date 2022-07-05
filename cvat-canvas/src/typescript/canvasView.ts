@@ -2556,6 +2556,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         cursor: 'default',
                     });
                 this.svgShapes[element.clientID] = circle;
+                if (element.occluded) {
+                    circle.addClass('cvat_canvas_shape_occluded');
+                }
+
+                if (element.hidden || element.outside || this.isInnerHidden(element.clientID)) {
+                    circle.addClass('cvat_canvas_hidden');
+                }
 
                 const mouseover = (): void => {
                     const locked = this.drawnStates[state.clientID].lock;

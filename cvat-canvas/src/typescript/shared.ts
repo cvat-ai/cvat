@@ -301,6 +301,14 @@ export function getSkeletonEdgeCoordinates(edge: SVG.Line): {
     x2 = nodeTo.cx();
     y2 = nodeTo.cy();
 
+    if (nodeFrom.hasClass('cvat_canvas_hidden')) {
+        x1 = x2;
+        y1 = y2;
+    } else if (nodeTo.hasClass('cvat_canvas_hidden')) {
+        x2 = x1;
+        y2 = y1;
+    }
+
     if ([x1, y1, x2, y2].some((coord: number): boolean => typeof coord !== 'number')) {
         throw new Error(`Edge coordinates must be numbers, got [${x1}, ${y1}, ${x2}, ${y2}]`);
     }
