@@ -47,3 +47,6 @@ class DataSerializerExtension(OpenApiSerializerExtension):
             remote_files = serializers.ListField(child=_make_field('remote_files', 'file'), default=[])
 
         return auto_schema._map_serializer(_Override(), direction, bypass_extensions=False)
+
+
+__all__ = [] # No public symbols here
