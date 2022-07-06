@@ -468,6 +468,7 @@
             const undoGroups = objectsForGroup.map((object) => object.group);
             for (const object of objectsForGroup) {
                 object.group = groupIdx;
+                object.updated = Date.now();
             }
             const redoGroups = objectsForGroup.map((object) => object.group);
 
@@ -476,11 +477,13 @@
                 () => {
                     objectsForGroup.forEach((object, idx) => {
                         object.group = undoGroups[idx];
+                        object.updated = Date.now();
                     });
                 },
                 () => {
                     objectsForGroup.forEach((object, idx) => {
                         object.group = redoGroups[idx];
+                        object.updated = Date.now();
                     });
                 },
                 objectsForGroup.map((object) => object.clientID),

@@ -707,6 +707,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             this.deleteObjects(deleted);
             this.addObjects(created);
+
+            // todo: implement updateObjects for skeletons, add group and color to updateObjects function
+            // change colors if necessary (for example when instance color is changed)
             // this.updateObjects(updated);
 
             this.deleteObjects(updated);
