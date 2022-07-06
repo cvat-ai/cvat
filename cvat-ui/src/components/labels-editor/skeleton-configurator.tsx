@@ -9,9 +9,8 @@ import Icon, { PictureOutlined } from '@ant-design/icons';
 import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
-import consts from 'consts';
 import {
-    idGenerator, Label, SkeletonConfiguration, toSVGCoord,
+    idGenerator, Label, ParentLabel, SkeletonConfiguration, toSVGCoord,
 } from './common';
 import SkeletonElementContextMenu from './skeleton-element-context-menu';
 
@@ -41,7 +40,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     private nodeCounter: number;
     private elementCounter: number;
     private draggableElement: SVGElement | null;
-    private labels: Record<string, Label>;
+    private labels: Record<string, ParentLabel>;
 
     public constructor(props: Props) {
         super(props);
@@ -167,7 +166,6 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             const nodeID = ++this.nodeCounter;
             this.labels[elementID] = {
                 name: `${elementID}`,
-                color: consts.NEW_LABEL_COLOR,
                 attributes: [],
                 id: idGenerator(),
             };

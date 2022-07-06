@@ -35,7 +35,6 @@ import {
     DrawnState,
     rotate2DPoints,
     readPointsFromShape,
-    computeWrappingBox,
     setupSkeletonEdges,
     makeSVGFromTemplate,
 } from './shared';
@@ -1216,6 +1215,34 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.deactivate();
             const { configuration } = model;
 
+            const updateShapeViews = (states: DrawnState[], parentState?: DrawnState): void => {
+                for (const state of states) {
+                    const { fill, stroke, 'fill-opacity': fillOpacity } = this.getShapeColorization(state, { configuration, parentState });
+                    const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
+                    if (shapeView) {
+                        const handler = (shapeView as any).instance.remember('_selectHandler');
+                        if (handler && handler.nested) {
+                            handler.nested.fill({ color: fill });
+                        }
+
+                        (shapeView as any).instance
+                            .fill({ color: fill, opacity: fillOpacity })
+                            .stroke({ color: stroke });
+                    }
+
+                    if (state.elements) {
+                        updateShapeViews(state.elements, state);
+                    }
+                }
+            };
+
+            if (configuration.shapeOpacity !== this.configuration.shapeOpacity ||
+                configuration.selectedShapeOpacity !== this.configuration.selectedShapeOpacity ||
+                configuration.outlinedBorders !== this.configuration.outlinedBorders ||
+                configuration.colorBy !== this.configuration.colorBy) {
+                updateShapeViews(Object.values(this.drawnStates));
+            }
+
             if (configuration.displayAllText && !this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
                     if (!(i in this.svgTexts)) {
@@ -1670,11 +1697,40 @@ export class CanvasViewImpl implements CanvasView, Listener {
             updated: state.updated,
             frame: state.frame,
             label: state.label,
+
+            group: state.group,
+            color: state.color,
             elements: state.shapeType === 'skeleton' ?
                 state.elements.map((element: any) => this.saveState(element)) : null,
         };
 
         return result;
+    }
+
+    private getShapeColorization(state: any, opts: {
+        configuration?: Configuration,
+        parentState?: any,
+    } = {}): { fill: string; stroke: string, 'fill-opacity': number } {
+        const { shapeType } = state;
+        const parentShapeType = opts.parentState?.shapeType;
+        const configuration = opts.configuration || this.configuration;
+        const { colorBy, shapeOpacity, outlinedBorders } = configuration;
+        let shapeColor = '';
+
+        if (colorBy === 'Instance') {
+            shapeColor = state.color;
+        } else if (colorBy === 'Group') {
+            shapeColor = state.group.color;
+        } else if (colorBy === 'Label') {
+            shapeColor = state.label.color;
+        }
+        const outlinedColor = parentShapeType === 'skeleton' ? 'black' : outlinedBorders || shapeColor;
+
+        return {
+            fill: shapeColor,
+            stroke: outlinedColor,
+            'fill-opacity': !['polyline', 'points', 'skeleton'].includes(shapeType) || parentShapeType === 'skeleton' ? shapeOpacity : 0,
+        };
     }
 
     private updateObjects(states: any[]): void {
@@ -2406,14 +2462,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 clientID: state.clientID,
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
                 'shape-rendering': 'geometricprecision',
-                stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
-            })
-            .move(xtl, ytl)
-            .addClass('cvat_canvas_shape');
+                ...this.getShapeColorization(state),
+            }).move(xtl, ytl).addClass('cvat_canvas_shape');
 
         if (state.rotation) {
             rect.rotate(state.rotation);
@@ -2437,13 +2490,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 clientID: state.clientID,
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
                 'shape-rendering': 'geometricprecision',
-                stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
-            })
-            .addClass('cvat_canvas_shape');
+                ...this.getShapeColorization(state),
+            }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
             polygon.addClass('cvat_canvas_shape_occluded');
@@ -2463,13 +2514,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 clientID: state.clientID,
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
                 'shape-rendering': 'geometricprecision',
-                stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
-            })
-            .addClass('cvat_canvas_shape');
+                ...this.getShapeColorization(state),
+            }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
             polyline.addClass('cvat_canvas_shape_occluded');
@@ -2490,13 +2539,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 clientID: state.clientID,
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
                 'shape-rendering': 'geometricprecision',
-                stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
-            })
-            .addClass('cvat_canvas_shape');
+                ...this.getShapeColorization(state),
+            }).addClass('cvat_canvas_shape');
 
         if (state.occluded) {
             cube.addClass('cvat_canvas_shape_occluded');
@@ -2516,11 +2563,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 clientID: state.clientID,
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
                 'shape-rendering': 'geometricprecision',
-                stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
+                ...this.getShapeColorization(state),
             }).addClass('cvat_canvas_shape') as SVG.G;
 
         const SVGElement = makeSVGFromTemplate(state.label.structure.svg);
@@ -2544,7 +2590,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const circle = skeleton.circle()
                     .center(cx, cy)
                     .attr({
-                        fill: element.color,
                         id: `cvat_canvas_shape_${element.clientID}`,
                         r: consts.BASE_POINT_SIZE / this.geometry.scale,
                         'color-rendering': 'optimizeQuality',
@@ -2552,6 +2597,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                         'data-node-id': templateElements[i].attr('data-node-id'),
                         'data-element-id': templateElements[i].attr('data-element-id'),
+                        ...this.getShapeColorization(element, { parentState: state }),
                     }).style({
                         cursor: 'default',
                     });
@@ -2949,11 +2995,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 clientID: state.clientID,
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
-                fill: state.color,
                 'shape-rendering': 'geometricprecision',
-                stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
+                ...this.getShapeColorization(state),
             })
             .center(cx, cy)
             .addClass('cvat_canvas_shape');
@@ -2981,9 +3026,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'pointer-events': 'none',
                 'shape-rendering': 'geometricprecision',
                 'stroke-width': 0,
-                fill: state.color, // to right fill property when call SVG.Shape::clone()
-            })
-            .style({
+                ...this.getShapeColorization(state),
+            }).style({
                 opacity: 0,
             });
 

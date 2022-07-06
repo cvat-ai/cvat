@@ -52,6 +52,8 @@ export interface DrawnState {
     updated: number;
     frame: number;
     label: any;
+    group: any;
+    color: string;
     elements: DrawnState[] | null;
 }
 

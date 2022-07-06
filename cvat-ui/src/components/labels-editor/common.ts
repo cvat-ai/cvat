@@ -14,7 +14,7 @@ export interface SkeletonConfiguration {
     type: string;
     structure: {
         svg: string;
-        sublabels: Label[],
+        sublabels: LabelOptColor[],
         elements: { label: string; element_id: number }[],
         edges: { from: number, to: number }[],
     },
@@ -28,6 +28,9 @@ export interface Label {
     structure?: SkeletonConfiguration['structure'],
     type?: SkeletonConfiguration['type'],
 }
+
+export type LabelOptColor = Omit<Label, 'color'> & { color?: string };
+export type ParentLabel = LabelOptColor & { sublabels?: LabelOptColor };
 
 let id = 0;
 
