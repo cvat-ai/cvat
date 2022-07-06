@@ -971,7 +971,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
                 if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
-                    (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                    if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
+                        const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
+                        if (wrappingRect) {
+                            (wrappingRect as any).resize({ snapToAngle: this.snapToAngleResize });
+                        }
+                    } else {
+                        (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                    }
                 }
             }
         }
@@ -983,7 +990,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
                 if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
-                    (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                    if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
+                        const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
+                        if (wrappingRect) {
+                            (wrappingRect as any).resize({ snapToAngle: this.snapToAngleResize });
+                        }
+                    } else {
+                        (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                    }
                 }
             }
         }
@@ -2811,7 +2825,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 };
 
-                if (typeof action === 'object') {
+                if (action !== 'stop') {
                     (element as any).draggable()
                         .on('dragstart', (): void => {
                             this.mode = Mode.RESIZE;
@@ -2865,7 +2879,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             let resized = false;
-            if (typeof action === 'object') {
+            if (action !== 'stop') {
                 (wrappingRect as any).resize(action).on('resizestart', (): void => {
                     this.mode = Mode.RESIZE;
                     resized = false;
