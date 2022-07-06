@@ -958,7 +958,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const [rotationPoint] = window.document.getElementsByClassName('svg_select_points_rot');
+        const [topPoint] = window.document.getElementsByClassName('svg_select_points_t');
         if (rotationPoint && !rotationPoint.children.length) {
+            if (topPoint) {
+                const rotY = +(rotationPoint as SVGEllipseElement).getAttribute('cy');
+                const topY = +(topPoint as SVGEllipseElement).getAttribute('cy');
+                (rotationPoint as SVGCircleElement).style.transform = `translate(0px, -${rotY - topY + 20}px)`;
+            }
+
             const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
             title.textContent = 'Hold Shift to snap angle';
             rotationPoint.appendChild(title);
