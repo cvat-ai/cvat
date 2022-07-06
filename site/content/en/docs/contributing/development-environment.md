@@ -77,8 +77,30 @@ description: 'Installing a development environment for different operating syste
   >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
   >  git checkout master
   > ```
+  > if you are still facing error `Running setup.py install for av ... error`, you may try more radical variant
+  > ```
+  >  cd "$(brew --repo homebrew/core)"
+  >  git checkout addd616edc9134f057e33694c420f4900be59db8
+  >  brew uninstall ffmpeg --force
+  >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+  >  git checkout master
+  > ```
+  >
+  > If you faced with error `Failed building wheel for h5py`, you may need install `hdf5`
+  > ```
+  > brew install hdf5
+  > export HDF5_DIR="$(brew --prefix hdf5)"
+  > pip install --no-binary=h5py h5py
+  > ```
+  > If you faced with error
+  > `OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']`.
+  > You may fix this using
+  > ```
+  > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
+  > ```
   > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit `cvat/requirements/base.txt`.
   > Change `tensorflow` to `tensorflow-macos`
+  > May need to downgrade version Python to 3.9.* or upgrade version `tensorflow-macos`
 
 - Create a super user for CVAT:
 
@@ -154,3 +176,8 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 - You might have to manually start the redis server in wsl before you can start the configuration inside
   Visual Studio Code. You can do this with `sudo service redis-server start`. Alternatively you can also
   use a redis docker image instead of using the redis-server locally.
+
+## Note for Mac users
+
+- You might have to manually start the redis server. You can do this with `redis-server`.
+Alternatively you can also use a redis docker image instead of using the redis-server locally.
