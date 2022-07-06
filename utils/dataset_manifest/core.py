@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
 import av
 import json
 import os
 
-from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
+from abc import ABC, abstractmethod
 from contextlib import closing
 from tempfile import NamedTemporaryFile
 from PIL import Image
@@ -17,6 +16,17 @@ from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 from cvat.apps.engine.cache import default_cache
 from cvat.rebotics.s3_client import s3_client
+from cvat.rebotics.utils import injected_property, StrEnum, ChoicesEnum
+
+
+class ManifestType(StrEnum, ChoicesEnum):
+    IMAGES = 'images'
+    VIDEO = 'video'
+
+
+class ManifestVersion(StrEnum, ChoicesEnum):
+    V1 = '1.0'
+    V1_1 = '1.1'
 
 
 class VideoStreamReader:
@@ -114,6 +124,7 @@ class VideoStreamReader:
             if not self._frames_number:
                 self._frames_number = index
 
+
 class KeyFramesVideoStreamReader(VideoStreamReader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -148,6 +159,7 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
                             if isValid:
                                 yield (index, key_frame['pts'], key_frame['md5'])
                     index += 1
+
 
 class DatasetImagesReader:
     def __init__(self,
@@ -226,6 +238,7 @@ class DatasetImagesReader:
     def __len__(self):
         return len(self.range_)
 
+
 class Dataset3DImagesReader(DatasetImagesReader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -248,25 +261,20 @@ class Dataset3DImagesReader(DatasetImagesReader):
             else:
                 yield dict()
 
+
+@injected_property('TYPE', error_message='Manifest TYPE is not set. Please, use manager to initialize.')
 class _Manifest:
-    class SupportedVersion(str, Enum):
-        V1 = '1.0'
-        V1_1 = '1.1'
-
-        @classmethod
-        def choices(cls):
-            return (x.value for x in cls)
-
-        def __str__(self):
-            return self.value
-
     FILE_NAME = 'manifest.jsonl'
-    VERSION = SupportedVersion.V1_1
+    VALID_EXTENSION = '.jsonl'
+    VERSION = ManifestVersion.V1_1
 
     def __init__(self, path, upload_dir=None):
-        assert path, 'A path to manifest file not found'
-        self._path = os.path.join(path, self.FILE_NAME) if os.path.isdir(path) else path
+        self._path = self._init_path(path)
         self._upload_dir = upload_dir
+
+    def _init_path(self, path):
+        assert path, 'A path to manifest file not found'
+        return os.path.join(path, self.FILE_NAME) if os.path.isdir(path) else path
 
     @property
     def path(self):
@@ -279,11 +287,8 @@ class _Manifest:
 
 
 class _S3Manifest(_Manifest):
-    # Manifest, which is stored on s3.
-    # same except assertions on path.
-    def __init__(self, path, upload_dir=None):
-        self._path = path if path.endswith('.jsonl') else os.path.join(path, self.FILE_NAME)
-        self._upload_dir = upload_dir
+    def _init_path(self, path):
+        return path if path.endswith(self.VALID_EXTENSION) else os.path.join(path, self.FILE_NAME)
 
 
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
@@ -292,9 +297,12 @@ class _Index:
     FILE_NAME = 'index.json'
 
     def __init__(self, path):
-        assert path and os.path.isdir(path), 'No index directory path'
-        self._path = os.path.join(path, self.FILE_NAME)
+        self._path = self._init_path(path)
         self._index = {}
+
+    def _init_path(self, path):
+        assert path and os.path.isdir(path), 'No index directory path'
+        return os.path.join(path, self.FILE_NAME)
 
     @property
     def path(self):
@@ -363,9 +371,8 @@ class _Index:
 
 class _CachedIndex(_Index):
     # Index, which is stored in cache instead of local files.
-    def __init__(self, path):
-        self._path = os.path.join(path, self.FILE_NAME)
-        self._index = {}
+    def _init_path(self, path):
+        return os.path.join(path, self.FILE_NAME)
 
     def dump(self):
         default_cache.set(
@@ -390,20 +397,26 @@ def _set_index(func):
             self.set_index()
     return wrapper
 
+
 class _ManifestManager(ABC):
     BASE_INFORMATION = {
         'version' : 1,
         'type': 2,
     }
 
+    manifest_class: type = _Manifest
+    index_class: type = _Index
+
+    _required_item_attributes = {}
+
     def _json_item_is_valid(self, **state):
-        for item in self._requared_item_attributes:
+        for item in self._required_item_attributes:
             if state.get(item, None) is None:
                 raise Exception(f"Invalid '{self.manifest.name} file structure': '{item}' is required, but not found")
 
     def __init__(self, path, create_index, upload_dir=None, *args, **kwargs):
-        self._manifest = _Manifest(path, upload_dir)
-        self._index = _Index(os.path.dirname(self._manifest.path))
+        self._manifest = self.manifest_class(path, upload_dir)
+        self._index = self.index_class(os.path.dirname(self._manifest.path))
         self._reader = None
         self._create_index = create_index
 
@@ -433,7 +446,7 @@ class _ManifestManager(ABC):
         if os.path.exists(self._index.path):
             self._index.load()
         else:
-            self._index.create(self._manifest.path, 3 if self._manifest.TYPE == 'video' else 2)
+            self._index.create(self._manifest.path, 3 if self._manifest.TYPE == ManifestType.VIDEO else 2)
             self._index.dump()
 
     def reset_index(self):
@@ -487,7 +500,8 @@ class _ManifestManager(ABC):
     def index(self):
         return self._index
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def data(self):
         pass
 
@@ -495,12 +509,13 @@ class _ManifestManager(ABC):
     def get_subset(self, subset_names):
         pass
 
+
 class VideoManifestManager(_ManifestManager):
-    _requared_item_attributes = {'number', 'pts'}
+    _required_item_attributes = {'number', 'pts'}
 
     def __init__(self, manifest_path, create_index=True):
         super().__init__(manifest_path, create_index)
-        setattr(self._manifest, 'TYPE', 'video')
+        setattr(self._manifest, 'TYPE', ManifestType.VIDEO)
         self.BASE_INFORMATION['properties'] = 3
 
     def link(self, media_file, upload_dir=None, chunk_size=36, force=False, only_key_frames=False, **kwargs):
@@ -576,6 +591,7 @@ class VideoManifestManager(_ManifestManager):
     def get_subset(self, subset_names):
         raise NotImplementedError()
 
+
 class VideoManifestValidator(VideoManifestManager):
     def __init__(self, source_path, manifest_path):
         self._source_path = source_path
@@ -615,12 +631,13 @@ class VideoManifestValidator(VideoManifestManager):
                 assert frames == self.video_length, "The uploaded manifest does not match the video"
                 return
 
+
 class ImageManifestManager(_ManifestManager):
-    _requared_item_attributes = {'name', 'extension'}
+    _required_item_attributes = {'name', 'extension'}
 
     def __init__(self, manifest_path, upload_dir=None, create_index=True):
         super().__init__(manifest_path, create_index, upload_dir)
-        setattr(self._manifest, 'TYPE', 'images')
+        setattr(self._manifest, 'TYPE', ManifestType.IMAGES)
 
     def link(self, **kwargs):
         ReaderClass = DatasetImagesReader if not kwargs.get('DIM_3D', None) else Dataset3DImagesReader
@@ -684,6 +701,8 @@ class ImageManifestManager(_ManifestManager):
 # class S3ManifestManager()
 
 
+
+@injected_property('TYPE', error_message='Manifest Validator TYPE is not set. Please, use concrete classes.')
 class _BaseManifestValidator(ABC):
     def __init__(self, full_manifest_path):
         self._manifest = _Manifest(full_manifest_path)
@@ -701,23 +720,26 @@ class _BaseManifestValidator(ABC):
 
     @staticmethod
     def _validate_version(_dict):
-        if not _dict['version'] in _Manifest.SupportedVersion.choices():
+        if not _dict['version'] in ManifestVersion.choices():
             raise ValueError('Incorrect version field')
 
     def _validate_type(self, _dict):
         if not _dict['type'] == self.TYPE:
             raise ValueError('Incorrect type field')
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def validators(self):
         pass
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def _validate_first_item(_dict):
         pass
 
+
 class _VideoManifestStructureValidator(_BaseManifestValidator):
-    TYPE = 'video'
+    TYPE = ManifestType.VIDEO
 
     @property
     def validators(self):
@@ -745,8 +767,9 @@ class _VideoManifestStructureValidator(_BaseManifestValidator):
         if not isinstance(_dict['pts'], int):
             raise ValueError('Incorrect pts field')
 
+
 class _DatasetManifestStructureValidator(_BaseManifestValidator):
-    TYPE = 'images'
+    TYPE = ManifestType.IMAGES
 
     @property
     def validators(self):
@@ -772,13 +795,16 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
         # if not isinstance(_dict['height'], int):
         #     raise ValueError('Incorrect height field')
 
+
 def is_manifest(full_manifest_path):
     return _is_video_manifest(full_manifest_path) or \
         _is_dataset_manifest(full_manifest_path)
 
+
 def _is_video_manifest(full_manifest_path):
     validator = _VideoManifestStructureValidator(full_manifest_path)
     return validator.validate()
+
 
 def _is_dataset_manifest(full_manifest_path):
     validator = _DatasetManifestStructureValidator(full_manifest_path)
