@@ -296,7 +296,7 @@ class TaskData(InstanceLabelData):
                     elements = []
                     for elem in db_label.skeleton.elements:
                         elements.append(('element', OrderedDict([
-                            ('label_id', str(elem['label'])),
+                            ('label', str(elem['label'])),
                             ('element_id', str(elem['element_id']))
                         ])))
 
