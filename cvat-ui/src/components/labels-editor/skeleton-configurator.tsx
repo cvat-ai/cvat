@@ -6,11 +6,12 @@ import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
 import Icon, { PictureOutlined } from '@ant-design/icons';
 
+import consts from 'consts';
 import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
 import {
-    idGenerator, Label, ParentLabel, SkeletonConfiguration, toSVGCoord,
+    idGenerator, Label, LabelOptColor, ParentLabel, SkeletonConfiguration, toSVGCoord,
 } from './common';
 import SkeletonElementContextMenu from './skeleton-element-context-menu';
 
@@ -40,7 +41,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     private nodeCounter: number;
     private elementCounter: number;
     private draggableElement: SVGElement | null;
-    private labels: Record<string, ParentLabel>;
+    private labels: Record<string, LabelOptColor>;
 
     public constructor(props: Props) {
         super(props);
@@ -278,6 +279,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 attr.id = idGenerator();
                 return attr;
             }),
+            color: labels[elementID]?.color || undefined,
             id: idGenerator(),
         };
 
@@ -307,7 +309,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             setAttributes(circle, {
                 r: 1.5,
                 stroke: 'black',
-                fill: 'grey',
+                fill: consts.NEW_LABEL_COLOR,
                 cx: x,
                 cy: y,
                 'stroke-width': 0.1,
@@ -501,6 +503,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             this.setState({ contextMenuVisible: false });
                             if (data) {
                                 this.labels[elementID] = data;
+                                if (data.color && svgRef.current) {
+                                    const element = svgRef.current.querySelector(`[data-element-id="${elementID}"]`);
+                                    if (element) {
+                                        element.setAttribute('fill', data.color);
+                                    }
+                                }
                                 this.setupTextLabels();
                             }
                         }}
