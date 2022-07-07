@@ -108,10 +108,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             showProjections,
             selectedOpacity,
+            opacity,
             smoothImage,
             textFontSize,
             textPosition,
             textContent,
+            colorBy,
+            outlined,
+            outlineColor,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -121,14 +125,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         canvasInstance.configure({
-            smoothImage,
-            autoborders: automaticBordering,
+            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
-            forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
-            intelligentPolygonCrop,
+            autoborders: automaticBordering,
             showProjections,
-            creationOpacity: selectedOpacity,
+            intelligentPolygonCrop,
+            selectedShapeOpacity: selectedOpacity,
+            shapeOpacity: opacity,
+            smoothImage,
+            colorBy,
+            outlinedBorders: outlined ? outlineColor || 'black' : false,
             textFontSize,
             textPosition,
             textContent,
@@ -141,7 +148,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidUpdate(prevProps: Props): void {
         const {
             opacity,
-            colorBy,
             selectedOpacity,
             outlined,
             outlineColor,
@@ -172,19 +178,25 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             intelligentPolygonCrop,
             showProjections,
             canvasBackgroundColor,
+            colorBy,
             onFetchAnnotation,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
+
         if (
             prevProps.showObjectsTextAlways !== showObjectsTextAlways ||
             prevProps.automaticBordering !== automaticBordering ||
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
+            prevProps.opacity !== opacity ||
             prevProps.selectedOpacity !== selectedOpacity ||
             prevProps.smoothImage !== smoothImage ||
             prevProps.textFontSize !== textFontSize ||
             prevProps.textPosition !== textPosition ||
-            prevProps.textContent !== textContent
+            prevProps.textContent !== textContent ||
+            prevProps.colorBy !== colorBy ||
+            prevProps.outlineColor !== outlineColor ||
+            prevProps.outlined !== outlined
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
@@ -192,8 +204,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 autoborders: automaticBordering,
                 showProjections,
                 intelligentPolygonCrop,
-                creationOpacity: selectedOpacity,
+                selectedShapeOpacity: selectedOpacity,
+                shapeOpacity: opacity,
                 smoothImage,
+                colorBy,
+                outlinedBorders: outlined ? outlineColor || 'black' : false,
                 textFontSize,
                 textPosition,
                 textContent,
@@ -268,16 +283,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 },
                 { once: true },
             );
-        }
-
-        if (
-            prevProps.opacity !== opacity ||
-            prevProps.outlined !== outlined ||
-            prevProps.outlineColor !== outlineColor ||
-            prevProps.selectedOpacity !== selectedOpacity ||
-            prevProps.colorBy !== colorBy
-        ) {
-            this.updateShapesView();
         }
 
         if (prevProps.showBitmap !== showBitmap) {
@@ -391,7 +396,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (state.shapeType === ShapeType.SKELETON && Array.isArray(state.elements)) {
             state.elements.forEach((element: Record<string, any>) => {
                 element.objectType = state.objectType;
-                element.label = element.label || jobInstance.labels.find((label: any) => label.id === element.labelID);
+                element.label = element.label || state.label.structure
+                    .sublabels.find((label: any) => label.id === element.labelID);
                 element.frame = state.frame;
                 element.rotation = 0;
                 element.occluded = element.occluded || false;
@@ -587,7 +593,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasSetup = (): void => {
         const { onSetupCanvas } = this.props;
         onSetupCanvas();
-        this.updateShapesView();
         this.activateOnCanvas();
     };
 
@@ -617,7 +622,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { activatedStateID, onUpdateContextMenu, annotations } = this.props;
 
         const [state] = annotations.filter((el: any) => el.clientID === activatedStateID);
-        if (![ShapeType.CUBOID, ShapeType.RECTANGLE].includes(state.shapeType)) {
+        if (![ShapeType.CUBOID, ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(state.shapeType)) {
             onUpdateContextMenu(
                 activatedStateID !== null,
                 e.detail.mouseEvent.clientX,
@@ -654,36 +659,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
             if (el) {
                 ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
-            }
-        }
-    }
-
-    private updateShapesView(): void {
-        const {
-            annotations, opacity, colorBy, outlined, outlineColor,
-        } = this.props;
-
-        for (const state of annotations) {
-            let shapeColor = '';
-
-            if (colorBy === ColorBy.INSTANCE) {
-                shapeColor = state.color;
-            } else if (colorBy === ColorBy.GROUP) {
-                shapeColor = state.group.color;
-            } else if (colorBy === ColorBy.LABEL) {
-                shapeColor = state.label.color;
-            }
-
-            // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
-            const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
-            if (shapeView) {
-                const handler = (shapeView as any).instance.remember('_selectHandler');
-                if (handler && handler.nested) {
-                    handler.nested.fill({ color: shapeColor });
-                }
-
-                (shapeView as any).instance.fill({ color: shapeColor, opacity });
-                (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
         }
     }

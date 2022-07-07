@@ -48,10 +48,8 @@
             data.labels = [];
 
             if (Array.isArray(initialData.labels)) {
-                for (const label of initialData.labels) {
-                    const classInstance = new Label(label);
-                    data.labels.push(classInstance);
-                }
+                data.labels = initialData.labels
+                    .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
             }
 
             if (typeof initialData.training_project === 'object') {

@@ -52,6 +52,8 @@ export interface DrawnState {
     updated: number;
     frame: number;
     label: any;
+    group: any;
+    color: string;
     elements: DrawnState[] | null;
 }
 
@@ -242,7 +244,7 @@ export function translateFromCanvas(offset: number, points: number[]): number[] 
     return points.map((coord: number): number => coord - offset);
 }
 
-export function computerWrappingBox(points: number[], margin = 0): Box & BBox {
+export function computeWrappingBox(points: number[], margin = 0): Box & BBox {
     let xtl = Number.MAX_SAFE_INTEGER;
     let ytl = Number.MAX_SAFE_INTEGER;
     let xbr = Number.MIN_SAFE_INTEGER;
@@ -293,13 +295,21 @@ export function getSkeletonEdgeCoordinates(edge: SVG.Line): {
         .find((element: SVG.Element): boolean => element.attr('data-node-id') === dataNodeTo);
 
     if (!nodeFrom || !nodeTo) {
-        throw new Error(`Edges nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not refer to any node`);
+        throw new Error(`Edges nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} not to refer to any node`);
     }
 
     x1 = nodeFrom.cx();
     y1 = nodeFrom.cy();
     x2 = nodeTo.cx();
     y2 = nodeTo.cy();
+
+    if (nodeFrom.hasClass('cvat_canvas_hidden')) {
+        x1 = x2;
+        y1 = y2;
+    } else if (nodeTo.hasClass('cvat_canvas_hidden')) {
+        x2 = x1;
+        y2 = y1;
+    }
 
     if ([x1, y1, x2, y2].some((coord: number): boolean => typeof coord !== 'number')) {
         throw new Error(`Edge coordinates must be numbers, got [${x1}, ${y1}, ${x2}, ${y2}]`);
@@ -342,6 +352,7 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
                 }).addClass('cvat_canvas_skeleton_edge') as SVG.Line;
             }
 
+            skeleton.node.prepend(edge.node);
             const points = getSkeletonEdgeCoordinates(edge);
             edge.attr({ ...points, 'stroke-width': 'inherit' });
         }

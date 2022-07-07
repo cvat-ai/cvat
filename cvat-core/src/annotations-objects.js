@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+const ObjectState = require('./object-state');
+
 (() => {
-    const ObjectState = require('./object-state');
     const { checkObjectType } = require('./common');
     const {
         colors, Source, ObjectShape, ObjectType, AttributeType, HistoryActions,
@@ -13,20 +14,6 @@
     const { Label } = require('./labels');
 
     const defaultGroupColor = '#E0E0E0';
-
-    // Called with the Annotation context
-    function objectStateFactory(frame, data) {
-        const objectState = new ObjectState(data);
-
-        // eslint-disable-next-line no-underscore-dangle
-        objectState.__internal = {
-            save: this.save.bind(this, frame, objectState),
-            delete: this.delete.bind(this),
-            context: this,
-        };
-
-        return objectState;
-    }
 
     function checkNumberOfPoints(shapeType, points) {
         if (shapeType === ObjectShape.RECTANGLE) {
@@ -112,6 +99,36 @@
         return [rotX, rotY];
     }
 
+    function computeWrappingBox(points, margin = 0) {
+        let xtl = Number.MAX_SAFE_INTEGER;
+        let ytl = Number.MAX_SAFE_INTEGER;
+        let xbr = Number.MIN_SAFE_INTEGER;
+        let ybr = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length; i += 2) {
+            const [x, y] = [points[i], points[i + 1]];
+            xtl = Math.min(xtl, x);
+            ytl = Math.min(ytl, y);
+            xbr = Math.max(xbr, x);
+            ybr = Math.max(ybr, y);
+        }
+
+        const box = {
+            xtl: xtl - margin,
+            ytl: ytl - margin,
+            xbr: xbr + margin,
+            ybr: ybr + margin,
+        };
+
+        return {
+            ...box,
+            x: box.xtl,
+            y: box.ytl,
+            width: box.xbr - box.xtl,
+            height: box.ybr - box.ytl,
+        };
+    }
+
     function validateAttributeValue(value, attr) {
         const { values } = attr;
         const type = attr.inputType;
@@ -189,10 +206,19 @@
                     },
                 },
             );
-            this.isSkeletonElement = injection.isSkeletonElement || false;
+            this.parentID = injection.parentID || null;
 
             this.appendDefaultAttributes(this.label);
             injection.groups.max = Math.max(injection.groups.max, this.group);
+        }
+
+        _withContext(frame) {
+            return {
+                __internal: {
+                    save: this.save.bind(this, frame),
+                    delete: this.delete.bind(this),
+                },
+            };
         }
 
         _saveLock(lock, frame) {
@@ -472,11 +498,11 @@
         }
 
         _fitPoints(points, rotation, maxX, maxY) {
-            const { shapeType, isSkeletonElement } = this;
+            const { shapeType, parentID } = this;
             checkObjectType('rotation', rotation, 'number', null);
             points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
 
-            if (isSkeletonElement || shapeType === ObjectShape.CUBOID ||
+            if (parentID !== null || shapeType === ObjectShape.CUBOID ||
                 shapeType === ObjectShape.ELLIPSE || !!rotation) {
                 // cuboids and rotated bounding boxes cannot be fitted
                 return points;
@@ -574,10 +600,9 @@
             return result;
         }
 
-        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the shape');
+                throw new ScriptingError('Received frame is not equal to the frame of the shape');
             }
 
             const result = {
@@ -585,6 +610,7 @@
                 shapeType: this.shapeType,
                 clientID: this.clientID,
                 serverID: this.serverID,
+                parentID: this.parentID,
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
@@ -600,6 +626,7 @@
                 pinned: this.pinned,
                 frame,
                 source: this.source,
+                ...this._withContext(frame),
             };
 
             if (typeof this.outside !== 'undefined') {
@@ -715,11 +742,11 @@
 
         save(frame, data) {
             if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the shape');
+                throw new ScriptingError('Received frame is not equal to the frame of the shape');
             }
 
             if (this.lock && data.lock) {
-                return objectStateFactory.call(this, frame, this.get(frame));
+                return new ObjectState(this.get(frame));
             }
 
             const updated = data.updateFlags;
@@ -778,7 +805,7 @@
             this.updateTimestamp(updated);
             updated.reset();
 
-            return objectStateFactory.call(this, frame, this.get(frame));
+            return new ObjectState(this.get(frame));
         }
     }
 
@@ -857,7 +884,6 @@
             };
         }
 
-        // Method is used to construct ObjectState objects
         get(frame) {
             const {
                 prev, next, first, last,
@@ -872,6 +898,7 @@
                 shapeType: this.shapeType,
                 clientID: this.clientID,
                 serverID: this.serverID,
+                parentID: this.parentID,
                 lock: this.lock,
                 color: this.color,
                 hidden: this.hidden,
@@ -886,6 +913,7 @@
                 },
                 frame,
                 source: this.source,
+                ...this._withContext(frame),
             };
         }
 
@@ -1245,7 +1273,7 @@
 
         save(frame, data) {
             if (this.lock && data.lock) {
-                return objectStateFactory.call(this, frame, this.get(frame));
+                return new ObjectState(this.get(frame));
             }
 
             const updated = data.updateFlags;
@@ -1311,7 +1339,7 @@
             this.updateTimestamp(updated);
             updated.reset();
 
-            return objectStateFactory.call(this, frame, this.get(frame));
+            return new ObjectState(this.get(frame));
         }
 
         getPosition(targetFrame, leftKeyframe, rightFrame) {
@@ -1370,10 +1398,9 @@
             };
         }
 
-        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the shape');
+                throw new ScriptingError('Received frame is not equal to the frame of the shape');
             }
 
             return {
@@ -1388,16 +1415,17 @@
                 updated: this.updated,
                 frame,
                 source: this.source,
+                ...this._withContext(frame),
             };
         }
 
         save(frame, data) {
             if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the tag');
+                throw new ScriptingError('Received frame is not equal to the frame of the tag');
             }
 
             if (this.lock && data.lock) {
-                return objectStateFactory.call(this, frame, this.get(frame));
+                return new ObjectState(this.get(frame));
             }
 
             const updated = data.updateFlags;
@@ -1427,7 +1455,7 @@
             this.updateTimestamp(updated);
             updated.reset();
 
-            return objectStateFactory.call(this, frame, this.get(frame));
+            return new ObjectState(this.get(frame));
         }
     }
 
@@ -1783,7 +1811,7 @@
             this.rotation = data.rotation || 0;
             this.occluded = false;
             this.points = undefined;
-            this.readOnlyFields = ['points', 'label', 'occluded', 'outside', 'pinned'];
+            this.readOnlyFields = ['points', 'label'];
 
             /* eslint-disable-next-line no-use-before-define */
             this.elements = data.elements.map((element) => shapeFactory({
@@ -1793,7 +1821,7 @@
                 source: this.source,
                 rotation: 0,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            }, injection.nextClientID(), { ...injection, isSkeletonElement: true }));
+            }, injection.nextClientID(), { ...injection, parentID: this.clientID }));
         }
 
         static distance(points, x, y) {
@@ -1855,10 +1883,9 @@
             };
         }
 
-        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the shape');
+                throw new ScriptingError('Received frame is not equal to the frame of the shape');
             }
 
             return {
@@ -1878,18 +1905,108 @@
                 group: this.groupObject,
                 color: this.color,
                 hidden: this.hidden,
-                updated: this.updated,
+                updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
                 pinned: this.pinned,
                 frame,
                 source: this.source,
+                ...this._withContext(frame),
             };
         }
 
+        _saveRotation(rotation, frame) {
+            const undoSkeletonPoints = this.elements.map((element) => element.points);
+            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+            const bbox = computeWrappingBox(undoSkeletonPoints.flat());
+            const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
+            for (const element of this.elements) {
+                const { points } = element;
+                const rotatedPoints = [];
+                for (let i = 0; i < points.length; i += 2) {
+                    const [x, y] = [points[i], points[i + 1]];
+                    rotatedPoints.push(...rotatePoint(x, y, rotation, cx, cy));
+                }
+
+                element.source = Source.MANUAL;
+                element.points = rotatedPoints;
+            }
+            this.source = Source.MANUAL;
+
+            const redoSkeletonPoints = this.elements.map((element) => element.points);
+            const redoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+            this.history.do(
+                HistoryActions.CHANGED_ROTATION,
+                () => {
+                    for (let i = 0; i < this.elements.length; i++) {
+                        this.elements[i].points = undoSkeletonPoints[i];
+                        this.elements[i].source = undoSources[i + 1];
+                        this.elements[i].updated = Date.now();
+                    }
+                    this.updated = Date.now();
+                },
+                () => {
+                    for (let i = 0; i < this.elements.length; i++) {
+                        this.elements[i].points = redoSkeletonPoints[i];
+                        this.elements[i].source = redoSources[i + 1];
+                        this.elements[i].updated = Date.now();
+                    }
+                    this.updated = Date.now();
+                },
+                [this.clientID, ...this.elements.map((element) => element.clientID)],
+                frame,
+            );
+        }
+
         save(frame, data) {
-            data.elements.forEach((element, idx) => {
-                const annotationContext = this.elements[idx];
-                annotationContext.save(frame, element);
-            });
+            if (this.lock && data.lock) {
+                return new ObjectState(this.get(frame));
+            }
+
+            const undoSkeletonPoints = this.elements.map((element) => element.points);
+            const undoSource = [this.source, ...this.elements.map((element) => element.source)];
+
+            try {
+                this.history.freeze(true);
+                data.elements.forEach((element, idx) => {
+                    const annotationContext = this.elements[idx];
+                    annotationContext.save(frame, element);
+                });
+            } finally {
+                this.history.freeze(false);
+            }
+
+            const redoSkeletonPoints = this.elements.map((element) => element.points);
+            const affectedElements = this.elements.filter((_, idx) => (
+                undoSkeletonPoints[idx]
+                    .some((coord, j) => redoSkeletonPoints[idx][j] !== coord)
+            ));
+
+            if (affectedElements.length) {
+                this.source = Source.MANUAL;
+                const redoSource = [this.source, ...this.elements.map((element) => element.source)];
+                this.history.do(
+                    HistoryActions.CHANGED_POINTS,
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            this.elements[i].points = undoSkeletonPoints[i];
+                            this.elements[i].source = undoSource[i + 1];
+                        }
+                        [this.source] = undoSource;
+                        this.updated = Date.now();
+                    },
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            this.elements[i].points = redoSkeletonPoints[i];
+                            this.elements[i].source = redoSource[i + 1];
+                        }
+                        [this.source] = redoSource;
+                        this.updated = Date.now();
+                    },
+                    [this.clientID, ...affectedElements.map((element) => element.clientID)],
+                    frame,
+                );
+            }
 
             const result = Shape.prototype.save.call(this, frame, data);
             return result;
@@ -2314,19 +2431,20 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.SKELETON;
-            this.readOnlyFields = ['points', 'label', 'occluded', 'outside', 'pinned'];
+            this.readOnlyFields = ['points', 'label'];
             this.pinned = false;
             this.shapes = {};
 
             const tracks = {};
             data.shapes.forEach((shape) => {
                 this.shapes[shape.frame] = ({
+                    serverID: shape.id,
                     type: shape.type,
                     occluded: shape.occluded,
                     outside: shape.outside,
                     attributes: shape.attributes,
                     rotation: shape.rotation,
-                    z_order: shape.z_order,
+                    zOrder: shape.z_order,
                     id: shape.id,
                 });
 
@@ -2339,6 +2457,7 @@
                             source: data.source,
                             readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
                             shapes: [{
+                                id: element.id,
                                 type: element.type,
                                 occluded: false,
                                 z_order: shape.z_order,
@@ -2352,6 +2471,7 @@
                         };
                     } else {
                         tracks[idx].shapes.push({
+                            id: element.id,
                             type: element.type,
                             occluded: false,
                             z_order: shape.z_order,
@@ -2367,8 +2487,75 @@
 
             /* eslint-disable-next-line no-use-before-define */
             this.elements = Object.values(tracks).map((track) => trackFactory(
-                track, injection.nextClientID(), { ...injection, isSkeletonElement: true },
+                track, injection.nextClientID(), { ...injection, parentID: this.clientID },
             ));
+        }
+
+        _saveRotation(rotation, frame) {
+            const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
+            const elementsData = this.elements.map((element) => element.get(frame));
+            const skeletonPoints = elementsData.map((data) => data.points);
+            const bbox = computeWrappingBox(skeletonPoints.flat());
+            const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
+
+            for (let i = 0; i < this.elements.length; i++) {
+                const element = this.elements[i];
+                const { points } = elementsData[i];
+
+                const rotatedPoints = [];
+                for (let j = 0; j < points.length; j += 2) {
+                    const [x, y] = [points[j], points[j + 1]];
+                    rotatedPoints.push(...rotatePoint(x, y, rotation, cx, cy));
+                }
+
+                if (undoSkeletonShapes[i]) {
+                    element.shapes[frame] = {
+                        ...undoSkeletonShapes[i],
+                        points: rotatedPoints,
+                    };
+                } else {
+                    element.shapes[frame] = {
+                        ...copyShape(elementsData[i]),
+                        points: rotatedPoints,
+                    };
+                }
+                element.source = Source.MANUAL;
+            }
+            this.source = Source.MANUAL;
+
+            const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const redoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+            this.history.do(
+                HistoryActions.CHANGED_ROTATION,
+                () => {
+                    for (let i = 0; i < this.elements.length; i++) {
+                        const element = this.elements[i];
+                        if (undoSkeletonShapes[i]) {
+                            element.shapes[frame] = undoSkeletonShapes[i];
+                        } else {
+                            delete element.shapes[frame];
+                        }
+                        element.source = undoSources[i + 1];
+                        this.updated = Date.now();
+                    }
+                    [this.source] = undoSources;
+                    this.updated = Date.now();
+                },
+                () => {
+                    for (let i = 0; i < this.elements.length; i++) {
+                        const element = this.elements[i];
+                        element.shapes[frame] = redoSkeletonShapes[i];
+                        element.source = redoSources[i + 1];
+                        this.updated = Date.now();
+                    }
+                    [this.source] = redoSources;
+                    this.updated = Date.now();
+                },
+                [this.clientID, ...this.elements.map((element) => element.clientID)],
+                frame,
+            );
         }
 
         // Method is used to export data to the server
@@ -2385,7 +2572,6 @@
             };
         }
 
-        // Method is used to construct ObjectState objects
         get(frame) {
             const { prev, next } = this.boundedKeyframes(frame);
 
@@ -2401,13 +2587,14 @@
                 lock: this.lock,
                 color: this.color,
                 hidden: this.hidden,
-                updated: this.updated,
+                updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
                 label: this.label,
                 pinned: this.pinned,
                 keyframes: this.deepBoundedKeyframes(frame),
                 elements: this.elements.map((element) => element.get(frame)),
                 frame,
                 source: this.source,
+                ...this._withContext(frame),
             };
         }
 
@@ -2448,10 +2635,66 @@
         }
 
         save(frame, data) {
-            data.elements.forEach((element, idx) => {
-                const annotationContext = this.elements[idx];
-                annotationContext.save(frame, element);
-            });
+            if (this.lock && data.lock) {
+                return new ObjectState(this.get(frame));
+            }
+
+            const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+            try {
+                this.history.freeze(true);
+                data.elements.forEach((element, idx) => {
+                    const annotationContext = this.elements[idx];
+                    annotationContext.save(frame, element);
+                });
+            } finally {
+                this.history.freeze(false);
+            }
+
+            const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+            const affectedElements = this.elements.filter((_, idx) => (
+                undoSkeletonShapes[idx] !== redoSkeletonShapes[idx]
+            ));
+
+            if (affectedElements.length) {
+                this.source = Source.MANUAL;
+                const redoSources = [this.source, ...this.elements.map((element) => element.source)];
+
+                this.history.do(
+                    HistoryActions.CHANGED_POINTS,
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            if (undoSkeletonShapes[i]) {
+                                this.elements[i].shapes[frame] = undoSkeletonShapes[i];
+                            } else if (redoSkeletonShapes[i]) {
+                                delete this.elements[i].shapes[frame];
+                            }
+
+                            [this.elements[i].source] = undoSources;
+                            this.elements[i].updated = Date.now();
+                        }
+                        [this.source] = undoSources;
+                        this.updated = Date.now();
+                    },
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            if (redoSkeletonShapes[i]) {
+                                this.elements[i].shapes[frame] = redoSkeletonShapes[i];
+                            } else if (undoSkeletonShapes[i]) {
+                                delete this.elements[i].shapes[frame];
+                            }
+
+                            [this.elements[i].source] = redoSources;
+                            this.elements[i].updated = Date.now();
+                        }
+                        [this.source] = redoSources;
+                        this.updated = Date.now();
+                    },
+                    [this.clientID, ...affectedElements.map((element) => element.clientID)],
+                    frame,
+                );
+            }
 
             const result = Track.prototype.save.call(this, frame, data);
             return result;
@@ -2507,6 +2750,7 @@
                 const skeletonShape = this.get(keyframe);
                 result[keyframe] = {
                     type: this.shapeType,
+                    id: this.shapes[keyframe]?.serverID,
                     occluded: skeletonShape.occluded,
                     z_order: skeletonShape.zOrder,
                     rotation: skeletonShape.rotation,
@@ -2516,6 +2760,7 @@
                     elements: this.elements.map((element) => {
                         const elementData = element.get(+keyframe);
                         return ({
+                            id: element.shapes[keyframe]?.serverID,
                             type: elementData.shapeType,
                             label_id: elementData.label.id,
                             occluded: elementData.occluded,
@@ -2631,6 +2876,5 @@
         Tag,
         shapeFactory,
         trackFactory,
-        objectStateFactory,
     };
 })();

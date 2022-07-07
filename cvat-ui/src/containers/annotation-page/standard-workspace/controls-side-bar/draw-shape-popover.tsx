@@ -10,6 +10,7 @@ import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
+import { Label } from 'components/labels-editor/common';
 
 interface OwnProps {
     shapeType: ShapeType;
@@ -82,17 +83,26 @@ interface State {
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
-    selectedLabelID: number;
+    selectedLabelID: number | null;
 }
 
 class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private minimumPoints = 3;
+    private satisfiedLabels: Label[];
 
     constructor(props: Props) {
         super(props);
 
         const { shapeType } = props;
-        const defaultLabelID = props.labels.length ? props.labels[0].id : null;
+        this.satisfiedLabels = props.labels.filter((label: Label) => {
+            if (shapeType === ShapeType.SKELETON) {
+                return label.type === ShapeType.SKELETON;
+            }
+
+            return typeof label.type !== 'string' || label.type === shapeType;
+        });
+
+        const defaultLabelID = this.satisfiedLabels.length ? this.satisfiedLabels[0].id : null;
         const defaultRectDrawingMethod = RectDrawingMethod.CLASSIC;
         const defaultCuboidDrawingMethod = CuboidDrawingMethod.CLASSIC;
         this.state = {
@@ -122,18 +132,23 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         canvasInstance.cancel();
 
         const selectedLabel = labels.find((label) => label.id === selectedLabelID);
-        canvasInstance.draw({
-            enabled: true,
-            rectDrawingMethod,
-            cuboidDrawingMethod,
-            numberOfPoints,
-            shapeType,
-            skeletonSVG: selectedLabel && selectedLabel.type === ShapeType.SKELETON ?
-                selectedLabel.structure.svg : undefined,
-            crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType),
-        });
+        if (selectedLabel) {
+            canvasInstance.draw({
+                enabled: true,
+                rectDrawingMethod,
+                cuboidDrawingMethod,
+                numberOfPoints,
+                shapeType,
+                skeletonSVG: selectedLabel && selectedLabel.type === ShapeType.SKELETON ?
+                    selectedLabel.structure.svg : undefined,
+                crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType),
+            });
 
-        onDrawStart(shapeType, selectedLabelID, objectType, numberOfPoints, rectDrawingMethod, cuboidDrawingMethod);
+            onDrawStart(
+                shapeType, selectedLabel.id, objectType,
+                numberOfPoints, rectDrawingMethod, cuboidDrawingMethod,
+            );
+        }
     }
 
     private onChangeRectDrawingMethod = (event: RadioChangeEvent): void => {
@@ -162,25 +177,23 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         });
     };
 
-    private onChangeLabel = (value: any): void => {
+    private onChangeLabel = (value: Label): void => {
         this.setState({
             selectedLabelID: value.id,
         });
     };
 
     public render(): JSX.Element {
+        const { satisfiedLabels } = this;
+        const { normalizedKeyMap, shapeType, jobInstance } = this.props;
         const {
             rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints,
         } = this.state;
 
-        const {
-            normalizedKeyMap, labels, shapeType, jobInstance,
-        } = this.props;
-
         return (
             <DrawShapePopoverComponent
                 jobInstance={jobInstance}
-                labels={labels}
+                labels={satisfiedLabels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}
                 selectedLabelID={selectedLabelID}

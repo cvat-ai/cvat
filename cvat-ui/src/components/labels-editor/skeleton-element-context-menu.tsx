@@ -5,13 +5,13 @@ import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 
 import LabelForm from './label-form';
-import { fromSVGCoord, Label } from './common';
+import { fromSVGCoord, LabelOptColor } from './common';
 
 interface ContextMenuProps {
     elementID: number;
-    labels: Record<number, Label>;
+    labels: Record<number, LabelOptColor>;
     container: SVGSVGElement;
-    onConfigureLabel(elementID: number, data: Label | null): void;
+    onConfigureLabel(elementID: number, data: LabelOptColor | null): void;
     onDelete(element: SVGElement): void;
 }
 
@@ -49,7 +49,7 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
             >
                 <LabelForm
                     label={elementLabel}
-                    labelNames={Object.values(labels).map((label: Label) => label.name)
+                    labelNames={Object.values(labels).map((label: LabelOptColor) => label.name)
                         .filter((name: string) => name !== elementLabel.name)}
                     onSubmit={(data) => {
                         setModalVisible(false);

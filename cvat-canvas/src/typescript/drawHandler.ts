@@ -18,7 +18,7 @@ import {
     readPointsFromShape,
     clamp,
     translateToCanvas,
-    computerWrappingBox,
+    computeWrappingBox,
     makeSVGFromTemplate,
     setupSkeletonEdges,
     translateFromCanvas,
@@ -422,7 +422,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             });
     }
 
@@ -431,7 +431,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             });
 
         const initialPoint: {
@@ -617,7 +617,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             });
 
         this.drawPolyshape();
@@ -686,7 +686,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             });
     }
 
@@ -806,7 +806,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             });
     }
 
@@ -869,7 +869,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -906,7 +906,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -944,7 +944,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -968,22 +968,20 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'face-stroke': 'black',
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedShapeOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
     }
 
-    private pasteSkeleton(box: BBox, elements: any[], rotation: number): void {
+    private pasteSkeleton(box: BBox, elements: any[]): void {
         const { offset } = this.geometry;
         let [xtl, ytl] = [box.x, box.y];
 
         this.pasteBox(box, 0);
-        this.drawInstance.rotate(rotation);
         this.pointsGroup = makeSVGFromTemplate(this.drawData.skeletonSVG);
         this.pointsGroup.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
         this.canvas.add(this.pointsGroup);
-        this.pointsGroup.rotate(rotation, box.x + box.width / 2, box.y + box.height / 2);
 
         this.pointsGroup.children().forEach((child: SVG.Element): void => {
             const dataType = child.attr('data-type');
@@ -1034,7 +1032,7 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.canvas.on('mousemove.draw', (): void => {
-            const [newXtl, newYtl, width, height] = [
+            const [newXtl, newYtl] = [
                 this.drawInstance.x(), this.drawInstance.y(),
                 this.drawInstance.width(), this.drawInstance.height(),
             ];
@@ -1049,8 +1047,6 @@ export class DrawHandlerImpl implements DrawHandler {
                 }
             });
             this.pointsGroup.untransform();
-            this.pointsGroup.rotate(rotation, newXtl + width / 2, newYtl + height / 2);
-
             setupSkeletonEdges(this.pointsGroup, this.pointsGroup);
         });
     }
@@ -1135,10 +1131,10 @@ export class DrawHandlerImpl implements DrawHandler {
                 const [cx, cy, rightX, topY] = translateToCanvas(offset, this.drawData.initialState.points);
                 this.pasteEllipse([cx, cy, rightX - cx, cy - topY], this.drawData.initialState.rotation);
             } else if (this.drawData.shapeType === 'skeleton') {
-                const box = computerWrappingBox(
+                const box = computeWrappingBox(
                     translateToCanvas(offset, this.drawData.initialState.points), consts.SKELETON_RECT_MARGIN,
                 );
-                this.pasteSkeleton(box, this.drawData.initialState.elements, this.drawData.initialState.rotation);
+                this.pasteSkeleton(box, this.drawData.initialState.elements);
             } else {
                 const points = translateToCanvas(offset, this.drawData.initialState.points);
                 const stringifiedPoints = stringifyPoints(points);
@@ -1240,7 +1236,7 @@ export class DrawHandlerImpl implements DrawHandler {
         const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
-            this.drawInstance.fill({ opacity: configuration.creationOpacity });
+            this.drawInstance.fill({ opacity: configuration.selectedShapeOpacity });
         }
 
         if (typeof configuration.autoborders === 'boolean') {

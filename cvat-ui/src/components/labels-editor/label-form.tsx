@@ -19,7 +19,7 @@ import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import consts from 'consts';
 import {
-    equalArrayHead, idGenerator, Label, Attribute,
+    equalArrayHead, idGenerator, Attribute, LabelOptColor,
 } from './common';
 
 export enum AttributeType {
@@ -31,9 +31,9 @@ export enum AttributeType {
 }
 
 interface Props {
-    label: Label | null;
+    label: LabelOptColor | null;
     labelNames?: string[];
-    onSubmit: (label: Label | null) => void;
+    onSubmit: (label: LabelOptColor | null) => void;
 }
 
 export default class LabelForm extends React.Component<Props> {
