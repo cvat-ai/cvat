@@ -50,7 +50,7 @@ class RestrictionsApi(object):
         self.api_client = api_client
         self.retrieve_terms_of_use_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": [],
                 "endpoint_path": "/api/restrictions/terms-of-use",
                 "operation_id": "retrieve_terms_of_use",
@@ -96,7 +96,7 @@ class RestrictionsApi(object):
         )
         self.retrieve_user_agreements_endpoint = _Endpoint(
             settings={
-                "response_type": (UserAgreement,),
+                "response_schema": (UserAgreement,),
                 "auth": [],
                 "endpoint_path": "/api/restrictions/user-agreements",
                 "operation_id": "retrieve_user_agreements",
@@ -141,63 +141,27 @@ class RestrictionsApi(object):
             api_client=api_client,
         )
 
-    @overload
     def retrieve_terms_of_use(
         self,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def retrieve_terms_of_use(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_terms_of_use(
-        self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_terms_of_use(
-        self, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_terms_of_use(
-        self,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_terms_of_use(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_terms_of_use(
-        self, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method provides CVAT terms of use  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_terms_of_use(async_req=True)
+        >>> thread = api.retrieve_terms_of_use(_async_call=True)
         >>> result = thread.get()
 
 
@@ -205,20 +169,17 @@ class RestrictionsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -238,136 +199,46 @@ class RestrictionsApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         return self.retrieve_terms_of_use_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_terms_of_use_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_terms_of_use(), but returns the response unprocessed.
-        Equivalent to calling retrieve_terms_of_use with
-        _parse_response = False and _check_status=False
-
-        Method provides CVAT terms of use  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_terms_of_use(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_terms_of_use(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def retrieve_user_agreements(
         self,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> UserAgreement:
-        ...
-
-    @overload
-    def retrieve_user_agreements(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[UserAgreement, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_user_agreements(
-        self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[UserAgreement, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_user_agreements(
-        self, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_user_agreements(
-        self,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_user_agreements(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_user_agreements(
-        self, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[UserAgreement, int, typing.Dict[str, str]], urllib3.HTTPResponse, UserAgreement
-    ]:
+    ) -> typing.Tuple[typing.Optional[UserAgreement], urllib3.HTTPResponse]:
         """Method provides user agreements that the user must accept to register  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_user_agreements(async_req=True)
+        >>> thread = api.retrieve_user_agreements(_async_call=True)
         >>> result = thread.get()
 
 
@@ -375,20 +246,17 @@ class RestrictionsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -408,73 +276,21 @@ class RestrictionsApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            UserAgreement
+            (UserAgreement, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         return self.retrieve_user_agreements_endpoint.call_with_http_info(**kwargs)
-
-    def retrieve_user_agreements_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_user_agreements(), but returns the response unprocessed.
-        Equivalent to calling retrieve_user_agreements with
-        _parse_response = False and _check_status=False
-
-        Method provides user agreements that the user must accept to register  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_user_agreements(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            UserAgreement
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_user_agreements(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )

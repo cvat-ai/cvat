@@ -60,7 +60,7 @@ class AuthApi(object):
         self.api_client = api_client
         self.create_login_endpoint = _Endpoint(
             settings={
-                "response_type": (Token,),
+                "response_schema": (Token,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/login",
                 "operation_id": "create_login",
@@ -116,7 +116,7 @@ class AuthApi(object):
         )
         self.create_logout_endpoint = _Endpoint(
             settings={
-                "response_type": (RestAuthDetail,),
+                "response_schema": (RestAuthDetail,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/logout",
                 "operation_id": "create_logout",
@@ -162,7 +162,7 @@ class AuthApi(object):
         )
         self.create_password_change_endpoint = _Endpoint(
             settings={
-                "response_type": (RestAuthDetail,),
+                "response_schema": (RestAuthDetail,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/password/change",
                 "operation_id": "create_password_change",
@@ -218,7 +218,7 @@ class AuthApi(object):
         )
         self.create_password_reset_endpoint = _Endpoint(
             settings={
-                "response_type": (RestAuthDetail,),
+                "response_schema": (RestAuthDetail,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/password/reset",
                 "operation_id": "create_password_reset",
@@ -274,7 +274,7 @@ class AuthApi(object):
         )
         self.create_password_reset_confirm_endpoint = _Endpoint(
             settings={
-                "response_type": (RestAuthDetail,),
+                "response_schema": (RestAuthDetail,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/password/reset/confirm",
                 "operation_id": "create_password_reset_confirm",
@@ -330,7 +330,7 @@ class AuthApi(object):
         )
         self.create_register_endpoint = _Endpoint(
             settings={
-                "response_type": (RestrictedRegister,),
+                "response_schema": (RestrictedRegister,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/register",
                 "operation_id": "create_register",
@@ -386,7 +386,7 @@ class AuthApi(object):
         )
         self.create_signing_endpoint = _Endpoint(
             settings={
-                "response_type": (str,),
+                "response_schema": (str,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/auth/signing",
                 "operation_id": "create_signing",
@@ -441,68 +441,29 @@ class AuthApi(object):
             api_client=api_client,
         )
 
-    @overload
     def create_login(
         self,
-        login_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        login_request: LoginRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> Token:
-        ...
-
-    @overload
-    def create_login(
-        self,
-        login_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[Token, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_login(
-        self, login_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[Token, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_login(
-        self, login_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_login(
-        self,
-        login_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_login(
-        self,
-        login_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_login(
-        self, login_request, **kwargs
-    ) -> typing.Union[typing.Tuple[Token, int, typing.Dict[str, str]], urllib3.HTTPResponse, Token]:
+    ) -> typing.Tuple[typing.Optional[Token], urllib3.HTTPResponse]:
         """create_login  # noqa: E501
 
         Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework  Accept the following POST parameters: username, password Return the REST Framework Token Object's key.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_login(login_request, async_req=True)
+        >>> thread = api.create_login(login_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -512,20 +473,17 @@ class AuthApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -545,141 +503,48 @@ class AuthApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            Token
+            (Token, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["login_request"] = login_request
         return self.create_login_endpoint.call_with_http_info(**kwargs)
 
-    def create_login_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_login(), but returns the response unprocessed.
-        Equivalent to calling create_login with
-        _parse_response = False and _check_status=False
-
-        create_login  # noqa: E501
-
-        Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework  Accept the following POST parameters: username, password Return the REST Framework Token Object's key.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_login(login_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            login_request (LoginRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            Token
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_login(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def create_logout(
         self,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> RestAuthDetail:
-        ...
-
-    @overload
-    def create_logout(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_logout(
-        self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_logout(
-        self, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_logout(
-        self,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_logout(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_logout(
-        self, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        RestAuthDetail,
-    ]:
+    ) -> typing.Tuple[typing.Optional[RestAuthDetail], urllib3.HTTPResponse]:
         """create_logout  # noqa: E501
 
         Calls Django logout method and delete the Token object assigned to the current User object.  Accepts/Returns nothing.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_logout(async_req=True)
+        >>> thread = api.create_logout(_async_call=True)
         >>> result = thread.get()
 
 
@@ -687,20 +552,17 @@ class AuthApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -720,142 +582,48 @@ class AuthApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            RestAuthDetail
+            (RestAuthDetail, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         return self.create_logout_endpoint.call_with_http_info(**kwargs)
 
-    def create_logout_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_logout(), but returns the response unprocessed.
-        Equivalent to calling create_logout with
-        _parse_response = False and _check_status=False
-
-        create_logout  # noqa: E501
-
-        Calls Django logout method and delete the Token object assigned to the current User object.  Accepts/Returns nothing.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_logout(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RestAuthDetail
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_logout(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def create_password_change(
         self,
-        password_change_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        password_change_request: PasswordChangeRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> RestAuthDetail:
-        ...
-
-    @overload
-    def create_password_change(
-        self,
-        password_change_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_password_change(
-        self, password_change_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_password_change(
-        self, password_change_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_password_change(
-        self,
-        password_change_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_password_change(
-        self,
-        password_change_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_password_change(
-        self, password_change_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        RestAuthDetail,
-    ]:
+    ) -> typing.Tuple[typing.Optional[RestAuthDetail], urllib3.HTTPResponse]:
         """create_password_change  # noqa: E501
 
         Calls Django Auth SetPasswordForm save method.  Accepts the following POST parameters: new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_password_change(password_change_request, async_req=True)
+        >>> thread = api.create_password_change(password_change_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -865,20 +633,17 @@ class AuthApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -898,150 +663,49 @@ class AuthApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            RestAuthDetail
+            (RestAuthDetail, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["password_change_request"] = password_change_request
         return self.create_password_change_endpoint.call_with_http_info(**kwargs)
 
-    def create_password_change_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_password_change(), but returns the response unprocessed.
-        Equivalent to calling create_password_change with
-        _parse_response = False and _check_status=False
-
-        create_password_change  # noqa: E501
-
-        Calls Django Auth SetPasswordForm save method.  Accepts the following POST parameters: new_password1, new_password2 Returns the success/fail message.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_password_change(password_change_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            password_change_request (PasswordChangeRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RestAuthDetail
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_password_change(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def create_password_reset(
         self,
-        password_reset_serializer_ex_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        password_reset_serializer_ex_request: PasswordResetSerializerExRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> RestAuthDetail:
-        ...
-
-    @overload
-    def create_password_reset(
-        self,
-        password_reset_serializer_ex_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_password_reset(
-        self,
-        password_reset_serializer_ex_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_password_reset(
-        self, password_reset_serializer_ex_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_password_reset(
-        self,
-        password_reset_serializer_ex_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_password_reset(
-        self,
-        password_reset_serializer_ex_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_password_reset(
-        self, password_reset_serializer_ex_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        RestAuthDetail,
-    ]:
+    ) -> typing.Tuple[typing.Optional[RestAuthDetail], urllib3.HTTPResponse]:
         """create_password_reset  # noqa: E501
 
         Calls Django Auth PasswordResetForm save method.  Accepts the following POST parameters: email Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_password_reset(password_reset_serializer_ex_request, async_req=True)
+        >>> thread = api.create_password_reset(password_reset_serializer_ex_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1051,20 +715,17 @@ class AuthApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -1084,150 +745,49 @@ class AuthApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            RestAuthDetail
+            (RestAuthDetail, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["password_reset_serializer_ex_request"] = password_reset_serializer_ex_request
         return self.create_password_reset_endpoint.call_with_http_info(**kwargs)
 
-    def create_password_reset_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_password_reset(), but returns the response unprocessed.
-        Equivalent to calling create_password_reset with
-        _parse_response = False and _check_status=False
-
-        create_password_reset  # noqa: E501
-
-        Calls Django Auth PasswordResetForm save method.  Accepts the following POST parameters: email Returns the success/fail message.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_password_reset(password_reset_serializer_ex_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            password_reset_serializer_ex_request (PasswordResetSerializerExRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RestAuthDetail
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_password_reset(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def create_password_reset_confirm(
         self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        password_reset_confirm_request: PasswordResetConfirmRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> RestAuthDetail:
-        ...
-
-    @overload
-    def create_password_reset_confirm(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_password_reset_confirm(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_password_reset_confirm(
-        self, password_reset_confirm_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_password_reset_confirm(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_password_reset_confirm(
-        self,
-        password_reset_confirm_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_password_reset_confirm(
-        self, password_reset_confirm_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        RestAuthDetail,
-    ]:
+    ) -> typing.Tuple[typing.Optional[RestAuthDetail], urllib3.HTTPResponse]:
         """create_password_reset_confirm  # noqa: E501
 
         Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_password_reset_confirm(password_reset_confirm_request, async_req=True)
+        >>> thread = api.create_password_reset_confirm(password_reset_confirm_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1237,20 +797,17 @@ class AuthApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -1270,146 +827,48 @@ class AuthApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            RestAuthDetail
+            (RestAuthDetail, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["password_reset_confirm_request"] = password_reset_confirm_request
         return self.create_password_reset_confirm_endpoint.call_with_http_info(**kwargs)
 
-    def create_password_reset_confirm_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_password_reset_confirm(), but returns the response unprocessed.
-        Equivalent to calling create_password_reset_confirm with
-        _parse_response = False and _check_status=False
-
-        create_password_reset_confirm  # noqa: E501
-
-        Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_password_reset_confirm(password_reset_confirm_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            password_reset_confirm_request (PasswordResetConfirmRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RestAuthDetail
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_password_reset_confirm(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def create_register(
         self,
-        restricted_register_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        restricted_register_request: RestrictedRegisterRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> RestrictedRegister:
-        ...
-
-    @overload
-    def create_register(
-        self,
-        restricted_register_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_register(
-        self, restricted_register_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_register(
-        self, restricted_register_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_register(
-        self,
-        restricted_register_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_register(
-        self,
-        restricted_register_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_register(
-        self, restricted_register_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        RestrictedRegister,
-    ]:
+    ) -> typing.Tuple[typing.Optional[RestrictedRegister], urllib3.HTTPResponse]:
         """create_register  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_register(restricted_register_request, async_req=True)
+        >>> thread = api.create_register(restricted_register_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1419,20 +878,17 @@ class AuthApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -1452,140 +908,49 @@ class AuthApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            RestrictedRegister
+            (RestrictedRegister, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["restricted_register_request"] = restricted_register_request
         return self.create_register_endpoint.call_with_http_info(**kwargs)
 
-    def create_register_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_register(), but returns the response unprocessed.
-        Equivalent to calling create_register with
-        _parse_response = False and _check_status=False
-
-        create_register  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_register(restricted_register_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            restricted_register_request (RestrictedRegisterRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RestrictedRegister
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_register(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def create_signing(
         self,
-        signing_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        signing_request: SigningRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> str:
-        ...
-
-    @overload
-    def create_signing(
-        self,
-        signing_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_signing(
-        self, signing_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_signing(
-        self, signing_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_signing(
-        self,
-        signing_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_signing(
-        self,
-        signing_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_signing(
-        self, signing_request, **kwargs
-    ) -> typing.Union[typing.Tuple[str, int, typing.Dict[str, str]], urllib3.HTTPResponse, str]:
+    ) -> typing.Tuple[typing.Optional[str], urllib3.HTTPResponse]:
         """This method signs URL for access to the server  # noqa: E501
 
         Signed URL contains a token which authenticates a user on the server.Signed URL is valid during 30 seconds since signing.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_signing(signing_request, async_req=True)
+        >>> thread = api.create_signing(signing_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1595,20 +960,17 @@ class AuthApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -1628,75 +990,22 @@ class AuthApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            str
+            (str, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["signing_request"] = signing_request
         return self.create_signing_endpoint.call_with_http_info(**kwargs)
-
-    def create_signing_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_signing(), but returns the response unprocessed.
-        Equivalent to calling create_signing with
-        _parse_response = False and _check_status=False
-
-        This method signs URL for access to the server  # noqa: E501
-
-        Signed URL contains a token which authenticates a user on the server.Signed URL is valid during 30 seconds since signing.  # noqa: E501
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_signing(signing_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            signing_request (SigningRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            str
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_signing(*args, **kwargs, _parse_response=False, _check_status=False)

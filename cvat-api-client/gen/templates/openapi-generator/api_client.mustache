@@ -12,6 +12,7 @@ import os
 import re
 import typing
 from urllib.parse import quote
+from urllib3 import HTTPResponse
 from urllib3.fields import RequestField
 
 {{#tornado}}
@@ -55,20 +56,26 @@ class ApiClient(object):
     Ref: https://openapi-generator.tech
     Do not edit the class manually.
 
-    :param configuration: .Configuration object for this client
-    :param header_name: a header to pass when making calls to the API.
-    :param header_value: a header value to pass when making calls to
-        the API.
-    :param cookie: a cookie to include in the header when making calls
-        to the API
-    :param pool_threads: The number of threads to use for async requests
-        to the API. More threads means more concurrent API requests.
+    Class members:
+{{#apiInfo}}{{#apis}}
+    {{>api_name}}: {{classname}}{{/apis}}{{/apiInfo}}
     """
 
     _pool = None
 
     def __init__(self, configuration=None, header_name=None, header_value=None,
                  cookie=None, pool_threads=1):
+        """
+        :param configuration: configuration object for this client
+        :param header_name: a header to pass when making calls to the API.
+        :param header_value: a header value to pass when making calls to
+            the API.
+        :param cookie: a cookie to include in the header when making calls
+            to the API
+        :param pool_threads: The number of threads to use for async requests
+            to the API. More threads means more concurrent API requests.
+        """
+
         if configuration is None:
             configuration = Configuration.get_default_copy()
         self.configuration = configuration
@@ -157,15 +164,14 @@ class ApiClient(object):
         body: typing.Optional[typing.Any] = None,
         post_params: typing.Optional[typing.List[typing.Tuple[str, typing.Any]]] = None,
         files: typing.Optional[typing.Dict[str, typing.List[io.IOBase]]] = None,
-        response_type: typing.Optional[typing.Tuple[typing.Any]] = None,
+        response_schema: typing.Optional[typing.Tuple[typing.Any]] = None,
         auth_settings: typing.Optional[typing.List[str]] = None,
-        _return_http_data_only: typing.Optional[bool] = None,
         collection_formats: typing.Optional[typing.Dict[str, str]] = None,
+        *,
         _parse_response: bool = True,
         _request_timeout: typing.Optional[typing.Union[int, float, typing.Tuple]] = None,
         _host: typing.Optional[str] = None,
         _check_type: typing.Optional[bool] = None,
-        _content_type: typing.Optional[str] = None,
         _check_status: bool = True,
         _request_auths: typing.Optional[typing.List[typing.Dict[str, typing.Any]]] = None
     ):
@@ -234,7 +240,7 @@ class ApiClient(object):
 
         try:
             # perform request and return response
-            response_data = {{#asyncio}}await {{/asyncio}}{{#tornado}}yield {{/tornado}}self.request(
+            response = {{#asyncio}}await {{/asyncio}}{{#tornado}}yield {{/tornado}}self.request(
                 method, url, query_params=query_params, headers=header_params,
                 post_params=post_params, body=body,
                 _parse_response=_parse_response,
@@ -244,50 +250,21 @@ class ApiClient(object):
             e.body = e.body.decode('utf-8')
             raise e
 
-        self.last_response = response_data
+        self.last_response = response
 
-        return_data = response_data
-
-        if not _parse_response:
-            {{^tornado}}
-            return (return_data)
-            {{/tornado}}
-            {{#tornado}}
-            raise tornado.gen.Return(return_data)
-            {{/tornado}}
-
-        # deserialize response data
-        if response_type:
-            if response_type != (file_type,):
-                encoding = "utf-8"
-                content_type = response_data.getheader('content-type')
-                if content_type is not None:
-                    match = re.search(r"charset=([a-zA-Z\-\d]+)[\s\;]?", content_type)
-                    if match:
-                        encoding = match.group(1)
-                response_data.data = response_data.data.decode(encoding)
-
+        return_data = None
+        if _parse_response and response_schema:
             return_data = self.deserialize(
-                response_data,
-                response_type,
-                _check_type
+                response,
+                response_schema,
+                _check_type=_check_type
             )
-        else:
-            return_data = None
 
-{{^tornado}}
-        if _return_http_data_only:
-            return (return_data)
-        else:
-            return (return_data, response_data.status,
-                    response_data.getheaders())
-{{/tornado}}
 {{#tornado}}
-        if _return_http_data_only:
-            raise tornado.gen.Return(return_data)
-        else:
-            raise tornado.gen.Return((return_data, response_data.status,
-                                      response_data.getheaders()))
+        raise tornado.gen.Return((return_data, response))
+{{/tornado}}
+{{^tornado}}
+        return (return_data, response)
 {{/tornado}}
 
     def parameters_to_multipart(self, params, collection_types):
@@ -359,11 +336,11 @@ class ApiClient(object):
             'Unable to prepare type {} for serialization'.format(
                 obj.__class__.__name__))
 
-    def deserialize(self, response, response_type, _check_type):
+    def deserialize(self, response: HTTPResponse, response_schema: typing.Tuple, *, _check_type: bool):
         """Deserializes response into an object.
 
-        :param response: RESTResponse object to be deserialized.
-        :param response_type: For the response, a tuple containing:
+        :param response (urllib3.HTTPResponse): object to be deserialized.
+        :param response_schema: For the response, a tuple containing:
             valid classes
             a list containing valid classes (for list schemas)
             a dict containing a tuple of valid classes as the value
@@ -373,30 +350,38 @@ class ApiClient(object):
             (float, none_type)
             ([int, none_type],)
             ({str: (bool, str, int, float, date, datetime, str, none_type)},)
-        :param _check_type: boolean, whether to check the types of the data
+        :param _check_type (bool): whether to check the types of the data
             received from the server
-        :type _check_type: bool
 
-        :return: deserialized object.
+        :return: deserialized object
         """
-        # handle file downloading
-        # save response body into a tmp file and return the instance
-        if response_type == (file_type,):
+
+        if response_schema == (file_type,):
+            # handle file downloading
+            # save response body into a tmp file and return the instance
             content_disposition = response.getheader("Content-Disposition")
             return deserialize_file(response.data, self.configuration,
                                     content_disposition=content_disposition)
 
+        encoding = "utf-8"
+        content_type = response.getheader('content-type')
+        if content_type is not None:
+            match = re.search(r"charset=([a-zA-Z\-\d]+)[\s\;]?", content_type)
+            if match:
+                encoding = match.group(1)
+        response_data = response.data.decode(encoding)
+
         # fetch data from response object
         try:
-            received_data = json.loads(response.data)
+            received_data = json.loads(response_data)
         except ValueError:
-            received_data = response.data
+            received_data = response_data
 
         # store our data under the key of 'received_data' so users have some
         # context if they are deserializing a string and the data type is wrong
         deserialized_data = validate_and_convert_types(
             received_data,
-            response_type,
+            response_schema,
             ['received_data'],
             True,
             _check_type,
@@ -414,11 +399,11 @@ class ApiClient(object):
         body: typing.Optional[typing.Any] = None,
         post_params: typing.Optional[typing.List[typing.Tuple[str, typing.Any]]] = None,
         files: typing.Optional[typing.Dict[str, typing.List[io.IOBase]]] = None,
-        response_type: typing.Optional[typing.Tuple[typing.Any]] = None,
+        response_schema: typing.Optional[typing.Tuple[typing.Any]] = None,
         auth_settings: typing.Optional[typing.List[str]] = None,
-        async_req: typing.Optional[bool] = None,
-        _return_http_data_only: typing.Optional[bool] = None,
         collection_formats: typing.Optional[typing.Dict[str, str]] = None,
+        *,
+        _async_call: typing.Optional[bool] = None,
         _parse_response: bool = True,
         _request_timeout: typing.Optional[typing.Union[int, float, typing.Tuple]] = None,
         _host: typing.Optional[str] = None,
@@ -428,7 +413,7 @@ class ApiClient(object):
     ):
         """Makes the HTTP request (synchronous) and returns deserialized data.
 
-        To make an async_req request, set the async_req parameter.
+        To make an _async_call request, set the _async_call parameter.
 
         :param resource_path: Path to method endpoint.
         :param method: Method to call.
@@ -440,7 +425,7 @@ class ApiClient(object):
         :param post_params dict: Request post form parameters,
             for `application/x-www-form-urlencoded`, `multipart/form-data`.
         :param auth_settings list: Auth Settings names for the request.
-        :param response_type: For the response, a tuple containing:
+        :param response_schema: For the response, a tuple containing:
             valid classes
             a list containing valid classes (for list schemas)
             a dict containing a tuple of valid classes as the value
@@ -453,11 +438,8 @@ class ApiClient(object):
         :param files: key -> field name, value -> a list of open file
             objects for `multipart/form-data`.
         :type files: dict
-        :param async_req bool: execute request asynchronously
-        :type async_req: bool, optional
-        :param _return_http_data_only: response data without head status code
-                                       and headers
-        :type _return_http_data_only: bool, optional
+        :param _async_call bool: execute request asynchronously
+        :type _async_call: bool, optional
         :param collection_formats: dict of collection formats for path, query,
             header, and post parameters.
         :type collection_formats: dict, optional
@@ -477,10 +459,10 @@ class ApiClient(object):
                               in the spec for a single request.
         :type _request_auths: list, optional
         :return:
-            If async_req parameter is True,
+            If _async_call parameter is True,
             the request will be called asynchronously.
             The method will return the request thread.
-            If parameter async_req is False or missing,
+            If parameter _async_call is False or missing,
             then the method will return the response directly.
         """
         params = {
@@ -492,9 +474,8 @@ class ApiClient(object):
             "body": body,
             "post_params": post_params,
             "files": files,
-            "response_type": response_type,
+            "response_schema": response_schema,
             "auth_settings": auth_settings,
-            "_return_http_data_only": _return_http_data_only,
             "collection_formats": collection_formats,
             "_parse_response": _parse_response,
             "_request_timeout": _request_timeout,
@@ -504,13 +485,13 @@ class ApiClient(object):
             "_check_status": _check_status,
         }
 
-        if not async_req:
+        if not _async_call:
             return self.__call_api(**params)
 
         return self.pool.apply_async(self.__call_api, (), kwds=params)
 
     def request(self, method, url, query_params=None, headers=None,
-                post_params=None, body=None, _parse_response=True,
+                post_params=None, body=None, *, _parse_response=True,
                 _request_timeout=None, _check_status=True):
         """Makes the HTTP request using RESTClient."""
         if method == "GET":
@@ -771,13 +752,18 @@ class ApiClient(object):
 
 
 class Endpoint(object):
-    def __init__(self, settings=None, params_map=None, root_map=None,
-                 headers_map=None, api_client=None, callable=None):
+    def __init__(self,
+            settings: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            params_map: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            root_map: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            headers_map: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            api_client: typing.Optional[ApiClient] = None
+    ):
         """Creates an endpoint
 
         Args:
             settings (dict): see below key value pairs
-                'response_type' (tuple/None): response type
+                'response_schema' (tuple/None): response type
                 'auth' (list): a list of auth type keys
                 'endpoint_path' (str): the endpoint path
                 'operation_id' (str): endpoint string identifier
@@ -789,7 +775,7 @@ class Endpoint(object):
                 'nullable' (list): list of nullable parameter names
                 'enum' (list): list of parameters with enum values
                 'validation' (list): list of parameters with validations
-            root_map
+            root_map (dict):
                 'validations' (dict): the dict mapping endpoint parameter tuple
                     paths to their validation dictionaries
                 'allowed_values' (dict): the dict mapping endpoint parameter
@@ -803,19 +789,17 @@ class Endpoint(object):
                 'accept' (list): list of Accept header strings
                 'content_type' (list): list of Content-Type header strings
             api_client (ApiClient) api client instance
-            callable (function): the function which is invoked when the
-                Endpoint is called
         """
+
         self.settings = settings
         self.params_map = params_map
         self.params_map['all'].extend([
-            'async_req',
+            '_async_call',
             '_host_index',
             '_parse_response',
             '_request_timeout',
-            '_return_http_data_only',
-            '_check_input_type',
-            '_check_return_type',
+            '_validate_inputs',
+            '_validate_outputs',
             '_check_status',
             '_content_type',
             '_spec_property_naming',
@@ -826,13 +810,12 @@ class Endpoint(object):
         self.allowed_values = root_map['allowed_values']
         self.openapi_types = root_map['openapi_types']
         extra_types = {
-            'async_req': (bool,),
+            '_async_call': (bool,),
             '_host_index': (none_type, int),
             '_parse_response': (bool,),
             '_request_timeout': (none_type, float, (float,), [float], int, (int,), [int]),
-            '_return_http_data_only': (bool,),
-            '_check_input_type': (bool,),
-            '_check_return_type': (bool,),
+            '_validate_inputs': (bool,),
+            '_validate_outputs': (bool,),
             '_check_status': (bool,),
             '_spec_property_naming': (bool,),
             '_content_type': (none_type, str),
@@ -844,7 +827,6 @@ class Endpoint(object):
         self.collection_format_map = root_map['collection_format_map']
         self.headers_map = headers_map
         self.api_client = api_client
-        self.callable = callable
 
     def __validate_inputs(self, kwargs):
         for param in self.params_map['enum']:
@@ -864,7 +846,7 @@ class Endpoint(object):
                     configuration=self.api_client.configuration
                 )
 
-        if kwargs['_check_input_type'] is False:
+        if kwargs['_validate_inputs'] is False:
             return
 
         for key, value in kwargs.items():
@@ -873,7 +855,7 @@ class Endpoint(object):
                 self.openapi_types[key],
                 [key],
                 kwargs['_spec_property_naming'],
-                kwargs['_check_input_type'],
+                kwargs['_validate_inputs'],
                 configuration=self.api_client.configuration
             )
             kwargs[key] = fixed_val
@@ -916,7 +898,44 @@ class Endpoint(object):
 
         return params
 
-    def call_with_http_info(self, **kwargs):
+    def call_with_http_info(self, **kwargs) -> typing.Tuple[typing.Optional[typing.Any], HTTPResponse]:
+        """
+        Keyword Args:
+            endpoint args
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _validate_inputs (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _validate_outputs (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            _async_call (bool): execute request asynchronously
+
+        Returns:
+            (parsed_model, response)
+                If the method is called asynchronously, returns the request
+                thread.
+        """
 
         try:
             index = self.api_client.configuration.server_operation_index.get(
@@ -943,11 +962,11 @@ class Endpoint(object):
                     " to method `%s`" %
                     (key, self.settings['operation_id'])
                 )
-            # only throw this nullable ApiValueError if _check_input_type
-            # is False, if _check_input_type==True we catch this case
+            # only throw this nullable ApiValueError if _validate_inputs
+            # is False, if _validate_inputs==True we catch this case
             # in self.__validate_inputs
             if (key not in self.params_map['nullable'] and value is None
-                    and kwargs['_check_input_type'] is False):
+                    and kwargs['_validate_inputs'] is False):
                 raise ApiValueError(
                     "Value may not be None for non-nullable parameter `%s`"
                     " when calling `%s`" %
@@ -990,12 +1009,11 @@ class Endpoint(object):
             body=params['body'],
             post_params=params['form'],
             files=params['file'],
-            response_type=self.settings['response_type'],
+            response_schema=self.settings['response_schema'],
             auth_settings=self.settings['auth'],
-            async_req=kwargs['async_req'],
-            _check_type=kwargs['_check_return_type'],
+            _async_call=kwargs['_async_call'],
+            _check_type=kwargs['_validate_outputs'],
             _check_status=kwargs['_check_status'],
-            _return_http_data_only=kwargs['_return_http_data_only'],
             _parse_response=kwargs['_parse_response'],
             _request_timeout=kwargs['_request_timeout'],
             _host=_host,

@@ -45,7 +45,7 @@ class {{classname}}(object):
 {{#operation}}
         self.{{>operation_name}}_endpoint = _Endpoint(
             settings={
-                'response_type': {{#returnType}}({{{.}}},){{/returnType}}{{^returnType}}None{{/returnType}},
+                'response_schema': {{#returnType}}({{{.}}},){{/returnType}}{{^returnType}}None{{/returnType}},
 {{#authMethods}}
 {{#-first}}
                 'auth': [
@@ -224,145 +224,40 @@ class {{classname}}(object):
 
 {{#operations}}
 {{#operation}}
-    @overload
     def {{>operation_name}}(
         self,
 {{#requiredParams}}
 {{^defaultValue}}
-        {{paramName}},
+        {{paramName}}: {{>model_templates/type_annotation_cleaned}},
 {{/defaultValue}}
 {{/requiredParams}}
 {{#requiredParams}}
 {{#defaultValue}}
-        {{paramName}}={{{defaultValue}}},
+        {{paramName}}: {{>model_templates/type_annotation_cleaned}} = {{{defaultValue}}},
 {{/defaultValue}}
 {{/requiredParams}}
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
-        **kwargs
-    ) -> {{>return_type}}:
-        ...
-
-    @overload
-    def {{>operation_name}}(
-        self,
-{{#requiredParams}}
-{{^defaultValue}}
-        {{paramName}},
-{{/defaultValue}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{#defaultValue}}
-        {{paramName}}={{{defaultValue}}},
-{{/defaultValue}}
-{{/requiredParams}}
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[{{>return_type}}, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def {{>operation_name}}(
-        self,
-{{#requiredParams}}
-{{^defaultValue}}
-        {{paramName}},
-{{/defaultValue}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{#defaultValue}}
-        {{paramName}}={{{defaultValue}}},
-{{/defaultValue}}
-{{/requiredParams}}
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[{{>return_type}}, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def {{>operation_name}}(
-        self,
-{{#requiredParams}}
-{{^defaultValue}}
-        {{paramName}},
-{{/defaultValue}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{#defaultValue}}
-        {{paramName}}={{{defaultValue}}},
-{{/defaultValue}}
-{{/requiredParams}}
-        _parse_response: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def {{>operation_name}}(
-        self,
-{{#requiredParams}}
-{{^defaultValue}}
-        {{paramName}},
-{{/defaultValue}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{#defaultValue}}
-        {{paramName}}={{{defaultValue}}},
-{{/defaultValue}}
-{{/requiredParams}}
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def {{>operation_name}}(
-        self,
-{{#requiredParams}}
-{{^defaultValue}}
-        {{paramName}},
-{{/defaultValue}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{#defaultValue}}
-        {{paramName}}={{{defaultValue}}},
-{{/defaultValue}}
-{{/requiredParams}}
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def {{>operation_name}}(
-        self,
-{{#requiredParams}}
-{{^defaultValue}}
-        {{paramName}},
-{{/defaultValue}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{#defaultValue}}
-        {{paramName}}={{{defaultValue}}},
-{{/defaultValue}}
-{{/requiredParams}}
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[{{>return_type}}, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            {{>return_type}}
-    ]:
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
+        **kwargs,
+    ) -> typing.Tuple[typing.Optional[{{>return_type}}], urllib3.HTTPResponse]:
         """{{{summary}}}{{^summary}}{{>operation_name}}{{/summary}}  # noqa: E501
 
 {{#notes}}
         {{{.}}}  # noqa: E501
 {{/notes}}
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.{{>operation_name}}({{#requiredParams}}{{^defaultValue}}{{paramName}}, {{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}}{{paramName}}={{{defaultValue}}}, {{/defaultValue}}{{/requiredParams}}async_req=True)
+        >>> thread = api.{{>operation_name}}({{#requiredParams}}{{^defaultValue}}{{paramName}}, {{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}}{{paramName}}={{{defaultValue}}}, {{/defaultValue}}{{/requiredParams}}_async_call=True)
         >>> result = thread.get()
 
 {{#requiredParams}}
@@ -383,20 +278,17 @@ class {{classname}}(object):
 
         Keyword Args:{{#optionalParams}}
             {{paramName}} ({{dataType}}):{{#description}} {{{.}}}.{{/description}} [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}{{/optionalParams}}
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -416,116 +308,27 @@ class {{classname}}(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            {{returnType}}{{^returnType}}None{{/returnType}}
+            ({{returnType}}{{^returnType}}None{{/returnType}}, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_parse_response'] = kwargs.get(
-            '_parse_response', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
+        kwargs['_async_call'] = _async_call
+        kwargs['_parse_response'] = _parse_response
+        kwargs['_request_timeout'] = _request_timeout
+        kwargs['_validate_inputs'] = _validate_inputs
+        kwargs['_validate_outputs'] = _validate_outputs
+        kwargs['_check_status'] = _check_status
+        kwargs['_spec_property_naming'] = _spec_property_naming
+        kwargs['_content_type'] = _content_type
+        kwargs['_host_index'] = _host_index
+        kwargs['_request_auths'] = _request_auths
 {{#requiredParams}}
-        kwargs['{{paramName}}'] = \
-            {{paramName}}
+        kwargs['{{paramName}}'] = {{paramName}}
 {{/requiredParams}}
         return self.{{>operation_name}}_endpoint.call_with_http_info(**kwargs)
-
-    def {{>operation_name}}_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        """
-        The same as {{>operation_name}}(), but returns the response unprocessed.
-        Equivalent to calling {{>operation_name}} with
-        _parse_response = False and _check_status=False
-
-        {{{summary}}}{{^summary}}{{>operation_name}}{{/summary}}  # noqa: E501
-
-{{#notes}}
-        {{{.}}}  # noqa: E501
-{{/notes}}
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.{{>operation_name}}({{#requiredParams}}{{^defaultValue}}{{paramName}}, {{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}}{{paramName}}={{{defaultValue}}}, {{/defaultValue}}{{/requiredParams}}async_req=True)
-        >>> result = thread.get()
-
-{{#requiredParams}}
-{{#-last}}
-        Args:
-{{/-last}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{^defaultValue}}
-            {{paramName}} ({{dataType}}):{{#description}} {{{.}}}{{/description}}
-{{/defaultValue}}
-{{/requiredParams}}
-{{#requiredParams}}
-{{#defaultValue}}
-            {{paramName}} ({{dataType}}):{{#description}} {{{.}}}.{{/description}} defaults to {{{defaultValue}}}, must be one of [{{{defaultValue}}}]
-{{/defaultValue}}
-{{/requiredParams}}
-
-        Keyword Args:{{#optionalParams}}
-            {{paramName}} ({{dataType}}):{{#description}} {{{.}}}.{{/description}} [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}{{/optionalParams}}
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            {{returnType}}{{^returnType}}None{{/returnType}}
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.{{>operation_name}}(*args, **kwargs,
-            _parse_response=False, _check_status=False)
 
 {{/operation}}
 {{/operations}}

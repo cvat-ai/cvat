@@ -60,7 +60,7 @@ class TasksApi(object):
         self.api_client = api_client
         self.jobs_partial_update_data_meta_endpoint = _Endpoint(
             settings={
-                "response_type": (DataMetaRead,),
+                "response_schema": (DataMetaRead,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/jobs/{id}/data/meta",
                 "operation_id": "jobs_partial_update_data_meta",
@@ -120,7 +120,7 @@ class TasksApi(object):
         )
         self.create_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskWrite,),
+                "response_schema": (TaskWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks",
                 "operation_id": "create",
@@ -176,7 +176,7 @@ class TasksApi(object):
         )
         self.create_annotations_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/annotations/",
                 "operation_id": "create_annotations",
@@ -261,7 +261,7 @@ class TasksApi(object):
         )
         self.create_backup_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/backup/",
                 "operation_id": "create_backup",
@@ -333,7 +333,7 @@ class TasksApi(object):
         )
         self.create_data_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/data/",
                 "operation_id": "create_data",
@@ -406,7 +406,7 @@ class TasksApi(object):
         )
         self.destroy_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}",
                 "operation_id": "destroy",
@@ -458,7 +458,7 @@ class TasksApi(object):
         )
         self.destroy_annotations_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/annotations/",
                 "operation_id": "destroy_annotations",
@@ -510,7 +510,7 @@ class TasksApi(object):
         )
         self.list_endpoint = _Endpoint(
             settings={
-                "response_type": (PaginatedTaskReadList,),
+                "response_schema": (PaginatedTaskReadList,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks",
                 "operation_id": "list",
@@ -576,7 +576,7 @@ class TasksApi(object):
         )
         self.list_jobs_endpoint = _Endpoint(
             settings={
-                "response_type": (PaginatedJobReadList,),
+                "response_schema": (PaginatedJobReadList,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/jobs",
                 "operation_id": "list_jobs",
@@ -648,7 +648,7 @@ class TasksApi(object):
         )
         self.partial_update_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskWrite,),
+                "response_schema": (TaskWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}",
                 "operation_id": "partial_update",
@@ -708,7 +708,7 @@ class TasksApi(object):
         )
         self.partial_update_annotations_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskWrite,),
+                "response_schema": (TaskWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/annotations/",
                 "operation_id": "partial_update_annotations",
@@ -777,7 +777,7 @@ class TasksApi(object):
         )
         self.partial_update_annotations_file_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskWrite,),
+                "response_schema": (TaskWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/annotations/{file_id}",
                 "operation_id": "partial_update_annotations_file",
@@ -850,7 +850,7 @@ class TasksApi(object):
         )
         self.partial_update_backup_file_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskWrite,),
+                "response_schema": (TaskWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/backup/{file_id}",
                 "operation_id": "partial_update_backup_file",
@@ -918,7 +918,7 @@ class TasksApi(object):
         )
         self.partial_update_data_file_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskWrite,),
+                "response_schema": (TaskWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/data/{file_id}",
                 "operation_id": "partial_update_data_file",
@@ -991,7 +991,7 @@ class TasksApi(object):
         )
         self.partial_update_data_meta_endpoint = _Endpoint(
             settings={
-                "response_type": (DataMetaRead,),
+                "response_schema": (DataMetaRead,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/data/meta",
                 "operation_id": "partial_update_data_meta",
@@ -1051,7 +1051,7 @@ class TasksApi(object):
         )
         self.retrieve_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskRead,),
+                "response_schema": (TaskRead,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}",
                 "operation_id": "retrieve",
@@ -1103,7 +1103,7 @@ class TasksApi(object):
         )
         self.retrieve_annotations_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/annotations/",
                 "operation_id": "retrieve_annotations",
@@ -1185,7 +1185,7 @@ class TasksApi(object):
         )
         self.retrieve_backup_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/backup",
                 "operation_id": "retrieve_backup",
@@ -1263,7 +1263,7 @@ class TasksApi(object):
         )
         self.retrieve_data_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/data/",
                 "operation_id": "retrieve_data",
@@ -1341,7 +1341,7 @@ class TasksApi(object):
         )
         self.retrieve_data_meta_endpoint = _Endpoint(
             settings={
-                "response_type": (DataMetaRead,),
+                "response_schema": (DataMetaRead,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/data/meta",
                 "operation_id": "retrieve_data_meta",
@@ -1393,7 +1393,7 @@ class TasksApi(object):
         )
         self.retrieve_dataset_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/dataset",
                 "operation_id": "retrieve_dataset",
@@ -1476,7 +1476,7 @@ class TasksApi(object):
         )
         self.retrieve_status_endpoint = _Endpoint(
             settings={
-                "response_type": (RqStatus,),
+                "response_schema": (RqStatus,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/status",
                 "operation_id": "retrieve_status",
@@ -1528,7 +1528,7 @@ class TasksApi(object):
         )
         self.update_endpoint = _Endpoint(
             settings={
-                "response_type": (TaskWrite,),
+                "response_schema": (TaskWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}",
                 "operation_id": "update",
@@ -1589,7 +1589,7 @@ class TasksApi(object):
         )
         self.update_annotations_endpoint = _Endpoint(
             settings={
-                "response_type": None,
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/annotations/",
                 "operation_id": "update_annotations",
@@ -1653,69 +1653,28 @@ class TasksApi(object):
             api_client=api_client,
         )
 
-    @overload
     def jobs_partial_update_data_meta(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> DataMetaRead:
-        ...
-
-    @overload
-    def jobs_partial_update_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def jobs_partial_update_data_meta(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def jobs_partial_update_data_meta(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def jobs_partial_update_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def jobs_partial_update_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def jobs_partial_update_data_meta(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[DataMetaRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, DataMetaRead
-    ]:
+    ) -> typing.Tuple[typing.Optional[DataMetaRead], urllib3.HTTPResponse]:
         """Method provides a meta information about media files which are related with the job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.jobs_partial_update_data_meta(id, async_req=True)
+        >>> thread = api.jobs_partial_update_data_meta(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1726,20 +1685,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -1759,144 +1715,48 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            DataMetaRead
+            (DataMetaRead, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.jobs_partial_update_data_meta_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_partial_update_data_meta_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as jobs_partial_update_data_meta(), but returns the response unprocessed.
-        Equivalent to calling jobs_partial_update_data_meta with
-        _parse_response = False and _check_status=False
-
-        Method provides a meta information about media files which are related with the job  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.jobs_partial_update_data_meta(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this job.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_job_write_request (PatchedJobWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            DataMetaRead
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.jobs_partial_update_data_meta(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def create(
         self,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        task_write_request: TaskWriteRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskWrite:
-        ...
-
-    @overload
-    def create(
-        self,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create(
-        self, task_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create(
-        self, task_write_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create(
-        self,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create(
-        self,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create(
-        self, task_write_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
         """Method creates a new task in a database without any attached images and videos  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create(task_write_request, async_req=True)
+        >>> thread = api.create(task_write_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1906,20 +1766,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -1939,143 +1796,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskWrite
+            (TaskWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["task_write_request"] = task_write_request
         return self.create_endpoint.call_with_http_info(**kwargs)
 
-    def create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create(), but returns the response unprocessed.
-        Equivalent to calling create with
-        _parse_response = False and _check_status=False
-
-        Method creates a new task in a database without any attached images and videos  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create(task_write_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            task_write_request (TaskWriteRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def create_annotations(
         self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        task_write_request: TaskWriteRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def create_annotations(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_annotations(
-        self, id, task_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_annotations(
-        self, id, task_write_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_annotations(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_annotations(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_annotations(
-        self, id, task_write_request, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method allows to upload task annotations from storage  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_annotations(id, task_write_request, async_req=True)
+        >>> thread = api.create_annotations(id, task_write_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -2091,20 +1854,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             use_default_location (bool): Use the location that was configured in task to import annotations. [optional] if omitted the server will use the default value of True
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -2124,146 +1884,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         kwargs["task_write_request"] = task_write_request
         return self.create_annotations_endpoint.call_with_http_info(**kwargs)
 
-    def create_annotations_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_annotations(), but returns the response unprocessed.
-        Equivalent to calling create_annotations with
-        _parse_response = False and _check_status=False
-
-        Method allows to upload task annotations from storage  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_annotations(id, task_write_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-            task_write_request (TaskWriteRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Annotation file name. [optional]
-            format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
-            location (str): where to import the annotation from. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in task to import annotations. [optional] if omitted the server will use the default value of True
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_annotations(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def create_backup(
         self,
-        task_file_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        task_file_request: TaskFileRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def create_backup(
-        self,
-        task_file_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_backup(
-        self, task_file_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_backup(
-        self, task_file_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_backup(
-        self,
-        task_file_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_backup(
-        self,
-        task_file_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_backup(
-        self, task_file_request, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method recreates a task from an attached task backup file  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_backup(task_file_request, async_req=True)
+        >>> thread = api.create_backup(task_file_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -2276,20 +1939,17 @@ class TasksApi(object):
             location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -2309,146 +1969,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["task_file_request"] = task_file_request
         return self.create_backup_endpoint.call_with_http_info(**kwargs)
 
-    def create_backup_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_backup(), but returns the response unprocessed.
-        Equivalent to calling create_backup with
-        _parse_response = False and _check_status=False
-
-        Method recreates a task from an attached task backup file  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_backup(task_file_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            task_file_request (TaskFileRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Backup file name. [optional]
-            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_backup(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def create_data(
         self,
-        id,
-        data_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        data_request: DataRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def create_data(
-        self,
-        id,
-        data_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_data(
-        self, id, data_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def create_data(
-        self, id, data_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_data(
-        self,
-        id,
-        data_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def create_data(
-        self,
-        id,
-        data_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def create_data(
-        self, id, data_request, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_data(id, data_request, async_req=True)
+        >>> thread = api.create_data(id, data_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -2462,20 +2025,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -2495,142 +2055,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         kwargs["data_request"] = data_request
         return self.create_data_endpoint.call_with_http_info(**kwargs)
 
-    def create_data_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as create_data(), but returns the response unprocessed.
-        Equivalent to calling create_data with
-        _parse_response = False and _check_status=False
-
-        Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.create_data(id, data_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-            data_request (DataRequest):
-
-        Keyword Args:
-            upload_finish (bool): Finishes data upload. Can be combined with Upload-Start header to create task data with one request. [optional]
-            upload_multiple (bool): Indicates that data with this request are single or multiple files that should be attached to a task. [optional]
-            upload_start (bool): Initializes data upload. No data should be sent with this header. [optional]
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.create_data(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def destroy(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def destroy(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def destroy(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def destroy(self, id, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def destroy(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def destroy(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def destroy(
-        self, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method deletes a specific task, all attached jobs, annotations, and data  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.destroy(id, async_req=True)
+        >>> thread = api.destroy(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -2640,20 +2107,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -2673,139 +2137,48 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.destroy_endpoint.call_with_http_info(**kwargs)
 
-    def destroy_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as destroy(), but returns the response unprocessed.
-        Equivalent to calling destroy with
-        _parse_response = False and _check_status=False
-
-        Method deletes a specific task, all attached jobs, annotations, and data  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.destroy(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.destroy(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def destroy_annotations(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def destroy_annotations(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def destroy_annotations(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def destroy_annotations(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def destroy_annotations(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def destroy_annotations(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def destroy_annotations(
-        self, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method deletes all annotations for a specific task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.destroy_annotations(id, async_req=True)
+        >>> thread = api.destroy_annotations(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -2815,20 +2188,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -2848,137 +2218,47 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.destroy_annotations_endpoint.call_with_http_info(**kwargs)
 
-    def destroy_annotations_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as destroy_annotations(), but returns the response unprocessed.
-        Equivalent to calling destroy_annotations with
-        _parse_response = False and _check_status=False
-
-        Method deletes all annotations for a specific task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.destroy_annotations(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.destroy_annotations(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def list(
         self,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> PaginatedTaskReadList:
-        ...
-
-    @overload
-    def list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def list(
-        self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def list(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def list(
-        self,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def list(
-        self, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        PaginatedTaskReadList,
-    ]:
+    ) -> typing.Tuple[typing.Optional[PaginatedTaskReadList], urllib3.HTTPResponse]:
         """Returns a paginated list of tasks according to query parameters (10 tasks per page)  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.list(async_req=True)
+        >>> thread = api.list(_async_call=True)
         >>> result = thread.get()
 
 
@@ -2991,20 +2271,17 @@ class TasksApi(object):
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -3024,145 +2301,47 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            PaginatedTaskReadList
+            (PaginatedTaskReadList, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         return self.list_endpoint.call_with_http_info(**kwargs)
 
-    def list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as list(), but returns the response unprocessed.
-        Equivalent to calling list with
-        _parse_response = False and _check_status=False
-
-        Returns a paginated list of tasks according to query parameters (10 tasks per page)  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.list(async_req=True)
-        >>> result = thread.get()
-
-
-        Keyword Args:
-            x_organization (str): [optional]
-            filter (str): A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            page (int): A page number within the paginated result set.. [optional]
-            page_size (int): Number of results to return per page.. [optional]
-            search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
-            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            PaginatedTaskReadList
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.list(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def list_jobs(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> PaginatedJobReadList:
-        ...
-
-    @overload
-    def list_jobs(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def list_jobs(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def list_jobs(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def list_jobs(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def list_jobs(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def list_jobs(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]],
-        urllib3.HTTPResponse,
-        PaginatedJobReadList,
-    ]:
+    ) -> typing.Tuple[typing.Optional[PaginatedJobReadList], urllib3.HTTPResponse]:
         """Method returns a list of jobs for a specific task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.list_jobs(id, async_req=True)
+        >>> thread = api.list_jobs(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -3177,20 +2356,17 @@ class TasksApi(object):
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -3210,146 +2386,48 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            PaginatedJobReadList
+            (PaginatedJobReadList, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.list_jobs_endpoint.call_with_http_info(**kwargs)
 
-    def list_jobs_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as list_jobs(), but returns the response unprocessed.
-        Equivalent to calling list_jobs with
-        _parse_response = False and _check_status=False
-
-        Method returns a list of jobs for a specific task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.list_jobs(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            filter (str): A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            page (int): A page number within the paginated result set.. [optional]
-            page_size (int): Number of results to return per page.. [optional]
-            search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
-            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            PaginatedJobReadList
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.list_jobs(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def partial_update(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskWrite:
-        ...
-
-    @overload
-    def partial_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def partial_update(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
         """Methods does a partial update of chosen fields in a task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update(id, async_req=True)
+        >>> thread = api.partial_update(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -3360,20 +2438,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -3393,146 +2468,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskWrite
+            (TaskWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as partial_update(), but returns the response unprocessed.
-        Equivalent to calling partial_update with
-        _parse_response = False and _check_status=False
-
-        Methods does a partial update of chosen fields in a task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.partial_update(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.partial_update(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def partial_update_annotations(
         self,
-        action,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        action: str,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskWrite:
-        ...
-
-    @overload
-    def partial_update_annotations(
-        self,
-        action,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_annotations(
-        self, action, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_annotations(
-        self, action, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_annotations(
-        self,
-        action,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_annotations(
-        self,
-        action,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def partial_update_annotations(
-        self, action, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
         """Method performs a partial update of annotations in a specific task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update_annotations(action, id, async_req=True)
+        >>> thread = api.partial_update_annotations(action, id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -3544,20 +2522,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -3577,150 +2552,50 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskWrite
+            (TaskWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["action"] = action
         kwargs["id"] = id
         return self.partial_update_annotations_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_annotations_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as partial_update_annotations(), but returns the response unprocessed.
-        Equivalent to calling partial_update_annotations with
-        _parse_response = False and _check_status=False
-
-        Method performs a partial update of annotations in a specific task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.partial_update_annotations(action, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            action (str):
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.partial_update_annotations(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def partial_update_annotations_file(
         self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        file_id: str,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskWrite:
-        ...
-
-    @overload
-    def partial_update_annotations_file(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_annotations_file(
-        self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_annotations_file(
-        self, file_id, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_annotations_file(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_annotations_file(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def partial_update_annotations_file(
-        self, file_id, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
         """Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update_annotations_file(file_id, id, async_req=True)
+        >>> thread = api.partial_update_annotations_file(file_id, id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -3732,20 +2607,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -3765,146 +2637,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskWrite
+            (TaskWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["file_id"] = file_id
         kwargs["id"] = id
         return self.partial_update_annotations_file_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_annotations_file_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as partial_update_annotations_file(), but returns the response unprocessed.
-        Equivalent to calling partial_update_annotations_file with
-        _parse_response = False and _check_status=False
-
-        Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.partial_update_annotations_file(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.partial_update_annotations_file(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def partial_update_backup_file(
         self,
-        file_id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        file_id: str,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskWrite:
-        ...
-
-    @overload
-    def partial_update_backup_file(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_backup_file(
-        self, file_id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_backup_file(
-        self, file_id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_backup_file(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_backup_file(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def partial_update_backup_file(
-        self, file_id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
         """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update_backup_file(file_id, async_req=True)
+        >>> thread = api.partial_update_backup_file(file_id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -3915,20 +2690,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -3948,148 +2720,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskWrite
+            (TaskWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["file_id"] = file_id
         return self.partial_update_backup_file_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_backup_file_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as partial_update_backup_file(), but returns the response unprocessed.
-        Equivalent to calling partial_update_backup_file with
-        _parse_response = False and _check_status=False
-
-        Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.partial_update_backup_file(file_id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.partial_update_backup_file(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def partial_update_data_file(
         self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        file_id: str,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskWrite:
-        ...
-
-    @overload
-    def partial_update_data_file(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_data_file(
-        self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_data_file(
-        self, file_id, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_data_file(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_data_file(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def partial_update_data_file(
-        self, file_id, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
         """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update_data_file(file_id, id, async_req=True)
+        >>> thread = api.partial_update_data_file(file_id, id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -4101,20 +2774,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -4134,146 +2804,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskWrite
+            (TaskWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["file_id"] = file_id
         kwargs["id"] = id
         return self.partial_update_data_file_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_data_file_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as partial_update_data_file(), but returns the response unprocessed.
-        Equivalent to calling partial_update_data_file with
-        _parse_response = False and _check_status=False
-
-        Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.partial_update_data_file(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.partial_update_data_file(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def partial_update_data_meta(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> DataMetaRead:
-        ...
-
-    @overload
-    def partial_update_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_data_meta(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def partial_update_data_meta(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def partial_update_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def partial_update_data_meta(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[DataMetaRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, DataMetaRead
-    ]:
+    ) -> typing.Tuple[typing.Optional[DataMetaRead], urllib3.HTTPResponse]:
         """Method provides a meta information about media files which are related with the task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update_data_meta(id, async_req=True)
+        >>> thread = api.partial_update_data_meta(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -4284,20 +2857,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -4317,144 +2887,48 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            DataMetaRead
+            (DataMetaRead, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.partial_update_data_meta_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_data_meta_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as partial_update_data_meta(), but returns the response unprocessed.
-        Equivalent to calling partial_update_data_meta with
-        _parse_response = False and _check_status=False
-
-        Method provides a meta information about media files which are related with the task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.partial_update_data_meta(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            DataMetaRead
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.partial_update_data_meta(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def retrieve(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskRead:
-        ...
-
-    @overload
-    def retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskRead
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskRead], urllib3.HTTPResponse]:
         """Method returns details of a specific task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve(id, async_req=True)
+        >>> thread = api.retrieve(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -4464,20 +2938,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -4497,139 +2968,48 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskRead
+            (TaskRead, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve(), but returns the response unprocessed.
-        Equivalent to calling retrieve with
-        _parse_response = False and _check_status=False
-
-        Method returns details of a specific task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskRead
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def retrieve_annotations(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def retrieve_annotations(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_annotations(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_annotations(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_annotations(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_annotations(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_annotations(
-        self, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method allows to download task annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_annotations(id, async_req=True)
+        >>> thread = api.retrieve_annotations(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -4645,20 +3025,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -4678,147 +3055,48 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.retrieve_annotations_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_annotations_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_annotations(), but returns the response unprocessed.
-        Equivalent to calling retrieve_annotations with
-        _parse_response = False and _check_status=False
-
-        Method allows to download task annotations  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_annotations(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Desired output file name. [optional]
-            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
-            location (str): Where need to save downloaded dataset. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_annotations(
-            *args, **kwargs, _parse_response=False, _check_status=False
-        )
-
-    @overload
     def retrieve_backup(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def retrieve_backup(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_backup(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_backup(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_backup(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_backup(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_backup(
-        self, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method backup a specified task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_backup(id, async_req=True)
+        >>> thread = api.retrieve_backup(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -4833,20 +3111,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             use_default_location (bool): Use the location that was configured in the task to export backup. [optional] if omitted the server will use the default value of True
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -4866,156 +3141,51 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.retrieve_backup_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_backup_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_backup(), but returns the response unprocessed.
-        Equivalent to calling retrieve_backup with
-        _parse_response = False and _check_status=False
-
-        Method backup a specified task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_backup(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Backup file name. [optional]
-            location (str): Where need to save downloaded backup. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in the task to export backup. [optional] if omitted the server will use the default value of True
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_backup(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def retrieve_data(
         self,
-        id,
-        number,
-        quality,
-        type,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        number: int,
+        quality: str,
+        type: str,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def retrieve_data(
-        self,
-        id,
-        number,
-        quality,
-        type,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_data(
-        self, id, number, quality, type, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_data(
-        self, id, number, quality, type, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_data(
-        self,
-        id,
-        number,
-        quality,
-        type,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_data(
-        self,
-        id,
-        number,
-        quality,
-        type,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_data(
-        self, id, number, quality, type, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method returns data for a specific task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_data(id, number, quality, type, async_req=True)
+        >>> thread = api.retrieve_data(id, number, quality, type, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -5028,20 +3198,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -5061,147 +3228,51 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         kwargs["number"] = number
         kwargs["quality"] = quality
         kwargs["type"] = type
         return self.retrieve_data_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_data_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_data(), but returns the response unprocessed.
-        Equivalent to calling retrieve_data with
-        _parse_response = False and _check_status=False
-
-        Method returns data for a specific task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_data(id, number, quality, type, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-            number (int): A unique number value identifying chunk or frame, doesn't matter for 'preview' type
-            quality (str): Specifies the quality level of the requested data, doesn't matter for 'preview' type
-            type (str): Specifies the type of the requested data
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_data(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def retrieve_data_meta(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> DataMetaRead:
-        ...
-
-    @overload
-    def retrieve_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_data_meta(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_data_meta(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_data_meta(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_data_meta(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[DataMetaRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, DataMetaRead
-    ]:
+    ) -> typing.Tuple[typing.Optional[DataMetaRead], urllib3.HTTPResponse]:
         """Method provides a meta information about media files which are related with the task  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_data_meta(id, async_req=True)
+        >>> thread = api.retrieve_data_meta(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -5211,20 +3282,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -5244,143 +3312,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            DataMetaRead
+            (DataMetaRead, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.retrieve_data_meta_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_data_meta_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_data_meta(), but returns the response unprocessed.
-        Equivalent to calling retrieve_data_meta with
-        _parse_response = False and _check_status=False
-
-        Method provides a meta information about media files which are related with the task  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_data_meta(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            DataMetaRead
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_data_meta(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def retrieve_dataset(
         self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        format: str,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def retrieve_dataset(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_dataset(
-        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_dataset(
-        self, format, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_dataset(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_dataset(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_dataset(
-        self, format, id, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Export task as a dataset in a specific format  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_dataset(format, id, async_req=True)
+        >>> thread = api.retrieve_dataset(format, id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -5396,20 +3370,17 @@ class TasksApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             use_default_location (bool): Use the location that was configured in task to export annotations. [optional] if omitted the server will use the default value of True
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -5429,148 +3400,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["format"] = format
         kwargs["id"] = id
         return self.retrieve_dataset_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_dataset_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_dataset(), but returns the response unprocessed.
-        Equivalent to calling retrieve_dataset with
-        _parse_response = False and _check_status=False
-
-        Export task as a dataset in a specific format  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_dataset(format, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
-            cloud_storage_id (float): Storage id. [optional]
-            filename (str): Desired output file name. [optional]
-            location (str): Where need to save downloaded dataset. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            use_default_location (bool): Use the location that was configured in task to export annotations. [optional] if omitted the server will use the default value of True
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_dataset(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def retrieve_status(
         self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> RqStatus:
-        ...
-
-    @overload
-    def retrieve_status(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[RqStatus, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_status(
-        self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[RqStatus, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def retrieve_status(
-        self, id, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_status(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def retrieve_status(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def retrieve_status(
-        self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[RqStatus, int, typing.Dict[str, str]], urllib3.HTTPResponse, RqStatus
-    ]:
+    ) -> typing.Tuple[typing.Optional[RqStatus], urllib3.HTTPResponse]:
         """When task is being created the method returns information about a status of the creation process  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_status(id, async_req=True)
+        >>> thread = api.retrieve_status(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -5580,20 +3452,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -5613,145 +3482,49 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            RqStatus
+            (RqStatus, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         return self.retrieve_status_endpoint.call_with_http_info(**kwargs)
 
-    def retrieve_status_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as retrieve_status(), but returns the response unprocessed.
-        Equivalent to calling retrieve_status with
-        _parse_response = False and _check_status=False
-
-        When task is being created the method returns information about a status of the creation process  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.retrieve_status(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            RqStatus
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.retrieve_status(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def update(
         self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        task_write_request: TaskWriteRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> TaskWrite:
-        ...
-
-    @overload
-    def update(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def update(
-        self, id, task_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def update(
-        self, id, task_write_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def update(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def update(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def update(
-        self, id, task_write_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
-    ]:
+    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
         """Method updates a task by id  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.update(id, task_write_request, async_req=True)
+        >>> thread = api.update(id, task_write_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -5762,20 +3535,17 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -5795,145 +3565,50 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            TaskWrite
+            (TaskWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         kwargs["task_write_request"] = task_write_request
         return self.update_endpoint.call_with_http_info(**kwargs)
 
-    def update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as update(), but returns the response unprocessed.
-        Equivalent to calling update with
-        _parse_response = False and _check_status=False
-
-        Method updates a task by id  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.update(id, task_write_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-            task_write_request (TaskWriteRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            TaskWrite
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.update(*args, **kwargs, _parse_response=False, _check_status=False)
-
-    @overload
     def update_annotations(
         self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True] = True,
-        _parse_response: typing.Literal[True] = True,
+        id: int,
+        task_write_request: TaskWriteRequest,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
         **kwargs,
-    ) -> None:
-        ...
-
-    @overload
-    def update_annotations(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def update_annotations(
-        self, id, task_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def update_annotations(
-        self, id, task_write_request, _parse_response: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def update_annotations(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[True],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def update_annotations(
-        self,
-        id,
-        task_write_request,
-        _return_http_data_only: typing.Literal[False],
-        _parse_response: typing.Literal[False],
-        **kwargs,
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def update_annotations(
-        self, id, task_write_request, **kwargs
-    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Method allows to upload task annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
+        asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.update_annotations(id, task_write_request, async_req=True)
+        >>> thread = api.update_annotations(id, task_write_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -5945,20 +3620,17 @@ class TasksApi(object):
             format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _parse_response (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
-            _check_input_type (bool): specifies if type checking
+            _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
-            _check_return_type (bool): specifies if type checking
+            _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
             _check_status (bool): whether to check response status
@@ -5978,77 +3650,23 @@ class TasksApi(object):
                 request; this effectively ignores the authentication
                 in the spec for a single request.
                 Default is None
-            async_req (bool): execute request asynchronously
+            _async_call (bool): execute request asynchronously
 
         Returns:
-            None
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs["async_req"] = kwargs.get("async_req", False)
-        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
-        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
-        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
-        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
-        kwargs["_check_status"] = kwargs.get("_check_status", True)
-        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
-        kwargs["_content_type"] = kwargs.get("_content_type")
-        kwargs["_host_index"] = kwargs.get("_host_index")
-        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["_async_call"] = _async_call
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
         kwargs["task_write_request"] = task_write_request
         return self.update_annotations_endpoint.call_with_http_info(**kwargs)
-
-    def update_annotations_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
-        """
-        The same as update_annotations(), but returns the response unprocessed.
-        Equivalent to calling update_annotations with
-        _parse_response = False and _check_status=False
-
-        Method allows to upload task annotations  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.update_annotations(id, task_write_request, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this task.
-            task_write_request (TaskWriteRequest):
-
-        Keyword Args:
-            x_organization (str): [optional]
-            format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            None
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.update_annotations(*args, **kwargs, _parse_response=False, _check_status=False)

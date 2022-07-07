@@ -32,22 +32,6 @@ from cvat_api_client.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class RESTResponse(io.IOBase):
-    def __init__(self, resp):
-        self.urllib3_response = resp
-        self.status = resp.status
-        self.reason = resp.reason
-        self.data = resp.data
-
-    def getheaders(self):
-        """Returns a dictionary of the response headers."""
-        return self.urllib3_response.getheaders()
-
-    def getheader(self, name, default=None):
-        """Returns a given response header."""
-        return self.urllib3_response.getheader(name, default)
-
-
 class RESTClientObject(object):
     def __init__(self, configuration, pools_size=4, maxsize=None):
         # urllib3.PoolManager will pass all kw parameters to connectionpool
@@ -113,10 +97,11 @@ class RESTClientObject(object):
         files=None,
         body=None,
         post_params=None,
+        *,
         _parse_response=True,
         _request_timeout=None,
         _check_status=True,
-    ):
+    ) -> urllib3.HTTPResponse:
         """Perform requests.
 
         :param method: http request method
@@ -236,12 +221,6 @@ class RESTClientObject(object):
         except urllib3.exceptions.SSLError as e:
             msg = "{0}\n{1}".format(type(e).__name__, str(e))
             raise ApiException(status=0, reason=msg)
-
-        if _parse_response:
-            r = RESTResponse(r)
-
-            # log response body
-            logger.debug("response body: %s", r.data)
 
         if _check_status and not 200 <= r.status <= 299:
             if r.status == 401:
