@@ -96,6 +96,14 @@ def jobs_by_org(tasks, jobs):
     return data
 
 @pytest.fixture(scope='session')
+def projects_by_org(projects):
+    data = {}
+    for project in projects:
+        data.setdefault(project['organization'], []).append(project)
+    data[''] = data.pop(None, [])
+    return data
+
+@pytest.fixture(scope='session')
 def tasks_by_org(tasks):
     data = {}
     for task in tasks:
