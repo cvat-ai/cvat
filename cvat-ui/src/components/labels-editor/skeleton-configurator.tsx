@@ -144,12 +144,19 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         }
     };
 
-    private setupCircle = (svg: SVGSVGElement, circle: SVGCircleElement): boolean => {
+    private setupCircle = (
+        svg: SVGSVGElement,
+        circle: SVGCircleElement,
+        labels: Record<string, ParentLabel> = {},
+    ): boolean => {
         const elementIDAttr = circle.getAttribute('data-element-id');
         const nodeIDAttr = circle.getAttribute('data-element-id');
         if (!elementIDAttr || !nodeIDAttr) return false;
         const elementID = +elementIDAttr;
         const nodeID = +nodeIDAttr;
+
+        this.elementCounter = Math.max(this.elementCounter, elementID);
+        this.nodeCounter = Math.max(this.nodeCounter, nodeID);
 
         circle.addEventListener('mouseover', () => {
             circle.setAttribute('stroke-width', '0.3');
@@ -266,8 +273,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         });
 
         this.labels[elementID] = {
-            name: `${elementID}`,
-            attributes: [],
+            name: labels[elementID]?.name || `${elementID}`,
+            attributes: (labels[elementID]?.attributes || []).map((attr) => {
+                attr.id = idGenerator();
+                return attr;
+            }),
             id: idGenerator(),
         };
 
@@ -292,8 +302,8 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             }
 
             const circle = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            const elementID = ++this.elementCounter;
-            const nodeID = ++this.nodeCounter;
+            const elementID = this.elementCounter + 1;
+            const nodeID = this.nodeCounter + 1;
             setAttributes(circle, {
                 r: 1.5,
                 stroke: 'black',
@@ -308,11 +318,6 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             svg.appendChild(circle);
 
             if (this.setupCircle(svg, circle)) {
-                this.labels[elementID] = {
-                    name: `${elementID}`,
-                    attributes: [],
-                    id: idGenerator(),
-                };
                 this.setupTextLabels();
             } else {
                 circle.remove();
@@ -590,7 +595,15 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             onClick={() => {
                                 if (svgRef.current) {
                                     this.setupTextLabels(false);
+
+                                    const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+                                    desc.setAttribute('data-description-type', 'labels-specification');
+                                    (desc as SVGDescElement).textContent = JSON.stringify(this.labels);
+                                    svgRef.current.appendChild(desc);
+
                                     const text = svgRef.current.innerHTML;
+                                    desc.remove();
+
                                     this.setupTextLabels();
                                     const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
                                     const url = URL.createObjectURL(blob);
@@ -622,9 +635,28 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                     if (isSVG && svgRef.current) {
                                         // eslint-disable-next-line
                                         svgRef.current.innerHTML = tmpSvg.innerHTML;
+                                        let labels = {};
+                                        const desc = Array.from(svgRef.current.children)
+                                            .find((child: Element): boolean => (
+                                                child.tagName === 'desc' &&
+                                                child.getAttribute('data-description-type') === 'labels-specification'
+                                            ));
+                                        if (desc) {
+                                            try {
+                                                labels = JSON.parse(desc.textContent || '{}');
+                                                desc.remove();
+                                            } catch (_) {
+                                                // ignore
+                                            }
+                                        }
+
+                                        this.nodeCounter = 0;
+                                        this.elementCounter = 0;
                                         for (const element of svgRef.current.children) {
                                             if (element.tagName === 'circle') {
-                                                if (!this.setupCircle(svgRef.current, element as SVGCircleElement)) {
+                                                if (!this.setupCircle(
+                                                    svgRef.current, (element as SVGCircleElement), labels,
+                                                )) {
                                                     element.remove();
                                                 }
                                             }
