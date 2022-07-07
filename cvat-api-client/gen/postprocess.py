@@ -50,12 +50,15 @@ class Processor:
 
     def make_type_annotation(self, type_repr: str) -> str:
         type_repr = type_repr.replace('[', 'typing.List[')
+        type_repr = type_repr.replace('(', 'typing.Union[').replace(')', ']')
         type_repr = type_repr.replace('{', 'typing.Dict[').replace(':', ',').replace('}', ']')
 
         ANY_pattern = "bool, date, datetime, dict, float, int, list, str"
         type_repr = type_repr.replace(ANY_pattern, 'typing.Any')
 
-        type_repr = re.sub(r'\(?((\S+,\s?){1,}\S+,?)\)?', r'typing.Union[\1]', type_repr)
+        # single optional arg pattern
+        type_repr = re.sub(r'^(.+, none_type)$', r'typing.Union[\1]', type_repr)
+
         return type_repr
 
 

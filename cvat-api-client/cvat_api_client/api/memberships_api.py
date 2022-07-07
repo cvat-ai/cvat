@@ -12,9 +12,8 @@
 from __future__ import annotations
 
 import re  # noqa: F401
-import sys  # noqa: F401
 import typing
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING
 
 import urllib3
 
@@ -24,15 +23,7 @@ from cvat_api_client.model.membership_read import MembershipRead
 from cvat_api_client.model.membership_write import MembershipWrite
 from cvat_api_client.model.paginated_membership_read_list import PaginatedMembershipReadList
 from cvat_api_client.model.patched_membership_write_request import PatchedMembershipWriteRequest
-from cvat_api_client.model_utils import (  # noqa: F401
-    check_allowed_values,
-    check_validations,
-    date,
-    datetime,
-    file_type,
-    none_type,
-    validate_and_convert_types,
-)
+from cvat_api_client.model_utils import date, datetime, file_type, none_type  # noqa: F401
 
 if TYPE_CHECKING:
     # Enable introspection. Can't work normally due to cyclic imports

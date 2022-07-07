@@ -172,7 +172,7 @@ class OrganizationWrite(ModelNormal):
     [optional]
     """
 
-    contact: typing.Union[typing.Dict[str, (typing.Any, none_type)]]  # noqa: E501
+    contact: typing.Dict[str, typing.Union[typing.Any, none_type]]  # noqa: E501
     """
     [optional]
     {str: (bool, date, datetime, dict, float, int, list, str, none_type)}
@@ -250,11 +250,12 @@ class OrganizationWrite(ModelNormal):
             contact ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): [optional]  # noqa: E501
             owner (int): [optional]  # noqa: E501
         """
+        from cvat_api_client.configuration import Configuration
 
         _check_type = kwargs.pop("_check_type", True)
         _spec_property_naming = kwargs.pop("_spec_property_naming", True)
         _path_to_item = kwargs.pop("_path_to_item", ())
-        _configuration = kwargs.pop("_configuration", None)
+        _configuration = kwargs.pop("_configuration", Configuration())
         _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
@@ -351,11 +352,12 @@ class OrganizationWrite(ModelNormal):
             contact ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): [optional]  # noqa: E501
             owner (int): [optional]  # noqa: E501
         """
+        from cvat_api_client.configuration import Configuration
 
         _check_type = kwargs.pop("_check_type", True)
         _spec_property_naming = kwargs.pop("_spec_property_naming", False)
         _path_to_item = kwargs.pop("_path_to_item", ())
-        _configuration = kwargs.pop("_configuration", None)
+        _configuration = kwargs.pop("_configuration", Configuration())
         _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:

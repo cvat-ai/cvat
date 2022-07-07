@@ -285,11 +285,12 @@ class MetaUser(ModelComposed):
             date_joined (datetime): [optional]  # noqa: E501
             groups ([str]): [optional]  # noqa: E501
         """
+        from cvat_api_client.configuration import Configuration
 
         _check_type = kwargs.pop("_check_type", True)
         _spec_property_naming = kwargs.pop("_spec_property_naming", False)
         _path_to_item = kwargs.pop("_path_to_item", ())
-        _configuration = kwargs.pop("_configuration", None)
+        _configuration = kwargs.pop("_configuration", Configuration())
         _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)

@@ -152,6 +152,8 @@ class InputTypeEnum(ModelSimple):
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
         """
+        from cvat_api_client.configuration import Configuration
+
         # required up here when default value is not given
         _path_to_item = kwargs.pop("_path_to_item", ())
 
@@ -169,7 +171,7 @@ class InputTypeEnum(ModelSimple):
 
         _check_type = kwargs.pop("_check_type", True)
         _spec_property_naming = kwargs.pop("_spec_property_naming", False)
-        _configuration = kwargs.pop("_configuration", None)
+        _configuration = kwargs.pop("_configuration", Configuration())
         _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
@@ -248,6 +250,8 @@ class InputTypeEnum(ModelSimple):
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
         """
+        from cvat_api_client.configuration import Configuration
+
         # required up here when default value is not given
         _path_to_item = kwargs.pop("_path_to_item", ())
 
@@ -267,7 +271,7 @@ class InputTypeEnum(ModelSimple):
 
         _check_type = kwargs.pop("_check_type", True)
         _spec_property_naming = kwargs.pop("_spec_property_naming", False)
-        _configuration = kwargs.pop("_configuration", None)
+        _configuration = kwargs.pop("_configuration", Configuration())
         _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:

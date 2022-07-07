@@ -12,9 +12,8 @@
 from __future__ import annotations
 
 import re  # noqa: F401
-import sys  # noqa: F401
 import typing
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING
 
 import urllib3
 
@@ -27,15 +26,7 @@ from cvat_api_client.model.paginated_cloud_storage_read_list import PaginatedClo
 from cvat_api_client.model.patched_cloud_storage_write_request import (
     PatchedCloudStorageWriteRequest,
 )
-from cvat_api_client.model_utils import (  # noqa: F401
-    check_allowed_values,
-    check_validations,
-    date,
-    datetime,
-    file_type,
-    none_type,
-    validate_and_convert_types,
-)
+from cvat_api_client.model_utils import date, datetime, file_type, none_type  # noqa: F401
 
 if TYPE_CHECKING:
     # Enable introspection. Can't work normally due to cyclic imports
@@ -1060,8 +1051,7 @@ class CloudStoragesApi(object):
         _async_call: bool = False,
         **kwargs,
     ) -> typing.Tuple[
-        typing.Optional[typing.Union[typing.Dict[str, (typing.Any, none_type)]]],
-        urllib3.HTTPResponse,
+        typing.Optional[typing.Dict[str, typing.Union[typing.Any, none_type]]], urllib3.HTTPResponse
     ]:
         """Method returns a manifest content  # noqa: E501
 

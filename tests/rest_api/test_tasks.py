@@ -222,8 +222,7 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as client:
-            patched_data = PatchedTaskWriteRequest(**deepcopy(data),
-                _configuration=client.configuration)
+            patched_data = PatchedTaskWriteRequest(**deepcopy(data))
             (_, response) = client.tasks_api.partial_update_annotations(
                 id=tid, action='update', org=org,
                 patched_task_write_request=patched_data,
@@ -246,8 +245,7 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as client:
-            patched_data = PatchedTaskWriteRequest(**deepcopy(data),
-                _configuration=client.configuration)
+            patched_data = PatchedTaskWriteRequest(**deepcopy(data))
             (_, response) = client.tasks_api.partial_update_annotations(
                 id=tid, org_id=org, action='update',
                 patched_task_write_request=patched_data,
@@ -284,8 +282,7 @@ class TestPostTaskData:
 
     def _test_create_task(self, username, spec, data, files):
         with make_api_client(username) as client:
-            (task, response) = client.tasks_api.create(TaskWriteRequest(**spec,
-                    _configuration=client.configuration))
+            (task, response) = client.tasks_api.create(TaskWriteRequest(**spec))
             assert response.status == HTTPStatus.CREATED
 
             task_data = DataRequest(**data, client_files=list(files.values()))
