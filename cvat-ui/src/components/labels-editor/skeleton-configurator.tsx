@@ -144,6 +144,136 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         }
     };
 
+    private setupCircle = (svg: SVGSVGElement, circle: SVGCircleElement): boolean => {
+        const elementIDAttr = circle.getAttribute('data-element-id');
+        const nodeIDAttr = circle.getAttribute('data-element-id');
+        if (!elementIDAttr || !nodeIDAttr) return false;
+        const elementID = +elementIDAttr;
+        const nodeID = +nodeIDAttr;
+
+        circle.addEventListener('mouseover', () => {
+            circle.setAttribute('stroke-width', '0.3');
+            const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
+            if (text) {
+                text.setAttribute('fill', 'red');
+            }
+
+            this.setState({
+                contextMenuElement: elementID,
+            });
+        });
+
+        circle.addEventListener('mouseout', () => {
+            circle.setAttribute('stroke-width', '0.1');
+            const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
+            if (text) {
+                text.setAttribute('fill', 'white');
+            }
+        });
+
+        circle.addEventListener('mousedown', (e: MouseEvent) => {
+            const { activeTool: currentActiveTool } = this.state;
+            if (e.button === 0 && currentActiveTool === 'point') {
+                this.draggableElement = circle;
+            }
+        });
+
+        circle.addEventListener('contextmenu', (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.setState({
+                contextMenuVisible: true,
+            });
+        });
+
+        (circle as any).cvat = {
+            deleteElement: () => {
+                // first remove all related edges
+                for (const element of svg.children) {
+                    const dataType = element.getAttribute('data-type');
+                    const dataNodeFrom = element.getAttribute('data-node-from');
+                    const dataNodeTo = element.getAttribute('data-node-to');
+                    if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
+                        setTimeout(() => {
+                            // use setTimeout to not change the array during iteration it
+                            element.remove();
+                        });
+                    }
+                }
+
+                // then close context menu if opened for the node
+                const { contextMenuElement: currentContextMenuElement } = this.state;
+                if (currentContextMenuElement === elementID) {
+                    this.setState({
+                        contextMenuElement: null,
+                        contextMenuVisible: false,
+                    });
+                }
+
+                // remove label instance for the element
+                delete this.labels[elementID];
+
+                // finally remove the element itself and its labels
+                circle.remove();
+                this.setupTextLabels();
+            },
+        };
+
+        circle.addEventListener('click', (evt: Event) => {
+            evt.stopPropagation();
+            const { activeTool: currentActiveTool } = this.state;
+            if (currentActiveTool === 'delete') {
+                (circle as any).cvat.deleteElement();
+            } else if (currentActiveTool === 'join') {
+                let line = this.findNotFinishedEdge();
+                if (!line) {
+                    line = window.document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    setAttributes(line, {
+                        x1: circle.getAttribute('cx'),
+                        y1: circle.getAttribute('cy'),
+                        x2: circle.getAttribute('cx'),
+                        y2: circle.getAttribute('cy'),
+                        stroke: 'black',
+                        'data-type': 'edge',
+                        'data-node-from': nodeID,
+                        'stroke-width': '0.1',
+                    });
+
+                    svg.prepend(line);
+                    return;
+                }
+
+                const dataNodeFrom = line.getAttribute('data-node-from');
+                const dataNodeTo = nodeID;
+
+                // if such edge already exists, remove the current one
+                const edge1 = svg
+                    .querySelector(`[data-node-from="${dataNodeFrom}"][data-node-to="${dataNodeTo}"]`);
+                const edge2 = svg
+                    .querySelector(`[data-node-from="${dataNodeTo}"][data-node-to="${dataNodeFrom}"]`);
+                if (edge1 || edge2) {
+                    line.remove();
+                }
+
+                if (dataNodeFrom !== `${dataNodeTo}`) {
+                    setAttributes(line, {
+                        x2: circle.getAttribute('cx'),
+                        y2: circle.getAttribute('cy'),
+                        'data-node-to': nodeID,
+                    });
+                }
+            }
+        });
+
+        this.labels[elementID] = {
+            name: `${elementID}`,
+            attributes: [],
+            id: idGenerator(),
+        };
+
+        return true;
+    };
+
     private onSVGClick = (event: MouseEvent): void => {
         const { activeTool, contextMenuVisible } = this.state;
         const svg = this.svgRef.current;
@@ -164,12 +294,6 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             const circle = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             const elementID = ++this.elementCounter;
             const nodeID = ++this.nodeCounter;
-            this.labels[elementID] = {
-                name: `${elementID}`,
-                attributes: [],
-                id: idGenerator(),
-            };
-
             setAttributes(circle, {
                 r: 1.5,
                 stroke: 'black',
@@ -183,121 +307,16 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             });
             svg.appendChild(circle);
 
-            circle.addEventListener('mouseover', () => {
-                circle.setAttribute('stroke-width', '0.3');
-                const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
-                if (text) {
-                    text.setAttribute('fill', 'red');
-                }
-
-                this.setState({
-                    contextMenuElement: elementID,
-                });
-            });
-
-            circle.addEventListener('mouseout', () => {
-                circle.setAttribute('stroke-width', '0.1');
-                const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
-                if (text) {
-                    text.setAttribute('fill', 'white');
-                }
-            });
-
-            circle.addEventListener('mousedown', (e: MouseEvent) => {
-                const { activeTool: currentActiveTool } = this.state;
-                if (e.button === 0 && currentActiveTool === 'point') {
-                    this.draggableElement = circle;
-                }
-            });
-
-            circle.addEventListener('contextmenu', (e: MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.setState({
-                    contextMenuVisible: true,
-                });
-            });
-
-            (circle as any).cvat = {
-                deleteElement: () => {
-                    // first remove all related edges
-                    for (const element of svg.children) {
-                        const dataType = element.getAttribute('data-type');
-                        const dataNodeFrom = element.getAttribute('data-node-from');
-                        const dataNodeTo = element.getAttribute('data-node-to');
-                        if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
-                            setTimeout(() => {
-                                // use setTimeout to not change the array during iteration it
-                                element.remove();
-                            });
-                        }
-                    }
-
-                    // then close context menu if opened for the node
-                    const { contextMenuElement: currentContextMenuElement } = this.state;
-                    if (currentContextMenuElement === elementID) {
-                        this.setState({
-                            contextMenuElement: null,
-                            contextMenuVisible: false,
-                        });
-                    }
-
-                    // remove label instance for the element
-                    delete this.labels[elementID];
-
-                    // finally remove the element itself and its labels
-                    circle.remove();
-                    this.setupTextLabels();
-                },
-            };
-
-            circle.addEventListener('click', (evt: Event) => {
-                evt.stopPropagation();
-                const { activeTool: currentActiveTool } = this.state;
-                if (currentActiveTool === 'delete') {
-                    (circle as any).cvat.deleteElement();
-                } else if (currentActiveTool === 'join') {
-                    let line = this.findNotFinishedEdge();
-                    if (!line) {
-                        line = window.document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        setAttributes(line, {
-                            x1: circle.getAttribute('cx'),
-                            y1: circle.getAttribute('cy'),
-                            x2: circle.getAttribute('cx'),
-                            y2: circle.getAttribute('cy'),
-                            stroke: 'black',
-                            'data-type': 'edge',
-                            'data-node-from': nodeID,
-                            'stroke-width': '0.1',
-                        });
-
-                        svg.prepend(line);
-                        return;
-                    }
-
-                    const dataNodeFrom = line.getAttribute('data-node-from');
-                    const dataNodeTo = nodeID;
-
-                    // if such edge already exists, remove the current one
-                    const edge1 = svg
-                        .querySelector(`[data-node-from="${dataNodeFrom}"][data-node-to="${dataNodeTo}"]`);
-                    const edge2 = svg
-                        .querySelector(`[data-node-from="${dataNodeTo}"][data-node-to="${dataNodeFrom}"]`);
-                    if (edge1 || edge2) {
-                        line.remove();
-                    }
-
-                    if (dataNodeFrom !== `${dataNodeTo}`) {
-                        setAttributes(line, {
-                            x2: circle.getAttribute('cx'),
-                            y2: circle.getAttribute('cy'),
-                            'data-node-to': nodeID,
-                        });
-                    }
-                }
-            });
-
-            this.setupTextLabels();
+            if (this.setupCircle(svg, circle)) {
+                this.labels[elementID] = {
+                    name: `${elementID}`,
+                    attributes: [],
+                    id: idGenerator(),
+                };
+                this.setupTextLabels();
+            } else {
+                circle.remove();
+            }
         }
     };
 
@@ -603,6 +622,13 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                     if (isSVG && svgRef.current) {
                                         // eslint-disable-next-line
                                         svgRef.current.innerHTML = tmpSvg.innerHTML;
+                                        for (const element of svgRef.current.children) {
+                                            if (element.tagName === 'circle') {
+                                                if (!this.setupCircle(svgRef.current, element as SVGCircleElement)) {
+                                                    element.remove();
+                                                }
+                                            }
+                                        }
                                         this.setupTextLabels();
                                     } else {
                                         notification.error({
