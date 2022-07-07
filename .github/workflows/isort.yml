@@ -1,7 +1,7 @@
-name: Linter
+name: isort
 on: pull_request
 jobs:
-  isort:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

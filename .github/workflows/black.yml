@@ -1,7 +1,7 @@
-name: Linter
+name: Black
 on: pull_request
 jobs:
-  Black:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
