@@ -680,12 +680,23 @@ class ProjectData(InstanceLabelData):
         outside: bool = attrib()
         keyframe: bool = attrib()
         attributes: List[InstanceLabelData.Attribute] = attrib()
+        elements: List['ProjectData.TrackedSkeleton'] = attrib()
         rotation: int = attrib(default=0)
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         z_order: int = attrib(default=0)
         label: str = attrib(default=None)
         track_id: int = attrib(default=0)
+
+    @attrs
+    class TrackedSkeleton:
+        label: str = attrib()
+        type: str = attrib()
+        points: List[float] = attrib()
+        occluded: bool = attrib()
+        outside: bool = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
+        shape_id: int = attrib(default=0)
 
     @attrs
     class Track:
@@ -854,6 +865,20 @@ class ProjectData(InstanceLabelData):
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
 
+    def _export_tracked_skeleton(self, shapes: dict, shape_id: int):
+        skeletons = []
+        for shape in shapes:
+            skeletons.append(ProjectData.TrackedSkeleton(
+                type=shape["type"],
+                label=self._get_label_name(shape["label_id"]),
+                points=shape["points"],
+                occluded=shape["occluded"],
+                outside=shape.get("outside", False),
+                shape_id=shape_id,
+                attributes=self._export_attributes(shape["attributes"]),
+            ))
+        return skeletons
+
     def _export_tracked_shape(self, shape: dict, task_id: int):
         return ProjectData.TrackedShape(
             type=shape["type"],
@@ -869,6 +894,7 @@ class ProjectData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
+            elements=self._export_tracked_skeleton(shape["elements"], shape["id"]),
         )
 
     def _export_labeled_skeleton(self, shapes: dict, task_id: int, shape_id: int):
