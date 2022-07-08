@@ -295,6 +295,8 @@ Class | Method | HTTP request | Description
  - [OrganizationRead](docs/OrganizationRead.md)
  - [OrganizationWrite](docs/OrganizationWrite.md)
  - [OrganizationWriteRequest](docs/OrganizationWriteRequest.md)
+ - [PageSize](docs/PageSize.md)
+ - [PageSizeAll](docs/PageSizeAll.md)
  - [PaginatedCloudStorageReadList](docs/PaginatedCloudStorageReadList.md)
  - [PaginatedCommentReadList](docs/PaginatedCommentReadList.md)
  - [PaginatedInvitationReadList](docs/PaginatedInvitationReadList.md)

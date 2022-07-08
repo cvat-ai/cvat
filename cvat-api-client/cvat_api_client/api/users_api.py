@@ -127,7 +127,7 @@ class UsersApi(object):
                     "org": (str,),
                     "org_id": (int,),
                     "page": (int,),
-                    "page_size": (int,),
+                    "page_size": (PageSize,),
                     "search": (str,),
                     "sort": (str,),
                 },
@@ -429,7 +429,7 @@ class UsersApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
-            page_size (int): Number of results to return per page.. [optional]
+            page_size (PageSize): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('username', 'first_name', 'last_name'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ('id', 'is_active', 'username'). [optional]
             _parse_response (bool): if False, the response data will not be parsed,

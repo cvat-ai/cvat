@@ -321,7 +321,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
-    page_size = 1 # int | Number of results to return per page. (optional)
+    page_size = PageSize(None) # PageSize | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description') (optional)
     sort = "sort_example" # str | Which field to use when ordering the results. Avaliable ordering_fields: ['provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description', 'id'] (optional)
 
@@ -345,7 +345,7 @@ Name | Type | Description  | Notes
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
- **page_size** | **int**| Number of results to return per page. | [optional]
+ **page_size** | **PageSize**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;provider_type&#39;, &#39;display_name&#39;, &#39;resource&#39;, &#39;credentials_type&#39;, &#39;owner&#39;, &#39;description&#39;) | [optional]
  **sort** | **str**| Which field to use when ordering the results. Avaliable ordering_fields: [&#39;provider_type&#39;, &#39;display_name&#39;, &#39;resource&#39;, &#39;credentials_type&#39;, &#39;owner&#39;, &#39;description&#39;, &#39;id&#39;] | [optional]
 

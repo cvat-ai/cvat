@@ -65,6 +65,8 @@ from cvat_api_client.model.operation_status import OperationStatus
 from cvat_api_client.model.organization_read import OrganizationRead
 from cvat_api_client.model.organization_write import OrganizationWrite
 from cvat_api_client.model.organization_write_request import OrganizationWriteRequest
+from cvat_api_client.model.page_size import PageSize
+from cvat_api_client.model.page_size_all import PageSizeAll
 from cvat_api_client.model.paginated_cloud_storage_read_list import PaginatedCloudStorageReadList
 from cvat_api_client.model.paginated_comment_read_list import PaginatedCommentReadList
 from cvat_api_client.model.paginated_invitation_read_list import PaginatedInvitationReadList
