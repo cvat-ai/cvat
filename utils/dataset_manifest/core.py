@@ -1,6 +1,7 @@
 # Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+import io
 
 import av
 import json
@@ -8,7 +9,7 @@ import os
 
 from abc import ABC, abstractmethod
 from contextlib import closing
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryFile, NamedTemporaryFile
 from PIL import Image
 from json.decoder import JSONDecodeError
 
@@ -285,10 +286,27 @@ class _Manifest:
         return os.path.basename(self._path) if not self._upload_dir \
             else os.path.relpath(self._path, self._upload_dir)
 
+    def open_file(self, mode: str = 'r+'):
+        """Warning: you should close the file!"""
+        return open(self._path, mode=mode)
+
 
 class _S3Manifest(_Manifest):
     def _init_path(self, path):
         return path if path.endswith(self.VALID_EXTENSION) else os.path.join(path, self.FILE_NAME)
+
+    def open_file(self, mode: str = 'r+'):
+        """Warning: you should close the file!"""
+        content = default_cache.get(self._path)
+        if content is None:
+            with NamedTemporaryFile(delete=False) as f:
+                s3_client.download_to_io(f)
+                path = f.name
+            with open(path, 'r+') as f:
+                content = f.read()
+            default_cache.set(self._path, content)
+            os.remove(path)
+        return io.StringIO(content)
 
 
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
@@ -356,17 +374,12 @@ class _Index:
     def _get_file(self, manifest):
         t = type(manifest)
         if t == str:
-            path = manifest
-        elif t == _Manifest:
-            path = manifest.path
-        elif t == _S3Manifest:
-            with NamedTemporaryFile(delete=False) as f:
-                s3_client.download_to_io(f)
-                path = f.name
+            assert os.path.exists(manifest), 'A manifest file not exists, index cannot be created'
+            return open(manifest, 'r+')
+        elif issubclass(t, _Manifest):
+            return manifest.open_file()
         else:
             raise ValueError(f'Unsupported manifest type: {t.__name__}')
-        assert os.path.exists(path), 'A manifest file not exists, index cannot be created'
-        return open(path, 'r+')
 
 
 class _CachedIndex(_Index):
@@ -426,7 +439,7 @@ class _ManifestManager(ABC):
 
     def _parse_line(self, line):
         """ Getting a random line from the manifest file """
-        with open(self._manifest.path, 'r') as manifest_file:
+        with self._manifest.open_file('r') as manifest_file:
             if isinstance(line, str):
                 assert line in self.BASE_INFORMATION.keys(), \
                     'An attempt to get non-existent information from the manifest'
@@ -471,7 +484,7 @@ class _ManifestManager(ABC):
         pass
 
     def __iter__(self):
-        with open(self._manifest.path, 'r') as manifest_file:
+        with self._manifest.open_file('r') as manifest_file:
             manifest_file.seek(self._index[0])
             image_number = 0
             line = manifest_file.readline()
@@ -698,8 +711,33 @@ class ImageManifestManager(_ManifestManager):
         return index_list, subset
 
 
-# class S3ManifestManager()
+class S3ManifestManager(ImageManifestManager):
+    manifest_class = _S3Manifest
+    index_class = _CachedIndex
 
+    @_set_index
+    def create(self, content=None, _tqdm=None):
+        """ Creating and saving a manifest file for the specialized dataset"""
+        with TemporaryFile('w+t') as manifest_file:
+            self._write_base_information(manifest_file)
+            obj = content if content else self._reader
+            self._write_core_part(manifest_file, obj, _tqdm)
+            manifest_file.seek(0)
+            s3_client.upload_from_io(manifest_file, self._manifest.path)
+
+    def init_index(self):
+        if self._index.path in default_cache:
+            self._index.load()
+        else:
+            self._index.create(self._manifest, 2)
+            self._index.dump()
+
+    def reset_index(self):
+        default_cache.delete(self._index.path)
+
+    def remove(self):
+        self.reset_index()
+        s3_client.delete_object(self.manifest.path)
 
 
 @injected_property('TYPE', error_message='Manifest Validator TYPE is not set. Please, use concrete classes.')

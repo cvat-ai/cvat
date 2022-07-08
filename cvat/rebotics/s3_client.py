@@ -45,5 +45,8 @@ class S3Client:
             ExpiresIn=expires,
         )
 
+    def delete_object(self, key: str) -> bool:
+        return self.client.delete_object(self.bucket, key)
+
 
 s3_client = S3Client()

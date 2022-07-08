@@ -37,6 +37,9 @@ class CacheClient:
     def delete(self, key, **kwargs):
         return self._cache.delete(key, **kwargs)
 
+    def __contains__(self, key):
+        return key in self._cache
+
 
 default_cache = CacheClient()
 
