@@ -5,7 +5,6 @@
 import os
 from io import BytesIO
 
-from diskcache import Cache
 from django.conf import settings
 from tempfile import NamedTemporaryFile
 
@@ -19,29 +18,7 @@ from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.utils import md5_hash
-
-
-class CacheClient:
-    def __init__(self, root=settings.CACHE_ROOT):
-        self._cache = Cache(root)
-
-    def __del__(self):
-        self._cache.close()
-
-    def get(self, key, default=None, **kwargs):
-        return self._cache.get(key, default=default, **kwargs)
-
-    def set(self, key, value, expire=settings.CACHE_EXPIRE, **kwargs):
-        return self._cache.set(key, value, expire=expire, **kwargs)
-
-    def delete(self, key, **kwargs):
-        return self._cache.delete(key, **kwargs)
-
-    def __contains__(self, key):
-        return key in self._cache
-
-
-default_cache = CacheClient()
+from cvat.rebotics.cache import default_cache
 
 
 class CacheInteraction:

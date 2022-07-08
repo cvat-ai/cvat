@@ -15,9 +15,9 @@ from json.decoder import JSONDecodeError
 
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
-from cvat.apps.engine.cache import default_cache
 from cvat.rebotics.s3_client import s3_client
 from cvat.rebotics.utils import injected_property, StrEnum, ChoicesEnum
+from cvat.rebotics.cache import default_cache
 
 
 class ManifestType(StrEnum, ChoicesEnum):
