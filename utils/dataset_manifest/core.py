@@ -748,7 +748,7 @@ class _BaseManifestValidator(ABC):
     def validate(self):
         try:
             # we cannot use index in general because manifest may be e.g. in share point with ro mode
-            with open(self._manifest.path, 'r') as manifest:
+            with self._manifest.open_file('r') as manifest:
                 for validator in self.validators:
                     line = json.loads(manifest.readline().strip())
                     validator(line)
