@@ -137,7 +137,8 @@ class LabelSerializer(SublabelSerializer):
             db_label.name = validated_data.get('name', db_label.name)
             logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
         else:
-            db_label = models.Label.objects.create(name=validated_data.get('name'), parent=parent_label, **instance)
+            db_label = models.Label.objects.create(name=validated_data.get('name'), type=validated_data.get('type'),
+                parent=parent_label, **instance)
             logger.info("New {} label was created".format(db_label.name))
         if validated_data.get('deleted') == True:
             db_label.delete()
