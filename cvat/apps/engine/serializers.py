@@ -501,7 +501,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 sublabels = label.pop('sublabels', [])
                 elements = label.pop('elements', [])
                 edges = label.pop('edges', [])
-                svg = label.pop('svg', [])
+                svg = label.pop('svg', '')
                 db_label = models.Label.objects.create(task=db_task, parent=parent_label, **label)
                 create_labels(sublabels, parent_label=db_label)
                 if db_label.type == str(models.LabelType.SKELETON):
@@ -544,8 +544,15 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         def update_labels(labels, parent_label=None):
             for label in labels:
                 sublabels = label.pop('sublabels', [])
+                elements = label.pop('elements', [])
+                edges = label.pop('edges', [])
+                svg = label.pop('svg', '')
                 db_label = LabelSerializer.update_instance(label, instance, parent_label)
                 update_labels(sublabels, parent_label=db_label)
+                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
 
         if instance.project_id is None:
             update_labels(labels)
