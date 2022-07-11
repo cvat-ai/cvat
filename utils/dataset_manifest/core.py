@@ -300,7 +300,7 @@ class _S3Manifest(_Manifest):
         content = default_cache.get(self._path)
         if content is None:
             with NamedTemporaryFile(delete=False) as f:
-                s3_client.download_to_io(f)
+                s3_client.download_to_io(self._path, f)
                 path = f.name
             with open(path, 'r+') as f:
                 content = f.read()
@@ -711,19 +711,8 @@ class ImageManifestManager(_ManifestManager):
         return index_list, subset
 
 
-class S3ManifestManager(ImageManifestManager):
-    manifest_class = _S3Manifest
+class CachedIndexManifestManager(ImageManifestManager):
     index_class = _CachedIndex
-
-    @_set_index
-    def create(self, content=None, _tqdm=None):
-        """ Creating and saving a manifest file for the specialized dataset"""
-        with TemporaryFile('w+t') as manifest_file:
-            self._write_base_information(manifest_file)
-            obj = content if content else self._reader
-            self._write_core_part(manifest_file, obj, _tqdm)
-            manifest_file.seek(0)
-            s3_client.upload_from_io(manifest_file, self._manifest.path)
 
     def init_index(self):
         if self._index.path in default_cache:
@@ -738,6 +727,20 @@ class S3ManifestManager(ImageManifestManager):
     def remove(self):
         self.reset_index()
         s3_client.delete_object(self.manifest.path)
+
+
+class S3ManifestManager(CachedIndexManifestManager):
+    manifest_class = _S3Manifest
+
+    @_set_index
+    def create(self, content=None, _tqdm=None):
+        """ Creating and saving a manifest file for the specialized dataset"""
+        with TemporaryFile('w+t') as manifest_file:
+            self._write_base_information(manifest_file)
+            obj = content if content else self._reader
+            self._write_core_part(manifest_file, obj, _tqdm)
+            manifest_file.seek(0)
+            s3_client.upload_from_io(manifest_file, self._manifest.path)
 
 
 @injected_property('TYPE', error_message='Manifest Validator TYPE is not set. Please, use concrete classes.')

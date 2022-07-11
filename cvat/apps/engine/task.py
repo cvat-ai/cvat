@@ -30,7 +30,7 @@ from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mp
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
-from utils.dataset_manifest.core import VideoManifestValidator
+from utils.dataset_manifest.core import VideoManifestValidator, CachedIndexManifestManager
 from utils.dataset_manifest.utils import detect_related_images
 from .cloud_provider import get_cloud_storage_instance, Credentials
 
@@ -311,7 +311,7 @@ def _move_data_to_s3(db_task: models.Task, data, upload_dir):
 def _move_preview_to_s3(db_task: models.Task, path):
     # TODO: add some try-catch
     db_data = db_task.data
-    key = os.path.join(settings.AWS_LOCATION, settings.S3_UPLOAD_ROOT, str(db_data.pk), 'preview.jpeg')
+    key = db_data.get_s3_preview_path()
     s3_client.upload_from_path(path, key)
     os.remove(path)
 
@@ -613,7 +613,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                     _update_status("{} The task will be created using the old method".format(base_msg))
             else: # images, archive, pdf
                 db_data.size = len(extractor)
-                manifest = ImageManifestManager(db_data.get_manifest_path())
+                manifest = CachedIndexManifestManager(db_data.get_manifest_path())
                 if not manifest_file:
                     manifest.link(
                         sources=extractor.absolute_source_paths,

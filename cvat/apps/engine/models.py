@@ -180,11 +180,11 @@ class Data(models.Model):
 
     def get_original_chunk_path(self, chunk_number):
         return os.path.join(self.get_original_cache_dirname(),
-            self._get_original_chunk_name(chunk_number))
+                            self._get_original_chunk_name(chunk_number))
 
     def get_compressed_chunk_path(self, chunk_number):
         return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_compressed_chunk_name(chunk_number))
+                            self._get_compressed_chunk_name(chunk_number))
 
     def get_preview_path(self):
         return os.path.join(self.get_data_dirname(), 'preview.jpeg')
@@ -208,6 +208,38 @@ class Data(models.Model):
         uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
         represented_files = [{'file':f} for f in uploaded_files]
         return represented_files
+
+    ############# same paths on s3
+
+    def get_s3_data_dirname(self):
+        return os.path.join(settings.AWS_LOCATION, settings.S3_UPLOAD_ROOT, str(self.pk))
+
+    def get_s3_upload_dirname(self):
+        return os.path.join(self.get_s3_data_dirname(), "raw")
+
+    def get_s3_compressed_cache_dirname(self):
+        return os.path.join(self.get_s3_data_dirname(), "compressed")
+
+    def get_s3_original_cache_dirname(self):
+        return os.path.join(self.get_s3_data_dirname(), "original")
+
+    def get_s3_original_chunk_path(self, chunk_number):
+        return os.path.join(self.get_s3_original_cache_dirname(),
+                            self._get_original_chunk_name(chunk_number))
+
+    def get_s3_compressed_chunk_path(self, chunk_number):
+        return os.path.join(self.get_s3_compressed_cache_dirname(),
+                            self._get_compressed_chunk_name(chunk_number))
+
+    def get_s3_preview_path(self):
+        return os.path.join(self.get_s3_data_dirname(), 'preview.jpeg')
+
+    def get_s3_manifest_path(self):
+        return os.path.join(self.get_s3_upload_dirname(), 'manifest.jsonl')
+
+    def get_s3_index_path(self):
+        return os.path.join(self.get_s3_upload_dirname(), 'index.json')
+
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
