@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
