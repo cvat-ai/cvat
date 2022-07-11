@@ -300,10 +300,21 @@ const { Source, ObjectShape } = require('./enums');
                          * @memberof module:API.cvat.classes.ObjectState
                          * @instance
                          */
-                        get: () => data.outside,
+                        get: () => {
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                return data.elements.every((el) => el.outside);
+                            }
+                            return data.outside;
+                        },
                         set: (outside) => {
-                            data.updateFlags.outside = true;
-                            data.outside = outside;
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                for (const element of this.elements) {
+                                    element.outside = outside;
+                                }
+                            } else {
+                                data.outside = outside;
+                                data.updateFlags.outside = true;
+                            }
                         },
                     },
                     keyframe: {
@@ -343,10 +354,21 @@ const { Source, ObjectShape } = require('./enums');
                          * @memberof module:API.cvat.classes.ObjectState
                          * @instance
                          */
-                        get: () => data.occluded,
+                        get: () => {
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                return data.elements.every((el) => el.occluded);
+                            }
+                            return data.occluded;
+                        },
                         set: (occluded) => {
-                            data.updateFlags.occluded = true;
-                            data.occluded = occluded;
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                for (const element of this.elements) {
+                                    element.occluded = occluded;
+                                }
+                            } else {
+                                data.occluded = occluded;
+                                data.updateFlags.occluded = true;
+                            }
                         },
                     },
                     lock: {

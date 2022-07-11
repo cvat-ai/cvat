@@ -1808,7 +1808,7 @@ const ObjectState = require('./object-state');
             this.rotation = 0;
             this.occluded = false;
             this.points = undefined;
-            this.readOnlyFields = ['points', 'label'];
+            this.readOnlyFields = ['points', 'label', 'occluded'];
 
             /* eslint-disable-next-line no-use-before-define */
             this.elements = data.elements.map((element) => shapeFactory({
@@ -1856,10 +1856,18 @@ const ObjectState = require('./object-state');
 
         // Method is used to export data to the server
         toJSON() {
+            const elements = this.elements.map((element) => ({
+                ...element.toJSON(),
+                source: this.source,
+                group: this.group,
+                z_order: this.zOrder,
+                rotation: 0,
+            }));
+
             return {
                 type: this.shapeType,
                 clientID: this.clientID,
-                occluded: this.occluded,
+                occluded: elements.every((el) => el.occluded),
                 z_order: this.zOrder,
                 points: this.points,
                 rotation: 0,
@@ -1871,13 +1879,7 @@ const ObjectState = require('./object-state');
 
                     return attributeAccumulator;
                 }, []),
-                elements: this.elements.map((element) => ({
-                    ...element.toJSON(),
-                    source: this.source,
-                    group: this.group,
-                    z_order: this.zOrder,
-                    rotation: 0,
-                })),
+                elements,
                 id: this.serverID,
                 frame: this.frame,
                 label_id: this.label.id,
@@ -1965,12 +1967,35 @@ const ObjectState = require('./object-state');
             );
         }
 
+        // _saveOutside(frame, outside) {
+        //     const wasKeyframe = frame in this.shapes;
+        //     const undoSource = this.source;
+        //     const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        //     const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+        //     const redoShape = wasKeyframe ?
+        //         { ...this.shapes[frame], outside } :
+        //         copyShape(this.get(frame), frame, { outside });
+
+        //     this.shapes[frame] = redoShape;
+        //     this.source = redoSource;
+        //     this._appendShapeActionToHistory(
+        //         HistoryActions.CHANGED_OUTSIDE,
+        //         frame,
+        //         undoShape,
+        //         redoShape,
+        //         undoSource,
+        //         redoSource,
+        //     );
+        // }
+
         save(frame, data) {
             if (this.lock && data.lock) {
                 return new ObjectState(this.get(frame));
             }
 
             const undoSkeletonPoints = this.elements.map((element) => element.points);
+            const undoSkeletonOccluded = this.elements.map((element) => element.occluded);
+
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
 
@@ -1985,18 +2010,20 @@ const ObjectState = require('./object-state');
             }
 
             const redoSkeletonPoints = this.elements.map((element) => element.points);
-            const affectedElements = this.elements.filter((_, idx) => (
+            const pointsChanged = this.elements.filter((_, idx) => (
                 undoSkeletonPoints[idx]
                     .some((coord, j) => redoSkeletonPoints[idx][j] !== coord)
             ));
+            const occludedChanged = this.elements.filter((el, idx) => el.occluded !== undoSkeletonOccluded[idx]);
 
-            if (affectedElements.length) {
+            if (pointsChanged.length) {
                 this.source = redoSource;
                 this.history.do(
                     HistoryActions.CHANGED_POINTS,
                     () => {
                         for (let i = 0; i < this.elements.length; i++) {
                             this.elements[i].points = undoSkeletonPoints[i];
+                            this.elements[i].updated = Date.now();
                         }
                         this.source = undoSource;
                         this.updated = Date.now();
@@ -2004,17 +2031,51 @@ const ObjectState = require('./object-state');
                     () => {
                         for (let i = 0; i < this.elements.length; i++) {
                             this.elements[i].points = redoSkeletonPoints[i];
+                            this.elements[i].updated = Date.now();
                         }
                         this.source = redoSource;
                         this.updated = Date.now();
                     },
-                    [this.clientID, ...affectedElements.map((element) => element.clientID)],
+                    [this.clientID, ...pointsChanged.map((element) => element.clientID)],
+                    frame,
+                );
+            }
+
+            if (occludedChanged.length) {
+                this.source = redoSource;
+                this.history.do(
+                    HistoryActions.CHANGED_OCCLUDED,
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            this.elements[i].occluded = undoSkeletonOccluded[i];
+                            this.elements[i].updated = Date.now();
+                        }
+                        this.source = undoSource;
+                        this.updated = Date.now();
+                    },
+                    () => {
+                        for (let i = 0; i < this.elements.length; i++) {
+                            this.elements[i].points = redoSkeletonPoints[i];
+                            this.elements[i].updated = Date.now();
+                        }
+                        this.source = redoSource;
+                        this.updated = Date.now();
+                    },
+                    [this.clientID, ...pointsChanged.map((element) => element.clientID)],
                     frame,
                 );
             }
 
             const result = Shape.prototype.save.call(this, frame, data);
             return result;
+        }
+
+        get occluded() {
+            return this.elements.every((element) => element.occluded);
+        }
+
+        set occluded(_) {
+            // stub
         }
     }
 
@@ -2436,7 +2497,7 @@ const ObjectState = require('./object-state');
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.SKELETON;
-            this.readOnlyFields = ['points', 'label'];
+            this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
             this.pinned = false;
             this.shapes = {};
 
@@ -2498,7 +2559,9 @@ const ObjectState = require('./object-state');
 
         _saveRotation(rotation, frame) {
             const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
-            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
+            const undoSource = this.source;
+            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+
             const elementsData = this.elements.map((element) => element.get(frame));
             const skeletonPoints = elementsData.map((data) => data.points);
             const bbox = computeWrappingBox(skeletonPoints.flat());
@@ -2525,13 +2588,10 @@ const ObjectState = require('./object-state');
                         points: rotatedPoints,
                     };
                 }
-                element.source = Source.MANUAL;
             }
-            this.source = Source.MANUAL;
+            this.source = redoSource;
 
             const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
-            const redoSources = [this.source, ...this.elements.map((element) => element.source)];
-
             this.history.do(
                 HistoryActions.CHANGED_ROTATION,
                 () => {
@@ -2542,20 +2602,18 @@ const ObjectState = require('./object-state');
                         } else {
                             delete element.shapes[frame];
                         }
-                        element.source = undoSources[i + 1];
                         this.updated = Date.now();
                     }
-                    [this.source] = undoSources;
+                    this.source = undoSource;
                     this.updated = Date.now();
                 },
                 () => {
                     for (let i = 0; i < this.elements.length; i++) {
                         const element = this.elements[i];
                         element.shapes[frame] = redoSkeletonShapes[i];
-                        element.source = redoSources[i + 1];
                         this.updated = Date.now();
                     }
-                    [this.source] = redoSources;
+                    this.source = redoSource;
                     this.updated = Date.now();
                 },
                 [this.clientID, ...this.elements.map((element) => element.clientID)],
@@ -2590,6 +2648,13 @@ const ObjectState = require('./object-state');
 
         get(frame) {
             const { prev, next } = this.boundedKeyframes(frame);
+            const elements = this.elements.map((element) => ({
+                ...element.get(frame),
+                source: this.source,
+                group: this.groupObject,
+                zOrder: this.zOrder,
+                rotation: 0,
+            }));
 
             return {
                 ...this.getPosition(frame, prev, next),
@@ -2607,16 +2672,15 @@ const ObjectState = require('./object-state');
                 label: this.label,
                 pinned: this.pinned,
                 keyframes: this.deepBoundedKeyframes(frame),
-                elements: this.elements.map((element) => ({
-                    ...element.get(frame),
-                    source: this.source,
-                    group: this.groupObject,
-                    zOrder: this.zOrder,
-                    rotation: 0,
-                })),
+                elements,
                 frame,
                 source: this.source,
                 ...this._withContext(frame),
+
+                // computable occluded
+                // computable outside
+                // todo: save occluded for a track, check undo/redo
+                // todo: save outside for a track, check undo/redo
             };
         }
 
@@ -2657,7 +2721,8 @@ const ObjectState = require('./object-state');
             }
 
             const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
-            const undoSources = [this.source, ...this.elements.map((element) => element.source)];
+            const undoSource = this.source;
+            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
 
             try {
                 this.history.freeze(true);
@@ -2675,9 +2740,7 @@ const ObjectState = require('./object-state');
             ));
 
             if (affectedElements.length) {
-                this.source = Source.MANUAL;
-                const redoSources = [this.source, ...this.elements.map((element) => element.source)];
-
+                this.source = redoSource;
                 this.history.do(
                     HistoryActions.CHANGED_POINTS,
                     () => {
@@ -2688,10 +2751,9 @@ const ObjectState = require('./object-state');
                                 delete this.elements[i].shapes[frame];
                             }
 
-                            [this.elements[i].source] = undoSources;
                             this.elements[i].updated = Date.now();
                         }
-                        [this.source] = undoSources;
+                        this.source = undoSource;
                         this.updated = Date.now();
                     },
                     () => {
@@ -2702,10 +2764,9 @@ const ObjectState = require('./object-state');
                                 delete this.elements[i].shapes[frame];
                             }
 
-                            [this.elements[i].source] = redoSources;
                             this.elements[i].updated = Date.now();
                         }
-                        [this.source] = redoSources;
+                        this.source = redoSource;
                         this.updated = Date.now();
                     },
                     [this.clientID, ...affectedElements.map((element) => element.clientID)],
@@ -2717,12 +2778,7 @@ const ObjectState = require('./object-state');
             return result;
         }
 
-        getPosition(targetFrame) {
-            const {
-                prev: leftKeyframe,
-                next: rightKeyframe,
-            } = Track.prototype.boundedKeyframes.call(this, targetFrame);
-
+        getPosition(targetFrame, leftKeyframe, rightKeyframe) {
             const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
             const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
             const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
@@ -2767,16 +2823,41 @@ const ObjectState = require('./object-state');
             const result = {};
             for (const keyframe of allKeyframes) {
                 const skeletonShape = this.get(keyframe);
+
+                const elements = this.elements.map((element, idx) => {
+                    const elementData = skeletonShape.elements[idx];
+                    return ({
+                        id: element.shapes[keyframe]?.serverID,
+                        type: elementData.shapeType,
+                        label_id: elementData.label.id,
+                        occluded: elementData.occluded,
+                        outside: elementData.outside,
+                        points: elementData.points,
+                        rotation: 0,
+                        attributes: Object.keys(skeletonShape.attributes).reduce(
+                            (attributeAccumulator, attrID) => {
+                                attributeAccumulator.push({
+                                    spec_id: attrID,
+                                    value: skeletonShape.attributes[attrID],
+                                });
+
+                                return attributeAccumulator;
+                            },
+                            [],
+                        ),
+                    });
+                });
+
                 result[keyframe] = {
                     type: this.shapeType,
                     id: this.shapes[keyframe]?.serverID,
-                    occluded: skeletonShape.occluded,
+                    occluded: elements.every((el) => el.occluded),
+                    outside: elements.every((el) => el.outside),
                     group: skeletonShape.group.id,
                     source: skeletonShape.source,
                     z_order: skeletonShape.zOrder,
                     rotation: 0,
                     frame: keyframe,
-                    outside: skeletonShape.outside,
                     attributes: Object.keys(skeletonShape.attributes).reduce(
                         (attributeAccumulator, attrID) => {
                             if (labelAttributes[attrID].mutable) {
@@ -2790,29 +2871,7 @@ const ObjectState = require('./object-state');
                         },
                         [],
                     ),
-                    elements: this.elements.map((element, idx) => {
-                        const elementData = skeletonShape.elements[idx];
-                        return ({
-                            id: element.shapes[keyframe]?.serverID,
-                            type: elementData.shapeType,
-                            label_id: elementData.label.id,
-                            occluded: elementData.occluded,
-                            outside: elementData.outside,
-                            points: elementData.points,
-                            rotation: 0,
-                            attributes: Object.keys(skeletonShape.attributes).reduce(
-                                (attributeAccumulator, attrID) => {
-                                    attributeAccumulator.push({
-                                        spec_id: attrID,
-                                        value: skeletonShape.attributes[attrID],
-                                    });
-
-                                    return attributeAccumulator;
-                                },
-                                [],
-                            ),
-                        });
-                    }),
+                    elements,
                 };
             }
 
