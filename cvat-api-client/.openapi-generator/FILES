@@ -78,8 +78,6 @@ cvat_api_client/model/operation_status.py
 cvat_api_client/model/organization_read.py
 cvat_api_client/model/organization_write.py
 cvat_api_client/model/organization_write_request.py
-cvat_api_client/model/page_size.py
-cvat_api_client/model/page_size_all.py
 cvat_api_client/model/paginated_cloud_storage_read_list.py
 cvat_api_client/model/paginated_comment_read_list.py
 cvat_api_client/model/paginated_invitation_read_list.py
@@ -208,8 +206,6 @@ docs/OrganizationRead.md
 docs/OrganizationWrite.md
 docs/OrganizationWriteRequest.md
 docs/OrganizationsApi.md
-docs/PageSize.md
-docs/PageSizeAll.md
 docs/PaginatedCloudStorageReadList.md
 docs/PaginatedCommentReadList.md
 docs/PaginatedInvitationReadList.md

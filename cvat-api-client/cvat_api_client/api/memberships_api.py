@@ -128,7 +128,7 @@ class MembershipsApi(object):
                     "org": (str,),
                     "org_id": (int,),
                     "page": (int,),
-                    "page_size": (PageSize,),
+                    "page_size": (int,),
                     "search": (str,),
                     "sort": (str,),
                 },
@@ -384,7 +384,7 @@ class MembershipsApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
-            page_size (PageSize): Number of results to return per page.. [optional]
+            page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('user_name', 'role'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['user_name', 'role', 'id', 'user']. [optional]
             _parse_response (bool): if False, the response data will not be parsed,

@@ -982,7 +982,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
-    page_size = PageSize(None) # PageSize | Number of results to return per page. (optional)
+    page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension') (optional)
     sort = "sort_example" # str | Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date'] (optional)
 
@@ -1006,7 +1006,7 @@ Name | Type | Description  | Notes
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
- **page_size** | **PageSize**| Number of results to return per page. | [optional]
+ **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;) | [optional]
  **sort** | **str**| Which field to use when ordering the results. Avaliable ordering_fields: [&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;, &#39;id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
 
@@ -1095,7 +1095,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
-    page_size = PageSize(None) # PageSize | Number of results to return per page. (optional)
+    page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension') (optional)
     sort = "sort_example" # str | Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date'] (optional)
 
@@ -1128,7 +1128,7 @@ Name | Type | Description  | Notes
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
- **page_size** | **PageSize**| Number of results to return per page. | [optional]
+ **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;) | [optional]
  **sort** | **str**| Which field to use when ordering the results. Avaliable ordering_fields: [&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;, &#39;id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
 

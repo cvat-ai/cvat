@@ -218,7 +218,7 @@ class JobsApi(object):
                     "org": (str,),
                     "org_id": (int,),
                     "page": (int,),
-                    "page_size": (PageSize,),
+                    "page_size": (int,),
                     "search": (str,),
                     "sort": (str,),
                 },
@@ -288,7 +288,7 @@ class JobsApi(object):
                     "org": (str,),
                     "org_id": (int,),
                     "page": (int,),
-                    "page_size": (PageSize,),
+                    "page_size": (int,),
                     "search": (str,),
                     "sort": (str,),
                 },
@@ -360,7 +360,7 @@ class JobsApi(object):
                     "org": (str,),
                     "org_id": (int,),
                     "page": (int,),
-                    "page_size": (PageSize,),
+                    "page_size": (int,),
                     "search": (str,),
                     "sort": (str,),
                 },
@@ -1263,7 +1263,7 @@ class JobsApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
-            page_size (PageSize): Number of results to return per page.. [optional]
+            page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             _parse_response (bool): if False, the response data will not be parsed,
@@ -1348,7 +1348,7 @@ class JobsApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
-            page_size (PageSize): Number of results to return per page.. [optional]
+            page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             _parse_response (bool): if False, the response data will not be parsed,
@@ -1434,7 +1434,7 @@ class JobsApi(object):
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
-            page_size (PageSize): Number of results to return per page.. [optional]
+            page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             _parse_response (bool): if False, the response data will not be parsed,

@@ -22,16 +22,33 @@ class TestGetUsers:
             # TODO: refactor into several functions
             if id_ == 'self':
                 (_, response) = api_client.users_api.retrieve_self(**kwargs,
-                        _parse_response=False)
-            elif id_ is None:
-                (_, response) = api_client.users_api.list(**kwargs,
                     _parse_response=False)
+                assert response.status == HTTPStatus.OK
+                response_data = json.loads(response.data)
+            elif id_ is None:
+                fetch_all = kwargs.get('page_size') == 'all'
+                if fetch_all:
+                    kwargs.pop('page_size')
+
+                (_, response) = api_client.users_api.list(**kwargs, _parse_response=False)
+                assert response.status == HTTPStatus.OK
+                parsed_data = json.loads(response.data)
+                response_data = parsed_data.get('results', [])
+
+                if fetch_all:
+                    page_idx = 2
+                    while parsed_data.get('next'):
+                        (_, response) = api_client.users_api.list(**kwargs,
+                            _parse_response=False, page=page_idx)
+                        assert response.status == HTTPStatus.OK
+                        parsed_data = json.loads(response.data)
+                        response_data += parsed_data.get('results', [])
+                        page_idx += 1
             else:
                 (_, response) = api_client.users_api.retrieve(id_, **kwargs,
                     _parse_response=False)
-            assert response.status == HTTPStatus.OK
-            response_data = json.loads(response.data)
-            response_data = response_data.get('results', response_data)
+                assert response.status == HTTPStatus.OK
+                response_data = json.loads(response.data)
 
         assert DeepDiff(data, response_data, ignore_order=True,
             exclude_paths=exclude_paths) == {}
@@ -42,13 +59,13 @@ class TestGetUsers:
             # TODO: refactor into several functions
             if id_ == 'self':
                 (_, response) = api_client.users_api.retrieve_self(**kwargs,
-                        _parse_response=False)
+                    _parse_response=False, _check_status=False)
             elif id_ is None:
                 (_, response) = api_client.users_api.list(**kwargs,
-                    _parse_response=False)
+                    _parse_response=False, _check_status=False)
             else:
                 (_, response) = api_client.users_api.retrieve(id_, **kwargs,
-                    _parse_response=False)
+                    _parse_response=False, _check_status=False)
             assert response.status == HTTPStatus.FORBIDDEN
 
     def test_admin_can_see_all_others(self, users):
