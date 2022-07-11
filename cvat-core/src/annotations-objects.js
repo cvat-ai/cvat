@@ -45,8 +45,8 @@ const ObjectState = require('./object-state');
         }
     }
 
-    function attrsAsObject(attributes) {
-        return attributes.label.attributes.reduce((accumulator, value) => {
+    function attrsAsAnObject(attributes) {
+        return attributes.reduce((accumulator, value) => {
             accumulator[value.id] = value;
             return accumulator;
         }, {});
@@ -358,7 +358,7 @@ const ObjectState = require('./object-state');
                 checkObjectType('label', data.label, null, Label);
             }
 
-            const labelAttributes = attrsAsObject(data.label.attributes);
+            const labelAttributes = attrsAsAnObject(data.label.attributes);
             if (updated.attributes) {
                 for (const attrID of Object.keys(data.attributes)) {
                     const value = data.attributes[attrID];
@@ -740,7 +740,7 @@ const ObjectState = require('./object-state');
             );
 
             this.source = redoSource;
-            this.zOrder = redoSource;
+            this.zOrder = redoZOrder;
         }
 
         save(frame, data) {
@@ -835,7 +835,7 @@ const ObjectState = require('./object-state');
 
         // Method is used to export data to the server
         toJSON() {
-            const labelAttributes = attrsAsObject(this.label.attributes);
+            const labelAttributes = attrsAsAnObject(this.label.attributes);
 
             return {
                 clientID: this.clientID,
@@ -1034,7 +1034,7 @@ const ObjectState = require('./object-state');
 
         _saveAttributes(attributes, frame) {
             const current = this.get(frame);
-            const labelAttributes = attrsAsObject(this.label.attributes);
+            const labelAttributes = attrsAsAnObject(this.label.attributes);
 
             const wasKeyframe = frame in this.shapes;
             const undoAttributes = this.attributes;
@@ -1876,7 +1876,7 @@ const ObjectState = require('./object-state');
                     source: this.source,
                     group: this.group,
                     z_order: this.zOrder,
-                    rotaiton: 0,
+                    rotation: 0,
                 })),
                 id: this.serverID,
                 frame: this.frame,
@@ -1908,7 +1908,7 @@ const ObjectState = require('./object-state');
                     source: this.source,
                     group: this.groupObject,
                     zOrder: this.zOrder,
-                    rotaiton: 0,
+                    rotation: 0,
                 })),
                 label: this.label,
                 group: this.groupObject,
@@ -2565,7 +2565,7 @@ const ObjectState = require('./object-state');
 
         // Method is used to export data to the server
         toJSON() {
-            const labelAttributes = attrsAsObject(this.label.attributes);
+            const labelAttributes = attrsAsAnObject(this.label.attributes);
 
             return {
                 clientID: this.clientID,
@@ -2612,7 +2612,7 @@ const ObjectState = require('./object-state');
                     source: this.source,
                     group: this.groupObject,
                     zOrder: this.zOrder,
-                    rotaiton: 0,
+                    rotation: 0,
                 })),
                 frame,
                 source: this.source,
@@ -2759,7 +2759,7 @@ const ObjectState = require('./object-state');
         }
 
         prepareShapesForServer() {
-            const labelAttributes = attrsAsObject(this.label.attributes);
+            const labelAttributes = attrsAsAnObject(this.label.attributes);
 
             let allKeyframes = new Set([this, ...this.elements].map((element) => Object.keys(element.shapes)).flat());
             allKeyframes = Array.from(allKeyframes).map((keyframe) => +keyframe);
