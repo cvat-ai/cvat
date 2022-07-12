@@ -51,5 +51,20 @@ class S3Client:
     def delete_object(self, key: str) -> bool:
         return self._client.delete_object(self.bucket, key)
 
+    def set_tags(self, key: str, tags: dict) -> dict:
+        if len(tags) > 10:
+            raise ValueError("Max of 10 tags allowed")
+        return self._client.put_object_tagging(self.bucket, key, Tagging={
+            'TagSet': [{'Key': k, 'Value': v} for k, v in tags.items()]
+        })
+
+    def get_tags(self, key: str):
+        response = self._client.get_object_tagging(self.bucket, key)
+        if 'TagSet' not in response:
+            raise ValueError("No tag container found in response")
+        return {item['Key']: item['Value'] for item in response['TagSet']}
+
+    # TODO: implement here delete_tags.
+
 
 s3_client = S3Client()

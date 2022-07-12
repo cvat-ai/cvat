@@ -576,7 +576,6 @@ AWS_FILE_STORAGE = 'cvat.rebotics.storage.CustomAWSMediaStorage'
 # AWS s3 storage settings for media storage.
 AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_DEFAULT_ACL = 'private'
-AWS_LOCATION = 'cvat-media'
 AWS_S3_FILE_OVERWRITE = False
 AWS_QUERYSTRING_AUTH = True
 AWS_QUERYSTRING_EXPIRE = 604800
@@ -593,4 +592,8 @@ if not AWS_S3_REGION_NAME:  # treat empty string as None
     AWS_S3_REGION_NAME = None
 AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
 
+USE_S3 = True
+USE_CACHE_S3 = True
+
 S3_UPLOAD_ROOT = 'data'
+S3_CACHE_ROOT = 'cache'

@@ -47,6 +47,8 @@ class FrameProvider:
     VIDEO_FRAME_EXT = '.PNG'
     VIDEO_FRAME_MIME = 'image/png'
 
+    # TODO: replace these everywhere with same from constants.
+
     class Quality(Enum):
         COMPRESSED = 0
         ORIGINAL = 100

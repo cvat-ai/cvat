@@ -28,7 +28,7 @@ from cvat.apps.engine.models import DimensionType, SortingMethod
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
-from utils.dataset_manifest import VideoManifestManager, CachedIndexManifestManager
+from utils.dataset_manifest import VideoManifestManager, CachedIndexManifestManager, S3ManifestManager
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -503,14 +503,21 @@ class FragmentMediaReader:
         return frame_range
 
 class ImageDatasetManifestReader(FragmentMediaReader):
+    _manifest_class = CachedIndexManifestManager
+
     def __init__(self, manifest_path, **kwargs):
         super().__init__(**kwargs)
-        self._manifest = CachedIndexManifestManager(manifest_path)
+        self._manifest = self._manifest_class(manifest_path)
         self._manifest.init_index()
 
     def __iter__(self):
         for idx in self._frame_range:
             yield self._manifest[idx]
+
+
+class S3DatasetManifestReader(ImageDatasetManifestReader):
+    _manifest_class = S3ManifestManager
+
 
 class VideoDatasetManifestReader(FragmentMediaReader):
     def __init__(self, manifest_path, **kwargs):
@@ -598,6 +605,7 @@ class IChunkWriter(ABC):
         pass
 
 class ZipChunkWriter(IChunkWriter):
+    # TODO: check this
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
@@ -611,6 +619,7 @@ class ZipChunkWriter(IChunkWriter):
         return []
 
 class ZipCompressedChunkWriter(IChunkWriter):
+    # TODO: errors here
     def save_as_chunk(self, images, chunk_path):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:

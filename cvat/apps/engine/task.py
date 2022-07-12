@@ -652,6 +652,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         counter = itertools.count()
         generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
         for chunk_idx, chunk_data in generator:
+            # TODO: upload chunks to s3 here
+            #  when not using cache, chunks are stored locally in
+            #  original and compressed dirs as zip archives.
+
             chunk_data = list(chunk_data)
             original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
             original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
@@ -659,6 +663,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
             img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
 
+            # 'not a video'
             if db_task.mode == 'annotation':
                 db_images.extend([
                     models.Image(
@@ -678,17 +683,19 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             progress = extractor.get_progress(chunk_data[-1][2])
             update_progress(progress)
 
+    # this means, it's not a video.
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
         created_images = models.Image.objects.filter(data_id=db_data.id)
 
+        # these are some context images for an image and have some specific description in the manifest.
         db_related_files = [
             models.RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
             for image in created_images
             for related_file_path in related_images.get(image.path, [])
         ]
         models.RelatedFile.objects.bulk_create(db_related_files)
-        db_images = []
+        db_images = []  # to free the memory?
     else:
         models.Video.objects.create(
             data=db_data,
