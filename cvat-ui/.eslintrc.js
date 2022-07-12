@@ -1,16 +1,11 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 const globalConfig = require('../.eslintrc.js');
 
 module.exports = {
-    env: {
-        node: true,
-    },
     parserOptions: {
-        parser: '@typescript-eslint/parser',
-        ecmaVersion: 6,
         project: './tsconfig.json',
         tsconfigRootDir: __dirname,
     },
@@ -20,27 +15,9 @@ module.exports = {
         'node_modules/**',
         'dist/**',
     ],
-    plugins: ['@typescript-eslint'],
-    extends: ['plugin:@typescript-eslint/recommended', 'airbnb-typescript'],
+    extends: ['airbnb-typescript'],
     rules: {
-        ...globalConfig.rules,
-
-        '@typescript-eslint/no-explicit-any': 0,
-        '@typescript-eslint/indent': ['error', 4],
-        '@typescript-eslint/lines-between-class-members': 0,
-        '@typescript-eslint/no-explicit-any': [0],
-        '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
-        '@typescript-eslint/explicit-module-boundary-types': 'off',
-        '@typescript-eslint/ban-types': [
-            'error',
-            {
-                types: {
-                    '{}': false, // TODO: try to fix with Record<string, unknown>
-                    object: false, // TODO: try to fix with Record<string, unknown>
-                    Function: false, // TODO: try to fix somehow
-                },
-            },
-        ],
+        ...globalConfig.rules, // need to import rules again because they've been redefined by "airbnb-typescript"
 
         'react/no-did-update-set-state': 0, // https://github.com/airbnb/javascript/issues/1875
         'react/require-default-props': 'off',
@@ -52,11 +29,4 @@ module.exports = {
         'react/jsx-props-no-spreading': 0,
         'jsx-quotes': ['error', 'prefer-single'],
     },
-    // settings: {
-    //     'import/resolver': {
-    //         node: {
-    //             paths: ['src', `${__dirname}/src`],
-    //         },
-    //     },
-    // },
 };

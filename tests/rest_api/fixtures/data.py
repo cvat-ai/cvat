@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -92,6 +92,14 @@ def jobs_by_org(tasks, jobs):
     data = {}
     for job in jobs:
         data.setdefault(tasks[job['task_id']]['organization'], []).append(job)
+    data[''] = data.pop(None, [])
+    return data
+
+@pytest.fixture(scope='session')
+def projects_by_org(projects):
+    data = {}
+    for project in projects:
+        data.setdefault(project['organization'], []).append(project)
     data[''] = data.pop(None, [])
     return data
 
@@ -213,7 +221,7 @@ def org_staff(memberships):
             return set()
         else:
             return set(m['user']['id'] for m in memberships
-                if m['role'] in ['maintainer', 'owner'] and m['user'] != None
+                if m['role'] in ['maintainer', 'owner'] and m['user'] is not None
                     and m['organization'] == org_id)
     return find
 
@@ -224,7 +232,7 @@ def is_org_member(memberships):
             return True
         else:
             return user_id in set(m['user']['id'] for m in memberships
-                if m['user'] != None and m['organization'] == org_id)
+                if m['user'] is not None and m['organization'] == org_id)
     return check
 
 @pytest.fixture(scope='session')

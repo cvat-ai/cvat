@@ -39,6 +39,7 @@ const defaultState: SettingsState = {
             algorithmsLocked: false,
             buttonVisible: false,
         },
+        showTagsOnFrame: true,
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -360,6 +361,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     showDeletedFrames: action.payload.showDeletedFrames,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOWING_TAGS_ON_FRAME: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    showTagsOnFrame: action.payload.showTagsOnFrame,
                 },
             };
         }

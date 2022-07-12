@@ -1,7 +1,7 @@
-name: Linter
+name: Remark
 on: pull_request
 jobs:
-  Remark:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

@@ -1434,7 +1434,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
     if isinstance(instance_data, ProjectData):
         for sub_dataset, task_data in instance_data.split_dataset(dm_dataset):
-            # FIXME: temporary workaround for cvat format, will be removed after migration importer to datumaro
+            # FIXME: temporary workaround for cvat format
+            # will be removed after migration importer to datumaro
             sub_dataset._format = dm_dataset.format
             import_dm_annotations(sub_dataset, task_data)
         return
@@ -1477,6 +1478,12 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
             try:
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
+
+                attributes = [
+                    instance_data.Attribute(name=n, value=str(v))
+                    for n, v in ann.attributes.items()
+                ]
+
                 if ann.type in shapes:
                     if ann.type == datum_annotation.AnnotationType.cuboid_3d:
                         try:
@@ -1485,44 +1492,50 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                             ann.points = ann.points
                         ann.z_order = 0
 
+                    # Use safe casting to bool instead of plain reading
+                    # because in some formats return type can be different
+                    # from bool / None
+                    # https://github.com/openvinotoolkit/datumaro/issues/719
+                    occluded = cast(ann.attributes.pop('occluded', None), bool) is True
+                    keyframe = cast(ann.attributes.get('keyframe', None), bool) is True
+                    outside = cast(ann.attributes.pop('outside', None), bool) is True
+
                     track_id = ann.attributes.pop('track_id', None)
+                    source = ann.attributes.pop('source').lower() \
+                        if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
+
                     if track_id is None or dm_dataset.format != 'cvat' :
                         instance_data.add_shape(instance_data.LabeledShape(
                             type=shapes[ann.type],
                             frame=frame_number,
                             points=ann.points,
                             label=label_cat.items[ann.label].name,
-                            occluded=ann.attributes.pop('occluded', None) == True,
+                            occluded=occluded,
                             z_order=ann.z_order,
                             group=group_map.get(ann.group, 0),
-                            source=str(ann.attributes.pop('source')).lower() \
-                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
-                            attributes=[instance_data.Attribute(name=n, value=str(v))
-                                for n, v in ann.attributes.items()],
+                            source=source,
+                            attributes=attributes,
                         ))
                         continue
 
-                    if ann.attributes.get('keyframe', None) == True or ann.attributes.get('outside', None) == True:
+                    if keyframe or outside:
                         track = instance_data.TrackedShape(
                             type=shapes[ann.type],
                             frame=frame_number,
-                            occluded=ann.attributes.pop('occluded', None) == True,
-                            outside=ann.attributes.pop('outside', None) == True,
-                            keyframe=ann.attributes.get('keyframe', None) == True,
+                            occluded=occluded,
+                            outside=outside,
+                            keyframe=keyframe,
                             points=ann.points,
                             z_order=ann.z_order,
-                            source=str(ann.attributes.pop('source')).lower() \
-                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
-                            attributes=[instance_data.Attribute(name=n, value=str(v))
-                                for n, v in ann.attributes.items()],
+                            source=source,
+                            attributes=attributes,
                         )
 
                         if track_id not in tracks:
                             tracks[track_id] = instance_data.Track(
                                 label=label_cat.items[ann.label].name,
                                 group=group_map.get(ann.group, 0),
-                                source=str(ann.attributes.pop('source')).lower() \
-                                    if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                                source=source,
                                 shapes=[],
                             )
 
@@ -1534,8 +1547,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
                         source='manual',
-                        attributes=[instance_data.Attribute(name=n, value=str(v))
-                            for n, v in ann.attributes.items()],
+                        attributes=attributes,
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "

@@ -631,6 +631,10 @@ export interface AnnotationState {
         objectState: any | null;
         frames: number;
     };
+    remove: {
+        objectState: any;
+        force: boolean;
+    }
     statistics: {
         collecting: boolean;
         visible: boolean;
@@ -705,6 +709,7 @@ export interface WorkspaceSettingsState {
     textFontSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
+    showTagsOnFrame: boolean;
 }
 
 export interface ShapesSettingsState {

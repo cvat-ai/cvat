@@ -11883,11 +11883,11 @@ test_scope_UPDATE_ORGANIZATION_context_ORGANIZATION_ownership_NONE_privilege_NON
 
 
 # projects_test.gen.rego.py
-# # Copyright (C) 2021 Intel Corporation
+# # Copyright (C) 2021-2022 Intel Corporation
 # #
 # # SPDX-License-Identifier: MIT
 #
-# # Copyright (C) 2021 Intel Corporation
+# # Copyright (C) 2021-2022 Intel Corporation
 # #
 # # SPDX-License-Identifier: MIT
 #

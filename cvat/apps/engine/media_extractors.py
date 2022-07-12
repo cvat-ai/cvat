@@ -494,7 +494,7 @@ class FragmentMediaReader:
             if idx < self._start_chunk_frame_number:
                 continue
             elif idx < self._end_chunk_frame_number and \
-                    not ((idx - self._start_chunk_frame_number) % self._step):
+                    not (idx - self._start_chunk_frame_number) % self._step:
                 frame_range.append(idx)
             elif (idx - self._start_chunk_frame_number) % self._step:
                 continue
@@ -654,20 +654,20 @@ class Mpeg4ChunkWriter(IChunkWriter):
             }
 
     def _create_av_container(self, path, w, h, rate, options, f='mp4'):
-            # x264 requires width and height must be divisible by 2 for yuv420p
-            if h % 2:
-                h += 1
-            if w % 2:
-                w += 1
+        # x264 requires width and height must be divisible by 2 for yuv420p
+        if h % 2:
+            h += 1
+        if w % 2:
+            w += 1
 
-            container = av.open(path, 'w',format=f)
-            video_stream = container.add_stream(self._codec_name, rate=rate)
-            video_stream.pix_fmt = "yuv420p"
-            video_stream.width = w
-            video_stream.height = h
-            video_stream.options = options
+        container = av.open(path, 'w',format=f)
+        video_stream = container.add_stream(self._codec_name, rate=rate)
+        video_stream.pix_fmt = "yuv420p"
+        video_stream.width = w
+        video_stream.height = h
+        video_stream.options = options
 
-            return container, video_stream
+        return container, video_stream
 
     def save_as_chunk(self, images, chunk_path):
         if not images:
@@ -779,7 +779,7 @@ def _is_zip(path):
 # 'mode': 'annotation' or 'interpolation' - mode of task that should be created.
 # 'unique': True or False - describes how the type can be combined with other.
 #           True - only one item of this type and no other is allowed
-#           False - this media types can be combined with other which have unique == False
+#           False - this media types can be combined with other which have unique is False
 
 MEDIA_TYPES = {
     'image': {

@@ -1413,7 +1413,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-06-22T09:20:25.189Z",
+    "last_login": "2022-06-29T12:55:15.511Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -3710,11 +3710,11 @@
     "assignee": 3,
     "bug_tracker": "",
     "created_date": "2021-12-14T19:52:37.278Z",
-    "updated_date": "2022-03-28T13:04:54.669Z",
+    "updated_date": "2022-06-30T08:56:45.601Z",
     "status": "annotation",
     "organization": 2,
-    "source_storage": null,
-    "target_storage": null
+    "source_storage": 3,
+    "target_storage": 1
   }
 },
 {
@@ -3898,7 +3898,7 @@
     "assignee": 19,
     "bug_tracker": "",
     "created_date": "2022-03-05T10:32:19.149Z",
-    "updated_date": "2022-03-05T10:32:35.568Z",
+    "updated_date": "2022-06-30T08:56:45.594Z",
     "overlap": 0,
     "segment_size": 11,
     "status": "annotation",
@@ -3906,8 +3906,8 @@
     "dimension": "2d",
     "subset": "Train",
     "organization": 2,
-    "source_storage": null,
-    "target_storage": null
+    "source_storage": 4,
+    "target_storage": 2
   }
 },
 {
@@ -6159,6 +6159,14 @@
   }
 },
 {
+  "model": "engine.manifest",
+  "pk": 3,
+  "fields": {
+    "filename": "manifest.jsonl",
+    "cloud_storage": 3
+  }
+},
+{
   "model": "engine.cloudstorage",
   "pk": 1,
   "fields": {
@@ -6190,6 +6198,55 @@
     "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
     "description": "",
     "organization": 2
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 3,
+  "fields": {
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "importexportbucket",
+    "display_name": "Import/Export bucket",
+    "owner": 1,
+    "created_date": "2022-06-29T12:56:18.257Z",
+    "updated_date": "2022-06-29T12:56:18.264Z",
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "Bucket for importing and exporting annotations and backups",
+    "organization": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 1,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 2,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 3,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 4,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
   }
 }
 ]

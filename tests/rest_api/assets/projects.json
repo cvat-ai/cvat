@@ -107,16 +107,24 @@
         "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
-      "source_storage": null,
+      "source_storage": {
+        "cloud_storage_id": 2,
+        "id": 3,
+        "location": "cloud_storage"
+      },
       "status": "annotation",
-      "target_storage": null,
+      "target_storage": {
+        "cloud_storage_id": 2,
+        "id": 1,
+        "location": "cloud_storage"
+      },
       "task_subsets": [
         "Train"
       ],
       "tasks": [
         11
       ],
-      "updated_date": "2022-03-28T13:04:54.669000Z",
+      "updated_date": "2022-06-30T08:56:45.601000Z",
       "url": "http://localhost:8080/api/projects/2"
     },
     {

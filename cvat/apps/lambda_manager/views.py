@@ -382,7 +382,7 @@ class LambdaQueue:
     def fetch_job(self, pk):
         queue = self._get_queue()
         job = queue.fetch_job(pk)
-        if job == None or not job.meta.get("lambda"):
+        if job is None or not job.meta.get("lambda"):
             raise ValidationError("{} lambda job is not found".format(pk),
                 code=status.HTTP_404_NOT_FOUND)
 

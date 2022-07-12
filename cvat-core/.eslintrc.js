@@ -1,12 +1,9 @@
-// Copyright (C) 2018-2021 Intel Corporation
+// Copyright (C) 2018-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 module.exports = {
     env: {
-        node: true,
-        browser: true,
-        es6: true,
         'jest/globals': true,
     },
     ignorePatterns: [
@@ -19,9 +16,8 @@ module.exports = {
         'dist/**',
     ],
     parserOptions: {
-        parser: 'babel-eslint',
-        sourceType: 'module',
-        ecmaVersion: 2018,
+        project: './tsconfig.json',
+        tsconfigRootDir: __dirname,
     },
     plugins: ['jest'],
     rules: {
@@ -29,5 +25,5 @@ module.exports = {
         'jest/no-focused-tests': 'error',
         'jest/no-identical-title': 'error',
         'jest/prefer-to-have-length': 'warn',
-      }
+    }
 };

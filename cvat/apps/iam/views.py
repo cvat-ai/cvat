@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -32,13 +32,13 @@ def get_context(request):
         org_id = request.GET.get('org_id')
         org_header = request.headers.get('X-Organization')
 
-        if org_id != None and (org_slug != None or org_header != None):
-            raise BadRequest('You cannot specify "org_id" query parameter with ' +
+        if org_id is not None and (org_slug is not None or org_header is not None):
+            raise BadRequest('You cannot specify "org_id" query parameter with '
                 '"org" query parameter or "X-Organization" HTTP header at the same time.')
-        if org_slug != None and org_header != None and org_slug != org_header:
-            raise BadRequest('You cannot specify "org" query parameter and ' +
+        if org_slug is not None and org_header is not None and org_slug != org_header:
+            raise BadRequest('You cannot specify "org" query parameter and '
                 '"X-Organization" HTTP header with different values.')
-        org_slug = org_slug if org_slug != None else org_header
+        org_slug = org_slug if org_slug is not None else org_header
 
         org_filter = None
         if org_slug:

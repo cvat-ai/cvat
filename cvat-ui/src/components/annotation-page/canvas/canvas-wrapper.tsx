@@ -18,6 +18,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import ImageSetupsContent from './image-setups-content';
 import ContextImage from '../standard-workspace/context-image/context-image';
 
@@ -69,6 +70,7 @@ interface Props {
     keyMap: KeyMap;
     canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
+    showTagsOnFrame: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -780,6 +782,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             keyMap,
             switchableAutomaticBordering,
             automaticBordering,
+            showTagsOnFrame,
             onSwitchAutomaticBordering,
             onSwitchZLayer,
             onAddZLayer,
@@ -842,6 +845,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         <PlusCircleOutlined onClick={onAddZLayer} />
                     </CVATTooltip>
                 </div>
+
+                {showTagsOnFrame ? (
+                    <div className='cvat-canvas-frame-tags'>
+                        <FrameTags />
+                    </div>
+                ) : null}
+                ;
             </Layout.Content>
         );
     }

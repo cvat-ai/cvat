@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -463,7 +463,9 @@ def update_states():
         try:
             get(db_git.task_id, db_user)
         except Exception:
-            slogger.glob("Exception occurred during a status updating for db_git with tid: {}".format(db_git.task_id))
+            slogger.glob.exception("Exception occurred during a status "
+                "updating for db_git with tid: {}".format(db_git.task_id),
+                exc_info=True)
 
 @transaction.atomic
 def _onsave(jid, data, action):

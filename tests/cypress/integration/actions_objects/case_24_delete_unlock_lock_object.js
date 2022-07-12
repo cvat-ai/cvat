@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,11 +12,11 @@ context('Delete unlock/lock object', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
         firstX: 100,
         firstY: 100,
         secondX: 300,
         secondY: 300,
+        labelName,
     };
 
     function lockObject() {
@@ -26,7 +26,7 @@ context('Delete unlock/lock object', () => {
     }
 
     function deleteObjectViaShortcut(shortcut, stateLockObject) {
-        if (stateLockObject == 'unlock') {
+        if (stateLockObject === 'unlock') {
             cy.get('.cvat-canvas-container').within(() => {
                 cy.get('.cvat_canvas_shape').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
             });
@@ -65,15 +65,18 @@ context('Delete unlock/lock object', () => {
         });
     }
 
-    function checkFailDeleteLockObject(shortcut) {
-        deleteObjectViaShortcut(shortcut, 'lock');
-        checkExistObject('exist');
-        cy.get('.cvat-notification-notice-remove-object-failed').should('exist');
-    }
-
     function checkExistObject(state) {
         cy.get('.cvat_canvas_shape').should(state);
         cy.get('.cvat-objects-sidebar-state-item').should(state);
+    }
+
+    function checkFailDeleteLockObject(shortcut) {
+        deleteObjectViaShortcut(shortcut, 'lock');
+        checkExistObject('exist');
+        cy.get('.cvat-modal-confirm').should('exist');
+        cy.get('.cvat-modal-confirm').within(() => {
+            cy.contains('Cancel').click();
+        });
     }
 
     before(() => {
@@ -105,7 +108,7 @@ context('Delete unlock/lock object', () => {
             cy.createRectangle(createRectangleShape2Points);
             lockObject();
             deleteObjectViaGUIFromSidebar();
-            actionOnConfirmWindow('OK');
+            actionOnConfirmWindow('Yes');
             checkExistObject('not.exist');
         });
 

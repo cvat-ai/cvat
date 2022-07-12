@@ -2,12 +2,14 @@
   "name": "cvat-core",
   "version": "5.1.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
-  "main": "babel.config.js",
+  "main": "src/api.ts",
   "scripts": {
     "build": "webpack",
     "test": "jest --config=jest.config.js --coverage",
     "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs",
-    "coveralls": "cat ./reports/coverage/lcov.info | coveralls"
+    "coveralls": "cat ./reports/coverage/lcov.info | coveralls",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "npm run type-check -- --watch"
   },
   "author": "Intel",
   "license": "MIT",
@@ -26,7 +28,7 @@
   "dependencies": {
     "axios": "^0.21.4",
     "browser-or-node": "^1.2.1",
-    "cvat-data": "../cvat-data",
+    "cvat-data": "file:../cvat-data",
     "detect-browser": "^5.2.1",
     "error-stack-parser": "^2.0.2",
     "form-data": "^2.5.0",

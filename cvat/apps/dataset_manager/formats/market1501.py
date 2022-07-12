@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -50,7 +50,7 @@ class LabelAttrToAttr(ItemTransform):
     def transform_item(self, item):
         annotations = list(item.annotations)
         attributes = dict(item.attributes)
-        if self._label != None:
+        if self._label is not None:
             labels = [ann for ann in annotations
                 if ann.type == AnnotationType.label \
                     and ann.label == self._label]

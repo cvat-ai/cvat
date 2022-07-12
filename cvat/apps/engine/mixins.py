@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -278,7 +278,7 @@ class AnnotationMixin:
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
-    def import_annotations(self, request, pk, db_obj, import_func, rq_func):
+    def import_annotations(self, request, pk, db_obj, import_func, rq_func, rq_id):
         use_default_location = request.query_params.get('use_default_location', True)
         use_settings = strtobool(str(use_default_location))
         obj = db_obj if use_settings else request.query_params
@@ -291,9 +291,6 @@ class AnnotationMixin:
         if location_conf['location'] == Location.CLOUD_STORAGE:
             format_name = request.query_params.get('format')
             file_name = request.query_params.get('filename')
-            rq_id = "{}@/api/{}/{}/annotations/upload".format(
-                self._object.__class__.__name__.lower(), request.user, pk
-            )
 
             return import_func(
                 request=request,

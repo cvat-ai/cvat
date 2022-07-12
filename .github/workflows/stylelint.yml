@@ -1,7 +1,7 @@
-name: Linter
+name: StyleLint
 on: pull_request
 jobs:
-  StyleLint:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

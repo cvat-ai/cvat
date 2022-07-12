@@ -167,11 +167,19 @@
         }
       ],
       "size": 11,
-      "source_storage": null,
+      "source_storage": {
+        "cloud_storage_id": 2,
+        "id": 4,
+        "location": "cloud_storage"
+      },
       "status": "annotation",
       "subset": "Train",
-      "target_storage": null,
-      "updated_date": "2022-03-05T10:32:35.568000Z",
+      "target_storage": {
+        "cloud_storage_id": 2,
+        "id": 2,
+        "location": "cloud_storage"
+      },
+      "updated_date": "2022-06-30T08:56:45.594000Z",
       "url": "http://localhost:8080/api/tasks/11"
     },
     {

@@ -308,7 +308,7 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
         parameters=[
             OpenApiParameter('format', description='Desired output format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('filename', description='Desired output file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('action', description='Used to start downloading process after annotation file had been created',
@@ -362,7 +362,8 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
                 pk=pk,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
-                rq_func=dm.project.import_dataset_as_project
+                rq_func=dm.project.import_dataset_as_project,
+                rq_id=f"/api/project/{pk}/dataset_import",
             )
         else:
             action = request.query_params.get("action", "").lower()
@@ -1022,6 +1023,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
                 db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_task_annotations,
+                rq_id = "{}@/api/tasks/{}/annotations/upload".format(request.user, pk)
             )
         elif request.method == 'PUT':
             format_name = request.query_params.get('format')
@@ -1350,6 +1352,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 db_obj=self._object.segment.task,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_job_annotations,
+                rq_id = "{}@/api/jobs/{}/annotations/upload".format(request.user, pk)
             )
 
         elif request.method == 'PUT':
