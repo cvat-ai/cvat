@@ -9,8 +9,7 @@ contains generator config and templates.
 
 1. Obtain the REST API schema:
 ```bash
-python manage.py spectacular --file schema.yml
-mv schema.yml cvat-api-client/schema/
+python manage.py spectacular --file schema.yml && mv schema.yml cvat-api-client/schema/
 ```
 
 2. Generate package code (call from the package root directory):
