@@ -41,7 +41,7 @@ class DataSerializerExtension(OpenApiSerializerExtension):
         def _make_field(source_name, field_name):
             return _sanitize_field(_get_field(instance, source_name, field_name))
 
-        class _Override(self.target_class):
+        class _Override(self.target_class): # pylint: disable=inherit-non-class
             client_files = serializers.ListField(child=_make_field('client_files', 'file'), default=[])
             server_files = serializers.ListField(child=_make_field('server_files', 'file'), default=[])
             remote_files = serializers.ListField(child=_make_field('remote_files', 'file'), default=[])
