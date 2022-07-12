@@ -29,6 +29,7 @@ interface Props {
     textFontSize: number;
     textPosition: 'center' | 'auto';
     textContent: string;
+    showTagsOnFrame: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
@@ -40,6 +41,7 @@ interface Props {
     onChangeTextFontSize(fontSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
+    onSwitchShowingTagsOnFrame(enabled: boolean): void;
 }
 
 function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -55,6 +57,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         textFontSize,
         textPosition,
         textContent,
+        showTagsOnFrame,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -66,6 +69,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onChangeTextFontSize,
         onChangeTextPosition,
         onChangeTextContent,
+        onSwitchShowingTagsOnFrame,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -221,6 +225,22 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>Try to crop polygons automatically when editing</Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-show-frame-tags'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={showTagsOnFrame}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchShowingTagsOnFrame(event.target.checked);
+                        }}
+                    >
+                        Show tags on frame
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>Show frame tags in the corner of the workspace</Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-aam-zoom-margin'>

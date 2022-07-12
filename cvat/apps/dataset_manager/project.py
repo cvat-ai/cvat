@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Mapping, Tuple
 from django.db import transaction
 
 from cvat.apps.engine import models
-from cvat.apps.engine.serializers import DataSerializer, TaskSerializer
+from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
 
@@ -80,7 +80,7 @@ class ProjectAnnotationAndData:
         })
         data_serializer.is_valid(raise_exception=True)
         db_data = data_serializer.save()
-        db_task = TaskSerializer.create(None, {
+        db_task = TaskWriteSerializer.create(None, {
             **task_fields,
             'data_id': db_data.id,
             'project_id': self.db_project.id

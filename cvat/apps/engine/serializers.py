@@ -21,7 +21,7 @@ from cvat.apps.engine.utils import parse_specific_attributes
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 
 class BasicUserSerializer(serializers.ModelSerializer):
-    def validate(self, data):
+    def validate(self, attrs):
         if hasattr(self, 'initial_data'):
             unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
             if unknown_keys:
@@ -31,7 +31,7 @@ class BasicUserSerializer(serializers.ModelSerializer):
                 else:
                     message = 'Got unknown fields: {}'.format(unknown_keys)
                 raise serializers.ValidationError(message)
-        return data
+        return attrs
 
     class Meta:
         model = User
@@ -113,7 +113,7 @@ class LabelSerializer(SublabelSerializer):
         return label
 
     def validate(self, attrs):
-        if attrs.get('deleted') == True and attrs.get('id') is None:
+        if attrs.get('deleted') and attrs.get('id') is None:
             raise serializers.ValidationError('Deleted label must have an ID')
 
         return attrs
@@ -140,7 +140,7 @@ class LabelSerializer(SublabelSerializer):
             db_label = models.Label.objects.create(name=validated_data.get('name'), type=validated_data.get('type'),
                 parent=parent_label, **instance)
             logger.info("New {} label was created".format(db_label.name))
-        if validated_data.get('deleted') == True:
+        if validated_data.get('deleted'):
             db_label.delete()
             return
         if not validated_data.get('color', None):
@@ -193,7 +193,8 @@ class JobReadSerializer(serializers.ModelSerializer):
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'labels', 'bug_tracker', 'status', 'stage', 'state', 'mode',
-            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type')
+            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
+            'updated_date',)
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):
@@ -370,7 +371,7 @@ class DataSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
-        match = re.search("step\s*=\s*([1-9]\d*)", value)
+        match = re.search(r"step\s*=\s*([1-9]\d*)", value)
         if not match:
             raise serializers.ValidationError("Invalid frame filter expression")
         return value
@@ -382,11 +383,11 @@ class DataSerializer(serializers.ModelSerializer):
         return value
 
     # pylint: disable=no-self-use
-    def validate(self, data):
-        if 'start_frame' in data and 'stop_frame' in data \
-            and data['start_frame'] > data['stop_frame']:
+    def validate(self, attrs):
+        if 'start_frame' in attrs and 'stop_frame' in attrs \
+            and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
-        return data
+        return attrs
 
     def create(self, validated_data):
         files = self._pop_data(validated_data)
@@ -438,8 +439,12 @@ class DataSerializer(serializers.ModelSerializer):
                 remote_file = models.RemoteFile(data=instance, **f)
                 remote_file.save()
 
+class StorageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Storage
+        fields = ('id', 'location', 'cloud_storage_id')
 
-class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
+class TaskReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
@@ -449,24 +454,47 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
     owner = BasicUserSerializer(required=False)
-    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
+    target_storage = StorageSerializer(required=False)
+    source_storage = StorageSerializer(required=False)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
-            'owner_id', 'assignee_id', 'bug_tracker', 'created_date', 'updated_date',
-            'overlap', 'segment_size', 'status', 'labels', 'segments',
-            'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
-            'size', 'image_quality', 'data', 'dimension', 'subset', 'organization')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status',
-            'data_chunk_size', 'owner', 'assignee', 'data_compressed_chunk_type',
-            'data_original_chunk_type', 'size', 'image_quality', 'data',
-            'organization')
-        write_once_fields = ('overlap', 'segment_size', 'project_id')
+            'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
+            'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
+            'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
+            'subset', 'organization', 'target_storage', 'source_storage',
+        )
+        read_only_fields = fields
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if instance.project_id:
+            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
+        return response
+
+class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+    target_storage = StorageSerializer(required=False)
+    source_storage = StorageSerializer(required=False)
+
+    class Meta:
+        model = models.Task
+        fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
+            'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
+            'target_storage', 'source_storage',
+        )
+        write_once_fields = ('overlap', 'segment_size', 'project_id', 'owner_id', 'labels')
+
+    def to_representation(self, instance):
+        serializer = TaskReadSerializer(instance, context=self.context)
+        return serializer.data
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
@@ -487,7 +515,15 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
-        db_task = models.Task.objects.create(**validated_data)
+        # configure source/target storages for import/export
+        storages = _configure_related_storages({
+            'source_storage': validated_data.pop('source_storage', None),
+            'target_storage': validated_data.pop('target_storage', None),
+        })
+
+        db_task = models.Task.objects.create(
+            **storages,
+            **validated_data)
 
         def create_labels(labels, parent_label=None):
             label_colors = list()
@@ -526,12 +562,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task.save()
         return db_task
 
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-        if instance.project_id:
-            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
-        return response
-
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
@@ -562,7 +592,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_project_id)
             if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
-                    raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
+                raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
@@ -598,6 +628,9 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         )
             instance.project = project
 
+        # update source and target storages
+        _update_related_storages(instance, validated_data)
+
         instance.save()
         return instance
 
@@ -609,6 +642,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 project = models.Project.objects.filter(id=project_id).first()
                 if project is None:
                     raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
@@ -639,22 +673,25 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
         read_only_fields = ('name',)
 
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
     owner = BasicUserSerializer(required=False, read_only=True)
-    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    assignee = BasicUserSerializer(allow_null=True, required=False)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True)
+    target_storage = StorageSerializer(required=False)
+    source_storage = StorageSerializer(required=False)
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
-            'owner_id', 'assignee_id', 'bug_tracker', 'task_subsets',
-            'created_date', 'updated_date', 'status', 'dimension', 'organization')
+            'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
+            'dimension', 'organization', 'target_storage', 'source_storage',
+        )
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
-            'assignee', 'task_subsets', 'dimension', 'organization', 'tasks')
+            'assignee', 'task_subsets', 'dimension', 'organization', 'tasks',
+            'target_storage', 'source_storage',
+        )
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
@@ -664,10 +701,37 @@ class ProjectSerializer(serializers.ModelSerializer):
         response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
         return response
 
+class ProjectWriteSerializer(serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
+
+    target_storage = StorageSerializer(required=False)
+    source_storage = StorageSerializer(required=False)
+
+    class Meta:
+        model = models.Project
+        fields = ('name', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
+            'target_storage', 'source_storage', 'task_subsets',
+        )
+
+    def to_representation(self, instance):
+        serializer = ProjectReadSerializer(instance, context=self.context)
+        return serializer.data
+
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
-        db_project = models.Project.objects.create(**validated_data)
+        # configure source/target storages for import/export
+        storages = _configure_related_storages({
+            'source_storage': validated_data.pop('source_storage', None),
+            'target_storage': validated_data.pop('target_storage', None),
+        })
+
+        db_project = models.Project.objects.create(
+            **storages,
+            **validated_data)
 
         def create_labels(labels, parent_label=None):
             label_colors = list()
@@ -697,7 +761,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
         create_labels(labels)
 
-        project_path = db_project.get_project_dirname()
+        project_path = db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
         os.makedirs(db_project.get_project_logs_dirname())
@@ -719,6 +783,9 @@ class ProjectSerializer(serializers.ModelSerializer):
                 update_labels(sublabels, parent_label=db_label)
 
         update_labels(labels)
+
+        # update source and target storages
+        _update_related_storages(instance, validated_data)
 
         instance.save()
         return instance
@@ -1090,19 +1157,19 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def _manifests_validation(storage, manifests):
-            # check manifest files availability
-            for manifest in manifests:
-                file_status = storage.get_file_status(manifest)
-                if file_status == Status.NOT_FOUND:
-                    raise serializers.ValidationError({
-                        'manifests': "The '{}' file does not exist on '{}' cloud storage" \
-                            .format(manifest, storage.name)
-                    })
-                elif file_status == Status.FORBIDDEN:
-                    raise serializers.ValidationError({
-                        'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
-                            .format(manifest, storage.name)
-                    })
+        # check manifest files availability
+        for manifest in manifests:
+            file_status = storage.get_file_status(manifest)
+            if file_status == Status.NOT_FOUND:
+                raise serializers.ValidationError({
+                    'manifests': "The '{}' file does not exist on '{}' cloud storage" \
+                        .format(manifest, storage.name)
+                })
+            elif file_status == Status.FORBIDDEN:
+                raise serializers.ValidationError({
+                    'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                        .format(manifest, storage.name)
+                })
 
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
@@ -1254,3 +1321,61 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         model = models.RelatedFile
         fields = '__all__'
         read_only_fields = ('path',)
+
+
+def _update_related_storages(instance, validated_data):
+    for storage in ('source_storage', 'target_storage'):
+        new_conf = validated_data.pop(storage, None)
+
+        if not new_conf:
+            continue
+
+        cloud_storage_id = new_conf.get('cloud_storage_id')
+        if cloud_storage_id:
+            _validate_existence_of_cloud_storage(cloud_storage_id)
+
+        # storage_instance maybe None
+        storage_instance = getattr(instance, storage)
+        if not storage_instance:
+            storage_instance = models.Storage(**new_conf)
+            storage_instance.save()
+            setattr(instance, storage, storage_instance)
+            continue
+
+        new_location = new_conf.get('location')
+        storage_instance.location = new_location or storage_instance.location
+        storage_instance.cloud_storage_id = new_conf.get('cloud_storage_id', \
+            storage_instance.cloud_storage_id if not new_location else None)
+
+        cloud_storage_id = storage_instance.cloud_storage_id
+        if cloud_storage_id:
+            try:
+                _ = models.CloudStorage.objects.get(id=cloud_storage_id)
+            except models.CloudStorage.DoesNotExist:
+                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+
+        storage_instance.save()
+
+def _configure_related_storages(validated_data):
+
+    storages = {
+        'source_storage': None,
+        'target_storage': None,
+    }
+
+    for i in storages:
+        storage_conf = validated_data.get(i)
+        if storage_conf:
+            cloud_storage_id = storage_conf.get('cloud_storage_id')
+            if cloud_storage_id:
+                _validate_existence_of_cloud_storage(cloud_storage_id)
+            storage_instance = models.Storage(**storage_conf)
+            storage_instance.save()
+            storages[i] = storage_instance
+    return storages
+
+def _validate_existence_of_cloud_storage(cloud_storage_id):
+    try:
+        _ = models.CloudStorage.objects.get(id=cloud_storage_id)
+    except models.CloudStorage.DoesNotExist:
+        raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')

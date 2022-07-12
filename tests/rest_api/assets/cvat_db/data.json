@@ -1413,7 +1413,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-03-05T09:34:33.293Z",
+    "last_login": "2022-06-29T12:55:15.511Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -2185,6 +2185,14 @@
   }
 },
 {
+  "model": "contenttypes.contenttype",
+  "pk": 49,
+  "fields": {
+    "app_label": "engine",
+    "model": "storage"
+  }
+},
+{
   "model": "sessions.session",
   "pk": "5x9v6r58e4l9if78anupog0ittsq2w3j",
   "fields": {
@@ -2206,6 +2214,14 @@
   "fields": {
     "session_data": ".eJxVjEsOwjAMBe-SNYrq_BxYsucMlWO7tIAaqWlXiLujSl3A9s3Me5uetnXst6ZLP4m5GABz-h0L8VPnnciD5nu1XOd1mYrdFXvQZm9V9HU93L-Dkdq41550gJRLCCmJyoBdJmKMmaEEjpwDqmh0wuhc8Q68cmJA7M4OMJjPFyYSODI:1nUkTH:BLJ2UbMcN1AmDEbuOLS5T_O-vbrAzEW_K8oRkQZYt4M",
     "expire_date": "2022-03-31T07:22:55.934Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "g5dq9vpt965l4v12hq2e2mtx3cyoofwi",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hAZ6BRcuvcMZGagtmogKe3KeHfbpAvd_vfef6tI6zLGteU5TkldlFGn341JnrnsID2o3KuWWpZ5Yr0r-qBN32rKr-vh_h2M1MatZtfjAJ6DdIQZhsw-gO2tSCc-9WiyBxc4kMdBMLnOIhMyuPMmWTDq8wXrITeF:1nyr78:_kk9OqBNFufSHoqDmlrR801u639WewL9v6cDAf-qtsY",
+    "expire_date": "2022-06-22T08:32:30.157Z"
   }
 },
 {
@@ -2286,6 +2302,14 @@
   "fields": {
     "session_data": ".eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ6w_vfef5lE61LT2nROQzYX48zhd2OSh44byHcab5OVaVzmge2m2J02209Zn9fd_Tuo1Oq3DrGwD040Ro_-nJmJgkgsqAAIioCi0KGKMhU4Mgip6wjRF6JyMu8PBAI5Mw:1nIXJc:oovNJRods5cbviWOWush4H3jDdP8XklEignva_EnQ8Q",
     "expire_date": "2022-02-25T14:54:28.092Z"
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "2d5bca87ec38cba82ad1da525431ec3a224385b6",
+  "fields": {
+    "user": 1,
+    "created": "2022-06-08T08:32:30.149Z"
   }
 },
 {
@@ -2687,6 +2711,25 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 10,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": ""
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 12,
+  "fields": {
+    "chunk_size": 72,
+    "size": 5,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 4,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -3588,6 +3631,61 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 428,
+  "fields": {
+    "data": 12,
+    "path": "0.png",
+    "frame": 0,
+    "width": 974,
+    "height": 452
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 429,
+  "fields": {
+    "data": 12,
+    "path": "1.png",
+    "frame": 1,
+    "width": 783,
+    "height": 760
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 430,
+  "fields": {
+    "data": 12,
+    "path": "2.png",
+    "frame": 2,
+    "width": 528,
+    "height": 458
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 431,
+  "fields": {
+    "data": 12,
+    "path": "3.png",
+    "frame": 3,
+    "width": 520,
+    "height": 350
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 432,
+  "fields": {
+    "data": 12,
+    "path": "4.png",
+    "frame": 4,
+    "width": 569,
+    "height": 483
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -3598,7 +3696,9 @@
     "created_date": "2021-12-14T19:46:37.969Z",
     "updated_date": "2022-03-05T09:47:49.679Z",
     "status": "annotation",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3610,9 +3710,11 @@
     "assignee": 3,
     "bug_tracker": "",
     "created_date": "2021-12-14T19:52:37.278Z",
-    "updated_date": "2022-03-28T13:04:54.669Z",
+    "updated_date": "2022-06-30T08:56:45.601Z",
     "status": "annotation",
-    "organization": 2
+    "organization": 2,
+    "source_storage": 3,
+    "target_storage": 1
   }
 },
 {
@@ -3626,7 +3728,25 @@
     "created_date": "2022-03-28T13:05:24.659Z",
     "updated_date": "2022-03-28T13:06:09.283Z",
     "status": "annotation",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 4,
+  "fields": {
+    "name": "project4",
+    "owner": 1,
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-06-08T08:32:45.521Z",
+    "updated_date": "2022-06-08T08:33:20.759Z",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3647,7 +3767,9 @@
     "data": 2,
     "dimension": "2d",
     "subset": "",
-    "organization": 1
+    "organization": 1,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3668,7 +3790,9 @@
     "data": 5,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3689,7 +3813,9 @@
     "data": 6,
     "dimension": "3d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3710,7 +3836,9 @@
     "data": 7,
     "dimension": "2d",
     "subset": "",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3731,7 +3859,9 @@
     "data": 8,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3752,7 +3882,9 @@
     "data": 9,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3766,14 +3898,16 @@
     "assignee": 19,
     "bug_tracker": "",
     "created_date": "2022-03-05T10:32:19.149Z",
-    "updated_date": "2022-03-05T10:32:35.568Z",
+    "updated_date": "2022-06-30T08:56:45.594Z",
     "overlap": 0,
     "segment_size": 11,
     "status": "annotation",
     "data": 11,
     "dimension": "2d",
     "subset": "Train",
-    "organization": 2
+    "organization": 2,
+    "source_storage": 4,
+    "target_storage": 2
   }
 },
 {
@@ -3794,7 +3928,32 @@
     "data": null,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 13,
+  "fields": {
+    "project": 4,
+    "name": "task1_in_project4",
+    "mode": "annotation",
+    "owner": 1,
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-06-08T08:33:06.505Z",
+    "updated_date": "2022-06-08T08:33:20.808Z",
+    "overlap": 0,
+    "segment_size": 5,
+    "status": "annotation",
+    "data": 12,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -4446,6 +4605,46 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 429,
+  "fields": {
+    "data": 12,
+    "file": "/home/django/data/data/12/raw/4.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 430,
+  "fields": {
+    "data": 12,
+    "file": "/home/django/data/data/12/raw/0.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 431,
+  "fields": {
+    "data": 12,
+    "file": "/home/django/data/data/12/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 432,
+  "fields": {
+    "data": 12,
+    "file": "/home/django/data/data/12/raw/3.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 433,
+  "fields": {
+    "data": 12,
+    "file": "/home/django/data/data/12/raw/2.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -4545,11 +4744,21 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 17,
+  "fields": {
+    "task": 13,
+    "start_frame": 0,
+    "stop_frame": 4
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
     "segment": 2,
     "assignee": 6,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "new"
@@ -4561,6 +4770,7 @@
   "fields": {
     "segment": 7,
     "assignee": 9,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4572,6 +4782,7 @@
   "fields": {
     "segment": 8,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "new"
@@ -4583,6 +4794,7 @@
   "fields": {
     "segment": 9,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4594,6 +4806,7 @@
   "fields": {
     "segment": 10,
     "assignee": 1,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4605,6 +4818,7 @@
   "fields": {
     "segment": 11,
     "assignee": 9,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4616,6 +4830,7 @@
   "fields": {
     "segment": 12,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "validation",
     "state": "new"
@@ -4627,6 +4842,7 @@
   "fields": {
     "segment": 13,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "acceptance",
     "state": "new"
@@ -4638,6 +4854,7 @@
   "fields": {
     "segment": 14,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "new"
@@ -4649,6 +4866,19 @@
   "fields": {
     "segment": 16,
     "assignee": 7,
+    "updated_date": "2022-06-22T09:18:45.296Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 17,
+  "fields": {
+    "segment": 17,
+    "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4782,6 +5012,26 @@
     "project": null,
     "name": "Car",
     "color": "#2080c0"
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 16,
+  "fields": {
+    "task": null,
+    "project": 4,
+    "name": "cat",
+    "color": "#6080c0"
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 17,
+  "fields": {
+    "task": null,
+    "project": 4,
+    "name": "dog",
+    "color": "#406040"
   }
 },
 {
@@ -5347,6 +5597,64 @@
   }
 },
 {
+  "model": "engine.jobcommit",
+  "pk": 63,
+  "fields": {
+    "scope": "create",
+    "owner": 1,
+    "timestamp": "2022-06-08T08:33:06.712Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 17
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 64,
+  "fields": {
+    "scope": "create",
+    "owner": 1,
+    "timestamp": "2022-06-08T08:33:20.812Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 17
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 65,
+  "fields": {
+    "scope": "create",
+    "owner": 1,
+    "timestamp": "2022-06-08T08:33:20.979Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 17
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 66,
+  "fields": {
+    "scope": "update",
+    "owner": 1,
+    "timestamp": "2022-06-08T08:33:20.980Z",
+    "data": {
+      "state": "in progress"
+    },
+    "job": 17
+  }
+},
+{
   "model": "engine.labeledshape",
   "pk": 1,
   "fields": {
@@ -5503,6 +5811,38 @@
     "occluded": false,
     "z_order": 0,
     "points": "[100.14453125, 246.03515625, 408.8692551505537, 327.5483359746413, 588.5839936608554, 289.0380348652925, 623.8851030110927, 183.77654516640177, 329.2812995245622, 71.45483359746322]",
+    "rotation": 0.0
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 34,
+  "fields": {
+    "job": 17,
+    "label": 16,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "z_order": 0,
+    "points": "[106.36066411239153, 85.1515964240134, 240.08352490421748, 241.26526181354166]",
+    "rotation": 0.0
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 35,
+  "fields": {
+    "job": 17,
+    "label": 16,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "z_order": 0,
+    "points": "[414.29522752496996, 124.8035516093205, 522.2641509433943, 286.75693673695605]",
     "rotation": 0.0
   }
 },
@@ -5819,6 +6159,14 @@
   }
 },
 {
+  "model": "engine.manifest",
+  "pk": 3,
+  "fields": {
+    "filename": "manifest.jsonl",
+    "cloud_storage": 3
+  }
+},
+{
   "model": "engine.cloudstorage",
   "pk": 1,
   "fields": {
@@ -5850,6 +6198,55 @@
     "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
     "description": "",
     "organization": 2
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 3,
+  "fields": {
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "importexportbucket",
+    "display_name": "Import/Export bucket",
+    "owner": 1,
+    "created_date": "2022-06-29T12:56:18.257Z",
+    "updated_date": "2022-06-29T12:56:18.264Z",
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "Bucket for importing and exporting annotations and backups",
+    "organization": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 1,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 2,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 3,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 4,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage_id": 2
   }
 }
 ]

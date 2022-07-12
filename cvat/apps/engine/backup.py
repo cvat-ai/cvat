@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,27 +17,35 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from django_sendfile import sendfile
+from distutils.util import strtobool
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
-    LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer,
-    ProjectSerializer, ProjectFileSerializer, TaskFileSerializer)
+    LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
+    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice, Task, Project
+from cvat.apps.engine.models import (
+    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
+    CloudStorage as CloudStorageModel)
 from cvat.apps.engine.task import _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
+from cvat.apps.engine.cloud_provider import (
+    db_storage_to_storage_instance, validate_bucket_status
+)
 
+from cvat.apps.engine.location import StorageType, get_location_configuration
 
 class Version(Enum):
-        V1 = '1.0'
+    V1 = '1.0'
 
 
 def _get_label_mapping(db_labels):
@@ -266,7 +274,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             raise NotImplementedError()
 
     def _write_task(self, zip_object, target_dir=None):
-        task_dir = self._db_task.get_task_dirname()
+        task_dir = self._db_task.get_dirname()
         target_task_dir = os.path.join(target_dir, self.TASK_DIRNAME) if target_dir else self.TASK_DIRNAME
         self._write_directory(
             source_dir=task_dir,
@@ -277,7 +285,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
     def _write_manifest(self, zip_object, target_dir=None):
         def serialize_task():
-            task_serializer = TaskSerializer(self._db_task)
+            task_serializer = TaskReadSerializer(self._db_task)
             for field in ('url', 'owner', 'assignee', 'segments'):
                 task_serializer.fields.pop(field)
 
@@ -348,8 +356,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
     def export_to(self, file, target_dir=None):
         if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
-           self._db_task.data.storage == StorageChoice.SHARE:
-           raise Exception('The task cannot be exported because it does not contain any raw data')
+                self._db_task.data.storage == StorageChoice.SHARE:
+            raise Exception('The task cannot be exported because it does not contain any raw data')
 
         if isinstance(file, str):
             with ZipFile(file, 'w') as zf:
@@ -484,7 +492,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._manifest['project_id'] = self._project_id
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
-        task_path = self._db_task.get_task_dirname()
+        task_path = self._db_task.get_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
@@ -569,7 +577,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
     def _write_manifest(self, zip_object):
         def serialize_project():
-            project_serializer = ProjectSerializer(self._db_project)
+            project_serializer = ProjectReadSerializer(self._db_project)
             for field in ('assignee', 'owner', 'tasks', 'url'):
                 project_serializer.fields.pop(field)
 
@@ -591,7 +599,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
             self._write_manifest(output_file)
 
 class ProjectImporter(_ImporterBase, _ProjectBackupBase):
-    TASKNAME_RE = 'task_(\d+)/'
+    TASKNAME_RE = r'task_(\d+)/'
 
     def __init__(self, filename, user_id, org_id=None):
         super().__init__(logger=slogger.glob)
@@ -616,7 +624,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._manifest["owner_id"] = self._user_id
 
         self._db_project = models.Project.objects.create(**self._manifest, organization_id=self._org_id)
-        project_path = self._db_project.get_project_dirname()
+        project_path = self._db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
         os.makedirs(self._db_project.get_project_logs_dirname())
@@ -693,6 +701,8 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
 
 def export(db_instance, request):
     action = request.query_params.get('action', None)
+    filename = request.query_params.get('filename', None)
+
     if action not in (None, 'download'):
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
@@ -702,14 +712,23 @@ def export(db_instance, request):
         logger = slogger.task[db_instance.pk]
         Exporter = TaskExporter
         cache_ttl = TASK_CACHE_TTL
+        use_target_storage_conf = request.query_params.get('use_default_location', True)
     elif isinstance(db_instance, Project):
         filename_prefix = 'project'
         logger = slogger.project[db_instance.pk]
         Exporter = ProjectExporter
         cache_ttl = PROJECT_CACHE_TTL
+        use_target_storage_conf = request.query_params.get('use_default_location', True)
     else:
         raise Exception(
             "Unexpected type of db_isntance: {}".format(type(db_instance)))
+    use_settings = strtobool(str(use_target_storage_conf))
+    obj = db_instance if use_settings else request.query_params
+    location_conf = get_location_configuration(
+        obj=obj,
+        use_settings=use_settings,
+        field_name=StorageType.TARGET
+    )
 
     queue = django_rq.get_queue("default")
     rq_id = "/api/{}s/{}/backup".format(filename_prefix, db_instance.pk)
@@ -728,11 +747,33 @@ def export(db_instance, request):
 
                     timestamp = datetime.strftime(last_project_update_time,
                         "%Y_%m_%d_%H_%M_%S")
-                    filename = "{}_{}_backup_{}{}".format(
+                    filename = filename or "{}_{}_backup_{}{}".format(
                         filename_prefix, db_instance.name, timestamp,
-                        os.path.splitext(file_path)[1])
-                    return sendfile(request, file_path, attachment=True,
-                        attachment_filename=filename.lower())
+                        os.path.splitext(file_path)[1]).lower()
+
+                    location = location_conf.get('location')
+                    if location == Location.LOCAL:
+                        return sendfile(request, file_path, attachment=True,
+                            attachment_filename=filename)
+                    elif location == Location.CLOUD_STORAGE:
+
+                        @validate_bucket_status
+                        def _export_to_cloud_storage(storage, file_path, file_name):
+                            storage.upload_file(file_path, file_name)
+
+                        try:
+                            storage_id = location_conf['storage_id']
+                        except KeyError:
+                            raise serializers.ValidationError(
+                                'Cloud storage location was selected for destination'
+                                ' but cloud storage id was not specified')
+                        db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                        storage = db_storage_to_storage_instance(db_storage)
+
+                        _export_to_cloud_storage(storage, file_path, filename)
+                        return Response(status=status.HTTP_200_OK)
+                    else:
+                        raise NotImplementedError()
                 else:
                     if os.path.exists(file_path):
                         return Response(status=status.HTTP_201_CREATED)
@@ -753,21 +794,47 @@ def export(db_instance, request):
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import(importer, request, rq_id, Serializer, file_field_name, filename=None):
+def _import(importer, request, rq_id, Serializer, file_field_name, location_conf, filename=None):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
         fd = None
-        if not filename:
-            serializer = Serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            payload_file = serializer.validated_data[file_field_name]
+
+        location = location_conf.get('location')
+        if location == Location.LOCAL:
+            if not filename:
+                serializer = Serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                payload_file = serializer.validated_data[file_field_name]
+                fd, filename = mkstemp(prefix='cvat_')
+                with open(filename, 'wb+') as f:
+                    for chunk in payload_file.chunks():
+                        f.write(chunk)
+        else:
+            @validate_bucket_status
+            def _import_from_cloud_storage(storage, file_name):
+                return storage.download_fileobj(file_name)
+
+            file_name = request.query_params.get('filename')
+            assert file_name
+
+            # download file from cloud storage
+            try:
+                storage_id = location_conf['storage_id']
+            except KeyError:
+                raise serializers.ValidationError(
+                    'Cloud storage location was selected for destination'
+                    ' but cloud storage id was not specified')
+            db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+            storage = db_storage_to_storage_instance(db_storage)
+
+            data = _import_from_cloud_storage(storage, file_name)
+
             fd, filename = mkstemp(prefix='cvat_')
             with open(filename, 'wb+') as f:
-                for chunk in payload_file.chunks():
-                    f.write(chunk)
+                f.write(data.getbuffer())
         rq_job = queue.enqueue_call(
             func=importer,
             args=(filename, request.user.id, org_id),
@@ -814,12 +881,18 @@ def import_project(request, filename=None):
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
+    location_conf = get_location_configuration(
+        obj=request.query_params,
+        field_name=StorageType.SOURCE,
+    )
+
     return _import(
         importer=_import_project,
         request=request,
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
+        location_conf=location_conf,
         filename=filename
     )
 
@@ -831,11 +904,17 @@ def import_task(request, filename=None):
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 
+    location_conf = get_location_configuration(
+        obj=request.query_params,
+        field_name=StorageType.SOURCE
+    )
+
     return _import(
         importer=_import_task,
         request=request,
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
+        location_conf=location_conf,
         filename=filename
     )

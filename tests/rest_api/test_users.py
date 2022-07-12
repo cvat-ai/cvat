@@ -1,12 +1,16 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
+
+import pytest
 from deepdiff import DeepDiff
 
-from .utils.config import get_method
+from rest_api.utils.config import get_method
 
+
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetUsers:
     def _test_can_see(self, user, data, endpoint='users', exclude_paths='', **kwargs):
         response = get_method(user, endpoint, **kwargs)

@@ -139,7 +139,7 @@ export enum AnnotationActionTypes {
     REPEAT_DRAW_SHAPE = 'REPEAT_DRAW_SHAPE',
     SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
-    REMEMBER_CREATED_OBJECT = 'REMEMBER_CREATED_OBJECT',
+    REMEMBER_OBJECT = 'REMEMBER_OBJECT',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
     UPDATE_ANNOTATIONS_FAILED = 'UPDATE_ANNOTATIONS_FAILED',
     CREATE_ANNOTATIONS_SUCCESS = 'CREATE_ANNOTATIONS_SUCCESS',
@@ -156,6 +156,7 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    REMOVE_OBJECT = 'REMOVE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
     PROPAGATE_OBJECT = 'PROPAGATE_OBJECT',
@@ -554,6 +555,16 @@ export function removeObjectAsync(sessionInstance: any, objectState: any, force:
                 },
             });
         }
+    };
+}
+
+export function removeObject(objectState: any, force: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.REMOVE_OBJECT,
+        payload: {
+            objectState,
+            force,
+        },
     };
 }
 
@@ -1199,7 +1210,7 @@ export function rememberObject(createParams: {
     activeCuboidDrawingMethod?: CuboidDrawingMethod;
 }): AnyAction {
     return {
-        type: AnnotationActionTypes.REMEMBER_CREATED_OBJECT,
+        type: AnnotationActionTypes.REMEMBER_OBJECT,
         payload: createParams,
     };
 }
@@ -1569,6 +1580,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
             canvas: { instance: canvasInstance },
+            annotations: { states },
             job: { labels, instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
@@ -1637,12 +1649,15 @@ export function repeatDrawShapeAsync(): ThunkAction {
         }
 
         if (activeObjectType === ObjectType.TAG) {
-            const objectState = new cvat.classes.ObjectState({
-                objectType: ObjectType.TAG,
-                label: activeLabel,
-                frame: frameNumber,
-            });
-            dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
+            const tags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
+            if (tags.every((objectState: any): boolean => objectState.label.id !== activeLabelID)) {
+                const objectState = new cvat.classes.ObjectState({
+                    objectType: ObjectType.TAG,
+                    label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                    frame: frameNumber,
+                });
+                dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
+            }
         } else if (canvasInstance) {
             canvasInstance.draw({
                 enabled: true,

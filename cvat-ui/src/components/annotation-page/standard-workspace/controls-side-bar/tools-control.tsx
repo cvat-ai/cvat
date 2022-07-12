@@ -351,7 +351,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction.latestRequest = null;
 
         try {
-            this.interaction.hideMessage = message.loading(`Waiting a response from ${activeInteractor?.name}..`, 0);
+            this.interaction.hideMessage = message.loading({
+                content: `Waiting a response from ${activeInteractor?.name}..`,
+                duration: 0,
+                className: 'cvat-tracking-notice',
+            });
             try {
                 // run server request
                 this.setState({ fetching: true });
@@ -697,12 +701,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                         const trackableObjects = trackingData.stateless[trackerID];
                         const numOfObjects = trackableObjects.clientIDs.length;
-                        hideMessage = message.loading(
-                            `${tracker.name}: states are being initialized for ${numOfObjects} ${
+                        hideMessage = message.loading({
+                            content: `${tracker.name}: states are being initialized for ${numOfObjects} ${
                                 numOfObjects > 1 ? 'objects' : 'object'
                             } ..`,
-                            0,
-                        );
+                            duration: 0,
+                            className: 'cvat-tracking-notice',
+                        });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,
@@ -742,12 +747,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                         const trackableObjects = trackingData.statefull[trackerID];
                         const numOfObjects = trackableObjects.clientIDs.length;
-                        hideMessage = message.loading(
-                            `${tracker.name}: ${numOfObjects} ${
+                        hideMessage = message.loading({
+                            content: `${tracker.name}: ${numOfObjects} ${
                                 numOfObjects > 1 ? 'objects are' : 'object is'
                             } being tracked..`,
-                            0,
-                        );
+                            duration: 0,
+                            className: 'cvat-tracking-notice',
+                        });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,

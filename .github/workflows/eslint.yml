@@ -1,7 +1,7 @@
-name: Linter
+name: ESLint
 on: pull_request
 jobs:
-  ESLint:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

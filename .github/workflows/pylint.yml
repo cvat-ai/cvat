@@ -1,7 +1,7 @@
-name: Linter
+name: Pylint
 on: pull_request
 jobs:
-  PyLint:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

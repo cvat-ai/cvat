@@ -63,7 +63,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                         'user': {
                             'role': self.org_role,
                         },
-                    } if self.org_id != None else None
+                    } if self.org_id is not None else None
                 }
             }
         }
@@ -210,7 +210,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 'role': self.role,
                 'organization': {
                     'id': self.org_id
-                } if self.org_id != None else None
+                } if self.org_id is not None else None
             }
 
         return data
@@ -417,7 +417,8 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
             'destroy': 'delete',
             'content': 'list:content',
             'preview': 'view',
-            'status': 'view'
+            'status': 'view',
+            'actions': 'view',
         }.get(view.action)]
 
     def get_resource(self):
@@ -427,7 +428,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
                 'owner': { 'id': self.user_id },
                 'organization': {
                     'id': self.org_id
-                } if self.org_id != None else None,
+                } if self.org_id is not None else None,
                 'user': {
                     'num_resources': Organization.objects.filter(
                         owner=self.user_id).count()
@@ -620,9 +621,9 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = TaskPermission.create_scope_create(request, org_id)
                 # We don't create a project, just move it. Thus need to decrease
                 # the number of resources.
-                if obj != None:
+                if obj is not None:
                     perm.payload['input']['resource']['user']['num_resources'] -= 1
-                    if obj.project != None:
+                    if obj.project is not None:
                         ValidationError('Cannot change the organization for '
                             'a task inside a project')
                 permissions.append(perm)

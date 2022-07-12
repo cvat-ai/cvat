@@ -42,6 +42,7 @@ export enum SettingsActionTypes {
     SET_SETTINGS = 'SET_SETTINGS',
     SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
     SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
+    SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -347,6 +348,15 @@ export function switchShowingDeletedFrames(showDeletedFrames: boolean): AnyActio
         type: SettingsActionTypes.SWITCH_SHOWING_DELETED_FRAMES,
         payload: {
             showDeletedFrames,
+        },
+    };
+}
+
+export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_TAGS_ON_FRAME,
+        payload: {
+            showTagsOnFrame,
         },
     };
 }

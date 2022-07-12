@@ -205,7 +205,7 @@ class Data(models.Model):
         default_permissions = ()
 
     def get_frame_step(self):
-        match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
+        match = re.search(r"step\s*=\s*([1-9]\d*)", self.frame_filter)
         return int(match.group(1)) if match else 1
 
     def get_data_dirname(self):
@@ -289,7 +289,6 @@ class Image(models.Model):
         default_permissions = ()
 
 class Project(models.Model):
-
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
@@ -302,15 +301,19 @@ class Project(models.Model):
                               default=StatusChoice.ANNOTATION)
     organization = models.ForeignKey(Organization, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="projects")
+    source_storage = models.ForeignKey('Storage', null=True, default=None,
+        blank=True, on_delete=models.SET_NULL, related_name='+')
+    target_storage = models.ForeignKey('Storage', null=True, default=None,
+        blank=True, on_delete=models.SET_NULL, related_name='+')
 
-    def get_project_dirname(self):
+    def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
 
     def get_project_logs_dirname(self):
-        return os.path.join(self.get_project_dirname(), 'logs')
+        return os.path.join(self.get_dirname(), 'logs')
 
     def get_tmp_dirname(self):
-        return os.path.join(self.get_project_dirname(), "tmp")
+        return os.path.join(self.get_dirname(), "tmp")
 
     def get_client_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "client.log")
@@ -348,17 +351,20 @@ class Task(models.Model):
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey(Organization, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="tasks")
-
+    source_storage = models.ForeignKey('Storage', null=True, default=None,
+        blank=True, on_delete=models.SET_NULL, related_name='+')
+    target_storage = models.ForeignKey('Storage', null=True, default=None,
+        blank=True, on_delete=models.SET_NULL, related_name='+')
 
     # Extend default permission model
     class Meta:
         default_permissions = ()
 
-    def get_task_dirname(self):
+    def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
 
     def get_task_logs_dirname(self):
-        return os.path.join(self.get_task_dirname(), 'logs')
+        return os.path.join(self.get_dirname(), 'logs')
 
     def get_client_log_path(self):
         return os.path.join(self.get_task_logs_dirname(), "client.log")
@@ -367,10 +373,10 @@ class Task(models.Model):
         return os.path.join(self.get_task_logs_dirname(), "task.log")
 
     def get_task_artifacts_dirname(self):
-        return os.path.join(self.get_task_dirname(), 'artifacts')
+        return os.path.join(self.get_dirname(), 'artifacts')
 
     def get_tmp_dirname(self):
-        return os.path.join(self.get_task_dirname(), "tmp")
+        return os.path.join(self.get_dirname(), "tmp")
 
     def __str__(self):
         return self.name
@@ -438,6 +444,7 @@ class Segment(models.Model):
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    updated_date = models.DateTimeField(auto_now=True)
     # TODO: it has to be deleted in Job, Task, Project and replaced by (stage, state)
     # The stage field cannot be changed by an assignee, but state field can be. For
     # now status is read only and it will be updated by (stage, state). Thus we don't
@@ -448,6 +455,9 @@ class Job(models.Model):
         default=StageChoice.ANNOTATION)
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
+
+    def get_dirname(self):
+        return os.path.join(settings.JOBS_ROOT, str(self.id))
 
     def get_project_id(self):
         project = self.segment.task.project
@@ -564,8 +574,8 @@ class SourceType(str, Enum):
     MANUAL = 'manual'
 
     @classmethod
-    def choices(self):
-        return tuple((x.value, x.name) for x in self)
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
 
     def __str__(self):
         return self.value
@@ -734,6 +744,21 @@ class Manifest(models.Model):
     def __str__(self):
         return '{}'.format(self.filename)
 
+class Location(str, Enum):
+    CLOUD_STORAGE = 'cloud_storage'
+    LOCAL = 'local'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+    @classmethod
+    def list(cls):
+        return [i.value for i in cls]
+
 class CloudStorage(models.Model):
     # restrictions:
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
@@ -761,7 +786,6 @@ class CloudStorage(models.Model):
     organization = models.ForeignKey(Organization, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="cloudstorages")
 
-
     class Meta:
         default_permissions = ()
         unique_together = ('provider_type', 'resource', 'credentials')
@@ -786,3 +810,10 @@ class CloudStorage(models.Model):
 
     def get_key_file_path(self):
         return os.path.join(self.get_storage_dirname(), 'key.json')
+
+class Storage(models.Model):
+    location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
+    cloud_storage_id = models.IntegerField(null=True, blank=True, default=None)
+
+    class Meta:
+        default_permissions = ()

@@ -11,9 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project/task backups uploading via chunk uploads (<https://github.com/cvat-ai/cvat/pull/9>)
 - Fixed UX bug when jobs pagination is reset after changing a job (<https://github.com/cvat-ai/cvat/pull/42>)
 - Progressbars in CLI for file uploading and downloading (<https://github.com/cvat-ai/cvat/pull/46>)
+- `utils/cli` changed to `cvat-cli` package (<https://github.com/cvat-ai/cvat/pull/59>)
+- Support custom file name for backup (<https://github.com/cvat-ai/cvat/pull/91>)
+- Possibility to display tags on frame (<https://github.com/cvat-ai/cvat/pull/75>)
+- Support source and target storages (server part) (<https://github.com/cvat-ai/cvat/pull/28>)
+- Tests for import/export annotation, dataset, backup from/to cloud storage (<https://github.com/cvat-ai/cvat/pull/56>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)
+- Simplified running REST API tests. Extended CI-nightly workflow (<https://github.com/cvat-ai/cvat/pull/26>)
+
 
 ### Deprecated
 - TDB
@@ -25,8 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Task creation progressbar bug (<https://github.com/cvat-ai/cvat/issues/12>)
 - Removed Python dependency ``open3d`` which brought different issues to the building process
 - Analytics not accessible when https is enabled (<https://github.com/cvat-ai/cvat/pull/20>)
-- Dataset import in an organization (<https://github.com/cvat-ai/cvat/pull/18>)
+- Dataset import in an organization (<https://github.com/cvat-ai/cvat/pull/18>, <https://github.com/cvat-ai/cvat/pull/35>)
 - Updated minimist npm package to v1.2.6 (<https://github.com/cvat-ai/cvat/pull/34>)
+- Request Status Code 500 "StopIteration" when exporting dataset (<https://github.com/cvat-ai/cvat/pull/17>)
 
 ### Security
 - TDB

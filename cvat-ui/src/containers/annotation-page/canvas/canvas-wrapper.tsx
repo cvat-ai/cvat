@@ -95,6 +95,7 @@ interface StateToProps {
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
     canvasBackgroundColor: string;
+    showTagsOnFrame: boolean;
 }
 
 interface DispatchToProps {
@@ -164,6 +165,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 aamZoomMargin,
                 showObjectsTextAlways,
                 showAllInterpolationTracks,
+                showTagsOnFrame,
                 automaticBordering,
                 intelligentPolygonCrop,
                 textFontSize,
@@ -212,6 +214,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textPosition,
         textContent,
         showAllInterpolationTracks,
+        showTagsOnFrame,
         curZLayer,
         minZLayer,
         maxZLayer,
