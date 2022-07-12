@@ -1867,7 +1867,6 @@ const ObjectState = require('./object-state');
             return {
                 type: this.shapeType,
                 clientID: this.clientID,
-                occluded: elements.every((el) => el.occluded),
                 z_order: this.zOrder,
                 points: this.points,
                 rotation: 0,
@@ -1967,27 +1966,6 @@ const ObjectState = require('./object-state');
             );
         }
 
-        // _saveOutside(frame, outside) {
-        //     const wasKeyframe = frame in this.shapes;
-        //     const undoSource = this.source;
-        //     const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
-        //     const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        //     const redoShape = wasKeyframe ?
-        //         { ...this.shapes[frame], outside } :
-        //         copyShape(this.get(frame), frame, { outside });
-
-        //     this.shapes[frame] = redoShape;
-        //     this.source = redoSource;
-        //     this._appendShapeActionToHistory(
-        //         HistoryActions.CHANGED_OUTSIDE,
-        //         frame,
-        //         undoShape,
-        //         redoShape,
-        //         undoSource,
-        //         redoSource,
-        //     );
-        // }
-
         save(frame, data) {
             if (this.lock && data.lock) {
                 return new ObjectState(this.get(frame));
@@ -2075,6 +2053,14 @@ const ObjectState = require('./object-state');
         }
 
         set occluded(_) {
+            // stub
+        }
+
+        get lock() {
+            return this.elements.every((element) => element.lock);
+        }
+
+        set lock(_) {
             // stub
         }
     }
@@ -2665,7 +2651,6 @@ const ObjectState = require('./object-state');
                 shapeType: this.shapeType,
                 clientID: this.clientID,
                 serverID: this.serverID,
-                lock: this.lock,
                 color: this.color,
                 hidden: this.hidden,
                 updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
@@ -2676,11 +2661,6 @@ const ObjectState = require('./object-state');
                 frame,
                 source: this.source,
                 ...this._withContext(frame),
-
-                // computable occluded
-                // computable outside
-                // todo: save occluded for a track, check undo/redo
-                // todo: save outside for a track, check undo/redo
             };
         }
 
@@ -2720,29 +2700,25 @@ const ObjectState = require('./object-state');
                 return new ObjectState(this.get(frame));
             }
 
-            const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
-            const undoSource = this.source;
-            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+            const updateElements = (affectedElements, action) => {
+                const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
+                const undoSource = this.source;
+                const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
 
-            try {
-                this.history.freeze(true);
-                data.elements.forEach((element, idx) => {
-                    const annotationContext = this.elements[idx];
-                    annotationContext.save(frame, element);
-                });
-            } finally {
-                this.history.freeze(false);
-            }
+                try {
+                    this.history.freeze(true);
+                    data.elements.forEach((element, idx) => {
+                        const annotationContext = this.elements[idx];
+                        annotationContext.save(frame, element);
+                    });
+                } finally {
+                    this.history.freeze(false);
+                }
 
-            const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
-            const affectedElements = this.elements.filter((_, idx) => (
-                undoSkeletonShapes[idx] !== redoSkeletonShapes[idx]
-            ));
+                const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
 
-            if (affectedElements.length) {
-                this.source = redoSource;
                 this.history.do(
-                    HistoryActions.CHANGED_POINTS,
+                    action,
                     () => {
                         for (let i = 0; i < this.elements.length; i++) {
                             if (undoSkeletonShapes[i]) {
@@ -2772,7 +2748,19 @@ const ObjectState = require('./object-state');
                     [this.clientID, ...affectedElements.map((element) => element.clientID)],
                     frame,
                 );
-            }
+            };
+
+            const updatedPoints = data.elements.filter((el) => el.updateFlags.points);
+            const updatedOccluded = data.elements.filter((el) => el.updateFlags.occluded);
+            const updatedOutside = data.elements.filter((el) => el.updateFlags.outside);
+
+            updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = false; });
+            updatedOutside.forEach((el) => { el.updateFlags.outside = false; });
+            updateElements(updatedPoints, HistoryActions.CHANGED_POINTS);
+            updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = true; });
+            updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED);
+            updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
+            updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
 
             const result = Track.prototype.save.call(this, frame, data);
             return result;

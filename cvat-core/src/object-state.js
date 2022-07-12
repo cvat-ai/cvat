@@ -378,10 +378,21 @@ const { Source, ObjectShape } = require('./enums');
                          * @memberof module:API.cvat.classes.ObjectState
                          * @instance
                          */
-                        get: () => data.lock,
+                        get: () => {
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                return data.elements.every((el) => el.lock);
+                            }
+                            return data.lock;
+                        },
                         set: (lock) => {
-                            data.updateFlags.lock = true;
-                            data.lock = lock;
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                for (const element of this.elements) {
+                                    element.lock = lock;
+                                }
+                            } else {
+                                data.updateFlags.lock = true;
+                                data.lock = lock;
+                            }
                         },
                     },
                     pinned: {
@@ -487,47 +498,47 @@ const { Source, ObjectShape } = require('./enums');
                 }),
             );
 
-            this.label = serialized.label;
-            this.lock = serialized.lock;
+            data.label = serialized.label;
+            data.lock = serialized.lock;
 
             if ([Source.MANUAL, Source.AUTO].includes(serialized.source)) {
                 data.source = serialized.source;
             }
             if (typeof serialized.zOrder === 'number') {
-                this.zOrder = serialized.zOrder;
+                data.zOrder = serialized.zOrder;
             }
             if (typeof serialized.occluded === 'boolean') {
-                this.occluded = serialized.occluded;
+                data.occluded = serialized.occluded;
             }
             if (typeof serialized.outside === 'boolean') {
-                this.outside = serialized.outside;
+                data.outside = serialized.outside;
             }
             if (typeof serialized.keyframe === 'boolean') {
-                this.keyframe = serialized.keyframe;
+                data.keyframe = serialized.keyframe;
             }
             if (typeof serialized.pinned === 'boolean') {
-                this.pinned = serialized.pinned;
+                data.pinned = serialized.pinned;
             }
             if (typeof serialized.hidden === 'boolean') {
-                this.hidden = serialized.hidden;
+                data.hidden = serialized.hidden;
             }
             if (typeof serialized.color === 'string') {
-                this.color = serialized.color;
+                data.color = serialized.color;
             }
             if (typeof serialized.rotation === 'number') {
-                this.rotation = serialized.rotation;
+                data.rotation = serialized.rotation;
             }
             if (Array.isArray(serialized.points)) {
-                this.points = serialized.points;
+                data.points = serialized.points;
             }
             if (
                 Array.isArray(serialized.descriptions) &&
                 serialized.descriptions.every((desc) => typeof desc === 'string')
             ) {
-                this.descriptions = serialized.descriptions;
+                data.descriptions = serialized.descriptions;
             }
             if (typeof serialized.attributes === 'object') {
-                this.attributes = serialized.attributes;
+                data.attributes = serialized.attributes;
             }
 
             data.updateFlags.reset();
