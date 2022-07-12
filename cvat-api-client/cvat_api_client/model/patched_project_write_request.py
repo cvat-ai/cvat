@@ -41,10 +41,12 @@ if TYPE_CHECKING:
 
 def lazy_import():
     from cvat_api_client.model.patched_label_request import PatchedLabelRequest
-    from cvat_api_client.model.storage_request import StorageRequest
+    from cvat_api_client.model.patched_project_write_request_target_storage import (
+        PatchedProjectWriteRequestTargetStorage,
+    )
 
     globals()["PatchedLabelRequest"] = PatchedLabelRequest
-    globals()["StorageRequest"] = StorageRequest
+    globals()["PatchedProjectWriteRequestTargetStorage"] = PatchedProjectWriteRequestTargetStorage
 
 
 class PatchedProjectWriteRequest(ModelNormal):
@@ -64,9 +66,9 @@ class PatchedProjectWriteRequest(ModelNormal):
 
       bug_tracker (str): [optional]  # noqa: E501
 
-      target_storage (StorageRequest): [optional]  # noqa: E501
+      target_storage (PatchedProjectWriteRequestTargetStorage): [optional]  # noqa: E501
 
-      source_storage (StorageRequest): [optional]  # noqa: E501
+      source_storage (PatchedProjectWriteRequestTargetStorage): [optional]  # noqa: E501
 
       task_subsets ([str]): [optional]  # noqa: E501
 
@@ -145,8 +147,8 @@ class PatchedProjectWriteRequest(ModelNormal):
                 none_type,
             ),  # noqa: E501
             "bug_tracker": (str,),  # noqa: E501
-            "target_storage": (StorageRequest,),  # noqa: E501
-            "source_storage": (StorageRequest,),  # noqa: E501
+            "target_storage": (PatchedProjectWriteRequestTargetStorage,),  # noqa: E501
+            "source_storage": (PatchedProjectWriteRequestTargetStorage,),  # noqa: E501
             "task_subsets": ([str],),  # noqa: E501
         }
 
@@ -181,12 +183,12 @@ class PatchedProjectWriteRequest(ModelNormal):
     [optional]
     """
 
-    target_storage: StorageRequest  # noqa: E501
+    target_storage: PatchedProjectWriteRequestTargetStorage  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: StorageRequest  # noqa: E501
+    source_storage: PatchedProjectWriteRequestTargetStorage  # noqa: E501
     """
     [optional]
     """
@@ -253,8 +255,8 @@ class PatchedProjectWriteRequest(ModelNormal):
             owner_id (int, none_type): [optional]  # noqa: E501
             assignee_id (int, none_type): [optional]  # noqa: E501
             bug_tracker (str): [optional]  # noqa: E501
-            target_storage (StorageRequest): [optional]  # noqa: E501
-            source_storage (StorageRequest): [optional]  # noqa: E501
+            target_storage (PatchedProjectWriteRequestTargetStorage): [optional]  # noqa: E501
+            source_storage (PatchedProjectWriteRequestTargetStorage): [optional]  # noqa: E501
             task_subsets ([str]): [optional]  # noqa: E501
         """
         from cvat_api_client.configuration import Configuration
@@ -352,8 +354,8 @@ class PatchedProjectWriteRequest(ModelNormal):
             owner_id (int, none_type): [optional]  # noqa: E501
             assignee_id (int, none_type): [optional]  # noqa: E501
             bug_tracker (str): [optional]  # noqa: E501
-            target_storage (StorageRequest): [optional]  # noqa: E501
-            source_storage (StorageRequest): [optional]  # noqa: E501
+            target_storage (PatchedProjectWriteRequestTargetStorage): [optional]  # noqa: E501
+            source_storage (PatchedProjectWriteRequestTargetStorage): [optional]  # noqa: E501
             task_subsets ([str]): [optional]  # noqa: E501
         """
         from cvat_api_client.configuration import Configuration

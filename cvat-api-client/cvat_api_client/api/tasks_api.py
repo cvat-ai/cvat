@@ -768,7 +768,7 @@ class TasksApi(object):
         )
         self.partial_update_annotations_file_endpoint = _Endpoint(
             settings={
-                "response_schema": (TaskWrite,),
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/annotations/{file_id}",
                 "operation_id": "partial_update_annotations_file",
@@ -782,7 +782,7 @@ class TasksApi(object):
                     "x_organization",
                     "org",
                     "org_id",
-                    "patched_task_write_request",
+                    "body",
                 ],
                 "required": [
                     "file_id",
@@ -809,7 +809,7 @@ class TasksApi(object):
                     "x_organization": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "patched_task_write_request": (PatchedTaskWriteRequest,),
+                    "body": (file_type,),
                 },
                 "attribute_map": {
                     "file_id": "file_id",
@@ -824,12 +824,12 @@ class TasksApi(object):
                     "x_organization": "header",
                     "org": "query",
                     "org_id": "query",
-                    "patched_task_write_request": "body",
+                    "body": "body",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": ["application/vnd.cvat+json"],
+                "accept": [],
                 "content_type": [
                     "application/json",
                     "application/x-www-form-urlencoded",
@@ -841,7 +841,7 @@ class TasksApi(object):
         )
         self.partial_update_backup_file_endpoint = _Endpoint(
             settings={
-                "response_schema": (TaskWrite,),
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/backup/{file_id}",
                 "operation_id": "partial_update_backup_file",
@@ -854,7 +854,7 @@ class TasksApi(object):
                     "x_organization",
                     "org",
                     "org_id",
-                    "patched_task_write_request",
+                    "body",
                 ],
                 "required": [
                     "file_id",
@@ -879,7 +879,7 @@ class TasksApi(object):
                     "x_organization": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "patched_task_write_request": (PatchedTaskWriteRequest,),
+                    "body": (file_type,),
                 },
                 "attribute_map": {
                     "file_id": "file_id",
@@ -892,12 +892,12 @@ class TasksApi(object):
                     "x_organization": "header",
                     "org": "query",
                     "org_id": "query",
-                    "patched_task_write_request": "body",
+                    "body": "body",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": ["application/vnd.cvat+json"],
+                "accept": [],
                 "content_type": [
                     "application/json",
                     "application/x-www-form-urlencoded",
@@ -909,7 +909,7 @@ class TasksApi(object):
         )
         self.partial_update_data_file_endpoint = _Endpoint(
             settings={
-                "response_schema": (TaskWrite,),
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/tasks/{id}/data/{file_id}",
                 "operation_id": "partial_update_data_file",
@@ -923,7 +923,7 @@ class TasksApi(object):
                     "x_organization",
                     "org",
                     "org_id",
-                    "patched_task_write_request",
+                    "body",
                 ],
                 "required": [
                     "file_id",
@@ -950,7 +950,7 @@ class TasksApi(object):
                     "x_organization": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "patched_task_write_request": (PatchedTaskWriteRequest,),
+                    "body": (file_type,),
                 },
                 "attribute_map": {
                     "file_id": "file_id",
@@ -965,12 +965,12 @@ class TasksApi(object):
                     "x_organization": "header",
                     "org": "query",
                     "org_id": "query",
-                    "patched_task_write_request": "body",
+                    "body": "body",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": ["application/vnd.cvat+json"],
+                "accept": [],
                 "content_type": [
                     "application/json",
                     "application/x-www-form-urlencoded",
@@ -2580,7 +2580,7 @@ class TasksApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -2597,7 +2597,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
+            body (file_type): [optional]
             _parse_response (bool): if False, the response data will not be parsed,
                 None is returned for data.
                 Default is True.
@@ -2631,7 +2631,7 @@ class TasksApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (TaskWrite, HTTPResponse)
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2664,7 +2664,7 @@ class TasksApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -2680,7 +2680,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
+            body (file_type): [optional]
             _parse_response (bool): if False, the response data will not be parsed,
                 None is returned for data.
                 Default is True.
@@ -2714,7 +2714,7 @@ class TasksApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (TaskWrite, HTTPResponse)
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2747,7 +2747,7 @@ class TasksApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[TaskWrite], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -2764,7 +2764,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_write_request (PatchedTaskWriteRequest): [optional]
+            body (file_type): [optional]
             _parse_response (bool): if False, the response data will not be parsed,
                 None is returned for data.
                 Default is True.
@@ -2798,7 +2798,7 @@ class TasksApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (TaskWrite, HTTPResponse)
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """

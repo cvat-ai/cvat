@@ -19,12 +19,12 @@ import urllib3
 
 from cvat_api_client.api_client import ApiClient
 from cvat_api_client.api_client import Endpoint as _Endpoint
+from cvat_api_client.model.dataset_file_request import DatasetFileRequest
 from cvat_api_client.model.paginated_polymorphic_project_list import PaginatedPolymorphicProjectList
 from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from cvat_api_client.model.project_file_request import ProjectFileRequest
 from cvat_api_client.model.project_read import ProjectRead
-from cvat_api_client.model.project_write import ProjectWrite
 from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from cvat_api_client.model_utils import date, datetime, file_type, none_type  # noqa: F401
 
@@ -47,7 +47,7 @@ class ProjectsApi(object):
         self.api_client = api_client
         self.create_endpoint = _Endpoint(
             settings={
-                "response_schema": (ProjectWrite,),
+                "response_schema": (ProjectRead,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects",
                 "operation_id": "create",
@@ -184,21 +184,20 @@ class ProjectsApi(object):
             },
             params_map={
                 "all": [
-                    "format",
                     "id",
-                    "project_write_request",
+                    "dataset_file_request",
                     "x_organization",
                     "cloud_storage_id",
                     "filename",
+                    "format",
                     "location",
                     "org",
                     "org_id",
                     "use_default_location",
                 ],
                 "required": [
-                    "format",
                     "id",
-                    "project_write_request",
+                    "dataset_file_request",
                 ],
                 "nullable": [],
                 "enum": [
@@ -212,35 +211,35 @@ class ProjectsApi(object):
                     ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
                 "openapi_types": {
-                    "format": (str,),
                     "id": (int,),
-                    "project_write_request": (ProjectWriteRequest,),
+                    "dataset_file_request": (DatasetFileRequest,),
                     "x_organization": (str,),
                     "cloud_storage_id": (float,),
                     "filename": (str,),
+                    "format": (str,),
                     "location": (str,),
                     "org": (str,),
                     "org_id": (int,),
                     "use_default_location": (bool,),
                 },
                 "attribute_map": {
-                    "format": "format",
                     "id": "id",
                     "x_organization": "X-Organization",
                     "cloud_storage_id": "cloud_storage_id",
                     "filename": "filename",
+                    "format": "format",
                     "location": "location",
                     "org": "org",
                     "org_id": "org_id",
                     "use_default_location": "use_default_location",
                 },
                 "location_map": {
-                    "format": "query",
                     "id": "path",
-                    "project_write_request": "body",
+                    "dataset_file_request": "body",
                     "x_organization": "header",
                     "cloud_storage_id": "query",
                     "filename": "query",
+                    "format": "query",
                     "location": "query",
                     "org": "query",
                     "org_id": "query",
@@ -451,7 +450,7 @@ class ProjectsApi(object):
         )
         self.partial_update_endpoint = _Endpoint(
             settings={
-                "response_schema": (ProjectWrite,),
+                "response_schema": (ProjectRead,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects/{id}",
                 "operation_id": "partial_update",
@@ -509,12 +508,12 @@ class ProjectsApi(object):
             },
             api_client=api_client,
         )
-        self.partial_update_backup_endpoint = _Endpoint(
+        self.partial_update_backup_file_endpoint = _Endpoint(
             settings={
-                "response_schema": (ProjectWrite,),
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects/backup/{file_id}",
-                "operation_id": "partial_update_backup",
+                "operation_id": "partial_update_backup_file",
                 "http_method": "PATCH",
                 "servers": None,
             },
@@ -524,7 +523,7 @@ class ProjectsApi(object):
                     "x_organization",
                     "org",
                     "org_id",
-                    "patched_project_write_request",
+                    "body",
                 ],
                 "required": [
                     "file_id",
@@ -549,7 +548,7 @@ class ProjectsApi(object):
                     "x_organization": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "patched_project_write_request": (PatchedProjectWriteRequest,),
+                    "body": (file_type,),
                 },
                 "attribute_map": {
                     "file_id": "file_id",
@@ -562,12 +561,12 @@ class ProjectsApi(object):
                     "x_organization": "header",
                     "org": "query",
                     "org_id": "query",
-                    "patched_project_write_request": "body",
+                    "body": "body",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": ["application/vnd.cvat+json"],
+                "accept": [],
                 "content_type": [
                     "application/json",
                     "application/x-www-form-urlencoded",
@@ -577,12 +576,12 @@ class ProjectsApi(object):
             },
             api_client=api_client,
         )
-        self.partial_update_dataset_endpoint = _Endpoint(
+        self.partial_update_dataset_file_endpoint = _Endpoint(
             settings={
-                "response_schema": (ProjectWrite,),
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects/{id}/dataset/{file_id}",
-                "operation_id": "partial_update_dataset",
+                "operation_id": "partial_update_dataset_file",
                 "http_method": "PATCH",
                 "servers": None,
             },
@@ -593,7 +592,7 @@ class ProjectsApi(object):
                     "x_organization",
                     "org",
                     "org_id",
-                    "patched_project_write_request",
+                    "body",
                 ],
                 "required": [
                     "file_id",
@@ -620,7 +619,7 @@ class ProjectsApi(object):
                     "x_organization": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "patched_project_write_request": (PatchedProjectWriteRequest,),
+                    "body": (file_type,),
                 },
                 "attribute_map": {
                     "file_id": "file_id",
@@ -635,12 +634,12 @@ class ProjectsApi(object):
                     "x_organization": "header",
                     "org": "query",
                     "org_id": "query",
-                    "patched_project_write_request": "body",
+                    "body": "body",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": ["application/vnd.cvat+json"],
+                "accept": [],
                 "content_type": [
                     "application/json",
                     "application/x-www-form-urlencoded",
@@ -962,7 +961,7 @@ class ProjectsApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[ProjectWrite], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[ProjectRead], urllib3.HTTPResponse]:
         """Method creates a new project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1011,7 +1010,7 @@ class ProjectsApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (ProjectWrite, HTTPResponse)
+            (ProjectRead, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1114,9 +1113,8 @@ class ProjectsApi(object):
 
     def create_dataset(
         self,
-        format: str,
         id: int,
-        project_write_request: ProjectWriteRequest,
+        dataset_file_request: DatasetFileRequest,
         *,
         _parse_response: bool = True,
         _request_timeout: typing.Union[int, float, tuple] = None,
@@ -1135,18 +1133,18 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.create_dataset(format, id, project_write_request, _async_call=True)
+        >>> thread = api.create_dataset(id, dataset_file_request, _async_call=True)
         >>> result = thread.get()
 
         Args:
-            format (str): Desired dataset format name You can get the list of supported formats at: /server/annotation/formats
             id (int): A unique integer value identifying this project.
-            project_write_request (ProjectWriteRequest):
+            dataset_file_request (DatasetFileRequest):
 
         Keyword Args:
             x_organization (str): [optional]
             cloud_storage_id (float): Storage id. [optional]
             filename (str): Dataset file name. [optional]
+            format (str): Desired dataset format name You can get the list of supported formats at: /server/annotation/formats. [optional]
             location (str): Where to import the dataset from. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
@@ -1198,9 +1196,8 @@ class ProjectsApi(object):
         kwargs["_content_type"] = _content_type
         kwargs["_host_index"] = _host_index
         kwargs["_request_auths"] = _request_auths
-        kwargs["format"] = format
         kwargs["id"] = id
-        kwargs["project_write_request"] = project_write_request
+        kwargs["dataset_file_request"] = dataset_file_request
         return self.create_dataset_endpoint.call_with_http_info(**kwargs)
 
     def destroy(
@@ -1467,7 +1464,7 @@ class ProjectsApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[ProjectWrite], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[ProjectRead], urllib3.HTTPResponse]:
         """Methods does a partial update of chosen fields in a project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1517,7 +1514,7 @@ class ProjectsApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (ProjectWrite, HTTPResponse)
+            (ProjectRead, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1534,7 +1531,7 @@ class ProjectsApi(object):
         kwargs["id"] = id
         return self.partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_backup(
+    def partial_update_backup_file(
         self,
         file_id: str,
         *,
@@ -1549,13 +1546,13 @@ class ProjectsApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[ProjectWrite], urllib3.HTTPResponse]:
-        """partial_update_backup  # noqa: E501
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
+        """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update_backup(file_id, _async_call=True)
+        >>> thread = api.partial_update_backup_file(file_id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1565,7 +1562,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_write_request (PatchedProjectWriteRequest): [optional]
+            body (file_type): [optional]
             _parse_response (bool): if False, the response data will not be parsed,
                 None is returned for data.
                 Default is True.
@@ -1599,7 +1596,7 @@ class ProjectsApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (ProjectWrite, HTTPResponse)
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1614,9 +1611,9 @@ class ProjectsApi(object):
         kwargs["_host_index"] = _host_index
         kwargs["_request_auths"] = _request_auths
         kwargs["file_id"] = file_id
-        return self.partial_update_backup_endpoint.call_with_http_info(**kwargs)
+        return self.partial_update_backup_file_endpoint.call_with_http_info(**kwargs)
 
-    def partial_update_dataset(
+    def partial_update_dataset_file(
         self,
         file_id: str,
         id: int,
@@ -1632,13 +1629,13 @@ class ProjectsApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[ProjectWrite], urllib3.HTTPResponse]:
-        """partial_update_dataset  # noqa: E501
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
+        """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.partial_update_dataset(file_id, id, _async_call=True)
+        >>> thread = api.partial_update_dataset_file(file_id, id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1649,7 +1646,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_write_request (PatchedProjectWriteRequest): [optional]
+            body (file_type): [optional]
             _parse_response (bool): if False, the response data will not be parsed,
                 None is returned for data.
                 Default is True.
@@ -1683,7 +1680,7 @@ class ProjectsApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (ProjectWrite, HTTPResponse)
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1699,7 +1696,7 @@ class ProjectsApi(object):
         kwargs["_request_auths"] = _request_auths
         kwargs["file_id"] = file_id
         kwargs["id"] = id
-        return self.partial_update_dataset_endpoint.call_with_http_info(**kwargs)
+        return self.partial_update_dataset_file_endpoint.call_with_http_info(**kwargs)
 
     def retrieve(
         self,

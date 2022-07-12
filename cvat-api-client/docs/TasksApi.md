@@ -1447,7 +1447,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_partial_update_annotations_file**
-> TaskWrite tasks_partial_update_annotations_file(file_id, id)
+> tasks_partial_update_annotations_file(file_id, id)
 
 Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 
@@ -1462,8 +1462,6 @@ Allows to upload an annotation file chunk. Implements TUS file uploading protoco
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task_write import TaskWrite
-from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1509,43 +1507,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_task_write_request = PatchedTaskWriteRequest(
-        name="name_example",
-        project_id=1,
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        overlap=1,
-        segment_size=1,
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        subset="subset_example",
-        target_storage=PatchedTaskWriteRequestTargetStorage(None),
-        source_storage=PatchedTaskWriteRequestTargetStorage(None),
-    ) # PatchedTaskWriteRequest |  (optional)
+    body = open('/path/to/file', 'rb') # file_type |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_partial_update_annotations_file(file_id, id)
-        pprint(api_response)
+        api_instance.tasks_partial_update_annotations_file(file_id, id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_annotations_file: %s\n" % e)
 
@@ -1553,8 +1520,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_partial_update_annotations_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
-        pprint(api_response)
+        api_instance.tasks_partial_update_annotations_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, body=body)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_annotations_file: %s\n" % e)
 ```
@@ -1569,11 +1535,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
+ **body** | **file_type**|  | [optional]
 
 ### Return type
 
-[**TaskWrite**](TaskWrite.md)
+void (empty response body)
 
 ### Authorization
 
@@ -1582,19 +1548,13 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
+ - **Accept**: Not defined
 
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_partial_update_backup_file**
-> TaskWrite tasks_partial_update_backup_file(file_id)
+> tasks_partial_update_backup_file(file_id)
 
 Allows to upload a file chunk. Implements TUS file uploading protocol.
 
@@ -1609,8 +1569,6 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task_write import TaskWrite
-from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1655,43 +1613,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_task_write_request = PatchedTaskWriteRequest(
-        name="name_example",
-        project_id=1,
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        overlap=1,
-        segment_size=1,
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        subset="subset_example",
-        target_storage=PatchedTaskWriteRequestTargetStorage(None),
-        source_storage=PatchedTaskWriteRequestTargetStorage(None),
-    ) # PatchedTaskWriteRequest |  (optional)
+    body = open('/path/to/file', 'rb') # file_type |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_partial_update_backup_file(file_id)
-        pprint(api_response)
+        api_instance.tasks_partial_update_backup_file(file_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_backup_file: %s\n" % e)
 
@@ -1699,8 +1626,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_partial_update_backup_file(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
-        pprint(api_response)
+        api_instance.tasks_partial_update_backup_file(file_id, x_organization=x_organization, org=org, org_id=org_id, body=body)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_backup_file: %s\n" % e)
 ```
@@ -1714,11 +1640,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
+ **body** | **file_type**|  | [optional]
 
 ### Return type
 
-[**TaskWrite**](TaskWrite.md)
+void (empty response body)
 
 ### Authorization
 
@@ -1727,19 +1653,13 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
+ - **Accept**: Not defined
 
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_partial_update_data_file**
-> TaskWrite tasks_partial_update_data_file(file_id, id)
+> tasks_partial_update_data_file(file_id, id)
 
 Allows to upload a file chunk. Implements TUS file uploading protocol.
 
@@ -1754,8 +1674,6 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task_write import TaskWrite
-from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1801,43 +1719,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_task_write_request = PatchedTaskWriteRequest(
-        name="name_example",
-        project_id=1,
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        overlap=1,
-        segment_size=1,
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        subset="subset_example",
-        target_storage=PatchedTaskWriteRequestTargetStorage(None),
-        source_storage=PatchedTaskWriteRequestTargetStorage(None),
-    ) # PatchedTaskWriteRequest |  (optional)
+    body = open('/path/to/file', 'rb') # file_type |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_partial_update_data_file(file_id, id)
-        pprint(api_response)
+        api_instance.tasks_partial_update_data_file(file_id, id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_data_file: %s\n" % e)
 
@@ -1845,8 +1732,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_partial_update_data_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
-        pprint(api_response)
+        api_instance.tasks_partial_update_data_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, body=body)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_data_file: %s\n" % e)
 ```
@@ -1861,11 +1747,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
+ **body** | **file_type**|  | [optional]
 
 ### Return type
 
-[**TaskWrite**](TaskWrite.md)
+void (empty response body)
 
 ### Authorization
 
@@ -1874,14 +1760,8 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
+ - **Accept**: Not defined
 
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

@@ -525,7 +525,7 @@ class JobsApi(object):
         )
         self.partial_update_annotations_file_endpoint = _Endpoint(
             settings={
-                "response_schema": (JobWrite,),
+                "response_schema": None,
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/jobs/{id}/annotations/{file_id}",
                 "operation_id": "partial_update_annotations_file",
@@ -539,7 +539,7 @@ class JobsApi(object):
                     "x_organization",
                     "org",
                     "org_id",
-                    "patched_job_write_request",
+                    "body",
                 ],
                 "required": [
                     "file_id",
@@ -566,7 +566,7 @@ class JobsApi(object):
                     "x_organization": (str,),
                     "org": (str,),
                     "org_id": (int,),
-                    "patched_job_write_request": (PatchedJobWriteRequest,),
+                    "body": (file_type,),
                 },
                 "attribute_map": {
                     "file_id": "file_id",
@@ -581,12 +581,12 @@ class JobsApi(object):
                     "x_organization": "header",
                     "org": "query",
                     "org_id": "query",
-                    "patched_job_write_request": "body",
+                    "body": "body",
                 },
                 "collection_format_map": {},
             },
             headers_map={
-                "accept": ["application/vnd.cvat+json"],
+                "accept": [],
                 "content_type": [
                     "application/json",
                     "application/x-www-form-urlencoded",
@@ -1670,7 +1670,7 @@ class JobsApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[JobWrite], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[None], urllib3.HTTPResponse]:
         """Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1687,7 +1687,7 @@ class JobsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_job_write_request (PatchedJobWriteRequest): [optional]
+            body (file_type): [optional]
             _parse_response (bool): if False, the response data will not be parsed,
                 None is returned for data.
                 Default is True.
@@ -1721,7 +1721,7 @@ class JobsApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (JobWrite, HTTPResponse)
+            (None, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """

@@ -191,8 +191,8 @@ Class | Method | HTTP request | Description
 *ProjectsApi* | [**projects_list**](docs/ProjectsApi.md#projects_list) | **GET** /api/projects | Returns a paginated list of projects according to query parameters (12 projects per page)
 *ProjectsApi* | [**projects_list_tasks**](docs/ProjectsApi.md#projects_list_tasks) | **GET** /api/projects/{id}/tasks | Method returns information of the tasks of the project with the selected id
 *ProjectsApi* | [**projects_partial_update**](docs/ProjectsApi.md#projects_partial_update) | **PATCH** /api/projects/{id} | Methods does a partial update of chosen fields in a project
-*ProjectsApi* | [**projects_partial_update_backup**](docs/ProjectsApi.md#projects_partial_update_backup) | **PATCH** /api/projects/backup/{file_id} | 
-*ProjectsApi* | [**projects_partial_update_dataset**](docs/ProjectsApi.md#projects_partial_update_dataset) | **PATCH** /api/projects/{id}/dataset/{file_id} | 
+*ProjectsApi* | [**projects_partial_update_backup_file**](docs/ProjectsApi.md#projects_partial_update_backup_file) | **PATCH** /api/projects/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
+*ProjectsApi* | [**projects_partial_update_dataset_file**](docs/ProjectsApi.md#projects_partial_update_dataset_file) | **PATCH** /api/projects/{id}/dataset/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 *ProjectsApi* | [**projects_retrieve**](docs/ProjectsApi.md#projects_retrieve) | **GET** /api/projects/{id} | Method returns details of a specific project
 *ProjectsApi* | [**projects_retrieve_annotations**](docs/ProjectsApi.md#projects_retrieve_annotations) | **GET** /api/projects/{id}/annotations | Method allows to download project annotations
 *ProjectsApi* | [**projects_retrieve_backup**](docs/ProjectsApi.md#projects_retrieve_backup) | **GET** /api/projects/{id}/backup | Methods creates a backup copy of a project
@@ -257,6 +257,7 @@ Class | Method | HTTP request | Description
  - [CredentialsTypeEnum](docs/CredentialsTypeEnum.md)
  - [DataMetaRead](docs/DataMetaRead.md)
  - [DataRequest](docs/DataRequest.md)
+ - [DatasetFileRequest](docs/DatasetFileRequest.md)
  - [DatasetFormat](docs/DatasetFormat.md)
  - [DatasetFormats](docs/DatasetFormats.md)
  - [Exception](docs/Exception.md)
@@ -317,6 +318,7 @@ Class | Method | HTTP request | Description
  - [PatchedMembershipWriteRequest](docs/PatchedMembershipWriteRequest.md)
  - [PatchedOrganizationWriteRequest](docs/PatchedOrganizationWriteRequest.md)
  - [PatchedProjectWriteRequest](docs/PatchedProjectWriteRequest.md)
+ - [PatchedProjectWriteRequestTargetStorage](docs/PatchedProjectWriteRequestTargetStorage.md)
  - [PatchedTaskWriteRequest](docs/PatchedTaskWriteRequest.md)
  - [PatchedTaskWriteRequestTargetStorage](docs/PatchedTaskWriteRequestTargetStorage.md)
  - [PatchedUserRequest](docs/PatchedUserRequest.md)
@@ -326,8 +328,8 @@ Class | Method | HTTP request | Description
  - [ProjectRead](docs/ProjectRead.md)
  - [ProjectReadAssignee](docs/ProjectReadAssignee.md)
  - [ProjectReadOwner](docs/ProjectReadOwner.md)
+ - [ProjectReadTargetStorage](docs/ProjectReadTargetStorage.md)
  - [ProjectSearch](docs/ProjectSearch.md)
- - [ProjectWrite](docs/ProjectWrite.md)
  - [ProjectWriteRequest](docs/ProjectWriteRequest.md)
  - [ProviderTypeEnum](docs/ProviderTypeEnum.md)
  - [RestAuthDetail](docs/RestAuthDetail.md)

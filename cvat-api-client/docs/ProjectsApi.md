@@ -11,8 +11,8 @@ Method | HTTP request | Description
 [**projects_list**](ProjectsApi.md#projects_list) | **GET** /api/projects | Returns a paginated list of projects according to query parameters (12 projects per page)
 [**projects_list_tasks**](ProjectsApi.md#projects_list_tasks) | **GET** /api/projects/{id}/tasks | Method returns information of the tasks of the project with the selected id
 [**projects_partial_update**](ProjectsApi.md#projects_partial_update) | **PATCH** /api/projects/{id} | Methods does a partial update of chosen fields in a project
-[**projects_partial_update_backup**](ProjectsApi.md#projects_partial_update_backup) | **PATCH** /api/projects/backup/{file_id} | 
-[**projects_partial_update_dataset**](ProjectsApi.md#projects_partial_update_dataset) | **PATCH** /api/projects/{id}/dataset/{file_id} | 
+[**projects_partial_update_backup_file**](ProjectsApi.md#projects_partial_update_backup_file) | **PATCH** /api/projects/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
+[**projects_partial_update_dataset_file**](ProjectsApi.md#projects_partial_update_dataset_file) | **PATCH** /api/projects/{id}/dataset/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 [**projects_retrieve**](ProjectsApi.md#projects_retrieve) | **GET** /api/projects/{id} | Method returns details of a specific project
 [**projects_retrieve_annotations**](ProjectsApi.md#projects_retrieve_annotations) | **GET** /api/projects/{id}/annotations | Method allows to download project annotations
 [**projects_retrieve_backup**](ProjectsApi.md#projects_retrieve_backup) | **GET** /api/projects/{id}/backup | Methods creates a backup copy of a project
@@ -20,7 +20,7 @@ Method | HTTP request | Description
 
 
 # **projects_create**
-> ProjectWrite projects_create(project_write_request)
+> ProjectRead projects_create(project_write_request)
 
 Method creates a new project
 
@@ -35,7 +35,7 @@ Method creates a new project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_write import ProjectWrite
+from cvat_api_client.model.project_read import ProjectRead
 from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
@@ -101,14 +101,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
-        target_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        source_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
+        target_storage=PatchedProjectWriteRequestTargetStorage(None),
+        source_storage=PatchedProjectWriteRequestTargetStorage(None),
         task_subsets=[
             "task_subsets_example",
         ],
@@ -147,7 +141,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ProjectWrite**](ProjectWrite.md)
+[**ProjectRead**](ProjectRead.md)
 
 ### Authorization
 
@@ -287,7 +281,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_create_dataset**
-> projects_create_dataset(format, id, project_write_request)
+> projects_create_dataset(id, dataset_file_request)
 
 Import dataset in specific format as a project
 
@@ -302,7 +296,7 @@ Import dataset in specific format as a project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_write_request import ProjectWriteRequest
+from cvat_api_client.model.dataset_file_request import DatasetFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -343,47 +337,14 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
-    format = "format_example" # str | Desired dataset format name You can get the list of supported formats at: /server/annotation/formats
     id = 1 # int | A unique integer value identifying this project.
-    project_write_request = ProjectWriteRequest(
-        name="name_example",
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        target_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        source_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        task_subsets=[
-            "task_subsets_example",
-        ],
-    ) # ProjectWriteRequest | 
+    dataset_file_request = DatasetFileRequest(
+        dataset_file=open('/path/to/file', 'rb'),
+    ) # DatasetFileRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
     cloud_storage_id = 3.14 # float | Storage id (optional)
     filename = "filename_example" # str | Dataset file name (optional)
+    format = "format_example" # str | Desired dataset format name You can get the list of supported formats at: /server/annotation/formats (optional)
     location = "cloud_storage" # str | Where to import the dataset from (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
@@ -392,7 +353,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Import dataset in specific format as a project
-        api_instance.projects_create_dataset(format, id, project_write_request)
+        api_instance.projects_create_dataset(id, dataset_file_request)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create_dataset: %s\n" % e)
 
@@ -400,7 +361,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Import dataset in specific format as a project
-        api_instance.projects_create_dataset(format, id, project_write_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        api_instance.projects_create_dataset(id, dataset_file_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create_dataset: %s\n" % e)
 ```
@@ -410,12 +371,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **format** | **str**| Desired dataset format name You can get the list of supported formats at: /server/annotation/formats |
  **id** | **int**| A unique integer value identifying this project. |
- **project_write_request** | [**ProjectWriteRequest**](ProjectWriteRequest.md)|  |
+ **dataset_file_request** | [**DatasetFileRequest**](DatasetFileRequest.md)|  |
  **x_organization** | **str**|  | [optional]
  **cloud_storage_id** | **float**| Storage id | [optional]
  **filename** | **str**| Dataset file name | [optional]
+ **format** | **str**| Desired dataset format name You can get the list of supported formats at: /server/annotation/formats | [optional]
  **location** | **str**| Where to import the dataset from | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
@@ -789,7 +750,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_partial_update**
-> ProjectWrite projects_partial_update(id)
+> ProjectRead projects_partial_update(id)
 
 Methods does a partial update of chosen fields in a project
 
@@ -804,7 +765,7 @@ Methods does a partial update of chosen fields in a project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_write import ProjectWrite
+from cvat_api_client.model.project_read import ProjectRead
 from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
@@ -874,14 +835,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
-        target_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        source_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
+        target_storage=PatchedProjectWriteRequestTargetStorage(None),
+        source_storage=PatchedProjectWriteRequestTargetStorage(None),
         task_subsets=[
             "task_subsets_example",
         ],
@@ -918,7 +873,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ProjectWrite**](ProjectWrite.md)
+[**ProjectRead**](ProjectRead.md)
 
 ### Authorization
 
@@ -938,10 +893,10 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **projects_partial_update_backup**
-> ProjectWrite projects_partial_update_backup(file_id)
+# **projects_partial_update_backup_file**
+> projects_partial_update_backup_file(file_id)
 
-
+Allows to upload a file chunk. Implements TUS file uploading protocol.
 
 ### Example
 
@@ -954,8 +909,6 @@ Name | Type | Description  | Notes
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_write import ProjectWrite
-from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1000,57 +953,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_project_write_request = PatchedProjectWriteRequest(
-        name="name_example",
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        target_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        source_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        task_subsets=[
-            "task_subsets_example",
-        ],
-    ) # PatchedProjectWriteRequest |  (optional)
+    body = open('/path/to/file', 'rb') # file_type |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
-        api_response = api_instance.projects_partial_update_backup(file_id)
-        pprint(api_response)
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_instance.projects_partial_update_backup_file(file_id)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling ProjectsApi->projects_partial_update_backup: %s\n" % e)
+        print("Exception when calling ProjectsApi->projects_partial_update_backup_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.projects_partial_update_backup(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_project_write_request=patched_project_write_request)
-        pprint(api_response)
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_instance.projects_partial_update_backup_file(file_id, x_organization=x_organization, org=org, org_id=org_id, body=body)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling ProjectsApi->projects_partial_update_backup: %s\n" % e)
+        print("Exception when calling ProjectsApi->projects_partial_update_backup_file: %s\n" % e)
 ```
 
 
@@ -1062,11 +980,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_project_write_request** | [**PatchedProjectWriteRequest**](PatchedProjectWriteRequest.md)|  | [optional]
+ **body** | **file_type**|  | [optional]
 
 ### Return type
 
-[**ProjectWrite**](ProjectWrite.md)
+void (empty response body)
 
 ### Authorization
 
@@ -1075,21 +993,15 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
+ - **Accept**: Not defined
 
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **projects_partial_update_dataset**
-> ProjectWrite projects_partial_update_dataset(file_id, id)
+# **projects_partial_update_dataset_file**
+> projects_partial_update_dataset_file(file_id, id)
 
-
+Allows to upload a file chunk. Implements TUS file uploading protocol.
 
 ### Example
 
@@ -1102,8 +1014,6 @@ Name | Type | Description  | Notes
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_write import ProjectWrite
-from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1149,57 +1059,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_project_write_request = PatchedProjectWriteRequest(
-        name="name_example",
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        target_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        source_storage=StorageRequest(
-            location=LocationEnum("cloud_storage"),
-            cloud_storage_id=1,
-        ),
-        task_subsets=[
-            "task_subsets_example",
-        ],
-    ) # PatchedProjectWriteRequest |  (optional)
+    body = open('/path/to/file', 'rb') # file_type |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
-        api_response = api_instance.projects_partial_update_dataset(file_id, id)
-        pprint(api_response)
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_instance.projects_partial_update_dataset_file(file_id, id)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling ProjectsApi->projects_partial_update_dataset: %s\n" % e)
+        print("Exception when calling ProjectsApi->projects_partial_update_dataset_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.projects_partial_update_dataset(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_project_write_request=patched_project_write_request)
-        pprint(api_response)
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_instance.projects_partial_update_dataset_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, body=body)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling ProjectsApi->projects_partial_update_dataset: %s\n" % e)
+        print("Exception when calling ProjectsApi->projects_partial_update_dataset_file: %s\n" % e)
 ```
 
 
@@ -1212,11 +1087,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_project_write_request** | [**PatchedProjectWriteRequest**](PatchedProjectWriteRequest.md)|  | [optional]
+ **body** | **file_type**|  | [optional]
 
 ### Return type
 
-[**ProjectWrite**](ProjectWrite.md)
+void (empty response body)
 
 ### Authorization
 
@@ -1225,14 +1100,8 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
+ - **Accept**: Not defined
 
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

@@ -627,7 +627,9 @@ class ApiClient(object):
         file_instance.close()
         return file_data
 
-    def _serialize_file(self, file_instance: io.IOBase):
+    def _serialize_file(
+        self, file_instance: io.IOBase
+    ) -> typing.Tuple[str, typing.Union[str, bytes], str]:
         if file_instance.closed is True:
             raise ApiValueError("Cannot read a closed file.")
         filename = os.path.basename(file_instance.name)

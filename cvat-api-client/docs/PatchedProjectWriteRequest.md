@@ -9,8 +9,8 @@ Name | Type | Description | Notes
 **owner_id** | **int, none_type** |  | [optional] 
 **assignee_id** | **int, none_type** |  | [optional] 
 **bug_tracker** | **str** |  | [optional] 
-**target_storage** | [**StorageRequest**](StorageRequest.md) |  | [optional] 
-**source_storage** | [**StorageRequest**](StorageRequest.md) |  | [optional] 
+**target_storage** | [**PatchedProjectWriteRequestTargetStorage**](PatchedProjectWriteRequestTargetStorage.md) |  | [optional] 
+**source_storage** | [**PatchedProjectWriteRequestTargetStorage**](PatchedProjectWriteRequestTargetStorage.md) |  | [optional] 
 **task_subsets** | **[str]** |  | [optional] 
 **any string name** | **bool, date, datetime, dict, float, int, list, str, none_type** | any string name can be used but the value must be the correct type | [optional]
 

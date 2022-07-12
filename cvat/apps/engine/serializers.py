@@ -618,13 +618,13 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         read_only_fields = ('name',)
 
 class ProjectReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
+    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[], read_only=True)
     owner = BasicUserSerializer(required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
-    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
-    dimension = serializers.CharField(max_length=16, required=False, read_only=True)
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
+    dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
+    target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
+    source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
 
     class Meta:
         model = models.Project
@@ -648,13 +648,13 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
+    labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
+    task_subsets = serializers.ListField(write_only=True, child=serializers.CharField(), required=False)
 
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    target_storage = StorageSerializer(write_only=True, required=False)
+    source_storage = StorageSerializer(write_only=True, required=False)
 
     class Meta:
         model = models.Project

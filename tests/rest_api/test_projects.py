@@ -2,13 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-import tempfile
+import io
 from http import HTTPStatus
 from itertools import groupby, product
 
 import pytest
 
-from .utils.config import get_method, post_files_method, post_method
+from cvat_api_client.models import DatasetFileRequest, ProjectWriteRequest
+
+from .utils.config import get_method, make_api_client
 
 
 @pytest.mark.usefixtures('dontchangedb')
@@ -24,14 +26,16 @@ class TestGetProjects:
                     return p['id']
 
     def _test_response_200(self, username, project_id, **kwargs):
-        response = get_method(username, f'projects/{project_id}', **kwargs)
-        assert response.status_code == HTTPStatus.OK
-        project = response.json()
-        assert project_id == project['id']
+        with make_api_client(username) as api_client:
+            (project, response) = api_client.projects_api.retrieve(project_id, **kwargs)
+            assert response.status == HTTPStatus.OK
+            assert project_id == project.id
 
     def _test_response_403(self, username, project_id):
-        response = get_method(username, f'projects/{project_id}')
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.projects_api.retrieve(project_id,
+                _parse_response=False, _check_status=False)
+            assert response.status == HTTPStatus.FORBIDDEN
 
     # Admin can see any project even he has no ownerships for this project.
     def test_project_admin_accessibility(self, projects, find_users, is_project_staff, org_staff):
@@ -116,12 +120,15 @@ class TestGetProjects:
 @pytest.mark.usefixtures('changedb')
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
-        response = post_method(user, '/projects', spec, **kwargs)
-        assert response.status_code == HTTPStatus.CREATED
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.projects_api.create(ProjectWriteRequest(**spec), **kwargs)
+            assert response.status == HTTPStatus.CREATED
 
     def _test_create_project_403(self, user, spec, **kwargs):
-        response = post_method(user, '/projects', spec, **kwargs)
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.projects_api.create(ProjectWriteRequest(**spec), **kwargs,
+                _parse_response=False, _check_status=False)
+        assert response.status == HTTPStatus.FORBIDDEN
 
     def test_if_worker_cannot_create_project(self, find_users):
         workers = find_users(privilege='worker')
@@ -189,7 +196,7 @@ class TestPostProjects:
         self._test_create_project_403(worker['username'], spec, org_id=worker['org'])
 
     @pytest.mark.parametrize('role', ('supervisor', 'maintainer', 'owner'))
-    def test_if_org_role_can_crate_project(self, find_users, role):
+    def test_if_org_role_can_create_project(self, find_users, role):
         privileged_users = find_users(role=role)
         assert len(privileged_users)
 
@@ -204,29 +211,34 @@ class TestPostProjects:
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestImportExportDatasetProject:
     def _test_export_project(self, username, project_id, format_name):
-        while True:
-            response = get_method(username, f'projects/{project_id}/dataset',
-                format=format_name)
-            response.raise_for_status()
-            if response.status_code == HTTPStatus.CREATED:
-                break
+        with make_api_client(username) as api_client:
+            while True:
+                (_, response) = api_client.projects_api.retrieve_dataset(id=project_id,
+                    format=format_name)
+                if response.status == HTTPStatus.CREATED:
+                    break
 
-        response = get_method(username, f'projects/{project_id}/dataset',
-            format=format_name, action='download')
-        assert response.status_code == HTTPStatus.OK
+            (_, response) = api_client.projects_api.retrieve_dataset(id=project_id,
+                    format=format_name, action='download')
+            assert response.status == HTTPStatus.OK
 
         return response
 
     def _test_import_project(self, username, project_id, format_name, data):
-        response = post_files_method(username, f'projects/{project_id}/dataset', None, data,
-            format=format_name)
-        assert response.status_code == HTTPStatus.ACCEPTED
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.projects_api.create_dataset(id=project_id,
+                format=format_name, dataset_file_request=DatasetFileRequest(**data),
+                _content_type="multipart/form-data")
+            assert response.status == HTTPStatus.ACCEPTED
 
-        while True:
-            response = get_method(username, f'projects/{project_id}/dataset', action='import_status')
-            response.raise_for_status()
-            if response.status_code == HTTPStatus.CREATED:
-                break
+            while True:
+                # TODO: Request schema doesn't describe this capability.
+                # It's better be refactored to a separate endpoint to get request status
+                response = get_method(username, f'projects/{project_id}/dataset',
+                    action='import_status')
+                response.raise_for_status()
+                if response.status_code == HTTPStatus.CREATED:
+                        break
 
     def test_can_import_dataset_in_org(self):
         username = 'admin1'
@@ -234,9 +246,8 @@ class TestImportExportDatasetProject:
 
         response = self._test_export_project(username, project_id, 'CVAT for images 1.1')
 
-        tmp_file = tempfile.NamedTemporaryFile(suffix='.zip')
-        tmp_file.write(response.content)
-        tmp_file.seek(0)
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = 'dataset.zip'
 
         import_data = {
             'dataset_file': tmp_file,

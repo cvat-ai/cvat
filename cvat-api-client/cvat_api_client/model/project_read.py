@@ -44,13 +44,13 @@ def lazy_import():
     from cvat_api_client.model.label import Label
     from cvat_api_client.model.project_read_assignee import ProjectReadAssignee
     from cvat_api_client.model.project_read_owner import ProjectReadOwner
-    from cvat_api_client.model.storage import Storage
+    from cvat_api_client.model.project_read_target_storage import ProjectReadTargetStorage
 
     globals()["JobStatus"] = JobStatus
     globals()["Label"] = Label
     globals()["ProjectReadAssignee"] = ProjectReadAssignee
     globals()["ProjectReadOwner"] = ProjectReadOwner
-    globals()["Storage"] = Storage
+    globals()["ProjectReadTargetStorage"] = ProjectReadTargetStorage
 
 
 class ProjectRead(ModelNormal):
@@ -84,13 +84,13 @@ class ProjectRead(ModelNormal):
 
       status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
 
-      dimension (str): [optional]  # noqa: E501
+      dimension (str, none_type): [optional]  # noqa: E501
 
       organization (int, none_type): [optional]  # noqa: E501
 
-      target_storage (Storage): [optional]  # noqa: E501
+      target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
 
-      source_storage (Storage): [optional]  # noqa: E501
+      source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
 
 
       allowed_values (dict): The key is the tuple path to the attribute
@@ -180,13 +180,16 @@ class ProjectRead(ModelNormal):
                 str,
                 none_type,
             ),  # noqa: E501
-            "dimension": (str,),  # noqa: E501
+            "dimension": (
+                str,
+                none_type,
+            ),  # noqa: E501
             "organization": (
                 int,
                 none_type,
             ),  # noqa: E501
-            "target_storage": (Storage,),  # noqa: E501
-            "source_storage": (Storage,),  # noqa: E501
+            "target_storage": (ProjectReadTargetStorage,),  # noqa: E501
+            "source_storage": (ProjectReadTargetStorage,),  # noqa: E501
         }
 
     @cached_property
@@ -256,7 +259,7 @@ class ProjectRead(ModelNormal):
     [optional]
     """
 
-    dimension: str  # noqa: E501
+    dimension: typing.Union[str, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -266,12 +269,12 @@ class ProjectRead(ModelNormal):
     [optional]
     """
 
-    target_storage: Storage  # noqa: E501
+    target_storage: ProjectReadTargetStorage  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: Storage  # noqa: E501
+    source_storage: ProjectReadTargetStorage  # noqa: E501
     """
     [optional]
     """
@@ -298,7 +301,9 @@ class ProjectRead(ModelNormal):
     read_only_vars = {
         "url",  # noqa: E501
         "id",  # noqa: E501
+        "labels",  # noqa: E501
         "tasks",  # noqa: E501
+        "task_subsets",  # noqa: E501
         "created_date",  # noqa: E501
         "updated_date",  # noqa: E501
         "status",  # noqa: E501
@@ -358,10 +363,10 @@ class ProjectRead(ModelNormal):
             created_date (datetime): [optional]  # noqa: E501
             updated_date (datetime): [optional]  # noqa: E501
             status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            dimension (str): [optional]  # noqa: E501
+            dimension (str, none_type): [optional]  # noqa: E501
             organization (int, none_type): [optional]  # noqa: E501
-            target_storage (Storage): [optional]  # noqa: E501
-            source_storage (Storage): [optional]  # noqa: E501
+            target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+            source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
         """
         from cvat_api_client.configuration import Configuration
 
@@ -468,10 +473,10 @@ class ProjectRead(ModelNormal):
             created_date (datetime): [optional]  # noqa: E501
             updated_date (datetime): [optional]  # noqa: E501
             status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            dimension (str): [optional]  # noqa: E501
+            dimension (str, none_type): [optional]  # noqa: E501
             organization (int, none_type): [optional]  # noqa: E501
-            target_storage (Storage): [optional]  # noqa: E501
-            source_storage (Storage): [optional]  # noqa: E501
+            target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+            source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
         """
         from cvat_api_client.configuration import Configuration
 

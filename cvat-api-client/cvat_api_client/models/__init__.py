@@ -27,6 +27,7 @@ from cvat_api_client.model.comment_write_request import CommentWriteRequest
 from cvat_api_client.model.credentials_type_enum import CredentialsTypeEnum
 from cvat_api_client.model.data_meta_read import DataMetaRead
 from cvat_api_client.model.data_request import DataRequest
+from cvat_api_client.model.dataset_file_request import DatasetFileRequest
 from cvat_api_client.model.dataset_format import DatasetFormat
 from cvat_api_client.model.dataset_formats import DatasetFormats
 from cvat_api_client.model.exception import Exception
@@ -91,6 +92,9 @@ from cvat_api_client.model.patched_label_request import PatchedLabelRequest
 from cvat_api_client.model.patched_membership_write_request import PatchedMembershipWriteRequest
 from cvat_api_client.model.patched_organization_write_request import PatchedOrganizationWriteRequest
 from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
+from cvat_api_client.model.patched_project_write_request_target_storage import (
+    PatchedProjectWriteRequestTargetStorage,
+)
 from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from cvat_api_client.model.patched_task_write_request_target_storage import (
     PatchedTaskWriteRequestTargetStorage,
@@ -102,8 +106,8 @@ from cvat_api_client.model.project_file_request import ProjectFileRequest
 from cvat_api_client.model.project_read import ProjectRead
 from cvat_api_client.model.project_read_assignee import ProjectReadAssignee
 from cvat_api_client.model.project_read_owner import ProjectReadOwner
+from cvat_api_client.model.project_read_target_storage import ProjectReadTargetStorage
 from cvat_api_client.model.project_search import ProjectSearch
-from cvat_api_client.model.project_write import ProjectWrite
 from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from cvat_api_client.model.provider_type_enum import ProviderTypeEnum
 from cvat_api_client.model.rest_auth_detail import RestAuthDetail

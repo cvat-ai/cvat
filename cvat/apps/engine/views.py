@@ -235,8 +235,9 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     create=extend_schema(
         summary='Method creates a new project',
+        request=ProjectWriteSerializer,
         responses={
-            '201': ProjectWriteSerializer,
+            '201': ProjectReadSerializer,
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific project',
@@ -250,8 +251,9 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a project',
+        request=ProjectWriteSerializer,
         responses={
-            '200': ProjectWriteSerializer,
+            '200': ProjectReadSerializer,
         })
 )
 class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, SerializeMixin):
@@ -268,15 +270,7 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options')
     iam_organization_field = 'organization'
-
-    def get_serializer_class(self):
-        if self.request.path.endswith('tasks'):
-            return TaskReadSerializer
-        else:
-            if self.request.method in SAFE_METHODS:
-                return ProjectReadSerializer
-            else:
-                return ProjectWriteSerializer
+    serializer_class = ProjectReadSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -338,7 +332,7 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('location', description='Where to import the dataset from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
@@ -350,6 +344,7 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
             OpenApiParameter('filename', description='Dataset file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
+        request=DatasetFileSerializer(required=False),
         responses={
             '202': OpenApiResponse(description='Exporting has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
