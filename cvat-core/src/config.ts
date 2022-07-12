@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-module.exports = {
+const config = {
     backendAPI: '/api',
     proxy: false,
     organizationID: null,
     origin: '',
     uploadChunkSize: 100,
 };
+
+export default config;

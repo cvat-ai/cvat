@@ -429,8 +429,8 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         if (!svg) return;
 
         const sublabels = Object.values(this.labels);
-        const elements: SkeletonConfiguration['structure']['elements'] = [];
-        const edges: SkeletonConfiguration['structure']['edges'] = [];
+        const elements: SkeletonConfiguration['elements'] = [];
+        const edges: SkeletonConfiguration['edges'] = [];
 
         Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
             const dataType = child.getAttribute('data-type');
@@ -472,12 +472,10 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             this.setupTextLabels(false);
             onSubmit({
                 type: 'skeleton',
-                structure: {
-                    svg: svg.innerHTML,
-                    sublabels,
-                    elements,
-                    edges,
-                },
+                svg: svg.innerHTML,
+                sublabels,
+                elements,
+                edges,
             });
         } finally {
             this.setupTextLabels();

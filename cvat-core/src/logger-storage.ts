@@ -10,7 +10,7 @@ const { LogType } = require('./enums');
 
 const WORKING_TIME_THRESHOLD = 100000; // ms, 1.66 min
 
-function sleep(ms) {
+function sleep(ms): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });

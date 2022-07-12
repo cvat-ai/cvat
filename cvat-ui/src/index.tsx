@@ -160,3 +160,6 @@ window.addEventListener('error', (errorEvent: ErrorEvent) => {
         }
     }
 });
+
+
+throw new Error('hello');

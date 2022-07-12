@@ -16,7 +16,9 @@ import ConstructorViewer from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
 import ConstructorUpdater from './constructor-updater';
 
-import { idGenerator, Label, Attribute } from './common';
+import {
+    idGenerator, Label, Attribute, LabelOptColor,
+} from './common';
 
 enum ConstructorMode {
     SHOW = 'SHOW',
@@ -173,7 +175,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     };
 
     private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]): void {
-        function transformLabel(label: Label): any {
+        function transformLabel(label: LabelOptColor): any {
             const transformed: any = {
                 name: label.name,
                 id: label.id < 0 ? undefined : label.id,
@@ -192,13 +194,12 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 transformed.type = label.type;
             }
 
-            if (label.structure) {
-                transformed.structure = {
-                    svg: label.structure.svg,
-                    sublabels: label.structure.sublabels.map((internalLabel: Label) => transformLabel(internalLabel)),
-                    elements: label.structure.elements,
-                    edges: label.structure.edges,
-                };
+            if (label.type === 'skeleton') {
+                transformed.svg = label.svg;
+                transformed.sublabels = (label.sublabels || [])
+                    .map((internalLabel: LabelOptColor) => transformLabel(internalLabel));
+                transformed.elements = label.elements;
+                transformed.edges = label.edges;
             }
 
             return transformed;

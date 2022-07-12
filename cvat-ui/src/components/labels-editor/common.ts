@@ -12,12 +12,10 @@ export interface Attribute {
 
 export interface SkeletonConfiguration {
     type: string;
-    structure: {
-        svg: string;
-        sublabels: LabelOptColor[],
-        elements: { label: string; element_id: number }[],
-        edges: { from: number, to: number }[],
-    },
+    svg: string;
+    sublabels: LabelOptColor[];
+    elements: { label: string; element_id: number }[];
+    edges: { from: number, to: number }[];
 }
 
 export interface Label {
@@ -25,8 +23,11 @@ export interface Label {
     color: string;
     id: number;
     attributes: Attribute[];
-    structure?: SkeletonConfiguration['structure'],
-    type?: SkeletonConfiguration['type'],
+    type?: SkeletonConfiguration['type'];
+    svg?: string;
+    sublabels?: LabelOptColor[];
+    elements?: { label: string; element_id: number }[];
+    edges?: { from: number, to: number }[];
 }
 
 export type LabelOptColor = Omit<Label, 'color'> & { color?: string };
