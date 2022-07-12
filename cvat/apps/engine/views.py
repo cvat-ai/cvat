@@ -403,6 +403,16 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
                     callback=dm.views.export_project_as_dataset
                 )
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='projects_partial_update_dataset_file',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -526,6 +536,16 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='projects_partial_update_backup_file',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
@@ -704,7 +724,9 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
     @extend_schema(methods=['PATCH'],
         operation_id='tasks_partial_update_backup_file',
         summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol."
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
     )
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
@@ -910,7 +932,9 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
     @extend_schema(methods=['PATCH'],
         operation_id='tasks_partial_update_data_file',
         summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol."
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
     )
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
@@ -1038,7 +1062,9 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
     @extend_schema(methods=['PATCH'],
         operation_id='tasks_partial_update_annotations_file',
         summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol."
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
     )
     @extend_schema(methods=['HEAD'],
         operation_id='tasks_annotations_file_retrieve_status',
@@ -1368,7 +1394,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['PATCH'],
         operation_id='jobs_partial_update_annotations_file',
         summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol."
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
     )
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
