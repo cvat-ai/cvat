@@ -146,7 +146,7 @@ module.exports = (env) => ({
         new CopyPlugin({
             patterns: [
                 {
-                    from: '../cvat-data/src/js/3rdparty/avc.wasm',
+                    from: '../cvat-data/src/ts/3rdparty/avc.wasm',
                     to: 'assets/3rdparty/',
                 },
             ],
