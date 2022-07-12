@@ -1867,6 +1867,7 @@ const ObjectState = require('./object-state');
             return {
                 type: this.shapeType,
                 clientID: this.clientID,
+                occluded: elements.every((el) => el.occluded),
                 z_order: this.zOrder,
                 points: this.points,
                 rotation: 0,
@@ -2756,11 +2757,20 @@ const ObjectState = require('./object-state');
 
             updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = false; });
             updatedOutside.forEach((el) => { el.updateFlags.outside = false; });
-            updateElements(updatedPoints, HistoryActions.CHANGED_POINTS);
-            updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = true; });
-            updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED);
-            updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
-            updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
+
+            if (updatedPoints.length) {
+                updateElements(updatedPoints, HistoryActions.CHANGED_POINTS);
+            }
+
+            if (updatedOccluded.length) {
+                updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = true; });
+                updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED);
+            }
+
+            if (updatedOutside.length) {
+                updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
+                updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
+            }
 
             const result = Track.prototype.save.call(this, frame, data);
             return result;
