@@ -164,6 +164,9 @@ class FrameProvider:
     def get_preview(self):
         return self._db_data.get_preview_path()
 
+    def get_s3_preview(self):
+        return self._db_data.get_s3_preview_path()
+
     def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
         chunk_number = self._validate_chunk_number(chunk_number)
         if self._db_data.storage_method == StorageMethodChoice.CACHE:

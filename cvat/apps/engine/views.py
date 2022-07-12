@@ -20,9 +20,8 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, Http404, HttpResponseRedirect
 from django.utils import timezone
-from django.core.files.base import File
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -72,6 +71,9 @@ from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
+
+from cvat.rebotics.s3_client import s3_client
+
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -530,7 +532,16 @@ class DataChunkGetter:
             return HttpResponse(buf.getvalue(), content_type=mime)
 
         elif self.type == 'preview':
-            return sendfile(request, frame_provider.get_preview())
+            path = frame_provider.get_preview()
+            if os.path.exists(path):
+                return sendfile(request, path)
+            try:
+                url = s3_client.get_presigned_url(frame_provider.get_s3_preview())
+                return HttpResponseRedirect(url)
+            except Exception as e:
+                slogger.glob.warning(str(e))
+                raise Http404('Preview not found')
+
 
         elif self.type == 'context_image':
             if not (start <= self.number <= stop):

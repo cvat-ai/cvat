@@ -28,7 +28,7 @@ from cvat.apps.engine.models import DimensionType, SortingMethod
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
-from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
+from utils.dataset_manifest import VideoManifestManager, CachedIndexManifestManager
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -505,7 +505,7 @@ class FragmentMediaReader:
 class ImageDatasetManifestReader(FragmentMediaReader):
     def __init__(self, manifest_path, **kwargs):
         super().__init__(**kwargs)
-        self._manifest = ImageManifestManager(manifest_path)
+        self._manifest = CachedIndexManifestManager(manifest_path)
         self._manifest.init_index()
 
     def __iter__(self):

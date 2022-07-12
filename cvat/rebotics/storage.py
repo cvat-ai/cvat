@@ -6,13 +6,13 @@ import requests
 from botocore.exceptions import ClientError
 from six import StringIO
 from storages.backends.s3boto3 import S3Boto3Storage, S3Boto3StorageFile
+from django.conf import settings
 
 try:
     from storages.backends.s3boto3 import S3StaticStorage as StaticStorage
 except ImportError:
     StaticStorage = S3Boto3Storage
 
-# from storages.utils import setting
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,10 @@ class CustomAWSMediaStorage(BaseS3StorageWithPathMixin, S3Boto3Storage):
         # Preserve the trailing slash after normalizing the path.
         # TODO: Handle force_http=not self.secure_urls like in s3boto
         name = self._normalize_name(self._clean_name(name))
-        return self.get_presigned_url(name, parameters, expire)
+        url = self.get_presigned_url(name, parameters, expire)
+        if settings.ENVIRONMENT == 'local' and 'minio' in url:
+            url = url.replace('minio', 'localhost', 1)
+        return url
 
     def get_presigned_url(self, name, parameters=None, expire=None):
         if expire is None:
@@ -132,12 +135,3 @@ def send_file_to_pre_signed_destination(file_io, destination, filename=None):
 
     if response.status_code != 204:
         raise FailedToUploadFileToS3('S3 error: {}'.format(response.content))
-
-
-class LocalS3MinioMediaStorage(CustomAWSMediaStorage):
-
-    def url(self, name, parameters=None, expire=None, **kwargs):
-        url = super().url(name, parameters, expire, **kwargs)
-        if 'minio' in url:
-            url = url.replace('minio', 'localhost')
-        return url
