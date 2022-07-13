@@ -9,7 +9,7 @@ import { Label, Attribute } from './labels';
 import {
     colors, Source, ShapeType, ObjectType, AttributeType, HistoryActions,
 } from './enums';
-import AnnotationHistory from 'annotations-history';
+import AnnotationHistory from './annotations-history';
 
 const defaultGroupColor = '#E0E0E0';
 
@@ -166,9 +166,8 @@ function validateAttributeValue(value: string, attr: Attribute): boolean {
     return values.includes(value);
 }
 
-function copyShape(state, frame: number, data) {
+function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): TrackedShape {
     return {
-        frame,
         rotation: state.rotation,
         zOrder: state.zOrder,
         points: state.points,
@@ -188,6 +187,7 @@ interface AnnotationInjection {
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
+    readOnlyFields?: string[];
     nextClientID: () => number;
 }
 
@@ -211,7 +211,7 @@ class Annotation {
     protected groupObject: {
         color: string;
         readonly id: number;
-    }
+    };
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         this.taskLabels = injection.labels;
@@ -225,7 +225,7 @@ class Annotation {
         this.frame = data.frame;
         this.removed = false;
         this.lock = false;
-        this.readOnlyFields = data.readOnlyFields || [];
+        this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
         this.source = data.source;
         this.updated = Date.now();
@@ -267,7 +267,7 @@ class Annotation {
         };
     }
 
-    _saveLock(lock, frame) {
+    _saveLock(lock: boolean, frame: number): void {
         const undoLock = this.lock;
         const redoLock = lock;
 
@@ -288,7 +288,7 @@ class Annotation {
         this.lock = lock;
     }
 
-    _saveColor(color, frame) {
+    _saveColor(color: string, frame: number): void {
         const undoColor = this.color;
         const redoColor = color;
 
@@ -309,7 +309,7 @@ class Annotation {
         this.color = color;
     }
 
-    _saveLabel(label, frame) {
+    _saveLabel(label: Label, frame: number): void {
         const undoLabel = this.label;
         const redoLabel = label;
         const undoAttributes = { ...this.attributes };
@@ -347,7 +347,7 @@ class Annotation {
         );
     }
 
-    _saveAttributes(attributes, frame) {
+    _saveAttributes(attributes: Record<number, string>, frame: number): void {
         const undoAttributes = { ...this.attributes };
 
         for (const attrID of Object.keys(attributes)) {
@@ -371,7 +371,7 @@ class Annotation {
         );
     }
 
-    _validateStateBeforeSave(data, updated) {
+    _validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags']): void {
         if (updated.label) {
             checkObjectType('label', data.label, null, Label);
         }
@@ -443,7 +443,7 @@ class Annotation {
         }
     }
 
-    appendDefaultAttributes(label) {
+    appendDefaultAttributes(label: Label): void {
         const labelAttributes = label.attributes;
         for (const attribute of labelAttributes) {
             if (!(attribute.id in this.attributes)) {
@@ -452,14 +452,14 @@ class Annotation {
         }
     }
 
-    updateTimestamp(updated) {
+    updateTimestamp(updated: ObjectState['updateFlags']): void {
         const anyChanges = Object.keys(updated).some((key) => !!updated[key]);
         if (anyChanges) {
             this.updated = Date.now();
         }
     }
 
-    delete(frame, force) {
+    delete(frame: number, force: boolean): boolean {
         if (!this.lock || force) {
             this.removed = true;
 
@@ -482,7 +482,15 @@ class Annotation {
         return this.removed;
     }
 
-    save() {
+    save(): void {
+        throw new ScriptingError('Is not implemented');
+    }
+
+    get(): void {
+        throw new ScriptingError('Is not implemented');
+    }
+
+    toJSON(): void {
         throw new ScriptingError('Is not implemented');
     }
 }
@@ -503,11 +511,11 @@ class Drawn extends Annotation {
         this.shapeType = null;
     }
 
-    _saveDescriptions(descriptions) {
+    _saveDescriptions(descriptions: string[]): void {
         this.descriptions = [...descriptions];
     }
 
-    _savePinned(pinned, frame) {
+    _savePinned(pinned: boolean, frame: number): void {
         const undoPinned = this.pinned;
         const redoPinned = pinned;
 
@@ -528,7 +536,7 @@ class Drawn extends Annotation {
         this.pinned = pinned;
     }
 
-    _saveHidden(hidden, frame) {
+    _saveHidden(hidden: boolean, frame: number): void {
         const undoHidden = this.hidden;
         const redoHidden = hidden;
 
@@ -549,7 +557,7 @@ class Drawn extends Annotation {
         this.hidden = hidden;
     }
 
-    _fitPoints(points, rotation, maxX, maxY) {
+    _fitPoints(points: number[], rotation: number, maxX: number, maxY: number): number[] {
         const { shapeType, parentID } = this;
         checkObjectType('rotation', rotation, 'number', null);
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
@@ -573,7 +581,7 @@ class Drawn extends Annotation {
         return fittedPoints;
     }
 
-    private _validateStateBeforeSave(frame, data, updated) {
+    private _validateStateBeforeSave(frame: number, data: ObjectState, updated: ObjectState['updateFlags']): number[] {
         /* eslint-disable-next-line no-underscore-dangle */
         Annotation.prototype._validateStateBeforeSave.call(this, data, updated);
 
@@ -597,14 +605,31 @@ class Drawn extends Annotation {
 
         return fittedPoints;
     }
+}
 
-    get() {
-        throw new ScriptingError('Is not implemented');
-    }
-
-    toJSON() {
-        throw new ScriptingError('Is not implemented');
-    }
+interface RawShapeData {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    group: number;
+    frame: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+    elements: {
+        id?: number;
+        attributes: RawTrackData['attributes'];
+        label_id: number;
+        occluded: boolean;
+        outside: boolean;
+        points: number[];
+        type: ShapeType;
+    }[];
+    occluded: boolean;
+    outside?: boolean; // only for skeleton elements
+    points?: number[];
+    rotation: number;
+    z_order: number;
+    type: ShapeType;
 }
 
 export class Shape extends Drawn {
@@ -614,7 +639,7 @@ export class Shape extends Drawn {
     protected outside: boolean;
     protected zOrder: number;
 
-    constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.points = data.points;
         this.rotation = data.rotation || 0;
@@ -624,8 +649,8 @@ export class Shape extends Drawn {
     }
 
     // Method is used to export data to the server
-    toJSON() {
-        const result = {
+    toJSON(): RawShapeData {
+        const result: RawShapeData = {
             type: this.shapeType,
             clientID: this.clientID,
             occluded: this.occluded,
@@ -640,12 +665,16 @@ export class Shape extends Drawn {
 
                 return attributeAccumulator;
             }, []),
-            id: this.serverID,
+            elements: [],
             frame: this.frame,
             label_id: this.label.id,
             group: this.group,
             source: this.source,
         };
+
+        if (this.serverID !== null) {
+            result.id = this.serverID;
+        }
 
         if (typeof this.outside !== 'undefined') {
             result.outside = this.outside;
@@ -690,7 +719,7 @@ export class Shape extends Drawn {
         return result;
     }
 
-    _saveRotation(rotation, frame) {
+    _saveRotation(rotation: number, frame: number): void {
         const undoRotation = this.rotation;
         const redoRotation = rotation;
         const undoSource = this.source;
@@ -716,7 +745,7 @@ export class Shape extends Drawn {
         this.rotation = redoRotation;
     }
 
-    _savePoints(points, frame) {
+    _savePoints(points: number[], frame: number): void {
         const undoPoints = this.points;
         const redoPoints = points;
         const undoSource = this.source;
@@ -742,7 +771,7 @@ export class Shape extends Drawn {
         this.points = redoPoints;
     }
 
-    _saveOccluded(occluded, frame) {
+    _saveOccluded(occluded: boolean, frame: number): void {
         const undoOccluded = this.occluded;
         const redoOccluded = occluded;
         const undoSource = this.source;
@@ -768,7 +797,7 @@ export class Shape extends Drawn {
         this.occluded = redoOccluded;
     }
 
-    _saveZOrder(zOrder, frame) {
+    _saveZOrder(zOrder: number, frame: number): void {
         const undoZOrder = this.zOrder;
         const redoZOrder = zOrder;
         const undoSource = this.source;
@@ -794,7 +823,7 @@ export class Shape extends Drawn {
         this.zOrder = redoZOrder;
     }
 
-    save(frame, data) {
+    save(frame: number, data: ObjectState): ObjectState {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
@@ -863,8 +892,49 @@ export class Shape extends Drawn {
     }
 }
 
+interface RawTrackData {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    group: number;
+    frame: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+    shapes: {
+        attributes: RawTrackData['attributes'];
+        elements: {
+            id?: number;
+            attributes: RawTrackData['attributes'];
+            label_id: 5;
+            occluded: boolean;
+            outside: boolean;
+            points: number[];
+            type: ShapeType;
+        }[];
+        id?: number;
+        points?: number[];
+        frame: number;
+        occluded: boolean;
+        outside: boolean;
+        rotation: number;
+        type: ShapeType;
+        z_order: number;
+    }[];
+}
+
+interface TrackedShape {
+    serverID?: number;
+    occluded: boolean;
+    outside: boolean;
+    rotation: number;
+    zOrder: number;
+    points?: number[];
+    attributes: Record<number, string>;
+}
+
 export class Track extends Drawn {
-    constructor(data, clientID, color, injection) {
+    protected shapes: Record<number, TrackedShape>;
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
             shapeAccumulator[value.frame] = {
@@ -885,14 +955,13 @@ export class Track extends Drawn {
     }
 
     // Method is used to export data to the server
-    toJSON() {
+    toJSON(): RawTrackData {
         const labelAttributes = attrsAsAnObject(this.label.attributes);
 
-        return {
+        const result: RawTrackData = {
             clientID: this.clientID,
-            id: this.serverID,
-            frame: this.frame,
             label_id: this.label.id,
+            frame: this.frame,
             group: this.group,
             source: this.source,
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
@@ -933,9 +1002,15 @@ export class Track extends Drawn {
                 return shapesAccumulator;
             }, []),
         };
+
+        if (this.serverID !== null) {
+            result.id = this.serverID;
+        }
+
+        return result;
     }
 
-    get(frame) {
+    get(frame: number) {
         const {
             prev, next, first, last,
         } = this.boundedKeyframes(frame);
@@ -968,7 +1043,7 @@ export class Track extends Drawn {
         };
     }
 
-    boundedKeyframes(targetFrame) {
+    boundedKeyframes(targetFrame: number): ObjectState['keyframes'] {
         const frames = Object.keys(this.shapes).map((frame) => +frame);
         let lDiff = Number.MAX_SAFE_INTEGER;
         let rDiff = Number.MAX_SAFE_INTEGER;
@@ -1193,7 +1268,7 @@ export class Track extends Drawn {
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
-            { ...this.shapes[frame], rotation } : copyShape(this.get(frame), frame, { rotation });
+            { ...this.shapes[frame], rotation } : copyShape(this.get(frame), { rotation });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1213,7 +1288,7 @@ export class Track extends Drawn {
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
-            { ...this.shapes[frame], points } : copyShape(this.get(frame), frame, { points });
+            { ...this.shapes[frame], points } : copyShape(this.get(frame), { points });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1234,7 +1309,7 @@ export class Track extends Drawn {
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], outside } :
-            copyShape(this.get(frame), frame, { outside });
+            copyShape(this.get(frame), { outside });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1255,7 +1330,7 @@ export class Track extends Drawn {
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], occluded } :
-            copyShape(this.get(frame), frame, { occluded });
+            copyShape(this.get(frame), { occluded });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1276,7 +1351,7 @@ export class Track extends Drawn {
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], zOrder } :
-            copyShape(this.get(frame), frame, { zOrder });
+            copyShape(this.get(frame), { zOrder });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1300,7 +1375,7 @@ export class Track extends Drawn {
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        const redoShape = keyframe ? copyShape(this.get(frame), frame, {}) : undefined;
+        const redoShape = keyframe ? copyShape(this.get(frame)) : undefined;
 
         this.source = redoSource;
         if (redoShape) {
@@ -1428,9 +1503,8 @@ export class Track extends Drawn {
 export class Tag extends Annotation {
     // Method is used to export data to the server
     toJSON() {
-        return {
+        const result = {
             clientID: this.clientID,
-            id: this.serverID,
             frame: this.frame,
             label_id: this.label.id,
             group: this.group,
@@ -1444,6 +1518,12 @@ export class Tag extends Annotation {
                 return attributeAccumulator;
             }, []),
         };
+
+        if (this.serverID !== null) {
+            result.id = this.serverID;
+        }
+
+        return result;
     }
 
     get(frame) {
@@ -1508,7 +1588,7 @@ export class Tag extends Annotation {
 }
 
 export class RectangleShape extends Shape {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.RECTANGLE;
         this.pinned = false;
@@ -1532,7 +1612,7 @@ export class RectangleShape extends Shape {
 }
 
 export class EllipseShape extends Shape {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.ELLIPSE;
         this.pinned = false;
@@ -1588,14 +1668,14 @@ export class EllipseShape extends Shape {
 }
 
 class PolyShape extends Shape {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.rotation = 0; // is not supported
     }
 }
 
 export class PolygonShape extends PolyShape {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POLYGON;
         checkNumberOfPoints(this.shapeType, this.points);
@@ -1666,7 +1746,7 @@ export class PolygonShape extends PolyShape {
 }
 
 export class PolylineShape extends PolyShape {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POLYLINE;
         checkNumberOfPoints(this.shapeType, this.points);
@@ -1710,7 +1790,7 @@ export class PolylineShape extends PolyShape {
 }
 
 export class PointsShape extends PolyShape {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POINTS;
         checkNumberOfPoints(this.shapeType, this.points);
@@ -1730,7 +1810,7 @@ export class PointsShape extends PolyShape {
 }
 
 export class CuboidShape extends Shape {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.rotation = 0;
         this.shapeType = ShapeType.CUBOID;
@@ -1852,7 +1932,9 @@ export class CuboidShape extends Shape {
 }
 
 export class SkeletonShape extends Shape {
-    constructor(data, clientID, color, injection) {
+    private elements: Shape[];
+
+    constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.SKELETON;
         this.pinned = false;
@@ -1861,18 +1943,23 @@ export class SkeletonShape extends Shape {
         this.points = undefined;
         this.readOnlyFields = ['points', 'label', 'occluded'];
 
-        /* eslint-disable-next-line no-use-before-define */
+        /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
         this.elements = data.elements.map((element) => shapeFactory({
             ...element,
             group: this.group,
             z_order: this.zOrder,
             source: this.source,
             rotation: 0,
+            frame: data.frame,
+            elements: [],
+        }, injection.nextClientID(), {
+            ...injection,
+            parentID: this.clientID,
             readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-        }, injection.nextClientID(), { ...injection, parentID: this.clientID }));
+        })) as any as Shape[];
     }
 
-    static distance(points, x, y) {
+    static distance(points: number[], x: number, y: number): number {
         const distances = [];
         let xtl = Number.MAX_SAFE_INTEGER;
         let ytl = Number.MAX_SAFE_INTEGER;
@@ -1906,16 +1993,18 @@ export class SkeletonShape extends Shape {
     }
 
     // Method is used to export data to the server
-    toJSON() {
+    toJSON(): RawShapeData {
         const elements = this.elements.map((element) => ({
             ...element.toJSON(),
+            outside: element.outside,
+            points: [...element.points],
             source: this.source,
             group: this.group,
             z_order: this.zOrder,
             rotation: 0,
         }));
 
-        return {
+        const result: RawShapeData = {
             type: this.shapeType,
             clientID: this.clientID,
             occluded: elements.every((el) => el.occluded),
@@ -1931,12 +2020,17 @@ export class SkeletonShape extends Shape {
                 return attributeAccumulator;
             }, []),
             elements,
-            id: this.serverID,
             frame: this.frame,
             label_id: this.label.id,
             group: this.group,
             source: this.source,
         };
+
+        if (this.serverID !== null) {
+            result.id = this.serverID;
+        }
+
+        return result;
     }
 
     get(frame) {
@@ -2113,7 +2207,7 @@ export class SkeletonShape extends Shape {
 }
 
 export class RectangleTrack extends Track {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.RECTANGLE;
         this.pinned = false;
@@ -2138,7 +2232,7 @@ export class RectangleTrack extends Track {
 }
 
 export class EllipseTrack extends Track {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.ELLIPSE;
         this.pinned = false;
@@ -2164,7 +2258,7 @@ export class EllipseTrack extends Track {
 }
 
 class PolyTrack extends Track {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         for (const shape of Object.values(this.shapes)) {
             shape.rotation = 0; // is not supported
@@ -2431,7 +2525,7 @@ class PolyTrack extends Track {
 }
 
 export class PolygonTrack extends PolyTrack {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POLYGON;
         for (const shape of Object.values(this.shapes)) {
@@ -2460,7 +2554,7 @@ export class PolygonTrack extends PolyTrack {
 }
 
 export class PolylineTrack extends PolyTrack {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POLYLINE;
         for (const shape of Object.values(this.shapes)) {
@@ -2470,7 +2564,7 @@ export class PolylineTrack extends PolyTrack {
 }
 
 export class PointsTrack extends PolyTrack {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POINTS;
         for (const shape of Object.values(this.shapes)) {
@@ -2503,7 +2597,7 @@ export class PointsTrack extends PolyTrack {
 }
 
 export class CuboidTrack extends Track {
-    constructor(data, clientID, color, injection) {
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.CUBOID;
         this.pinned = false;
@@ -2527,34 +2621,38 @@ export class CuboidTrack extends Track {
 }
 
 export class SkeletonTrack extends Track {
-    constructor(data, clientID, color, injection) {
+    private elements: Track[];
+
+    constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.SKELETON;
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
         this.shapes = {};
+        const { sublabels } = this.label.structure;
 
-        const tracks = {};
+        const tracks: Record<number, RawTrackData> = {};
         data.shapes.forEach((shape) => {
             this.shapes[shape.frame] = ({
                 serverID: shape.id,
-                type: shape.type,
                 occluded: shape.occluded,
                 outside: shape.outside,
-                attributes: shape.attributes,
-                rotation: 0,
                 zOrder: shape.z_order,
-                id: shape.id,
+                rotation: 0,
+                attributes: shape.attributes.reduce((attributeAccumulator, attr) => {
+                    attributeAccumulator[attr.spec_id] = attr.value;
+                    return attributeAccumulator;
+                }, {}),
             });
 
             shape.elements.forEach((element, idx) => {
+                const label = sublabels.find((sublabel: Label): boolean => sublabel.id === element.label_id);
                 if (!tracks[idx]) {
                     tracks[idx] = {
                         frame: shape.frame,
                         label_id: element.label_id,
                         group: data.group,
                         source: data.source,
-                        readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
                         shapes: [{
                             id: element.id,
                             type: element.type,
@@ -2564,9 +2662,18 @@ export class SkeletonTrack extends Track {
                             points: element.points,
                             frame: shape.frame,
                             outside: element.outside,
-                            attributes: [],
+                            attributes: element.attributes.filter((attr): boolean => {
+                                const mutable = label.attributes
+                                    .find((attribute: Attribute): boolean => attribute.id === attr.spec_id)?.mutable;
+                                return mutable;
+                            }),
+                            elements: [],
                         }],
-                        attributes: [],
+                        attributes: element.attributes.filter((attr): boolean => {
+                            const mutable = label.attributes
+                                .find((attribute: Attribute): boolean => attribute.id === attr.spec_id)?.mutable;
+                            return !mutable;
+                        }),
                     };
                 } else {
                     tracks[idx].shapes.push({
@@ -2578,19 +2685,28 @@ export class SkeletonTrack extends Track {
                         points: element.points,
                         frame: shape.frame,
                         outside: element.outside,
-                        attributes: [],
+                        attributes: element.attributes.filter((attr): boolean => {
+                            const mutable = label.attributes
+                                .find((attribute: Attribute): boolean => attribute.id === attr.spec_id)?.mutable;
+                            return mutable;
+                        }),
+                        elements: [],
                     });
                 }
             });
         });
 
-        /* eslint-disable-next-line no-use-before-define */
+        /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
         this.elements = Object.values(tracks).map((track) => trackFactory(
-            track, injection.nextClientID(), { ...injection, parentID: this.clientID },
-        ));
+            track, injection.nextClientID(), {
+                ...injection,
+                parentID: this.clientID,
+                readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
+            },
+        )) as any as Track[];
     }
 
-    _saveRotation(rotation, frame) {
+    _saveRotation(rotation: number, frame: number): void {
         const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
@@ -2655,12 +2771,11 @@ export class SkeletonTrack extends Track {
     }
 
     // Method is used to export data to the server
-    toJSON() {
+    toJSON(): RawTrackData {
         const labelAttributes = attrsAsAnObject(this.label.attributes);
 
-        return {
+        const result: RawTrackData = {
             clientID: this.clientID,
-            id: this.serverID,
             frame: this.frame,
             label_id: this.label.id,
             group: this.group,
@@ -2677,9 +2792,15 @@ export class SkeletonTrack extends Track {
             }, []),
             shapes: this.prepareShapesForServer(),
         };
+
+        if (this.serverID !== null) {
+            result.id = this.serverID;
+        }
+
+        return result;
     }
 
-    get(frame) {
+    get(frame: number) {
         const { prev, next } = this.boundedKeyframes(frame);
         const elements = this.elements.map((element) => ({
             ...element.get(frame),
@@ -2712,7 +2833,7 @@ export class SkeletonTrack extends Track {
     }
 
     // finds keyframes considering keyframes of nested elements
-    deepBoundedKeyframes(targetFrame) {
+    deepBoundedKeyframes(targetFrame: number): ObjectState['keyframes'] {
         const boundedKeyframes = Track.prototype.boundedKeyframes.call(this, targetFrame);
 
         for (const element of this.elements) {
@@ -2742,7 +2863,7 @@ export class SkeletonTrack extends Track {
         return boundedKeyframes;
     }
 
-    save(frame, data) {
+    save(frame: number, data: ObjectState): ObjectState {
         if (this.lock && data.lock) {
             return new ObjectState(this.get(frame));
         }
@@ -2844,7 +2965,7 @@ export class SkeletonTrack extends Track {
         return result;
     }
 
-    getPosition(targetFrame, leftKeyframe, rightKeyframe) {
+    getPosition(targetFrame: number, leftKeyframe: number | null, rightKeyframe: number | null) {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
         const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
@@ -2880,7 +3001,7 @@ export class SkeletonTrack extends Track {
         );
     }
 
-    prepareShapesForServer() {
+    prepareShapesForServer(): RawTrackData['shapes'] {
         const labelAttributes = attrsAsAnObject(this.label.attributes);
 
         let allKeyframes = new Set([this, ...this.elements].map((element) => Object.keys(element.shapes)).flat());
@@ -2915,8 +3036,8 @@ export class SkeletonTrack extends Track {
             });
 
             result[keyframe] = {
-                type: this.shapeType,
                 id: this.shapes[keyframe]?.serverID,
+                type: this.shapeType,
                 occluded: elements.every((el) => el.occluded),
                 outside: elements.every((el) => el.outside),
                 group: skeletonShape.group.id,
@@ -2945,40 +3066,40 @@ export class SkeletonTrack extends Track {
     }
 }
 
-RectangleTrack.distance = RectangleShape.distance;
-PolygonTrack.distance = PolygonShape.distance;
-PolylineTrack.distance = PolylineShape.distance;
-PointsTrack.distance = PointsShape.distance;
-EllipseTrack.distance = EllipseShape.distance;
-CuboidTrack.distance = CuboidShape.distance;
-SkeletonTrack.distance = SkeletonShape.distance;
+Object.defineProperty(RectangleTrack, 'distance', { value: RectangleShape.distance });
+Object.defineProperty(PolygonTrack, 'distance', { value: PolygonShape.distance });
+Object.defineProperty(PolylineTrack, 'distance', { value: PolylineShape.distance });
+Object.defineProperty(PointsTrack, 'distance', { value: PointsShape.distance });
+Object.defineProperty(EllipseTrack, 'distance', { value: EllipseShape.distance });
+Object.defineProperty(CuboidTrack, 'distance', { value: CuboidShape.distance });
+Object.defineProperty(SkeletonTrack, 'distance', { value: SkeletonShape.distance });
 
-export function shapeFactory(shapeData, clientID, injection) {
-    const { type } = shapeData;
+export function shapeFactory(data: RawShapeData, clientID: number, injection: AnnotationInjection): Annotation {
+    const { type } = data;
     const color = colors[clientID % colors.length];
 
     let shapeModel = null;
     switch (type) {
         case ShapeType.RECTANGLE:
-            shapeModel = new RectangleShape(shapeData, clientID, color, injection);
+            shapeModel = new RectangleShape(data, clientID, color, injection);
             break;
         case ShapeType.POLYGON:
-            shapeModel = new PolygonShape(shapeData, clientID, color, injection);
+            shapeModel = new PolygonShape(data, clientID, color, injection);
             break;
         case ShapeType.POLYLINE:
-            shapeModel = new PolylineShape(shapeData, clientID, color, injection);
+            shapeModel = new PolylineShape(data, clientID, color, injection);
             break;
         case ShapeType.POINTS:
-            shapeModel = new PointsShape(shapeData, clientID, color, injection);
+            shapeModel = new PointsShape(data, clientID, color, injection);
             break;
         case ShapeType.ELLIPSE:
-            shapeModel = new EllipseShape(shapeData, clientID, color, injection);
+            shapeModel = new EllipseShape(data, clientID, color, injection);
             break;
         case ShapeType.CUBOID:
-            shapeModel = new CuboidShape(shapeData, clientID, color, injection);
+            shapeModel = new CuboidShape(data, clientID, color, injection);
             break;
         case ShapeType.SKELETON:
-            shapeModel = new SkeletonShape(shapeData, clientID, color, injection);
+            shapeModel = new SkeletonShape(data, clientID, color, injection);
             break;
         default:
             throw new DataError(`An unexpected type of shape "${type}"`);
@@ -2987,7 +3108,7 @@ export function shapeFactory(shapeData, clientID, injection) {
     return shapeModel;
 }
 
-export function trackFactory(trackData, clientID, injection) {
+export function trackFactory(trackData: RawTrackData, clientID: number, injection: AnnotationInjection): Annotation {
     if (trackData.shapes.length) {
         const { type } = trackData.shapes[0];
         const color = colors[clientID % colors.length];
