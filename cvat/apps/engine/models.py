@@ -194,6 +194,14 @@ class Data(models.Model):
         return os.path.join(self.get_compressed_cache_dirname(),
                             self._get_compressed_chunk_name(chunk_number))
 
+    def get_chunk_path(self, chunk_number, quality):
+        if quality == FrameQuality.ORIGINAL:
+            return self.get_original_chunk_path(chunk_number)
+        elif quality == FrameQuality.COMPRESSED:
+            return self.get_compressed_chunk_path(chunk_number)
+        else:
+            raise ValueError('Invalid quality value: {}'.format(quality.value))
+
     def get_preview_path(self):
         return os.path.join(self.get_data_dirname(), self.preview_file_name)
 
