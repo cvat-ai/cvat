@@ -22,12 +22,12 @@ interface RawAttribute {
  * @hideconstructor
  */
 export class Attribute {
-    private id?: number;
-    private defaultValue: string;
-    private inputType: AttrInputType;
-    private mutable: boolean;
-    private name: string;
-    private values: string[];
+    public id?: number;
+    public defaultValue: string;
+    public inputType: AttrInputType;
+    public mutable: boolean;
+    public name: string;
+    public values: string[];
 
     constructor(initialData: RawAttribute) {
         const data = {

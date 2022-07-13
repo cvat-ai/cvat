@@ -6,7 +6,7 @@
     const serverProxy = require('./server-proxy');
     const Collection = require('./annotations-collection');
     const AnnotationsSaver = require('./annotations-saver');
-    const AnnotationsHistory = require('./annotations-history');
+    const AnnotationsHistory = require('./annotations-history').default;
     const { checkObjectType } = require('./common');
     const { Project } = require('./project');
     const { Task, Job } = require('./session');
