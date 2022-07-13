@@ -15,9 +15,10 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # Install Node.js 16
+  # Install Node.js 16 and yarn
   curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
   sudo apt-get install -y nodejs
+  sudo npm install --global yarn
   ```
 
   MacOS 10.15
@@ -111,7 +112,7 @@ description: 'Installing a development environment for different operating syste
 - Install npm packages for UI (run the following command from CVAT root directory):
 
   ```bash
-  npm ci
+  yarn --frozen-lockfile
   ```
 
   > Note for Mac users
@@ -134,11 +135,11 @@ description: 'Installing a development environment for different operating syste
 - Start npm UI debug server (run the following command from CVAT root directory):
   - If you want to run CVAT in localhost:
     ```sh
-    npm run start:cvat-ui
+    yarn run start:cvat-ui
      ```
   - If you want to access CVAT from outside of your host:
     ```sh
-    CVAT_UI_HOST='<YOUR_HOST_IP>' npm run start:cvat-ui
+    CVAT_UI_HOST='<YOUR_HOST_IP>' yarn run start:cvat-ui
     ```
 - Open a new terminal window.
 - Run VScode from the virtual environment (run the following command from CVAT root directory):
