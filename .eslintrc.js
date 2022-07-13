@@ -52,6 +52,7 @@ module.exports = {
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
         'import/prefer-default-export': 0, // works incorrect with interfaces
 
+        '@typescript-eslint/ban-ts-comment': 0,
         '@typescript-eslint/no-explicit-any': 0,
         '@typescript-eslint/indent': ['error', 4],
         '@typescript-eslint/lines-between-class-members': 0,

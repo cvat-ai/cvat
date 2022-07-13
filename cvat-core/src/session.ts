@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
-    const PluginRegistry = require('./plugins');
+    const PluginRegistry = require('./plugins').default;
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {

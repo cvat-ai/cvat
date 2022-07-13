@@ -8,10 +8,10 @@
  */
 
 function build() {
-    const PluginRegistry = require('./plugins');
+    const PluginRegistry = require('./plugins').default;
     const loggerStorage = require('./logger-storage');
     const Log = require('./log');
-    const ObjectState = require('./object-state');
+    const ObjectState = require('./object-state').default;
     const Statistics = require('./statistics');
     const Comment = require('./comment');
     const Issue = require('./issue');

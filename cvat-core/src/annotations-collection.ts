@@ -10,15 +10,15 @@
         Shape,
         Tag,
     } = require('./annotations-objects');
-    const AnnotationsFilter = require('./annotations-filter');
+    const AnnotationsFilter = require('./annotations-filter').default;
     const { checkObjectType } = require('./common');
     const Statistics = require('./statistics');
     const { Label } = require('./labels');
     const { ArgumentError, ScriptingError } = require('./exceptions');
-    const ObjectState = require('./object-state');
+    const ObjectState = require('./object-state').default;
 
     const {
-        HistoryActions, ObjectShape, ObjectType, colors,
+        HistoryActions, ShapeType, ObjectType, colors,
     } = require('./enums');
 
     class Collection {
@@ -177,7 +177,7 @@
                 throw new ArgumentError(`Unknown label for the task: ${label.id}`);
             }
 
-            if (!Object.values(ObjectShape).includes(shapeType)) {
+            if (!Object.values(ShapeType).includes(shapeType)) {
                 throw new ArgumentError(`Got unknown shapeType "${shapeType}"`);
             }
 
@@ -682,9 +682,9 @@
                         checkObjectType('point coordinate', coord, 'number', null);
                     }
 
-                    if (!Object.values(ObjectShape).includes(state.shapeType)) {
+                    if (!Object.values(ShapeType).includes(state.shapeType)) {
                         throw new ArgumentError(
-                            `Object shape must be one of: ${JSON.stringify(Object.values(ObjectShape))}`,
+                            `Object shape must be one of: ${JSON.stringify(Object.values(ShapeType))}`,
                         );
                     }
 

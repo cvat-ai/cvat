@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-const ObjectState = require('./object-state');
+const ObjectState = require('./object-state').default;
 
 (() => {
     const { checkObjectType } = require('./common');
     const {
-        colors, Source, ObjectShape, ObjectType, AttributeType, HistoryActions,
+        colors, Source, ShapeType, ObjectType, AttributeType, HistoryActions,
     } = require('./enums');
 
     const { DataError, ArgumentError, ScriptingError } = require('./exceptions');
@@ -16,27 +16,27 @@ const ObjectState = require('./object-state');
     const defaultGroupColor = '#E0E0E0';
 
     function checkNumberOfPoints(shapeType, points) {
-        if (shapeType === ObjectShape.RECTANGLE) {
+        if (shapeType === ShapeType.RECTANGLE) {
             if (points.length / 2 !== 2) {
                 throw new DataError(`Rectangle must have 2 points, but got ${points.length / 2}`);
             }
-        } else if (shapeType === ObjectShape.POLYGON) {
+        } else if (shapeType === ShapeType.POLYGON) {
             if (points.length / 2 < 3) {
                 throw new DataError(`Polygon must have at least 3 points, but got ${points.length / 2}`);
             }
-        } else if (shapeType === ObjectShape.POLYLINE) {
+        } else if (shapeType === ShapeType.POLYLINE) {
             if (points.length / 2 < 2) {
                 throw new DataError(`Polyline must have at least 2 points, but got ${points.length / 2}`);
             }
-        } else if (shapeType === ObjectShape.POINTS) {
+        } else if (shapeType === ShapeType.POINTS) {
             if (points.length / 2 < 1) {
                 throw new DataError(`Points must have at least 1 points, but got ${points.length / 2}`);
             }
-        } else if (shapeType === ObjectShape.CUBOID) {
+        } else if (shapeType === ShapeType.CUBOID) {
             if (points.length / 2 !== 8) {
                 throw new DataError(`Cuboid must have 8 points, but got ${points.length / 2}`);
             }
-        } else if (shapeType === ObjectShape.ELLIPSE) {
+        } else if (shapeType === ShapeType.ELLIPSE) {
             if (points.length / 2 !== 2) {
                 throw new DataError(`Ellipse must have 1 point, rx and ry but got ${points.toString()}`);
             }
@@ -67,11 +67,11 @@ const ObjectState = require('./object-state');
         const MIN_SHAPE_LENGTH = 3;
         const MIN_SHAPE_AREA = 9;
 
-        if (shapeType === ObjectShape.POINTS) {
+        if (shapeType === ShapeType.POINTS) {
             return true;
         }
 
-        if (shapeType === ObjectShape.ELLIPSE) {
+        if (shapeType === ShapeType.ELLIPSE) {
             const [cx, cy, rightX, topY] = points;
             const [rx, ry] = [rightX - cx, cy - topY];
             return rx * ry * Math.PI > MIN_SHAPE_AREA;
@@ -89,7 +89,7 @@ const ObjectState = require('./object-state');
             ymax = Math.max(ymax, points[i + 1]);
         }
 
-        if (shapeType === ObjectShape.POLYLINE) {
+        if (shapeType === ShapeType.POLYLINE) {
             const length = Math.max(xmax - xmin, ymax - ymin);
             return length >= MIN_SHAPE_LENGTH;
         }
@@ -505,8 +505,8 @@ const ObjectState = require('./object-state');
             checkObjectType('rotation', rotation, 'number', null);
             points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
 
-            if (parentID !== null || shapeType === ObjectShape.CUBOID ||
-                shapeType === ObjectShape.ELLIPSE || !!rotation) {
+            if (parentID !== null || shapeType === ShapeType.CUBOID ||
+                shapeType === ShapeType.ELLIPSE || !!rotation) {
                 // cuboids and rotated bounding boxes cannot be fitted
                 return points;
             }
@@ -1459,7 +1459,7 @@ const ObjectState = require('./object-state');
     class RectangleShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.RECTANGLE;
+            this.shapeType = ShapeType.RECTANGLE;
             this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
         }
@@ -1483,7 +1483,7 @@ const ObjectState = require('./object-state');
     class EllipseShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.ELLIPSE;
+            this.shapeType = ShapeType.ELLIPSE;
             this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
         }
@@ -1546,7 +1546,7 @@ const ObjectState = require('./object-state');
     class PolygonShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYGON;
+            this.shapeType = ShapeType.POLYGON;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1617,7 +1617,7 @@ const ObjectState = require('./object-state');
     class PolylineShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYLINE;
+            this.shapeType = ShapeType.POLYLINE;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1661,7 +1661,7 @@ const ObjectState = require('./object-state');
     class PointsShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POINTS;
+            this.shapeType = ShapeType.POINTS;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1682,7 +1682,7 @@ const ObjectState = require('./object-state');
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.rotation = 0;
-            this.shapeType = ObjectShape.CUBOID;
+            this.shapeType = ShapeType.CUBOID;
             this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
         }
@@ -1803,7 +1803,7 @@ const ObjectState = require('./object-state');
     class SkeletonShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.SKELETON;
+            this.shapeType = ShapeType.SKELETON;
             this.pinned = false;
             this.rotation = 0;
             this.occluded = false;
@@ -2069,7 +2069,7 @@ const ObjectState = require('./object-state');
     class RectangleTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.RECTANGLE;
+            this.shapeType = ShapeType.RECTANGLE;
             this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
@@ -2094,7 +2094,7 @@ const ObjectState = require('./object-state');
     class EllipseTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.ELLIPSE;
+            this.shapeType = ShapeType.ELLIPSE;
             this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
@@ -2387,7 +2387,7 @@ const ObjectState = require('./object-state');
     class PolygonTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYGON;
+            this.shapeType = ShapeType.POLYGON;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -2416,7 +2416,7 @@ const ObjectState = require('./object-state');
     class PolylineTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYLINE;
+            this.shapeType = ShapeType.POLYLINE;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -2426,7 +2426,7 @@ const ObjectState = require('./object-state');
     class PointsTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POINTS;
+            this.shapeType = ShapeType.POINTS;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -2459,7 +2459,7 @@ const ObjectState = require('./object-state');
     class CuboidTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.CUBOID;
+            this.shapeType = ShapeType.CUBOID;
             this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
@@ -2483,7 +2483,7 @@ const ObjectState = require('./object-state');
     class SkeletonTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.SKELETON;
+            this.shapeType = ShapeType.SKELETON;
             this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
             this.pinned = false;
             this.shapes = {};
@@ -2891,25 +2891,25 @@ const ObjectState = require('./object-state');
 
         let shapeModel = null;
         switch (type) {
-            case ObjectShape.RECTANGLE:
+            case ShapeType.RECTANGLE:
                 shapeModel = new RectangleShape(shapeData, clientID, color, injection);
                 break;
-            case ObjectShape.POLYGON:
+            case ShapeType.POLYGON:
                 shapeModel = new PolygonShape(shapeData, clientID, color, injection);
                 break;
-            case ObjectShape.POLYLINE:
+            case ShapeType.POLYLINE:
                 shapeModel = new PolylineShape(shapeData, clientID, color, injection);
                 break;
-            case ObjectShape.POINTS:
+            case ShapeType.POINTS:
                 shapeModel = new PointsShape(shapeData, clientID, color, injection);
                 break;
-            case ObjectShape.ELLIPSE:
+            case ShapeType.ELLIPSE:
                 shapeModel = new EllipseShape(shapeData, clientID, color, injection);
                 break;
-            case ObjectShape.CUBOID:
+            case ShapeType.CUBOID:
                 shapeModel = new CuboidShape(shapeData, clientID, color, injection);
                 break;
-            case ObjectShape.SKELETON:
+            case ShapeType.SKELETON:
                 shapeModel = new SkeletonShape(shapeData, clientID, color, injection);
                 break;
             default:
@@ -2926,25 +2926,25 @@ const ObjectState = require('./object-state');
 
             let trackModel = null;
             switch (type) {
-                case ObjectShape.RECTANGLE:
+                case ShapeType.RECTANGLE:
                     trackModel = new RectangleTrack(trackData, clientID, color, injection);
                     break;
-                case ObjectShape.POLYGON:
+                case ShapeType.POLYGON:
                     trackModel = new PolygonTrack(trackData, clientID, color, injection);
                     break;
-                case ObjectShape.POLYLINE:
+                case ShapeType.POLYLINE:
                     trackModel = new PolylineTrack(trackData, clientID, color, injection);
                     break;
-                case ObjectShape.POINTS:
+                case ShapeType.POINTS:
                     trackModel = new PointsTrack(trackData, clientID, color, injection);
                     break;
-                case ObjectShape.ELLIPSE:
+                case ShapeType.ELLIPSE:
                     trackModel = new EllipseTrack(trackData, clientID, color, injection);
                     break;
-                case ObjectShape.CUBOID:
+                case ShapeType.CUBOID:
                     trackModel = new CuboidTrack(trackData, clientID, color, injection);
                     break;
-                case ObjectShape.SKELETON:
+                case ShapeType.SKELETON:
                     trackModel = new SkeletonTrack(trackData, clientID, color, injection);
                     break;
                 default:

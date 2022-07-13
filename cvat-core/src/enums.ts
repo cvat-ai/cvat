@@ -1,6 +1,6 @@
 // Copyright (C) 2019-2022 Intel Corporation
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier = MIT
 
 /**
  * Share files types
@@ -11,10 +11,10 @@
  * @property {string} REG 'REG'
  * @readonly
 */
-export const ShareFileType = Object.freeze({
-    DIR: 'DIR',
-    REG: 'REG',
-});
+export enum ShareFileType {
+    DIR = 'DIR',
+    REG = 'REG',
+}
 
 /**
  * Task statuses
@@ -26,11 +26,11 @@ export const ShareFileType = Object.freeze({
  * @property {string} COMPLETED 'completed'
  * @readonly
 */
-export const TaskStatus = Object.freeze({
-    ANNOTATION: 'annotation',
-    VALIDATION: 'validation',
-    COMPLETED: 'completed',
-});
+export enum TaskStatus {
+    ANNOTATION = 'annotation',
+    VALIDATION = 'validation',
+    COMPLETED = 'completed',
+}
 
 /**
  * Job stages
@@ -42,11 +42,11 @@ export const TaskStatus = Object.freeze({
  * @property {string} ACCEPTANCE 'acceptance'
  * @readonly
 */
-export const JobStage = Object.freeze({
-    ANNOTATION: 'annotation',
-    VALIDATION: 'validation',
-    ACCEPTANCE: 'acceptance',
-});
+export enum JobStage {
+    ANNOTATION = 'annotation',
+    VALIDATION = 'validation',
+    ACCEPTANCE = 'acceptance',
+}
 
 /**
  * Job states
@@ -59,12 +59,12 @@ export const JobStage = Object.freeze({
  * @property {string} REJECTED 'rejected'
  * @readonly
 */
-export const JobState = Object.freeze({
-    NEW: 'new',
-    IN_PROGRESS: 'in progress',
-    COMPLETED: 'completed',
-    REJECTED: 'rejected',
-});
+export enum JobState {
+    NEW = 'new',
+    IN_PROGRESS = 'in progress',
+    COMPLETED = 'completed',
+    REJECTED = 'rejected',
+}
 
 /**
  * Task dimension
@@ -75,10 +75,10 @@ export const JobState = Object.freeze({
  * @property {string} DIMENSION_3D '3d'
  * @readonly
 */
-export const DimensionType = Object.freeze({
-    DIMENSION_2D: '2d',
-    DIMENSION_3D: '3d',
-});
+export enum DimensionType {
+    DIMENSION_2D = '2d',
+    DIMENSION_3D = '3d',
+}
 
 /**
  * List of RQ statuses
@@ -92,13 +92,13 @@ export const DimensionType = Object.freeze({
  * @property {string} UNKNOWN 'unknown'
  * @readonly
 */
-export const RQStatus = Object.freeze({
-    QUEUED: 'queued',
-    STARTED: 'started',
-    FINISHED: 'finished',
-    FAILED: 'failed',
-    UNKNOWN: 'unknown',
-});
+export enum RQStatus {
+    QUEUED = 'queued',
+    STARTED = 'started',
+    FINISHED = 'finished',
+    FAILED = 'failed',
+    UNKNOWN = 'unknown',
+}
 
 /**
  * Task modes
@@ -109,10 +109,10 @@ export const RQStatus = Object.freeze({
  * @property {string} INTERPOLATION 'interpolation'
  * @readonly
 */
-export const TaskMode = Object.freeze({
-    ANNOTATION: 'annotation',
-    INTERPOLATION: 'interpolation',
-});
+export enum TaskMode {
+    ANNOTATION = 'annotation',
+    INTERPOLATION = 'interpolation',
+}
 
 /**
  * Attribute types
@@ -126,13 +126,13 @@ export const TaskMode = Object.freeze({
  * @property {string} TEXT 'text'
  * @readonly
 */
-export const AttributeType = Object.freeze({
-    CHECKBOX: 'checkbox',
-    RADIO: 'radio',
-    SELECT: 'select',
-    NUMBER: 'number',
-    TEXT: 'text',
-});
+export enum AttributeType {
+    CHECKBOX = 'checkbox',
+    RADIO = 'radio',
+    SELECT = 'select',
+    NUMBER = 'number',
+    TEXT = 'text',
+}
 
 /**
  * Object types
@@ -144,16 +144,16 @@ export const AttributeType = Object.freeze({
  * @property {string} TRACK 'track'
  * @readonly
 */
-export const ObjectType = Object.freeze({
-    TAG: 'tag',
-    SHAPE: 'shape',
-    TRACK: 'track',
-});
+export enum ObjectType {
+    TAG = 'tag',
+    SHAPE = 'shape',
+    TRACK = 'track',
+}
 
 /**
  * Object shapes
  * @enum {string}
- * @name ObjectShape
+ * @name ShapeType
  * @memberof module:API.cvat.enums
  * @property {string} RECTANGLE 'rectangle'
  * @property {string} POLYGON 'polygon'
@@ -163,15 +163,15 @@ export const ObjectType = Object.freeze({
  * @property {string} SKELETON 'skeleton'
  * @readonly
 */
-export const ObjectShape = Object.freeze({
-    RECTANGLE: 'rectangle',
-    POLYGON: 'polygon',
-    POLYLINE: 'polyline',
-    POINTS: 'points',
-    ELLIPSE: 'ellipse',
-    CUBOID: 'cuboid',
-    SKELETON: 'skeleton',
-});
+export enum ShapeType {
+    RECTANGLE = 'rectangle',
+    POLYGON = 'polygon',
+    POLYLINE = 'polyline',
+    POINTS = 'points',
+    ELLIPSE = 'ellipse',
+    CUBOID = 'cuboid',
+    SKELETON = 'skeleton',
+}
 
 /**
  * Annotation type
@@ -182,10 +182,10 @@ export const ObjectShape = Object.freeze({
  * @property {string} AUTO 'auto'
  * @readonly
 */
-export const Source = Object.freeze({
-    MANUAL: 'manual',
-    AUTO: 'auto',
-});
+export enum Source {
+    MANUAL = 'manual',
+    AUTO = 'auto',
+}
 
 /**
  * Logger event types
@@ -221,39 +221,39 @@ export const Source = Object.freeze({
  * @property {string} debugInfo Debug info
  * @readonly
 */
-export const LogType = Object.freeze({
-    loadJob: 'Load job',
-    saveJob: 'Save job',
-    restoreJob: 'Restore job',
-    uploadAnnotations: 'Upload annotations',
-    sendUserActivity: 'Send user activity',
-    sendException: 'Send exception',
-    sendTaskInfo: 'Send task info',
+export enum LogType {
+    loadJob = 'Load job',
+    saveJob = 'Save job',
+    restoreJob = 'Restore job',
+    uploadAnnotations = 'Upload annotations',
+    sendUserActivity = 'Send user activity',
+    sendException = 'Send exception',
+    sendTaskInfo = 'Send task info',
 
-    drawObject: 'Draw object',
-    pasteObject: 'Paste object',
-    copyObject: 'Copy object',
-    propagateObject: 'Propagate object',
-    dragObject: 'Drag object',
-    resizeObject: 'Resize object',
-    deleteObject: 'Delete object',
-    lockObject: 'Lock object',
-    mergeObjects: 'Merge objects',
-    changeAttribute: 'Change attribute',
-    changeLabel: 'Change label',
+    drawObject = 'Draw object',
+    pasteObject = 'Paste object',
+    copyObject = 'Copy object',
+    propagateObject = 'Propagate object',
+    dragObject = 'Drag object',
+    resizeObject = 'Resize object',
+    deleteObject = 'Delete object',
+    lockObject = 'Lock object',
+    mergeObjects = 'Merge objects',
+    changeAttribute = 'Change attribute',
+    changeLabel = 'Change label',
 
-    changeFrame: 'Change frame',
-    moveImage: 'Move image',
-    zoomImage: 'Zoom image',
-    fitImage: 'Fit image',
-    rotateImage: 'Rotate image',
+    changeFrame = 'Change frame',
+    moveImage = 'Move image',
+    zoomImage = 'Zoom image',
+    fitImage = 'Fit image',
+    rotateImage = 'Rotate image',
 
-    undoAction: 'Undo action',
-    redoAction: 'Redo action',
+    undoAction = 'Undo action',
+    redoAction = 'Redo action',
 
-    pressShortcut: 'Press shortcut',
-    debugInfo: 'Debug info',
-});
+    pressShortcut = 'Press shortcut',
+    debugInfo = 'Debug info',
+}
 
 /**
  * Types of actions with annotations
@@ -279,28 +279,28 @@ export const LogType = Object.freeze({
  * @property {string} RESTORED_FRAME Restored frame
  * @readonly
 */
-export const HistoryActions = Object.freeze({
-    CHANGED_LABEL: 'Changed label',
-    CHANGED_ATTRIBUTES: 'Changed attributes',
-    CHANGED_POINTS: 'Changed points',
-    CHANGED_ROTATION: 'Object rotated',
-    CHANGED_OUTSIDE: 'Changed outside',
-    CHANGED_OCCLUDED: 'Changed occluded',
-    CHANGED_ZORDER: 'Changed z-order',
-    CHANGED_KEYFRAME: 'Changed keyframe',
-    CHANGED_LOCK: 'Changed lock',
-    CHANGED_PINNED: 'Changed pinned',
-    CHANGED_COLOR: 'Changed color',
-    CHANGED_HIDDEN: 'Changed hidden',
-    CHANGED_SOURCE: 'Changed source',
-    MERGED_OBJECTS: 'Merged objects',
-    SPLITTED_TRACK: 'Splitted track',
-    GROUPED_OBJECTS: 'Grouped objects',
-    CREATED_OBJECTS: 'Created objects',
-    REMOVED_OBJECT: 'Removed object',
-    REMOVED_FRAME: 'Removed frame',
-    RESTORED_FRAME: 'Restored frame',
-});
+export enum HistoryActions {
+    CHANGED_LABEL = 'Changed label',
+    CHANGED_ATTRIBUTES = 'Changed attributes',
+    CHANGED_POINTS = 'Changed points',
+    CHANGED_ROTATION = 'Object rotated',
+    CHANGED_OUTSIDE = 'Changed outside',
+    CHANGED_OCCLUDED = 'Changed occluded',
+    CHANGED_ZORDER = 'Changed z-order',
+    CHANGED_KEYFRAME = 'Changed keyframe',
+    CHANGED_LOCK = 'Changed lock',
+    CHANGED_PINNED = 'Changed pinned',
+    CHANGED_COLOR = 'Changed color',
+    CHANGED_HIDDEN = 'Changed hidden',
+    CHANGED_SOURCE = 'Changed source',
+    MERGED_OBJECTS = 'Merged objects',
+    SPLITTED_TRACK = 'Splitted track',
+    GROUPED_OBJECTS = 'Grouped objects',
+    CREATED_OBJECTS = 'Created objects',
+    REMOVED_OBJECT = 'Removed object',
+    REMOVED_FRAME = 'Removed frame',
+    RESTORED_FRAME = 'Restored frame',
+}
 
 /**
  * Enum string values.
@@ -308,11 +308,11 @@ export const HistoryActions = Object.freeze({
  * @memberof module:API.cvat.enums
  * @enum {string}
 */
-export const ModelType = {
-    DETECTOR: 'detector',
-    INTERACTOR: 'interactor',
-    TRACKER: 'tracker',
-};
+export enum ModelType {
+    DETECTOR = 'detector',
+    INTERACTOR = 'interactor',
+    TRACKER = 'tracker',
+}
 
 /**
  * Array of hex colors
@@ -364,11 +364,11 @@ export const colors = [
  * @property {string} GOOGLE_CLOUD_STORAGE 'GOOGLE_CLOUD_STORAGE'
  * @readonly
 */
-export const CloudStorageProviderType = Object.freeze({
-    AWS_S3_BUCKET: 'AWS_S3_BUCKET',
-    AZURE_CONTAINER: 'AZURE_CONTAINER',
-    GOOGLE_CLOUD_STORAGE: 'GOOGLE_CLOUD_STORAGE',
-});
+export enum CloudStorageProviderType {
+    AWS_S3_BUCKET = 'AWS_S3_BUCKET',
+    AZURE_CONTAINER = 'AZURE_CONTAINER',
+    GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE',
+}
 
 /**
  * Types of cloud storage credentials
@@ -381,12 +381,12 @@ export const CloudStorageProviderType = Object.freeze({
  * @property {string} KEY_FILE_PATH 'KEY_FILE_PATH'
  * @readonly
  */
-export const CloudStorageCredentialsType = Object.freeze({
-    KEY_SECRET_KEY_PAIR: 'KEY_SECRET_KEY_PAIR',
-    ACCOUNT_NAME_TOKEN_PAIR: 'ACCOUNT_NAME_TOKEN_PAIR',
-    ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
-    KEY_FILE_PATH: 'KEY_FILE_PATH',
-});
+export enum CloudStorageCredentialsType {
+    KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR',
+    ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR',
+    ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
+    KEY_FILE_PATH = 'KEY_FILE_PATH',
+}
 
 /**
  * Task statuses
@@ -399,12 +399,12 @@ export const CloudStorageCredentialsType = Object.freeze({
  * @property {string} OWNER 'owner'
  * @readonly
 */
-export const MembershipRole = Object.freeze({
-    WORKER: 'worker',
-    SUPERVISOR: 'supervisor',
-    MAINTAINER: 'maintainer',
-    OWNER: 'owner',
-});
+export enum MembershipRole {
+    WORKER = 'worker',
+    SUPERVISOR = 'supervisor',
+    MAINTAINER = 'maintainer',
+    OWNER = 'owner',
+}
 
 /**
  * Sorting methods
@@ -417,9 +417,9 @@ export const MembershipRole = Object.freeze({
  * @property {string} RANDOM 'random'
  * @readonly
 */
-export const SortingMethod = Object.freeze({
-    LEXICOGRAPHICAL: 'lexicographical',
-    NATURAL: 'natural',
-    PREDEFINED: 'predefined',
-    RANDOM: 'random',
-});
+export enum SortingMethod {
+    LEXICOGRAPHICAL = 'lexicographical',
+    NATURAL = 'natural',
+    PREDEFINED = 'predefined',
+    RANDOM = 'random',
+}

@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-const jsonLogic = require('json-logic-js');
-const { AttributeType, ObjectType } = require('./enums');
+import jsonLogic from 'json-logic-js';
+import { AttributeType, ObjectType } from './enums';
 
-function adjustName(name) {
+function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
 }
 
-class AnnotationsFilter {
+export default class AnnotationsFilter {
     _convertObjects(statesData) {
         const objects = statesData.map((state) => {
             const labelAttributes = state.label.attributes.reduce((acc, attr) => {
@@ -75,5 +75,3 @@ class AnnotationsFilter {
             .filter((_, index) => jsonLogic.apply(filters[0], converted[index]));
     }
 }
-
-module.exports = AnnotationsFilter;

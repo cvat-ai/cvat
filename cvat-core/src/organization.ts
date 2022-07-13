@@ -6,7 +6,7 @@ const { checkObjectType, isEnum } = require('./common');
 const config = require('./config');
 const { MembershipRole } = require('./enums');
 const { ArgumentError, ServerError } = require('./exceptions');
-const PluginRegistry = require('./plugins');
+const PluginRegistry = require('./plugins').default;
 const serverProxy = require('./server-proxy');
 const User = require('./user');
 

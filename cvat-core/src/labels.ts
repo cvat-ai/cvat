@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ObjectShape, AttributeType } from './enums';
+import { ShapeType, AttributeType } from './enums';
 import { ArgumentError } from './exceptions';
 
 type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
@@ -292,7 +292,7 @@ export class Label {
                  */
                 structure: {
                     get: () => {
-                        if (data.type === ObjectShape.SKELETON) {
+                        if (data.type === ShapeType.SKELETON) {
                             return {
                                 svg: data.svg,
                                 edges: [...data.edges],
