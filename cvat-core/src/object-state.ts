@@ -6,6 +6,7 @@ import { Source, ShapeType, ObjectType } from './enums';
 import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
+import { isEnum } from './common';
 
 interface UpdateFlags {
     label: boolean;
@@ -25,12 +26,49 @@ interface UpdateFlags {
     reset: () => void;
 }
 
+interface SerializedData {
+    objectType: ObjectType;
+    label: Label;
+    frame: number;
+
+    shapeType?: ShapeType;
+    clientID?: number;
+    serverID?: number;
+    parentID?: number;
+    lock?: boolean;
+    hidden?: boolean;
+    pinned?: boolean;
+    attributes?: { id: number; value: string }[];
+    group?: { color: string; id: number; };
+    color?: string;
+    updated?: number;
+    source?: Source;
+    zOrder?: number;
+    points?: number[];
+    occluded?: boolean;
+    outside?: boolean;
+    keyframe?: boolean;
+    rotation?: number;
+    descriptions?: string[];
+    keyframes?: {
+        prev: number | null;
+        next: number | null;
+        first: number | null;
+        last: number | null;
+    };
+    elements?: SerializedData[];
+    __internal: {
+        save: (objectState: ObjectState) => ObjectState;
+        delete: (frame: number, force: boolean) => boolean;
+    };
+}
+
 /**
  * Class representing a state of an object on a specific frame
  * @memberof module:API.cvat.classes
 */
 export default class ObjectState {
-    private __internal: {
+    private readonly __internal: {
         save: (objectState: ObjectState) => ObjectState;
         delete: (frame: number, force: boolean) => boolean;
     };
@@ -40,28 +78,28 @@ export default class ObjectState {
     public readonly objectType: ObjectType;
     public readonly shapeType: ShapeType;
     public readonly source: Source;
-    public readonly clientID: number;
-    public readonly serverID: number;
-    public readonly parentID: number;
-    public label: Label;
-    public color: string;
-    public hidden: boolean;
-    public points: number[];
-    public rotation: number;
-    public readonly group: { color: string; id: number; };
-    public zOrder: number;
-    public outside: boolean;
-    public keyframe: boolean;
+    public readonly clientID: number | null;
+    public readonly serverID: number | null;
+    public readonly parentID: number | null;
+    public readonly updated: number;
+    public readonly group: { color: string; id: number; } | null;
     public readonly keyframes: {
         first: number | null;
         prev: number | null;
         next: number | null;
         last: number | null;
-    };
-    public occluded: boolean;
-    public lock: boolean;
+    } | null;
+    public label: Label;
+    public color: string;
+    public hidden: boolean;
     public pinned: boolean;
-    public readonly updated: number;
+    public points: number[] | null;
+    public rotation: number | null;
+    public zOrder: number;
+    public outside: boolean;
+    public occluded: boolean;
+    public keyframe: boolean;
+    public lock: boolean;
     public attributes: { id: number; value: string }[];
     public descriptions: string[];
     public elements: ObjectState[];
@@ -74,7 +112,19 @@ export default class ObjectState {
      * </br> Optional fields which can be set later: points, zOrder, outside,
      * occluded, hidden, attributes, lock, label, color, keyframe, source
      */
-    constructor(serialized) {
+    constructor(serialized: SerializedData) {
+        if (!isEnum.call(ObjectType, serialized.objectType)) {
+            throw new Error(`ObjectState must be provided its objectType, got wrong value ${serialized.objectType}`);
+        }
+
+        if (!(serialized.label instanceof Label)) {
+            throw new Error(`ObjectState must be provided correct Label, got wrong value ${serialized.label}`);
+        }
+
+        if (!Number.isInteger(serialized.frame)) {
+            throw new Error(`ObjectState must be provided correct frame, got wrong value ${serialized.frame}`);
+        }
+
         const updateFlags: UpdateFlags = {} as UpdateFlags;
         // Shows whether any properties updated since the object initialization
         Object.defineProperty(updateFlags, 'reset', {
@@ -103,35 +153,35 @@ export default class ObjectState {
         });
 
         const data = {
-            label: null,
+            label: serialized.label,
             attributes: {},
             descriptions: [],
             elements: Array.isArray(serialized.elements) ?
-                serialized.elements.map((element) => new ObjectState(element)) : undefined,
+                serialized.elements.map((element) => new ObjectState(element)) : null,
 
             points: null,
             rotation: null,
-            outside: null,
-            occluded: null,
-            keyframe: null,
+            outside: false,
+            occluded: false,
+            keyframe: true,
 
-            zOrder: null,
-            lock: null,
-            color: null,
-            hidden: null,
-            pinned: null,
+            zOrder: 0,
+            lock: serialized.lock || false,
+            color: '#000000',
+            hidden: false,
+            pinned: false,
             source: Source.MANUAL,
-            keyframes: serialized.keyframes,
-            group: serialized.group,
-            updated: serialized.updated,
+            keyframes: serialized.keyframes || null,
+            group: serialized.group || null,
+            updated: serialized.updated || Date.now(),
 
-            clientID: serialized.clientID,
-            serverID: serialized.serverID,
-            parentID: serialized.parentID,
+            clientID: serialized.clientID || null,
+            serverID: serialized.serverID || null,
+            parentID: serialized.parentID || null,
 
             frame: serialized.frame,
             objectType: serialized.objectType,
-            shapeType: serialized.shapeType,
+            shapeType: serialized.shapeType || null,
             updateFlags,
         };
 
@@ -245,10 +295,22 @@ export default class ObjectState {
                      * @memberof module:API.cvat.classes.ObjectState
                      * @instance
                      */
-                    get: () => data.hidden,
+                    get: () => {
+                        if (data.shapeType === ShapeType.SKELETON) {
+                            return data.elements.every((element: ObjectState) => element.hidden);
+                        }
+
+                        return data.hidden;
+                    },
                     set: (hidden) => {
-                        data.updateFlags.hidden = true;
-                        data.hidden = hidden;
+                        if (data.shapeType === ShapeType.SKELETON) {
+                            data.elements.forEach((element: ObjectState) => {
+                                element.hidden = hidden;
+                            });
+                        } else {
+                            data.updateFlags.hidden = true;
+                            data.hidden = hidden;
+                        }
                     },
                 },
                 points: {
@@ -552,9 +614,6 @@ export default class ObjectState {
                 },
             }),
         );
-
-        data.label = serialized.label;
-        data.lock = serialized.lock;
 
         if ([Source.MANUAL, Source.AUTO].includes(serialized.source)) {
             data.source = serialized.source;

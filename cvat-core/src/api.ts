@@ -880,11 +880,6 @@ function build() {
     cvat.organizations = Object.freeze(cvat.organizations);
 
     const implementAPI = require('./api-implementation');
-
-    Math.clamp = function clamp(value, min, max) {
-        return Math.min(Math.max(value, min), max);
-    };
-
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
 }

@@ -568,7 +568,7 @@
 
                 const label = object.label.name;
                 if (objectType === 'tag') {
-                    labels[label].tags++;
+                    labels[label].tag++;
                     labels[label].manually++;
                     labels[label].total++;
                 } else {
@@ -651,7 +651,7 @@
 
             for (const state of objectStates) {
                 checkObjectType('object state', state, null, ObjectState);
-                checkObjectType('state client ID', state.clientID, 'undefined', null);
+                checkObjectType('state client ID', state.clientID, null, null);
                 checkObjectType('state frame', state.frame, 'integer', null);
                 checkObjectType('state rotation', state.rotation || 0, 'number', null);
                 checkObjectType('state attributes', state.attributes, null, Object);
