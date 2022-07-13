@@ -2868,7 +2868,7 @@ export class SkeletonTrack extends Track {
             return new ObjectState(this.get(frame));
         }
 
-        const updateElements = (affectedElements, action, property: 'hidden' | 'lock' | null = null) => {
+        const updateElements = (affectedElements, action, property: 'hidden' | 'lock' | null = null): void => {
             const undoSkeletonProperties = this.elements.map((element) => element[property] || null);
             const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
             const undoSource = this.source;

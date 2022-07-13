@@ -38,7 +38,7 @@ interface SerializedData {
     lock?: boolean;
     hidden?: boolean;
     pinned?: boolean;
-    attributes?: { id: number; value: string }[];
+    attributes?: Record<number, string>;
     group?: { color: string; id: number; };
     color?: string;
     updated?: number;
@@ -100,7 +100,7 @@ export default class ObjectState {
     public occluded: boolean;
     public keyframe: boolean;
     public lock: boolean;
-    public attributes: { id: number; value: string }[];
+    public attributes: Record<number, string>;
     public descriptions: string[];
     public elements: ObjectState[];
 
