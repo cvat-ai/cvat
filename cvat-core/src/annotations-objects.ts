@@ -192,10 +192,10 @@ interface AnnotationInjection {
 }
 
 class Annotation {
+    public clientID: number;
     protected taskLabels: Label[];
     protected history: any;
     protected groupColors: Record<number, string>;
-    protected clientID: number;
     protected serverID: number | null;
     protected parentID: number | null;
     protected group: number;
@@ -858,7 +858,7 @@ export class Shape extends Drawn {
         }
 
         if (updated.points && fittedPoints.length) {
-            this._savePoints(fittedPoints, rotation, frame);
+            this._savePoints(fittedPoints, frame);
         }
 
         if (updated.occluded) {
@@ -933,7 +933,7 @@ interface TrackedShape {
 }
 
 export class Track extends Drawn {
-    protected shapes: Record<number, TrackedShape>;
+    public shapes: Record<number, TrackedShape>;
     constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
@@ -1082,7 +1082,7 @@ export class Track extends Drawn {
         };
     }
 
-    getAttributes(targetFrame) {
+    getAttributes(targetFrame: number): Record<number, string> {
         const result = {};
 
         // First of all copy all unmutable attributes
@@ -1095,7 +1095,7 @@ export class Track extends Drawn {
         // Secondly get latest mutable attributes up to target frame
         const frames = Object.keys(this.shapes).sort((a, b) => +a - +b);
         for (const frame of frames) {
-            if (frame <= targetFrame) {
+            if (+frame <= targetFrame) {
                 const { attributes } = this.shapes[frame];
 
                 for (const attrID in attributes) {
@@ -1109,7 +1109,7 @@ export class Track extends Drawn {
         return result;
     }
 
-    _saveLabel(label, frame) {
+    _saveLabel(label: Label, frame: number): void {
         const undoLabel = this.label;
         const redoLabel = label;
         const undoAttributes = {
@@ -1158,7 +1158,7 @@ export class Track extends Drawn {
         );
     }
 
-    _saveAttributes(attributes, frame) {
+    _saveAttributes(attributes: Record<number, string>, frame: number): void {
         const current = this.get(frame);
         const labelAttributes = attrsAsAnObject(this.label.attributes);
 
@@ -1262,7 +1262,7 @@ export class Track extends Drawn {
         );
     }
 
-    _saveRotation(rotation, frame) {
+    _saveRotation(rotation: number, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
@@ -1282,7 +1282,7 @@ export class Track extends Drawn {
         );
     }
 
-    _savePoints(points, frame) {
+    _savePoints(points: number[], frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
@@ -1302,7 +1302,7 @@ export class Track extends Drawn {
         );
     }
 
-    _saveOutside(frame, outside) {
+    _saveOutside(frame: number, outside: boolean): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
@@ -1323,7 +1323,7 @@ export class Track extends Drawn {
         );
     }
 
-    _saveOccluded(occluded, frame) {
+    _saveOccluded(occluded: boolean, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
@@ -1344,7 +1344,7 @@ export class Track extends Drawn {
         );
     }
 
-    _saveZOrder(zOrder, frame) {
+    _saveZOrder(zOrder: number, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
@@ -1365,7 +1365,7 @@ export class Track extends Drawn {
         );
     }
 
-    _saveKeyframe(frame, keyframe) {
+    _saveKeyframe(frame: number, keyframe: boolean): void {
         const wasKeyframe = frame in this.shapes;
 
         if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
@@ -1465,7 +1465,11 @@ export class Track extends Drawn {
         return new ObjectState(this.get(frame));
     }
 
-    getPosition(targetFrame, leftKeyframe, rightFrame) {
+    interpolatePosition(left: any, right: any, offset: number): {} {
+        throw new ScriptingError('Not implemented');
+    }
+
+    getPosition(targetFrame: number, leftKeyframe: number | null, rightFrame: number | null) {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
         const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
@@ -1500,14 +1504,22 @@ export class Track extends Drawn {
     }
 }
 
+interface RawTagData {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    frame: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+}
+
 export class Tag extends Annotation {
     // Method is used to export data to the server
-    toJSON() {
-        const result = {
+    toJSON(): RawTagData {
+        const result: RawTagData = {
             clientID: this.clientID,
             frame: this.frame,
             label_id: this.label.id,
-            group: this.group,
             source: this.source,
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 attributeAccumulator.push({
@@ -1526,7 +1538,7 @@ export class Tag extends Annotation {
         return result;
     }
 
-    get(frame) {
+    get(frame: number) {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
@@ -1547,7 +1559,7 @@ export class Tag extends Annotation {
         };
     }
 
-    save(frame, data) {
+    save(frame: number, data: ObjectState): ObjectState {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the tag');
         }
@@ -1595,7 +1607,7 @@ export class RectangleShape extends Shape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points, x, y, angle) {
+    static distance(points: number[], x: number, y: number, angle: number): number {
         const [xtl, ytl, xbr, ybr] = points;
         const cx = xtl + (xbr - xtl) / 2;
         const cy = ytl + (ybr - ytl) / 2;
@@ -1619,7 +1631,7 @@ export class EllipseShape extends Shape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points, x, y, angle) {
+    static distance(points: number[], x: number, y: number, angle: number): number {
         const [cx, cy, rightX, topY] = points;
         const [rx, ry] = [rightX - cx, cy - topY];
         const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
@@ -1681,8 +1693,8 @@ export class PolygonShape extends PolyShape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points, x, y) {
-        function position(x1, y1, x2, y2) {
+    static distance(points: number[], x: number, y: number): number {
+        function position(x1, y1, x2, y2): number {
             return (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1);
         }
 
@@ -1752,7 +1764,7 @@ export class PolylineShape extends PolyShape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points, x, y) {
+    static distance(points: number[], x: number, y: number): number {
         const distances = [];
         for (let i = 0; i < points.length - 2; i += 2) {
             // Current point
@@ -1796,7 +1808,7 @@ export class PointsShape extends PolyShape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points, x, y) {
+    static distance(points: number[], x: number, y: number): number {
         const distances = [];
         for (let i = 0; i < points.length; i += 2) {
             const x1 = points[i];
@@ -1901,7 +1913,7 @@ export class CuboidShape extends Shape {
         return wn !== 0;
     }
 
-    static distance(actualPoints, x, y) {
+    static distance(actualPoints: number[], x: number, y: number): number {
         const points = [];
 
         for (let i = 0; i < 16; i += 2) {
