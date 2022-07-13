@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import ObjectState from './object-state';
-import { checkObjectType } from './common';
+import { checkObjectType, clamp } from './common';
 import { DataError, ArgumentError, ScriptingError } from './exceptions';
 import { Label, Attribute } from './labels';
 import {
@@ -182,7 +182,9 @@ function copyShape(state, frame: number, data) {
 interface AnnotationInjection {
     labels: Label[];
     groups: { max: number };
-    frameMeta: any;
+    frameMeta: {
+        deleted_frames: Record<number, boolean>;
+    };
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
@@ -190,23 +192,23 @@ interface AnnotationInjection {
 }
 
 class Annotation {
-    private taskLabels: Label[];
-    private history: any;
-    private groupColors: Record<number, string>;
-    private clientID: number;
-    private serverID: number | null;
-    private parentID: number | null;
-    private group: number;
-    private label: Label;
-    private frame: number;
-    private removed: boolean;
-    private lock: boolean;
-    private readOnlyFields: string[];
-    private color: string;
-    private source: Source;
-    private updated: number;
-    private attributes: Record<number, string>;
-    private groupObject: {
+    protected taskLabels: Label[];
+    protected history: any;
+    protected groupColors: Record<number, string>;
+    protected clientID: number;
+    protected serverID: number | null;
+    protected parentID: number | null;
+    protected group: number;
+    protected label: Label;
+    protected frame: number;
+    protected removed: boolean;
+    protected lock: boolean;
+    protected readOnlyFields: string[];
+    protected color: string;
+    protected source: Source;
+    protected updated: number;
+    protected attributes: Record<number, string>;
+    protected groupObject: {
         color: string;
         readonly id: number;
     }
@@ -486,7 +488,13 @@ class Annotation {
 }
 
 class Drawn extends Annotation {
-    constructor(data, clientID, color, injection) {
+    protected frameMeta: AnnotationInjection['frameMeta'];
+    protected descriptions: string[];
+    protected hidden: boolean;
+    protected pinned: boolean;
+    protected shapeType: ShapeType;
+
+    constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.frameMeta = injection.frameMeta;
         this.descriptions = data.descriptions || [];
@@ -557,15 +565,15 @@ class Drawn extends Annotation {
         for (let i = 0; i < points.length - 1; i += 2) {
             const x = points[i];
             const y = points[i + 1];
-            const clampedX = Math.clamp(x, 0, maxX);
-            const clampedY = Math.clamp(y, 0, maxY);
+            const clampedX = clamp(x, 0, maxX);
+            const clampedY = clamp(y, 0, maxY);
             fittedPoints.push(clampedX, clampedY);
         }
 
         return fittedPoints;
     }
 
-    _validateStateBeforeSave(frame, data, updated) {
+    private _validateStateBeforeSave(frame, data, updated) {
         /* eslint-disable-next-line no-underscore-dangle */
         Annotation.prototype._validateStateBeforeSave.call(this, data, updated);
 
@@ -590,10 +598,6 @@ class Drawn extends Annotation {
         return fittedPoints;
     }
 
-    save() {
-        throw new ScriptingError('Is not implemented');
-    }
-
     get() {
         throw new ScriptingError('Is not implemented');
     }
@@ -604,7 +608,13 @@ class Drawn extends Annotation {
 }
 
 export class Shape extends Drawn {
-    constructor(data, clientID, color, injection) {
+    protected points: number[];
+    protected rotation: number;
+    protected occluded: boolean;
+    protected outside: boolean;
+    protected zOrder: number;
+
+    constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.points = data.points;
         this.rotation = data.rotation || 0;
