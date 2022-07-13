@@ -2747,14 +2747,15 @@ export class SkeletonTrack extends Track {
             return new ObjectState(this.get(frame));
         }
 
-        const updateElements = (affectedElements, action) => {
+        const updateElements = (affectedElements, action, property: 'hidden' | 'lock' | null = null) => {
+            const undoSkeletonProperties = this.elements.map((element) => element[property] || null);
             const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
 
             try {
                 this.history.freeze(true);
-                data.elements.forEach((element, idx) => {
+                affectedElements.forEach((element, idx) => {
                     const annotationContext = this.elements[idx];
                     annotationContext.save(frame, element);
                 });
@@ -2762,18 +2763,22 @@ export class SkeletonTrack extends Track {
                 this.history.freeze(false);
             }
 
+            const redoSkeletonProperties = this.elements.map((element) => element[property] || null);
             const redoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
 
             this.history.do(
                 action,
                 () => {
                     for (let i = 0; i < this.elements.length; i++) {
-                        if (undoSkeletonShapes[i]) {
-                            this.elements[i].shapes[frame] = undoSkeletonShapes[i];
-                        } else if (redoSkeletonShapes[i]) {
-                            delete this.elements[i].shapes[frame];
+                        if (property) {
+                            this.elements[i][property] = undoSkeletonProperties[i];
+                        } else {
+                            if (undoSkeletonShapes[i]) {
+                                this.elements[i].shapes[frame] = undoSkeletonShapes[i];
+                            } else if (redoSkeletonShapes[i]) {
+                                delete this.elements[i].shapes[frame];
+                            }
                         }
-
                         this.elements[i].updated = Date.now();
                     }
                     this.source = undoSource;
@@ -2781,12 +2786,15 @@ export class SkeletonTrack extends Track {
                 },
                 () => {
                     for (let i = 0; i < this.elements.length; i++) {
-                        if (redoSkeletonShapes[i]) {
-                            this.elements[i].shapes[frame] = redoSkeletonShapes[i];
-                        } else if (undoSkeletonShapes[i]) {
-                            delete this.elements[i].shapes[frame];
+                        if (property) {
+                            this.elements[i][property] = redoSkeletonProperties[i];
+                        } else {
+                            if (redoSkeletonShapes[i]) {
+                                this.elements[i].shapes[frame] = redoSkeletonShapes[i];
+                            } else if (undoSkeletonShapes[i]) {
+                                delete this.elements[i].shapes[frame];
+                            }
                         }
-
                         this.elements[i].updated = Date.now();
                     }
                     this.source = redoSource;
@@ -2800,9 +2808,13 @@ export class SkeletonTrack extends Track {
         const updatedPoints = data.elements.filter((el) => el.updateFlags.points);
         const updatedOccluded = data.elements.filter((el) => el.updateFlags.occluded);
         const updatedOutside = data.elements.filter((el) => el.updateFlags.outside);
+        const updatedHidden = data.elements.filter((el) => el.updateFlags.hidden);
+        const updatedLock = data.elements.filter((el) => el.updateFlags.lock);
 
         updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = false; });
         updatedOutside.forEach((el) => { el.updateFlags.outside = false; });
+        updatedHidden.forEach((el) => { el.updateFlags.hidden = false; });
+        updatedLock.forEach((el) => { el.updateFlags.lock = false; });
 
         if (updatedPoints.length) {
             updateElements(updatedPoints, HistoryActions.CHANGED_POINTS);
@@ -2816,6 +2828,16 @@ export class SkeletonTrack extends Track {
         if (updatedOutside.length) {
             updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
             updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
+        }
+
+        if (updatedHidden.length) {
+            updatedHidden.forEach((el) => { el.updateFlags.hidden = true; });
+            updateElements(updatedHidden, HistoryActions.CHANGED_HIDDEN, 'hidden');
+        }
+
+        if (updatedLock.length) {
+            updatedLock.forEach((el) => { el.updateFlags.lock = true; });
+            updateElements(updatedLock, HistoryActions.CHANGED_LOCK, 'lock');
         }
 
         const result = Track.prototype.save.call(this, frame, data);
