@@ -1,4 +1,6 @@
 from io import BytesIO, IOBase
+from urllib.parse import urlencode
+from tempfile import SpooledTemporaryFile
 
 import boto3
 from django.conf import settings
@@ -26,7 +28,10 @@ class S3Client:
 
     def upload_from_io(self, io: IOBase, key: str) -> bool:
         io.seek(0)
-        return self._client.upload_fileobj(io, self.bucket, key)
+        with SpooledTemporaryFile() as c:
+            c.write(io.read())
+            response = self._client.upload_fileobj(c, self.bucket, key)
+        return response
 
     def download_to_path(self, key: str, path: str) -> None:
         self._client.download_file(self.bucket, key, str(path))
@@ -52,19 +57,16 @@ class S3Client:
         return self._client.delete_object(self.bucket, key)
 
     def set_tags(self, key: str, tags: dict) -> dict:
-        if len(tags) > 10:
-            raise ValueError("Max of 10 tags allowed")
-        return self._client.put_object_tagging(self.bucket, key, Tagging={
+        return self._client.put_object_tagging(Bucket=self.bucket, Key=key, Tagging={
             'TagSet': [{'Key': k, 'Value': v} for k, v in tags.items()]
         })
 
     def get_tags(self, key: str):
-        response = self._client.get_object_tagging(self.bucket, key)
-        if 'TagSet' not in response:
-            raise ValueError("No tag container found in response")
+        response = self._client.get_object_tagging(Bucket=self.bucket, Key=key)
         return {item['Key']: item['Value'] for item in response['TagSet']}
 
-    # TODO: implement here delete_tags.
+    def delete_tags(self, key: str):
+        return self._client.delete_object_tagging(Bucket=self.bucket, Key=key)
 
 
 s3_client = S3Client()

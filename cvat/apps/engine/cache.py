@@ -46,11 +46,11 @@ class CacheInteraction:
         key = db_data.get_s3_chunk_path(chunk_number, quality)
         try:
             chunk = s3_client.download_to_io(key)
-            tag = s3_client.get_tags(key)['mime']
-        except Exception as e:  # TODO: better exception handling and move to s3_client.
+            tag = s3_client.get_tags(key)['mime_type']
+        except Exception as e:  # TODO: better handling.
             slogger.glob.exception(str(e))
             chunk, tag = self.prepare_chunk_buff(db_data, quality, chunk_number)
-            self._save_s3_chunk(db_data.id, chunk_number, quality, chunk, tag)
+            self._save_s3_chunk(db_data, chunk_number, quality, chunk, tag)
         return chunk, tag
 
     def prepare_chunk_buff(self, db_data, quality, chunk_number):
