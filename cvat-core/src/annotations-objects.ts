@@ -2023,36 +2023,28 @@ export class SkeletonShape extends Shape {
             return new ObjectState(this.get(frame));
         }
 
-        const undoSkeletonPoints = this.elements.map((element) => element.points);
-        const undoSkeletonOccluded = this.elements.map((element) => element.occluded);
+        const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock') => {
+            const undoSkeletonProperties = this.elements.map((element) => element[property]);
+            const undoSource = this.source;
+            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
 
-        const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+            try {
+                this.history.freeze(true);
+                affectedElements.forEach((element, idx) => {
+                    const annotationContext = this.elements[idx];
+                    annotationContext.save(frame, element);
+                });
+            } finally {
+                this.history.freeze(false);
+            }
 
-        try {
-            this.history.freeze(true);
-            data.elements.forEach((element, idx) => {
-                const annotationContext = this.elements[idx];
-                annotationContext.save(frame, element);
-            });
-        } finally {
-            this.history.freeze(false);
-        }
+            const redoSkeletonProperties = this.elements.map((element) => element[property]);
 
-        const redoSkeletonPoints = this.elements.map((element) => element.points);
-        const pointsChanged = this.elements.filter((_, idx) => (
-            undoSkeletonPoints[idx]
-                .some((coord, j) => redoSkeletonPoints[idx][j] !== coord)
-        ));
-        const occludedChanged = this.elements.filter((el, idx) => el.occluded !== undoSkeletonOccluded[idx]);
-
-        if (pointsChanged.length) {
-            this.source = redoSource;
             this.history.do(
-                HistoryActions.CHANGED_POINTS,
+                action,
                 () => {
                     for (let i = 0; i < this.elements.length; i++) {
-                        this.elements[i].points = undoSkeletonPoints[i];
+                        this.elements[i][property] = undoSkeletonProperties[i];
                         this.elements[i].updated = Date.now();
                     }
                     this.source = undoSource;
@@ -2060,40 +2052,43 @@ export class SkeletonShape extends Shape {
                 },
                 () => {
                     for (let i = 0; i < this.elements.length; i++) {
-                        this.elements[i].points = redoSkeletonPoints[i];
+                        this.elements[i][property] = redoSkeletonProperties[i];
                         this.elements[i].updated = Date.now();
                     }
                     this.source = redoSource;
                     this.updated = Date.now();
                 },
-                [this.clientID, ...pointsChanged.map((element) => element.clientID)],
+                [this.clientID, ...affectedElements.map((element) => element.clientID)],
                 frame,
             );
+        };
+
+        const updatedPoints = data.elements.filter((el) => el.updateFlags.points);
+        const updatedOccluded = data.elements.filter((el) => el.updateFlags.occluded);
+        const updatedHidden = data.elements.filter((el) => el.updateFlags.hidden);
+        const updatedLock = data.elements.filter((el) => el.updateFlags.lock);
+
+        updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = false; });
+        updatedHidden.forEach((el) => { el.updateFlags.hidden = false; });
+        updatedLock.forEach((el) => { el.updateFlags.lock = false; });
+
+        if (updatedPoints.length) {
+            updateElements(updatedPoints, HistoryActions.CHANGED_POINTS, 'points');
         }
 
-        if (occludedChanged.length) {
-            this.source = redoSource;
-            this.history.do(
-                HistoryActions.CHANGED_OCCLUDED,
-                () => {
-                    for (let i = 0; i < this.elements.length; i++) {
-                        this.elements[i].occluded = undoSkeletonOccluded[i];
-                        this.elements[i].updated = Date.now();
-                    }
-                    this.source = undoSource;
-                    this.updated = Date.now();
-                },
-                () => {
-                    for (let i = 0; i < this.elements.length; i++) {
-                        this.elements[i].points = redoSkeletonPoints[i];
-                        this.elements[i].updated = Date.now();
-                    }
-                    this.source = redoSource;
-                    this.updated = Date.now();
-                },
-                [this.clientID, ...pointsChanged.map((element) => element.clientID)],
-                frame,
-            );
+        if (updatedOccluded.length) {
+            updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = true; });
+            updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED, 'occluded');
+        }
+
+        if (updatedHidden.length) {
+            updatedHidden.forEach((el) => { el.updateFlags.hidden = true; });
+            updateElements(updatedHidden, HistoryActions.CHANGED_OUTSIDE, 'hidden');
+        }
+
+        if (updatedLock.length) {
+            updatedLock.forEach((el) => { el.updateFlags.lock = true; });
+            updateElements(updatedLock, HistoryActions.CHANGED_LOCK, 'lock');
         }
 
         const result = Shape.prototype.save.call(this, frame, data);
