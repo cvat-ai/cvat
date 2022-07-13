@@ -72,7 +72,7 @@ setup(
     python_requires=">=3.6",
     install_requires=BASE_REQUIREMENTS,
     package_dir={"": "."},
-    packages=find_packages(include=["cvat_api_client.*"]),
+    packages=find_packages(include=["cvat_api_client*"]),
     include_package_data=True,
     license="MIT License",
 )
