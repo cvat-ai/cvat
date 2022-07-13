@@ -2621,6 +2621,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                         'data-node-id': templateElements[i].attr('data-node-id'),
                         'data-element-id': templateElements[i].attr('data-element-id'),
+                        'data-label-id': templateElements[i].attr('data-label-id'),
+                        'data-client-id': element.clientID,
                         ...this.getShapeColorization(element, { parentState: state }),
                     }).style({
                         cursor: 'default',
@@ -2818,6 +2820,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             Object.entries(svgElements).forEach(([key, element]) => {
                 const clientID = +key;
+                const elementState = state.elements
+                    .find((_element: any) => _element.clientID === clientID);
                 const text = this.svgTexts[clientID];
                 const hideElementText = (): void => {
                     if (text) {
@@ -2832,7 +2836,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 };
 
-                if (action !== 'stop') {
+                if (action !== 'stop' && !elementState.lock) {
                     (element as any).draggable()
                         .on('dragstart', (): void => {
                             this.mode = Mode.RESIZE;
@@ -2856,8 +2860,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             const dx2 = (p1.x - p2.x) ** 2;
                             const dy2 = (p1.y - p2.y) ** 2;
                             if (Math.sqrt(dx2 + dy2) >= delta) {
-                                const elementState = state.elements
-                                    .find((_element: any) => _element.clientID === clientID);
                                 const elementShape = skeleton.children()
                                     .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${clientID}`);
 
@@ -2919,6 +2921,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     for (const child of skeleton.children()) {
                         if (child.type === 'circle') {
+                            const childClientID = child.attr('data-client-id');
+                            if (state.elements.find((el: any) => el.clientID === childClientID).lock || false) {
+                                continue;
+                            }
                             const offsetX = (child.cx() - prevXtl) / (prevXbr - prevXtl);
                             const offsetY = (child.cy() - prevYtl) / (prevYbr - prevYtl);
                             child.center(offsetX * instance.width() + x, offsetY * instance.height() + y);
