@@ -21,6 +21,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
+from cvat.apps.engine.constants import FrameQuality
 
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -286,9 +287,9 @@ class LambdaFunction:
 
     def _get_image(self, db_task, frame, quality):
         if quality is None or quality == "original":
-            quality = FrameProvider.Quality.ORIGINAL
+            quality = FrameQuality.ORIGINAL
         elif  quality == "compressed":
-            quality = FrameProvider.Quality.COMPRESSED
+            quality = FrameQuality.COMPRESSED
         else:
             raise ValidationError(
                 '`{}` lambda function was run '.format(self.id) +

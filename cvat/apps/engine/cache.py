@@ -18,6 +18,7 @@ from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType, Data, CloudStorage
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.utils import md5_hash
+from cvat.apps.engine.constants import FrameQuality
 from cvat.rebotics.cache import default_cache
 from cvat.rebotics.s3_client import s3_client
 
@@ -118,7 +119,7 @@ class CacheInteraction:
             with NamedTemporaryFile(mode='w+b', prefix='cvat',
                                     suffix=file_name.replace(os.path.sep, '#'),
                                     delete=False) as f:
-                key = db_data.get_s3_file_path(file_name)
+                key = db_data.get_s3_uploaded_file_path(file_name)
                 s3_client.download_to_io(key, f)
                 path = f.name
             self._validate_checksum(item, path, file_name, slogger.glob)
@@ -218,11 +219,10 @@ class CacheInteraction:
         return images
 
     def _get_writer(self, db_data, quality):
-        from cvat.apps.engine.frame_provider import FrameProvider  # TODO: remove circular dependency
         writer_classes = {
-            FrameProvider.Quality.COMPRESSED:
+            FrameQuality.COMPRESSED:
                 Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter,
-            FrameProvider.Quality.ORIGINAL:
+            FrameQuality.ORIGINAL:
                 Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter,
         }
 

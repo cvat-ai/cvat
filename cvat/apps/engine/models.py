@@ -147,8 +147,8 @@ class Data(models.Model):
         default_permissions = ()
 
     upload_dirname = 'raw'
-    compressed_dirname = 'compressed'
-    original_dirname = 'original'
+    compressed_cache_dirname = 'compressed'
+    original_cache_dirname = 'original'
     preview_file_name = 'preview.jpeg'
     manifest_file_name = 'manifest.jsonl'
     index_file_name = 'index.json'
@@ -164,10 +164,10 @@ class Data(models.Model):
         return os.path.join(self.get_data_dirname(), self.upload_dirname)
 
     def get_compressed_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), self.compressed_dirname)
+        return os.path.join(self.get_data_dirname(), self.compressed_cache_dirname)
 
     def get_original_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), self.original_dirname)
+        return os.path.join(self.get_data_dirname(), self.original_cache_dirname)
 
     @staticmethod
     def _get_chunk_name(chunk_number, chunk_type):
@@ -222,37 +222,36 @@ class Data(models.Model):
     def get_s3_data_dirname(self):
         return os.path.join(settings.S3_UPLOAD_ROOT, str(self.pk))
 
-    def get_s3_cache_dirname(self):
+    def get_s3_cache_base_dirname(self):
         return os.path.join(settings.S3_CACHE_ROOT, str(self.pk))
 
     def get_s3_upload_dirname(self):
         return os.path.join(self.get_s3_data_dirname(), self.upload_dirname)
 
-    def get_s3_file_path(self, file_name):
+    def get_s3_uploaded_file_path(self, file_name):
         return os.path.join(self.get_s3_upload_dirname(), file_name)
 
-    def get_s3_compressed_dirname(self):
-        return os.path.join(self.get_s3_cache_dirname(), self.compressed_dirname)
+    def get_s3_compressed_cache_dirname(self):
+        return os.path.join(self.get_s3_cache_base_dirname(), self.compressed_cache_dirname)
 
-    def get_s3_original_dirname(self):
-        return os.path.join(self.get_s3_cache_dirname(), self.original_dirname)
+    def get_s3_original_cache_dirname(self):
+        return os.path.join(self.get_s3_cache_base_dirname(), self.original_cache_dirname)
 
     def get_s3_original_chunk_path(self, chunk_number):
-        return os.path.join(self.get_s3_original_dirname(),
+        return os.path.join(self.get_s3_original_cache_dirname(),
                             self._get_original_chunk_name(chunk_number))
 
-    # TODO: make single get_chunk_path either and use it everywhere.
+    def get_s3_compressed_chunk_path(self, chunk_number):
+        return os.path.join(self.get_s3_compressed_cache_dirname(),
+                            self._get_compressed_chunk_name(chunk_number))
+
     def get_s3_chunk_path(self, chunk_number, quality):
-        if quality.value == FrameQuality.ORIGINAL.value:
+        if quality == FrameQuality.ORIGINAL:
             return self.get_s3_original_chunk_path(chunk_number)
-        elif quality.value == FrameQuality.COMPRESSED.value:
+        elif quality == FrameQuality.COMPRESSED:
             return self.get_s3_compressed_chunk_path(chunk_number)
         else:
             raise ValueError('Invalid quality value: {}'.format(quality.value))
-
-    def get_s3_compressed_chunk_path(self, chunk_number):
-        return os.path.join(self.get_s3_compressed_dirname(),
-                            self._get_compressed_chunk_name(chunk_number))
 
     def get_s3_preview_path(self):
         return os.path.join(self.get_s3_data_dirname(), self.preview_file_name)

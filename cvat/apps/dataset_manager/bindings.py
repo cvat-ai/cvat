@@ -25,6 +25,7 @@ from cvat.apps.engine.models import AttributeType, DimensionType, AttributeSpec
 from cvat.apps.engine.models import Image as Img
 from cvat.apps.engine.models import Label, Project, ShapeType, Task
 from cvat.apps.dataset_manager.formats.utils import get_label_color
+from cvat.apps.engine.constants import FrameQuality, FrameType
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import EllipsesToMasks
@@ -1061,15 +1062,15 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
                 # some formats or transforms can require image data
                 def _make_image(i, **kwargs):
                     loader = lambda _: frame_provider.get_frame(i,
-                        quality=frame_provider.Quality.ORIGINAL,
-                        out_type=frame_provider.Type.NUMPY_ARRAY)[0]
+                        quality=FrameQuality.ORIGINAL,
+                        out_type=FrameType.NUMPY_ARRAY)[0]
                     return Image(loader=loader, **kwargs)
             else:
                 # for images use encoded data to avoid recoding
                 def _make_image(i, **kwargs):
                     loader = lambda _: frame_provider.get_frame(i,
-                        quality=frame_provider.Quality.ORIGINAL,
-                        out_type=frame_provider.Type.BUFFER)[0].getvalue()
+                        quality=FrameQuality.ORIGINAL,
+                        out_type=FrameType.BUFFER)[0].getvalue()
                     return ByteImage(data=loader, **kwargs)
 
         for frame_data in task_data.group_by_frame(include_empty=True):
@@ -1164,8 +1165,8 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
                         frame_provider = FrameProvider(task.data)
                         def _make_image(i, **kwargs):
                             loader = lambda _: frame_provider.get_frame(i,
-                                quality=frame_provider.Quality.ORIGINAL,
-                                out_type=frame_provider.Type.NUMPY_ARRAY)[0]
+                                quality=FrameQuality.ORIGINAL,
+                                out_type=FrameType.NUMPY_ARRAY)[0]
                             return Image(loader=loader, **kwargs)
                         return _make_image
                 else:
@@ -1174,8 +1175,8 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
                         frame_provider = FrameProvider(task.data)
                         def _make_image(i, **kwargs):
                             loader = lambda _: frame_provider.get_frame(i,
-                                quality=frame_provider.Quality.ORIGINAL,
-                                out_type=frame_provider.Type.BUFFER)[0].getvalue()
+                                quality=FrameQuality.ORIGINAL,
+                                out_type=FrameType.BUFFER)[0].getvalue()
                             return ByteImage(data=loader, **kwargs)
                         return _make_image
                 image_maker_per_task[task.id] = image_maker_factory(task)

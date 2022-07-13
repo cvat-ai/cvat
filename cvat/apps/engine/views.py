@@ -65,6 +65,7 @@ from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import UploadMixin
+from cvat.apps.engine.constants import FrameQuality
 
 from . import models, task
 from .log import clogger, slogger
@@ -494,8 +495,8 @@ class DataChunkGetter:
 
         self.type = data_type
         self.number = int(data_num) if data_num else None
-        self.quality = FrameProvider.Quality.COMPRESSED \
-            if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+        self.quality = FrameQuality.COMPRESSED \
+            if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
         self.dimension = task_dim
 
