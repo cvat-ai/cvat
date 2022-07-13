@@ -26,7 +26,7 @@ jobs:
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            npm ci
+            yarn install --frozen-lockfile
             mkdir -p stylelint_report
 
             echo "StyleLint version: "$(npx stylelint --version)

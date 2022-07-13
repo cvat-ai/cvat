@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Eslint && remarklint dependencies",
   "main": ".eslintrc.js",
+  "private": true,
   "directories": {
     "test": "tests"
   },
@@ -89,7 +90,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "coverage": "npm run instrument && npm run cp && npm run rm",
+    "coverage": "yarn run instrument && yarn run cp && yarn run rm",
     "instrument": "nyc instrument cvat-ui cvat-ui_cov && nyc instrument cvat-canvas cvat-canvas_cov && nyc instrument cvat-data cvat-data_cov && nyc instrument cvat-core cvat-core_cov",
     "cp": "cp -r cvat-ui_cov/* cvat-ui && cp -r cvat-canvas_cov/* cvat-canvas && cp -r cvat-data_cov/* cvat-data && cp -r cvat-core_cov/* cvat-core",
     "rm": "rm -rf cvat-ui_cov cvat-canvas_cov cvat-data_cov cvat-core_cov",
@@ -99,15 +100,15 @@
     "precommit:cvat-canvas": "cd cvat-canvas && eslint --fix",
     "precommit:cvat-canvas3d": "cd cvat-canvas3d && eslint --fix",
     "precommit:cvat-ui": "cd cvat-ui && eslint --fix",
-    "build:cvat-ui": "npm run build --workspace=cvat-ui",
-    "build:cvat-canvas": "npm run build --workspace=cvat-canvas",
-    "build:cvat-canvas3d": "npm run build --workspace=cvat-canvas3d",
-    "build:cvat-core": "npm run build --workspace=cvat-core",
-    "build:cvat-data": "npm run build --workspace=cvat-data",
-    "server:cvat-canvas": "npm run server --workspace=cvat-canvas",
-    "server:cvat-canvas3d": "npm run server --workspace=cvat-canvas3d",
-    "server:cvat-data": "npm run server --workspace=cvat-data",
-    "start:cvat-ui": "npm run start --workspace=cvat-ui"
+    "build:cvat-ui": "yarn workspace cvat-ui run build",
+    "build:cvat-canvas": "yarn workspace cvat-canvas run build",
+    "build:cvat-canvas3d": "yarn workspace cvat-canvas3d run build",
+    "build:cvat-core": "yarn workspace cvat-core run build",
+    "build:cvat-data": "yarn workspace cvat-data run build",
+    "server:cvat-canvas": "yarn workspace cvat-canvas run server",
+    "server:cvat-canvas3d": "yarn workspace cvat-canvas3d run server",
+    "server:cvat-data": "yarn workspace cvat-data run server",
+    "start:cvat-ui": "yarn workspace cvat-ui run start"
   },
   "repository": {
     "type": "git",
@@ -118,5 +119,12 @@
   "bugs": {
     "url": "https://github.com/openvinotoolkit/cvat/issues"
   },
-  "homepage": "https://github.com/openvinotoolkit/cvat#readme"
+  "homepage": "https://github.com/openvinotoolkit/cvat#readme",
+  "resolutions": {
+    "@types/react": "^17.0.30",
+    "@types/react-dom": "^18.0.5",
+    "@types/react-redux": "^7.1.24",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/prettier": "2.4.1"
+  }
 }

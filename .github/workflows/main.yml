@@ -155,7 +155,7 @@ jobs:
           -c 'python manage.py test cvat/apps cvat-cli -k tasks_id -k lambda -k share -v 2'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'cd cvat-data && npm ci --ignore-scripts && cd ../cvat-core && npm ci --ignore-scripts && npm run test'
+          -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -257,7 +257,7 @@ jobs:
           docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
 
           cd ./tests
-          npm ci
+          yarn --frozen-lockfile
 
           if [ ${{ matrix.specs }} == 'canvas3d_functionality' ]; then
             npx cypress run --headed --browser chrome --config-file pr_cypress_canvas3d.json
