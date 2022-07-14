@@ -26,9 +26,8 @@ jobs:
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            npm ci
-            cd tests && npm ci && cd ..
-            npm install eslint-detailed-reporter --save-dev --legacy-peer-deps
+            yarn install --frozen-lockfile
+            yarn add eslint-detailed-reporter -D -W
             mkdir -p eslint_report
 
             echo "ESLint version: "$(npx eslint --version)

@@ -25,14 +25,14 @@ description: 'Instructions on how to run all existence tests.'
 1. Install npm dependencies:
    ```
    cd tests
-   npm ci
+   yarn --frozen-lockfile
    ```
 
 **Running tests**
 
 ```
-npm run cypress:run:chrome
-npm run cypress:run:chrome:canvas3d
+yarn run cypress:run:chrome
+yarn run cypress:run:chrome:canvas3d
 ```
 
 # REST API tests
@@ -75,7 +75,7 @@ pytest ./tests/rest_api --rebuild
    ```
 1. Install npm dependencies:
    ```
-   npm ci
+   yarn --frozen-lockfile
    ```
 1. Run CVAT instance
    ```
@@ -90,5 +90,5 @@ pytest ./tests/rest_api --rebuild
 1. JS tests
    ```
    cd cvat-core
-   npm run test
+   yarn run test
    ```
