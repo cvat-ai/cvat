@@ -4,6 +4,7 @@
 
 from enum import Enum
 
+
 class ResourceType(Enum):
     LOCAL = 0
     SHARE = 1

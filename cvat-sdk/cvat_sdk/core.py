@@ -10,11 +10,10 @@ import mimetypes
 import os
 import os.path as osp
 from contextlib import ExitStack, closing
+from http.cookies import SimpleCookie
 from io import BytesIO
 from time import sleep
 from typing import Dict, List, Optional, Sequence, Tuple
-
-from http.cookies import SimpleCookie
 
 import requests
 import tqdm
@@ -49,25 +48,24 @@ class Client:
     @staticmethod
     def _fix_host_url(url):
         # TODO: add url fixing in API client
-        url = url.rstrip('/')
+        url = url.rstrip("/")
 
-        if not (url.startswith('http://') or url.startswith('https://')):
-            url = 'http://' + url
+        if not (url.startswith("http://") or url.startswith("https://")):
+            url = "http://" + url
 
         return url
 
     def login(self, credentials: Tuple[str, str]):
-        _, response = self.api.auth_api.create_login(models.LoginRequest(
-            username=credentials[0], password=credentials[1]
-        ))
+        _, response = self.api.auth_api.create_login(
+            models.LoginRequest(username=credentials[0], password=credentials[1])
+        )
 
         # TODO: use requests instead of urllib3
         # TODO: add cookie handling in API client
-        cookies = SimpleCookie(response.getheader('Set-Cookie'))
-        self.api.cookie = ' '.join([
-            cookies['sessionid'].output(header=""),
-            cookies['csrftoken'].output(header="")
-        ])
+        cookies = SimpleCookie(response.getheader("Set-Cookie"))
+        self.api.cookie = " ".join(
+            [cookies["sessionid"].output(header=""), cookies["csrftoken"].output(header="")]
+        )
 
     def create_task(
         self,
