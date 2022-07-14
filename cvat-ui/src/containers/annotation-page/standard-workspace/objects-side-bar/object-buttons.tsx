@@ -247,6 +247,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
         return (
             <ItemButtonsComponent
                 readonly={readonly}
+                parentID={objectState.parentID}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
                 occluded={objectState.occluded}

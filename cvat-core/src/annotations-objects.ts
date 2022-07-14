@@ -797,6 +797,32 @@ export class Shape extends Drawn {
         this.occluded = redoOccluded;
     }
 
+    _saveOutside(outside: boolean, frame: number): void {
+        const undoOutside = this.outside;
+        const redoOutside = outside;
+        const undoSource = this.source;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+
+        this.history.do(
+            HistoryActions.CHANGED_OCCLUDED,
+            () => {
+                this.outside = undoOutside;
+                this.source = undoSource;
+                this.updated = Date.now();
+            },
+            () => {
+                this.occluded = redoOutside;
+                this.source = redoSource;
+                this.updated = Date.now();
+            },
+            [this.clientID],
+            frame,
+        );
+
+        this.source = redoSource;
+        this.outside = redoOutside;
+    }
+
     _saveZOrder(zOrder: number, frame: number): void {
         const undoZOrder = this.zOrder;
         const redoZOrder = zOrder;
@@ -863,6 +889,10 @@ export class Shape extends Drawn {
 
         if (updated.occluded) {
             this._saveOccluded(data.occluded, frame);
+        }
+
+        if (updated.outside) {
+            this._saveOutside(data.outside, frame);
         }
 
         if (updated.zOrder) {
