@@ -237,7 +237,7 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Method creates a new project',
         request=ProjectWriteSerializer,
         responses={
-            '201': ProjectReadSerializer,
+            '201': ProjectWriteSerializer,
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific project',
@@ -253,7 +253,7 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Methods does a partial update of chosen fields in a project',
         request=ProjectWriteSerializer,
         responses={
-            '200': ProjectReadSerializer,
+            '200': ProjectWriteSerializer,
         })
 )
 class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, SerializeMixin):
@@ -270,7 +270,17 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options')
     iam_organization_field = 'organization'
-    serializer_class = ProjectReadSerializer
+
+    def get_serializer_class(self):
+        # TODO: fix separation into read and write serializers for requests and responses
+        # probably with drf-rw-serializers
+        if self.request.path.endswith('tasks'):
+            return TaskReadSerializer
+        else:
+            if self.request.method in SAFE_METHODS:
+                return ProjectReadSerializer
+            else:
+                return ProjectWriteSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
