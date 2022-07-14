@@ -113,6 +113,7 @@ cvat_api_client/model/project_read_assignee.py
 cvat_api_client/model/project_read_owner.py
 cvat_api_client/model/project_read_target_storage.py
 cvat_api_client/model/project_search.py
+cvat_api_client/model/project_write.py
 cvat_api_client/model/project_write_request.py
 cvat_api_client/model/provider_type_enum.py
 cvat_api_client/model/rest_auth_detail.py
@@ -243,6 +244,7 @@ docs/ProjectReadAssignee.md
 docs/ProjectReadOwner.md
 docs/ProjectReadTargetStorage.md
 docs/ProjectSearch.md
+docs/ProjectWrite.md
 docs/ProjectWriteRequest.md
 docs/ProjectsApi.md
 docs/ProviderTypeEnum.md

@@ -108,6 +108,7 @@ from cvat_api_client.model.project_read_assignee import ProjectReadAssignee
 from cvat_api_client.model.project_read_owner import ProjectReadOwner
 from cvat_api_client.model.project_read_target_storage import ProjectReadTargetStorage
 from cvat_api_client.model.project_search import ProjectSearch
+from cvat_api_client.model.project_write import ProjectWrite
 from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from cvat_api_client.model.provider_type_enum import ProviderTypeEnum
 from cvat_api_client.model.rest_auth_detail import RestAuthDetail

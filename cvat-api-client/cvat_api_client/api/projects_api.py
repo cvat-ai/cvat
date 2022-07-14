@@ -25,6 +25,7 @@ from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from cvat_api_client.model.project_file_request import ProjectFileRequest
 from cvat_api_client.model.project_read import ProjectRead
+from cvat_api_client.model.project_write import ProjectWrite
 from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from cvat_api_client.model_utils import date, datetime, file_type, none_type  # noqa: F401
 
@@ -47,7 +48,7 @@ class ProjectsApi(object):
         self.api_client = api_client
         self.create_endpoint = _Endpoint(
             settings={
-                "response_schema": (ProjectRead,),
+                "response_schema": (ProjectWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects",
                 "operation_id": "create",
@@ -450,7 +451,7 @@ class ProjectsApi(object):
         )
         self.partial_update_endpoint = _Endpoint(
             settings={
-                "response_schema": (ProjectRead,),
+                "response_schema": (ProjectWrite,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/projects/{id}",
                 "operation_id": "partial_update",
@@ -873,19 +874,18 @@ class ProjectsApi(object):
             },
             params_map={
                 "all": [
-                    "format",
                     "id",
                     "x_organization",
                     "action",
                     "cloud_storage_id",
                     "filename",
+                    "format",
                     "location",
                     "org",
                     "org_id",
                     "use_default_location",
                 ],
                 "required": [
-                    "format",
                     "id",
                 ],
                 "nullable": [],
@@ -902,36 +902,36 @@ class ProjectsApi(object):
                     ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
                 "openapi_types": {
-                    "format": (str,),
                     "id": (int,),
                     "x_organization": (str,),
                     "action": (str,),
                     "cloud_storage_id": (float,),
                     "filename": (str,),
+                    "format": (str,),
                     "location": (str,),
                     "org": (str,),
                     "org_id": (int,),
                     "use_default_location": (bool,),
                 },
                 "attribute_map": {
-                    "format": "format",
                     "id": "id",
                     "x_organization": "X-Organization",
                     "action": "action",
                     "cloud_storage_id": "cloud_storage_id",
                     "filename": "filename",
+                    "format": "format",
                     "location": "location",
                     "org": "org",
                     "org_id": "org_id",
                     "use_default_location": "use_default_location",
                 },
                 "location_map": {
-                    "format": "query",
                     "id": "path",
                     "x_organization": "header",
                     "action": "query",
                     "cloud_storage_id": "query",
                     "filename": "query",
+                    "format": "query",
                     "location": "query",
                     "org": "query",
                     "org_id": "query",
@@ -961,7 +961,7 @@ class ProjectsApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[ProjectRead], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[ProjectWrite], urllib3.HTTPResponse]:
         """Method creates a new project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1010,7 +1010,7 @@ class ProjectsApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (ProjectRead, HTTPResponse)
+            (ProjectWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1464,7 +1464,7 @@ class ProjectsApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[ProjectRead], urllib3.HTTPResponse]:
+    ) -> typing.Tuple[typing.Optional[ProjectWrite], urllib3.HTTPResponse]:
         """Methods does a partial update of chosen fields in a project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1514,7 +1514,7 @@ class ProjectsApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            (ProjectRead, HTTPResponse)
+            (ProjectWrite, HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1956,7 +1956,6 @@ class ProjectsApi(object):
 
     def retrieve_dataset(
         self,
-        format: str,
         id: int,
         *,
         _parse_response: bool = True,
@@ -1976,11 +1975,10 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.retrieve_dataset(format, id, _async_call=True)
+        >>> thread = api.retrieve_dataset(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
-            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
             id (int): A unique integer value identifying this project.
 
         Keyword Args:
@@ -1988,6 +1986,7 @@ class ProjectsApi(object):
             action (str): Used to start downloading process after annotation file had been created. [optional]
             cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
             location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
@@ -2039,6 +2038,5 @@ class ProjectsApi(object):
         kwargs["_content_type"] = _content_type
         kwargs["_host_index"] = _host_index
         kwargs["_request_auths"] = _request_auths
-        kwargs["format"] = format
         kwargs["id"] = id
         return self.retrieve_dataset_endpoint.call_with_http_info(**kwargs)

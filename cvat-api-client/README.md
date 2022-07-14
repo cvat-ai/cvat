@@ -330,6 +330,7 @@ Class | Method | HTTP request | Description
  - [ProjectReadOwner](docs/ProjectReadOwner.md)
  - [ProjectReadTargetStorage](docs/ProjectReadTargetStorage.md)
  - [ProjectSearch](docs/ProjectSearch.md)
+ - [ProjectWrite](docs/ProjectWrite.md)
  - [ProjectWriteRequest](docs/ProjectWriteRequest.md)
  - [ProviderTypeEnum](docs/ProviderTypeEnum.md)
  - [RestAuthDetail](docs/RestAuthDetail.md)

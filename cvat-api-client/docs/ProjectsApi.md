@@ -20,7 +20,7 @@ Method | HTTP request | Description
 
 
 # **projects_create**
-> ProjectRead projects_create(project_write_request)
+> ProjectWrite projects_create(project_write_request)
 
 Method creates a new project
 
@@ -35,7 +35,7 @@ Method creates a new project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_read import ProjectRead
+from cvat_api_client.model.project_write import ProjectWrite
 from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
@@ -141,7 +141,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ProjectRead**](ProjectRead.md)
+[**ProjectWrite**](ProjectWrite.md)
 
 ### Authorization
 
@@ -750,7 +750,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_partial_update**
-> ProjectRead projects_partial_update(id)
+> ProjectWrite projects_partial_update(id)
 
 Methods does a partial update of chosen fields in a project
 
@@ -765,7 +765,7 @@ Methods does a partial update of chosen fields in a project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_read import ProjectRead
+from cvat_api_client.model.project_write import ProjectWrite
 from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
@@ -873,7 +873,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ProjectRead**](ProjectRead.md)
+[**ProjectWrite**](ProjectWrite.md)
 
 ### Authorization
 
@@ -1464,7 +1464,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_retrieve_dataset**
-> projects_retrieve_dataset(format, id)
+> projects_retrieve_dataset(id)
 
 Export project as a dataset in a specific format
 
@@ -1519,12 +1519,12 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
-    format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats
     id = 1 # int | A unique integer value identifying this project.
     x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional)
     cloud_storage_id = 3.14 # float | Storage id (optional)
     filename = "filename_example" # str | Desired output file name (optional)
+    format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats (optional)
     location = "cloud_storage" # str | Where need to save downloaded dataset (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
@@ -1533,7 +1533,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Export project as a dataset in a specific format
-        api_instance.projects_retrieve_dataset(format, id)
+        api_instance.projects_retrieve_dataset(id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_dataset: %s\n" % e)
 
@@ -1541,7 +1541,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Export project as a dataset in a specific format
-        api_instance.projects_retrieve_dataset(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        api_instance.projects_retrieve_dataset(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_dataset: %s\n" % e)
 ```
@@ -1551,12 +1551,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **format** | **str**| Desired output format name You can get the list of supported formats at: /server/annotation/formats |
  **id** | **int**| A unique integer value identifying this project. |
  **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional]
  **cloud_storage_id** | **float**| Storage id | [optional]
  **filename** | **str**| Desired output file name | [optional]
+ **format** | **str**| Desired output format name You can get the list of supported formats at: /server/annotation/formats | [optional]
  **location** | **str**| Where need to save downloaded dataset | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
