@@ -9,7 +9,7 @@ TEMPLATE_DIR="gen"
 PYTHON_POST_PROCESS_FILE="${TEMPLATE_DIR}/postprocess.py"
 
 mkdir -p "${DST_DIR}/"
-rm -f -r "${DST_DIR}/docs/" "${DST_DIR}/${LIB_NAME}"
+rm -f -r "${DST_DIR}/docs/" "${DST_DIR}/${LIB_NAME}/api" "${DST_DIR}/${LIB_NAME}/model"
 cp "${TEMPLATE_DIR}/templates/openapi-generator/.openapi-generator-ignore" "${DST_DIR}/"
 
 # Pass template dir here
