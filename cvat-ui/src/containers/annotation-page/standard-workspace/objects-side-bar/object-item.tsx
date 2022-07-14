@@ -19,7 +19,7 @@ import {
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
 } from 'reducers/interfaces';
-import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
+import ObjectStateItemComponent, { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { shift } from 'utils/math';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
@@ -307,15 +307,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobInstance,
         } = this.props;
 
-        let stateColor = '';
-        if (colorBy === ColorBy.INSTANCE) {
-            stateColor = objectState.color;
-        } else if (colorBy === ColorBy.GROUP) {
-            stateColor = objectState.group.color;
-        } else if (colorBy === ColorBy.LABEL) {
-            stateColor = objectState.label.color;
-        }
-
         return (
             <ObjectStateItemComponent
                 jobInstance={jobInstance}
@@ -327,7 +318,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 serverID={objectState.serverID}
                 locked={objectState.lock}
                 labelID={objectState.label.id}
-                color={stateColor}
+                color={getColor(objectState, colorBy)}
                 attributes={attributes}
                 elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}

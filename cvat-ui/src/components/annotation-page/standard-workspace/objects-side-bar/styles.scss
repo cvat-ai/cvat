@@ -231,7 +231,7 @@
 
         > .ant-collapse-content {
             > .ant-collapse-content-box {
-                padding: 3px;
+                padding: 0;
             }
 
             border: unset;
@@ -427,10 +427,9 @@
 }
 
 .cvat-objects-sidebar-state-item-elements {
-    padding-left: $grid-unit-size;
-    margin-left: 5%;
-    border-top: 1px solid $object-item-border-color;
-    border-left: 1px solid $object-item-border-color;
+    padding: $grid-unit-size * 0.5;
+    border: 1px solid $object-item-border-color;
+    border-bottom: 0;
 
     &:last-child {
         border-bottom: 1px solid $object-item-border-color;

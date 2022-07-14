@@ -6,10 +6,24 @@ import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 
+import { ObjectState } from 'cvat-core-wrapper';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
 import ItemBasics from './object-item-basics';
+
+export function getColor(state: ObjectState, colorBy: ColorBy): string {
+    let color = '';
+    if (colorBy === ColorBy.INSTANCE) {
+        color = state.color;
+    } else if (colorBy === ColorBy.GROUP) {
+        color = state.group?.color || '#000';
+    } else if (colorBy === ColorBy.LABEL) {
+        color = state.label.color as string;
+    }
+
+    return color;
+}
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
@@ -158,25 +172,33 @@ function ObjectItemComponent(props: Props): JSX.Element {
                                 )}
                                 key='elements'
                             >
-                                {elements.map((element: any) => (
-                                    <div key={element.clientID} className='cvat-objects-sidebar-state-item-elements'>
-                                        <Text
-                                            type='secondary'
-                                            style={{ fontSize: 10 }}
-                                            className='cvat-objects-sidebar-state-item-object-type-text'
+                                {elements.map((element: any) => {
+                                    const elementColor = getColor(element, colorBy);
+
+                                    return (
+                                        <div
+                                            key={element.clientID}
+                                            className='cvat-objects-sidebar-state-item-elements'
+                                            style={{ background: `${elementColor}` }}
                                         >
-                                            {`${element.label.name} [${element.shapeType.toUpperCase()}]`}
-                                        </Text>
-                                        <ObjectButtonsContainer readonly={readonly} clientID={element.clientID} />
-                                        {!!element.label.attributes.length && (
-                                            <ItemDetailsContainer
-                                                readonly={readonly}
-                                                clientID={element.clientID}
-                                                parentID={clientID}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
+                                            <Text
+                                                type='secondary'
+                                                style={{ fontSize: 10 }}
+                                                className='cvat-objects-sidebar-state-item-object-type-text'
+                                            >
+                                                {`${element.label.name} [${element.shapeType.toUpperCase()}]`}
+                                            </Text>
+                                            <ObjectButtonsContainer readonly={readonly} clientID={element.clientID} />
+                                            {!!element.label.attributes.length && (
+                                                <ItemDetailsContainer
+                                                    readonly={readonly}
+                                                    parentID={clientID}
+                                                    clientID={element.clientID}
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </Collapse.Panel>
                         </Collapse>
                     </>

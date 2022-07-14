@@ -42,7 +42,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         attrInputType, attrValues, attrValue, attrName, attrID, readonly, changeAttribute,
     } = props;
 
-    const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em' };
+    const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em', fontSize: 12 };
 
     if (attrInputType === 'checkbox') {
         return (
