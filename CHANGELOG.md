@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated minimist npm package to v1.2.6 (<https://github.com/cvat-ai/cvat/pull/34>)
 - Request Status Code 500 "StopIteration" when exporting dataset (<https://github.com/cvat-ai/cvat/pull/17>)
 - Generated OpenAPI schema for several endpoints (<https://github.com/cvat-ai/cvat/issues/72>)
+- Annotation window might have top offset if try to move a locked object (<https://github.com/cvat-ai/cvat/pull/123>)
 
 ### Security
 - TDB

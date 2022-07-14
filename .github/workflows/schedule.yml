@@ -179,7 +179,7 @@ jobs:
           -c 'coverage run -a manage.py test cvat/apps cvat-cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'cd cvat-data && npm ci --ignore-scripts && cd ../cvat-core && npm ci --ignore-scripts && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
+          -c 'yarn --frozen-lockfile --ignore-script && yarn workspace cvat-core run test'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
 
@@ -232,8 +232,8 @@ jobs:
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
         run: |
-          npm ci
-          npm run coverage
+          yarn --frozen-lockfile
+          yarn run coverage
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml build cvat_ui
 
       - name: Run CVAT instance
@@ -286,7 +286,7 @@ jobs:
       - name: Run tests
         run: |
           cd ./tests
-          npm ci
+          yarn --frozen-lockfile
 
           TESTS_3D=('canvas3d_functionality' 'canvas3d_functionality_2')
           for testset in ${TESTS_3D[@]};
@@ -377,7 +377,7 @@ jobs:
           mkdir -p ./nyc_output_tmp
           mv ./out_*.json ./nyc_output_tmp
           mkdir -p ./.nyc_output
-          npm ci
+          yarn --frozen-lockfile
           npx nyc merge ./nyc_output_tmp ./.nyc_output/out.json
 
       - name: Sending results to Coveralls

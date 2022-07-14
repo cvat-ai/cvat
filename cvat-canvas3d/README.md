@@ -9,17 +9,17 @@ It presents a canvas to viewing, drawing and editing of 3D annotations.
 
 If you make changes in this package, please do following:
 
-- After not important changes (typos, backward compatible bug fixes, refactoring) do: `npm version patch`
-- After changing API (backward compatible new features) do: `npm version minor`
-- After changing API (changes that break backward compatibility) do: `npm version major`
+- After not important changes (typos, backward compatible bug fixes, refactoring) do: `yarn version --patch`
+- After changing API (backward compatible new features) do: `yarn version --minor`
+- After changing API (changes that break backward compatibility) do: `yarn version --major`
 
 ## Commands
 
 - Building of the module from sources in the `dist` directory:
 
 ```bash
-npm run build
-npm run build -- --mode=development     # without a minification
+yarn run build
+yarn run build --mode=development     # without a minification
 ```
 
 ### API Methods

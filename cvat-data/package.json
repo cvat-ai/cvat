@@ -5,10 +5,10 @@
   "main": "src/ts/cvat-data.ts",
   "scripts": {
     "patch": "cd src/ts && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
-    "build": "npm run patch; webpack --config ./webpack.config.js",
-    "server": "npm run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'",
+    "build": "yarn run patch; webpack --config ./webpack.config.js",
+    "server": "yarn run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'",
     "type-check": "tsc --noEmit",
-    "type-check:watch": "npm run type-check -- --watch"
+    "type-check:watch": "yarn run type-check -- --watch"
   },
   "author": "Intel",
   "license": "MIT",
