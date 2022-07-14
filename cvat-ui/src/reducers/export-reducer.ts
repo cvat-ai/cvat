@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ExportActions, ExportActionTypes } from 'actions/export-actions';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import deepCopy from 'utils/deep-copy';
 
 import { ExportState } from './interfaces';

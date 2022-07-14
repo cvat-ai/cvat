@@ -1465,7 +1465,7 @@ export class Track extends Drawn {
         return new ObjectState(this.get(frame));
     }
 
-    interpolatePosition(left: any, right: any, offset: number): {} {
+    interpolatePosition(): {} {
         throw new ScriptingError('Not implemented');
     }
 
@@ -1509,6 +1509,7 @@ interface RawTagData {
     clientID?: number;
     label_id: number;
     frame: number;
+    group: number;
     source: Source;
     attributes: { spec_id: number; value: string }[];
 }
@@ -1521,6 +1522,7 @@ export class Tag extends Annotation {
             frame: this.frame,
             label_id: this.label.id,
             source: this.source,
+            group: 0, // TODO: why server requires group for tags?
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 attributeAccumulator.push({
                     spec_id: attrId,

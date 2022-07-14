@@ -73,7 +73,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                             objectStates={objectStates}
                             key={id}
                             clientID={id}
-                            initialCollapsed={statesCollapsedAll}
                         />
                     ),
                 )}

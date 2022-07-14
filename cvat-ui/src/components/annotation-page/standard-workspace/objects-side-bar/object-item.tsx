@@ -3,14 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-
 import Text from 'antd/lib/typography/Text';
+import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
+import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
-import ItemDetails, { attrValuesAreEqual } from './object-item-details';
 import ItemBasics from './object-item-basics';
-import Collapse from 'antd/lib/collapse';
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
@@ -23,12 +22,10 @@ interface Props {
     labelID: number;
     locked: boolean;
     elements: any[];
-    attrValues: Record<number, string>;
     color: string;
     colorBy: ColorBy;
     labels: any[];
     attributes: any[];
-    collapsed: boolean;
     jobInstance: any;
     activate(): void;
     copy(): void;
@@ -39,9 +36,7 @@ interface Props {
     toForeground(): void;
     remove(): void;
     changeLabel(label: any): void;
-    changeAttribute(attrID: number, value: string): void;
     changeColor(color: string): void;
-    collapse(): void;
     resetCuboidPerspective(): void;
 }
 
@@ -56,13 +51,11 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         nextProps.serverID === prevProps.serverID &&
         nextProps.objectType === prevProps.objectType &&
         nextProps.shapeType === prevProps.shapeType &&
-        nextProps.collapsed === prevProps.collapsed &&
         nextProps.labels === prevProps.labels &&
         nextProps.attributes === prevProps.attributes &&
         nextProps.elements === prevProps.elements &&
         nextProps.normalizedKeyMap === prevProps.normalizedKeyMap &&
-        nextProps.colorBy === prevProps.colorBy &&
-        attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues)
+        nextProps.colorBy === prevProps.colorBy
     );
 }
 
@@ -75,14 +68,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
         clientID,
         serverID,
         locked,
-        attrValues,
         labelID,
         color,
         colorBy,
         elements,
         attributes,
         labels,
-        collapsed,
         normalizedKeyMap,
         activate,
         copy,
@@ -93,9 +84,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         toForeground,
         remove,
         changeLabel,
-        changeAttribute,
         changeColor,
-        collapse,
         resetCuboidPerspective,
         jobInstance,
     } = props;
@@ -151,13 +140,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (
-                    <ItemDetails
+                    <ItemDetailsContainer
                         readonly={readonly}
-                        collapsed={collapsed}
-                        attributes={attributes}
-                        values={attrValues}
-                        collapse={collapse}
-                        changeAttribute={changeAttribute}
+                        clientID={clientID}
+                        parentID={null}
                     />
                 )}
                 {!!elements.length && (
@@ -182,6 +168,13 @@ function ObjectItemComponent(props: Props): JSX.Element {
                                             {`${element.label.name} [${element.shapeType.toUpperCase()}]`}
                                         </Text>
                                         <ObjectButtonsContainer readonly={readonly} clientID={element.clientID} />
+                                        {!!element.label.attributes.length && (
+                                            <ItemDetailsContainer
+                                                readonly={readonly}
+                                                clientID={element.clientID}
+                                                parentID={clientID}
+                                            />
+                                        )}
                                     </div>
                                 ))}
                             </Collapse.Panel>

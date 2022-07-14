@@ -16,7 +16,7 @@ import Form from 'antd/lib/form';
 
 import { CombinedState } from 'reducers/interfaces';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 

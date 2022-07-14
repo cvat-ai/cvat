@@ -552,7 +552,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     models.AttributeSpec.objects.create(label=db_label, **attr)
 
         create_labels(labels)
-        task_path = db_task.get_task_dirname()
+        task_path = db_task.get_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 

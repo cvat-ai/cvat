@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { Row } from 'antd/lib/grid';
+import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 
 import ItemAttribute from './object-item-attribute';
@@ -48,7 +49,7 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                 activeKey={collapsed ? [] : ['details']}
                 onChange={collapse}
             >
-                <Collapse.Panel header={<span style={{ fontSize: '11px' }}>Details</span>} key='details'>
+                <Collapse.Panel header={<Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>} key='details'>
                     {attributes.map(
                         (attribute: any): JSX.Element => (
                             <Row

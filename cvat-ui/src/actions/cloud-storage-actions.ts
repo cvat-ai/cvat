@@ -4,7 +4,7 @@
 
 import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { CloudStoragesQuery, CloudStorage, Indexable } from 'reducers/interfaces';
 
 const cvat = getCore();

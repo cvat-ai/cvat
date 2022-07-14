@@ -4,7 +4,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { PluginsList } from 'reducers/interfaces';
-import getCore from '../cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 

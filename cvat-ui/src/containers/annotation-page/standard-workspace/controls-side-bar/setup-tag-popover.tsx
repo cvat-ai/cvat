@@ -10,7 +10,7 @@ import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actio
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 interface DispatchToProps {

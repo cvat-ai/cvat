@@ -6,9 +6,7 @@ import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
-import { LogType } from 'cvat-logger';
 import {
-    collapseObjectItems,
     updateAnnotationsAsync,
     changeFrameAsync,
     changeGroupColorAsync,
@@ -30,12 +28,10 @@ interface OwnProps {
     readonly: boolean;
     clientID: number;
     objectStates: any[];
-    initialCollapsed: boolean;
 }
 
 interface StateToProps {
     objectState: any;
-    collapsed: boolean;
     labels: any[];
     attributes: any[];
     jobInstance: any;
@@ -53,7 +49,6 @@ interface StateToProps {
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
-    collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObject: (activatedStateID: number | null) => void;
     removeObject: (objectState: any) => void;
     copyShape: (objectState: any) => void;
@@ -65,7 +60,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             annotations: {
-                collapsed: statesCollapsed,
                 activatedStateID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
@@ -81,16 +75,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const { objectStates: states, initialCollapsed, clientID } = own;
+    const { objectStates: states, clientID } = own;
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
 
-    const collapsedState =
-        typeof statesCollapsed[clientID] === 'undefined' ? initialCollapsed : statesCollapsed[clientID];
-
     return {
         objectState: states[index],
-        collapsed: collapsedState,
         attributes: jobAttributes[states[index].label.id],
         labels,
         ready,
@@ -113,9 +103,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateState(state: any): void {
             dispatch(updateAnnotationsAsync([state]));
-        },
-        collapseOrExpand(objectStates: any[], collapsed: boolean): void {
-            dispatch(collapseObjectItems(objectStates, collapsed));
         },
         activateObject(activatedStateID: number | null): void {
             dispatch(activateObjectAction(activatedStateID, null));
@@ -233,12 +220,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     };
 
-    private collapse = (): void => {
-        const { collapseOrExpand, objectState, collapsed } = this.props;
-
-        collapseOrExpand([objectState], !collapsed);
-    };
-
     private changeColor = (color: string): void => {
         const { objectState, colorBy, changeGroupColor } = this.props;
 
@@ -254,21 +235,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const { objectState, readonly } = this.props;
         if (!readonly) {
             objectState.label = label;
-            this.commit();
-        }
-    };
-
-    private changeAttribute = (id: number, value: string): void => {
-        const { objectState, readonly, jobInstance } = this.props;
-        if (!readonly) {
-            jobInstance.logger.log(LogType.changeAttribute, {
-                id,
-                value,
-                object_id: objectState.clientID,
-            });
-            const attr: Record<number, string> = {};
-            attr[id] = value;
-            objectState.attributes = attr;
             this.commit();
         }
     };
@@ -332,7 +298,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     public render(): JSX.Element {
         const {
             objectState,
-            collapsed,
             labels,
             attributes,
             activated,
@@ -361,7 +326,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 clientID={objectState.clientID}
                 serverID={objectState.serverID}
                 locked={objectState.lock}
-                attrValues={{ ...objectState.attributes }}
                 labelID={objectState.label.id}
                 color={stateColor}
                 attributes={attributes}
@@ -369,7 +333,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 normalizedKeyMap={normalizedKeyMap}
                 labels={labels}
                 colorBy={colorBy}
-                collapsed={collapsed}
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
@@ -380,8 +343,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 toForeground={this.toForeground}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
-                changeAttribute={this.changeAttribute}
-                collapse={this.collapse}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );

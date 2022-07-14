@@ -15,7 +15,7 @@ import ProjectSearch from 'components/create-task-page/project-search-field';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
 import { switchMoveTaskModalVisible, moveTaskToProjectAsync } from 'actions/tasks-actions';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import LabelMapperItem, { LabelMapperItemValue } from './label-mapper-item';
 
 const core = getCore();
