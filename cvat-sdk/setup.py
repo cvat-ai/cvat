@@ -11,6 +11,7 @@
 
 import os.path as osp
 import re
+
 from setuptools import find_packages, setup
 
 # To install the library, run the following
@@ -19,6 +20,7 @@ from setuptools import find_packages, setup
 #
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
+
 
 def find_version(project_dir=None):
     if not project_dir:
