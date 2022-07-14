@@ -197,10 +197,10 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceFolder}/cvat-api-client/gen/postprocess.py",
+            "program": "${workspaceFolder}/cvat-sdk/gen/postprocess.py",
             "args": [
-                "--schema", "${workspaceFolder}/cvat-api-client/schema/schema.yml",
-                "--input-path", "${workspaceFolder}/cvat-api-client/cvat_api_client/"
+                "--schema", "${workspaceFolder}/cvat-sdk/schema/schema.yml",
+                "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"

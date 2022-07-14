@@ -12,7 +12,7 @@ import pytest
 from copy import deepcopy
 from deepdiff import DeepDiff
 
-from cvat_api_client.models import DatasetFileRequest, ProjectWriteRequest
+from cvat_sdk.models import DatasetFileRequest, ProjectWriteRequest
 
 from .utils.config import get_method, patch_method, make_api_client
 

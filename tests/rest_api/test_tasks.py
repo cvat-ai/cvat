@@ -7,8 +7,8 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from time import sleep
-from cvat_api_client.apis import TasksApi
-from cvat_api_client.models import DataRequest, RqStatus, TaskWriteRequest, PatchedTaskWriteRequest
+from cvat_sdk.apis import TasksApi
+from cvat_sdk.models import DataRequest, RqStatus, TaskWriteRequest, PatchedTaskWriteRequest
 
 import pytest
 from deepdiff import DeepDiff

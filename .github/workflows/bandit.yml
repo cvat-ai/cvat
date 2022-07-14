@@ -18,7 +18,7 @@ jobs:
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
               DIRECTORY="${FILE%%/*}"
-              if [[ "$EXTENSION" == 'py' && "$DIRECTORY" != 'cvat-api-client' ]]; then
+              if [[ "$EXTENSION" == 'py' && "$DIRECTORY" != 'cvat-sdk' ]]; then
                   CHANGED_FILES+=" $FILE"
               fi
           done

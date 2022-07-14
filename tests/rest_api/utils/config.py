@@ -4,7 +4,7 @@
 
 import os.path as osp
 import requests
-from cvat_api_client import ApiClient, Configuration
+from cvat_sdk import ApiClient, Configuration
 
 ROOT_DIR = __file__[:__file__.rfind(osp.join("utils", ""))]
 ASSETS_DIR = osp.abspath(osp.join(ROOT_DIR, 'assets'))

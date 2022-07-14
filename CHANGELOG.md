@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Possibility to display tags on frame (<https://github.com/cvat-ai/cvat/pull/75>)
 - Support source and target storages (server part) (<https://github.com/cvat-ai/cvat/pull/28>)
 - Tests for import/export annotation, dataset, backup from/to cloud storage (<https://github.com/cvat-ai/cvat/pull/56>)
-- Added Python SDK package (`cvat-api-client`) (<https://github.com/cvat-ai/cvat/pull/7>)
+- Added Python SDK package (`cvat-sdk`) (<https://github.com/cvat-ai/cvat/pull/7>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)
