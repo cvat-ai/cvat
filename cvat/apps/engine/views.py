@@ -520,7 +520,7 @@ class DataChunkGetter:
                 buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
                 if settings.USE_CACHE_S3:
                     # buff is an url to s3 storage, return url + mime in a json response
-                    return HttpResponseRedirect(buff)
+                    return HttpResponseRedirect(buff, content_type=mime_type)
                 else:
                     # buff is an io, return its contents in response
                     buff.seek(0)
