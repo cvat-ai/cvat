@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 from .core import VideoManifestManager, ImageManifestManager, is_manifest,\
-    CachedIndexManifestManager, S3ManifestManager
+    CachedIndexManifestManager, S3ManifestManager, clean_filenames

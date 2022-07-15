@@ -1,5 +1,4 @@
 from io import BytesIO, IOBase
-from urllib.parse import urlencode
 from tempfile import SpooledTemporaryFile
 
 import boto3

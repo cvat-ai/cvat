@@ -15,6 +15,8 @@ from json.decoder import JSONDecodeError
 
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
+from django.utils.text import get_valid_filename
+
 from cvat.rebotics.s3_client import s3_client
 from cvat.rebotics.utils import injected_property, StrEnum, ChoicesEnum
 from cvat.rebotics.cache import default_cache
@@ -850,3 +852,16 @@ def _is_video_manifest(full_manifest_path):
 def _is_dataset_manifest(full_manifest_path):
     validator = _DatasetManifestStructureValidator(full_manifest_path)
     return validator.validate()
+
+
+def clean_filenames(manifest_path, skip=2):
+    with open(manifest_path) as f:
+        content = f.read()
+    content = content.strip().split('\n')
+    with open(manifest_path, 'w') as f:
+        for line in content[:skip]:
+            f.write(line + '\n')
+        for line in content[skip:]:
+            data = json.loads(line)
+            data['name'] = get_valid_filename(data['name'])
+            f.write(json.dumps(data, separators=(',', ':')) + '\n')

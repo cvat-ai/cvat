@@ -26,11 +26,13 @@ from django.db import transaction
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.media_extractors import MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, \
-    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
+from cvat.apps.engine.media_extractors import MEDIA_TYPES, Mpeg4ChunkWriter, \
+    Mpeg4CompressedChunkWriter, ValidateDimension, ZipChunkWriter, \
+    ZipCompressedChunkWriter, get_mime, sort
 from cvat.apps.engine.utils import av_scan_paths
-from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
-from utils.dataset_manifest.core import VideoManifestValidator, CachedIndexManifestManager
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, \
+    CachedIndexManifestManager, is_manifest, clean_filenames
+from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
 from .cloud_provider import get_cloud_storage_instance, Credentials
 
@@ -290,22 +292,31 @@ def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 
+def _move_manifest_to_s3(db_data: models.Data):
+    path = db_data.get_manifest_path()
+    key = db_data.get_s3_manifest_path()
+    # to match names from django storage.
+    clean_filenames(path)
+    slogger.glob.info('{} -> {}'.format(path, key))
+    s3_client.upload_from_path(path, key)
+    os.remove(path)
+
+
 def _move_files_to_s3(db_data: models.Data):
     # TODO: add some try-catch
     client_files = db_data.client_files.all()
-    remote_files = db_data.remote_files.all()
     for client_file in client_files:
         path = client_file.file.path
-        slogger.glob.info(path)
-        name = path.rsplit('/', 1)[-1]
-        with open(path, 'rb') as f:
-            models.S3File.objects.create(
-                file=File(f, name=name),
-                data=db_data,
-            )
-        os.remove(path)
+        if os.path.exists(path):
+            slogger.glob.info(path)
+            name = path.rsplit('/', 1)[-1]
+            with open(path, 'rb') as f:
+                models.S3File.objects.create(
+                    file=File(f, name=name),
+                    data=db_data,
+                )
+            os.remove(path)
     client_files.delete()
-    remote_files.delete()
 
 
 def _move_preview_to_s3(db_data: models.Data):
@@ -317,21 +328,12 @@ def _move_preview_to_s3(db_data: models.Data):
     os.remove(path)
 
 
-def _move_manifest_to_s3(db_data: models.Data):
-    path = db_data.get_manifest_path()
-    if os.path.exists(path):
-        key = db_data.get_s3_manifest_path()
-        slogger.glob.info('{} -> {}'.format(path, key))
-        s3_client.upload_from_path(path, key)
-        os.remove(path)
-
-
 def _move_data_to_s3(db_data: models.Data):
     # This does not apply to video, cloud storages or share uploads.
     slogger.glob.info('Moving files to s3 for data {}:'.format(db_data.id))
+    _move_manifest_to_s3(db_data)
     _move_files_to_s3(db_data)
     _move_preview_to_s3(db_data)
-    _move_manifest_to_s3(db_data)
     slogger.glob.info('Done.')
 
 
