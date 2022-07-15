@@ -189,6 +189,10 @@ class InvitationRead(ModelNormal):
             organization (int):
 
         Keyword Args:
+            key (str): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -219,8 +223,6 @@ class InvitationRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            key (str): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -292,6 +294,10 @@ class InvitationRead(ModelNormal):
             organization (int):
 
         Keyword Args:
+            key (str): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -322,8 +328,6 @@ class InvitationRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            key (str): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

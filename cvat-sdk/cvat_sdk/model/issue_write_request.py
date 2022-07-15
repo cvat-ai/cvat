@@ -184,6 +184,10 @@ class IssueWriteRequest(ModelNormal):
             message (str):
 
         Keyword Args:
+            assignee (int, none_type): [optional]  # noqa: E501
+
+            resolved (bool): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -214,8 +218,6 @@ class IssueWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            assignee (int, none_type): [optional]  # noqa: E501
-            resolved (bool): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -287,6 +289,10 @@ class IssueWriteRequest(ModelNormal):
             message (str):
 
         Keyword Args:
+            assignee (int, none_type): [optional]  # noqa: E501
+
+            resolved (bool): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -317,8 +323,6 @@ class IssueWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            assignee (int, none_type): [optional]  # noqa: E501
-            resolved (bool): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

@@ -21,15 +21,17 @@ from PIL import Image
 from tusclient import client, uploader
 from tusclient.request import TusRequest, TusUploadFailed
 
-from cvat_sdk import ApiClient, Configuration, models
+from cvat_sdk import ApiClient, Configuration, models, ApiValueError
 from cvat_sdk.types import ResourceType
-from cvat_sdk.utils import StreamWithProgress, expect_status
+from cvat_sdk.utils import StreamWithProgress, expect_status, filter_dict
 
 log = logging.getLogger(__name__)
 
 
 class Client:
     def __init__(self, url: str, credentials: Optional[Tuple[str, str]] = None):
+        # TODO: try to autodetect schema
+        self._api_map = _CVAT_API_V2(url)
         self.api = ApiClient(Configuration(host=self._fix_host_url(url)))
 
         if credentials is not None:
@@ -55,10 +57,16 @@ class Client:
 
         return url
 
+    @staticmethod
+    def _detect_schema(url: str) -> str:
+        raise NotImplementedError
+
     def login(self, credentials: Tuple[str, str]):
-        _, response = self.api.auth_api.create_login(
+        auth, response = self.api.auth_api.create_login(
             models.LoginRequest(username=credentials[0], password=credentials[1])
         )
+
+        self.api.set_default_header('Authorization', 'Token ' + auth.key)
 
         # TODO: use requests instead of urllib3
         # TODO: add cookie handling in API client
@@ -69,18 +77,17 @@ class Client:
 
     def create_task(
         self,
-        name: str,
-        labels: List[Dict[str, str]],
+        conf: models.TaskWriteRequest,
         resource_type: ResourceType,
         resources: Sequence[str],
         *,
-        annotation_path="",
-        annotation_format="CVAT XML 1.1",
+        annotation_path: str = "",
+        annotation_format: str = "CVAT XML 1.1",
         completion_verification_period=20,
         git_completion_verification_period=2,
         dataset_repository_url="",
-        lfs=False,
-        pbar: tqdm.tqdm = None,
+        use_lfs: bool = False,
+        pbar: Optional[tqdm.tqdm] = None,
         **kwargs,
     ) -> int:
         """
@@ -90,52 +97,39 @@ class Client:
         Returns: id of the created task
         """
 
-        url = self.api.tasks
-        labels = [] if kwargs.get("project_id") is not None else labels
-        data = {"name": name, "labels": labels}
+        if conf.get('project_id') and conf.get('labels'):
+            raise ApiValueError("Can't set labels to a task inside a project", ['labels'])
+        task, _ = self.api.tasks_api.create(conf)
+        log.debug(f"Created task ID: {task.id} NAME: {task.name}")
 
-        for flag in ["bug_tracker", "overlap", "project_id", "segment_size"]:
-            if kwargs.get(flag) is not None:
-                data[flag] = kwargs.get(flag)
+        self.upload_task_data(task.id, resource_type, resources, pbar=pbar, **kwargs)
 
-        response = self.session.post(url, json=data)
-        response.raise_for_status()
-        response_json = response.json()
-        log.info("Created task ID: {id} NAME: {name}".format(**response_json))
-
-        task_id = response_json["id"]
-        assert isinstance(task_id, int)
-        self.tasks_data(task_id, resource_type, resources, pbar=pbar, **kwargs)
-
-        if annotation_path != "":
-            url = self.api.tasks_id_status(task_id)
-            response = self.session.get(url)
-            response_json = response.json()
+        if annotation_path:
+            status, _ = self.api.tasks_api.retrieve_status(task.id)
 
             log.info("Awaiting data compression before uploading annotations...")
-            while response_json["state"] != "Finished":
+            while status.state.value != "Finished":
                 sleep(completion_verification_period)
-                response = self.session.get(url)
-                response_json = response.json()
-                logger_string = """Awaiting compression for task {}.
-                            Status={}, Message={}""".format(
-                    task_id, response_json["state"], response_json["message"]
+                status, _ = self.api.tasks_api.retrieve_status(task.id)
+                log.info("Awaiting compression for task %s. Status=%s, Message=%s",
+                    task.id, status.state.value, status.message
                 )
-                log.info(logger_string)
 
-            self.tasks_upload(task_id, annotation_format, annotation_path, pbar=pbar, **kwargs)
+            self.upload_task_annotations(task.id, annotation_format, annotation_path,
+                pbar=pbar, **kwargs)
 
         if dataset_repository_url:
             response = self.session.post(
-                self.api.git_create(task_id),
-                json={"path": dataset_repository_url, "lfs": lfs, "tid": task_id},
+                self.api.git_create(task.id),
+                json={"path": dataset_repository_url, "lfs": use_lfs, "tid": task.id},
             )
             response_json = response.json()
             rq_id = response_json["rq_id"]
             log.info(f"Create RQ ID: {rq_id}")
-            check_url = self.api.git_check(rq_id)
-            response = self.session.get(check_url)
-            response_json = response.json()
+            check_url = self._api_map.git_check(rq_id)
+            response = self.api.rest_client.GET(check_url,
+                headers={"Cookie": self.api.cookie, **self.api.default_headers})
+            response_json = json.loads(response.data)
             while response_json["status"] != "finished":
                 log.info(
                     """Awaiting a dataset repository to be created for the task. Response status: {}""".format(
@@ -143,11 +137,12 @@ class Client:
                     )
                 )
                 sleep(git_completion_verification_period)
-                response = self.session.get(check_url)
-                response_json = response.json()
+                response = self.api.rest_client.GET(check_url,
+                    headers={"Cookie": self.api.cookie, **self.api.default_headers})
+                response_json = json.loads(response.data)
                 if response_json["status"] == "failed" or response_json["status"] == "unknown":
                     log.error(
-                        f"Dataset repository creation request for task {task_id} failed"
+                        f"Dataset repository creation request for task {task.id} failed"
                         f'with status {response_json["status"]}.'
                     )
                     break
@@ -156,9 +151,45 @@ class Client:
                 f"Dataset repository creation completed with status: {response_json['status']}."
             )
 
-        return task_id
+        return task.id
 
-    def tasks_data(
+    MAX_REQUEST_SIZE = 100 * 2**20
+
+    def _split_files_by_requests(
+        self, filenames: List[str]
+    ) -> Tuple[List[Tuple[List[str], int]], List[str], int]:
+        bulk_files: Dict[str, int] = {}
+        separate_files: Dict[str, int] = {}
+
+        # sort by size
+        for filename in filenames:
+            filename = os.path.abspath(filename)
+            file_size = os.stat(filename).st_size
+            if self.MAX_REQUEST_SIZE < file_size:
+                separate_files[filename] = file_size
+            else:
+                bulk_files[filename] = file_size
+
+        total_size = sum(bulk_files.values()) + sum(separate_files.values())
+
+        # group small files by requests
+        bulk_file_groups: List[Tuple[List[str], int]] = []
+        current_group_size: int = 0
+        current_group: List[str] = []
+        for filename, file_size in bulk_files.items():
+            if self.MAX_REQUEST_SIZE < current_group_size + file_size:
+                bulk_file_groups.append((current_group, current_group_size))
+                current_group_size = 0
+                current_group = []
+
+            current_group.append(filename)
+            current_group_size += file_size
+        if current_group:
+            bulk_file_groups.append((current_group, current_group_size))
+
+        return bulk_file_groups, separate_files, total_size
+
+    def upload_task_data(
         self,
         task_id: int,
         resource_type: ResourceType,
@@ -168,65 +199,37 @@ class Client:
         **kwargs,
     ) -> None:
         """Add local, remote, or shared files to an existing task."""
-        url = self.api.tasks_id_data(task_id)
         data = {}
-
-        if resource_type == ResourceType.LOCAL:
-            bulk_files: Dict[str, int] = {}
-            separate_files: Dict[str, int] = {}
-
-            MAX_REQUEST_SIZE = 100 * 2**20
-
-            for filename in resources:
-                filename = os.path.abspath(filename)
-                file_size = os.stat(filename).st_size
-                if MAX_REQUEST_SIZE < file_size:
-                    separate_files[filename] = file_size
-                else:
-                    bulk_files[filename] = file_size
-
-            total_size = sum(bulk_files.values()) + sum(separate_files.values())
-
-            # split files by requests
-            bulk_file_groups = []
-            current_group_size = 0
-            current_group = []
-            for filename, file_size in bulk_files.items():
-                if MAX_REQUEST_SIZE < current_group_size + file_size:
-                    bulk_file_groups.append((current_group, current_group_size))
-                    current_group_size = 0
-                    current_group = []
-
-                current_group.append(filename)
-                current_group_size += file_size
-            if current_group:
-                bulk_file_groups.append((current_group, current_group_size))
-        elif resource_type == ResourceType.REMOTE:
-            data = {"remote_files[{}]".format(i): f for i, f in enumerate(resources)}
-        elif resource_type == ResourceType.SHARE:
-            data = {"server_files[{}]".format(i): f for i, f in enumerate(resources)}
+        if resource_type is ResourceType.LOCAL:
+            bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
+        elif resource_type is ResourceType.REMOTE:
+            data = {f"remote_files[{i}]": f for i, f in enumerate(resources)}
+        elif resource_type is ResourceType.SHARE:
+            data = {f"server_files[{i}]": f for i, f in enumerate(resources)}
 
         data["image_quality"] = 70
-
-        ## capture additional kwargs
-        for flag in [
-            "chunk_size",
-            "copy_data",
-            "image_quality",
-            "sorting_method",
-            "start_frame",
-            "stop_frame",
-            "use_cache",
-            "use_zip_chunks",
-        ]:
-            if kwargs.get(flag) is not None:
-                data[flag] = kwargs.get(flag)
+        data.update(
+            filter_dict(
+                kwargs,
+                keep=[
+                    "chunk_size",
+                    "copy_data",
+                    "image_quality",
+                    "sorting_method",
+                    "start_frame",
+                    "stop_frame",
+                    "use_cache",
+                    "use_zip_chunks",
+                ],
+            )
+        )
         if kwargs.get("frame_step") is not None:
             data["frame_filter"] = f"step={kwargs.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            response = self.session.post(url, data=data)
-            response.raise_for_status()
+            self.api.tasks_api.create_data(task_id,
+                data_request=models.DataRequest(**data),
+                _content_type="multipart/form-data")
         elif resource_type == ResourceType.LOCAL:
             if pbar is None:
                 pbar = self._make_pbar("Uploading files...")
@@ -234,6 +237,7 @@ class Client:
             if pbar is not None:
                 pbar.reset(total_size)
 
+            url = self._api_map.make_endpoint_url(self.api.tasks_api.create_data_endpoint.path.format(id=task_id))
             self._tus_start_upload(url)
 
             for group, group_size in bulk_file_groups:
@@ -242,10 +246,16 @@ class Client:
                     for i, filename in enumerate(group):
                         group_files[f"client_files[{i}]"] = (
                             filename,
-                            es.enter_context(closing(open(filename, "rb"))),
+                            es.enter_context(closing(open(filename, "rb"))).read(),
                         )
-                    response = self.session.post(
-                        url, data=data, files=group_files, headers={"Upload-Multiple": ""}
+                    response = self.api.rest_client.POST(url,
+                        post_params=dict(**data, **group_files),
+                        headers={
+                            "Content-Type": "multipart/form-data",
+                            "Upload-Multiple": "",
+                            "Cookies": self.api.cookie,
+                            **self.api.default_headers
+                        }
                     )
                 expect_status(200, response)
 
@@ -345,12 +355,12 @@ class Client:
 
         log.info(f"Annotations have been exported to {filename}")
 
-    def _make_tus_uploader(cli, url, **kwargs):
+    def _make_tus_uploader(cli: Client, url, **kwargs):
         # Adjusts the library code for CVAT server
         # allows to reuse session
         class MyTusUploader(client.Uploader):
-            def __init__(self, *_args, session: requests.Session = None, **_kwargs):
-                self._session = session
+            def __init__(self, *_args, api_client: ApiClient, **_kwargs):
+                self._api_client = api_client
                 super().__init__(*_args, **_kwargs)
 
             def _do_request(self):
@@ -372,8 +382,7 @@ class Client:
                 headers = self.headers
                 headers["upload-length"] = str(self.file_size)
                 headers["upload-metadata"] = ",".join(self.encode_metadata())
-                headers["origin"] = cli.api.host  # required by CVAT server
-                resp = self._session.post(self.client.url, headers=headers)
+                resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
                 url = resp.headers.get("location")
                 if url is None:
                     msg = "Attempt to retrieve create file url with status {}".format(
@@ -390,15 +399,19 @@ class Client:
                 This is different from the instance attribute 'offset' because this makes an
                 http request to the tus server to retrieve the offset.
                 """
-                resp = self._session.head(self.url, headers=self.headers)
+                resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
                 offset = resp.headers.get("upload-offset")
                 if offset is None:
                     msg = "Attempt to retrieve offset fails with status {}".format(resp.status_code)
                     raise uploader.TusCommunicationError(msg, resp.status_code, resp.content)
                 return int(offset)
 
-        tus_client = client.TusClient(url, headers=cli.session.headers)
-        return MyTusUploader(client=tus_client, session=cli.session, **kwargs)
+        headers = {}
+        headers["Origin"] = cli.api.configuration.host # required by CVAT server
+        headers["Cookie"] = cli.api.cookie
+        headers.update(cli.api.default_headers)
+        tus_client = client.TusClient(url, headers=headers)
+        return MyTusUploader(client=tus_client, api_client=cli.api, **kwargs)
 
     def _upload_file_data_with_tus(self, url, filename, *, params=None, pbar=None, logger=None):
         CHUNK_SIZE = 10 * 2**20
@@ -427,16 +440,30 @@ class Client:
         return self._tus_finish_upload(url, params=params)
 
     def _tus_start_upload(self, url, *, params=None):
-        response = self.session.post(url, headers={"Upload-Start": ""}, params=params)
+        response = self.api.rest_client.POST(url,
+            post_params=params,
+            headers={
+                "Content-Type": "multipart/form-data",
+                "Upload-Start": "",
+                "Cookies": self.api.cookie,
+                **self.api.default_headers
+            }
+        )
         expect_status(202, response)
         return response
 
     def _tus_finish_upload(self, url, *, params=None, data=None):
-        response = self.session.post(url, headers={"Upload-Finish": ""}, params=params, data=data)
+        response = self.api.rest_client.POST(url,
+            headers={
+                "Content-Type": "multipart/form-data",
+                "Upload-Finish": "",
+                "Cookies": self.api.cookie,
+                **self.api.default_headers
+            }, post_params=dict(**(params or {}), **(data or {})))
         expect_status(202, response)
         return response
 
-    def tasks_upload(
+    def upload_task_annotations(
         self, task_id, fileformat, filename, *, completion_check_period=2, pbar=None, **kwargs
     ):
         """Upload annotations for a task in the specified format
@@ -553,3 +580,27 @@ class Client:
             except:
                 os.unlink(tmp_path)
                 raise
+
+
+class _CVAT_API_V2:
+    """Build parameterized API URLs"""
+
+    def __init__(self, host, https=False):
+        if host.startswith("https://"):
+            https = True
+        if host.startswith("http://") or host.startswith("https://"):
+            host = host.replace("http://", "")
+            host = host.replace("https://", "")
+        scheme = "https" if https else "http"
+        self.host = "{}://{}".format(scheme, host)
+        self.base = self.host + "/api/"
+        self.git = f"{scheme}://{host}/git/repository/"
+
+    def git_create(self, task_id):
+        return self.git + f"create/{task_id}"
+
+    def git_check(self, rq_id):
+        return self.git + f"check/{rq_id}"
+
+    def make_endpoint_url(self, path: str) -> str:
+        return self.host + path

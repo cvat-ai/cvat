@@ -280,6 +280,24 @@ class CloudStorageWriteRequest(ModelNormal):
             credentials_type (CredentialsTypeEnum):
 
         Keyword Args:
+            owner (BasicUserRequest): [optional]  # noqa: E501
+
+            session_token (str): [optional]  # noqa: E501
+
+            account_name (str): [optional]  # noqa: E501
+
+            key (str): [optional]  # noqa: E501
+
+            secret_key (str): [optional]  # noqa: E501
+
+            key_file (file_type): [optional]  # noqa: E501
+
+            specific_attributes (str): [optional]  # noqa: E501
+
+            description (str): [optional]  # noqa: E501
+
+            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -310,15 +328,6 @@ class CloudStorageWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            owner (BasicUserRequest): [optional]  # noqa: E501
-            session_token (str): [optional]  # noqa: E501
-            account_name (str): [optional]  # noqa: E501
-            key (str): [optional]  # noqa: E501
-            secret_key (str): [optional]  # noqa: E501
-            key_file (file_type): [optional]  # noqa: E501
-            specific_attributes (str): [optional]  # noqa: E501
-            description (str): [optional]  # noqa: E501
-            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -392,6 +401,24 @@ class CloudStorageWriteRequest(ModelNormal):
             credentials_type (CredentialsTypeEnum):
 
         Keyword Args:
+            owner (BasicUserRequest): [optional]  # noqa: E501
+
+            session_token (str): [optional]  # noqa: E501
+
+            account_name (str): [optional]  # noqa: E501
+
+            key (str): [optional]  # noqa: E501
+
+            secret_key (str): [optional]  # noqa: E501
+
+            key_file (file_type): [optional]  # noqa: E501
+
+            specific_attributes (str): [optional]  # noqa: E501
+
+            description (str): [optional]  # noqa: E501
+
+            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -422,15 +449,6 @@ class CloudStorageWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            owner (BasicUserRequest): [optional]  # noqa: E501
-            session_token (str): [optional]  # noqa: E501
-            account_name (str): [optional]  # noqa: E501
-            key (str): [optional]  # noqa: E501
-            secret_key (str): [optional]  # noqa: E501
-            key_file (file_type): [optional]  # noqa: E501
-            specific_attributes (str): [optional]  # noqa: E501
-            description (str): [optional]  # noqa: E501
-            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

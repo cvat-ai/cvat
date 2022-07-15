@@ -276,6 +276,32 @@ class PatchedCloudStorageWriteRequest(ModelNormal):
         """PatchedCloudStorageWriteRequest - a model defined in OpenAPI
 
         Keyword Args:
+            provider_type (ProviderTypeEnum): [optional]  # noqa: E501
+
+            resource (str): [optional]  # noqa: E501
+
+            display_name (str): [optional]  # noqa: E501
+
+            owner (BasicUserRequest): [optional]  # noqa: E501
+
+            credentials_type (CredentialsTypeEnum): [optional]  # noqa: E501
+
+            session_token (str): [optional]  # noqa: E501
+
+            account_name (str): [optional]  # noqa: E501
+
+            key (str): [optional]  # noqa: E501
+
+            secret_key (str): [optional]  # noqa: E501
+
+            key_file (file_type): [optional]  # noqa: E501
+
+            specific_attributes (str): [optional]  # noqa: E501
+
+            description (str): [optional]  # noqa: E501
+
+            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -306,19 +332,6 @@ class PatchedCloudStorageWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            provider_type (ProviderTypeEnum): [optional]  # noqa: E501
-            resource (str): [optional]  # noqa: E501
-            display_name (str): [optional]  # noqa: E501
-            owner (BasicUserRequest): [optional]  # noqa: E501
-            credentials_type (CredentialsTypeEnum): [optional]  # noqa: E501
-            session_token (str): [optional]  # noqa: E501
-            account_name (str): [optional]  # noqa: E501
-            key (str): [optional]  # noqa: E501
-            secret_key (str): [optional]  # noqa: E501
-            key_file (file_type): [optional]  # noqa: E501
-            specific_attributes (str): [optional]  # noqa: E501
-            description (str): [optional]  # noqa: E501
-            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -380,6 +393,32 @@ class PatchedCloudStorageWriteRequest(ModelNormal):
         """PatchedCloudStorageWriteRequest - a model defined in OpenAPI
 
         Keyword Args:
+            provider_type (ProviderTypeEnum): [optional]  # noqa: E501
+
+            resource (str): [optional]  # noqa: E501
+
+            display_name (str): [optional]  # noqa: E501
+
+            owner (BasicUserRequest): [optional]  # noqa: E501
+
+            credentials_type (CredentialsTypeEnum): [optional]  # noqa: E501
+
+            session_token (str): [optional]  # noqa: E501
+
+            account_name (str): [optional]  # noqa: E501
+
+            key (str): [optional]  # noqa: E501
+
+            secret_key (str): [optional]  # noqa: E501
+
+            key_file (file_type): [optional]  # noqa: E501
+
+            specific_attributes (str): [optional]  # noqa: E501
+
+            description (str): [optional]  # noqa: E501
+
+            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -410,19 +449,6 @@ class PatchedCloudStorageWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            provider_type (ProviderTypeEnum): [optional]  # noqa: E501
-            resource (str): [optional]  # noqa: E501
-            display_name (str): [optional]  # noqa: E501
-            owner (BasicUserRequest): [optional]  # noqa: E501
-            credentials_type (CredentialsTypeEnum): [optional]  # noqa: E501
-            session_token (str): [optional]  # noqa: E501
-            account_name (str): [optional]  # noqa: E501
-            key (str): [optional]  # noqa: E501
-            secret_key (str): [optional]  # noqa: E501
-            key_file (file_type): [optional]  # noqa: E501
-            specific_attributes (str): [optional]  # noqa: E501
-            description (str): [optional]  # noqa: E501
-            manifests ([ManifestRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

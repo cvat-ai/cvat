@@ -214,6 +214,22 @@ class PatchedUserRequest(ModelNormal):
         """PatchedUserRequest - a model defined in OpenAPI
 
         Keyword Args:
+            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.. [optional]  # noqa: E501
+
+            first_name (str): [optional]  # noqa: E501
+
+            last_name (str): [optional]  # noqa: E501
+
+            email (str): [optional]  # noqa: E501
+
+            groups ([str]): [optional]  # noqa: E501
+
+            is_staff (bool): Designates whether the user can log into this admin site.. [optional]  # noqa: E501
+
+            is_superuser (bool): Designates that this user has all permissions without explicitly assigning them.. [optional]  # noqa: E501
+
+            is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -244,14 +260,6 @@ class PatchedUserRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.. [optional]  # noqa: E501
-            first_name (str): [optional]  # noqa: E501
-            last_name (str): [optional]  # noqa: E501
-            email (str): [optional]  # noqa: E501
-            groups ([str]): [optional]  # noqa: E501
-            is_staff (bool): Designates whether the user can log into this admin site.. [optional]  # noqa: E501
-            is_superuser (bool): Designates that this user has all permissions without explicitly assigning them.. [optional]  # noqa: E501
-            is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -313,6 +321,22 @@ class PatchedUserRequest(ModelNormal):
         """PatchedUserRequest - a model defined in OpenAPI
 
         Keyword Args:
+            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.. [optional]  # noqa: E501
+
+            first_name (str): [optional]  # noqa: E501
+
+            last_name (str): [optional]  # noqa: E501
+
+            email (str): [optional]  # noqa: E501
+
+            groups ([str]): [optional]  # noqa: E501
+
+            is_staff (bool): Designates whether the user can log into this admin site.. [optional]  # noqa: E501
+
+            is_superuser (bool): Designates that this user has all permissions without explicitly assigning them.. [optional]  # noqa: E501
+
+            is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -343,14 +367,6 @@ class PatchedUserRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.. [optional]  # noqa: E501
-            first_name (str): [optional]  # noqa: E501
-            last_name (str): [optional]  # noqa: E501
-            email (str): [optional]  # noqa: E501
-            groups ([str]): [optional]  # noqa: E501
-            is_staff (bool): Designates whether the user can log into this admin site.. [optional]  # noqa: E501
-            is_superuser (bool): Designates that this user has all permissions without explicitly assigning them.. [optional]  # noqa: E501
-            is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

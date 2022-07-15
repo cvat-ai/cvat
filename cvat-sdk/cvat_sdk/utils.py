@@ -5,9 +5,10 @@
 from __future__ import annotations
 
 import io
+from typing import Any, Dict, Sequence
 
-import requests
 import tqdm
+import urllib3
 
 
 class StreamWithProgress:
@@ -38,9 +39,12 @@ class StreamWithProgress:
         return self.stream.tell()
 
 
-def expect_status(code: int, response: requests.Response) -> None:
-    response.raise_for_status()
-    if response.status_code != code:
-        raise Exception(
-            "Failed to upload file: " f"unexpected status code received ({response.status_code})"
-        )
+def expect_status(code: int, response: urllib3.HTTPResponse) -> None:
+    if response.status != code:
+        raise Exception(f"Unexpected status code received {response.status}")
+
+
+def filter_dict(
+    d: Dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> Dict[str, Any]:
+    return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}

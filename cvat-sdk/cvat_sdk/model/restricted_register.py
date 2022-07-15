@@ -181,6 +181,14 @@ class RestrictedRegister(ModelNormal):
             username (str):
 
         Keyword Args:
+            email (str): [optional]  # noqa: E501
+
+            first_name (str): [optional]  # noqa: E501
+
+            last_name (str): [optional]  # noqa: E501
+
+            confirmations ([UserAgreement]): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -211,10 +219,6 @@ class RestrictedRegister(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            email (str): [optional]  # noqa: E501
-            first_name (str): [optional]  # noqa: E501
-            last_name (str): [optional]  # noqa: E501
-            confirmations ([UserAgreement]): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -280,6 +284,14 @@ class RestrictedRegister(ModelNormal):
             username (str):
 
         Keyword Args:
+            email (str): [optional]  # noqa: E501
+
+            first_name (str): [optional]  # noqa: E501
+
+            last_name (str): [optional]  # noqa: E501
+
+            confirmations ([UserAgreement]): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -310,10 +322,6 @@ class RestrictedRegister(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            email (str): [optional]  # noqa: E501
-            first_name (str): [optional]  # noqa: E501
-            last_name (str): [optional]  # noqa: E501
-            confirmations ([UserAgreement]): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

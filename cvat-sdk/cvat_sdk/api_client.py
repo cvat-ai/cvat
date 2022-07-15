@@ -884,6 +884,10 @@ class Endpoint(object):
         self.headers_map = headers_map
         self.api_client = api_client
 
+    @property
+    def path(self) -> str:
+        return self.settings["endpoint_path"]
+
     def __validate_inputs(self, kwargs):
         for param in self.params_map["enum"]:
             if param in kwargs:

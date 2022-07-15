@@ -315,6 +315,40 @@ class DataRequest(ModelNormal):
             image_quality (int):
 
         Keyword Args:
+            chunk_size (int, none_type): [optional]  # noqa: E501
+
+            size (int): [optional]  # noqa: E501
+
+            start_frame (int): [optional]  # noqa: E501
+
+            stop_frame (int): [optional]  # noqa: E501
+
+            frame_filter (str): [optional]  # noqa: E501
+
+            compressed_chunk_type (ChunkType): [optional]  # noqa: E501
+
+            original_chunk_type (ChunkType): [optional]  # noqa: E501
+
+            client_files ([file_type]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            server_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            remote_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            use_zip_chunks (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
+
+            cloud_storage_id (int, none_type): [optional]  # noqa: E501
+
+            use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
+
+            copy_data (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
+
+            storage_method (StorageMethod): [optional]  # noqa: E501
+
+            storage (StorageType): [optional]  # noqa: E501
+
+            sorting_method (SortingMethod): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -345,23 +379,6 @@ class DataRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            chunk_size (int, none_type): [optional]  # noqa: E501
-            size (int): [optional]  # noqa: E501
-            start_frame (int): [optional]  # noqa: E501
-            stop_frame (int): [optional]  # noqa: E501
-            frame_filter (str): [optional]  # noqa: E501
-            compressed_chunk_type (ChunkType): [optional]  # noqa: E501
-            original_chunk_type (ChunkType): [optional]  # noqa: E501
-            client_files ([file_type]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            server_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            remote_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            use_zip_chunks (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            cloud_storage_id (int, none_type): [optional]  # noqa: E501
-            use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            copy_data (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            storage_method (StorageMethod): [optional]  # noqa: E501
-            storage (StorageType): [optional]  # noqa: E501
-            sorting_method (SortingMethod): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -427,6 +444,40 @@ class DataRequest(ModelNormal):
             image_quality (int):
 
         Keyword Args:
+            chunk_size (int, none_type): [optional]  # noqa: E501
+
+            size (int): [optional]  # noqa: E501
+
+            start_frame (int): [optional]  # noqa: E501
+
+            stop_frame (int): [optional]  # noqa: E501
+
+            frame_filter (str): [optional]  # noqa: E501
+
+            compressed_chunk_type (ChunkType): [optional]  # noqa: E501
+
+            original_chunk_type (ChunkType): [optional]  # noqa: E501
+
+            client_files ([file_type]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            server_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            remote_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            use_zip_chunks (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
+
+            cloud_storage_id (int, none_type): [optional]  # noqa: E501
+
+            use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
+
+            copy_data (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
+
+            storage_method (StorageMethod): [optional]  # noqa: E501
+
+            storage (StorageType): [optional]  # noqa: E501
+
+            sorting_method (SortingMethod): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -457,23 +508,6 @@ class DataRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            chunk_size (int, none_type): [optional]  # noqa: E501
-            size (int): [optional]  # noqa: E501
-            start_frame (int): [optional]  # noqa: E501
-            stop_frame (int): [optional]  # noqa: E501
-            frame_filter (str): [optional]  # noqa: E501
-            compressed_chunk_type (ChunkType): [optional]  # noqa: E501
-            original_chunk_type (ChunkType): [optional]  # noqa: E501
-            client_files ([file_type]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            server_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            remote_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            use_zip_chunks (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            cloud_storage_id (int, none_type): [optional]  # noqa: E501
-            use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            copy_data (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            storage_method (StorageMethod): [optional]  # noqa: E501
-            storage (StorageType): [optional]  # noqa: E501
-            sorting_method (SortingMethod): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

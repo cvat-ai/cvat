@@ -262,6 +262,12 @@ class ExceptionRequest(ModelNormal):
             stack (str):
 
         Keyword Args:
+            job_id (int): [optional]  # noqa: E501
+
+            task_id (int): [optional]  # noqa: E501
+
+            proj_id (int): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -292,9 +298,6 @@ class ExceptionRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            job_id (int): [optional]  # noqa: E501
-            task_id (int): [optional]  # noqa: E501
-            proj_id (int): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -389,6 +392,12 @@ class ExceptionRequest(ModelNormal):
             stack (str):
 
         Keyword Args:
+            job_id (int): [optional]  # noqa: E501
+
+            task_id (int): [optional]  # noqa: E501
+
+            proj_id (int): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -419,9 +428,6 @@ class ExceptionRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            job_id (int): [optional]  # noqa: E501
-            task_id (int): [optional]  # noqa: E501
-            proj_id (int): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

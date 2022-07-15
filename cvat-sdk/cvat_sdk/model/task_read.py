@@ -435,6 +435,58 @@ class TaskRead(ModelNormal):
         """TaskRead - a model defined in OpenAPI
 
         Keyword Args:
+            url (str): [optional]  # noqa: E501
+
+            id (int): [optional]  # noqa: E501
+
+            name (str): [optional]  # noqa: E501
+
+            project_id (int, none_type): [optional]  # noqa: E501
+
+            mode (str): [optional]  # noqa: E501
+
+            owner (BasicUser): [optional]  # noqa: E501
+
+            assignee (CommentReadOwner): [optional]  # noqa: E501
+
+            bug_tracker (str): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
+            overlap (int): [optional]  # noqa: E501
+
+            segment_size (int): [optional]  # noqa: E501
+
+            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            labels ([Label]): [optional]  # noqa: E501
+
+            segments ([Segment]): [optional]  # noqa: E501
+
+            data_chunk_size (int, none_type): [optional]  # noqa: E501
+
+            data_compressed_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            data_original_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            size (int): [optional]  # noqa: E501
+
+            image_quality (int): [optional]  # noqa: E501
+
+            data (int): [optional]  # noqa: E501
+
+            dimension (str): [optional]  # noqa: E501
+
+            subset (str): [optional]  # noqa: E501
+
+            organization (int, none_type): [optional]  # noqa: E501
+
+            target_storage (TaskReadTargetStorage): [optional]  # noqa: E501
+
+            source_storage (TaskReadTargetStorage): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -465,32 +517,6 @@ class TaskRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            url (str): [optional]  # noqa: E501
-            id (int): [optional]  # noqa: E501
-            name (str): [optional]  # noqa: E501
-            project_id (int, none_type): [optional]  # noqa: E501
-            mode (str): [optional]  # noqa: E501
-            owner (BasicUser): [optional]  # noqa: E501
-            assignee (CommentReadOwner): [optional]  # noqa: E501
-            bug_tracker (str): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
-            overlap (int): [optional]  # noqa: E501
-            segment_size (int): [optional]  # noqa: E501
-            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            labels ([Label]): [optional]  # noqa: E501
-            segments ([Segment]): [optional]  # noqa: E501
-            data_chunk_size (int, none_type): [optional]  # noqa: E501
-            data_compressed_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            data_original_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            size (int): [optional]  # noqa: E501
-            image_quality (int): [optional]  # noqa: E501
-            data (int): [optional]  # noqa: E501
-            dimension (str): [optional]  # noqa: E501
-            subset (str): [optional]  # noqa: E501
-            organization (int, none_type): [optional]  # noqa: E501
-            target_storage (TaskReadTargetStorage): [optional]  # noqa: E501
-            source_storage (TaskReadTargetStorage): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -552,6 +578,58 @@ class TaskRead(ModelNormal):
         """TaskRead - a model defined in OpenAPI
 
         Keyword Args:
+            url (str): [optional]  # noqa: E501
+
+            id (int): [optional]  # noqa: E501
+
+            name (str): [optional]  # noqa: E501
+
+            project_id (int, none_type): [optional]  # noqa: E501
+
+            mode (str): [optional]  # noqa: E501
+
+            owner (BasicUser): [optional]  # noqa: E501
+
+            assignee (CommentReadOwner): [optional]  # noqa: E501
+
+            bug_tracker (str): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
+            overlap (int): [optional]  # noqa: E501
+
+            segment_size (int): [optional]  # noqa: E501
+
+            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            labels ([Label]): [optional]  # noqa: E501
+
+            segments ([Segment]): [optional]  # noqa: E501
+
+            data_chunk_size (int, none_type): [optional]  # noqa: E501
+
+            data_compressed_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            data_original_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            size (int): [optional]  # noqa: E501
+
+            image_quality (int): [optional]  # noqa: E501
+
+            data (int): [optional]  # noqa: E501
+
+            dimension (str): [optional]  # noqa: E501
+
+            subset (str): [optional]  # noqa: E501
+
+            organization (int, none_type): [optional]  # noqa: E501
+
+            target_storage (TaskReadTargetStorage): [optional]  # noqa: E501
+
+            source_storage (TaskReadTargetStorage): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -582,32 +660,6 @@ class TaskRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            url (str): [optional]  # noqa: E501
-            id (int): [optional]  # noqa: E501
-            name (str): [optional]  # noqa: E501
-            project_id (int, none_type): [optional]  # noqa: E501
-            mode (str): [optional]  # noqa: E501
-            owner (BasicUser): [optional]  # noqa: E501
-            assignee (CommentReadOwner): [optional]  # noqa: E501
-            bug_tracker (str): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
-            overlap (int): [optional]  # noqa: E501
-            segment_size (int): [optional]  # noqa: E501
-            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            labels ([Label]): [optional]  # noqa: E501
-            segments ([Segment]): [optional]  # noqa: E501
-            data_chunk_size (int, none_type): [optional]  # noqa: E501
-            data_compressed_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            data_original_chunk_type (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            size (int): [optional]  # noqa: E501
-            image_quality (int): [optional]  # noqa: E501
-            data (int): [optional]  # noqa: E501
-            dimension (str): [optional]  # noqa: E501
-            subset (str): [optional]  # noqa: E501
-            organization (int, none_type): [optional]  # noqa: E501
-            target_storage (TaskReadTargetStorage): [optional]  # noqa: E501
-            source_storage (TaskReadTargetStorage): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

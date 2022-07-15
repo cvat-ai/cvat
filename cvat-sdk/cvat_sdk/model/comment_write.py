@@ -181,6 +181,16 @@ class CommentWrite(ModelNormal):
             issue (int):
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            owner (int): [optional]  # noqa: E501
+
+            message (str): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -211,11 +221,6 @@ class CommentWrite(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            owner (int): [optional]  # noqa: E501
-            message (str): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -281,6 +286,16 @@ class CommentWrite(ModelNormal):
             issue (int):
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            owner (int): [optional]  # noqa: E501
+
+            message (str): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -311,11 +326,6 @@ class CommentWrite(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            owner (int): [optional]  # noqa: E501
-            message (str): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

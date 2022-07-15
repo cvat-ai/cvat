@@ -171,6 +171,14 @@ class PaginatedCommentReadList(ModelNormal):
         """PaginatedCommentReadList - a model defined in OpenAPI
 
         Keyword Args:
+            count (int): [optional]  # noqa: E501
+
+            next (str, none_type): [optional]  # noqa: E501
+
+            previous (str, none_type): [optional]  # noqa: E501
+
+            results ([CommentRead]): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -201,10 +209,6 @@ class PaginatedCommentReadList(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            count (int): [optional]  # noqa: E501
-            next (str, none_type): [optional]  # noqa: E501
-            previous (str, none_type): [optional]  # noqa: E501
-            results ([CommentRead]): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -266,6 +270,14 @@ class PaginatedCommentReadList(ModelNormal):
         """PaginatedCommentReadList - a model defined in OpenAPI
 
         Keyword Args:
+            count (int): [optional]  # noqa: E501
+
+            next (str, none_type): [optional]  # noqa: E501
+
+            previous (str, none_type): [optional]  # noqa: E501
+
+            results ([CommentRead]): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -296,10 +308,6 @@ class PaginatedCommentReadList(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            count (int): [optional]  # noqa: E501
-            next (str, none_type): [optional]  # noqa: E501
-            previous (str, none_type): [optional]  # noqa: E501
-            results ([CommentRead]): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

@@ -226,6 +226,16 @@ class SimpleJob(ModelNormal):
             assignee (CommentReadOwner):
 
         Keyword Args:
+            url (str): [optional]  # noqa: E501
+
+            id (int): [optional]  # noqa: E501
+
+            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            stage (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            state (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -256,11 +266,6 @@ class SimpleJob(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            url (str): [optional]  # noqa: E501
-            id (int): [optional]  # noqa: E501
-            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            stage (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            state (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -326,6 +331,16 @@ class SimpleJob(ModelNormal):
             assignee (CommentReadOwner):
 
         Keyword Args:
+            url (str): [optional]  # noqa: E501
+
+            id (int): [optional]  # noqa: E501
+
+            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            stage (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            state (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -356,11 +371,6 @@ class SimpleJob(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            url (str): [optional]  # noqa: E501
-            id (int): [optional]  # noqa: E501
-            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            stage (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            state (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

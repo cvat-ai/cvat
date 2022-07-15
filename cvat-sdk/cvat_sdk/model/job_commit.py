@@ -178,6 +178,16 @@ class JobCommit(ModelNormal):
         """JobCommit - a model defined in OpenAPI
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            owner (int, none_type): [optional]  # noqa: E501
+
+            data ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): [optional]  # noqa: E501
+
+            timestamp (datetime): [optional]  # noqa: E501
+
+            scope (str): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -208,11 +218,6 @@ class JobCommit(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            owner (int, none_type): [optional]  # noqa: E501
-            data ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): [optional]  # noqa: E501
-            timestamp (datetime): [optional]  # noqa: E501
-            scope (str): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -274,6 +279,16 @@ class JobCommit(ModelNormal):
         """JobCommit - a model defined in OpenAPI
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            owner (int, none_type): [optional]  # noqa: E501
+
+            data ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): [optional]  # noqa: E501
+
+            timestamp (datetime): [optional]  # noqa: E501
+
+            scope (str): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -304,11 +319,6 @@ class JobCommit(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            owner (int, none_type): [optional]  # noqa: E501
-            data ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): [optional]  # noqa: E501
-            timestamp (datetime): [optional]  # noqa: E501
-            scope (str): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

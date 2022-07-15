@@ -257,6 +257,26 @@ class TaskWriteRequest(ModelNormal):
             name (str):
 
         Keyword Args:
+            project_id (int, none_type): [optional]  # noqa: E501
+
+            owner_id (int, none_type): [optional]  # noqa: E501
+
+            assignee_id (int, none_type): [optional]  # noqa: E501
+
+            bug_tracker (str): [optional]  # noqa: E501
+
+            overlap (int, none_type): [optional]  # noqa: E501
+
+            segment_size (int): [optional]  # noqa: E501
+
+            labels ([PatchedLabelRequest]): [optional]  # noqa: E501
+
+            subset (str): [optional]  # noqa: E501
+
+            target_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
+
+            source_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -287,16 +307,6 @@ class TaskWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            project_id (int, none_type): [optional]  # noqa: E501
-            owner_id (int, none_type): [optional]  # noqa: E501
-            assignee_id (int, none_type): [optional]  # noqa: E501
-            bug_tracker (str): [optional]  # noqa: E501
-            overlap (int, none_type): [optional]  # noqa: E501
-            segment_size (int): [optional]  # noqa: E501
-            labels ([PatchedLabelRequest]): [optional]  # noqa: E501
-            subset (str): [optional]  # noqa: E501
-            target_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
-            source_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -362,6 +372,26 @@ class TaskWriteRequest(ModelNormal):
             name (str):
 
         Keyword Args:
+            project_id (int, none_type): [optional]  # noqa: E501
+
+            owner_id (int, none_type): [optional]  # noqa: E501
+
+            assignee_id (int, none_type): [optional]  # noqa: E501
+
+            bug_tracker (str): [optional]  # noqa: E501
+
+            overlap (int, none_type): [optional]  # noqa: E501
+
+            segment_size (int): [optional]  # noqa: E501
+
+            labels ([PatchedLabelRequest]): [optional]  # noqa: E501
+
+            subset (str): [optional]  # noqa: E501
+
+            target_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
+
+            source_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -392,16 +422,6 @@ class TaskWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            project_id (int, none_type): [optional]  # noqa: E501
-            owner_id (int, none_type): [optional]  # noqa: E501
-            assignee_id (int, none_type): [optional]  # noqa: E501
-            bug_tracker (str): [optional]  # noqa: E501
-            overlap (int, none_type): [optional]  # noqa: E501
-            segment_size (int): [optional]  # noqa: E501
-            labels ([PatchedLabelRequest]): [optional]  # noqa: E501
-            subset (str): [optional]  # noqa: E501
-            target_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
-            source_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

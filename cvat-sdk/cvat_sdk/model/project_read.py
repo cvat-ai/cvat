@@ -322,6 +322,36 @@ class ProjectRead(ModelNormal):
             name (str):
 
         Keyword Args:
+            url (str): [optional]  # noqa: E501
+
+            id (int): [optional]  # noqa: E501
+
+            labels ([Label]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            tasks ([int]): [optional]  # noqa: E501
+
+            owner (ProjectReadOwner): [optional]  # noqa: E501
+
+            assignee (ProjectReadAssignee): [optional]  # noqa: E501
+
+            bug_tracker (str): [optional]  # noqa: E501
+
+            task_subsets ([str]): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
+            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            dimension (str, none_type): [optional]  # noqa: E501
+
+            organization (int, none_type): [optional]  # noqa: E501
+
+            target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+
+            source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -352,21 +382,6 @@ class ProjectRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            url (str): [optional]  # noqa: E501
-            id (int): [optional]  # noqa: E501
-            labels ([Label]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            tasks ([int]): [optional]  # noqa: E501
-            owner (ProjectReadOwner): [optional]  # noqa: E501
-            assignee (ProjectReadAssignee): [optional]  # noqa: E501
-            bug_tracker (str): [optional]  # noqa: E501
-            task_subsets ([str]): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
-            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            dimension (str, none_type): [optional]  # noqa: E501
-            organization (int, none_type): [optional]  # noqa: E501
-            target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
-            source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -432,6 +447,36 @@ class ProjectRead(ModelNormal):
             name (str):
 
         Keyword Args:
+            url (str): [optional]  # noqa: E501
+
+            id (int): [optional]  # noqa: E501
+
+            labels ([Label]): [optional] if omitted the server will use the default value of []  # noqa: E501
+
+            tasks ([int]): [optional]  # noqa: E501
+
+            owner (ProjectReadOwner): [optional]  # noqa: E501
+
+            assignee (ProjectReadAssignee): [optional]  # noqa: E501
+
+            bug_tracker (str): [optional]  # noqa: E501
+
+            task_subsets ([str]): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
+            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            dimension (str, none_type): [optional]  # noqa: E501
+
+            organization (int, none_type): [optional]  # noqa: E501
+
+            target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+
+            source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -462,21 +507,6 @@ class ProjectRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            url (str): [optional]  # noqa: E501
-            id (int): [optional]  # noqa: E501
-            labels ([Label]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            tasks ([int]): [optional]  # noqa: E501
-            owner (ProjectReadOwner): [optional]  # noqa: E501
-            assignee (ProjectReadAssignee): [optional]  # noqa: E501
-            bug_tracker (str): [optional]  # noqa: E501
-            task_subsets ([str]): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
-            status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            dimension (str, none_type): [optional]  # noqa: E501
-            organization (int, none_type): [optional]  # noqa: E501
-            target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
-            source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

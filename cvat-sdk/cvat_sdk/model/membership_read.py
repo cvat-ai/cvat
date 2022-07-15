@@ -212,6 +212,18 @@ class MembershipRead(ModelNormal):
             user (BasicUser):
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            organization (int): [optional]  # noqa: E501
+
+            is_active (bool): [optional]  # noqa: E501
+
+            joined_date (datetime): [optional]  # noqa: E501
+
+            role (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            invitation (str): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -242,12 +254,6 @@ class MembershipRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            organization (int): [optional]  # noqa: E501
-            is_active (bool): [optional]  # noqa: E501
-            joined_date (datetime): [optional]  # noqa: E501
-            role (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            invitation (str): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -313,6 +319,18 @@ class MembershipRead(ModelNormal):
             user (BasicUser):
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            organization (int): [optional]  # noqa: E501
+
+            is_active (bool): [optional]  # noqa: E501
+
+            joined_date (datetime): [optional]  # noqa: E501
+
+            role (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
+
+            invitation (str): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -343,12 +361,6 @@ class MembershipRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            organization (int): [optional]  # noqa: E501
-            is_active (bool): [optional]  # noqa: E501
-            joined_date (datetime): [optional]  # noqa: E501
-            role (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
-            invitation (str): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

@@ -231,6 +231,22 @@ class IssueRead(ModelNormal):
             comments ([CommentRead]):
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            frame (int): [optional]  # noqa: E501
+
+            job (int): [optional]  # noqa: E501
+
+            owner (CommentReadOwner): [optional]  # noqa: E501
+
+            assignee (CommentReadOwner): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
+            resolved (bool): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -261,14 +277,6 @@ class IssueRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            frame (int): [optional]  # noqa: E501
-            job (int): [optional]  # noqa: E501
-            owner (CommentReadOwner): [optional]  # noqa: E501
-            assignee (CommentReadOwner): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
-            resolved (bool): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -336,6 +344,22 @@ class IssueRead(ModelNormal):
             comments ([CommentRead]):
 
         Keyword Args:
+            id (int): [optional]  # noqa: E501
+
+            frame (int): [optional]  # noqa: E501
+
+            job (int): [optional]  # noqa: E501
+
+            owner (CommentReadOwner): [optional]  # noqa: E501
+
+            assignee (CommentReadOwner): [optional]  # noqa: E501
+
+            created_date (datetime): [optional]  # noqa: E501
+
+            updated_date (datetime): [optional]  # noqa: E501
+
+            resolved (bool): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -366,14 +390,6 @@ class IssueRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (int): [optional]  # noqa: E501
-            frame (int): [optional]  # noqa: E501
-            job (int): [optional]  # noqa: E501
-            owner (CommentReadOwner): [optional]  # noqa: E501
-            assignee (CommentReadOwner): [optional]  # noqa: E501
-            created_date (datetime): [optional]  # noqa: E501
-            updated_date (datetime): [optional]  # noqa: E501
-            resolved (bool): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

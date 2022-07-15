@@ -160,6 +160,12 @@ class PatchedJobWriteRequest(ModelNormal):
         """PatchedJobWriteRequest - a model defined in OpenAPI
 
         Keyword Args:
+            assignee (int, none_type): [optional]  # noqa: E501
+
+            stage (JobStage): [optional]  # noqa: E501
+
+            state (OperationStatus): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -190,9 +196,6 @@ class PatchedJobWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            assignee (int, none_type): [optional]  # noqa: E501
-            stage (JobStage): [optional]  # noqa: E501
-            state (OperationStatus): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -254,6 +257,12 @@ class PatchedJobWriteRequest(ModelNormal):
         """PatchedJobWriteRequest - a model defined in OpenAPI
 
         Keyword Args:
+            assignee (int, none_type): [optional]  # noqa: E501
+
+            stage (JobStage): [optional]  # noqa: E501
+
+            state (OperationStatus): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -284,9 +293,6 @@ class PatchedJobWriteRequest(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            assignee (int, none_type): [optional]  # noqa: E501
-            stage (JobStage): [optional]  # noqa: E501
-            state (OperationStatus): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 

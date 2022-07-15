@@ -220,6 +220,16 @@ class DataMetaRead(ModelNormal):
             deleted_frames ([int]):
 
         Keyword Args:
+            chunk_size (int): [optional]  # noqa: E501
+
+            size (int): [optional]  # noqa: E501
+
+            start_frame (int): [optional]  # noqa: E501
+
+            stop_frame (int): [optional]  # noqa: E501
+
+            frame_filter (str): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -250,11 +260,6 @@ class DataMetaRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            chunk_size (int): [optional]  # noqa: E501
-            size (int): [optional]  # noqa: E501
-            start_frame (int): [optional]  # noqa: E501
-            stop_frame (int): [optional]  # noqa: E501
-            frame_filter (str): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -324,6 +329,16 @@ class DataMetaRead(ModelNormal):
             deleted_frames ([int]):
 
         Keyword Args:
+            chunk_size (int): [optional]  # noqa: E501
+
+            size (int): [optional]  # noqa: E501
+
+            start_frame (int): [optional]  # noqa: E501
+
+            stop_frame (int): [optional]  # noqa: E501
+
+            frame_filter (str): [optional]  # noqa: E501
+
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -354,11 +369,6 @@ class DataMetaRead(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            chunk_size (int): [optional]  # noqa: E501
-            size (int): [optional]  # noqa: E501
-            start_frame (int): [optional]  # noqa: E501
-            stop_frame (int): [optional]  # noqa: E501
-            frame_filter (str): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
