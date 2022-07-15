@@ -30,6 +30,7 @@ class S3Client:
         io.seek(0)
         with SpooledTemporaryFile() as c:
             c.write(io.read())
+            c.seek(0)
             response = self._client.upload_fileobj(c, self.bucket, key)
         return response
 

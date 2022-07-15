@@ -45,13 +45,13 @@ class CacheInteraction:
     def _get_s3_buff_mime(self, chunk_number, quality, db_data):
         key = db_data.get_s3_chunk_path(chunk_number, quality)
         try:
-            chunk = s3_client.download_to_io(key)
             tag = s3_client.get_tags(key)['mime_type']
-        except Exception as e:  # TODO: better handling.
-            slogger.glob.exception(str(e))
+        except Exception:  # TODO: better handling.
+            slogger.glob.info('Chunk {} not found, creating.'.format(key))
             chunk, tag = self.prepare_chunk_buff(db_data, quality, chunk_number)
             self._save_s3_chunk(db_data, chunk_number, quality, chunk, tag)
-        return chunk, tag
+        url = s3_client.get_presigned_url(key)
+        return url, tag
 
     def prepare_chunk_buff(self, db_data, quality, chunk_number):
         upload_dir = {

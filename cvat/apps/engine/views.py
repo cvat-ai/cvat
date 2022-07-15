@@ -12,6 +12,7 @@ import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
+import json
 
 import cv2
 from django.db.models.query import Prefetch
@@ -515,13 +516,17 @@ class DataChunkGetter:
                     f'[{start_chunk}, {stop_chunk}] range')
 
             # TODO: av.FFmpegError processing
-            # TODO: if s3 - return redirect to s3 and mime_type, then load it from frontend itself.
             if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
                 buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
-                buff.seek(0)
-                response = HttpResponse(buff.getvalue(), content_type=mime_type)
-                buff.close()
-                return response
+                if settings.USE_CACHE_S3:
+                    # buff is an url to s3 storage, return url + mime in a json response
+                    return HttpResponseRedirect(buff, content_type=mime_type)
+                else:
+                    # buff is an io, return its contents in response
+                    buff.seek(0)
+                    response = HttpResponse(buff.getvalue(), content_type=mime_type)
+                    buff.close()
+                    return response
 
             # Follow symbol links if the chunk is a link on a real image otherwise
             # mimetype detection inside sendfile will work incorrectly.
