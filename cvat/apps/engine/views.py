@@ -552,7 +552,6 @@ class DataChunkGetter:
                 slogger.glob.warning(str(e))
                 raise Http404('Preview not found')
 
-
         elif self.type == 'context_image':
             if not (start <= self.number <= stop):
                 raise ValidationError('The frame number should be in ' +

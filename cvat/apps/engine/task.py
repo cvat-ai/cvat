@@ -26,8 +26,8 @@ from django.db import transaction
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
-    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
+from cvat.apps.engine.media_extractors import MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, \
+    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 from cvat.apps.engine.utils import av_scan_paths
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, CachedIndexManifestManager
@@ -36,13 +36,16 @@ from .cloud_provider import get_cloud_storage_instance, Credentials
 
 from cvat.rebotics.s3_client import s3_client
 
+
 ############################# Low Level server API
+
 
 def create(tid, data):
     """Schedule the task"""
     q = django_rq.get_queue('default')
     q.enqueue_call(func=_create_thread, args=(tid, data),
         job_id="/api/tasks/{}".format(tid))
+
 
 # internal implementation of rq exception handler
 @transaction.atomic
@@ -59,7 +62,9 @@ def rq_handler(job, exc_type, exc_value, traceback):
 
     return False
 
+
 ############################# Internal implementation for server API
+
 
 def _copy_data_from_source(server_files, upload_dir, server_dir=None):
     job = rq.get_current_job()
@@ -79,6 +84,7 @@ def _copy_data_from_source(server_files, upload_dir, server_dir=None):
             if not os.path.exists(target_dir):
                 os.makedirs(target_dir)
             shutil.copyfile(source_path, target_path)
+
 
 def _save_task_to_db(db_task):
     job = rq.get_current_job()
@@ -120,6 +126,7 @@ def _save_task_to_db(db_task):
 
     db_task.data.save()
     db_task.save()
+
 
 def _count_files(data, manifest_files=None):
     share_root = settings.SHARE_ROOT
@@ -171,6 +178,7 @@ def _count_files(data, manifest_files=None):
 
     return counter
 
+
 def _validate_data(counter, manifest_files=None):
     unique_entries = 0
     multiple_entries = 0
@@ -201,6 +209,7 @@ def _validate_data(counter, manifest_files=None):
 
     return counter, task_modes[0]
 
+
 def _validate_manifest(manifests, root_dir):
     if manifests:
         if len(manifests) != 1:
@@ -210,6 +219,7 @@ def _validate_manifest(manifests, root_dir):
             return manifests[0]
         raise Exception('Invalid manifest was uploaded')
     return None
+
 
 def _validate_url(url):
     def _validate_ip_address(ip_address):
@@ -250,6 +260,7 @@ def _validate_url(url):
         if not ip_v4_records and not ip_v6_records:
             raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
 
+
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
     local_files = {}
@@ -274,16 +285,15 @@ def _download_data(urls, upload_dir):
 
     return list(local_files.keys())
 
+
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 
-def _move_data_to_s3(db_task: models.Task, data, upload_dir):
+def _move_files_to_s3(db_data: models.Data):
     # TODO: add some try-catch
-    db_data = db_task.data
     client_files = db_data.client_files.all()
     remote_files = db_data.remote_files.all()
-    slogger.glob.info('Moving files to s3:')
     for client_file in client_files:
         path = client_file.file.path
         slogger.glob.info(path)
@@ -294,26 +304,35 @@ def _move_data_to_s3(db_task: models.Task, data, upload_dir):
                 data=db_data,
             )
         os.remove(path)
-    for name in data['remote_files']:
-        path = os.path.join(upload_dir, name)
-        slogger.glob.info(path)
-        with open(path, 'rb') as f:
-            models.S3File.objects.create(
-                file=File(f, name=name),
-                data=db_data,
-            )
-        os.remove(path)
     client_files.delete()
     remote_files.delete()
-    slogger.glob.info('Done.')
 
 
-def _move_preview_to_s3(db_task: models.Task, path):
+def _move_preview_to_s3(db_data: models.Data):
     # TODO: add some try-catch
-    db_data = db_task.data
+    path = db_data.get_preview_path()
     key = db_data.get_s3_preview_path()
+    slogger.glob.info('{} -> {}'.format(path, key))
     s3_client.upload_from_path(path, key)
     os.remove(path)
+
+
+def _move_manifest_to_s3(db_data: models.Data):
+    path = db_data.get_manifest_path()
+    if os.path.exists(path):
+        key = db_data.get_s3_manifest_path()
+        slogger.glob.info('{} -> {}'.format(path, key))
+        s3_client.upload_from_path(path, key)
+        os.remove(path)
+
+
+def _move_data_to_s3(db_data: models.Data):
+    # This does not apply to video, cloud storages or share uploads.
+    slogger.glob.info('Moving files to s3 for data {}:'.format(db_data.id))
+    _move_files_to_s3(db_data)
+    _move_preview_to_s3(db_data)
+    _move_manifest_to_s3(db_data)
+    slogger.glob.info('Done.')
 
 
 @transaction.atomic
@@ -706,14 +725,16 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
     else:
         # validate stop_frame
-        db_data.stop_frame = min(db_data.stop_frame, \
-            db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
+        db_data.stop_frame = min(db_data.stop_frame,
+                                 db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
     preview = extractor.get_preview()
     preview_path = db_data.get_preview_path()
     preview.save(preview_path)
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
-    _move_data_to_s3(db_task, data, upload_dir)
-    _move_preview_to_s3(db_task, preview_path)
+
+    if settings.USE_S3:
+        _move_data_to_s3(db_data)
+
     _save_task_to_db(db_task)
