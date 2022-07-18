@@ -8,12 +8,6 @@ from six import StringIO
 from storages.backends.s3boto3 import S3Boto3Storage, S3Boto3StorageFile
 from django.conf import settings
 
-try:
-    from storages.backends.s3boto3 import S3StaticStorage as StaticStorage
-except ImportError:
-    StaticStorage = S3Boto3Storage
-
-
 logger = logging.getLogger(__name__)
 
 
