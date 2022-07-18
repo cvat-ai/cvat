@@ -1,4 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -49,25 +50,28 @@ class UserSerializer(serializers.ModelSerializer):
         write_only_fields = ('password', )
 
 class AttributeSerializer(serializers.ModelSerializer):
+    values = serializers.ListField(allow_empty=True,
+        child=serializers.CharField(max_length=200),
+    )
+
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value',
-            'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
 
     # pylint: disable=no-self-use
     def to_internal_value(self, data):
         attribute = data.copy()
-        attribute['values'] = '\n'.join(map(lambda x: x.strip(), data.get('values', [])))
+        attribute['values'] = '\n'.join(data.get('values', []))
         return attribute
 
     def to_representation(self, instance):
         if instance:
-            attribute = super().to_representation(instance)
-            attribute['values'] = attribute['values'].split('\n')
+            rep = super().to_representation(instance)
+            rep['values'] = instance.values.split('\n')
         else:
-            attribute = instance
+            rep = instance
 
-        return attribute
+        return rep
 
 class LabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -413,18 +417,18 @@ class StorageSerializer(serializers.ModelSerializer):
 class TaskReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
-    data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type')
-    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type')
-    size = serializers.ReadOnlyField(source='data.size')
-    image_quality = serializers.ReadOnlyField(source='data.image_quality')
-    data = serializers.ReadOnlyField(source='data.id')
+    data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
+    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
+    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
+    size = serializers.ReadOnlyField(source='data.size', required=False)
+    image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
+    data = serializers.ReadOnlyField(source='data.id', required=False)
     owner = BasicUserSerializer(required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -435,6 +439,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'subset', 'organization', 'target_storage', 'source_storage',
         )
         read_only_fields = fields
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
@@ -447,8 +452,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -614,13 +619,13 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         read_only_fields = ('name',)
 
 class ProjectReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
+    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[], read_only=True)
     owner = BasicUserSerializer(required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
-    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
-    dimension = serializers.CharField(max_length=16, required=False, read_only=True)
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
+    dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
+    target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
+    source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
 
     class Meta:
         model = models.Project
@@ -632,6 +637,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
             'assignee', 'task_subsets', 'dimension', 'organization', 'tasks',
             'target_storage', 'source_storage',
         )
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
@@ -642,13 +648,13 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
+    labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
+    task_subsets = serializers.ListField(write_only=True, child=serializers.CharField(), required=False)
 
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    target_storage = StorageSerializer(write_only=True, required=False)
+    source_storage = StorageSerializer(write_only=True, required=False)
 
     class Meta:
         model = models.Project
@@ -945,6 +951,7 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
         model = models.CloudStorage
         exclude = ['credentials']
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
 @extend_schema_serializer(
     examples=[
@@ -1027,6 +1034,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             'manifests', 'organization'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     # pylint: disable=no-self-use
     def validate_specific_attributes(self, value):

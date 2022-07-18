@@ -16,11 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Possibility to display tags on frame (<https://github.com/cvat-ai/cvat/pull/75>)
 - Support source and target storages (server part) (<https://github.com/cvat-ai/cvat/pull/28>)
 - Tests for import/export annotation, dataset, backup from/to cloud storage (<https://github.com/cvat-ai/cvat/pull/56>)
+- Added Python SDK package (`cvat-sdk`) (<https://github.com/cvat-ai/cvat/pull/7>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)
 - Simplified running REST API tests. Extended CI-nightly workflow (<https://github.com/cvat-ai/cvat/pull/26>)
-
+- REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`) (<https://github.com/cvat-ai/cvat/pull/7>)
 
 ### Deprecated
 - TDB
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dataset import in an organization (<https://github.com/cvat-ai/cvat/pull/18>, <https://github.com/cvat-ai/cvat/pull/35>)
 - Updated minimist npm package to v1.2.6 (<https://github.com/cvat-ai/cvat/pull/34>)
 - Request Status Code 500 "StopIteration" when exporting dataset (<https://github.com/cvat-ai/cvat/pull/17>)
+- Generated OpenAPI schema for several endpoints (<https://github.com/cvat-ai/cvat/issues/72>)
 - Annotation window might have top offset if try to move a locked object (<https://github.com/cvat-ai/cvat/pull/123>)
 
 ### Security
