@@ -105,7 +105,7 @@ TF.enable_tf_check = True
 
 # pylint: disable=unused-import
 import cvat.apps.dataset_manager.formats.coco
-import cvat.apps.dataset_manager.formats.cvat
+import cvat.apps.dataset_manager.formats.cvat_format
 import cvat.apps.dataset_manager.formats.datumaro
 import cvat.apps.dataset_manager.formats.labelme
 import cvat.apps.dataset_manager.formats.mask

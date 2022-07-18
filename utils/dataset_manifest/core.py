@@ -1,19 +1,36 @@
 # Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+import io
 
-from enum import Enum
 import av
 import json
 import os
 
-from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
+from abc import ABC, abstractmethod
 from contextlib import closing
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryFile, NamedTemporaryFile
 from PIL import Image
 from json.decoder import JSONDecodeError
 
 from .utils import SortingMethod, md5_hash, rotate_image, sort
+
+from django.utils.text import get_valid_filename
+
+from cvat.rebotics.s3_client import s3_client
+from cvat.rebotics.utils import injected_property, StrEnum, ChoicesEnum
+from cvat.rebotics.cache import default_cache
+
+
+class ManifestType(StrEnum, ChoicesEnum):
+    IMAGES = 'images'
+    VIDEO = 'video'
+
+
+class ManifestVersion(StrEnum, ChoicesEnum):
+    V1 = '1.0'
+    V1_1 = '1.1'
+
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -110,6 +127,7 @@ class VideoStreamReader:
             if not self._frames_number:
                 self._frames_number = index
 
+
 class KeyFramesVideoStreamReader(VideoStreamReader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -144,6 +162,7 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
                             if isValid:
                                 yield (index, key_frame['pts'], key_frame['md5'])
                     index += 1
+
 
 class DatasetImagesReader:
     def __init__(self,
@@ -222,6 +241,7 @@ class DatasetImagesReader:
     def __len__(self):
         return len(self.range_)
 
+
 class Dataset3DImagesReader(DatasetImagesReader):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -244,25 +264,20 @@ class Dataset3DImagesReader(DatasetImagesReader):
             else:
                 yield dict()
 
+
+@injected_property('TYPE', error_message='Manifest TYPE is not set. Please, use manager to initialize.')
 class _Manifest:
-    class SupportedVersion(str, Enum):
-        V1 = '1.0'
-        V1_1 = '1.1'
-
-        @classmethod
-        def choices(cls):
-            return (x.value for x in cls)
-
-        def __str__(self):
-            return self.value
-
     FILE_NAME = 'manifest.jsonl'
-    VERSION = SupportedVersion.V1_1
+    VALID_EXTENSION = '.jsonl'
+    VERSION = ManifestVersion.V1_1
 
     def __init__(self, path, upload_dir=None):
-        assert path, 'A path to manifest file not found'
-        self._path = os.path.join(path, self.FILE_NAME) if os.path.isdir(path) else path
+        self._path = self._init_path(path)
         self._upload_dir = upload_dir
+
+    def _init_path(self, path):
+        assert path, 'A path to manifest file not found'
+        return os.path.join(path, self.FILE_NAME) if os.path.isdir(path) else path
 
     @property
     def path(self):
@@ -273,15 +288,41 @@ class _Manifest:
         return os.path.basename(self._path) if not self._upload_dir \
             else os.path.relpath(self._path, self._upload_dir)
 
+    def open_file(self, mode: str = 'r+'):
+        """Warning: you should close the file!"""
+        return open(self._path, mode=mode)
+
+
+class _S3Manifest(_Manifest):
+    def _init_path(self, path):
+        return path if path.endswith(self.VALID_EXTENSION) else os.path.join(path, self.FILE_NAME)
+
+    def open_file(self, mode: str = 'r+'):
+        """Warning: you should close the file!"""
+        content = default_cache.get(self._path)
+        if content is None:
+            with NamedTemporaryFile(delete=False) as f:
+                s3_client.download_to_io(self._path, f)
+                path = f.name
+            with open(path, 'r+') as f:
+                content = f.read()
+            default_cache.set(self._path, content)
+            os.remove(path)
+        return io.StringIO(content)
+
+
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
 class _Index:
     FILE_NAME = 'index.json'
 
     def __init__(self, path):
-        assert path and os.path.isdir(path), 'No index directory path'
-        self._path = os.path.join(path, self.FILE_NAME)
+        self._path = self._init_path(path)
         self._index = {}
+
+    def _init_path(self, path):
+        assert path and os.path.isdir(path), 'No index directory path'
+        return os.path.join(path, self.FILE_NAME)
 
     @property
     def path(self):
@@ -300,8 +341,7 @@ class _Index:
         os.remove(self._path)
 
     def create(self, manifest, skip):
-        assert os.path.exists(manifest), 'A manifest file not exists, index cannot be created'
-        with open(manifest, 'r+') as manifest_file:
+        with self._get_file(manifest) as manifest_file:
             while skip:
                 manifest_file.readline()
                 skip -= 1
@@ -316,8 +356,7 @@ class _Index:
                 line = manifest_file.readline()
 
     def partial_update(self, manifest, number):
-        assert os.path.exists(manifest), 'A manifest file not exists, index cannot be updated'
-        with open(manifest, 'r+') as manifest_file:
+        with self._get_file(manifest) as manifest_file:
             manifest_file.seek(self._index[number])
             line = manifest_file.readline()
             while line:
@@ -334,6 +373,38 @@ class _Index:
     def __len__(self):
         return len(self._index)
 
+    def _get_file(self, manifest):
+        t = type(manifest)
+        if t == str:
+            assert os.path.exists(manifest), 'A manifest file not exists, index cannot be created'
+            return open(manifest, 'r+')
+        elif issubclass(t, _Manifest):
+            return manifest.open_file()
+        else:
+            raise ValueError(f'Unsupported manifest type: {t.__name__}')
+
+
+class _CachedIndex(_Index):
+    # Index, which is stored in cache instead of local files.
+    def _init_path(self, path):
+        return os.path.join(path, self.FILE_NAME)
+
+    def dump(self):
+        default_cache.set(
+            self._path,
+            json.dumps(self._index, separators=(',', ':'))
+        )
+
+    def load(self):
+        self._index = json.loads(
+            default_cache.get(self._path),
+            object_hook=lambda d: {int(k): v for k, v in d.items()}
+        )
+
+    def remove(self):
+        default_cache.delete(self.path)
+
+
 def _set_index(func):
     def wrapper(self, *args, **kwargs):
         func(self, *args,  **kwargs)
@@ -341,20 +412,26 @@ def _set_index(func):
             self.set_index()
     return wrapper
 
+
 class _ManifestManager(ABC):
     BASE_INFORMATION = {
         'version' : 1,
         'type': 2,
     }
 
+    manifest_class: type = _Manifest
+    index_class: type = _Index
+
+    _required_item_attributes = {}
+
     def _json_item_is_valid(self, **state):
-        for item in self._requared_item_attributes:
+        for item in self._required_item_attributes:
             if state.get(item, None) is None:
                 raise Exception(f"Invalid '{self.manifest.name} file structure': '{item}' is required, but not found")
 
     def __init__(self, path, create_index, upload_dir=None, *args, **kwargs):
-        self._manifest = _Manifest(path, upload_dir)
-        self._index = _Index(os.path.dirname(self._manifest.path))
+        self._manifest = self.manifest_class(path, upload_dir)
+        self._index = self.index_class(os.path.dirname(self._manifest.path))
         self._reader = None
         self._create_index = create_index
 
@@ -364,7 +441,7 @@ class _ManifestManager(ABC):
 
     def _parse_line(self, line):
         """ Getting a random line from the manifest file """
-        with open(self._manifest.path, 'r') as manifest_file:
+        with self._manifest.open_file('r') as manifest_file:
             if isinstance(line, str):
                 assert line in self.BASE_INFORMATION.keys(), \
                     'An attempt to get non-existent information from the manifest'
@@ -384,7 +461,7 @@ class _ManifestManager(ABC):
         if os.path.exists(self._index.path):
             self._index.load()
         else:
-            self._index.create(self._manifest.path, 3 if self._manifest.TYPE == 'video' else 2)
+            self._index.create(self._manifest.path, 3 if self._manifest.TYPE == ManifestType.VIDEO else 2)
             self._index.dump()
 
     def reset_index(self):
@@ -409,7 +486,7 @@ class _ManifestManager(ABC):
         pass
 
     def __iter__(self):
-        with open(self._manifest.path, 'r') as manifest_file:
+        with self._manifest.open_file('r') as manifest_file:
             manifest_file.seek(self._index[0])
             image_number = 0
             line = manifest_file.readline()
@@ -438,7 +515,8 @@ class _ManifestManager(ABC):
     def index(self):
         return self._index
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def data(self):
         pass
 
@@ -446,12 +524,13 @@ class _ManifestManager(ABC):
     def get_subset(self, subset_names):
         pass
 
+
 class VideoManifestManager(_ManifestManager):
-    _requared_item_attributes = {'number', 'pts'}
+    _required_item_attributes = {'number', 'pts'}
 
     def __init__(self, manifest_path, create_index=True):
         super().__init__(manifest_path, create_index)
-        setattr(self._manifest, 'TYPE', 'video')
+        setattr(self._manifest, 'TYPE', ManifestType.VIDEO)
         self.BASE_INFORMATION['properties'] = 3
 
     def link(self, media_file, upload_dir=None, chunk_size=36, force=False, only_key_frames=False, **kwargs):
@@ -527,6 +606,7 @@ class VideoManifestManager(_ManifestManager):
     def get_subset(self, subset_names):
         raise NotImplementedError()
 
+
 class VideoManifestValidator(VideoManifestManager):
     def __init__(self, source_path, manifest_path):
         self._source_path = source_path
@@ -566,12 +646,13 @@ class VideoManifestValidator(VideoManifestManager):
                 assert frames == self.video_length, "The uploaded manifest does not match the video"
                 return
 
+
 class ImageManifestManager(_ManifestManager):
-    _requared_item_attributes = {'name', 'extension'}
+    _required_item_attributes = {'name', 'extension'}
 
     def __init__(self, manifest_path, upload_dir=None, create_index=True):
         super().__init__(manifest_path, create_index, upload_dir)
-        setattr(self._manifest, 'TYPE', 'images')
+        setattr(self._manifest, 'TYPE', ManifestType.IMAGES)
 
     def link(self, **kwargs):
         ReaderClass = DatasetImagesReader if not kwargs.get('DIM_3D', None) else Dataset3DImagesReader
@@ -632,6 +713,39 @@ class ImageManifestManager(_ManifestManager):
         return index_list, subset
 
 
+class CachedIndexManifestManager(ImageManifestManager):
+    index_class = _CachedIndex
+
+    def init_index(self):
+        if self._index.path in default_cache:
+            self._index.load()
+        else:
+            self._index.create(self._manifest, 2)
+            self._index.dump()
+
+    def reset_index(self):
+        default_cache.delete(self._index.path)
+
+    def remove(self):
+        self.reset_index()
+        s3_client.delete_object(self.manifest.path)
+
+
+class S3ManifestManager(CachedIndexManifestManager):
+    manifest_class = _S3Manifest
+
+    @_set_index
+    def create(self, content=None, _tqdm=None):
+        """ Creating and saving a manifest file for the specialized dataset"""
+        with TemporaryFile('w+t') as manifest_file:
+            self._write_base_information(manifest_file)
+            obj = content if content else self._reader
+            self._write_core_part(manifest_file, obj, _tqdm)
+            manifest_file.seek(0)
+            s3_client.upload_from_io(manifest_file, self._manifest.path)
+
+
+@injected_property('TYPE', error_message='Manifest Validator TYPE is not set. Please, use concrete classes.')
 class _BaseManifestValidator(ABC):
     def __init__(self, full_manifest_path):
         self._manifest = _Manifest(full_manifest_path)
@@ -639,7 +753,7 @@ class _BaseManifestValidator(ABC):
     def validate(self):
         try:
             # we cannot use index in general because manifest may be e.g. in share point with ro mode
-            with open(self._manifest.path, 'r') as manifest:
+            with self._manifest.open_file('r') as manifest:
                 for validator in self.validators:
                     line = json.loads(manifest.readline().strip())
                     validator(line)
@@ -649,23 +763,26 @@ class _BaseManifestValidator(ABC):
 
     @staticmethod
     def _validate_version(_dict):
-        if not _dict['version'] in _Manifest.SupportedVersion.choices():
+        if not _dict['version'] in ManifestVersion.choices():
             raise ValueError('Incorrect version field')
 
     def _validate_type(self, _dict):
         if not _dict['type'] == self.TYPE:
             raise ValueError('Incorrect type field')
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def validators(self):
         pass
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def _validate_first_item(_dict):
         pass
 
+
 class _VideoManifestStructureValidator(_BaseManifestValidator):
-    TYPE = 'video'
+    TYPE = ManifestType.VIDEO
 
     @property
     def validators(self):
@@ -693,8 +810,9 @@ class _VideoManifestStructureValidator(_BaseManifestValidator):
         if not isinstance(_dict['pts'], int):
             raise ValueError('Incorrect pts field')
 
+
 class _DatasetManifestStructureValidator(_BaseManifestValidator):
-    TYPE = 'images'
+    TYPE = ManifestType.IMAGES
 
     @property
     def validators(self):
@@ -720,14 +838,30 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
         # if not isinstance(_dict['height'], int):
         #     raise ValueError('Incorrect height field')
 
+
 def is_manifest(full_manifest_path):
     return _is_video_manifest(full_manifest_path) or \
         _is_dataset_manifest(full_manifest_path)
+
 
 def _is_video_manifest(full_manifest_path):
     validator = _VideoManifestStructureValidator(full_manifest_path)
     return validator.validate()
 
+
 def _is_dataset_manifest(full_manifest_path):
     validator = _DatasetManifestStructureValidator(full_manifest_path)
     return validator.validate()
+
+
+def clean_filenames(manifest_path, skip=2):
+    with open(manifest_path) as f:
+        content = f.read()
+    content = content.strip().split('\n')
+    with open(manifest_path, 'w') as f:
+        for line in content[:skip]:
+            f.write(line + '\n')
+        for line in content[skip:]:
+            data = json.loads(line)
+            data['name'] = get_valid_filename(data['name'])
+            f.write(json.dumps(data, separators=(',', ':')) + '\n')

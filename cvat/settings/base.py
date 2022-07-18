@@ -417,10 +417,12 @@ LOGGING = {
         'cvat.server': {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'propagate': False
         },
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'propagate': False
         },
         'django': {
             'handlers': ['console'],
@@ -461,25 +463,20 @@ RESTRICTIONS = {
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
+USE_CACHE = bool(int(os.getenv('USE_CACHE', 1)))
+CACHE_EXPIRE = float(os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60))  # week in seconds
+
 CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    },
-    'diskcache': {
+    'default': {
         'BACKEND': 'diskcache.DjangoCache',
         'LOCATION': CACHE_ROOT,
-        'TIMEOUT': None,
+        'TIMEOUT': CACHE_EXPIRE,
         'OPTIONS': {
-            'size_limit' : 2 ** 40,  # 1 Tb
+            'size_limit': 2 ** 40,  # 1 Tb
         }
     },
 }
 
-USE_CACHE = True
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     # tus upload protocol headers
@@ -572,3 +569,31 @@ VERSION_TRACKER_URL = os.getenv(
     'VERSION_TRACKER_URL',
     'https://versions.fyn.rocks/api/v1/track-version',
 )
+
+# Media storage settings
+AWS_FILE_STORAGE = 'cvat.rebotics.storage.CustomAWSMediaStorage'
+
+# AWS s3 storage settings for media storage.
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_DEFAULT_ACL = 'private'
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_AUTH = True
+AWS_QUERYSTRING_EXPIRE = 604800
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=3600',
+}
+
+AWS_S3_ADDRESSING_STYLE = os.getenv('AWS_S3_ADRESSING_STYLE', 'virtual')
+AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
+AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
+if not AWS_S3_REGION_NAME:  # treat empty string as None
+    AWS_S3_REGION_NAME = None
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
+
+USE_S3 = True
+USE_CACHE_S3 = True
+
+S3_UPLOAD_ROOT = 'data'
+S3_CACHE_ROOT = 'cache'

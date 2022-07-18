@@ -5,6 +5,10 @@
 from .development import *
 import tempfile
 
+# Tests will break, mostly.
+USE_S3 = False
+USE_CACHE_S3 = False
+
 _temp_dir = tempfile.TemporaryDirectory(dir=BASE_DIR, suffix="cvat")
 BASE_DIR = _temp_dir.name
 

@@ -20,7 +20,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, Http404, HttpResponseRedirect
 from django.utils import timezone
 
 from drf_spectacular.types import OpenApiTypes
@@ -65,12 +65,16 @@ from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import UploadMixin
+from cvat.apps.engine.constants import FrameQuality
 
 from . import models, task
 from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
+
+from cvat.rebotics.s3_client import s3_client
+
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -491,8 +495,8 @@ class DataChunkGetter:
 
         self.type = data_type
         self.number = int(data_num) if data_num else None
-        self.quality = FrameProvider.Quality.COMPRESSED \
-            if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+        self.quality = FrameQuality.COMPRESSED \
+            if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
         self.dimension = task_dim
 
@@ -513,7 +517,15 @@ class DataChunkGetter:
             # TODO: av.FFmpegError processing
             if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
                 buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
-                return HttpResponse(buff.getvalue(), content_type=mime_type)
+                if settings.USE_CACHE_S3:
+                    # buff is an url to s3 storage, return url + mime in a json response
+                    return HttpResponseRedirect(buff, content_type=mime_type)
+                else:
+                    # buff is an io, return its contents in response
+                    buff.seek(0)
+                    response = HttpResponse(buff.getvalue(), content_type=mime_type)
+                    buff.close()
+                    return response
 
             # Follow symbol links if the chunk is a link on a real image otherwise
             # mimetype detection inside sendfile will work incorrectly.
@@ -529,7 +541,15 @@ class DataChunkGetter:
             return HttpResponse(buf.getvalue(), content_type=mime)
 
         elif self.type == 'preview':
-            return sendfile(request, frame_provider.get_preview())
+            path = frame_provider.get_preview()
+            if os.path.exists(path):
+                return sendfile(request, path)
+            try:
+                url = s3_client.get_presigned_url(frame_provider.get_s3_preview())
+                return HttpResponseRedirect(url)
+            except Exception as e:
+                slogger.glob.warning(str(e))
+                raise Http404('Preview not found')
 
         elif self.type == 'context_image':
             if not (start <= self.number <= stop):
@@ -638,8 +658,10 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             db_project.save()
             assert instance.organization == db_project.organization
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Task):
         task_dirname = instance.get_task_dirname()
+        # To avoid integrity error
+        instance.segment_set.all().delete()
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
         if instance.data and not instance.data.tasks.all():
@@ -698,7 +720,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             uploaded_files.extend(data.get('client_files'))
             serializer.validated_data.update({'client_files': uploaded_files})
 
-            db_data = serializer.save()
+            db_data: Data = serializer.save()
             self._object.data = db_data
             self._object.save()
             data = {k: v for k, v in serializer.data.items()}
@@ -719,7 +741,10 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
+
+            # internal task handling
             task.create(self._object.id, data)
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)

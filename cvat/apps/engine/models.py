@@ -15,6 +15,9 @@ from django.db.models.fields import FloatField
 from django.core.serializers.json import DjangoJSONEncoder
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
+from cvat.rebotics.storage import CustomAWSMediaStorage
+from cvat.apps.engine.constants import FrameQuality
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -143,6 +146,13 @@ class Data(models.Model):
     class Meta:
         default_permissions = ()
 
+    upload_dirname = 'raw'
+    compressed_cache_dirname = 'compressed'
+    original_cache_dirname = 'original'
+    preview_file_name = 'preview.jpeg'
+    manifest_file_name = 'manifest.jsonl'
+    index_file_name = 'index.json'
+
     def get_frame_step(self):
         match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
         return int(match.group(1)) if match else 1
@@ -151,13 +161,13 @@ class Data(models.Model):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
 
     def get_upload_dirname(self):
-        return os.path.join(self.get_data_dirname(), "raw")
+        return os.path.join(self.get_data_dirname(), self.upload_dirname)
 
     def get_compressed_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), "compressed")
+        return os.path.join(self.get_data_dirname(), self.compressed_cache_dirname)
 
     def get_original_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), "original")
+        return os.path.join(self.get_data_dirname(), self.original_cache_dirname)
 
     @staticmethod
     def _get_chunk_name(chunk_number, chunk_type):
@@ -178,20 +188,28 @@ class Data(models.Model):
 
     def get_original_chunk_path(self, chunk_number):
         return os.path.join(self.get_original_cache_dirname(),
-            self._get_original_chunk_name(chunk_number))
+                            self._get_original_chunk_name(chunk_number))
 
     def get_compressed_chunk_path(self, chunk_number):
         return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_compressed_chunk_name(chunk_number))
+                            self._get_compressed_chunk_name(chunk_number))
+
+    def get_chunk_path(self, chunk_number, quality):
+        if quality == FrameQuality.ORIGINAL:
+            return self.get_original_chunk_path(chunk_number)
+        elif quality == FrameQuality.COMPRESSED:
+            return self.get_compressed_chunk_path(chunk_number)
+        else:
+            raise ValueError('Invalid quality value: {}'.format(quality.value))
 
     def get_preview_path(self):
-        return os.path.join(self.get_data_dirname(), 'preview.jpeg')
+        return os.path.join(self.get_data_dirname(), self.preview_file_name)
 
     def get_manifest_path(self):
-        return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
+        return os.path.join(self.get_upload_dirname(), self.manifest_file_name)
 
     def get_index_path(self):
-        return os.path.join(self.get_upload_dirname(), 'index.json')
+        return os.path.join(self.get_upload_dirname(), self.index_file_name)
 
     def make_dirs(self):
         data_path = self.get_data_dirname()
@@ -206,6 +224,49 @@ class Data(models.Model):
         uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
         represented_files = [{'file':f} for f in uploaded_files]
         return represented_files
+
+    ############# same paths on s3
+
+    def get_s3_data_dirname(self):
+        return os.path.join(settings.S3_UPLOAD_ROOT, str(self.pk))
+
+    def get_s3_cache_base_dirname(self):
+        return os.path.join(settings.S3_CACHE_ROOT, str(self.pk))
+
+    def get_s3_upload_dirname(self):
+        return os.path.join(self.get_s3_data_dirname(), self.upload_dirname)
+
+    def get_s3_uploaded_file_path(self, file_name):
+        return os.path.join(self.get_s3_upload_dirname(), file_name)
+
+    def get_s3_compressed_cache_dirname(self):
+        return os.path.join(self.get_s3_cache_base_dirname(), self.compressed_cache_dirname)
+
+    def get_s3_original_cache_dirname(self):
+        return os.path.join(self.get_s3_cache_base_dirname(), self.original_cache_dirname)
+
+    def get_s3_original_chunk_path(self, chunk_number):
+        return os.path.join(self.get_s3_original_cache_dirname(),
+                            self._get_original_chunk_name(chunk_number))
+
+    def get_s3_compressed_chunk_path(self, chunk_number):
+        return os.path.join(self.get_s3_compressed_cache_dirname(),
+                            self._get_compressed_chunk_name(chunk_number))
+
+    def get_s3_chunk_path(self, chunk_number, quality):
+        if quality == FrameQuality.ORIGINAL:
+            return self.get_s3_original_chunk_path(chunk_number)
+        elif quality == FrameQuality.COMPRESSED:
+            return self.get_s3_compressed_chunk_path(chunk_number)
+        else:
+            raise ValueError('Invalid quality value: {}'.format(quality.value))
+
+    def get_s3_preview_path(self):
+        return os.path.join(self.get_s3_data_dirname(), self.preview_file_name)
+
+    def get_s3_manifest_path(self):
+        return os.path.join(self.get_s3_upload_dirname(), self.manifest_file_name)
+
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
@@ -329,11 +390,16 @@ def upload_path_handler(instance, filename):
     # relative path is required since Django 3.1.11
     return os.path.join(os.path.relpath(instance.data.get_upload_dirname(), settings.BASE_DIR), filename)
 
+def client_file_upload_path_handler(instance, filename):
+    return os.path.join('client-files', upload_path_handler(instance, filename))
+
+def related_file_upload_path_handler(instance, filename):
+    return os.path.join('related-files', upload_path_handler(instance, filename))
+
 # For client files which the user is uploaded
 class ClientFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='client_files')
-    file = models.FileField(upload_to=upload_path_handler,
-        max_length=1024, storage=MyFileSystemStorage())
+    file = models.FileField(upload_to=client_file_upload_path_handler, max_length=1024)
 
     class Meta:
         default_permissions = ()
@@ -358,13 +424,27 @@ class RemoteFile(models.Model):
 
 class RelatedFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
-    path = models.FileField(upload_to=upload_path_handler,
-                            max_length=1024, storage=MyFileSystemStorage())
+    path = models.FileField(upload_to=related_file_upload_path_handler, max_length=1024)
     primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
 
     class Meta:
         default_permissions = ()
         unique_together = ("data", "path")
+
+
+def s3_upload_path_handler(instance, filename):
+    return os.path.join(instance.data.get_s3_upload_dirname(), filename)
+
+
+class S3File(models.Model):
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name='s3_files', null=True)
+    file = models.FileField(upload_to=s3_upload_path_handler, max_length=1024,
+                            storage=CustomAWSMediaStorage)
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ('data', 'file')
+
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)

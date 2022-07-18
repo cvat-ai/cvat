@@ -23,8 +23,10 @@ from datumaro.util.image import Image
 from cvat.apps.dataset_manager.bindings import TaskData, match_dm_item, ProjectData, get_defaulted_subset, import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.constants import FrameType, FrameQuality
 
 from .registry import exporter, importer, dm_env
+
 
 class CvatPath:
     IMAGES_DIR = 'images'
@@ -1031,8 +1033,8 @@ def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectDat
 
     frame_provider = FrameProvider(task_data.db_task.data)
     frames = frame_provider.get_frames(
-        frame_provider.Quality.ORIGINAL,
-        frame_provider.Type.BUFFER)
+        FrameQuality.ORIGINAL,
+        FrameType.BUFFER)
     for frame_id, (frame_data, _) in enumerate(frames):
         frame_name = task_data.frame_info[frame_id]['path'] if project_data is None \
             else project_data.frame_info[(task_data.db_task.id, frame_id)]['path']
