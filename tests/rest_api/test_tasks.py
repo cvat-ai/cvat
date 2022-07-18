@@ -3,18 +3,23 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os.path as osp
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
+from tempfile import TemporaryDirectory
 from time import sleep
+from typing import List
+from cvat_sdk import models
 from cvat_sdk.apis import TasksApi
-from cvat_sdk.models import DataRequest, RqStatus, TaskWriteRequest, PatchedTaskWriteRequest
+from cvat_sdk.core import CvatClient
+from cvat_sdk.types import ResourceType
 
 import pytest
 from deepdiff import DeepDiff
 from PIL import Image
 
-from .utils.config import make_api_client
+from .utils.config import make_api_client, BASE_URL, USER_PASS
 
 
 def generate_image_file(filename, size=(50, 50)):
@@ -26,7 +31,7 @@ def generate_image_file(filename, size=(50, 50)):
 
     return f
 
-def generate_image_files(count):
+def generate_image_files(count) -> List[BytesIO]:
     images = []
     for i in range(count):
         image = generate_image_file(f'{i}.jpeg')
@@ -125,12 +130,12 @@ class TestGetTasks:
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.tasks_api.create(TaskWriteRequest(**spec), **kwargs)
+            (_, response) = api_client.tasks_api.create(models.TaskWriteRequest(**spec), **kwargs)
             assert response.status == HTTPStatus.CREATED
 
     def _test_create_task_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.tasks_api.create(TaskWriteRequest(**spec), **kwargs,
+            (_, response) = api_client.tasks_api.create(models.TaskWriteRequest(**spec), **kwargs,
                 _parse_response=False, _check_status=False)
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -222,7 +227,7 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
-            patched_data = PatchedTaskWriteRequest(**deepcopy(data))
+            patched_data = models.PatchedTaskWriteRequest(**deepcopy(data))
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid, action='update', org=org,
                 patched_task_write_request=patched_data,
@@ -245,7 +250,7 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
-            patched_data = PatchedTaskWriteRequest(**deepcopy(data))
+            patched_data = models.PatchedTaskWriteRequest(**deepcopy(data))
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid, org_id=org, action='update',
                 patched_task_write_request=patched_data,
@@ -273,7 +278,7 @@ class TestGetTaskDataset:
 @pytest.mark.usefixtures("changedb")
 class TestPostTaskData:
     @staticmethod
-    def _wait_until_task_is_created(api: TasksApi, task_id: int) -> RqStatus:
+    def _wait_until_task_is_created(api: TasksApi, task_id: int) -> models.RqStatus:
         while True:
             (status, _) = api.retrieve_status(task_id)
             if status.state.value in ['Finished', 'Failed']:
@@ -282,10 +287,10 @@ class TestPostTaskData:
 
     def _test_create_task(self, username, spec, data, files):
         with make_api_client(username) as api_client:
-            (task, response) = api_client.tasks_api.create(TaskWriteRequest(**spec))
+            (task, response) = api_client.tasks_api.create(models.TaskWriteRequest(**spec))
             assert response.status == HTTPStatus.CREATED
 
-            task_data = DataRequest(**data, client_files=list(files.values()))
+            task_data = models.DataRequest(**data, client_files=list(files.values()))
             (_, response) = api_client.tasks_api.create_data(task.id, task_data,
                 _content_type="multipart/form-data")
             assert response.status == HTTPStatus.ACCEPTED
@@ -329,3 +334,40 @@ class TestPostTaskData:
         with make_api_client(username) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
+
+    def test_can_create_task_with_local_data(self):
+        username = 'admin1'
+        task_spec = {
+            'name': f'test {username} to create a task with defined start and stop frames',
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [
+                    {
+                        "name": "a",
+                        "mutable": True,
+                        "input_type": "number",
+                        "default_value": "5",
+                        "values": ["4", "5", "6"]
+                    }
+                ]
+            }],
+        }
+
+        task_data = {
+            'image_quality': 75,
+        }
+
+        with TemporaryDirectory() as temp_dir:
+            task_files = generate_image_files(7)
+            for i, f in enumerate(task_files):
+                with open(osp.join(temp_dir, osp.basename(f.name)), 'wb') as fd:
+                    fd.write(f.getvalue())
+                    task_files[i] = osp.join(temp_dir, f.name)
+
+            with CvatClient(BASE_URL, (username, USER_PASS)) as client:
+                task_id = client.create_task(models.TaskWriteRequest(**task_spec),
+                    resource_type=ResourceType.LOCAL, resources=task_files, **task_data)
+
+                (task, _) = client.api.tasks_api.retrieve(task_id)
+                assert task.size == 7

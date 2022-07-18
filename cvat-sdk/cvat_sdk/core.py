@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from __future__ import annotations
 
 import json
@@ -21,14 +25,14 @@ from PIL import Image
 from tusclient import client, uploader
 from tusclient.request import TusRequest, TusUploadFailed
 
-from cvat_sdk import ApiClient, Configuration, models, ApiValueError
+from cvat_sdk import ApiClient, ApiValueError, Configuration, models
 from cvat_sdk.types import ResourceType
 from cvat_sdk.utils import StreamWithProgress, expect_status, filter_dict
 
 log = logging.getLogger(__name__)
 
 
-class Client:
+class CvatClient:
     def __init__(self, url: str, credentials: Optional[Tuple[str, str]] = None):
         # TODO: try to autodetect schema
         self._api_map = _CVAT_API_V2(url)
@@ -66,7 +70,7 @@ class Client:
             models.LoginRequest(username=credentials[0], password=credentials[1])
         )
 
-        self.api.set_default_header('Authorization', 'Token ' + auth.key)
+        self.api.set_default_header("Authorization", "Token " + auth.key)
 
         # TODO: use requests instead of urllib3
         # TODO: add cookie handling in API client
@@ -97,8 +101,8 @@ class Client:
         Returns: id of the created task
         """
 
-        if conf.get('project_id') and conf.get('labels'):
-            raise ApiValueError("Can't set labels to a task inside a project", ['labels'])
+        if conf.get("project_id") and conf.get("labels"):
+            raise ApiValueError("Can't set labels to a task inside a project", ["labels"])
         task, _ = self.api.tasks_api.create(conf)
         log.debug(f"Created task ID: {task.id} NAME: {task.name}")
 
@@ -111,12 +115,16 @@ class Client:
             while status.state.value != "Finished":
                 sleep(completion_verification_period)
                 status, _ = self.api.tasks_api.retrieve_status(task.id)
-                log.info("Awaiting compression for task %s. Status=%s, Message=%s",
-                    task.id, status.state.value, status.message
+                log.info(
+                    "Awaiting compression for task %s. Status=%s, Message=%s",
+                    task.id,
+                    status.state.value,
+                    status.message,
                 )
 
-            self.upload_task_annotations(task.id, annotation_format, annotation_path,
-                pbar=pbar, **kwargs)
+            self.upload_task_annotations(
+                task.id, annotation_format, annotation_path, pbar=pbar, **kwargs
+            )
 
         if dataset_repository_url:
             response = self.session.post(
@@ -127,8 +135,9 @@ class Client:
             rq_id = response_json["rq_id"]
             log.info(f"Create RQ ID: {rq_id}")
             check_url = self._api_map.git_check(rq_id)
-            response = self.api.rest_client.GET(check_url,
-                headers={"Cookie": self.api.cookie, **self.api.default_headers})
+            response = self.api.rest_client.GET(
+                check_url, headers={"Cookie": self.api.cookie, **self.api.default_headers}
+            )
             response_json = json.loads(response.data)
             while response_json["status"] != "finished":
                 log.info(
@@ -137,8 +146,9 @@ class Client:
                     )
                 )
                 sleep(git_completion_verification_period)
-                response = self.api.rest_client.GET(check_url,
-                    headers={"Cookie": self.api.cookie, **self.api.default_headers})
+                response = self.api.rest_client.GET(
+                    check_url, headers={"Cookie": self.api.cookie, **self.api.default_headers}
+                )
                 response_json = json.loads(response.data)
                 if response_json["status"] == "failed" or response_json["status"] == "unknown":
                     log.error(
@@ -227,9 +237,11 @@ class Client:
             data["frame_filter"] = f"step={kwargs.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            self.api.tasks_api.create_data(task_id,
+            self.api.tasks_api.create_data(
+                task_id,
                 data_request=models.DataRequest(**data),
-                _content_type="multipart/form-data")
+                _content_type="multipart/form-data",
+            )
         elif resource_type == ResourceType.LOCAL:
             if pbar is None:
                 pbar = self._make_pbar("Uploading files...")
@@ -237,25 +249,28 @@ class Client:
             if pbar is not None:
                 pbar.reset(total_size)
 
-            url = self._api_map.make_endpoint_url(self.api.tasks_api.create_data_endpoint.path.format(id=task_id))
+            url = self._api_map.make_endpoint_url(
+                self.api.tasks_api.create_data_endpoint.path.format(id=task_id)
+            )
             self._tus_start_upload(url)
 
             for group, group_size in bulk_file_groups:
                 with ExitStack() as es:
-                    group_files = {}
+                    files = {}
                     for i, filename in enumerate(group):
-                        group_files[f"client_files[{i}]"] = (
+                        files[f"client_files[{i}]"] = (
                             filename,
                             es.enter_context(closing(open(filename, "rb"))).read(),
                         )
-                    response = self.api.rest_client.POST(url,
-                        post_params=dict(**data, **group_files),
+                    response = self.api.rest_client.POST(
+                        url,
+                        post_params=dict(**data, **files),
                         headers={
                             "Content-Type": "multipart/form-data",
                             "Upload-Multiple": "",
                             "Cookies": self.api.cookie,
-                            **self.api.default_headers
-                        }
+                            **self.api.default_headers,
+                        },
                     )
                 expect_status(200, response)
 
@@ -355,7 +370,7 @@ class Client:
 
         log.info(f"Annotations have been exported to {filename}")
 
-    def _make_tus_uploader(cli: Client, url, **kwargs):
+    def _make_tus_uploader(cli: CvatClient, url, **kwargs):
         # Adjusts the library code for CVAT server
         # allows to reuse session
         class MyTusUploader(client.Uploader):
@@ -407,7 +422,7 @@ class Client:
                 return int(offset)
 
         headers = {}
-        headers["Origin"] = cli.api.configuration.host # required by CVAT server
+        headers["Origin"] = cli.api.configuration.host  # required by CVAT server
         headers["Cookie"] = cli.api.cookie
         headers.update(cli.api.default_headers)
         tus_client = client.TusClient(url, headers=headers)
@@ -440,26 +455,30 @@ class Client:
         return self._tus_finish_upload(url, params=params)
 
     def _tus_start_upload(self, url, *, params=None):
-        response = self.api.rest_client.POST(url,
+        response = self.api.rest_client.POST(
+            url,
             post_params=params,
             headers={
                 "Content-Type": "multipart/form-data",
                 "Upload-Start": "",
                 "Cookies": self.api.cookie,
-                **self.api.default_headers
-            }
+                **self.api.default_headers,
+            },
         )
         expect_status(202, response)
         return response
 
     def _tus_finish_upload(self, url, *, params=None, data=None):
-        response = self.api.rest_client.POST(url,
+        response = self.api.rest_client.POST(
+            url,
             headers={
                 "Content-Type": "multipart/form-data",
                 "Upload-Finish": "",
                 "Cookies": self.api.cookie,
-                **self.api.default_headers
-            }, post_params=dict(**(params or {}), **(data or {})))
+                **self.api.default_headers,
+            },
+            post_params=dict(**(params or {}), **(data or {})),
+        )
         expect_status(202, response)
         return response
 
