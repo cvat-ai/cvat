@@ -142,7 +142,7 @@ class Configuration(object):
         ssl_ca_cert=None,
     ):
         """Constructor"""
-        self._base_path = "http://localhost" if host is None else host
+        self._base_path = self._fix_host_url("http://localhost" if host is None else host)
         """Default Base url
         """
         self.server_index = 0 if server_index is None and host is None else server_index
@@ -159,15 +159,17 @@ class Configuration(object):
         # Authentication Settings
         self.access_token = access_token
         self.api_key = {}
-        if api_key:
-            self.api_key = api_key
         """dict to store API key(s)
         """
+        if api_key:
+            self.api_key = api_key
+
         self.api_key_prefix = {}
-        if api_key_prefix:
-            self.api_key_prefix = api_key_prefix
         """dict to store API prefix (e.g. Bearer)
         """
+        if api_key_prefix:
+            self.api_key_prefix = api_key_prefix
+
         self.refresh_api_key_hook = None
         """function hook to refresh API key if expired
         """
@@ -526,3 +528,12 @@ class Configuration(object):
         """Fix base path."""
         self._base_path = value
         self.server_index = None
+
+    @staticmethod
+    def _fix_host_url(url):
+        url = url.rstrip("/")
+
+        if not (url.startswith("http://") or url.startswith("https://")):
+            url = "http://" + url
+
+        return url

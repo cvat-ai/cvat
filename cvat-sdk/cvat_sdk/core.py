@@ -25,7 +25,7 @@ from PIL import Image
 from tusclient import client, uploader
 from tusclient.request import TusRequest, TusUploadFailed
 
-from cvat_sdk import ApiClient, ApiValueError, Configuration, models
+from cvat_sdk import ApiClient, ApiException, ApiValueError, Configuration, models
 from cvat_sdk.types import ResourceType
 from cvat_sdk.utils import StreamWithProgress, expect_status, filter_dict
 
@@ -33,10 +33,10 @@ log = logging.getLogger(__name__)
 
 
 class CvatClient:
-    def __init__(self, url: str, credentials: Optional[Tuple[str, str]] = None):
+    def __init__(self, url: str, *, credentials: Optional[Tuple[str, str]] = None):
         # TODO: try to autodetect schema
         self._api_map = _CVAT_API_V2(url)
-        self.api = ApiClient(Configuration(host=self._fix_host_url(url)))
+        self.api = ApiClient(Configuration(host=url))
 
         if credentials is not None:
             self.login(credentials)
@@ -52,28 +52,18 @@ class CvatClient:
         return self.__exit__(None, None, None)
 
     @staticmethod
-    def _fix_host_url(url):
-        # TODO: add url fixing in API client
-        url = url.rstrip("/")
-
-        if not (url.startswith("http://") or url.startswith("https://")):
-            url = "http://" + url
-
-        return url
-
-    @staticmethod
     def _detect_schema(url: str) -> str:
         raise NotImplementedError
 
     def login(self, credentials: Tuple[str, str]):
-        auth, response = self.api.auth_api.create_login(
+        (auth, response) = self.api.auth_api.create_login(
             models.LoginRequest(username=credentials[0], password=credentials[1])
         )
 
         self.api.set_default_header("Authorization", "Token " + auth.key)
 
         # TODO: use requests instead of urllib3
-        # TODO: add cookie handling in API client
+        # TODO: add cookie handling to ApiClient
         cookies = SimpleCookie(response.getheader("Set-Cookie"))
         self.api.cookie = " ".join(
             [cookies["sessionid"].output(header=""), cookies["csrftoken"].output(header="")]
@@ -87,9 +77,8 @@ class CvatClient:
         *,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
-        completion_verification_period=20,
-        git_completion_verification_period=2,
-        dataset_repository_url="",
+        status_check_period: int = 5,
+        dataset_repository_url: str = "",
         use_lfs: bool = False,
         pbar: Optional[tqdm.tqdm] = None,
         **kwargs,
@@ -102,66 +91,85 @@ class CvatClient:
         """
 
         if conf.get("project_id") and conf.get("labels"):
-            raise ApiValueError("Can't set labels to a task inside a project", ["labels"])
-        task, _ = self.api.tasks_api.create(conf)
-        log.debug(f"Created task ID: {task.id} NAME: {task.name}")
+            raise ApiValueError(
+                "Can't set labels to a task inside a project. "
+                "Tasks inside a project use project's labels.",
+                ["labels"],
+            )
+        (task, _) = self.api.tasks_api.create(conf)
+        log.debug("Created task ID: %s NAME: %s", task.id, task.name)
 
         self.upload_task_data(task.id, resource_type, resources, pbar=pbar, **kwargs)
 
+        log.debug("Awaiting for task %s creation...", task.id)
+        status = None
+        while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
+            sleep(status_check_period)
+            (status, _) = self.api.tasks_api.retrieve_status(task.id)
+
+            log.debug(
+                " Status=%s, Message=%s",
+                status.state.value,
+                status.message,
+            )
+
+            if status == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
+                raise ApiException(status=status.state.value, reason=status.message)
+
+            status = status.state.value
+
         if annotation_path:
-            status, _ = self.api.tasks_api.retrieve_status(task.id)
-
-            log.info("Awaiting data compression before uploading annotations...")
-            while status.state.value != "Finished":
-                sleep(completion_verification_period)
-                status, _ = self.api.tasks_api.retrieve_status(task.id)
-                log.info(
-                    "Awaiting compression for task %s. Status=%s, Message=%s",
-                    task.id,
-                    status.state.value,
-                    status.message,
-                )
-
             self.upload_task_annotations(
                 task.id, annotation_format, annotation_path, pbar=pbar, **kwargs
             )
 
         if dataset_repository_url:
-            response = self.session.post(
-                self.api.git_create(task.id),
-                json={"path": dataset_repository_url, "lfs": use_lfs, "tid": task.id},
-            )
-            response_json = response.json()
-            rq_id = response_json["rq_id"]
-            log.info(f"Create RQ ID: {rq_id}")
-            check_url = self._api_map.git_check(rq_id)
-            response = self.api.rest_client.GET(
-                check_url, headers={"Cookie": self.api.cookie, **self.api.default_headers}
-            )
-            response_json = json.loads(response.data)
-            while response_json["status"] != "finished":
-                log.info(
-                    """Awaiting a dataset repository to be created for the task. Response status: {}""".format(
-                        response_json["status"]
-                    )
-                )
-                sleep(git_completion_verification_period)
-                response = self.api.rest_client.GET(
-                    check_url, headers={"Cookie": self.api.cookie, **self.api.default_headers}
-                )
-                response_json = json.loads(response.data)
-                if response_json["status"] == "failed" or response_json["status"] == "unknown":
-                    log.error(
-                        f"Dataset repository creation request for task {task.id} failed"
-                        f'with status {response_json["status"]}.'
-                    )
-                    break
-
-            log.info(
-                f"Dataset repository creation completed with status: {response_json['status']}."
+            self._create_git_repo(
+                task_id=task.id,
+                repo_url=dataset_repository_url,
+                status_check_period=status_check_period,
+                use_lfs=use_lfs,
             )
 
         return task.id
+
+    def _create_git_repo(
+        self, *, task_id: int, repo_url: str, status_check_period: int = 5, use_lfs: bool = True
+    ):
+        common_headers = {"Cookie": self.api.cookie, **self.api.default_headers}
+
+        response = self.api.rest_client.POST(
+            self._api_map.git_create(task_id),
+            post_params={"path": repo_url, "lfs": use_lfs, "tid": task_id},
+            headers=common_headers,
+        )
+        response_json = json.loads(response)
+        rq_id = response_json["rq_id"]
+        log.info(f"Create RQ ID: {rq_id}")
+
+        log.debug("Awaiting a dataset repository to be created for the task %s...", task_id)
+        check_url = self._api_map.git_check(rq_id)
+        status = None
+        while status != "finished":
+            sleep(status_check_period)
+            response = self.api.rest_client.GET(check_url, headers=common_headers)
+            response_json = json.loads(response.data)
+            status = response_json["status"]
+            if status == "failed" or status == "unknown":
+                log.error(
+                    "Dataset repository creation request for task %s failed" "with status %s.",
+                    task_id,
+                    status,
+                )
+                break
+
+            log.debug(
+                "Awaiting a dataset repository to be created for the task %s. Response status: %s",
+                task_id,
+                status,
+            )
+
+        log.debug("Dataset repository creation completed with status: %s.", status)
 
     MAX_REQUEST_SIZE = 100 * 2**20
 
@@ -243,9 +251,6 @@ class CvatClient:
                 _content_type="multipart/form-data",
             )
         elif resource_type == ResourceType.LOCAL:
-            if pbar is None:
-                pbar = self._make_pbar("Uploading files...")
-
             if pbar is not None:
                 pbar.reset(total_size)
 

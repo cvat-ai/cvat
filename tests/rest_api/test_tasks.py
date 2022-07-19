@@ -338,7 +338,7 @@ class TestPostTaskData:
     def test_can_create_task_with_local_data(self):
         username = 'admin1'
         task_spec = {
-            'name': f'test {username} to create a task with defined start and stop frames',
+            'name': f'test {username} to create a task with local data',
             "labels": [{
                 "name": "car",
                 "color": "#ff00ff",
@@ -365,7 +365,7 @@ class TestPostTaskData:
                     fd.write(f.getvalue())
                     task_files[i] = osp.join(temp_dir, f.name)
 
-            with CvatClient(BASE_URL, (username, USER_PASS)) as client:
+            with CvatClient(BASE_URL, credentials=(username, USER_PASS)) as client:
                 task_id = client.create_task(models.TaskWriteRequest(**task_spec),
                     resource_type=ResourceType.LOCAL, resources=task_files, **task_data)
 
