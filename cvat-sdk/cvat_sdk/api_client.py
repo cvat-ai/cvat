@@ -293,7 +293,7 @@ class ApiClient(object):
             headers["Cookie"] = self.cookies.output(header="")
         return headers
 
-    def _update_cookies_from_response(self, response: urllib3.HTTPResponse):
+    def _update_cookies_from_response(self, response: HTTPResponse):
         self.cookies.update(SimpleCookie(response.getheader("Set-Cookie")))
 
     def parameters_to_multipart(self, params, collection_types):
