@@ -285,10 +285,6 @@ class JobAnnotation:
                 db_elem = models.LabeledSkeleton(shape=db_shape, **elem)
                 if db_elem.label_id and db_elem.label_id not in self.db_labels:
                     raise AttributeError("label_id `{}` is invalid".format(db_elem.label_id))
-                db_elem.shape_id = db_shape.id
-                db_elements.append(db_elem)
-
-                elem["attributes"] = attributes
 
                 for attr in attributes:
                     db_attr = models.LabeledSkeletonAttributeVal(**attr)
@@ -297,6 +293,9 @@ class JobAnnotation:
 
                     db_attr.skeleton_id = len(db_elements)
                     db_attrs.append(db_attr)
+
+                db_elements.append(db_elem)
+                elem["attributes"] = attributes
 
             db_elements = bulk_create(
                 db_model=models.LabeledSkeleton,
@@ -470,7 +469,6 @@ class JobAnnotation:
             "label",
             "labeledshapeattributeval_set",
             "labeledskeleton_set",
-            "labeledskeleton__labeledskeletonattributeval_set"
         ).values(
             'id',
             'label_id',
@@ -500,11 +498,6 @@ class JobAnnotation:
         db_shapes = _merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
-                'labeledshapeattributeval_set': [
-                    'labeledshapeattributeval__spec_id',
-                    'labeledshapeattributeval__value',
-                    'labeledshapeattributeval__id',
-                ],
                 'labeledskeleton_set': [
                     'labeledskeleton__id',
                     'labeledskeleton__type',
@@ -520,6 +513,19 @@ class JobAnnotation:
             },
             field_id='id',
         )
+
+        db_shapes = _merge_table_rows(
+            rows=db_shapes,
+            keys_for_merge={
+                'labeledshapeattributeval_set': [
+                    'labeledshapeattributeval__spec_id',
+                    'labeledshapeattributeval__value',
+                    'labeledshapeattributeval__id',
+                ],
+            },
+            field_id='id',
+        )
+
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.labeledshapeattributeval_set,
                 self.db_attributes[db_shape.label_id]["all"].values())
