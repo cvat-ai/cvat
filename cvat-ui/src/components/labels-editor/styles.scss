@@ -168,10 +168,12 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-skeleton-configurator-action-buttons,
 .cvat-skeleton-configurator-svg-buttons {
-    > button, > span {
+    > button,
+    > span {
         width: 45%;
 
-        button, .ant-upload {
+        button,
+        .ant-upload {
             width: 100%;
         }
     }
@@ -181,7 +183,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     font-size: 4px;
     font-weight: bold;
     pointer-events: none;
-    box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 1);
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 1);
 }
 
 .ant-menu.cvat-skeleton-configurator-context-menu {
