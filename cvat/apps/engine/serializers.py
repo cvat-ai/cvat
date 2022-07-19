@@ -438,7 +438,10 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'subset', 'organization', 'target_storage', 'source_storage',
         )
         read_only_fields = fields
-        extra_kwargs = { 'organization': { 'allow_null': True } }
+        extra_kwargs = {
+            'organization': { 'allow_null': True },
+            'overlap': { 'allow_null': True },
+        }
 
     def to_representation(self, instance):
         response = super().to_representation(instance)

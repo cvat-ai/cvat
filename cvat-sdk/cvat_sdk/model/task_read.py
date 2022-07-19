@@ -84,7 +84,7 @@ class TaskRead(ModelNormal):
 
       updated_date (datetime): [optional]  # noqa: E501
 
-      overlap (int): [optional]  # noqa: E501
+      overlap (int, none_type): [optional]  # noqa: E501
 
       segment_size (int): [optional]  # noqa: E501
 
@@ -185,7 +185,10 @@ class TaskRead(ModelNormal):
             "bug_tracker": (str,),  # noqa: E501
             "created_date": (datetime,),  # noqa: E501
             "updated_date": (datetime,),  # noqa: E501
-            "overlap": (int,),  # noqa: E501
+            "overlap": (
+                int,
+                none_type,
+            ),  # noqa: E501
             "segment_size": (int,),  # noqa: E501
             "status": (
                 bool,
@@ -294,7 +297,7 @@ class TaskRead(ModelNormal):
     [optional]
     """
 
-    overlap: int  # noqa: E501
+    overlap: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -455,7 +458,7 @@ class TaskRead(ModelNormal):
 
             updated_date (datetime): [optional]  # noqa: E501
 
-            overlap (int): [optional]  # noqa: E501
+            overlap (int, none_type): [optional]  # noqa: E501
 
             segment_size (int): [optional]  # noqa: E501
 
@@ -598,7 +601,7 @@ class TaskRead(ModelNormal):
 
             updated_date (datetime): [optional]  # noqa: E501
 
-            overlap (int): [optional]  # noqa: E501
+            overlap (int, none_type): [optional]  # noqa: E501
 
             segment_size (int): [optional]  # noqa: E501
 

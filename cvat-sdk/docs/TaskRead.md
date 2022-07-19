@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 **bug_tracker** | **str** |  | [optional] [readonly] 
 **created_date** | **datetime** |  | [optional] [readonly] 
 **updated_date** | **datetime** |  | [optional] [readonly] 
-**overlap** | **int** |  | [optional] [readonly] 
+**overlap** | **int, none_type** |  | [optional] [readonly] 
 **segment_size** | **int** |  | [optional] [readonly] 
 **status** | **bool, date, datetime, dict, float, int, list, str, none_type** |  | [optional] [readonly] 
 **labels** | [**[Label]**](Label.md) |  | [optional] 
