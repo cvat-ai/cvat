@@ -708,12 +708,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.deleteObjects(deleted);
             this.addObjects(created);
 
+            const updatedSkeletons = updated.filter((state: any): boolean => state.shapeType === 'skeleton');
+            const updatedNotSkeletons = updated.filter((state: any): boolean => state.shapeType !== 'skeleton');
             // todo: implement updateObjects for skeletons, add group and color to updateObjects function
             // change colors if necessary (for example when instance color is changed)
-            // this.updateObjects(updated);
+            this.updateObjects(updatedNotSkeletons);
 
-            this.deleteObjects(updated);
-            this.addObjects(updated);
+            this.deleteObjects(updatedSkeletons);
+            this.addObjects(updatedSkeletons);
 
             this.sortObjects();
 
