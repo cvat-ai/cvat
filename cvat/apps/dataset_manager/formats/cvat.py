@@ -2,29 +2,34 @@
 #
 # SPDX-License-Identifier: MIT
 
-from io import BufferedWriter
 import os
 import os.path as osp
-from glob import glob
-from typing import Callable
 import zipfile
 from collections import OrderedDict
+from copy import copy
+from glob import glob
+from io import BufferedWriter
 from tempfile import TemporaryDirectory
+from typing import Callable
+
+from datumaro.components.annotation import (AnnotationType, Bbox, Label,
+                                            LabelCategories, Points, Polygon,
+                                            PolyLine)
+from datumaro.components.dataset import Dataset, DatasetItem
+from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
+                                           Importer)
+from datumaro.util.image import Image
 from defusedxml import ElementTree
 
-from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.components.extractor import Importer, Extractor, DEFAULT_SUBSET_NAME
-from datumaro.components.annotation import (
-    AnnotationType, Bbox, Points, Polygon, PolyLine, Label, LabelCategories,
-)
-
-from datumaro.util.image import Image
-
-from cvat.apps.dataset_manager.bindings import TaskData, match_dm_item, ProjectData, get_defaulted_subset, import_dm_annotations
+from cvat.apps.dataset_manager.bindings import (ProjectData, TaskData,
+                                                get_defaulted_subset,
+                                                import_dm_annotations,
+                                                match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
 
-from .registry import exporter, importer, dm_env
+from .registry import dm_env, exporter, importer
+
 
 class CvatPath:
     IMAGES_DIR = 'images'
@@ -963,6 +968,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
                         ("label", elem.label),
                         ("outside", str(int(elem.outside))),
                         ("occluded", str(int(elem.occluded))),
+                        ("keyframe", str(int(elem.keyframe))),
                     ])
 
                     if elem.type == "rectangle":
@@ -1184,6 +1190,8 @@ def load_anno(file_object, annotations):
             if el.tag in supported_shapes and shape['type'] == 'skeleton' and el.tag != 'skeleton':
                 if track is None:
                     element['frame'] = frame_id
+                else:
+                    element['keyframe'] = el.attrib['keyframe'] == "1"
                 element['label_id'] = annotations._get_label_id(el.attrib['label'])
 
                 element['occluded'] = el.attrib['occluded'] == '1'
@@ -1273,8 +1281,16 @@ def load_anno(file_object, annotations):
                         shape['points'].extend(map(float, pair.split(',')))
 
                 if track is not None:
-                    if shape["keyframe"]:
+                    if shape['keyframe']:
                         track.shapes.append(annotations.TrackedShape(**shape))
+                    elif shape['type'] == 'skeleton':
+                        skeleton_shape = copy(shape)
+                        skeleton_shape['elements'] = []
+                        for elem in shape['elements']:
+                            if elem['keyframe'] == True:
+                                skeleton_shape['elements'].append(elem)
+                        if len(skeleton_shape['elements']):
+                            track.shapes.append(annotations.TrackedShape(**skeleton_shape))
                 else:
                     annotations.add_shape(annotations.LabeledShape(**shape))
                 shape = None
