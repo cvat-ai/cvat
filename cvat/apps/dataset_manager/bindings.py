@@ -175,7 +175,7 @@ class TaskData(InstanceLabelData):
     TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, source, shapes')
     TrackedSkeleton = namedtuple(
-        'TrackedSkeleton', 'type, points, occluded, outside, attributes, label, shape_id')
+        'TrackedSkeleton', 'type, points, occluded, outside, attributes, label, keyframe, shape_id')
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
@@ -338,6 +338,7 @@ class TaskData(InstanceLabelData):
                 points=shape["points"],
                 occluded=shape["occluded"],
                 outside=shape.get("outside", False),
+                keyframe=shape.get("keyframe", False),
                 shape_id=shape_id,
                 attributes=self._export_attributes(shape["attributes"]),
             ))
@@ -695,6 +696,7 @@ class ProjectData(InstanceLabelData):
         points: List[float] = attrib()
         occluded: bool = attrib()
         outside: bool = attrib()
+        keyframe: bool = attrib()
         attributes: List[InstanceLabelData.Attribute] = attrib()
         shape_id: int = attrib(default=0)
 
@@ -874,6 +876,7 @@ class ProjectData(InstanceLabelData):
                 points=shape["points"],
                 occluded=shape["occluded"],
                 outside=shape.get("outside", False),
+                keyframe=shape.get("keyframe", False),
                 shape_id=shape_id,
                 attributes=self._export_attributes(shape["attributes"]),
             ))

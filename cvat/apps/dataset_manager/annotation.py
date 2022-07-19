@@ -441,6 +441,7 @@ class TrackManager(ObjectManager):
 
         def copy_skeleton(source, points=None):
             copied = deepcopy(source)
+            copied["keyframe"] = False
             if points is not None:
                 copied["points"] = points
             return copied
@@ -702,25 +703,42 @@ class TrackManager(ObjectManager):
         def skeleton_interpolation(shape0, shape1):
             shapes = []
             distance = shape1["frame"] - shape0["frame"]
-            diff = np.subtract(shape1["points"], shape0["points"])
+
+            elems1 = {}
+            for elem1 in shape1["elements"]:
+                elems1[elem1["label_id"]] = elem1
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
                 rotation = (shape0["rotation"] + find_angle_diff(
                     shape1["rotation"], shape0["rotation"],
                 ) * offset + 360) % 360
-                points = shape0["points"] + diff * offset
+                points = []
 
                 elements = []
-                for elem0, elem1 in zip(shape0["elements"], shape1["elements"]):
-                    elems_diff = np.subtract(elem1["points"], elem0["points"])
-                    points = elem0["points"] + elems_diff * offset
+                for elem0 in shape0["elements"]:
+                    if elem0["label_id"] in elems1:
+                        elem1 = elems1[elem0["label_id"]]
 
-                    elements.append(copy_skeleton(elem0, points.tolist()))
+                        elems_diff = np.subtract(elem1["points"], elem0["points"])
+                        points = elem0["points"] + elems_diff * offset
 
-                shape = copy_shape(shape0, frame, points.tolist(), rotation)
+                        elements.append(copy_skeleton(elem0, points.tolist()))
+                    else:
+                        elements.append(copy_skeleton(elem0))
+
+                shape = copy_shape(shape0, frame, rotation=rotation)
                 shape["elements"] = elements
                 shapes.append(shape)
+
+            elems = deepcopy(shape0["elements"])
+            for i, elem in enumerate(elems):
+                if elem["label_id"] in elems1:
+                    elems[i] = elems1[elem["label_id"]]
+                    elems[i]["keyframe"] = True
+                else:
+                    elems[i]["keyframe"] = False
+            shape1["elements"] = elems
 
             return shapes
 
@@ -752,6 +770,10 @@ class TrackManager(ObjectManager):
         shapes = []
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
+        if track["shapes"]:
+            for elem in track["shapes"][0]["elements"]:
+                elem["keyframe"] = True
+
         for shape in track["shapes"]:
             if prev_shape:
                 assert shape["frame"] > curr_frame
@@ -762,6 +784,12 @@ class TrackManager(ObjectManager):
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
+            if shape["type"] == str(ShapeType.SKELETON):
+                for elem in shape["elements"]:
+                    if not elem["keyframe"]:
+                        shape["keyframe"] = False
+                        break
+
             shapes.append(shape)
             curr_frame = shape["frame"]
             prev_shape = shape

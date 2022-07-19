@@ -245,7 +245,6 @@ class Annotation {
                     set: (newColor) => {
                         if (this.group && typeof newColor === 'string' && /^#[0-9A-F]{6}$/i.test(newColor)) {
                             this.groupColors[this.group] = newColor;
-                            this.updated = Date.now();
                         }
                     },
                 },
@@ -2690,8 +2689,13 @@ export class SkeletonTrack extends Track {
                 }, {}),
             });
 
-            shape.elements.forEach((element, idx) => {
+            shape.elements.forEach((element) => {
                 const label = sublabels.find((sublabel: Label): boolean => sublabel.id === element.label_id);
+                let idx = 0;
+                while (tracks[idx] && tracks[idx].label_id !== element.label_id) {
+                    idx += 1;
+                }
+
                 if (!tracks[idx]) {
                     tracks[idx] = {
                         frame: shape.frame,
@@ -3055,36 +3059,37 @@ export class SkeletonTrack extends Track {
         const result = {};
         for (const keyframe of allKeyframes) {
             const skeletonShape = this.get(keyframe);
-
-            const elements = this.elements.map((element, idx) => {
+            const shapeElements = [];
+            for (let idx = 0; idx < this.elements.length; idx += 1) {
                 const elementData = skeletonShape.elements[idx];
-                return ({
-                    id: element.shapes[keyframe]?.serverID,
-                    type: elementData.shapeType,
-                    label_id: elementData.label.id,
-                    occluded: elementData.occluded,
-                    outside: elementData.outside,
-                    points: elementData.points,
-                    rotation: 0,
-                    attributes: Object.keys(skeletonShape.attributes).reduce(
-                        (attributeAccumulator, attrID) => {
-                            attributeAccumulator.push({
-                                spec_id: attrID,
-                                value: skeletonShape.attributes[attrID],
-                            });
-
-                            return attributeAccumulator;
-                        },
-                        [],
-                    ),
-                });
-            });
+                if (elementData.keyframe) {
+                    shapeElements.push({
+                        id: this.elements[idx].shapes[keyframe]?.serverID,
+                        type: elementData.shapeType,
+                        label_id: elementData.label.id,
+                        occluded: elementData.occluded,
+                        outside: elementData.outside,
+                        points: elementData.points,
+                        rotation: 0,
+                        attributes: Object.keys(skeletonShape.attributes).reduce(
+                            (attributeAccumulator, attrID) => {
+                                attributeAccumulator.push({
+                                    spec_id: attrID,
+                                    value: skeletonShape.attributes[attrID],
+                                });
+                                return attributeAccumulator;
+                            },
+                            [],
+                        ),
+                    });
+                }
+            }
 
             result[keyframe] = {
                 id: this.shapes[keyframe]?.serverID,
                 type: this.shapeType,
-                occluded: elements.every((el) => el.occluded),
-                outside: elements.every((el) => el.outside),
+                occluded: shapeElements.every((el) => el.occluded),
+                outside: shapeElements.every((el) => el.outside),
                 group: skeletonShape.group.id,
                 source: skeletonShape.source,
                 z_order: skeletonShape.zOrder,
@@ -3103,7 +3108,7 @@ export class SkeletonTrack extends Track {
                     },
                     [],
                 ),
-                elements,
+                elements: shapeElements,
             };
         }
 
