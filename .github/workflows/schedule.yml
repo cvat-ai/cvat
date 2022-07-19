@@ -239,6 +239,7 @@ jobs:
 
       - name: REST API tests
         run: |
+          pip3 install --user cvat-sdk/
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/
           pytest tests/rest_api/ --stop-services
