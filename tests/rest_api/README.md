@@ -24,7 +24,8 @@ the server calling REST API directly (as it done by users).
    the root directory of the cloned CVAT repository:
 
    ```console
-   pip3 install --user -r tests/rest_api/requirements.txt
+   pip install cvat-sdk/
+   pip install -r tests/rest_api/requirements.txt
    pytest tests/rest_api/
    ```
 

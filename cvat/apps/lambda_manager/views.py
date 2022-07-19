@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -666,11 +667,13 @@ def return_response(success_code=status.HTTP_200_OK):
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
     retrieve=extend_schema(
+        operation_id='lambda_retrieve_functions',
         summary='Method returns the information about the function',
         responses={
             '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='Information about the function'),
         }),
     list=extend_schema(
+        operation_id='lambda_list_functions',
         summary='Method returns a list of functions')
 )
 class FunctionViewSet(viewsets.ViewSet):
@@ -710,6 +713,7 @@ class FunctionViewSet(viewsets.ViewSet):
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
     retrieve=extend_schema(
+        operation_id='lambda_retrieve_requests',
         summary='Method returns the status of the request',
         parameters=[
             # specify correct type
@@ -717,6 +721,7 @@ class FunctionViewSet(viewsets.ViewSet):
                 description='Request id'),
         ]),
     list=extend_schema(
+        operation_id='lambda_list_requests',
         summary='Method returns a list of requests'),
     #TODO
     create=extend_schema(

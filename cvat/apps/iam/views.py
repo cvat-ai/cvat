@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,7 +9,7 @@ from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from rest_framework.response import Response
-from rest_auth.registration.views import RegisterView
+from dj_rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
 from furl import furl
 
@@ -77,7 +78,6 @@ class ContextMiddleware:
         request.iam_context = SimpleLazyObject(lambda: get_context(request))
 
         return self.get_response(request)
-
 
 @extend_schema(tags=['auth'])
 @extend_schema_view(post=extend_schema(

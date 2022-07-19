@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -112,13 +113,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'rest_auth',
+    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    'rest_auth.registration',
+    'dj_rest_auth.registration',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.organizations',
@@ -177,7 +178,7 @@ REST_FRAMEWORK = {
         'anon': '100/minute',
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
@@ -508,7 +509,7 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    'VERSION': 'alpha',
+    'VERSION': 'alpha (2.0)',
     'CONTACT': {
         'name': 'Nikita Manovich',
         'url': 'https://github.com/nmanovic',
@@ -518,11 +519,10 @@ SPECTACULAR_SETTINGS = {
         'name': 'MIT License',
         'url': 'https://en.wikipedia.org/wiki/MIT_License',
     },
+
     'SERVE_PUBLIC': True,
-    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-    'SCHEMA_PATH_PREFIX': '/api',
-    'SCHEMA_PATH_PREFIX_TRIM': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+
     # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
@@ -538,5 +538,32 @@ SPECTACULAR_SETTINGS = {
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
+
+    # TODO: Our current implementation does not suppose this.
+    # Need to reconsider this later. It happens, for example,
+    # in TaskSerializer for data-originated fields - they can be empty.
+    # https://github.com/tfranzel/drf-spectacular/issues/54
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+
+    # Required for correct file upload type (bytes)
+    'COMPONENT_SPLIT_REQUEST': True,
+
+    'ENUM_NAME_OVERRIDES': {
+        'ShapeType': 'cvat.apps.engine.models.ShapeType',
+        'OperationStatus': 'cvat.apps.engine.models.StateChoice',
+        'ChunkType': 'cvat.apps.engine.models.DataChoice',
+        'StorageMethod': 'cvat.apps.engine.models.StorageMethodChoice',
+        'JobStatus': 'cvat.apps.engine.models.StatusChoice',
+        'JobStage': 'cvat.apps.engine.models.StageChoice',
+        'StorageType': 'cvat.apps.engine.models.StorageChoice',
+        'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+    },
+
+    # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
+    # some libraries (e.g. drf-nested-routers) use "_pk" suffixed path variables.
+    # This setting globally coerces path variables like "{user_pk}" to "{user_id}".
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SCHEMA_PATH_PREFIX_TRIM': False,
 }
 
