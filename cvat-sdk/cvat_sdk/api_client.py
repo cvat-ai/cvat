@@ -19,6 +19,7 @@ import mimetypes
 import os
 import re
 import typing
+from http.cookies import SimpleCookie
 from multiprocessing.pool import ThreadPool
 from typing import TYPE_CHECKING
 from urllib.parse import quote
@@ -84,15 +85,16 @@ class ApiClient(object):
     _pool = None
 
     def __init__(
-        self, configuration=None, header_name=None, header_value=None, cookie=None, pool_threads=1
+        self,
+        configuration: typing.Optional[Configuration] = None,
+        headers: typing.Optional[typing.Dict[str, str]] = None,
+        cookies: typing.Optional[typing.Dict[str, str]] = None,
+        pool_threads: int = 1,
     ):
         """
         :param configuration: configuration object for this client
-        :param header_name: a header to pass when making calls to the API.
-        :param header_value: a header value to pass when making calls to
-            the API.
-        :param cookie: a cookie to include in the header when making calls
-            to the API
+        :param headers: header to include when making calls to the API
+        :param cookies: cookies to include when making calls to the API
         :param pool_threads: The number of threads to use for async requests
             to the API. More threads means more concurrent API requests.
         """
@@ -103,10 +105,10 @@ class ApiClient(object):
         self.pool_threads = pool_threads
 
         self.rest_client = rest.RESTClientObject(configuration)
-        self.default_headers = {}
-        if header_name is not None:
-            self.default_headers[header_name] = header_value
-        self.cookie = cookie
+        self.default_headers: typing.Dict[str, str] = headers or {}
+        self.cookies = SimpleCookie()
+        if cookies:
+            self.cookies.update(cookies)
         # Set default User-Agent.
         self.user_agent = "OpenAPI-Generator/2.0-alpha/python"
 
@@ -195,9 +197,7 @@ class ApiClient(object):
 
         # header parameters
         header_params = header_params or {}
-        header_params.update(self.default_headers)
-        if self.cookie:
-            header_params["Cookie"] = self.cookie
+        header_params.update(self.get_common_headers())
         if header_params:
             header_params = self.sanitize_for_serialization(header_params)
             header_params = dict(self.parameters_to_tuples(header_params, collection_formats))
@@ -274,10 +274,27 @@ class ApiClient(object):
         self.last_response = response
 
         return_data = None
-        if _parse_response and response_schema:
-            return_data = self.deserialize(response, response_schema, _check_type=_check_type)
+        if _parse_response:
+            self._update_cookies_from_response(response)
+
+            if response_schema:
+                return_data = self.deserialize(response, response_schema, _check_type=_check_type)
 
         return (return_data, response)
+
+    def get_common_headers(self) -> typing.Dict[str, str]:
+        """
+        Returns a headers dict with all the required headers for requests
+        """
+
+        headers = {}
+        headers.update(self.default_headers)
+        if self.cookies:
+            headers["Cookie"] = self.cookies.output(header="")
+        return headers
+
+    def _update_cookies_from_response(self, response: urllib3.HTTPResponse):
+        self.cookies.update(SimpleCookie(response.getheader("Set-Cookie")))
 
     def parameters_to_multipart(self, params, collection_types):
         """Get parameters as list of tuples, formatting as json if value is collection_types
@@ -455,7 +472,8 @@ class ApiClient(object):
         :type collection_formats: dict, optional
         :param _parse_response: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
-                                 data. Default is True.
+                                 data. Response headers will not be
+                                 processed (cookies as well). Default is True.
         :type _parse_response: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request

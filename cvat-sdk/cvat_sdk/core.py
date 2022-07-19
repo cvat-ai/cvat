@@ -14,7 +14,6 @@ import mimetypes
 import os
 import os.path as osp
 from contextlib import ExitStack, closing
-from http.cookies import SimpleCookie
 from io import BytesIO
 from time import sleep
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -34,6 +33,7 @@ log = logging.getLogger(__name__)
 
 class CvatClient:
     def __init__(self, url: str, *, credentials: Optional[Tuple[str, str]] = None):
+        # TODO: use requests instead of urllib3 in ApiClient
         # TODO: try to autodetect schema
         self._api_map = _CVAT_API_V2(url)
         self.api = ApiClient(Configuration(host=url))
@@ -56,18 +56,13 @@ class CvatClient:
         raise NotImplementedError
 
     def login(self, credentials: Tuple[str, str]):
-        (auth, response) = self.api.auth_api.create_login(
+        (auth, _) = self.api.auth_api.create_login(
             models.LoginRequest(username=credentials[0], password=credentials[1])
         )
 
+        assert "sessionid" in self.api.cookies
+        assert "csrftoken" in self.api.cookies
         self.api.set_default_header("Authorization", "Token " + auth.key)
-
-        # TODO: use requests instead of urllib3
-        # TODO: add cookie handling to ApiClient
-        cookies = SimpleCookie(response.getheader("Set-Cookie"))
-        self.api.cookie = " ".join(
-            [cookies["sessionid"].output(header=""), cookies["csrftoken"].output(header="")]
-        )
 
     def create_task(
         self,
@@ -108,7 +103,8 @@ class CvatClient:
             (status, _) = self.api.tasks_api.retrieve_status(task.id)
 
             log.debug(
-                " Status=%s, Message=%s",
+                "Task %s creation status=%s, message=%s",
+                task.id,
                 status.state.value,
                 status.message,
             )
@@ -136,7 +132,7 @@ class CvatClient:
     def _create_git_repo(
         self, *, task_id: int, repo_url: str, status_check_period: int = 5, use_lfs: bool = True
     ):
-        common_headers = {"Cookie": self.api.cookie, **self.api.default_headers}
+        common_headers = self.api.get_common_headers()
 
         response = self.api.rest_client.POST(
             self._api_map.git_create(task_id),
@@ -273,8 +269,7 @@ class CvatClient:
                         headers={
                             "Content-Type": "multipart/form-data",
                             "Upload-Multiple": "",
-                            "Cookies": self.api.cookie,
-                            **self.api.default_headers,
+                            **self.api.get_common_headers(),
                         },
                     )
                 expect_status(200, response)
@@ -428,8 +423,7 @@ class CvatClient:
 
         headers = {}
         headers["Origin"] = cli.api.configuration.host  # required by CVAT server
-        headers["Cookie"] = cli.api.cookie
-        headers.update(cli.api.default_headers)
+        headers.update(cli.api.get_common_headers())
         tus_client = client.TusClient(url, headers=headers)
         return MyTusUploader(client=tus_client, api_client=cli.api, **kwargs)
 
@@ -466,8 +460,7 @@ class CvatClient:
             headers={
                 "Content-Type": "multipart/form-data",
                 "Upload-Start": "",
-                "Cookies": self.api.cookie,
-                **self.api.default_headers,
+                **self.api.get_common_headers(),
             },
         )
         expect_status(202, response)
@@ -479,8 +472,7 @@ class CvatClient:
             headers={
                 "Content-Type": "multipart/form-data",
                 "Upload-Finish": "",
-                "Cookies": self.api.cookie,
-                **self.api.default_headers,
+                **self.api.get_common_headers(),
             },
             post_params=dict(**(params or {}), **(data or {})),
         )
