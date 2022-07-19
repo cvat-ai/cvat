@@ -102,18 +102,17 @@ class LabelSerializer(SublabelSerializer):
     svg = serializers.CharField(allow_blank=True, required=False)
     elements = serializers.JSONField(required=False)
     edges = serializers.JSONField(required=False)
-    skeleton = SkeletonSerializer(required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'has_parent', 'skeleton')
+        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'has_parent')
 
     def to_representation(self, instance):
         label = super().to_representation(instance)
         if label['type'] == str(models.LabelType.SKELETON):
-            label['edges'] = label['skeleton']['edges']
-            label['elements'] = label['skeleton']['elements']
-            label['svg'] = label['skeleton']['svg']
+            label['edges'] = instance.skeleton.edges
+            label['elements'] = instance.skeleton.elements
+            label['svg'] = instance.skeleton.svg
         return label
 
     def validate(self, attrs):
