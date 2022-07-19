@@ -597,7 +597,7 @@ class DataChunkGetter:
         self.dimension = task_dim
 
 
-    def __call__(self, request, start, stop, db_data):
+    def __call__(self, request, start, stop, db_data, db_object):
         if not db_data:
             raise NotFound(detail='Cannot find requested data')
 
@@ -630,7 +630,7 @@ class DataChunkGetter:
             return HttpResponse(buf.getvalue(), content_type=mime)
 
         elif self.type == 'preview':
-            return sendfile(request, frame_provider.get_preview())
+            return sendfile(request, db_object.get_preview_path())
 
         elif self.type == 'context_image':
             if not (start <= self.number <= stop):
@@ -934,7 +934,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
                 self._object.dimension)
 
             return data_getter(request, self._object.data.start_frame,
-                self._object.data.stop_frame, self._object.data)
+                self._object.data.stop_frame, self._object.data, self._object.data)
 
     @extend_schema(methods=['PATCH'],
         operation_id='tasks_partial_update_data_file',
@@ -1492,7 +1492,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_job.segment.task.dimension)
 
         return data_getter(request, db_job.segment.start_frame,
-            db_job.segment.stop_frame, db_job.segment.task.data)
+            db_job.segment.stop_frame, db_job.segment.task.data, db_job)
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
         responses={
@@ -1988,7 +1988,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                 with NamedTemporaryFile() as temp_image:
                     storage.download_file(preview_path, temp_image.name)
                     reader = ImageListReader([temp_image.name])
-                    preview = reader.get_preview()
+                    preview = reader.get_preview(frame=0)
                     preview.save(db_storage.get_preview_path())
             content_type = mimetypes.guess_type(db_storage.get_preview_path())[0]
             return HttpResponse(open(db_storage.get_preview_path(), 'rb').read(), content_type)
