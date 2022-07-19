@@ -1,4 +1,3 @@
-.gitignore
 README.md
 cvat_sdk/__init__.py
 cvat_sdk/api/__init__.py

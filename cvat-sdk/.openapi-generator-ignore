@@ -34,3 +34,4 @@
 /tox.ini
 /.gitlab-ci.yml
 /.travis.yml
+/.gitignore
