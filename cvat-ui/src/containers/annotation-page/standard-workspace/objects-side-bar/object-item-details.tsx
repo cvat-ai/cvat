@@ -54,7 +54,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         },
     } = state;
 
-    const collapsedReferenceID = Number.isInteger(parentID) ? parentID : clientID;
     const collapsed = typeof statesCollapsed[clientID as number] === 'undefined' ? collapsedAll : statesCollapsed[clientID];
 
     return {

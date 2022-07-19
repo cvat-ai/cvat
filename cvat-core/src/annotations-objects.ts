@@ -245,6 +245,7 @@ class Annotation {
                     set: (newColor) => {
                         if (this.group && typeof newColor === 'string' && /^#[0-9A-F]{6}$/i.test(newColor)) {
                             this.groupColors[this.group] = newColor;
+                            this.updated = Date.now();
                         }
                     },
                 },

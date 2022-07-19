@@ -1723,8 +1723,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             updated: state.updated,
             frame: state.frame,
             label: state.label,
-
-            group: state.group,
+            group: { id: state.group.id, color: state.group.color },
             color: state.color,
             elements: state.shapeType === 'skeleton' ?
                 state.elements.map((element: any) => this.saveState(element)) : null,
@@ -1879,6 +1878,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         }
                     }
                 }
+            }
+
+            if (
+                drawnState.group.id !== state.group.id || drawnState.group.color !== state.group.color
+            ) {
+                shape.attr({ ...this.getShapeColorization(state) });
             }
 
             this.drawnStates[state.clientID] = this.saveState(state);

@@ -1429,12 +1429,12 @@ export function changeGroupColorAsync(group: number, color: string): ThunkAction
         const groupStates = state.annotation.annotations.states.filter(
             (_state: any): boolean => _state.group.id === group,
         );
-        if (groupStates.length) {
-            groupStates[0].group.color = color;
-            dispatch(updateAnnotationsAsync(groupStates));
-        } else {
-            dispatch(updateAnnotationsAsync([]));
+
+        for (const objectState of groupStates) {
+            objectState.group.color = color;
         }
+
+        dispatch(updateAnnotationsAsync(groupStates));
     };
 }
 
