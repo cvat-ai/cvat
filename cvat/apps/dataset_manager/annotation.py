@@ -704,21 +704,20 @@ class TrackManager(ObjectManager):
             shapes = []
             distance = shape1["frame"] - shape0["frame"]
 
-            elems1 = {}
-            for elem1 in shape1["elements"]:
-                elems1[elem1["label_id"]] = elem1
+            elements1 = {}
+            for elem in shape1["elements"]:
+                elements1[elem["label_id"]] = elem
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
                 rotation = (shape0["rotation"] + find_angle_diff(
                     shape1["rotation"], shape0["rotation"],
                 ) * offset + 360) % 360
-                points = []
 
                 elements = []
                 for elem0 in shape0["elements"]:
-                    if elem0["label_id"] in elems1:
-                        elem1 = elems1[elem0["label_id"]]
+                    if elem0["label_id"] in  elements1:
+                        elem1 =  elements1[elem0["label_id"]]
 
                         elems_diff = np.subtract(elem1["points"], elem0["points"])
                         points = elem0["points"] + elems_diff * offset
@@ -731,14 +730,14 @@ class TrackManager(ObjectManager):
                 shape["elements"] = elements
                 shapes.append(shape)
 
-            elems = deepcopy(shape0["elements"])
-            for i, elem in enumerate(elems):
-                if elem["label_id"] in elems1:
-                    elems[i] = elems1[elem["label_id"]]
-                    elems[i]["keyframe"] = True
+            elements1 = deepcopy(shape0["elements"])
+            for i, elem in enumerate(elements1):
+                if elem["label_id"] in  elements1:
+                    elements1[i] =  elements1[elem["label_id"]]
+                    elements1[i]["keyframe"] = True
                 else:
-                    elems[i]["keyframe"] = False
-            shape1["elements"] = elems
+                    elements1[i]["keyframe"] = False
+            shape1["elements"] = elements1
 
             return shapes
 
@@ -764,6 +763,8 @@ class TrackManager(ObjectManager):
                 shapes = polyshape_interpolation(shape0, shape1)
             elif is_skeleton:
                 shapes = skeleton_interpolation(shape0, shape1)
+            else:
+                raise NotImplementedError()
 
             return shapes
 

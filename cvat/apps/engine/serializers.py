@@ -8,7 +8,6 @@ import re
 import shutil
 
 from tempfile import NamedTemporaryFile
-from requests import request
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group

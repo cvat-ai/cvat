@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from email.policy import default
 import os
 import re
 import shutil
@@ -496,7 +495,7 @@ class Label(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
-    type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=None)
+    type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=LabelType.ANY)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sublabels')
 
     def __str__(self):
@@ -510,7 +509,7 @@ class Label(models.Model):
         unique_together = ('task', 'name', 'parent')
 
 class Skeleton(models.Model):
-    root = models.OneToOneField(Label, on_delete=models.CASCADE, null=True, default=None)
+    root = models.OneToOneField(Label, on_delete=models.CASCADE)
     svg = models.TextField(null=True, default=None)
     elements = models.JSONField(null=True)
     edges = models.JSONField(null=True)

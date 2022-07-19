@@ -1287,7 +1287,7 @@ def load_anno(file_object, annotations):
                         skeleton_shape = copy(shape)
                         skeleton_shape['elements'] = []
                         for elem in shape['elements']:
-                            if elem['keyframe'] == True:
+                            if elem['keyframe']:
                                 skeleton_shape['elements'].append(elem)
                         if len(skeleton_shape['elements']):
                             track.shapes.append(annotations.TrackedShape(**skeleton_shape))
