@@ -3071,11 +3071,11 @@ export class SkeletonTrack extends Track {
                         outside: elementData.outside,
                         points: elementData.points,
                         rotation: 0,
-                        attributes: Object.keys(skeletonShape.attributes).reduce(
+                        attributes: Object.keys(elementData.attributes).reduce(
                             (attributeAccumulator, attrID) => {
                                 attributeAccumulator.push({
                                     spec_id: attrID,
-                                    value: skeletonShape.attributes[attrID],
+                                    value: elementData.attributes[attrID],
                                 });
                                 return attributeAccumulator;
                             },
