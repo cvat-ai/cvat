@@ -16,7 +16,7 @@ import { PlayCircleOutlined, LaptopOutlined } from '@ant-design/icons';
 import { setSettings } from 'actions/settings-actions';
 import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspace-settings';
 import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 interface SettingsModalProps {
     visible: boolean;

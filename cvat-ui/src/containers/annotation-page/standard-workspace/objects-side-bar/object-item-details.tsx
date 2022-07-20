@@ -4,7 +4,7 @@
 
 import React, { Dispatch } from 'react';
 import { ObjectState } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { AnyAction } from 'redux';
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';

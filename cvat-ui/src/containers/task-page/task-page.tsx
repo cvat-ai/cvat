@@ -9,7 +9,7 @@ import { RouteComponentProps } from 'react-router';
 import { getTasksAsync } from 'actions/tasks-actions';
 
 import TaskPageComponent from 'components/task-page/task-page';
-import { Task, CombinedState } from 'reducers/interfaces';
+import { Task, CombinedState } from 'reducers';
 
 type Props = RouteComponentProps<{ id: string }>;
 

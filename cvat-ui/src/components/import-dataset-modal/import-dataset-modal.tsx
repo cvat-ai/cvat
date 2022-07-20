@@ -18,7 +18,7 @@ import {
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 
 import ImportDatasetStatusModal from './import-dataset-status-modal';

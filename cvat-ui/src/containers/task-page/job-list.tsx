@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 
 import JobListComponent from 'components/task-page/job-list';
 import { updateJobAsync } from 'actions/tasks-actions';
-import { Task } from 'reducers/interfaces';
+import { Task } from 'reducers';
 
 interface OwnProps {
     task: Task;

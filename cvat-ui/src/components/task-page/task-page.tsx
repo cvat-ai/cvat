@@ -15,7 +15,7 @@ import JobListContainer from 'containers/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import { Task } from 'reducers/interfaces';
+import { Task } from 'reducers';
 import TopBarComponent from './top-bar';
 
 interface TaskPageComponentProps {

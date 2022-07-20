@@ -19,7 +19,7 @@ import Icon, {
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { ObjectType, ShapeType } from 'reducers/interfaces';
+import { ObjectType, ShapeType } from 'reducers';
 import {
     ObjectOutsideIcon, FirstIcon, LastIcon, PreviousIcon, NextIcon,
 } from 'icons';

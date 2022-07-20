@@ -6,7 +6,7 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { FormatsActionTypes, FormatsActions } from 'actions/formats-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 
-import { FormatsState } from './interfaces';
+import { FormatsState } from '.';
 
 const defaultState: FormatsState = {
     annotationFormats: null,

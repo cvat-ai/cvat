@@ -27,7 +27,7 @@ import {
     GridColor,
     ObjectType,
     Workspace,
-} from 'reducers/interfaces';
+} from 'reducers';
 
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';

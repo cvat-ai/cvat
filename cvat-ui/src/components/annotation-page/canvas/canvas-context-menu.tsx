@@ -9,7 +9,7 @@ import Menu from 'antd/lib/menu';
 import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { Workspace } from 'reducers/interfaces';
+import { Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
 import consts from 'consts';
 

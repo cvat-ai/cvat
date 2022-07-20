@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
-import { Task, TasksQuery, CombinedState } from 'reducers/interfaces';
+import { Task, TasksQuery, CombinedState } from 'reducers';
 import TasksPageComponent from 'components/tasks-page/tasks-page';
 
 interface StateToProps {

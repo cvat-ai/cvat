@@ -2643,13 +2643,32 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     circle.addClass('cvat_canvas_hidden');
                 }
 
-                const mouseover = (): void => {
+                const mouseover = (e: MouseEvent): void => {
                     const locked = this.drawnStates[state.clientID].lock;
                     if (!locked) {
                         circle.attr({
                             'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
                         });
+
+                        const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
+                        const event: CustomEvent = new CustomEvent('canvas.moved', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                x: x - this.geometry.offset,
+                                y: y - this.geometry.offset,
+                                activatedElementID: element.clientID,
+                                states: this.controller.objects,
+                            },
+                        });
+
+                        this.canvas.dispatchEvent(event);
                     }
+                };
+
+                const mousemove = (e: MouseEvent): void => {
+                    e.stopPropagation();
+                    e.preventDefault();
                 };
 
                 const mouseleave = (): void => {
@@ -2660,10 +2679,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 circle.on('mouseover', mouseover);
                 circle.on('mouseleave', mouseleave);
+                circle.on('mousemove', mousemove);
                 circle.on('remove', () => {
                     circle.off('remove');
                     circle.off('mouseover', mouseover);
                     circle.off('mouseleave', mouseleave);
+                    circle.off('mousemove', mousemove);
                 });
 
                 svgElements[element.clientID] = circle;

@@ -9,7 +9,7 @@ import Modal from 'antd/lib/modal';
 
 import { ThunkDispatch } from 'utils/redux';
 import { modelsActions, startInferenceAsync } from 'actions/models-actions';
-import { Model, CombinedState } from 'reducers/interfaces';
+import { Model, CombinedState } from 'reducers';
 import DetectorRunner from './detector-runner';
 
 interface StateToProps {

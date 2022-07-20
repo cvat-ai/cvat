@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
-import { JobsQuery } from 'reducers/interfaces';
+import { JobsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,

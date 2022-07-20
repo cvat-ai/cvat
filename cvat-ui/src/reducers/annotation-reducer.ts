@@ -18,7 +18,7 @@ import {
     ObjectType,
     ShapeType,
     Workspace,
-} from './interfaces';
+} from '.';
 
 function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
     return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
@@ -78,6 +78,7 @@ const defaultState: AnnotationState = {
     },
     annotations: {
         activatedStateID: null,
+        activatedElementID: null,
         activatedAttributeID: null,
         saving: {
             forceExit: false,
@@ -712,7 +713,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
-            const { activatedStateID, activatedAttributeID } = action.payload;
+            const { activatedStateID, activatedElementID, activatedAttributeID } = action.payload;
 
             const {
                 canvas: { activeControl, instance },
@@ -727,6 +728,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID,
+                    activatedElementID,
                     activatedAttributeID,
                 },
             };
@@ -1130,6 +1132,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 workspace,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                    activatedAttributeID: null,
+                },
             };
         }
         case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {

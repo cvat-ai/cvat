@@ -8,7 +8,7 @@ import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { PointIcon } from 'icons';
-import { ShapeType } from 'reducers/interfaces';
+import { ShapeType } from 'reducers';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';

@@ -465,6 +465,7 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.drawInstance.on('drawstop', () => {
+            this.drawInstance.off('drawstop');
             const points = this.getFinalEllipseCoordinates(readPointsFromShape(this.drawInstance), false);
             const { shapeType, redraw: clientID } = this.drawData;
             this.release();

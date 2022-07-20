@@ -8,7 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
-import { CombinedState, DimensionType } from 'reducers/interfaces';
+import { CombinedState, DimensionType } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { shift } from 'utils/math';
 

@@ -9,7 +9,7 @@ import Collapse from 'antd/lib/collapse';
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
+import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import ItemBasics from './object-item-basics';
 
 export function getColor(state: ObjectState, colorBy: ColorBy): string {

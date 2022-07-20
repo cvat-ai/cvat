@@ -12,7 +12,7 @@ import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, DimensionType } from 'reducers/interfaces';
+import { CombinedState, DimensionType } from 'reducers';
 import { showStatistics } from 'actions/annotation-actions';
 
 interface StateToProps {

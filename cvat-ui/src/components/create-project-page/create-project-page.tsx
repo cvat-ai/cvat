@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { connect } from 'react-redux';
 import CreateProjectContent from './create-project-content';
-import { CombinedState } from '../../reducers/interfaces';
+import { CombinedState } from '../../reducers';
 import CreateProjectContext, { ICreateProjectContext } from './create-project.context';
 
 function CreateProjectPageComponent(props: StateToProps): JSX.Element {

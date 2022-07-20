@@ -17,7 +17,7 @@ import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import { omit } from 'lodash';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;

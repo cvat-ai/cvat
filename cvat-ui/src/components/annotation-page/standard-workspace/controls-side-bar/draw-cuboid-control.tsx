@@ -8,7 +8,7 @@ import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ShapeType } from 'reducers/interfaces';
+import { ShapeType } from 'reducers';
 
 import { CubeIcon } from 'icons';
 

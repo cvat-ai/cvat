@@ -4,7 +4,7 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
-import { ActiveControl } from 'reducers/interfaces';
+import { ActiveControl } from 'reducers';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 import MoveControl, {
     Props as MoveControlProps,

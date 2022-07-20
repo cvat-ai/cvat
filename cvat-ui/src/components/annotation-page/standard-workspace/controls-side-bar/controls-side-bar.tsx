@@ -7,7 +7,7 @@ import Layout from 'antd/lib/layout';
 
 import {
     ActiveControl, ObjectType, Rotation, ShapeType,
-} from 'reducers/interfaces';
+} from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Label } from 'components/labels-editor/common';

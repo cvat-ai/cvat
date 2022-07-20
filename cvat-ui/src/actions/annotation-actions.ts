@@ -28,7 +28,7 @@ import {
     ShapeType,
     Task,
     Workspace,
-} from 'reducers/interfaces';
+} from 'reducers';
 import { updateJobAsync } from './tasks-actions';
 import { switchToolsBlockerState } from './settings-actions';
 
@@ -589,11 +589,16 @@ export function copyShape(objectState: any): AnyAction {
     };
 }
 
-export function activateObject(activatedStateID: number | null, activatedAttributeID: number | null): AnyAction {
+export function activateObject(
+    activatedStateID: number | null,
+    activatedElementID: number | null,
+    activatedAttributeID: number | null,
+): AnyAction {
     return {
         type: AnnotationActionTypes.ACTIVATE_OBJECT,
         payload: {
             activatedStateID,
+            activatedElementID,
             activatedAttributeID,
         },
     };
@@ -1267,7 +1272,7 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
-                dispatch(activateObject(null, null));
+                dispatch(activateObject(null, null, null));
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());

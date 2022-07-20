@@ -23,7 +23,7 @@ import {
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
 import { getCore } from 'cvat-core-wrapper';

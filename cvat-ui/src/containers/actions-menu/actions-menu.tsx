@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 import { modelsActions } from 'actions/models-actions';
 import {
@@ -97,13 +97,14 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         openMoveTaskToProjectWindow,
     } = props;
 
-    function onClickMenu(params: MenuInfo): void {
+    const onClickMenu = (params: MenuInfo): void => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
             showExportModal(taskInstance);
         } else if (action === Actions.DELETE_TASK) {
             deleteTask(taskInstance);
         } else if (action === Actions.OPEN_BUG_TRACKER) {
+            /* eslint-disable-next-line security/detect-non-literal-fs-filename */
             window.open(`${taskInstance.bugTracker}`, '_blank');
         } else if (action === Actions.RUN_AUTO_ANNOTATION) {
             openRunModelWindow(taskInstance);
@@ -112,14 +113,14 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
             openMoveTaskToProjectWindow(taskInstance.id);
         }
-    }
+    };
 
-    function onUploadAnnotations(format: string, file: File): void {
+    const onUploadAnnotations = (format: string, file: File): void => {
         const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
         if (loader && file) {
             loadAnnotations(taskInstance, loader, file);
         }
-    }
+    };
 
     return (
         <ActionsMenuComponent

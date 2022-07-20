@@ -6,7 +6,7 @@ import { ExportActions, ExportActionTypes } from 'actions/export-actions';
 import { getCore } from 'cvat-core-wrapper';
 import deepCopy from 'utils/deep-copy';
 
-import { ExportState } from './interfaces';
+import { ExportState } from '.';
 
 const core = getCore();
 

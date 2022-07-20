@@ -15,7 +15,7 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     ObjectType, ShapeType, ColorBy, DimensionType,
-} from 'reducers/interfaces';
+} from 'reducers';
 import ColorPicker from './color-picker';
 
 interface Props {

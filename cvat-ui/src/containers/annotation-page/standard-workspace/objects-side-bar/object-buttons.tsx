@@ -9,7 +9,7 @@ import { LogType } from 'cvat-logger';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
 import { updateAnnotationsAsync, changeFrameAsync } from 'actions/annotation-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
 interface OwnProps {

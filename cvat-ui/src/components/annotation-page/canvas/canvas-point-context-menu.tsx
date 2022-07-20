@@ -8,7 +8,7 @@ import Button from 'antd/lib/button';
 import { DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { connect } from 'react-redux';
 
-import { CombinedState, ContextMenuType } from 'reducers/interfaces';
+import { CombinedState, ContextMenuType } from 'reducers';
 import { updateAnnotationsAsync, updateCanvasContextMenu } from 'actions/annotation-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 

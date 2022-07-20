@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { JobsActions, JobsActionTypes } from 'actions/jobs-actions';
-import { JobsState } from './interfaces';
+import { JobsState } from '.';
 
 const defaultState: JobsState = {
     fetching: false,

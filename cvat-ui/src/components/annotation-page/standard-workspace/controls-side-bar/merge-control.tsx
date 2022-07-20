@@ -7,7 +7,7 @@ import Icon from '@ant-design/icons';
 
 import { MergeIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ActiveControl } from 'reducers/interfaces';
+import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 export interface Props {

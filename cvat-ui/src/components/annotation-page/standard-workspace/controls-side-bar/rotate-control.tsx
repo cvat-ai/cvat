@@ -7,7 +7,7 @@ import Icon from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 
 import { RotateIcon } from 'icons';
-import { Rotation } from 'reducers/interfaces';
+import { Rotation } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import withVisibilityHandling from './handle-popover-visibility';
 
