@@ -154,6 +154,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     ActiveControl.DRAW_POLYLINE,
                     ActiveControl.DRAW_RECTANGLE,
                     ActiveControl.DRAW_CUBOID,
+                    ActiveControl.DRAW_ELLIPSE,
+                    ActiveControl.DRAW_SKELETON,
                     ActiveControl.AI_TOOLS,
                     ActiveControl.OPENCV_TOOLS,
                 ].includes(activeControl);

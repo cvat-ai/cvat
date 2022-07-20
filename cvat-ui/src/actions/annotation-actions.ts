@@ -1534,6 +1534,8 @@ export function pasteShapeAsync(): ThunkAction {
                 activeControl = ActiveControl.DRAW_POLYLINE;
             } else if (initialState.shapeType === ShapeType.CUBOID) {
                 activeControl = ActiveControl.DRAW_CUBOID;
+            } else if (initialState.shapeType === ShapeType.ELLIPSE) {
+                activeControl = ActiveControl.DRAW_ELLIPSE;
             } else if (initialState.shapeType === ShapeType.SKELETON) {
                 activeControl = ActiveControl.DRAW_SKELETON;
             }
@@ -1693,6 +1695,8 @@ export function redrawShapeAsync(): ThunkAction {
                     activeControl = ActiveControl.DRAW_POLYLINE;
                 } else if (state.shapeType === ShapeType.CUBOID) {
                     activeControl = ActiveControl.DRAW_CUBOID;
+                } else if (state.shapeType === ShapeType.SKELETON) {
+                    activeControl = ActiveControl.DRAW_SKELETON;
                 }
 
                 dispatch({

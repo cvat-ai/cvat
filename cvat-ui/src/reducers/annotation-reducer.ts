@@ -492,6 +492,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeControl = ActiveControl.DRAW_ELLIPSE;
             } else if (payload.activeShapeType === ShapeType.CUBOID) {
                 activeControl = ActiveControl.DRAW_CUBOID;
+            } else if (payload.activeShapeType === ShapeType.SKELETON) {
+                activeControl = ActiveControl.DRAW_SKELETON;
             } else if (payload.activeObjectType === ObjectType.TAG) {
                 activeControl = ActiveControl.CURSOR;
             }
