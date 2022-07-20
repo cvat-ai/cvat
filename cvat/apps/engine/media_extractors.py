@@ -111,7 +111,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self):
+    def get_preview(self, frame):
         pass
 
     @abstractmethod
@@ -198,11 +198,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self):
+    def get_preview(self, frame):
         if self._dimension == DimensionType.DIM_3D:
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
         else:
-            fp = open(self._source_path[0], "rb")
+            fp = open(self._source_path[frame], "rb")
         return self._get_preview(fp)
 
     def get_image_size(self, i):
@@ -338,12 +338,13 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-    def get_preview(self):
+    def get_preview(self, frame):
         if self._dimension == DimensionType.DIM_3D:
             # TODO
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
             return self._get_preview(fp)
-        io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
+
+        io_image = io.BytesIO(self._zip_source.read(self._source_path[frame]))
         return self._get_preview(io_image)
 
     def get_image_size(self, i):
@@ -453,19 +454,23 @@ class VideoReader(IMediaReader):
                 duration = duration_sec * tb_denominator
         return duration
 
-    def get_preview(self):
+    def get_preview(self, frame):
         container = self._get_av_container()
         stream = container.streams.video[0]
-        preview = next(container.decode(stream))
-        return self._get_preview(preview.to_image() if not stream.metadata.get('rotate') \
-            else av.VideoFrame().from_ndarray(
-                rotate_image(
-                    preview.to_ndarray(format='bgr24'),
-                    360 - int(container.streams.video[0].metadata.get('rotate'))
-                ),
-                format ='bgr24'
-            ).to_image()
-        )
+        tb_denominator = stream.time_base.denominator
+        needed_time = int((frame / stream.guessed_rate) * tb_denominator)
+        container.seek(offset=needed_time, stream=stream)
+        for packet in container.demux(stream):
+            for frame in packet.decode():
+                return self._get_preview(frame.to_image() if not stream.metadata.get('rotate') \
+                    else av.VideoFrame().from_ndarray(
+                        rotate_image(
+                            frame.to_ndarray(format='bgr24'),
+                            360 - int(container.streams.video[0].metadata.get('rotate'))
+                        ),
+                        format ='bgr24'
+                    ).to_image()
+                )
 
     def get_image_size(self, i):
         image = (next(iter(self)))[0]
