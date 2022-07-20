@@ -15,7 +15,6 @@ from io import BytesIO
 from time import sleep
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import requests
 import tqdm
 from PIL import Image
 from tusclient import client, uploader
@@ -292,16 +291,16 @@ class CvatClient:
     def tasks_delete(self, task_ids, **kwargs):
         """Delete a list of tasks, ignoring those which don't exist."""
         for task_id in task_ids:
-            url = self.api.tasks_id(task_id)
-            response = self.session.delete(url)
-            try:
-                response.raise_for_status()
-                log.info("Task ID {} deleted".format(task_id))
-            except requests.exceptions.HTTPError as e:
-                if response.status_code == 404:
-                    log.info("Task ID {} not found".format(task_id))
-                else:
-                    raise e
+            (_, response) = self.api.tasks_api.destroy(task_id, _check_status=False)
+            if 200 <= response.status <= 299:
+                log.debug(f"Task ID {task_id} deleted")
+            elif response.status == 404:
+                log.debug(f"Task ID {task_id} not found")
+            else:
+                log.debug(
+                    f"Failed to delete task ID {task_id}: "
+                    f"{response.msg} (status {response.status})"
+                )
 
     def tasks_frame(self, task_id, frame_ids, outdir="", quality="original", **kwargs):
         """Download the requested frame numbers for a task and save images as
