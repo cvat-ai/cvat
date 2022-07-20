@@ -10,20 +10,19 @@ import logging
 import mimetypes
 import os
 import os.path as osp
-from contextlib import ExitStack, closing
+from contextlib import closing
 from io import BytesIO
 from time import sleep
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from PIL import Image
-from tusclient import client, uploader
-from tusclient.request import TusRequest, TusUploadFailed
 
 from cvat_sdk import ApiClient, ApiException, ApiValueError, Configuration, models
 from cvat_sdk.usecases.helpers import get_paginated_collection
 from cvat_sdk.usecases.progress_reporter import ProgressReporter
 from cvat_sdk.usecases.types import ResourceType
-from cvat_sdk.usecases.utils import StreamWithProgress, expect_status, filter_dict
+from cvat_sdk.usecases.uploading import Uploader
+from cvat_sdk.usecases.utils import expect_status, filter_dict
 
 log = logging.getLogger(__name__)
 
@@ -164,42 +163,6 @@ class CvatClient:
 
         log.debug("Dataset repository creation completed with status: %s.", status)
 
-    MAX_REQUEST_SIZE = 100 * 2**20
-
-    def _split_files_by_requests(
-        self, filenames: List[str]
-    ) -> Tuple[List[Tuple[List[str], int]], List[str], int]:
-        bulk_files: Dict[str, int] = {}
-        separate_files: Dict[str, int] = {}
-
-        # sort by size
-        for filename in filenames:
-            filename = os.path.abspath(filename)
-            file_size = os.stat(filename).st_size
-            if self.MAX_REQUEST_SIZE < file_size:
-                separate_files[filename] = file_size
-            else:
-                bulk_files[filename] = file_size
-
-        total_size = sum(bulk_files.values()) + sum(separate_files.values())
-
-        # group small files by requests
-        bulk_file_groups: List[Tuple[List[str], int]] = []
-        current_group_size: int = 0
-        current_group: List[str] = []
-        for filename, file_size in bulk_files.items():
-            if self.MAX_REQUEST_SIZE < current_group_size + file_size:
-                bulk_file_groups.append((current_group, current_group_size))
-                current_group_size = 0
-                current_group = []
-
-            current_group.append(filename)
-            current_group_size += file_size
-        if current_group:
-            bulk_file_groups.append((current_group, current_group_size))
-
-        return bulk_file_groups, separate_files, total_size
-
     def upload_task_data(
         self,
         task_id: int,
@@ -212,7 +175,7 @@ class CvatClient:
         """Add local, remote, or shared files to an existing task."""
         data = {}
         if resource_type is ResourceType.LOCAL:
-            bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
+            pass # handled later
         elif resource_type is ResourceType.REMOTE:
             data = {f"remote_files[{i}]": f for i, f in enumerate(resources)}
         elif resource_type is ResourceType.SHARE:
@@ -244,40 +207,12 @@ class CvatClient:
                 _content_type="multipart/form-data",
             )
         elif resource_type == ResourceType.LOCAL:
-            if pbar is not None:
-                pbar.start(total_size, desc="Uploading data")
-
             url = self._api_map.make_endpoint_url(
                 self.api.tasks_api.create_data_endpoint.path.format(id=task_id)
             )
-            self._tus_start_upload(url)
 
-            for group, group_size in bulk_file_groups:
-                with ExitStack() as es:
-                    files = {}
-                    for i, filename in enumerate(group):
-                        files[f"client_files[{i}]"] = (
-                            filename,
-                            es.enter_context(closing(open(filename, "rb"))).read(),
-                        )
-                    response = self.api.rest_client.POST(
-                        url,
-                        post_params=dict(**data, **files),
-                        headers={
-                            "Content-Type": "multipart/form-data",
-                            "Upload-Multiple": "",
-                            **self.api.get_common_headers(),
-                        },
-                    )
-                expect_status(200, response)
-
-                if pbar is not None:
-                    pbar.advance(group_size)
-
-            for filename in separate_files:
-                self._upload_file_with_tus(url, filename, pbar=pbar, logger=log.debug)
-
-            self._tus_finish_upload(url, data=data)
+            uploader = Uploader(self.api)
+            uploader.upload_files(url, resources, pbar=pbar, **data)
 
     def list_tasks(
         self, *, return_json: bool = False, **kwargs
@@ -358,115 +293,6 @@ class CvatClient:
         self._download_file(url + "&action=download", output_path=filename, pbar=pbar)
 
         log.info(f"Annotations have been exported to {filename}")
-
-    def _make_tus_uploader(cli: CvatClient, url, **kwargs):
-        # Adjusts the library code for CVAT server
-        # allows to reuse session
-        class MyTusUploader(client.Uploader):
-            def __init__(self, *_args, api_client: ApiClient, **_kwargs):
-                self._api_client = api_client
-                super().__init__(*_args, **_kwargs)
-
-            def _do_request(self):
-                self.request = TusRequest(self)
-                self.request.handle = self._session
-                try:
-                    self.request.perform()
-                    self.verify_upload()
-                except TusUploadFailed as error:
-                    self._retry_or_cry(error)
-
-            @uploader._catch_requests_error
-            def create_url(self):
-                """
-                Return upload url.
-
-                Makes request to tus server to create a new upload url for the required file upload.
-                """
-                headers = self.headers
-                headers["upload-length"] = str(self.file_size)
-                headers["upload-metadata"] = ",".join(self.encode_metadata())
-                resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
-                url = resp.headers.get("location")
-                if url is None:
-                    msg = "Attempt to retrieve create file url with status {}".format(
-                        resp.status_code
-                    )
-                    raise uploader.TusCommunicationError(msg, resp.status_code, resp.content)
-                return uploader.urljoin(self.client.url, url)
-
-            @uploader._catch_requests_error
-            def get_offset(self):
-                """
-                Return offset from tus server.
-
-                This is different from the instance attribute 'offset' because this makes an
-                http request to the tus server to retrieve the offset.
-                """
-                resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
-                offset = resp.headers.get("upload-offset")
-                if offset is None:
-                    msg = "Attempt to retrieve offset fails with status {}".format(resp.status_code)
-                    raise uploader.TusCommunicationError(msg, resp.status_code, resp.content)
-                return int(offset)
-
-        headers = {}
-        headers["Origin"] = cli.api.configuration.host  # required by CVAT server
-        headers.update(cli.api.get_common_headers())
-        tus_client = client.TusClient(url, headers=headers)
-        return MyTusUploader(client=tus_client, api_client=cli.api, **kwargs)
-
-    def _upload_file_data_with_tus(self, url, filename, *, params=None, pbar=None, logger=None):
-        CHUNK_SIZE = 10 * 2**20
-
-        file_size = os.stat(filename).st_size
-
-        with open(filename, "rb") as input_file:
-            if pbar is not None:
-                input_file = StreamWithProgress(input_file, pbar, length=file_size)
-
-            tus_uploader = self._make_tus_uploader(
-                url + "/",
-                metadata=params,
-                file_stream=input_file,
-                chunk_size=CHUNK_SIZE,
-                log_func=logger,
-            )
-            tus_uploader.upload()
-
-    def _upload_file_with_tus(self, url, filename, *, params=None, pbar=None, logger=None):
-        # "CVAT-TUS" protocol has 2 extra messages
-        self._tus_start_upload(url, params=params)
-        self._upload_file_data_with_tus(
-            url=url, filename=filename, params=params, pbar=pbar, logger=logger
-        )
-        return self._tus_finish_upload(url, params=params)
-
-    def _tus_start_upload(self, url, *, params=None):
-        response = self.api.rest_client.POST(
-            url,
-            post_params=params,
-            headers={
-                "Content-Type": "multipart/form-data",
-                "Upload-Start": "",
-                **self.api.get_common_headers(),
-            },
-        )
-        expect_status(202, response)
-        return response
-
-    def _tus_finish_upload(self, url, *, params=None, data=None):
-        response = self.api.rest_client.POST(
-            url,
-            headers={
-                "Content-Type": "multipart/form-data",
-                "Upload-Finish": "",
-                **self.api.get_common_headers(),
-            },
-            post_params=dict(**(params or {}), **(data or {})),
-        )
-        expect_status(202, response)
-        return response
 
     def upload_task_annotations(
         self, task_id, fileformat, filename, *, completion_check_period=2, pbar=None, **kwargs
