@@ -7,7 +7,7 @@
     "build": "tsc && webpack --config ./webpack.config.js",
     "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",

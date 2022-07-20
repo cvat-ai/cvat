@@ -138,7 +138,7 @@ The exact steps on how FFmpeg was configured and compiled can be found in the [D
 FFmpeg is an open source framework licensed under LGPL and GPL.
 See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
 for determining if your use of FFmpeg requires any
-additional licenses. Intel is not responsible for obtaining any
+additional licenses. CVAT.ai is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in
 connection with your use of FFmpeg.
 
@@ -180,7 +180,6 @@ If you are not sure or just want to browse other users common questions,
 Other ways to ask questions and get our support:
 
 - [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow\*
-- [Forum on Intel Developer Zone](https://software.intel.com/en-us/forums/computer-vision)
 
 ## Links
 

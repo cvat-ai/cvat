@@ -115,7 +115,7 @@
     "type": "git",
     "url": "git+https://github.com/cvat-ai/cvat.git"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/cvat-ai/cvat/issues"

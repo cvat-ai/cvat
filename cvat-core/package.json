@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check -- --watch"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",
