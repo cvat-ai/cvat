@@ -4,6 +4,7 @@ additionalProperties:
   packageName: "cvat_sdk"
   initRequiredVars: true
   generateSourceCodeOnly: false
+  generatorLanguageVersion: '>=3.7'
 globalProperties:
   generateAliasAsModel: true
   apiTests: false

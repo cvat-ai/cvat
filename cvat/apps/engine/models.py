@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -462,6 +463,8 @@ class Job(models.Model):
             })
         db_commit.save()
 
+    def get_preview_path(self):
+        return os.path.join(self.get_dirname(), "preview.jpeg")
 
     class Meta:
         default_permissions = ()

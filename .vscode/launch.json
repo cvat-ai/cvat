@@ -191,7 +191,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Postprocess generator output",
+            "name": "api client: Postprocess generator output",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -206,7 +206,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "api client: Generate REST API Schema",
+            "name": "server: Generate REST API Schema",
             "type": "python",
             "request": "launch",
             "justMyCode": false,

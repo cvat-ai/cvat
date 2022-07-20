@@ -35,3 +35,8 @@ the `gen/templates/openapi-generator/` directory.
 Relevant links:
 - [Generator implementation, available variables in templates](https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator/src/main/java/org/openapitools/codegen)
 - [Mustache syntax in the generator](https://github.com/OpenAPITools/openapi-generator/wiki/Mustache-Template-Variables)
+
+## How to test
+
+API client tests are integrated into REST API tests (`/tests/rest_api/`).
+To allow editing of the package, install it with `pip install -e cvat-sdk/`.

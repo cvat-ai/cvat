@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support source and target storages (server part) (<https://github.com/cvat-ai/cvat/pull/28>)
 - Tests for import/export annotation, dataset, backup from/to cloud storage (<https://github.com/cvat-ai/cvat/pull/56>)
 - Added Python SDK package (`cvat-sdk`) (<https://github.com/cvat-ai/cvat/pull/7>)
+- Previews for jobs (<https://github.com/cvat-ai/cvat/pull/112>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)
