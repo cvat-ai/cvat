@@ -7,7 +7,7 @@ import { ArgumentError } from './exceptions';
 
 type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
 
-interface RawAttribute {
+export interface RawAttribute {
     name: string;
     mutable: boolean;
     input_type: AttrInputType;
@@ -139,8 +139,8 @@ export class Attribute {
     }
 }
 
-type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | null;
-interface RawLabel {
+type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | 'any';
+export interface RawLabel {
     id?: number;
     name: string;
     color: string;

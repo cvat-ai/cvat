@@ -31,10 +31,13 @@ function ConstructorCreator(props: Props): JSX.Element {
     const [error, setError] = useState<string | null>(null);
     const onSubmitSkeletonConf = useCallback((data: SkeletonConfiguration) => {
         if (labelConfiguration) {
-            onCreate({
+            const label = {
                 ...labelConfiguration,
                 ...data,
-            });
+                type: (labelConfiguration.type || 'any' as LabelOptColor['type']),
+            } as LabelOptColor;
+
+            onCreate(label);
         }
     }, [labelConfiguration]);
 

@@ -12,10 +12,9 @@ import Modal from 'antd/lib/modal';
 import { Store } from 'antd/lib/form/interface';
 import Paragraph from 'antd/lib/typography/Paragraph';
 
+import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import {
-    Label, Attribute, validateParsedLabel, idGenerator,
-} from './common';
+import { validateParsedLabel, idGenerator, LabelOptColor } from './common';
 
 function validateLabels(_: RuleObject, value: string): Promise<void> {
     try {
@@ -23,7 +22,7 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
-        const labelNames = parsed.map((label: Label) => label.name);
+        const labelNames = parsed.map((label: RawLabel) => label.name);
         if (new Set(labelNames).size !== labelNames.length) {
             return Promise.reject(new Error('Label names must be unique for the task'));
         }
@@ -43,17 +42,17 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
 }
 
 interface Props {
-    labels: Label[];
-    onSubmit: (labels: Label[]) => void;
+    labels: LabelOptColor[];
+    onSubmit: (labels: LabelOptColor[]) => void;
 }
 
-function convertLabels(labels: Label[]): Label[] {
+function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
     return labels.map(
-        (label: any): Label => ({
+        (label: LabelOptColor): LabelOptColor => ({
             ...label,
-            id: label.id < 0 ? undefined : label.id,
+            id: (label.id as number) < 0 ? undefined : label.id,
             attributes: label.attributes.map(
-                (attribute: any): Attribute => ({
+                (attribute: any): RawAttribute => ({
                     ...attribute,
                     id: attribute.id < 0 ? undefined : attribute.id,
                 }),
@@ -81,7 +80,7 @@ export default class RawViewer extends React.PureComponent<Props> {
 
     private handleSubmit = (values: Store): void => {
         const { onSubmit, labels } = this.props;
-        const parsed = JSON.parse(values.labels);
+        const parsed = JSON.parse(values.labels) as RawLabel[];
 
         const labelIDs: number[] = [];
         const attrIDs: number[] = [];
@@ -98,10 +97,18 @@ export default class RawViewer extends React.PureComponent<Props> {
             }
         }
 
-        const deletedLabels = labels.filter((_label: Label) => _label.id >= 0 && !labelIDs.includes(_label.id));
+        const deletedLabels = labels
+            .filter((_label: LabelOptColor) => {
+                const labelID = _label.id as number;
+                return labelID >= 0 && !labelIDs.includes(labelID);
+            });
+
         const deletedAttributes = labels
-            .reduce((acc: Attribute[], _label) => [...acc, ..._label.attributes], [])
-            .filter((_attr: Attribute) => _attr.id >= 0 && !attrIDs.includes(_attr.id));
+            .reduce((acc: RawAttribute[], _label) => [...acc, ..._label.attributes], [])
+            .filter((_attr: RawAttribute) => {
+                const attrID = _attr.id as number;
+                return attrID >= 0 && !attrIDs.includes(attrID);
+            });
 
         if (deletedLabels.length || deletedAttributes.length) {
             Modal.confirm({
@@ -114,7 +121,9 @@ export default class RawViewer extends React.PureComponent<Props> {
                                 Following labels are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-labels'>
                                     {deletedLabels
-                                        .map((_label: Label) => <Tag color={_label.color}>{_label.name}</Tag>)}
+                                        .map((_label: LabelOptColor): JSX.Element => (
+                                            <Tag key={_label.id as number} color={_label.color}>{_label.name}</Tag>
+                                        ))}
                                 </div>
 
                             </Paragraph>
@@ -123,7 +132,9 @@ export default class RawViewer extends React.PureComponent<Props> {
                             <Paragraph>
                                 Following attributes are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
-                                    {deletedAttributes.map((_attr: Attribute) => <Tag>{_attr.name}</Tag>)}
+                                    {deletedAttributes.map((_attr: RawAttribute) => (
+                                        <Tag key={_attr.id as number}>{_attr.name}</Tag>
+                                    ))}
                                 </div>
                             </Paragraph>
                         ) : null}

@@ -5,11 +5,11 @@
 import React from 'react';
 
 import LabelForm from './label-form';
-import { Label } from './common';
+import { LabelOptColor } from './common';
 
 interface Props {
-    label: Label;
-    onUpdate: (label: Label | null) => void;
+    label: LabelOptColor;
+    onUpdate: (label: LabelOptColor | null) => void;
 }
 
 export default function ConstructorUpdater(props: Props): JSX.Element {

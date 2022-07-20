@@ -4,6 +4,9 @@
 
 import _cvat from 'cvat-core/src/api';
 import ObjectState from 'cvat-core/src/object-state';
+import {
+    Label, Attribute, RawAttribute, RawLabel,
+} from 'cvat-core/src/labels';
 
 const cvat: any = _cvat;
 
@@ -19,4 +22,11 @@ function getCore(): any {
 export {
     getCore,
     ObjectState,
+    Label,
+    Attribute,
+};
+
+export type {
+    RawAttribute,
+    RawLabel,
 };

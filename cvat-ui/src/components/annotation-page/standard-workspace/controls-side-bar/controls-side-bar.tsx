@@ -90,7 +90,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
-    const withUnspecifiedType = labels.some((label: any) => label.type === null && !label.hasParent);
+    const withUnspecifiedType = labels.some((label: any) => label.type === 'any' && !label.hasParent);
     let rectangleControlVisible = withUnspecifiedType;
     let polygonControlVisible = withUnspecifiedType;
     let polylineControlVisible = withUnspecifiedType;

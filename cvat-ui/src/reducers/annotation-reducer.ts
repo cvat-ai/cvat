@@ -165,7 +165,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let workspaceSelected = Workspace.STANDARD;
 
             const defaultLabel = job.labels.length ? job.labels[0] : null;
-            let activeShapeType = defaultLabel && typeof defaultLabel.type === 'string' ?
+            let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
 
             if (job.dimension === DimensionType.DIM_3D) {
