@@ -1,7 +1,4 @@
 # Copyright (C) 2020-2022 Intel Corporation
-#
-# SPDX-License-Identifier: MIT
-
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -16,7 +13,7 @@ import os.path as osp
 from contextlib import ExitStack, closing
 from io import BytesIO
 from time import sleep
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
 import tqdm
@@ -25,6 +22,7 @@ from tusclient import client, uploader
 from tusclient.request import TusRequest, TusUploadFailed
 
 from cvat_sdk import ApiClient, ApiException, ApiValueError, Configuration, models
+from cvat_sdk.helpers import get_paginated_collection
 from cvat_sdk.types import ResourceType
 from cvat_sdk.utils import StreamWithProgress, expect_status, filter_dict
 
@@ -282,30 +280,14 @@ class CvatClient:
 
             self._tus_finish_upload(url, data=data)
 
-    def tasks_list(self, use_json_output, **kwargs):
+    def list_tasks(
+        self, *, return_json: bool = False, **kwargs
+    ) -> Union[List[models.TaskRead], List[Dict[str, Any]]]:
         """List all tasks in either basic or JSON format."""
-        url = self.api.tasks
-        response = self.session.get(url)
-        response.raise_for_status()
-        output = []
-        page = 1
-        json_data_list = []
-        while True:
-            response_json = response.json()
-            output += response_json["results"]
-            for r in response_json["results"]:
-                if use_json_output:
-                    json_data_list.append(r)
-                else:
-                    log.info("{id},{name},{status}".format(**r))
-            if not response_json["next"]:
-                log.info(json.dumps(json_data_list, indent=4))
-                return output
-            page += 1
-            url = self.api.tasks_page(page)
-            response = self.session.get(url)
-            response.raise_for_status()
-        return output
+
+        return get_paginated_collection(
+            endpoint=self.api.tasks_api.list, return_json=return_json, **kwargs
+        )
 
     def tasks_delete(self, task_ids, **kwargs):
         """Delete a list of tasks, ignoring those which don't exist."""

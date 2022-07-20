@@ -5,6 +5,7 @@
 from http import HTTPStatus
 import json
 import typing
+from cvat_sdk.helpers import get_paginated_collection
 
 import pytest
 from deepdiff import DeepDiff
@@ -26,24 +27,8 @@ class TestGetUsers:
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
             elif id_ is None:
-                fetch_all = kwargs.get('page_size') == 'all'
-                if fetch_all:
-                    kwargs.pop('page_size')
-
-                (_, response) = api_client.users_api.list(**kwargs, _parse_response=False)
-                assert response.status == HTTPStatus.OK
-                parsed_data = json.loads(response.data)
-                response_data = parsed_data.get('results', [])
-
-                if fetch_all:
-                    page_idx = 2
-                    while parsed_data.get('next'):
-                        (_, response) = api_client.users_api.list(**kwargs,
-                            _parse_response=False, page=page_idx)
-                        assert response.status == HTTPStatus.OK
-                        parsed_data = json.loads(response.data)
-                        response_data += parsed_data.get('results', [])
-                        page_idx += 1
+                response_data = get_paginated_collection(api_client.users_api.list_endpoint,
+                    return_json=True)
             else:
                 (_, response) = api_client.users_api.retrieve(id_, **kwargs,
                     _parse_response=False)
@@ -70,8 +55,7 @@ class TestGetUsers:
 
     def test_admin_can_see_all_others(self, users):
         exclude_paths = [f"root[{i}]['last_login']" for i in range(len(users))]
-        self._test_can_see('admin2', users.raw, exclude_paths=exclude_paths,
-            page_size="all")
+        self._test_can_see('admin2', users.raw, exclude_paths=exclude_paths)
 
     def test_everybody_can_see_self(self, users_by_name):
         for user, data in users_by_name.items():
