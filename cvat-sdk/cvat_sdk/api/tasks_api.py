@@ -49,12 +49,12 @@ class TasksApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.jobs_partial_update_data_meta_endpoint = _Endpoint(
+        self.partial_update_data_meta_endpoint = _Endpoint(
             settings={
                 "response_schema": (DataMetaRead,),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/jobs/{id}/data/meta",
-                "operation_id": "jobs_partial_update_data_meta",
+                "operation_id": "partial_update_data_meta",
                 "http_method": "PATCH",
                 "servers": None,
             },
@@ -1644,7 +1644,7 @@ class TasksApi(object):
             api_client=api_client,
         )
 
-    def jobs_partial_update_data_meta(
+    def partial_update_data_meta(
         self,
         id: int,
         *,
@@ -1665,7 +1665,7 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass _async_call=True
 
-        >>> thread = api.jobs_partial_update_data_meta(id, _async_call=True)
+        >>> thread = api.partial_update_data_meta(id, _async_call=True)
         >>> result = thread.get()
 
         Args:
@@ -1724,7 +1724,7 @@ class TasksApi(object):
         kwargs["_host_index"] = _host_index
         kwargs["_request_auths"] = _request_auths
         kwargs["id"] = id
-        return self.jobs_partial_update_data_meta_endpoint.call_with_http_info(**kwargs)
+        return self.partial_update_data_meta_endpoint.call_with_http_info(**kwargs)
 
     def create(
         self,

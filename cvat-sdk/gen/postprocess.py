@@ -18,8 +18,11 @@ def collect_operations(schema):
 
     operations = {}
 
-    for _, endpoint_schema in endpoints.items():
-        for _, method_schema in endpoint_schema.items():
+    for endpoint_name, endpoint_schema in endpoints.items():
+        for method_name, method_schema in endpoint_schema.items():
+            method_schema = dict(method_schema)
+            method_schema['method'] = method_name
+            method_schema['endpoint'] = endpoint_name
             operations[method_schema["operationId"]] = method_schema
 
     return operations
@@ -37,11 +40,15 @@ class Processor:
         operation = self._operations[name]
 
         new_name = name
-        for tag in operation.get("tags", []):
-            prefix = tag + "_"
-            if new_name.startswith(prefix):
-                new_name = new_name[len(prefix) :]
-                break
+
+        tokenized_path = operation['endpoint'].split('/')
+        assert 3 <= len(tokenized_path)
+        assert tokenized_path[0] == '' and tokenized_path[1] == 'api'
+        tokenized_path = tokenized_path[2:]
+
+        prefix = tokenized_path[0] + "_"
+        if new_name.startswith(prefix):
+            new_name = new_name[len(prefix) :]
 
         return new_name
 

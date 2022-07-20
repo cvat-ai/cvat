@@ -2,7 +2,7 @@ README.md
 cvat_sdk/__init__.py
 cvat_sdk/api/__init__.py
 cvat_sdk/api/auth_api.py
-cvat_sdk/api/cloud_storages_api.py
+cvat_sdk/api/cloudstorages_api.py
 cvat_sdk/api/comments_api.py
 cvat_sdk/api/invitations_api.py
 cvat_sdk/api/issues_api.py
@@ -155,7 +155,7 @@ docs/ChunkType.md
 docs/CloudStorageRead.md
 docs/CloudStorageWrite.md
 docs/CloudStorageWriteRequest.md
-docs/CloudStoragesApi.md
+docs/CloudstoragesApi.md
 docs/CommentRead.md
 docs/CommentReadOwner.md
 docs/CommentWrite.md

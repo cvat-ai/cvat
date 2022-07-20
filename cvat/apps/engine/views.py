@@ -1801,7 +1801,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
 
-@extend_schema(tags=['cloud storages'])
+@extend_schema(tags=['cloudstorages'])
 @extend_schema_view(
     retrieve=extend_schema(
         summary='Method returns details of a specific cloud storage',

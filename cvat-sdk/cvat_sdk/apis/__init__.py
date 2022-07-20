@@ -14,7 +14,7 @@
 
 # Import APIs into API package:
 from cvat_sdk.api.auth_api import AuthApi
-from cvat_sdk.api.cloud_storages_api import CloudStoragesApi
+from cvat_sdk.api.cloudstorages_api import CloudstoragesApi
 from cvat_sdk.api.comments_api import CommentsApi
 from cvat_sdk.api.invitations_api import InvitationsApi
 from cvat_sdk.api.issues_api import IssuesApi
