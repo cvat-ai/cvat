@@ -12,8 +12,8 @@ from time import sleep
 from typing import List
 from cvat_sdk import models
 from cvat_sdk.apis import TasksApi
-from cvat_sdk.client import CvatClient
-from cvat_sdk.types import ResourceType
+from cvat_sdk.usecases.client import CvatClient
+from cvat_sdk.usecases.types import ResourceType
 
 import pytest
 from deepdiff import DeepDiff

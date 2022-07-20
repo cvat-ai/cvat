@@ -9,7 +9,7 @@ import logging
 from typing import Any, Dict, List, Union
 
 from cvat_sdk.api_client import Endpoint
-from cvat_sdk.utils import expect_status
+from cvat_sdk.usecases.utils import expect_status
 
 log = logging.getLogger(__name__)
 

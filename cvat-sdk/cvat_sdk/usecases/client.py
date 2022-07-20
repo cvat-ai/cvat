@@ -20,10 +20,10 @@ from tusclient import client, uploader
 from tusclient.request import TusRequest, TusUploadFailed
 
 from cvat_sdk import ApiClient, ApiException, ApiValueError, Configuration, models
-from cvat_sdk.helpers import get_paginated_collection
-from cvat_sdk.types import ResourceType
-from cvat_sdk.utils import StreamWithProgress, expect_status, filter_dict
-from cvat_sdk.progress_reporter import ProgressReporter
+from cvat_sdk.usecases.helpers import get_paginated_collection
+from cvat_sdk.usecases.progress_reporter import ProgressReporter
+from cvat_sdk.usecases.types import ResourceType
+from cvat_sdk.usecases.utils import StreamWithProgress, expect_status, filter_dict
 
 log = logging.getLogger(__name__)
 
@@ -322,8 +322,14 @@ class CvatClient:
             im.save(os.path.join(outdir, outfile))
 
     def tasks_dump(
-        self, task_id, fileformat: str, filename: str, *,
-        pbar: Optional[ProgressReporter] = None, status_check_period: int = 2, **kwargs
+        self,
+        task_id,
+        fileformat: str,
+        filename: str,
+        *,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: int = 2,
+        **kwargs,
     ) -> None:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
@@ -532,9 +538,12 @@ class CvatClient:
         log.info(f"Task has been imported sucessfully. Task ID: {task_id}")
 
     def _download_file(
-        self, url: str, output_path: str, *,
+        self,
+        url: str,
+        output_path: str,
+        *,
         timeout: int = 60,
-        pbar: Optional[ProgressReporter] = None
+        pbar: Optional[ProgressReporter] = None,
     ) -> None:
         """
         Downloads the file from url into a temporary file, then renames it
