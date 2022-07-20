@@ -121,8 +121,8 @@ Limitations:
 
 Prebuilt docker images for CVAT releases are available on Docker Hub:
 
-- [cvat_server](https://hub.docker.com/r/cvat/server)
-- [cvat_ui](https://hub.docker.com/r/cvat/ui)
+- [cvat/server](https://hub.docker.com/r/cvat/server)
+- [cvat/ui](https://hub.docker.com/r/cvat/ui)
 
 ## REST API
 The current REST API version is `2.0-alpha`. We focus on its improvement and therefore
@@ -190,11 +190,11 @@ Other ways to ask questions and get our support:
   <!-- prettier-ignore-start -->
   <!-- Badges -->
 
-[docker-server-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_server.svg?style=flat-square&label=server%20pulls
-[docker-server-image-url]: https://hub.docker.com/r/openvino/cvat_server
+[docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
+[docker-server-image-url]: https://hub.docker.com/r/cvat/server
 
-[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_ui.svg?style=flat-square&label=UI%20pulls
-[docker-ui-image-url]: https://hub.docker.com/r/openvino/cvat_ui
+[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
+[docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
 
 [ci-img]: https://github.com/cvat-ai/cvat/workflows/CI/badge.svg?branch=develop
 [ci-url]: https://github.com/cvat-ai/cvat/actions
