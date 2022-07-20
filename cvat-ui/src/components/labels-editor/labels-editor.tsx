@@ -66,7 +66,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 elements: label.elements,
                 sublabels: label.sublabels,
                 svg: label.svg,
-                has_parent: label.has_parent,
                 attributes: label.attributes.map(
                     (attr: RawAttribute): RawAttribute => ({
                         id: attr.id || idGenerator(),

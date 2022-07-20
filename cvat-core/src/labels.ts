@@ -336,7 +336,6 @@ export class Label {
             attributes: [...this.attributes.map((el) => el.toJSON())],
             color: this.color,
             type: this.type,
-            has_parent: this.hasParent,
         };
 
         if (typeof this.id !== 'undefined') {

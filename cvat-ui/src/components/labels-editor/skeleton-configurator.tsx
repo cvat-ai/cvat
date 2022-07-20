@@ -28,7 +28,7 @@ function setAttributes(element: Element, attrs: Record<string, string | number |
 interface Props {
     onSubmit(configuration: SkeletonConfiguration): void;
     disabled?: boolean;
-    label: LabelOptColor;
+    label: LabelOptColor | null;
 }
 
 interface State {

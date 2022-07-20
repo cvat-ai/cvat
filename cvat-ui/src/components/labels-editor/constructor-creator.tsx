@@ -64,7 +64,11 @@ function ConstructorCreator(props: Props): JSX.Element {
             {
                 creatorType === 'skeleton' && (
                     <>
-                        <SkeletonConfigurator onSubmit={onSubmitSkeletonConf} ref={skeletonConfiguratorRef} />
+                        <SkeletonConfigurator
+                            label={null}
+                            onSubmit={onSubmitSkeletonConf}
+                            ref={skeletonConfiguratorRef}
+                        />
                         { error !== null && <Alert type='error' message={error} /> }
                     </>
                 )
