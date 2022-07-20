@@ -15,7 +15,6 @@ from io import BytesIO
 from time import sleep
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import tqdm
 from PIL import Image
 from tusclient import client, uploader
 from tusclient.request import TusRequest, TusUploadFailed
@@ -24,6 +23,7 @@ from cvat_sdk import ApiClient, ApiException, ApiValueError, Configuration, mode
 from cvat_sdk.helpers import get_paginated_collection
 from cvat_sdk.types import ResourceType
 from cvat_sdk.utils import StreamWithProgress, expect_status, filter_dict
+from cvat_sdk.progress_reporter import ProgressReporter
 
 log = logging.getLogger(__name__)
 
@@ -69,10 +69,10 @@ class CvatClient:
         *,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
-        status_check_period: int = 5,
+        status_check_period: int = 2,
         dataset_repository_url: str = "",
         use_lfs: bool = False,
-        pbar: Optional[tqdm.tqdm] = None,
+        pbar: Optional[ProgressReporter] = None,
         **kwargs,
     ) -> int:
         """
@@ -127,7 +127,7 @@ class CvatClient:
         return task.id
 
     def _create_git_repo(
-        self, *, task_id: int, repo_url: str, status_check_period: int = 5, use_lfs: bool = True
+        self, *, task_id: int, repo_url: str, status_check_period: int = 2, use_lfs: bool = True
     ):
         common_headers = self.api.get_common_headers()
 
@@ -206,7 +206,7 @@ class CvatClient:
         resource_type: ResourceType,
         resources: Sequence[str],
         *,
-        pbar: Optional[tqdm.tqdm] = None,
+        pbar: Optional[ProgressReporter] = None,
         **kwargs,
     ) -> None:
         """Add local, remote, or shared files to an existing task."""
@@ -245,7 +245,7 @@ class CvatClient:
             )
         elif resource_type == ResourceType.LOCAL:
             if pbar is not None:
-                pbar.reset(total_size)
+                pbar.start(total_size, desc="Uploading data")
 
             url = self._api_map.make_endpoint_url(
                 self.api.tasks_api.create_data_endpoint.path.format(id=task_id)
@@ -272,7 +272,7 @@ class CvatClient:
                 expect_status(200, response)
 
                 if pbar is not None:
-                    pbar.update(group_size)
+                    pbar.advance(group_size)
 
             for filename in separate_files:
                 self._upload_file_with_tus(url, filename, pbar=pbar, logger=log.debug)
@@ -322,7 +322,8 @@ class CvatClient:
             im.save(os.path.join(outdir, outfile))
 
     def tasks_dump(
-        self, task_id, fileformat, filename, *, pbar=None, completion_check_period=2, **kwargs
+        self, task_id, fileformat: str, filename: str, *,
+        pbar: Optional[ProgressReporter] = None, status_check_period: int = 2, **kwargs
     ) -> None:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
@@ -343,10 +344,11 @@ class CvatClient:
             log.info("STATUS {}".format(response.status_code))
             if response.status_code == 201:
                 break
-            sleep(completion_check_period)
+            sleep(status_check_period)
 
-        if pbar is None:
-            pbar = self._make_pbar("Downloading")
+        if pbar is not None:
+            pbar.start("Downloading")
+
         self._download_file(url + "&action=download", output_path=filename, pbar=pbar)
 
         log.info(f"Annotations have been exported to {filename}")
@@ -529,11 +531,10 @@ class CvatClient:
         task_id = response.json()["id"]
         log.info(f"Task has been imported sucessfully. Task ID: {task_id}")
 
-    def _make_pbar(self, title: str = None) -> tqdm.tqdm:
-        return tqdm.tqdm(unit_scale=True, unit="B", unit_divisor=1024, desc=title)
-
     def _download_file(
-        self, url: str, output_path: str, *, timeout: int = 60, pbar: Optional[tqdm.tqdm] = None
+        self, url: str, output_path: str, *,
+        timeout: int = 60,
+        pbar: Optional[ProgressReporter] = None
     ) -> None:
         """
         Downloads the file from url into a temporary file, then renames it
@@ -561,12 +562,12 @@ class CvatClient:
             try:
                 with open(tmp_path, "wb") as fd:
                     if pbar is not None:
-                        pbar.reset(file_size)
+                        pbar.start(file_size, desc="Downloading")
 
                     try:
                         for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                             if pbar is not None:
-                                pbar.update(n=len(chunk))
+                                pbar.advance(len(chunk))
 
                             fd.write(chunk)
                     finally:

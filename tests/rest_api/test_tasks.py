@@ -12,7 +12,7 @@ from time import sleep
 from typing import List
 from cvat_sdk import models
 from cvat_sdk.apis import TasksApi
-from cvat_sdk.core import CvatClient
+from cvat_sdk.client import CvatClient
 from cvat_sdk.types import ResourceType
 
 import pytest
