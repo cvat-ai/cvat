@@ -7,7 +7,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
-import { Model } from 'reducers/interfaces';
+import { Model } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {

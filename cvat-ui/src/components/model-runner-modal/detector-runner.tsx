@@ -14,13 +14,13 @@ import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 
-import { Model, ModelAttribute, StringObject } from 'reducers/interfaces';
+import { Model, ModelAttribute, StringObject } from 'reducers';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
 import consts from 'consts';
-import { DimensionType } from '../../reducers/interfaces';
+import { DimensionType } from '../../reducers';
 
 interface Props {
     withCleanup: boolean;

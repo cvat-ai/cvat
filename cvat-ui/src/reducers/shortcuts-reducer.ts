@@ -6,7 +6,7 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { DimensionType, ShortcutsState } from './interfaces';
+import { DimensionType, ShortcutsState } from '.';
 
 function formatShortcuts(shortcuts: KeyMapItem): string {
     const list: string[] = shortcuts.displayedSequences || (shortcuts.sequences as string[]);

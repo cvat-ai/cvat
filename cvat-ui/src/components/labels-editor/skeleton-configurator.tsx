@@ -11,7 +11,7 @@ import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
 import {
-    idGenerator, Label, LabelOptColor, ParentLabel, SkeletonConfiguration, toSVGCoord,
+    idGenerator, LabelOptColor, ParentLabel, SkeletonConfiguration, toSVGCoord,
 } from './common';
 import SkeletonElementContextMenu from './skeleton-element-context-menu';
 
@@ -497,7 +497,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             this.setState({ contextMenuVisible: false });
                             (element as any).cvat.deleteElement();
                         }}
-                        onConfigureLabel={(elementID: number, data: Label | null) => {
+                        onConfigureLabel={(elementID: number, data: LabelOptColor | null) => {
                             this.setState({ contextMenuVisible: false });
                             if (data) {
                                 this.labels[elementID] = data;

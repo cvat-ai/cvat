@@ -18,7 +18,7 @@ import {
     ObjectType,
     ShapeType,
     Workspace,
-} from './interfaces';
+} from '.';
 
 function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
     return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
@@ -78,6 +78,7 @@ const defaultState: AnnotationState = {
     },
     annotations: {
         activatedStateID: null,
+        activatedElementID: null,
         activatedAttributeID: null,
         saving: {
             forceExit: false,
@@ -164,7 +165,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let workspaceSelected = Workspace.STANDARD;
 
             const defaultLabel = job.labels.length ? job.labels[0] : null;
-            let activeShapeType = defaultLabel && typeof defaultLabel.type === 'string' ?
+            let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
 
             if (job.dimension === DimensionType.DIM_3D) {
@@ -492,6 +493,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeControl = ActiveControl.DRAW_ELLIPSE;
             } else if (payload.activeShapeType === ShapeType.CUBOID) {
                 activeControl = ActiveControl.DRAW_CUBOID;
+            } else if (payload.activeShapeType === ShapeType.SKELETON) {
+                activeControl = ActiveControl.DRAW_SKELETON;
             } else if (payload.activeObjectType === ObjectType.TAG) {
                 activeControl = ActiveControl.CURSOR;
             }
@@ -710,7 +713,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
-            const { activatedStateID, activatedAttributeID } = action.payload;
+            const { activatedStateID, activatedElementID, activatedAttributeID } = action.payload;
 
             const {
                 canvas: { activeControl, instance },
@@ -725,6 +728,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID,
+                    activatedElementID,
                     activatedAttributeID,
                 },
             };
@@ -1128,6 +1132,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 workspace,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                    activatedAttributeID: null,
+                },
             };
         }
         case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {

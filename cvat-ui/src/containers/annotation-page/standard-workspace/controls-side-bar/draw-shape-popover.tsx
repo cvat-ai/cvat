@@ -6,7 +6,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { RadioChangeEvent } from 'antd/lib/radio';
 
-import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
+import { CombinedState, ShapeType, ObjectType } from 'reducers';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
@@ -99,7 +99,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 return label.type === ShapeType.SKELETON;
             }
 
-            return typeof label.type !== 'string' || label.type === shapeType;
+            return ['any', shapeType].includes(label.type);
         });
 
         const defaultLabelID = this.satisfiedLabels.length ? this.satisfiedLabels[0].id : null;

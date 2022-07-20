@@ -4,7 +4,7 @@
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
 
-import { ImportState } from './interfaces';
+import { ImportState } from '.';
 
 const defaultState: ImportState = {
     progress: 0.0,

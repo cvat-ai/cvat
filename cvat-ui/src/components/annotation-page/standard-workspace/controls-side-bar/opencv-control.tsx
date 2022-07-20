@@ -22,7 +22,7 @@ import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
     CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState,
-} from 'reducers/interfaces';
+} from 'reducers';
 import {
     interactWithCanvas,
     fetchAnnotationsAsync,

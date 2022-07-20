@@ -8,7 +8,7 @@ import { Col, Row } from 'antd/lib/grid';
 
 import {
     ActiveControl, PredictorState, ToolsBlockerState, Workspace,
-} from 'reducers/interfaces';
+} from 'reducers';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';

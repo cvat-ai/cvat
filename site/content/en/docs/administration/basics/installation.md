@@ -389,7 +389,7 @@ your cloud storage as a FUSE and use it later as a share.
 
 You can enable email verification for newly registered users.
 Specify these options in the
-[settings file](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py) to configure Django allauth
+[settings file](https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py) to configure Django allauth
 to enable email verification (ACCOUNT_EMAIL_VERIFICATION = 'mandatory').
 Access is denied until the user's email address is verified.
 

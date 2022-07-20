@@ -20,7 +20,7 @@ import {
     switchShowingTagsOnFrame,
 } from 'actions/settings-actions';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 import WorkspaceSettingsComponent from 'components/header/settings-modal/workspace-settings';
 

@@ -12,7 +12,7 @@ import { debounce } from 'lodash';
 
 import Select from 'antd/lib/select';
 import { getCore } from 'cvat-core-wrapper';
-import { CloudStorage } from 'reducers/interfaces';
+import { CloudStorage } from 'reducers';
 import { AzureProvider, GoogleCloudProvider, S3Provider } from 'icons';
 import { ProviderType } from 'utils/enums';
 import CloudStorageFiles from './cloud-storages-files';

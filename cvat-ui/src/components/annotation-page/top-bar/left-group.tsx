@@ -14,7 +14,7 @@ import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotati
 import {
     MainMenuIcon, SaveIcon, UndoIcon, RedoIcon,
 } from 'icons';
-import { ActiveControl, ToolsBlockerState } from 'reducers/interfaces';
+import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {

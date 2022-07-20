@@ -12,7 +12,7 @@ import {
     closeJob as closeJobAction,
 } from 'actions/annotation-actions';
 
-import { CombinedState, Workspace } from 'reducers/interfaces';
+import { CombinedState, Workspace } from 'reducers';
 
 type OwnProps = RouteComponentProps<{
     tid: string;

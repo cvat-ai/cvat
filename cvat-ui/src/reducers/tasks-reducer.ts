@@ -9,7 +9,7 @@ import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
 import { AnnotationActionTypes } from 'actions/annotation-actions';
-import { TasksState, Task } from './interfaces';
+import { TasksState, Task } from '.';
 
 const defaultState: TasksState = {
     initialized: false,

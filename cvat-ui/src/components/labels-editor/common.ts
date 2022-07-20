@@ -2,13 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-export interface Attribute {
-    id: number;
-    name: string;
-    input_type: string;
-    mutable: boolean;
-    values: string[];
-}
+import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
 
 export interface SkeletonConfiguration {
     type: string;
@@ -18,24 +12,12 @@ export interface SkeletonConfiguration {
     edges: { from: number, to: number }[];
 }
 
-export interface Label {
-    name: string;
-    color: string;
-    id: number;
-    attributes: Attribute[];
-    type?: SkeletonConfiguration['type'];
-    svg?: string;
-    sublabels?: LabelOptColor[];
-    elements?: { label: string; element_id: number }[];
-    edges?: { from: number, to: number }[];
-}
-
-export type LabelOptColor = Omit<Label, 'color'> & { color?: string };
+export type LabelOptColor = Omit<RawLabel, 'color'> & { color?: string };
 export type ParentLabel = LabelOptColor & { sublabels?: LabelOptColor };
 
 let id = 0;
 
-function validateParsedAttribute(attr: Attribute): void {
+function validateParsedAttribute(attr: RawAttribute): void {
     if (typeof attr.name !== 'string') {
         throw new Error(`Type of attribute name must be a string. Got value ${attr.name}`);
     }
@@ -69,7 +51,7 @@ function validateParsedAttribute(attr: Attribute): void {
     }
 }
 
-export function validateParsedLabel(label: Label): void {
+export function validateParsedLabel(label: RawLabel): void {
     if (typeof label.name !== 'string') {
         throw new Error(`Type of label name must be a string. Got value ${label.name}`);
     }

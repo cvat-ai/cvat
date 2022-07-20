@@ -29,7 +29,7 @@ import { getCore } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
     CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
-} from 'reducers/interfaces';
+} from 'reducers';
 import {
     interactWithCanvas,
     switchNavigationBlocked as switchNavigationBlockedAction,

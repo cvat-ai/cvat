@@ -11,7 +11,7 @@ import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
-} from 'reducers/interfaces';
+} from 'reducers';
 import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
@@ -31,6 +31,7 @@ interface Props {
     canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
     activatedStateID: number | null;
+    activatedElementID: number | null;
     activatedAttributeID: number | null;
     annotations: any[];
     frameData: any;
@@ -85,7 +86,7 @@ interface Props {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject(activatedStateID: number | null): void;
+    onActivateObject(activatedStateID: number | null, activatedElementID?: number | null): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -533,7 +534,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasCursorMoved = async (event: any): Promise<void> => {
         const {
-            jobInstance, activatedStateID, workspace, onActivateObject,
+            jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject,
         } = this.props;
 
         if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
@@ -549,8 +550,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 }
             }
 
-            if (activatedStateID !== result.state.clientID) {
-                onActivateObject(result.state.clientID);
+            if (activatedStateID !== result.state.clientID || activatedElementID !== event.detail.activatedElementID) {
+                onActivateObject(result.state.clientID, event.detail.activatedElementID || null);
             }
         }
     };

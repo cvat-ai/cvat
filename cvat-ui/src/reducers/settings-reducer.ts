@@ -11,7 +11,7 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy, DimensionType,
-} from './interfaces';
+} from '.';
 
 const defaultState: SettingsState = {
     shapes: {

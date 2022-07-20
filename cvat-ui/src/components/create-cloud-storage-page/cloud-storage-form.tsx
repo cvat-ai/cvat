@@ -14,7 +14,7 @@ import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
 
-import { CombinedState, CloudStorage } from 'reducers/interfaces';
+import { CombinedState, CloudStorage } from 'reducers';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';

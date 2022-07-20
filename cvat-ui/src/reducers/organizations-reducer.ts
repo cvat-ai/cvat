@@ -4,7 +4,7 @@
 
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { OrganizationActions, OrganizationActionsTypes } from 'actions/organization-actions';
-import { OrganizationState } from './interfaces';
+import { OrganizationState } from '.';
 
 const defaultState: OrganizationState = {
     list: [],

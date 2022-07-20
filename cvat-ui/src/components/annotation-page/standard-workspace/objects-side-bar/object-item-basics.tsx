@@ -8,7 +8,7 @@ import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 
-import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
+import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';

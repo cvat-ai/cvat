@@ -8,7 +8,7 @@ import React from 'react';
 import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import FeedbackComponent from '../feedback/feedback';
-import { Model } from '../../reducers/interfaces';
+import { Model } from '../../reducers';
 
 interface Props {
     interactors: Model[];

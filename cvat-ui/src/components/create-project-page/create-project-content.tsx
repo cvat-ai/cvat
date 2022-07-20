@@ -17,7 +17,7 @@ import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
 import patterns from 'utils/validation-patterns';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
 import CreateProjectContext from './create-project.context';

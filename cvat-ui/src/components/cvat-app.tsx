@@ -46,7 +46,7 @@ import CreateOrganizationComponent from 'components/create-organization-page/cre
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { NotificationsState } from 'reducers/interfaces';
+import { NotificationsState } from 'reducers';
 import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, {
     platformInfo,

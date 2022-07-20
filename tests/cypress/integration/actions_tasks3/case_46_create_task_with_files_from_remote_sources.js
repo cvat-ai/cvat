@@ -9,7 +9,7 @@ context('Create a task with files from remote sources.', () => {
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
     const wrongUrl =
-        'https://raw.githubusercontent.com/openvinotoolkit/cvat/v1.2.0/cvat/apps/documentation/static/documentation/images/cvatt.jpg';
+        'https://raw.githubusercontent.com/cvat-ai/cvat/v1.2.0/cvat/apps/documentation/static/documentation/images/cvatt.jpg';
     const correctUrl = wrongUrl.replace('cvatt.jpg', 'cvat.jpg');
 
     before(() => {

@@ -608,6 +608,7 @@ export interface AnnotationState {
     };
     annotations: {
         activatedStateID: number | null;
+        activatedElementID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;

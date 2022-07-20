@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers';
 import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 

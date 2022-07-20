@@ -10,7 +10,7 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 
-import { Project } from 'reducers/interfaces';
+import { Project } from 'reducers';
 import ActionsMenu from 'components/projects-page/actions-menu';
 
 interface DetailsComponentProps {

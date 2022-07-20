@@ -9,7 +9,7 @@ import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
 import Progress from 'antd/lib/progress';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 function ImportDatasetStatusModal(): JSX.Element {
     const currentImportId = useSelector((state: CombinedState) => state.import.importingId);

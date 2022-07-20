@@ -17,7 +17,7 @@ import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-wo
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
-import { Workspace } from 'reducers/interfaces';
+import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import './styles.scss';
 import Button from 'antd/lib/button';

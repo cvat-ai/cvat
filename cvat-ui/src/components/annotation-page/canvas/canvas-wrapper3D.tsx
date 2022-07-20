@@ -12,7 +12,7 @@ import {
 import { ResizableBox } from 'react-resizable';
 import {
     ColorBy, ContextMenuType, ObjectType, Workspace,
-} from 'reducers/interfaces';
+} from 'reducers';
 import {
     CameraAction, Canvas3d, ViewType, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { PluginsList } from 'reducers/interfaces';
+import { PluginsList } from 'reducers';
 import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();

@@ -7,7 +7,7 @@ import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
     ProjectsQuery, TasksQuery, CombinedState, Indexable,
-} from 'reducers/interfaces';
+} from 'reducers';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import { getCore } from 'cvat-core-wrapper';

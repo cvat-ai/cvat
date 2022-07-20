@@ -353,26 +353,26 @@ export class DrawHandlerImpl implements DrawHandler {
         this.canvas.off('mousedown.draw');
         this.canvas.off('mousemove.draw');
 
-        if (this.pointsGroup) {
-            this.pointsGroup.remove();
-            this.pointsGroup = null;
-        }
-
         // Draw plugin in some cases isn't activated
         // For example when draw from initialState
         // Or when no drawn points, but we call cancel() drawing
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
-            if (
-                ['polygon', 'polyline', 'points'].includes(this.drawData.shapeType) ||
+            if (['polygon', 'polyline', 'points'].includes(this.drawData.shapeType) ||
                 (this.drawData.shapeType === 'cuboid' &&
-                    this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)
-            ) {
+                this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
             }
             // Clear drawing
             this.drawInstance.draw('stop');
+        } else if (this.drawInstance && this.drawData.shapeType === 'ellipse' && !this.drawData.initialState) {
+            this.drawInstance.fire('drawstop');
+        }
+
+        if (this.pointsGroup) {
+            this.pointsGroup.remove();
+            this.pointsGroup = null;
         }
 
         this.drawInstance.off();
@@ -447,21 +447,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 const translated = translateToSVG(this.canvas.node as any as SVGSVGElement, [e.clientX, e.clientY]);
                 [initialPoint.x, initialPoint.y] = translated;
             } else {
-                const points = this.getFinalEllipseCoordinates(readPointsFromShape(this.drawInstance), false);
-                const { shapeType, redraw: clientID } = this.drawData;
-                this.release();
-
-                if (this.canceled) return;
-                if (checkConstraint('ellipse', points)) {
-                    this.onDrawDone(
-                        {
-                            clientID,
-                            shapeType,
-                            points,
-                        },
-                        Date.now() - this.startTimestamp,
-                    );
-                }
+                this.drawInstance.fire('drawstop');
             }
         });
 
@@ -475,6 +461,25 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.drawInstance.center(cx, cy);
                 this.drawInstance.radius(rx, ry);
                 this.shapeSizeElement.update(this.drawInstance);
+            }
+        });
+
+        this.drawInstance.on('drawstop', () => {
+            this.drawInstance.off('drawstop');
+            const points = this.getFinalEllipseCoordinates(readPointsFromShape(this.drawInstance), false);
+            const { shapeType, redraw: clientID } = this.drawData;
+            this.release();
+
+            if (this.canceled) return;
+            if (checkConstraint('ellipse', points)) {
+                this.onDrawDone(
+                    {
+                        clientID,
+                        shapeType,
+                        points,
+                    },
+                    Date.now() - this.startTimestamp,
+                );
             }
         });
     }
@@ -750,6 +755,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     transform: `translate(${x}px, ${y}px)`,
                 });
 
+                /* eslint-disable-next-line no-unsanitized/property */
                 this.pointsGroup.node.innerHTML = this.drawData.skeletonSVG;
                 Array.from(this.pointsGroup.node.children).forEach((child: Element) => {
                     const dataType = child.getAttribute('data-type');

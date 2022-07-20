@@ -18,7 +18,7 @@ import {
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
-} from 'reducers/interfaces';
+} from 'reducers';
 import ObjectStateItemComponent, { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { shift } from 'utils/math';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -105,7 +105,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(updateAnnotationsAsync([state]));
         },
         activateObject(activatedStateID: number | null): void {
-            dispatch(activateObjectAction(activatedStateID, null));
+            dispatch(activateObjectAction(activatedStateID, null, null));
         },
         removeObject(objectState: any): void {
             dispatch(removeObjectAction(objectState, false));

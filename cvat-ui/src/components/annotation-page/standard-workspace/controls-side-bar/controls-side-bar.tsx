@@ -7,7 +7,7 @@ import Layout from 'antd/lib/layout';
 
 import {
     ActiveControl, ObjectType, Rotation, ShapeType,
-} from 'reducers/interfaces';
+} from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Label } from 'components/labels-editor/common';
@@ -90,7 +90,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
-    const withUnspecifiedType = labels.some((label: any) => label.type === null && !label.hasParent);
+    const withUnspecifiedType = labels.some((label: any) => label.type === 'any' && !label.hasParent);
     let rectangleControlVisible = withUnspecifiedType;
     let polygonControlVisible = withUnspecifiedType;
     let polylineControlVisible = withUnspecifiedType;
@@ -154,6 +154,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     ActiveControl.DRAW_POLYLINE,
                     ActiveControl.DRAW_RECTANGLE,
                     ActiveControl.DRAW_CUBOID,
+                    ActiveControl.DRAW_ELLIPSE,
+                    ActiveControl.DRAW_SKELETON,
                     ActiveControl.AI_TOOLS,
                     ActiveControl.OPENCV_TOOLS,
                 ].includes(activeControl);

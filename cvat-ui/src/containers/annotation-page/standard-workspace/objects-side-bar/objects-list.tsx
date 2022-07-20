@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import PropTypes from 'prop-types';
+
 import { connect } from 'react-redux';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
@@ -19,7 +21,8 @@ import {
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
-} from 'reducers/interfaces';
+} from 'reducers';
+import { ObjectState } from 'cvat-core-wrapper';
 
 interface OwnProps {
     readonly: boolean;
@@ -37,6 +40,7 @@ interface StateToProps {
     colors: string[];
     colorBy: ColorBy;
     activatedStateID: number | null;
+    activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
     keyMap: KeyMap;
@@ -62,6 +66,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsed,
                 collapsedAll,
                 activatedStateID,
+                activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
@@ -101,6 +106,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         colors,
         colorBy,
         activatedStateID,
+        activatedElementID,
         minZLayer,
         maxZLayer,
         keyMap,
@@ -156,6 +162,10 @@ interface State {
 }
 
 class ObjectsListContainer extends React.PureComponent<Props, State> {
+    static propTypes = {
+        readonly: PropTypes.bool,
+    };
+
     static defaultProps = {
         readonly: false,
     };
@@ -248,6 +258,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             statesHidden,
             statesLocked,
             activatedStateID,
+            activatedElementID,
             maxZLayer,
             minZLayer,
             keyMap,
@@ -299,11 +310,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             }
         };
 
-        const activatedStated = (): any | null => {
+        const activatedState = (): any | null => {
             if (activatedStateID !== null) {
-                const [state] = objectStates.filter(
-                    (objectState: any): boolean => objectState.clientID === activatedStateID,
-                );
+                const state = objectStates
+                    .find((objectState: ObjectState): boolean => objectState.clientID === activatedStateID);
+
+                if (state && activatedElementID !== null) {
+                    const element = state.elements
+                        .find((_element: ObjectState): boolean => _element.clientID === activatedElementID);
+                    return element || null;
+                }
 
                 return state || null;
             }
@@ -328,7 +344,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly) {
                     state.lock = !state.lock;
                     updateAnnotations([state]);
@@ -342,7 +358,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly) {
                     state.hidden = !state.hidden;
                     updateAnnotations([state]);
@@ -350,7 +366,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.occluded = !state.occluded;
                     updateAnnotations([state]);
@@ -358,7 +374,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly && state.objectType === ObjectType.TRACK) {
                     state.keyframe = !state.keyframe;
                     updateAnnotations([state]);
@@ -366,22 +382,22 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly && state.objectType === ObjectType.TRACK) {
+                const state = activatedState();
+                if (state && !readonly && (state.objectType === ObjectType.TRACK || state.parentID)) {
                     state.outside = !state.outside;
                     updateAnnotations([state]);
                 }
             },
             DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly) {
                     removeObject(state, event ? event.shiftKey : false);
                 }
             },
             CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state) {
                     if (colorBy === ColorBy.GROUP) {
                         const colorID = (colors.indexOf(state.group.color) + 1) % colors.length;
@@ -398,7 +414,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
@@ -406,7 +422,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
@@ -414,21 +430,21 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             COPY_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly) {
                     copyShape(state);
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && !readonly) {
                     propagateObject(state);
                 }
             },
             NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof state.keyframes.next === 'number' ? state.keyframes.next : null;
                     if (frame !== null && isAbleToChangeFrame()) {
@@ -438,7 +454,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
+                const state = activatedState();
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof state.keyframes.prev === 'number' ? state.keyframes.prev : null;
                     if (frame !== null && isAbleToChangeFrame()) {

@@ -6,7 +6,7 @@ import consts from 'consts';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { ReviewState } from './interfaces';
+import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
     issues: [],

@@ -8,7 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import { PlusOutlined } from '@ant-design/icons';
 
-import { CloudStoragesQuery } from 'reducers/interfaces';
+import { CloudStoragesQuery } from 'reducers';
 import Input from 'antd/lib/input';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
