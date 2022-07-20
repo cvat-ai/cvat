@@ -21,7 +21,7 @@ context('Try to create a task with an incorrect dataset repository.', () => {
     const directoryToArchive = imagesFolder;
     const incorrectDatasetRepoUrl = 'dummyrepo.local';
     const incorrectDatasetRepoUrlHttps = 'https://dummyrepo.local';
-    const repositoryWithMissingAccess = 'https://github.com/openvinotoolkit/cvat';
+    const repositoryWithMissingAccess = 'https://github.com/cvat-ai/cvat';
 
     before(() => {
         cy.visit('auth/login');

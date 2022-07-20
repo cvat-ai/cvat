@@ -534,7 +534,7 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://openvinotoolkit.github.io/cvat/docs/',
+        'url': 'https://cvat-ai.github.io/cvat/docs/',
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html

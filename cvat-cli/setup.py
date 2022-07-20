@@ -48,7 +48,7 @@ setup(
     description="Command-line client for CVAT",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/openvinotoolkit/cvat/",
+    url="https://github.com/cvat-ai/cvat/",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     classifiers=[

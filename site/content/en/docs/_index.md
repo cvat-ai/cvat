@@ -32,7 +32,7 @@ Answers to frequently asked questions.
 
 {{% /blocks/feature %}}
 
-{{% blocks/feature icon="fab fa-github" title="[GitHub Repository](https://github.com/openvinotoolkit/cvat)" %}}
+{{% blocks/feature icon="fab fa-github" title="[GitHub Repository](https://github.com/cvat-ai/cvat)" %}}
 
 Computer Vision Annotation Tool GitHub repository.
 

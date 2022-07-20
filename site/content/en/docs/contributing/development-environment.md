@@ -51,7 +51,7 @@ description: 'Installing a development environment for different operating syste
 - Install CVAT on your local host:
 
   ```bash
-  git clone https://github.com/openvinotoolkit/cvat
+  git clone https://github.com/cvat-ai/cvat
   cd cvat && mkdir logs keys
   python3 -m venv .env
   . .env/bin/activate
