@@ -344,7 +344,7 @@ In the window that appears, select the created bucket and click export.
 ### Prepare manifest file
 
 Now you need to prepare a manifest file. I used [AWS cli](https://aws.amazon.com/cli/) and
-[script for prepare manifest file](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest).
+[script for prepare manifest file](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest).
 Perform the installation using the manual [aws-shell](https://github.com/awslabs/aws-shell),
 I used `aws-cli 1.20.49` `Python 3.7.9` `Windows 10`.
 You can configure credentials by running `aws configure`.

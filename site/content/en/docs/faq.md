@@ -101,7 +101,7 @@ volumes:
 
 ## How to make unassigned tasks not visible to all users
 
-Set [reduce_task_visibility](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py#L424)
+Set [reduce_task_visibility](https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py#L455)
 variable to `True`.
 
 ## Where are uploaded images/videos stored
@@ -135,7 +135,7 @@ Follow this [guide](/docs/administration/basics/installation/#windows-10).
 
 ## I do not have the Analytics tab on the header section. How can I add analytics
 
-You should build CVAT images with ['Analytics' component](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics).
+You should build CVAT images with ['Analytics' component](https://github.com/cvat-ai/cvat/tree/develop/components/analytics).
 
 ## How to upload annotations to an entire task from UI when there are multiple jobs in the task
 
