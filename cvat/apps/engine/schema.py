@@ -64,7 +64,7 @@ class CustomProxySerializerExtension(PolymorphicProxySerializerExtension):
         if cls == __class__:
             return False
 
-        if not super(OpenApiSerializerExtension, cls)._matches(target):
+        if not super()._matches(target):
             return False
 
         return target.component_name == cls.target_component
