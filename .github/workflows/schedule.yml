@@ -6,7 +6,7 @@ on:
 
 env:
   SERVER_IMAGE_TEST_REPO: cvat_server
-  UI_IMAGE_TEST_REPO: cvat_ui
+  UI_IMAGE_TEST_REPO: instrumentation_cvat_ui
 
 jobs:
   check_updates:
@@ -69,7 +69,7 @@ jobs:
           echo ::set-output name=default_branch::${DEFAULT_BRANCH}
           echo ::set-output name=sha::${SHA}
 
-  build_server:
+  build:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
@@ -78,8 +78,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
@@ -87,11 +87,25 @@ jobs:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
+      - name: CVAT UI. Getting cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_ui
+          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
+
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: CVAT UI. Extract metadata (tags, labels) for Docker
+        id: meta-ui
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.UI_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
@@ -107,35 +121,6 @@ jobs:
           push: true
           tags: ${{ steps.meta-server.outputs.tags }}
           labels: ${{ steps.meta-server.outputs.labels }}
-
-  build_ui:
-    needs: search_cache
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME_2 }}
-          password: ${{ secrets.DOCKERHUB_TOKEN_2 }}
-
-      - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
-
-      - name: CVAT UI. Extract metadata (tags, labels) for Docker
-        id: meta-ui
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_USERNAME_2 }}/${{ env.UI_IMAGE_TEST_REPO }}
-          tags:
-            type=raw,value=nightly
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
         run: |
@@ -153,7 +138,7 @@ jobs:
           labels: ${{ steps.meta-ui.outputs.labels }}
 
   unit_testing:
-    needs: build_server
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -216,15 +201,15 @@ jobs:
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: Pull CVAT server image
         run: |
@@ -262,7 +247,7 @@ jobs:
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
 
   e2e_testing:
-    needs: [build_server, build_ui]
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -281,41 +266,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
+
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Pull CVAT server image
-        run: |
-          docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
 
       - name: CVAT UI. Extract metadata (tags, labels) for Docker
         id: meta-ui
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME_2 }}/${{ env.UI_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_USERNAME }}/${{ env.UI_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME_2 }}
-          password: ${{ secrets.DOCKERHUB_TOKEN_2 }}
-
       - name: Pull CVAT UI image
         run: |
+          docker pull ${{ steps.meta-server.outputs.tags }}
+          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
+
           docker pull ${{ steps.meta-ui.outputs.tags }}
           docker tag ${{ steps.meta-ui.outputs.tags }} openvino/cvat_ui
 
@@ -426,15 +403,15 @@ jobs:
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: Pull CVAT server image
         run: |
