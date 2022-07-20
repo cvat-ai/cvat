@@ -498,6 +498,18 @@ class JobAnnotation:
         db_shapes = _merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
+                'labeledshapeattributeval_set': [
+                    'labeledshapeattributeval__spec_id',
+                    'labeledshapeattributeval__value',
+                    'labeledshapeattributeval__id',
+                ],
+            },
+            field_id='id',
+        )
+
+        db_shapes = _merge_table_rows(
+            rows=db_shapes,
+            keys_for_merge={
                 'labeledskeleton_set': [
                     'labeledskeleton__id',
                     'labeledskeleton__type',
@@ -509,18 +521,6 @@ class JobAnnotation:
                     'labeledskeleton__labeledskeletonattributeval__spec_id',
                     'labeledskeleton__labeledskeletonattributeval__value',
                     'labeledskeleton__labeledskeletonattributeval__id',
-                ],
-            },
-            field_id='id',
-        )
-
-        db_shapes = _merge_table_rows(
-            rows=db_shapes,
-            keys_for_merge={
-                'labeledshapeattributeval_set': [
-                    'labeledshapeattributeval__spec_id',
-                    'labeledshapeattributeval__value',
-                    'labeledshapeattributeval__id',
                 ],
             },
             field_id='id',
