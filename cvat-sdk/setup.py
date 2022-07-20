@@ -62,7 +62,7 @@ setup(
     description="CVAT REST API",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="Nikita Manovich",
+    author="CVAT.ai team",
     author_email="support@cvat.ai",
     url="https://github.com/cvat-ai/cvat",
     keywords=["OpenAPI", "OpenAPI-Generator", "CVAT REST API"],

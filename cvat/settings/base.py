@@ -511,7 +511,7 @@ SPECTACULAR_SETTINGS = {
     # Set VERSION to None if only the request version should be rendered.
     'VERSION': 'alpha (2.0)',
     'CONTACT': {
-        'name': 'Nikita Manovich',
+        'name': 'CVAT.ai team',
         'url': 'https://github.com/cvat-ai/cvat',
         'email': 'support@cvat.ai',
     },
