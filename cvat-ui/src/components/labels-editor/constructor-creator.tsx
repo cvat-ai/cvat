@@ -34,7 +34,6 @@ function ConstructorCreator(props: Props): JSX.Element {
             const label = {
                 ...labelConfiguration,
                 ...data,
-                type: (labelConfiguration.type || 'any' as LabelOptColor['type']),
             } as LabelOptColor;
 
             onCreate(label);
