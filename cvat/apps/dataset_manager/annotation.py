@@ -771,7 +771,7 @@ class TrackManager(ObjectManager):
         shapes = []
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
-        if track["shapes"]:
+        if track["shapes"][0]["type"] == ShapeType.SKELETON:
             for elem in track["shapes"][0]["elements"]:
                 elem["keyframe"] = True
 
