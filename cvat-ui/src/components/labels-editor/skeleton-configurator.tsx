@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
@@ -6,6 +7,7 @@ import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
 import Icon, { PictureOutlined } from '@ant-design/icons';
 
+import { ShapeType } from 'cvat-core-wrapper';
 import consts from 'consts';
 import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
@@ -25,6 +27,8 @@ function setAttributes(element: Element, attrs: Record<string, string | number |
 
 interface Props {
     onSubmit(configuration: SkeletonConfiguration): void;
+    disabled?: boolean;
+    label: LabelOptColor;
 }
 
 interface State {
@@ -35,6 +39,14 @@ interface State {
 }
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
+    static defaultProps = {
+        disabled: false,
+    };
+
+    static propTypes = {
+        disabled: PropTypes.bool,
+    };
+
     private canvasRef: React.RefObject<HTMLCanvasElement>;
     private svgRef: React.RefObject<SVGSVGElement>;
     private canvasResizeObserver: ResizeObserver;
@@ -73,6 +85,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
     public componentDidMount(): void {
         const { canvasRef, svgRef } = this;
+        const { label } = this.props;
         const canvas = canvasRef.current;
         const svg = svgRef.current;
 
@@ -85,6 +98,20 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             svg.setAttribute('viewBox', '0 0 100 100');
             svg.addEventListener('click', this.onSVGClick);
             svg.addEventListener('mousemove', this.onSVGMouseMove);
+        }
+
+        if (label && svg && label.elements) {
+            const sublabels = label.sublabels as LabelOptColor[];
+            /* eslint-disable-next-line no-unsanitized/property */
+            svg.innerHTML = label.svg as string;
+            for (const element of label.elements) {
+                // todo: update elements with label_id instead of label name
+                const sublabel = sublabels.find((_label) => _label.name === element.label);
+                if (sublabel) {
+                    this.labels[element.element_id] = sublabel;
+                }
+            }
+            this.setupTextLabels();
         }
     }
 
@@ -281,6 +308,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             }),
             color: labels[elementID]?.color || undefined,
             id: idGenerator(),
+            type: ShapeType.POINTS,
         };
 
         return true;
@@ -484,10 +512,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
     public render(): JSX.Element {
         const { canvasRef, svgRef } = this;
+        const { disabled } = this.props;
         const { activeTool, contextMenuVisible, contextMenuElement } = this.state;
 
         return (
-            <Row className='cvat-skeleton-configurator'>
+            <Row className='cvat-skeleton-configurator' style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
                     <SkeletonElementContextMenu
                         elementID={contextMenuElement}

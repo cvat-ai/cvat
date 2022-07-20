@@ -144,7 +144,7 @@ export interface RawLabel {
     id?: number;
     name: string;
     color: string;
-    type?: LabelType;
+    type: LabelType;
     svg?: string;
     edges?: { from: number, to: number }[];
     elements?: { label: string; element_id: number }[];
@@ -335,6 +335,8 @@ export class Label {
             name: this.name,
             attributes: [...this.attributes.map((el) => el.toJSON())],
             color: this.color,
+            type: this.type,
+            has_parent: this.hasParent,
         };
 
         if (typeof this.id !== 'undefined') {

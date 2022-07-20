@@ -7,6 +7,7 @@ import ObjectState from 'cvat-core/src/object-state';
 import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
+import { ShapeType } from 'cvat-core/src/enums';
 
 const cvat: any = _cvat;
 
@@ -24,6 +25,7 @@ export {
     ObjectState,
     Label,
     Attribute,
+    ShapeType,
 };
 
 export type {
