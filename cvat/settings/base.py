@@ -511,8 +511,8 @@ SPECTACULAR_SETTINGS = {
     'VERSION': 'alpha (2.0)',
     'CONTACT': {
         'name': 'Nikita Manovich',
-        'url': 'https://github.com/nmanovic',
-        'email': 'nikita.manovich@intel.com',
+        'url': 'https://github.com/cvat-ai/cvat',
+        'email': 'support@cvat.ai',
     },
     'LICENSE': {
         'name': 'MIT License',
@@ -533,7 +533,7 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://openvinotoolkit.github.io/cvat/docs/',
+        'url': 'https://cvat-ai.github.io/cvat/docs/',
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
