@@ -9,7 +9,7 @@ fullnameOverride: ""
 cvat:
   backend:
     replicas: 1
-    image: openvino/cvat_server
+    image: cvat/server
     tag: latest
     permissionFix:
       enabled: true
@@ -59,7 +59,7 @@ cvat:
       size: 20Gi
   frontend:
     replicas: 1
-    image: openvino/cvat_ui
+    image: cvat/ui
     tag: latest
     labels: {}
     #  test: test

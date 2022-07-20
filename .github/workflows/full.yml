@@ -184,10 +184,10 @@ jobs:
       - name: Pull CVAT images
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
 
           docker pull ${{ steps.meta-ui.outputs.tags }}
-          docker tag ${{ steps.meta-ui.outputs.tags }} openvino/cvat_ui
+          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui
 
       - name: Running OPA tests
         run: |
@@ -282,10 +282,10 @@ jobs:
       - name: Pull CVAT images
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
 
           docker pull ${{ steps.meta-ui.outputs.tags }}
-          docker tag ${{ steps.meta-ui.outputs.tags }} openvino/cvat_ui
+          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui
 
       - name: Run CVAT instance
         run: |
