@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 **is_staff** | **bool** | Designates whether the user can log into this admin site. | [optional] 
 **is_superuser** | **bool** | Designates that this user has all permissions without explicitly assigning them. | [optional] 
 **is_active** | **bool** | Designates whether this user should be treated as active. Unselect this instead of deleting accounts. | [optional] 
-**last_login** | **datetime** |  | [optional] [readonly] 
+**last_login** | **datetime, none_type** |  | [optional] [readonly] 
 **date_joined** | **datetime** |  | [optional] [readonly] 
 **any string name** | **bool, date, datetime, dict, float, int, list, str, none_type** | any string name can be used but the value must be the correct type | [optional]
 

@@ -74,12 +74,6 @@ class MetaUser(ModelComposed):
     allowed_values = {}
 
     validations = {
-        ("username",): {
-            "max_length": 150,
-            "regex": {
-                "pattern": r"^[\w.@+-]+$",  # noqa: E501
-            },
-        },
         ("first_name",): {
             "max_length": 150,
         },
@@ -88,6 +82,12 @@ class MetaUser(ModelComposed):
         },
         ("email",): {
             "max_length": 254,
+        },
+        ("username",): {
+            "max_length": 150,
+            "regex": {
+                "pattern": r"^[\w.@+-]+$",  # noqa: E501
+            },
         },
     }
 
@@ -124,7 +124,6 @@ class MetaUser(ModelComposed):
         """
         lazy_import()
         return {
-            "username": (str,),  # noqa: E501
             "url": (str,),  # noqa: E501
             "id": (int,),  # noqa: E501
             "first_name": (str,),  # noqa: E501
@@ -133,22 +132,18 @@ class MetaUser(ModelComposed):
             "is_staff": (bool,),  # noqa: E501
             "is_superuser": (bool,),  # noqa: E501
             "is_active": (bool,),  # noqa: E501
-            "last_login": (datetime,),  # noqa: E501
+            "last_login": (
+                datetime,
+                none_type,
+            ),  # noqa: E501
             "date_joined": (datetime,),  # noqa: E501
+            "username": (str,),  # noqa: E501
             "groups": ([str],),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
-        lazy_import()
-        val = {
-            "BasicUser": BasicUser,
-            "None": BasicUser,
-            "User": User,
-        }
-        if not val:
-            return None
-        return {"username": val}
+        return None
 
     # member type declarations
     url: str  # noqa: E501
@@ -204,7 +199,7 @@ class MetaUser(ModelComposed):
     Designates whether this user should be treated as active. Unselect this instead of deleting accounts..
     """
 
-    last_login: datetime  # noqa: E501
+    last_login: typing.Union[datetime, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -215,7 +210,6 @@ class MetaUser(ModelComposed):
     """
 
     attribute_map = {
-        "username": "username",  # noqa: E501
         "url": "url",  # noqa: E501
         "id": "id",  # noqa: E501
         "first_name": "first_name",  # noqa: E501
@@ -226,6 +220,7 @@ class MetaUser(ModelComposed):
         "is_active": "is_active",  # noqa: E501
         "last_login": "last_login",  # noqa: E501
         "date_joined": "date_joined",  # noqa: E501
+        "username": "username",  # noqa: E501
         "groups": "groups",  # noqa: E501
     }
 
@@ -238,11 +233,10 @@ class MetaUser(ModelComposed):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, username, *args, **kwargs) -> MetaUser:  # noqa: E501
+    def _from_openapi_data(cls, *args, **kwargs) -> MetaUser:  # noqa: E501
         """MetaUser - a model defined in OpenAPI
 
         Keyword Args:
-            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -281,8 +275,9 @@ class MetaUser(ModelComposed):
             is_staff (bool): Designates whether the user can log into this admin site.. [optional]  # noqa: E501
             is_superuser (bool): Designates that this user has all permissions without explicitly assigning them.. [optional]  # noqa: E501
             is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
-            last_login (datetime): [optional]  # noqa: E501
+            last_login (datetime, none_type): [optional]  # noqa: E501
             date_joined (datetime): [optional]  # noqa: E501
+            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.. [optional]  # noqa: E501
             groups ([str]): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
@@ -324,9 +319,7 @@ class MetaUser(ModelComposed):
             "_configuration": _configuration,
             "_visited_composed_classes": self._visited_composed_classes,
         }
-        required_args = {
-            "username": username,
-        }
+        required_args = {}
         kwargs.update(required_args)
         composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
@@ -362,11 +355,10 @@ class MetaUser(ModelComposed):
     )
 
     @convert_js_args_to_python_args
-    def __init__(self, username, *args, **kwargs):  # noqa: E501
+    def __init__(self, *args, **kwargs):  # noqa: E501
         """MetaUser - a model defined in OpenAPI
 
         Keyword Args:
-            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -405,8 +397,9 @@ class MetaUser(ModelComposed):
             is_staff (bool): Designates whether the user can log into this admin site.. [optional]  # noqa: E501
             is_superuser (bool): Designates that this user has all permissions without explicitly assigning them.. [optional]  # noqa: E501
             is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
-            last_login (datetime): [optional]  # noqa: E501
+            last_login (datetime, none_type): [optional]  # noqa: E501
             date_joined (datetime): [optional]  # noqa: E501
+            username (str): Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.. [optional]  # noqa: E501
             groups ([str]): [optional]  # noqa: E501
         """
 
@@ -445,9 +438,7 @@ class MetaUser(ModelComposed):
             "_configuration": _configuration,
             "_visited_composed_classes": self._visited_composed_classes,
         }
-        required_args = {
-            "username": username,
-        }
+        required_args = {}
         kwargs.update(required_args)
         composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
@@ -482,10 +473,10 @@ class MetaUser(ModelComposed):
         # loading
         lazy_import()
         return {
-            "anyOf": [],
-            "allOf": [],
-            "oneOf": [
+            "anyOf": [
                 BasicUser,
                 User,
             ],
+            "allOf": [],
+            "oneOf": [],
         }

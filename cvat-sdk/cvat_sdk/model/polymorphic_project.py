@@ -125,7 +125,6 @@ class PolymorphicProject(ModelComposed):
         """
         lazy_import()
         return {
-            "name": (str,),  # noqa: E501
             "url": (str,),  # noqa: E501
             "id": (int,),  # noqa: E501
             "labels": ([Label],),  # noqa: E501
@@ -157,19 +156,12 @@ class PolymorphicProject(ModelComposed):
             ),  # noqa: E501
             "target_storage": (ProjectReadTargetStorage,),  # noqa: E501
             "source_storage": (ProjectReadTargetStorage,),  # noqa: E501
+            "name": (str,),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
-        lazy_import()
-        val = {
-            "None": ProjectSearch,
-            "ProjectRead": ProjectRead,
-            "ProjectSearch": ProjectSearch,
-        }
-        if not val:
-            return None
-        return {"name": val}
+        return None
 
     # member type declarations
     url: str  # noqa: E501
@@ -255,7 +247,6 @@ class PolymorphicProject(ModelComposed):
     """
 
     attribute_map = {
-        "name": "name",  # noqa: E501
         "url": "url",  # noqa: E501
         "id": "id",  # noqa: E501
         "labels": "labels",  # noqa: E501
@@ -271,10 +262,10 @@ class PolymorphicProject(ModelComposed):
         "organization": "organization",  # noqa: E501
         "target_storage": "target_storage",  # noqa: E501
         "source_storage": "source_storage",  # noqa: E501
+        "name": "name",  # noqa: E501
     }
 
     read_only_vars = {
-        "name",  # noqa: E501
         "url",  # noqa: E501
         "id",  # noqa: E501
         "labels",  # noqa: E501
@@ -285,15 +276,15 @@ class PolymorphicProject(ModelComposed):
         "status",  # noqa: E501
         "dimension",  # noqa: E501
         "organization",  # noqa: E501
+        "name",  # noqa: E501
     }
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, name, *args, **kwargs) -> PolymorphicProject:  # noqa: E501
+    def _from_openapi_data(cls, *args, **kwargs) -> PolymorphicProject:  # noqa: E501
         """PolymorphicProject - a model defined in OpenAPI
 
         Keyword Args:
-            name (str):
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -339,6 +330,7 @@ class PolymorphicProject(ModelComposed):
             organization (int, none_type): [optional]  # noqa: E501
             target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
             source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+            name (str): [optional]  # noqa: E501
         """
         from cvat_sdk.configuration import Configuration
 
@@ -379,9 +371,7 @@ class PolymorphicProject(ModelComposed):
             "_configuration": _configuration,
             "_visited_composed_classes": self._visited_composed_classes,
         }
-        required_args = {
-            "name": name,
-        }
+        required_args = {}
         kwargs.update(required_args)
         composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
@@ -417,7 +407,7 @@ class PolymorphicProject(ModelComposed):
     )
 
     @convert_js_args_to_python_args
-    def __init__(self, name, *args, **kwargs):  # noqa: E501
+    def __init__(self, *args, **kwargs):  # noqa: E501
         """PolymorphicProject - a model defined in OpenAPI
 
         Keyword Args:
@@ -466,6 +456,7 @@ class PolymorphicProject(ModelComposed):
             organization (int, none_type): [optional]  # noqa: E501
             target_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
             source_storage (ProjectReadTargetStorage): [optional]  # noqa: E501
+            name (str): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop("_check_type", True)
@@ -503,9 +494,7 @@ class PolymorphicProject(ModelComposed):
             "_configuration": _configuration,
             "_visited_composed_classes": self._visited_composed_classes,
         }
-        required_args = {
-            "name": name,
-        }
+        required_args = {}
         kwargs.update(required_args)
         composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
@@ -540,10 +529,10 @@ class PolymorphicProject(ModelComposed):
         # loading
         lazy_import()
         return {
-            "anyOf": [],
-            "allOf": [],
-            "oneOf": [
+            "anyOf": [
                 ProjectRead,
                 ProjectSearch,
             ],
+            "allOf": [],
+            "oneOf": [],
         }

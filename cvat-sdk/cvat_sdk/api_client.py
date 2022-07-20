@@ -40,8 +40,10 @@ from cvat_sdk.model_utils import (
     datetime,
     deserialize_file,
     file_type,
+    get_file_data_and_close_file,
     model_to_dict,
     none_type,
+    to_json,
     validate_and_convert_types,
 )
 
@@ -333,32 +335,7 @@ class ApiClient(object):
         :param read_files: Whether to read file data or leave files as is.
         :return: The serialized form of data.
         """
-        if isinstance(obj, (ModelNormal, ModelComposed)):
-            return {
-                key: cls.sanitize_for_serialization(val, read_files=read_files)
-                for key, val in model_to_dict(obj, serialize=True).items()
-            }
-        elif isinstance(obj, io.IOBase):
-            if read_files:
-                return cls.get_file_data_and_close_file(obj)
-            else:
-                return obj
-        elif isinstance(obj, (str, int, float, none_type, bool)):
-            return obj
-        elif isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        elif isinstance(obj, ModelSimple):
-            return cls.sanitize_for_serialization(obj.value, read_files=read_files)
-        elif isinstance(obj, (list, tuple)):
-            return [cls.sanitize_for_serialization(item, read_files=read_files) for item in obj]
-        if isinstance(obj, dict):
-            return {
-                key: cls.sanitize_for_serialization(val, read_files=read_files)
-                for key, val in obj.items()
-            }
-        raise ApiValueError(
-            "Unable to prepare type {} for serialization".format(obj.__class__.__name__)
-        )
+        return to_json(obj, read_files=read_files)
 
     def deserialize(
         self, response: HTTPResponse, response_schema: typing.Tuple, *, _check_type: bool
@@ -639,12 +616,6 @@ class ApiClient(object):
                 new_params.append((k, v))
         return new_params
 
-    @staticmethod
-    def get_file_data_and_close_file(file_instance: io.IOBase) -> bytes:
-        file_data = file_instance.read()
-        file_instance.close()
-        return file_data
-
     def _serialize_file(
         self, file_instance: io.IOBase
     ) -> typing.Tuple[str, typing.Union[str, bytes], str]:
@@ -652,7 +623,7 @@ class ApiClient(object):
             raise ApiValueError("Cannot read a closed file.")
         filename = os.path.basename(file_instance.name)
 
-        filedata = self.get_file_data_and_close_file(file_instance)
+        filedata = get_file_data_and_close_file(file_instance)
 
         mimetype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
@@ -971,13 +942,24 @@ class Endpoint(object):
         return params
 
     def call_with_http_info(
-        self, **kwargs
+        self,
+        _parse_response: bool = True,
+        _request_timeout: typing.Union[int, float, tuple] = None,
+        _validate_inputs: bool = True,
+        _validate_outputs: bool = True,
+        _check_status: bool = True,
+        _spec_property_naming: bool = False,
+        _content_type: typing.Optional[str] = None,
+        _host_index: typing.Optional[int] = None,
+        _request_auths: typing.Optional[typing.List] = None,
+        _async_call: bool = False,
+        **kwargs,
     ) -> typing.Tuple[typing.Optional[typing.Any], HTTPResponse]:
         """
         Keyword Args:
             endpoint args
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
+            _parse_response (bool): if False, the response data will not be parsed,
+                None is returned for data.
                 Default is True.
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -989,6 +971,9 @@ class Endpoint(object):
             _validate_outputs (bool): specifies if type checking
                 should be done one the data received from the server.
                 Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
             _spec_property_naming (bool): True if the variable names in the input data
                 are serialized names, as specified in the OpenAPI document.
                 False if the variable names in the input data
@@ -1010,6 +995,17 @@ class Endpoint(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
+
+        kwargs["_parse_response"] = _parse_response
+        kwargs["_request_timeout"] = _request_timeout
+        kwargs["_validate_inputs"] = _validate_inputs
+        kwargs["_validate_outputs"] = _validate_outputs
+        kwargs["_check_status"] = _check_status
+        kwargs["_spec_property_naming"] = _spec_property_naming
+        kwargs["_content_type"] = _content_type
+        kwargs["_host_index"] = _host_index
+        kwargs["_request_auths"] = _request_auths
+        kwargs["_async_call"] = _async_call
 
         try:
             index = (

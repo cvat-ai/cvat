@@ -231,7 +231,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
                 serializers=[
                     ProjectReadSerializer, ProjectSearchSerializer,
-                ], resource_type_field_name='name', many=True),
+                ], resource_type_field_name=None, many=True),
         }),
     create=extend_schema(
         summary='Method creates a new project',
@@ -1726,7 +1726,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
                     UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name='username'),
+                ], resource_type_field_name=None),
         }),
     retrieve=extend_schema(
         summary='Method provides information of a specific user',
@@ -1734,7 +1734,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
                     UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name='username'),
+                ], resource_type_field_name=None),
         }),
     partial_update=extend_schema(
         summary='Method updates chosen fields of a user',
@@ -1742,7 +1742,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
                     UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name='username'),
+                ], resource_type_field_name=None),
         }),
     destroy=extend_schema(
         summary='Method deletes a specific user from the server',
@@ -1790,7 +1790,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
                     UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name='username'),
+                ], resource_type_field_name=None),
         })
     @action(detail=False, methods=['GET'])
     def self(self, request):

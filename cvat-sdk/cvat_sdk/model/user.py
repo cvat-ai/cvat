@@ -66,7 +66,7 @@ class User(ModelNormal):
 
       is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
 
-      last_login (datetime): [optional]  # noqa: E501
+      last_login (datetime, none_type): [optional]  # noqa: E501
 
       date_joined (datetime): [optional]  # noqa: E501
 
@@ -150,7 +150,10 @@ class User(ModelNormal):
             "is_staff": (bool,),  # noqa: E501
             "is_superuser": (bool,),  # noqa: E501
             "is_active": (bool,),  # noqa: E501
-            "last_login": (datetime,),  # noqa: E501
+            "last_login": (
+                datetime,
+                none_type,
+            ),  # noqa: E501
             "date_joined": (datetime,),  # noqa: E501
         }
 
@@ -212,7 +215,7 @@ class User(ModelNormal):
     Designates whether this user should be treated as active. Unselect this instead of deleting accounts..
     """
 
-    last_login: datetime  # noqa: E501
+    last_login: typing.Union[datetime, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -272,7 +275,7 @@ class User(ModelNormal):
 
             is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
 
-            last_login (datetime): [optional]  # noqa: E501
+            last_login (datetime, none_type): [optional]  # noqa: E501
 
             date_joined (datetime): [optional]  # noqa: E501
 
@@ -389,7 +392,7 @@ class User(ModelNormal):
 
             is_active (bool): Designates whether this user should be treated as active. Unselect this instead of deleting accounts.. [optional]  # noqa: E501
 
-            last_login (datetime): [optional]  # noqa: E501
+            last_login (datetime, none_type): [optional]  # noqa: E501
 
             date_joined (datetime): [optional]  # noqa: E501
 

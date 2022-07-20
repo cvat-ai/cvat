@@ -47,6 +47,9 @@ class UserSerializer(serializers.ModelSerializer):
             'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
+        extra_kwargs = {
+            'last_login': { 'allow_null': True }
+        }
 
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
