@@ -468,7 +468,7 @@ class JobAnnotation:
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
             "label",
             "labeledshapeattributeval_set",
-            "labeledskeleton_set",
+            "labeledskeleton_set__labeledskeletonattributeval_set",
         ).values(
             'id',
             'label_id',
@@ -493,7 +493,7 @@ class JobAnnotation:
             'labeledskeleton__labeledskeletonattributeval__spec_id',
             'labeledskeleton__labeledskeletonattributeval__value',
             'labeledskeleton__labeledskeletonattributeval__id',
-            ).order_by('frame')
+            ).order_by('id', 'labeledskeleton__frame')
 
         db_shapes = _merge_table_rows(
             rows=db_shapes,
@@ -503,13 +503,6 @@ class JobAnnotation:
                     'labeledshapeattributeval__value',
                     'labeledshapeattributeval__id',
                 ],
-            },
-            field_id='id',
-        )
-
-        db_shapes = _merge_table_rows(
-            rows=db_shapes,
-            keys_for_merge={
                 'labeledskeleton_set': [
                     'labeledskeleton__id',
                     'labeledskeleton__type',
@@ -521,7 +514,7 @@ class JobAnnotation:
                     'labeledskeleton__labeledskeletonattributeval__spec_id',
                     'labeledskeleton__labeledskeletonattributeval__value',
                     'labeledskeleton__labeledskeletonattributeval__id',
-                ],
+                ]
             },
             field_id='id',
         )
