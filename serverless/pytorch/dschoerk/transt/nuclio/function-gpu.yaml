@@ -1,0 +1,88 @@
+metadata:
+  name: pth-dschoerk-transt
+  namespace: cvat
+  annotations:
+    name: TransT
+    type: tracker
+    spec:
+    framework: pytorch
+
+spec:
+  description: Fast Online Object Tracking and Segmentation
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/trans-t
+
+  build:
+    image: cvat/pth.dschoerk.transt
+    #baseImage: ubuntu:20.04
+
+    # GPU only
+    baseImage: nvidia/cuda:11.1-devel-ubuntu20.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: PATH="/root/miniconda3/bin:${PATH}"
+        - kind: ARG
+          value: PATH="/root/miniconda3/bin:${PATH}"
+        - kind: RUN
+          value: rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/sources.list.d/nvidia-ml.list
+        - kind: RUN
+          value: apt update && apt install -y --no-install-recommends wget git ca-certificates libglib2.0-0 libgl1 && rm -rf /var/lib/apt/lists/* # libxrender1 libxext6
+        - kind: RUN
+          value: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &&
+            chmod +x Miniconda3-latest-Linux-x86_64.sh && ./Miniconda3-latest-Linux-x86_64.sh -b &&
+            rm -f Miniconda3-latest-Linux-x86_64.sh
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: conda create -y -n transt python=3.8
+        - kind: SHELL
+          value: '["conda", "run", "-n", "transt", "/bin/bash", "-c"]'
+        - kind: RUN
+          value: git clone https://github.com/dschoerk/TransT trans-t
+
+        #- kind: RUN
+        #  value: pip install torch==1.7.1+cpu torchvision==0.8.2+cpu torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
+
+        # GPU only
+        - kind: RUN
+          value: pip install torch==1.7.0+cu110 torchvision==0.8.1+cu110 -f https://download.pytorch.org/whl/torch_stable.html
+
+
+        - kind: RUN
+          value: pip install jsonpickle opencv-python
+
+        - kind: RUN
+          value: wget --no-check-certificate 'https://drive.google.com/uc?id=1Pq0sK-9jmbLAVtgB9-dPDc2pipCxYdM5' -O /transt.pth
+
+        - kind: RUN
+          value: apt remove -y git wget
+        - kind: RUN
+          value: cd trans-t
+        - kind: ENTRYPOINT
+          value: '["conda", "run", "-n", "transt"]'
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  # GPU only
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
