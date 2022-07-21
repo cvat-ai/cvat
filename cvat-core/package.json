@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check -- --watch"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",
@@ -32,8 +32,8 @@
     "detect-browser": "^5.2.1",
     "error-stack-parser": "^2.0.2",
     "form-data": "^2.5.0",
-    "jest-config": "^26.6.3",
-    "js-cookie": "^2.2.0",
+    "jest-config": "^28.1.2",
+    "js-cookie": "^3.0.1",
     "json-logic-js": "^2.0.1",
     "platform": "^1.3.5",
     "quickhull": "^1.0.3",
