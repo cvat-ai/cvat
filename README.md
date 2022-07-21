@@ -121,8 +121,8 @@ Limitations:
 
 Prebuilt docker images for CVAT releases are available on Docker Hub:
 
-- [cvat_server](https://hub.docker.com/r/openvino/cvat_server)
-- [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui)
+- [cvat/server](https://hub.docker.com/r/cvat/server)
+- [cvat/ui](https://hub.docker.com/r/cvat/ui)
 
 ## REST API
 The current REST API version is `2.0-alpha`. We focus on its improvement and therefore
@@ -138,7 +138,7 @@ The exact steps on how FFmpeg was configured and compiled can be found in the [D
 FFmpeg is an open source framework licensed under LGPL and GPL.
 See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
 for determining if your use of FFmpeg requires any
-additional licenses. Intel is not responsible for obtaining any
+additional licenses. CVAT.ai is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in
 connection with your use of FFmpeg.
 
@@ -180,7 +180,6 @@ If you are not sure or just want to browse other users common questions,
 Other ways to ask questions and get our support:
 
 - [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow\*
-- [Forum on Intel Developer Zone](https://software.intel.com/en-us/forums/computer-vision)
 
 ## Links
 
@@ -191,11 +190,11 @@ Other ways to ask questions and get our support:
   <!-- prettier-ignore-start -->
   <!-- Badges -->
 
-[docker-server-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_server.svg?style=flat-square&label=server%20pulls
-[docker-server-image-url]: https://hub.docker.com/r/openvino/cvat_server
+[docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
+[docker-server-image-url]: https://hub.docker.com/r/cvat/server
 
-[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_ui.svg?style=flat-square&label=UI%20pulls
-[docker-ui-image-url]: https://hub.docker.com/r/openvino/cvat_ui
+[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
+[docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
 
 [ci-img]: https://github.com/cvat-ai/cvat/workflows/CI/badge.svg?branch=develop
 [ci-url]: https://github.com/cvat-ai/cvat/actions

@@ -17,7 +17,7 @@
     "not IE 11",
     "> 2%"
   ],
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "dependencies": {
     "@ant-design/icons": "^4.6.3",

@@ -27,7 +27,7 @@ services:
 
   cvat:
     container_name: cvat
-    image: openvino/cvat_server
+    image: cvat/server
     restart: always
     depends_on:
       - cvat_redis
@@ -57,7 +57,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: openvino/cvat_ui
+    image: cvat/ui
     restart: always
     depends_on:
       - cvat
