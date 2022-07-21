@@ -40,7 +40,7 @@ class StreamWithProgress:
         return self.stream.tell()
 
 
-def expect_status(code: int, response: urllib3.HTTPResponse) -> None:
+def assert_status(code: int, response: urllib3.HTTPResponse) -> None:
     if response.status != code:
         raise Exception(f"Unexpected status code received {response.status}")
 

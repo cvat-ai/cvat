@@ -5,13 +5,10 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import Any, Dict, List, Union
 
 from cvat_sdk.api_client import Endpoint
-from cvat_sdk.usecases.utils import expect_status
-
-log = logging.getLogger(__name__)
+from cvat_sdk.usecases.utils import assert_status
 
 
 def get_paginated_collection(
@@ -25,7 +22,7 @@ def get_paginated_collection(
     page = 1
     while True:
         (page_contents, response) = endpoint.call_with_http_info(**kwargs, page=page)
-        expect_status(200, response)
+        assert_status(200, response)
 
         if return_json:
             results.extend(json.loads(response.data).get("results", []))

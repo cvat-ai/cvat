@@ -13,7 +13,9 @@ from time import sleep
 from typing import List
 from cvat_sdk import models
 from cvat_sdk.apis import TasksApi
+from cvat_sdk.usecases.auth import login
 from cvat_sdk.usecases.client import CvatClient
+from cvat_sdk.usecases.tasks import create_task
 from cvat_sdk.usecases.types import ResourceType
 
 import pytest
@@ -366,9 +368,14 @@ class TestPostTaskData:
                     fd.write(f.getvalue())
                     task_files[i] = osp.join(temp_dir, f.name)
 
-            with CvatClient(BASE_URL, credentials=(username, USER_PASS)) as client:
-                task_id = client.create_task(models.TaskWriteRequest(**task_spec),
-                    resource_type=ResourceType.LOCAL, resources=task_files, **task_data)
+            with CvatClient(BASE_URL) as client:
+                login(client, (username, USER_PASS))
+
+                task_id = create_task(client,
+                    spec=models.TaskWriteRequest(**task_spec),
+                    data_params=task_data,
+                    resource_type=ResourceType.LOCAL,
+                    resources=task_files)
 
                 (task, _) = client.api.tasks_api.retrieve(task_id)
                 assert task.size == 7

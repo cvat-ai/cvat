@@ -10,8 +10,9 @@ import os
 from typing import Dict, List, Optional, Tuple
 
 from cvat_sdk import ApiClient
+from cvat_sdk.usecases.client import CvatClient
 from cvat_sdk.usecases.progress_reporter import ProgressReporter
-from cvat_sdk.usecases.utils import StreamWithProgress, expect_status
+from cvat_sdk.usecases.utils import StreamWithProgress, assert_status
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ log = logging.getLogger(__name__)
 MAX_REQUEST_SIZE = 100 * 2**20
 
 class Uploader:
-    def __init__(self, client: ApiClient):
+    def __init__(self, client: CvatClient):
         self.client = client
 
     def upload_files(self, url: str, resources: List[str], *,
@@ -39,24 +40,28 @@ class Uploader:
                         filename,
                         es.enter_context(closing(open(filename, "rb"))).read(),
                     )
-                response = self.client.rest_client.POST(
+                response = self.client.api.rest_client.POST(
                     url,
                     post_params=dict(**kwargs, **files),
                     headers={
                         "Content-Type": "multipart/form-data",
                         "Upload-Multiple": "",
-                        **self.client.get_common_headers(),
+                        **self.client.api.get_common_headers(),
                     },
                 )
-            expect_status(200, response)
+            assert_status(200, response)
 
             if pbar is not None:
                 pbar.advance(group_size)
 
         for filename in separate_files:
-            self._upload_file_with_tus(url, filename, pbar=pbar, logger=log.debug)
+            self._upload_file_with_tus(url, filename, params=kwargs, pbar=pbar, logger=log.debug)
 
         self._tus_finish_upload(url, data=kwargs)
+
+    def upload_file(self, url, filename, *, params=None, pbar=None, logger=None):
+        return self._upload_file_with_tus(url=url, filename=filename,
+            params=params, pbar=pbar, logger=logger)
 
     def _split_files_by_requests(
         self,
@@ -93,6 +98,7 @@ class Uploader:
 
         return bulk_file_groups, separate_files, total_size
 
+    @staticmethod
     def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
         import tusclient.uploader as tus_uploader
         from tusclient.client import TusClient, Uploader
@@ -167,6 +173,7 @@ class Uploader:
                 input_file = StreamWithProgress(input_file, pbar, length=file_size)
 
             tus_uploader = self._make_tus_uploader(
+                self.client.api,
                 url + "/",
                 metadata=params,
                 file_stream=input_file,
@@ -184,7 +191,7 @@ class Uploader:
         return self._tus_finish_upload(url, params=params)
 
     def _tus_start_upload(self, url, *, params=None):
-        response = self.client.rest_client.POST(
+        response = self.client.api.rest_client.POST(
             url,
             post_params=params,
             headers={
@@ -193,11 +200,11 @@ class Uploader:
                 **self.client.get_common_headers(),
             },
         )
-        expect_status(202, response)
+        assert_status(202, response)
         return response
 
     def _tus_finish_upload(self, url, *, params=None, data=None):
-        response = self.client.rest_client.POST(
+        response = self.client.api.rest_client.POST(
             url,
             headers={
                 "Content-Type": "multipart/form-data",
@@ -206,5 +213,5 @@ class Uploader:
             },
             post_params=dict(**(params or {}), **(data or {})),
         )
-        expect_status(202, response)
+        assert_status(202, response)
         return response
