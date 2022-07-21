@@ -295,7 +295,7 @@ export function getSkeletonEdgeCoordinates(edge: SVG.Line): {
         .find((element: SVG.Element): boolean => element.attr('data-node-id') === dataNodeTo);
 
     if (!nodeFrom || !nodeTo) {
-        throw new Error(`Edges nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not to refer to any node`);
+        throw new Error(`Edge's nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not to refer to any node`);
     }
 
     x1 = nodeFrom.cx();
