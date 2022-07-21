@@ -103,13 +103,35 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         }
 
         const labels: Record<string, LabelOptColor> = {};
-        if (label && label.svg && label.elements) {
+        if (label && label.svg) {
             const sublabels = label.sublabels as LabelOptColor[];
-            for (const element of label.elements) {
-                // todo: update elements with label_id instead of label name
-                const sublabel = sublabels.find((_label) => _label.name === element.label);
-                if (sublabel) {
-                    labels[element.element_id] = sublabel;
+            const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+
+            // eslint-disable-next-line no-unsanitized/property
+            tmpSvg.innerHTML = label.svg;
+
+            for (const element of tmpSvg.children) {
+                if (element.tagName === 'circle') {
+                    const elementID = element.getAttribute('data-element-id');
+                    const labelName = element.getAttribute('data-label-name');
+                    const labelID = element.getAttribute('data-label-id');
+                    if (elementID && (labelName !== null || labelID !== null)) {
+                        const sublabel = sublabels.find((_sublabel: LabelOptColor): boolean => {
+                            if (labelName !== null) {
+                                return _sublabel.name === labelName;
+                            }
+
+                            if (labelID !== null) {
+                                return _sublabel.id === +labelID;
+                            }
+
+                            return false;
+                        });
+
+                        if (sublabel) {
+                            labels[elementID] = sublabel;
+                        }
+                    }
                 }
             }
 
@@ -177,7 +199,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     private setupSkeleton = (innerHTML: string, importedLabels: Record<string, LabelOptColor>): boolean => {
         const { svgRef } = this;
         if (svgRef.current) {
-            // eslint-disable-next-line
+            // eslint-disable-next-line no-unsanitized/property
             svgRef.current.innerHTML = innerHTML;
             this.nodeCounter = 0;
             this.elementCounter = 0;
@@ -402,8 +424,8 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     if (cx && cy && elementID) {
                         const label = this.labels[elementID];
                         const text = window.document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                        // eslint-disable-next-line
-                        text.innerHTML = `${label.name}`
+                        // eslint-disable-next-line no-unsanitized/property
+                        text.innerHTML = `${label.name}`;
                         text.classList.add('cvat-skeleton-configurator-text-label');
                         setAttributes(text, {
                             x: +cx + TEXT_MARGIN,
@@ -489,17 +511,21 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         if (!svg) throw new Error('SVG reference is null');
 
         const sublabels = Object.values(this.labels);
-        const elements: SkeletonConfiguration['elements'] = [];
 
+        let elements = 0;
         Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
             const dataType = child.getAttribute('data-type');
             if (dataType && dataType.includes('element')) {
                 const elementID = child.getAttribute('data-element-id');
-                if (elementID) {
+                if (elementID !== null) {
+                    elements++;
                     const elementLabel = this.labels[elementID];
-                    child.setAttribute('data-label-name', elementLabel.name);
                     if (elementLabel) {
-                        elements.push({ label: elementLabel.name, element_id: +elementID });
+                        child.setAttribute('data-label-name', elementLabel.name);
+                    } else {
+                        throw new Error(
+                            `Element ${elementID} does not refer to any label`,
+                        );
                     }
                 }
             } else if (dataType === 'edge') {
@@ -510,22 +536,21 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     const node2 = svg.querySelector(`[data-node-to="${dataNodeTo}"]`);
                     if (!node1 || !node2) {
                         throw new Error(
-                            `Edges nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} not to refer to any node`,
+                            `Edges nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not to refer to any node`,
                         );
                     }
                 }
             }
         });
 
-        if (!sublabels.length || !elements.length) {
+        if (!sublabels.length || !elements) {
             throw new Error('At least one skeleton element is necessary');
         }
 
-        if (elements.length !== sublabels.length) {
+        if (elements !== sublabels.length) {
             throw new Error(
-                `Skeleton configurator state is not consistent. ${JSON.stringify(
-                    { sublabels, elements },
-                )}`,
+                `Skeleton configurator state is not consistent. Number of sublabels ${sublabels.length}` +
+                `differs from number of elements ${elements}`,
             );
         }
 
@@ -535,7 +560,6 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 type: 'skeleton',
                 svg: svg.innerHTML,
                 sublabels,
-                elements,
             };
         } finally {
             this.setupTextLabels();
@@ -694,7 +718,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             beforeUpload={(file: RcFile) => {
                                 file.text().then((result) => {
                                     const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                    // eslint-disable-next-line
+                                    // eslint-disable-next-line no-unsanitized/property
                                     tmpSvg.innerHTML = result;
                                     let isSVG = true;
                                     for (let c = tmpSvg.childNodes, i = c.length; i--;) {
@@ -702,7 +726,6 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                     }
 
                                     if (isSVG) {
-                                        // eslint-disable-next-line
                                         let labels = {};
                                         const desc = Array.from(tmpSvg.children)
                                             .find((child: Element): boolean => (

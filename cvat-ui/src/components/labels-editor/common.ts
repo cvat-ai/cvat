@@ -8,7 +8,6 @@ export interface SkeletonConfiguration {
     type: 'skeleton';
     svg: string;
     sublabels: RawLabel[];
-    elements: { label: string; element_id: number }[];
 }
 
 export type LabelOptColor = RawLabel;
