@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-version: '3.3'
+version: '3.4'
 
 services:
   cvat_db:
@@ -13,6 +13,8 @@ services:
       POSTGRES_USER: root
       POSTGRES_DB: cvat
       POSTGRES_HOST_AUTH_METHOD: trust
+    labels:
+      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
     volumes:
       - cvat_db:/var/lib/postgresql/data
     networks:
@@ -46,6 +48,7 @@ services:
       - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
         PathPrefix(`/api/`, `/git/`, `/opencv/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
       - traefik.http.routers.cvat.entrypoints=web
+      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -64,6 +67,7 @@ services:
       - traefik.http.services.cvat-ui.loadbalancer.server.port=80
       - traefik.http.routers.cvat-ui.rule=Host(`${CVAT_HOST:-localhost}`)
       - traefik.http.routers.cvat-ui.entrypoints=web
+      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
     networks:
       - cvat
 
@@ -76,7 +80,8 @@ services:
       - '--providers.docker.network=cvat'
       - '--entryPoints.web.address=:8080'
       - '--providers.file.directory=/etc/traefik/rules'
-    # Uncomment to get Traefik dashboard
+      - '--providers.docker.constraints=Label(`cvat.instance`,`${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}`)'
+    # Uncomment to get Traefik dashboard (don't forget to also uncomment the port below!)
     #   - "--entryPoints.dashboard.address=:8090"
     #   - "--api.dashboard=true"
     # labels:
@@ -85,8 +90,9 @@ services:
     #   - traefik.http.routers.dashboard.service=api@internal
     #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
     ports:
-      - 8080:8080
-      - 8090:8090
+      - ${CVAT_EXT_PORT:-8080}:8080
+    # Uncomment (with above) to get Traefik dashboard
+    #  - 8090:8090
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -96,14 +102,17 @@ services:
     container_name: cvat_opa
     image: openpolicyagent/opa:0.34.2-rootless
     restart: always
+    labels:
+      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
     networks:
       cvat:
         aliases:
           - opa
     volumes:
       - ./cvat/apps/iam/rules:/rules
-    ports:
-      - '8181:8181'
+    # Uncomment to expose opa on your system.
+    # ports:
+    #   - '8181:8181'
     command: run --server --addr :8181 --set=decision_logs.console=true /rules
 
 volumes:

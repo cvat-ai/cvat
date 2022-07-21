@@ -2,38 +2,41 @@
 #
 # SPDX-License-Identifier: MIT
 
-version: '3.3'
+version: '3.4'
 
 services:
   cvat:
     labels:
       - traefik.http.routers.cvat.entrypoints=websecure
       - traefik.http.routers.cvat.tls.certresolver=lets-encrypt
+      - cvat.https.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-80}/${CVAT_EXT_HTTPS_PORT:-443}'
 
   cvat_ui:
     labels:
       - traefik.http.routers.cvat-ui.entrypoints=websecure
       - traefik.http.routers.cvat-ui.tls.certresolver=lets-encrypt
+      - cvat.https.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-80}/${CVAT_EXT_HTTPS_PORT:-443}'
 
   traefik:
     image: traefik:v2.4
     container_name: traefik
     command:
-      - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=cvat"
-      - "--entryPoints.web.address=:80"
-      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entryPoints.websecure.address=:443"
-      - "--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
-      - "--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true"
-      - "--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json"
+      - '--providers.docker.exposedByDefault=false'
+      - '--providers.docker.network=cvat'
+      - '--entryPoints.web.address=:80'
+      - '--entryPoints.web.http.redirections.entryPoint.to=websecure'
+      - '--entryPoints.web.http.redirections.entryPoint.scheme=https'
+      - '--entryPoints.websecure.address=:443'
+      - '--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:?Please set the ACME_EMAIL env variable}'
+      - '--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true'
+      - '--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json'
+      - '--providers.docker.constraints=Label(`cvat.https.instance`,`${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-80}/${CVAT_EXT_HTTPS_PORT:-443}`)'
       # Uncomment to get Traefik dashboard
       # - "--entryPoints.dashboard.address=:8090"
       # - "--api.dashboard=true"
     ports:
-      - 80:80
-      - 443:443
+      - ${CVAT_EXT_PORT:-80}:80
+      - ${CVAT_EXT_HTTPS_PORT:-443}:443
     volumes:
       - cvat_letsencrypt:/letsencrypt
 
