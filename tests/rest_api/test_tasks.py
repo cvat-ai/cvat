@@ -275,11 +275,12 @@ class TestGetTaskDataset:
 class TestPostTaskData:
     @staticmethod
     def _wait_until_task_is_created(api: TasksApi, task_id: int) -> RqStatus:
-        while True:
+        for _ in range(100):
             (status, _) = api.retrieve_status(task_id)
             if status.state.value in ['Finished', 'Failed']:
                 return status
             sleep(1)
+        raise Exception('Cannot create task')
 
     def _test_create_task(self, username, spec, data, files):
         with make_api_client(username) as api_client:

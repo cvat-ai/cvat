@@ -144,7 +144,7 @@ class AbstractArrayField(models.TextField):
             return []
         if value.startswith('[') and value.endswith(']'):
             value = value[1:-1]
-        return [self.converter(v) for v in value.split(self.separator)]
+        return [self.converter(v) for v in value.split(self.separator) if v]
 
     def to_python(self, value):
         if isinstance(value, list):
