@@ -62,7 +62,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 id: label.id || idGenerator(),
                 color: label.color,
                 type: label.type,
-                edges: label.edges,
                 elements: label.elements,
                 sublabels: label.sublabels,
                 svg: label.svg,
@@ -202,7 +201,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 transformed.sublabels = (label.sublabels || [])
                     .map((internalLabel: LabelOptColor) => transformLabel(internalLabel));
                 transformed.elements = label.elements;
-                transformed.edges = label.edges;
             }
 
             return transformed;

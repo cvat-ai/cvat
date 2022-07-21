@@ -146,7 +146,6 @@ export interface RawLabel {
     color?: string;
     type: LabelType;
     svg?: string;
-    edges?: { from: number, to: number }[];
     elements?: { label: string; element_id: number }[];
     sublabels?: RawLabel[];
     has_parent?: boolean;
@@ -165,7 +164,7 @@ export class Label {
     public readonly color?: string;
     public readonly attributes: Attribute[];
     public readonly type: LabelType;
-    public structure: Required<Pick<RawLabel, 'svg' | 'elements' | 'edges'>> & {
+    public structure: Required<Pick<RawLabel, 'svg' | 'elements'>> & {
         sublabels: Label[];
     } | null;
     public deleted: boolean;
@@ -181,7 +180,6 @@ export class Label {
             has_parent: false,
             deleted: false,
             svg: undefined,
-            edges: undefined,
             elements: undefined,
             sublabels: undefined,
             attributes: [],
@@ -207,7 +205,6 @@ export class Label {
         if (data.type === 'skeleton') {
             data.sublabels = data.sublabels.map((internalLabel) => new Label({ ...internalLabel, has_parent: true }));
             data.elements = data.elements.map((element) => ({ ...element }));
-            data.edges = data.edges.map((edge) => ({ ...edge }));
         }
 
         Object.defineProperties(
@@ -267,7 +264,6 @@ export class Label {
                 /**
                  * @typedef {Object} SkeletonStructure
                  * @property {module:API.cvat.classes.Label[]} sublabels A list of labels the skeleton includes
-                 * @property {Object[]} edges A list of edges the skeleton includes
                  * @property {Object[]} elements A list of elements the skeleton consists of
                  * @property {Object[]} svg An SVG representation of the skeleton
                  * A type of a file
@@ -295,7 +291,6 @@ export class Label {
                         if (data.type === ShapeType.SKELETON) {
                             return {
                                 svg: data.svg,
-                                edges: [...data.edges],
                                 elements: [...data.elements],
                                 sublabels: [...data.sublabels],
                             };
@@ -358,7 +353,6 @@ export class Label {
             object.svg = structure.svg;
             object.sublabels = structure.sublabels.map((internalLabel) => internalLabel.toJSON());
             object.elements = structure.elements.map((element) => ({ ...element }));
-            object.edges = structure.edges.map((edge) => ({ ...edge }));
         }
 
         return object;

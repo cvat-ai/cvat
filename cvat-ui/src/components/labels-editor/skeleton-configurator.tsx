@@ -490,7 +490,6 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         const sublabels = Object.values(this.labels);
         const elements: SkeletonConfiguration['elements'] = [];
-        const edges: SkeletonConfiguration['edges'] = [];
 
         Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
             const dataType = child.getAttribute('data-type');
@@ -509,8 +508,10 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 if (dataNodeFrom && dataNodeTo && Number.isInteger(+dataNodeFrom) && Number.isInteger(+dataNodeTo)) {
                     const node1 = svg.querySelector(`[data-node-from="${dataNodeFrom}"]`);
                     const node2 = svg.querySelector(`[data-node-to="${dataNodeTo}"]`);
-                    if (node1 && node2) {
-                        edges.push({ from: +dataNodeFrom, to: +dataNodeTo });
+                    if (!node1 || !node2) {
+                        throw new Error(
+                            `Edges nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} not to refer to any node`,
+                        );
                     }
                 }
             }
@@ -523,7 +524,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         if (elements.length !== sublabels.length) {
             throw new Error(
                 `Skeleton configurator state is not consistent. ${JSON.stringify(
-                    { sublabels, elements, edges },
+                    { sublabels, elements },
                 )}`,
             );
         }
@@ -535,7 +536,6 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 svg: svg.innerHTML,
                 sublabels,
                 elements,
-                edges,
             };
         } finally {
             this.setupTextLabels();
