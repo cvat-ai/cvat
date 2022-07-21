@@ -7,9 +7,6 @@ import traceback
 import jsonpickle
 import torch
 
-import cv2
-# from model_handler import ModelHandler
-
 from pysot_toolkit.bbox import get_axis_aligned_bbox
 from pysot_toolkit.trackers.tracker import Tracker
 from pysot_toolkit.trackers.net_wrappers import NetWithBackbone
@@ -145,3 +142,4 @@ def handler(context, event):
 
         return context.Response(headers={},
             content_type='application/json', status_code=666)
+
