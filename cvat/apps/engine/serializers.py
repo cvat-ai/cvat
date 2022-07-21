@@ -88,29 +88,23 @@ class SublabelSerializer(serializers.ModelSerializer):
 class SkeletonSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
-    elements = serializers.JSONField(required=False)
-    edges = serializers.JSONField(required=False)
 
     class Meta:
         model = models.Skeleton
-        fields = ('id', 'svg', 'elements', 'edges')
+        fields = ('id', 'svg',)
 
 class LabelSerializer(SublabelSerializer):
     deleted = serializers.BooleanField(required=False, help_text='Delete label if value is true from proper Task/Project object')
     sublabels = SublabelSerializer(many=True, required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
-    elements = serializers.JSONField(required=False)
-    edges = serializers.JSONField(required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'has_parent')
+        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'sublabels', 'has_parent')
 
     def to_representation(self, instance):
         label = super().to_representation(instance)
         if label['type'] == str(models.LabelType.SKELETON):
-            label['edges'] = instance.skeleton.edges
-            label['elements'] = instance.skeleton.elements
             label['svg'] = instance.skeleton.svg
         return label
 
@@ -539,15 +533,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 label_colors.append(label['color'])
 
                 sublabels = label.pop('sublabels', [])
-                elements = label.pop('elements', [])
-                edges = label.pop('edges', [])
                 svg = label.pop('svg', '')
                 db_label = models.Label.objects.create(task=db_task, parent=parent_label, **label)
                 create_labels(sublabels, parent_label=db_label)
                 if db_label.type == str(models.LabelType.SKELETON):
                     for db_sublabel in list(db_label.sublabels.all()):
                         svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
+                    models.Skeleton.objects.create(root=db_label, svg=svg)
 
                 for attr in attributes:
                     if attr.get('id', None):
@@ -578,15 +570,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         def update_labels(labels, parent_label=None):
             for label in labels:
                 sublabels = label.pop('sublabels', [])
-                elements = label.pop('elements', [])
-                edges = label.pop('edges', [])
                 svg = label.pop('svg', '')
                 db_label = LabelSerializer.update_instance(label, instance, parent_label)
                 update_labels(sublabels, parent_label=db_label)
                 if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
                     for db_sublabel in list(db_label.sublabels.all()):
                         svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
+                    models.Skeleton.objects.create(root=db_label, svg=svg)
 
         if instance.project_id is None:
             update_labels(labels)
@@ -748,15 +738,13 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 label_colors.append(label['color'])
 
                 sublabels = label.pop('sublabels', [])
-                elements = label.pop('elements', [])
-                edges = label.pop('edges', [])
                 svg = label.pop('svg', [])
                 db_label = models.Label.objects.create(project=db_project, parent=parent_label, **label)
                 create_labels(sublabels, parent_label=db_label)
                 if db_label.type == str(models.LabelType.SKELETON):
                     for db_sublabel in list(db_label.sublabels.all()):
                         svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
+                    models.Skeleton.objects.create(root=db_label, svg=svg)
 
                 for attr in attributes:
                     if attr.get('id', None):

@@ -286,25 +286,7 @@ class TaskData(InstanceLabelData):
                         for db_attr in db_label.attributespec_set.all()])
                 ])
                 if db_label.type == str(LabelType.SKELETON):
-                    edges = []
-                    for edge in db_label.skeleton.edges:
-                        edges.append(('edge', OrderedDict([
-                            ('from', str(edge['from'])),
-                            ('to', str(edge['to']))
-                        ])))
-
-                    elements = []
-                    for elem in db_label.skeleton.elements:
-                        elements.append(('element', OrderedDict([
-                            ('label', str(elem['label'])),
-                            ('element_id', str(elem['element_id']))
-                        ])))
-
-                    label["structure"] = OrderedDict([
-                        ("edges", edges),
-                        ("elements", elements),
-                        ("svg", db_label.skeleton.svg)
-                    ])
+                    label["svg"] = db_label.skeleton.svg
 
                 labels.append(('label', label))
 

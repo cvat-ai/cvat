@@ -513,8 +513,6 @@ class Label(models.Model):
 class Skeleton(models.Model):
     root = models.OneToOneField(Label, on_delete=models.CASCADE)
     svg = models.TextField(null=True, default=None)
-    elements = models.JSONField(null=True)
-    edges = models.JSONField(null=True)
 
     class Meta:
         default_permissions = ()
