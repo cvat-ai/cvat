@@ -11,6 +11,8 @@ import sys
 import traceback
 import subprocess
 import os
+import urllib.parse
+
 from av import VideoFrame
 from PIL import Image
 
@@ -102,7 +104,7 @@ def md5_hash(frame):
 
 def parse_specific_attributes(specific_attributes):
     assert isinstance(specific_attributes, str), 'Specific attributes must be a string'
+    parsed_specific_attributes = urllib.parse.parse_qsl(specific_attributes)
     return {
-        item.split('=')[0].strip(): item.split('=')[1].strip()
-            for item in specific_attributes.split('&')
-    } if specific_attributes else dict()
+        key: value for (key, value) in parsed_specific_attributes
+    } if parsed_specific_attributes else dict()

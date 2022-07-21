@@ -99,7 +99,7 @@ class _CloudStorage(ABC):
     def content(self):
         return list(map(lambda x: x['name'] , self._files))
 
-def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_attributes=None):
+def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_attributes=None, endpoint=None):
     instance = None
     if cloud_provider == CloudProviderChoice.AWS_S3:
         instance = AWS_S3(
@@ -107,7 +107,8 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             access_key_id=credentials.key,
             secret_key=credentials.secret_key,
             session_token=credentials.session_token,
-            region=specific_attributes.get('region', 'us-east-2')
+            region=specific_attributes.get('region'),
+            endpoint_url=specific_attributes.get('endpoint_url'),
         )
     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
         instance = AzureBlobContainer(
@@ -137,7 +138,8 @@ class AWS_S3(_CloudStorage):
                 region,
                 access_key_id=None,
                 secret_key=None,
-                session_token=None):
+                session_token=None,
+                endpoint_url=None):
         super().__init__()
         if all([access_key_id, secret_key, session_token]):
             self._s3 = boto3.resource(
@@ -145,20 +147,22 @@ class AWS_S3(_CloudStorage):
                 aws_access_key_id=access_key_id,
                 aws_secret_access_key=secret_key,
                 aws_session_token=session_token,
-                region_name=region
+                region_name=region,
+                endpoint_url=endpoint_url
             )
         elif access_key_id and secret_key:
             self._s3 = boto3.resource(
                 's3',
                 aws_access_key_id=access_key_id,
                 aws_secret_access_key=secret_key,
-                region_name=region
+                region_name=region,
+                endpoint_url=endpoint_url
             )
         elif any([access_key_id, secret_key, session_token]):
             raise Exception('Insufficient data for authorization')
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
-            self._s3 = boto3.resource('s3', region_name=region)
+            self._s3 = boto3.resource('s3', region_name=region, endpoint_url=endpoint_url)
             self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
         self._client_s3 = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
