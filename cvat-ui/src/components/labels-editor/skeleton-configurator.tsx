@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
+import Alert from 'antd/lib/alert';
 import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
 import Icon, { PictureOutlined } from '@ant-design/icons';
@@ -13,7 +14,7 @@ import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
 import {
-    idGenerator, LabelOptColor, ParentLabel, SkeletonConfiguration, toSVGCoord,
+    idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
 import SkeletonElementContextMenu from './skeleton-element-context-menu';
 
@@ -26,7 +27,6 @@ function setAttributes(element: Element, attrs: Record<string, string | number |
 }
 
 interface Props {
-    onSubmit(configuration: SkeletonConfiguration): void;
     disabled?: boolean;
     label: LabelOptColor | null;
 }
@@ -36,6 +36,7 @@ interface State {
     contextMenuVisible: boolean;
     contextMenuElement: number | null;
     image: RcFile | null;
+    error: null | string;
 }
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
@@ -62,6 +63,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             contextMenuVisible: false,
             contextMenuElement: null,
             image: null,
+            error: null,
         };
 
         this.canvasRef = React.createRef<HTMLCanvasElement>();
@@ -100,18 +102,18 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             svg.addEventListener('mousemove', this.onSVGMouseMove);
         }
 
-        if (label && svg && label.elements) {
+        const labels: Record<string, LabelOptColor> = {};
+        if (label && label.svg && label.elements) {
             const sublabels = label.sublabels as LabelOptColor[];
-            /* eslint-disable-next-line no-unsanitized/property */
-            svg.innerHTML = label.svg as string;
             for (const element of label.elements) {
                 // todo: update elements with label_id instead of label name
                 const sublabel = sublabels.find((_label) => _label.name === element.label);
                 if (sublabel) {
-                    this.labels[element.element_id] = sublabel;
+                    labels[element.element_id] = sublabel;
                 }
             }
-            this.setupTextLabels();
+
+            this.setupSkeleton(label.svg as string, labels);
         }
     }
 
@@ -172,10 +174,32 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         }
     };
 
+    private setupSkeleton = (innerHTML: string, importedLabels: Record<string, LabelOptColor>): boolean => {
+        const { svgRef } = this;
+        if (svgRef.current) {
+            // eslint-disable-next-line
+            svgRef.current.innerHTML = innerHTML;
+            this.nodeCounter = 0;
+            this.elementCounter = 0;
+            for (const element of svgRef.current.children) {
+                if (element.tagName === 'circle') {
+                    if (!this.setupCircle(
+                        svgRef.current, (element as SVGCircleElement), importedLabels,
+                    )) {
+                        element.remove();
+                    }
+                }
+            }
+            this.setupTextLabels();
+        }
+
+        return false;
+    };
+
     private setupCircle = (
         svg: SVGSVGElement,
         circle: SVGCircleElement,
-        labels: Record<string, ParentLabel> = {},
+        labels: Record<string, LabelOptColor> = {},
     ): boolean => {
         const elementIDAttr = circle.getAttribute('data-element-id');
         const nodeIDAttr = circle.getAttribute('data-element-id');
@@ -303,11 +327,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         this.labels[elementID] = {
             name: labels[elementID]?.name || `${elementID}`,
             attributes: (labels[elementID]?.attributes || []).map((attr) => {
-                attr.id = idGenerator();
+                attr.id = (attr?.id || 0) > 0 ? attr.id : idGenerator();
                 return attr;
             }),
             color: labels[elementID]?.color || undefined,
-            id: idGenerator(),
+            id: (labels[elementID]?.id || 0) > 0 ? labels[elementID].id : idGenerator(),
             type: ShapeType.POINTS,
         };
 
@@ -450,11 +474,19 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         return null;
     }
 
-    public submit(): void {
-        const { onSubmit } = this.props;
+    public submit(): SkeletonConfiguration | null {
+        try {
+            return this.wrappedSubmit();
+        } catch (error: any) {
+            this.setState({ error: error.toString() });
+            return null;
+        }
+    }
+
+    public wrappedSubmit(): SkeletonConfiguration {
         const svg = this.svgRef.current;
 
-        if (!svg) return;
+        if (!svg) throw new Error('SVG reference is null');
 
         const sublabels = Object.values(this.labels);
         const elements: SkeletonConfiguration['elements'] = [];
@@ -498,13 +530,13 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         try {
             this.setupTextLabels(false);
-            onSubmit({
+            return {
                 type: 'skeleton',
                 svg: svg.innerHTML,
                 sublabels,
                 elements,
                 edges,
-            });
+            };
         } finally {
             this.setupTextLabels();
         }
@@ -513,7 +545,9 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     public render(): JSX.Element {
         const { canvasRef, svgRef } = this;
         const { disabled } = this.props;
-        const { activeTool, contextMenuVisible, contextMenuElement } = this.state;
+        const {
+            activeTool, contextMenuVisible, contextMenuElement, error,
+        } = this.state;
 
         return (
             <Row className='cvat-skeleton-configurator' style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
@@ -667,11 +701,10 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                         isSVG = isSVG && c[i].nodeType === 1;
                                     }
 
-                                    if (isSVG && svgRef.current) {
+                                    if (isSVG) {
                                         // eslint-disable-next-line
-                                        svgRef.current.innerHTML = tmpSvg.innerHTML;
                                         let labels = {};
-                                        const desc = Array.from(svgRef.current.children)
+                                        const desc = Array.from(tmpSvg.children)
                                             .find((child: Element): boolean => (
                                                 child.tagName === 'desc' &&
                                                 child.getAttribute('data-description-type') === 'labels-specification'
@@ -685,18 +718,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                             }
                                         }
 
-                                        this.nodeCounter = 0;
-                                        this.elementCounter = 0;
-                                        for (const element of svgRef.current.children) {
-                                            if (element.tagName === 'circle') {
-                                                if (!this.setupCircle(
-                                                    svgRef.current, (element as SVGCircleElement), labels,
-                                                )) {
-                                                    element.remove();
-                                                }
-                                            }
-                                        }
-                                        this.setupTextLabels();
+                                        this.setupSkeleton(tmpSvg.innerHTML, labels as Record<string, LabelOptColor>);
                                     } else {
                                         notification.error({
                                             message: 'Wrong skeleton structure',
@@ -710,6 +732,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         </Upload>
                     </Row>
                 </Col>
+                { error !== null && <Alert type='error' message={error} /> }
             </Row>
         );
     }

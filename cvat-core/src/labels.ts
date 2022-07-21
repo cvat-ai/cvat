@@ -143,7 +143,7 @@ type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | '
 export interface RawLabel {
     id?: number;
     name: string;
-    color: string;
+    color?: string;
     type: LabelType;
     svg?: string;
     edges?: { from: number, to: number }[];
@@ -334,9 +334,12 @@ export class Label {
         const object: RawLabel = {
             name: this.name,
             attributes: [...this.attributes.map((el) => el.toJSON())],
-            color: this.color,
             type: this.type,
         };
+
+        if (typeof this.color !== 'undefined') {
+            object.color = this.color;
+        }
 
         if (typeof this.id !== 'undefined') {
             object.id = this.id;

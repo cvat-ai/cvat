@@ -5,15 +5,14 @@
 import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
 
 export interface SkeletonConfiguration {
-    type: string;
+    type: 'skeleton';
     svg: string;
-    sublabels: LabelOptColor[];
+    sublabels: RawLabel[];
     elements: { label: string; element_id: number }[];
     edges: { from: number, to: number }[];
 }
 
-export type LabelOptColor = Omit<RawLabel, 'color'> & { color?: string };
-export type ParentLabel = LabelOptColor & { sublabels?: LabelOptColor };
+export type LabelOptColor = RawLabel;
 
 let id = 0;
 

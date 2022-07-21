@@ -20,7 +20,7 @@ import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import consts from 'consts';
 import {
-    equalArrayHead, idGenerator, LabelOptColor,
+    equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
 } from './common';
 
 export enum AttributeType {
@@ -35,6 +35,7 @@ interface Props {
     label: LabelOptColor | null;
     labelNames?: string[];
     onSubmit: (label: LabelOptColor | null) => void;
+    onSkeletonSubmit?: () => SkeletonConfiguration | null;
 }
 
 export default class LabelForm extends React.Component<Props> {
@@ -48,12 +49,21 @@ export default class LabelForm extends React.Component<Props> {
     }
 
     private handleSubmit = (values: Store): void => {
-        const { label, onSubmit } = this.props;
+        const { label, onSubmit, onSkeletonSubmit } = this.props;
+
+        let skeletonConfiguration: SkeletonConfiguration | null = null;
+        if (onSkeletonSubmit) {
+            skeletonConfiguration = onSkeletonSubmit();
+            if (!skeletonConfiguration) {
+                return;
+            }
+        }
 
         onSubmit({
             name: values.name,
             id: label ? label.id : idGenerator(),
             color: values.color,
+            type: 'any' as LabelOptColor['type'],
             attributes: (values.attributes || []).map((attribute: Store) => {
                 let attrValues: string | string[] = attribute.values;
                 if (!Array.isArray(attrValues)) {
@@ -71,6 +81,7 @@ export default class LabelForm extends React.Component<Props> {
                     input_type: attribute.type.toLowerCase(),
                 };
             }),
+            ...(skeletonConfiguration || {}),
         });
 
         if (this.formRef.current) {
@@ -444,7 +455,7 @@ export default class LabelForm extends React.Component<Props> {
     private renderContinueButton(): JSX.Element | null {
         const { label } = this.props;
 
-        if (label) return null;
+        if (label && label.id as number > 0) return null;
         return (
             <CVATTooltip title='Save the label and create one more'>
                 <Button

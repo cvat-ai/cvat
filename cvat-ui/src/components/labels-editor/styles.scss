@@ -114,6 +114,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-bottom: $grid-unit-size;
     padding-top: $grid-unit-size;
     padding-bottom: $grid-unit-size;
+
+    > .ant-alert {
+        width: 100%;
+    }
 }
 
 .cvat-skeleton-configurator-canvas {
