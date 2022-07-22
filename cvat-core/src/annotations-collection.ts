@@ -210,7 +210,11 @@
                     keyframes[object.frame] = {
                         type: shapeType,
                         frame: object.frame,
-                        points: [...object.points],
+                        points: Array.isArray(object.points) ? [...object.points] : undefined,
+                        elements: Array.isArray(object.elements) ? object.elements.map((el) => {
+                            const { id, clientID, ...rest } = el.toJSON();
+                            return rest;
+                        }) : undefined,
                         occluded: object.occluded,
                         rotation: object.rotation,
                         zOrder: object.zOrder,
@@ -233,6 +237,10 @@
                         keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
                         keyframes[object.frame + 1].frame++;
+                        (keyframes[object.frame + 1].elements || []).forEach((el) => {
+                            el.outside = keyframes[object.frame + 1].outside;
+                            el.frame = keyframes[object.frame + 1].frame;
+                        });
                     }
                 } else if (object instanceof Track) {
                     // If this object is track, iterate through all its
