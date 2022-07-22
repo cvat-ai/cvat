@@ -1,6 +1,8 @@
 ![CVAT logo](site/content/en/images/cvat_poster_with_name.png)
 # Computer Vision Annotation Tool (CVAT)
 
+<a href="https://www.producthunt.com/posts/cvat-computer-vision-annotation-tool?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-cvat&#0045;computer&#0045;vision&#0045;annotation&#0045;tool" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=353415&theme=light" alt="CVAT&#0032;–&#0032;Computer&#0032;Vision&#0032;Annotation&#0032;Tool - The&#0032;open&#0032;data&#0032;annotation&#0032;platform&#0032;for&#0032;AI | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 [![CI][ci-img]][ci-url]
 [![Gitter chat][gitter-img]][gitter-url]
 [![Coverage Status][coverage-img]][coverage-url]
@@ -33,7 +35,7 @@ Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a 
 - [XML annotation format](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/)
 - [AWS Deployment Guide](https://cvat-ai.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
 - [Frequently asked questions](https://cvat-ai.github.io/cvat/docs/faq/)
-- [Questions](#questions)
+- [Where to ask questions](#where-to-ask-questions)
 
 ## Partners ❤️
 
@@ -41,13 +43,13 @@ CVAT is used by teams all over the world. If you use us, please drop us a line a
 [contact@cvat.ai](mailto:contact+github@cvat.ai) - and we'll add you to this list.
 
 - [ATLANTIS](https://github.com/smhassanerfani/atlantis) is an open-source dataset for semantic segmentation
-  of waterbody images, depevoped by [iWERS](http://ce.sc.edu/iwers/) group in the
+  of waterbody images, depeloped by [iWERS](http://ce.sc.edu/iwers/) group in the
   Department of Civil and Environmental Engineering at University of South Carolina, is using CVAT.
   For developing a semantic segmentation dataset using CVAT, please check
   [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391),
   [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk)
   and [annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
-- [Onepanel](https://github.com/onepanelio/core) is an open source
+- [Onepanel](https://github.com/onepanelio/core) is an open-source
   vision AI platform that fully integrates CVAT with scalable data processing
   and parallelized training pipelines.
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
@@ -84,8 +86,8 @@ The images have been downloaded more than 1M times so far.
 
 ## REST API
 
-CVAT has a REST API. Its current version is `2.0-alpha`. We focus on its
-improvement and therefore REST API may be changed in the next release.
+CVAT has a REST API: [documentation](https://cvat-ai.github.io/cvat/docs/administration/basics/rest_api_guide/).
+Its current version is `2.0-alpha`. We focus on its improvement, and the API may be changed in the next releases.
 
 ## Screencasts 🎦
 
@@ -115,26 +117,26 @@ For more information about supported formats, look at the
 
 | Annotation format                                                                                         | Import | Export |
 | --------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| [CVAT for images](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     | X      | X      |
-| [CVAT for a video](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) | X      | X      |
-| [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |        | X      |
-| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     | X      | X      |
-| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             | X      | X      |
-| [YOLO](https://pjreddie.com/darknet/yolo/)                                                                | X      | X      |
-| [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           | X      | X      |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       | X      | X      |
-| [MOT](https://motchallenge.net/)                                                                          | X      | X      |
-| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    | X      | X      |
-| [ImageNet](http://www.image-net.org)                                                                      | X      | X      |
-| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                      | X      | X      |
-| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                                           | X      | X      |
-| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                           | X      | X      |
-| [Market-1501](https://www.aitribune.com/dataset/2018051063)                                               | X      | X      |
-| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                                | X      | X      |
-| [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                | X      | X      |
-| [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   | X      | X      |
-| [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            | X      | X      |
-| [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   | X      | X      |
+| [CVAT for images](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     |   ✔️    |   ✔️    |
+| [CVAT for a video](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) |   ✔️    |   ✔️    |
+| [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |        |   ✔️    |
+| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     |   ✔️    |   ✔️    |
+| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             |   ✔️    |   ✔️    |
+| [YOLO](https://pjreddie.com/darknet/yolo/)                                                                |   ✔️    |   ✔️    |
+| [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           |   ✔️    |   ✔️    |
+| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       |   ✔️    |   ✔️    |
+| [MOT](https://motchallenge.net/)                                                                          |   ✔️    |   ✔️    |
+| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    |   ✔️    |   ✔️    |
+| [ImageNet](http://www.image-net.org)                                                                      |   ✔️    |   ✔️    |
+| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                      |   ✔️    |   ✔️    |
+| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                                           |   ✔️    |   ✔️    |
+| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                           |   ✔️    |   ✔️    |
+| [Market-1501](https://www.aitribune.com/dataset/2018051063)                                               |   ✔️    |   ✔️    |
+| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                                |   ✔️    |   ✔️    |
+| [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                |   ✔️    |   ✔️    |
+| [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   |   ✔️    |   ✔️    |
+| [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            |   ✔️    |   ✔️    |
+| [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   |   ✔️    |   ✔️    |
 
 <!--lint enable maximum-line-length-->
 
@@ -148,22 +150,22 @@ can be ran on:
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
-| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |     |
-| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | X   |     |
-| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |     |
-| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |     |
-| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |     |
-| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |     |
-| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |     |
-| [YOLO v5](/serverless/pytorch/ultralytics/yolov5/nuclio)                                                | detector   | PyTorch    | X   |     |
-| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | X   | X   |
-| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    | X   |     |
-| [HRNet](/serverless/pytorch/saic-vul/hrnet/nuclio)                                                      | interactor | PyTorch    |     | X   |
-| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | X   |     |
-| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
-| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   | X   |
-| [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    | X   | X   |
-| [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   | X   |     |
+| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   |  ✔️  |     |
+| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   |  ✔️  |     |
+| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   |  ✔️  |     |
+| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   |  ✔️  |     |
+| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   |  ✔️  |     |
+| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   |  ✔️  |     |
+| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   |  ✔️  |     |
+| [YOLO v5](/serverless/pytorch/ultralytics/yolov5/nuclio)                                                | detector   | PyTorch    |  ✔️  |     |
+| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    |  ✔️  |  ✔️  |
+| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    |  ✔️  |     |
+| [HRNet](/serverless/pytorch/saic-vul/hrnet/nuclio)                                                      | interactor | PyTorch    |     |  ✔️  |
+| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    |  ✔️  |     |
+| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow |  ✔️  |  ✔️  |
+| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow |  ✔️  |  ✔️  |
+| [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    |  ✔️  |  ✔️  |
+| [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   |  ✔️  |     |
 
 <!--lint enable maximum-line-length-->
 
@@ -177,26 +179,23 @@ The exact steps on how FFmpeg was configured and compiled can be found in the [D
 FFmpeg is an open source framework licensed under LGPL and GPL.
 See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
 for determining if your use of FFmpeg requires any
-additional licenses. CVAT.ai is not responsible for obtaining any
+additional licenses. CVAT.ai Corporation is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in
 connection with your use of FFmpeg.
 
-## Questions
+## Where to ask questions
 
-CVAT usage related questions or unclear concepts can be posted in our
-[Gitter chat](https://gitter.im/opencv-cvat) for **quick replies** from
-contributors and other users.
+[Gitter chat](https://gitter.im/opencv-cvat): you can post CVAT usage related there.
+Typically they get answered fast by the core team or community. You can also browse other users
+common questions on our gitter.
 
-However, if you have a feature request or a bug report that can reproduced,
-feel free to open an issue (with steps to reproduce the bug if it's a bug
-report) on [GitHub\* issues](https://github.com/cvat-ai/cvat/issues).
+[GitHub issues](https://github.com/cvat-ai/cvat/issues): please post your have feature requests or bug reports there.
+If it's a bug, please add the steps to reproduce it.
 
-If you are not sure or just want to browse other users common questions,
-[Gitter chat](https://gitter.im/opencv-cvat) is the way to go.
+[\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
+questions and get our support.
 
-Other ways to ask questions and get our support:
-
-- [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow\*
+[contact@cvat.ai](mailto:contact+github@cvat.ai): reach out to us with feedback, comments, or inquiries.
 
 ## Links
 
