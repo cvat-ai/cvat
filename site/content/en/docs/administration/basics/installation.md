@@ -354,6 +354,50 @@ you should specify the `CVAT_HOST` environment variable, like this:
 export CVAT_HOST=<YOUR_DOMAIN>
 ```
 
+### Change the bound port
+
+If you want to expose CVAT on a different port than the default (8080), you should specify the
+`CVAT_EXT_PORT` environment variable, like this:
+
+```bash
+export CVAT_EXT_PORT=80
+```
+
+### Run multiple instances
+
+Multiple instances can be started by using a different project name and a different external port.
+For example:
+
+```bash
+CVAT_EXT_PORT=8080 docker-compose -p first-cvat-instance up
+CVAT_EXT_PORT=8081 docker-compose -p second-cvat-instance up
+```
+
+If you wish, you can use environment files to save these details, for example:
+
+#### `first-cvat-instance.env`
+
+```bash
+COMPOSE_PROJECT_NAME=first-cvat-instance
+CVAT_EXT_PORT=8080
+```
+
+#### `second-cvat-instance.env`
+
+```bash
+COMPOSE_PROJECT_NAME=second-cvat-instance
+CVAT_EXT_PORT=8081
+```
+
+#### To run
+
+```bash
+docker-compose --env-file first-cvat-instance.env up
+docker-compose --env-file second-cvat-instance.env up
+```
+
+You can also include `CVAT_HOST` in the environment files.
+
 ### Share path
 
 You can use a share storage for data uploading during you are creating a task.
