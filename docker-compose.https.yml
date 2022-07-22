@@ -5,21 +5,33 @@
 version: '3.4'
 
 services:
+  cvat_db:
+    container_name: cvat_db_https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
+    labels:
+      - cvat.instance=https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
+
+  cvat_redis:
+    container_name: cvat_redis_https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
+    labels:
+      - cvat.instance=https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
+
   cvat:
+    container_name: cvat_https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
     labels:
       - traefik.http.routers.cvat.entrypoints=websecure
       - traefik.http.routers.cvat.tls.certresolver=lets-encrypt
-      - cvat.https.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-80}/${CVAT_EXT_HTTPS_PORT:-443}'
+      - cvat.instance=https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
 
   cvat_ui:
+    container_name: cvat_https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
     labels:
       - traefik.http.routers.cvat-ui.entrypoints=websecure
       - traefik.http.routers.cvat-ui.tls.certresolver=lets-encrypt
-      - cvat.https.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-80}/${CVAT_EXT_HTTPS_PORT:-443}'
+      - cvat.instance=https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
 
   traefik:
     image: traefik:v2.4
-    container_name: traefik
+    container_name: traefik_https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
     command:
       - '--providers.docker.exposedByDefault=false'
       - '--providers.docker.network=cvat'
@@ -30,7 +42,7 @@ services:
       - '--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:?Please set the ACME_EMAIL env variable}'
       - '--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true'
       - '--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json'
-      - '--providers.docker.constraints=Label(`cvat.https.instance`,`${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-80}/${CVAT_EXT_HTTPS_PORT:-443}`)'
+      - '--providers.docker.constraints=Label(`cvat.instance`,`https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}`)'
       # Uncomment to get Traefik dashboard
       # - "--entryPoints.dashboard.address=:8090"
       # - "--api.dashboard=true"
@@ -39,6 +51,11 @@ services:
       - ${CVAT_EXT_HTTPS_PORT:-443}:443
     volumes:
       - cvat_letsencrypt:/letsencrypt
+
+  cvat_opa:
+    container_name: cvat_opa_https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
+    labels:
+      - cvat.instance=https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
 
 volumes:
   cvat_letsencrypt:

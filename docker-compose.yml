@@ -6,7 +6,7 @@ version: '3.4'
 
 services:
   cvat_db:
-    container_name: cvat_db
+    container_name: cvat_db_http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     image: postgres:10-alpine
     restart: always
     environment:
@@ -14,21 +14,23 @@ services:
       POSTGRES_DB: cvat
       POSTGRES_HOST_AUTH_METHOD: trust
     labels:
-      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
+      - cvat.instance=http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     volumes:
       - cvat_db:/var/lib/postgresql/data
     networks:
       - cvat
 
   cvat_redis:
-    container_name: cvat_redis
+    container_name: cvat_redis_http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     image: redis:4.0-alpine
     restart: always
+    labels:
+      - cvat.instance=http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     networks:
       - cvat
 
   cvat:
-    container_name: cvat
+    container_name: cvat_http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     image: openvino/cvat_server
     restart: always
     depends_on:
@@ -45,10 +47,10 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
-      - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
+      - traefik.http.routers.cvat.rule=Host(`http_${CVAT_HOST:-localhost}`) &&
         PathPrefix(`/api/`, `/git/`, `/opencv/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
       - traefik.http.routers.cvat.entrypoints=web
-      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
+      - cvat.instance=http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -57,7 +59,7 @@ services:
       - cvat
 
   cvat_ui:
-    container_name: cvat_ui
+    container_name: cvat_ui_http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     image: openvino/cvat_ui
     restart: always
     depends_on:
@@ -65,22 +67,22 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat-ui.loadbalancer.server.port=80
-      - traefik.http.routers.cvat-ui.rule=Host(`${CVAT_HOST:-localhost}`)
+      - traefik.http.routers.cvat-ui.rule=Host(`http_${CVAT_HOST:-localhost}`)
       - traefik.http.routers.cvat-ui.entrypoints=web
-      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
+      - cvat.instance=http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     networks:
       - cvat
 
   traefik:
     image: traefik:v2.4
-    container_name: traefik
+    container_name: traefik_http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     restart: always
     command:
       - '--providers.docker.exposedByDefault=false'
       - '--providers.docker.network=cvat'
       - '--entryPoints.web.address=:8080'
       - '--providers.file.directory=/etc/traefik/rules'
-      - '--providers.docker.constraints=Label(`cvat.instance`,`${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}`)'
+      - '--providers.docker.constraints=Label(`cvat.instance`,`http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}`)'
     # Uncomment to get Traefik dashboard (don't forget to also uncomment the port below!)
     #   - "--entryPoints.dashboard.address=:8090"
     #   - "--api.dashboard=true"
@@ -88,7 +90,7 @@ services:
     #   - traefik.enable=true
     #   - traefik.http.routers.dashboard.entrypoints=dashboard
     #   - traefik.http.routers.dashboard.service=api@internal
-    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
+    #   - traefik.http.routers.dashboard.rule=Host(`http_${CVAT_HOST:-localhost}`)
     ports:
       - ${CVAT_EXT_PORT:-8080}:8080
     # Uncomment (with above) to get Traefik dashboard
@@ -99,11 +101,11 @@ services:
       - cvat
 
   cvat_opa:
-    container_name: cvat_opa
+    container_name: cvat_opa_http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     image: openpolicyagent/opa:0.34.2-rootless
     restart: always
     labels:
-      - cvat.instance='${CVAT_HOST:-localhost}:${CVAT_EXT_PORT:-8080}'
+      - cvat.instance=http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     networks:
       cvat:
         aliases:
