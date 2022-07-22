@@ -48,7 +48,7 @@ anchor = "smart"
 [[menu.main]]
     name = "Try it now"
     weight = 50
-    url = "https://cvat.org"
+    url = "https://app.cvat.ai"
 [[menu.main]]
     name = "GitHub"
     weight = 60

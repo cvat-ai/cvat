@@ -11,7 +11,7 @@ CVAT is free, online, interactive video and image annotation
 tool for computer vision. It is being used by our team to
 annotate million of objects with different properties. Many UI
 and UX decisions are based on feedbacks from professional data
-annotation team. Try it online [cvat.org](https://cvat.org).
+annotation team. Try it online [app.cvat.ai](https://app.cvat.ai).
 
 ![CVAT screenshot](site/content/en/images/cvat.jpg)
 
@@ -102,7 +102,7 @@ For more information about supported formats look at the
 
 <!--lint enable maximum-line-length-->
 
-## Online demo: [cvat.org](https://cvat.org)
+## Online demo: [app.cvat.ai](https://app.cvat.ai)
 
 This is an online demo with the latest version of the annotation tool.
 Try it online without local installation. Only own or assigned tasks
