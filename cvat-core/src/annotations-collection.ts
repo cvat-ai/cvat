@@ -210,8 +210,8 @@
                     keyframes[object.frame] = {
                         type: shapeType,
                         frame: object.frame,
-                        points: Array.isArray(object.points) ? [...object.points] : undefined,
-                        elements: Array.isArray(object.elements) ? object.elements.map((el) => {
+                        points: object.shapeType === ShapeType.SKELETON ? undefined : [...object.points],
+                        elements: object.shapeType === ShapeType.SKELETON ? object.elements.map((el) => {
                             const { id, clientID, ...rest } = el.toJSON();
                             return rest;
                         }) : undefined,
@@ -237,6 +237,7 @@
                         keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
                         keyframes[object.frame + 1].frame++;
+                        keyframes[object.frame + 1].attributes = [];
                         (keyframes[object.frame + 1].elements || []).forEach((el) => {
                             el.outside = keyframes[object.frame + 1].outside;
                             el.frame = keyframes[object.frame + 1].frame;
@@ -246,8 +247,14 @@
                     // If this object is track, iterate through all its
                     // keyframes and push copies to new keyframes
                     const attributes = {}; // id:value
-                    for (const keyframe of Object.keys(object.shapes)) {
-                        const shape = object.shapes[keyframe];
+                    const trackShapes = object.shapes;
+                    const exportedShapes = object.shapeType === ShapeType.SKELETON ?
+                        object.prepareShapesForServer().reduce((acc, val) => {
+                            acc[val.frame] = val;
+                            return acc;
+                        }, {}) : {};
+                    for (const keyframe of Object.keys(trackShapes)) {
+                        const shape = trackShapes[keyframe];
                         // Frame already saved and it is not outside
                         if (keyframe in keyframes && !keyframes[keyframe].outside) {
                             // This shape is outside and non-outside shape already exists
@@ -271,7 +278,12 @@
                         keyframes[keyframe] = {
                             type: shapeType,
                             frame: +keyframe,
-                            points: [...shape.points],
+                            points: object.shapeType === ShapeType.SKELETON ? undefined : [...shape.points],
+                            elements: object.shapeType === ShapeType.SKELETON ?
+                                exportedShapes[keyframe].elements.map((el) => {
+                                    const { id, ...rest } = el;
+                                    return rest;
+                                }) : undefined,
                             rotation: shape.rotation,
                             occluded: shape.occluded,
                             outside: shape.outside,
