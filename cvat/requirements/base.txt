@@ -43,7 +43,7 @@ tensorflow==2.8.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.
 patool==1.12
 diskcache==5.0.2
 boto3==1.17.61
-azure-storage-blob==12.8.1
+azure-storage-blob==12.13.0
 google-cloud-storage==1.42.0
 # --no-binary=datumaro: workaround for pip to install
 # opencv-headless instead of regular opencv, to actually run setup script
