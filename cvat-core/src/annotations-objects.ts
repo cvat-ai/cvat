@@ -2083,31 +2083,34 @@ export class SkeletonShape extends Shape {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
 
+        const elements = this.elements.map((element) => ({
+            ...element.get(frame),
+            source: this.source,
+            group: this.groupObject,
+            zOrder: this.zOrder,
+            rotation: 0,
+        }));
+
         return {
             objectType: ObjectType.SHAPE,
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
-            occluded: this.occluded,
             points: this.points,
-            lock: this.lock,
             zOrder: this.zOrder,
             rotation: 0,
             attributes: { ...this.attributes },
             descriptions: [...this.descriptions],
-            elements: this.elements.map((element) => ({
-                ...element.get(frame),
-                source: this.source,
-                group: this.groupObject,
-                zOrder: this.zOrder,
-                rotation: 0,
-            })),
+            elements,
             label: this.label,
             group: this.groupObject,
             color: this.color,
-            hidden: this.hidden,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             pinned: this.pinned,
+            outside: elements.every((el) => el.outside),
+            occluded: elements.every((el) => el.occluded),
+            lock: elements.every((el) => el.lock),
+            hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
             ...this._withContext(frame),
@@ -2870,7 +2873,6 @@ export class SkeletonTrack extends Track {
             clientID: this.clientID,
             serverID: this.serverID,
             color: this.color,
-            hidden: this.hidden,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             label: this.label,
             pinned: this.pinned,
@@ -2878,6 +2880,10 @@ export class SkeletonTrack extends Track {
             elements,
             frame,
             source: this.source,
+            outside: elements.every((el) => el.outside),
+            occluded: elements.every((el) => el.occluded),
+            lock: elements.every((el) => el.lock),
+            hidden: elements.every((el) => el.hidden),
             ...this._withContext(frame),
         };
     }
