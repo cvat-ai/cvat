@@ -285,6 +285,10 @@ class TaskData(InstanceLabelData):
                             ("values", db_attr.values)]))
                         for db_attr in db_label.attributespec_set.all()])
                 ])
+
+                if db_label.parent:
+                    label["parent"] = db_label.parent.name
+
                 if db_label.type == str(LabelType.SKELETON):
                     label["svg"] = db_label.skeleton.svg
 
