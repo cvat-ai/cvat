@@ -10,6 +10,7 @@ export default function isAbleToChangeFrame(): boolean {
 
     const state: CombinedState = store.getState();
     const { instance } = state.annotation.canvas;
+
     return !!instance && instance.isAbleToChangeFrame() &&
         !state.annotation.player.navigationBlocked;
 }

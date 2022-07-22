@@ -104,7 +104,6 @@ const defaultState: NotificationsState = {
             redo: null,
             search: null,
             searchEmptyFrame: null,
-            searchNonDeletedFrame: null,
             deleteFrame: null,
             restoreFrame: null,
             savingLogs: null,
@@ -1114,21 +1113,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         searchEmptyFrame: {
                             message: 'Could not search an empty frame',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.SEARCH_NON_DELETED_FRAME_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        searchNonDeletedFrame: {
-                            message: 'Could not search an non-deleted frame',
                             reason: action.payload.error.toString(),
                         },
                     },

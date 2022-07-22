@@ -70,8 +70,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private canvas: HTMLDivElement;
     private gridPath: SVGPathElement;
     private gridPattern: SVGPatternElement;
-    private deletedImageOverlay: SVGSVGElement;
-    private deletedImageOverlayPath: SVGPathElement;
     private controller: CanvasController;
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
@@ -95,7 +93,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
     };
-    private canvasFilters: string;
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -497,7 +494,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private moveCanvas(): void {
-        for (const obj of [this.background, this.grid, this.deletedImageOverlay, this.bitmap]) {
+        for (const obj of [this.background, this.grid, this.bitmap]) {
             obj.style.top = `${this.geometry.top}px`;
             obj.style.left = `${this.geometry.left}px`;
         }
@@ -519,7 +516,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private transformCanvas(): void {
         // Transform canvas
         for (const obj of [
-            this.background, this.grid, this.deletedImageOverlay, this.content, this.bitmap, this.attachmentBoard,
+            this.background, this.grid, this.content, this.bitmap, this.attachmentBoard,
         ]) {
             obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
         }
@@ -600,7 +597,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private resizeCanvas(): void {
-        for (const obj of [this.background, this.grid, this.deletedImageOverlay, this.bitmap]) {
+        for (const obj of [this.background, this.grid, this.bitmap]) {
             obj.style.width = `${this.geometry.image.width}px`;
             obj.style.height = `${this.geometry.image.height}px`;
         }
@@ -993,7 +990,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.innerObjectsFlags = {
             drawHidden: {},
         };
-        this.canvasFilters = '';
 
         // Create HTML elements
         this.loadingAnimation = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1007,9 +1003,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.gridPath = window.document.createElementNS('http://www.w3.org/2000/svg', 'path');
         this.gridPattern = window.document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
 
-        this.deletedImageOverlay = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        this.deletedImageOverlayPath = window.document.createElementNS('http://www.w3.org/2000/svg', 'path');
-
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = SVG.adopt((this.content as any) as HTMLElement) as SVG.Container;
 
@@ -1021,7 +1014,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        const deletedImageOverlayRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 
         // Setup defs
         const contentDefs = this.adoptedContent.defs();
@@ -1068,16 +1060,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridRect.setAttribute('height', '100%');
         gridRect.setAttribute('fill', 'url(#cvat_canvas_grid_pattern)');
 
-        // Setup deleted frame overlay
-        this.deletedImageOverlay.setAttribute('id', 'cvat_canvas_deleted_frame_overlay');
-        this.deletedImageOverlay.setAttribute('version', '2');
-        this.deletedImageOverlay.setAttribute('viewBox', '0 0 1024 1024');
-        this.deletedImageOverlayPath.setAttribute('d', 'm 360,184 v 0 h 304 v 0 72 h 72 v -80 c 0,-35.3 -28.7,-64 -64,-64 H 352 c -35.3,0 -64,28.7 -64,64 v 80 h 72 z m 504,72 H 160 c -17.7,0 -32,14.3 -32,32 v 32 c 0,4.4 3.6,8 8,8 h 60.4 l 24.7,523 c 1.6,34.1 29.8,61 63.9,61 h 454 c 34.2,0 62.3,-26.8 63.9,-61 L 827.6,328 H 888 c 4.4,0 8,-3.6 8,-8 v -32 c 0,-17.7 -14.3,-32 -32,-32 z M 731.3,840 H 292.7 L 268.5,328 h 487 z');
-        this.deletedImageOverlayPath.setAttribute('opacity', '0.75');
-        deletedImageOverlayRect.setAttribute('width', '100%');
-        deletedImageOverlayRect.setAttribute('height', '100%');
-        deletedImageOverlayRect.setAttribute('fill', 'url(#cvat_canvas_deleted_frame_overlay_pattern)');
-
         // Setup content
         this.text.setAttribute('id', 'cvat_canvas_text_content');
         this.background.setAttribute('id', 'cvat_canvas_background');
@@ -1099,14 +1081,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridDefs.appendChild(this.gridPattern);
         this.gridPattern.appendChild(this.gridPath);
 
-        this.deletedImageOverlay.appendChild(this.deletedImageOverlayPath);
-        this.deletedImageOverlay.appendChild(deletedImageOverlayRect);
-
         this.canvas.appendChild(this.loadingAnimation);
         this.canvas.appendChild(this.text);
         this.canvas.appendChild(this.background);
         this.canvas.appendChild(this.bitmap);
-        this.canvas.appendChild(this.deletedImageOverlay);
         this.canvas.appendChild(this.grid);
         this.canvas.appendChild(this.content);
         this.canvas.appendChild(this.attachmentBoard);
@@ -1267,12 +1245,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if (typeof configuration.canvasFilters === 'string') {
-                this.canvasFilters = configuration.canvasFilters;
-
-                if (!model.imageDeleted) {
-                    this.background.style.filter = this.canvasFilters;
-                }
+            if (typeof configuration.CSSImageFilter === 'string') {
+                this.background.style.filter = configuration.CSSImageFilter;
             }
 
             this.activate(activeElement);
@@ -1317,12 +1291,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 }
 
-                if (model.imageDeleted) {
-                    this.deletedImageOverlay.style.display = null;
-                    this.background.style.filter = 'saturate(0) brightness(1.5) contrast(0.5)';
-                } else {
-                    this.background.style.filter = this.canvasFilters;
-                    this.deletedImageOverlay.style.display = 'none';
+                if (model.imageIsDeleted) {
+                    let { width, height } = this.background;
+                    if (image.imageData instanceof ImageData) {
+                        width = image.imageData.width;
+                        height = image.imageData.height;
+                    }
+
+                    this.background.classList.add('cvat_canvas_removed_image');
+                    const canvasContext = this.background.getContext('2d');
+                    const fontSize = width / 10;
+                    canvasContext.font = `bold ${fontSize}px serif`;
+                    canvasContext.textAlign = 'center';
+                    canvasContext.lineWidth = fontSize / 20;
+                    canvasContext.strokeStyle = 'white';
+                    canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
+                    canvasContext.fillStyle = 'black';
+                    canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+                } else if (this.background.classList.contains('cvat_canvas_removed_image')) {
+                    this.background.classList.remove('cvat_canvas_removed_image');
                 }
 
                 this.moveCanvas();

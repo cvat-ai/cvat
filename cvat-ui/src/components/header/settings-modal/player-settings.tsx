@@ -216,7 +216,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Checkbox>
                     </Row>
                     <Row>
-                        <Text type='secondary'>You will be able to restore deleted frame</Text>
+                        <Text type='secondary'>You will be able to navigate and restore deleted frames</Text>
                     </Row>
                 </Col>
             </Row>

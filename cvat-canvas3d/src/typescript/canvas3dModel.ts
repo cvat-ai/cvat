@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -101,6 +101,7 @@ export interface Canvas3dDataModel {
     imageID: number | null;
     imageOffset: number;
     imageSize: Size;
+    imageIsDeleted: boolean;
     drawData: DrawData;
     mode: Mode;
     objectUpdating: boolean;
@@ -116,6 +117,7 @@ export interface Canvas3dDataModel {
 export interface Canvas3dModel {
     mode: Mode;
     data: Canvas3dDataModel;
+    readonly imageIsDeleted: boolean;
     readonly groupData: GroupData;
     setup(frameData: any, objectStates: any[]): void;
     isAbleToChangeFrame(): boolean;
@@ -153,6 +155,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 height: 0,
                 width: 0,
             },
+            imageIsDeleted: false,
             drawData: {
                 enabled: false,
                 initialState: null,
@@ -187,7 +190,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             return;
         }
 
-        if (frameData.number === this.data.imageID) {
+        if (frameData.number === this.data.imageID && frameData.deleted === this.data.imageIsDeleted) {
             if (this.data.objectUpdating) {
                 return;
             }
@@ -213,7 +216,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                     height: frameData.height as number,
                     width: frameData.width as number,
                 };
-
+                this.data.imageIsDeleted = frameData.deleted;
                 this.data.image = data;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
                 this.data.objects = objectStates;
@@ -340,6 +343,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public get groupData(): GroupData {
         return { ...this.data.groupData };
+    }
+
+    public get imageIsDeleted(): boolean {
+        return this.data.imageIsDeleted;
     }
 
     public destroy(): void {}

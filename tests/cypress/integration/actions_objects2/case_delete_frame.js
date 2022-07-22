@@ -52,20 +52,20 @@ context('Delete frame from job.', () => {
         it('Check previous frame available and deleted.', () => {
             cy.get('.cvat-player-previous-button').click();
             cy.checkFrameNum(frame);
-            cy.get('#cvat_canvas_deleted_frame_overlay').should('be.visible');
+            cy.get('.cvat-player-restore-frame').should('be.visible');
         });
 
         it('Check open from deleted frame', () => {
             cy.goToTaskList();
             cy.openTaskJob(taskName);
             cy.checkFrameNum(frame);
-            cy.get('#cvat_canvas_deleted_frame_overlay').should('be.visible');
+            cy.get('.cvat-player-restore-frame').should('be.visible');
         });
 
         it('Restore frame.', () => {
             cy.deleteFrame('restore');
             cy.checkFrameNum(frame);
-            cy.get('#cvat_canvas_deleted_frame_overlay').should('not.be.visible');
+            cy.get('.cvat-player-restore-frame').should('not.exist');
         });
     });
 });

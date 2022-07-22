@@ -206,21 +206,20 @@ class TaskData(InstanceLabelData):
         return d
 
     def _init_frame_info(self):
+        self._deleted_frames = { k: True for k in self._db_task.data.deleted_frames }
         if hasattr(self._db_task.data, 'video'):
             self._frame_info = {frame: {
                 "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
                 "width": self._db_task.data.video.width,
                 "height": self._db_task.data.video.height,
-            } for frame in range(self._db_task.data.size)
-            if frame not in self._db_task.data.deleted_frames}
+            } for frame in range(self._db_task.data.size)}
         else:
             self._frame_info = {self.rel_frame_id(db_image.frame): {
                 "id": db_image.id,
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
-            } for db_image in self._db_task.data.images.all()
-            if self.rel_frame_id(db_image.frame) not in self._db_task.data.deleted_frames}
+            } for db_image in self._db_task.data.images.all()}
 
         self._frame_mapping = {
             self._get_filename(info["path"]): frame_number
@@ -377,13 +376,14 @@ class TaskData(InstanceLabelData):
 
         if include_empty:
             for idx in self._frame_info:
-                get_frame(idx)
+                if idx not in self._deleted_frames:
+                    get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
         shape_data = ''
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
-            if shape['frame'] not in self._frame_info:
+            if shape['frame'] not in self._frame_info or shape['frame'] in self._deleted_frames:
                 # After interpolation there can be a finishing frame
                 # outside of the task boundaries. Filter it out to avoid errors.
                 # https://github.com/openvinotoolkit/cvat/issues/2827
@@ -404,7 +404,7 @@ class TaskData(InstanceLabelData):
                     get_frame(shape['frame']).labels.update({label.id: label})
 
         for tag in self._annotation_ir.tags:
-            if tag['frame'] not in self._frame_info:
+            if tag['frame'] not in self._frame_info or shape['frame'] in self._deleted_frames:
                 continue
             get_frame(tag['frame']).tags.append(self._export_tag(tag))
 
@@ -413,12 +413,13 @@ class TaskData(InstanceLabelData):
     @property
     def shapes(self):
         for shape in self._annotation_ir.shapes:
-            if shape["frame"] not in self._db_task.data.deleted_frames:
+            if shape["frame"] not in self._deleted_frames:
                 yield self._export_labeled_shape(shape)
 
     @property
     def tracks(self):
         for idx, track in enumerate(self._annotation_ir.tracks):
+            track['shapes'] = list(filter(lambda x: x['frame'] not in self._deleted_frames, track['shapes']))
             tracked_shapes = TrackManager.get_interpolated_shapes(
                 track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
@@ -433,13 +434,13 @@ class TaskData(InstanceLabelData):
                 group=track["group"],
                 source=track["source"],
                 shapes=[self._export_tracked_shape(shape)
-                    for shape in tracked_shapes if shape["frame"] not in self._db_task.data.deleted_frames],
+                    for shape in tracked_shapes if shape["frame"] not in self._deleted_frames],
             )
 
     @property
     def tags(self):
         for tag in self._annotation_ir.tags:
-            if tag["frame"] not in self._db_task.data.deleted_frames:
+            if tag["frame"] not in self._deleted_frames:
                 yield self._export_tag(tag)
 
     @property
@@ -544,6 +545,10 @@ class TaskData(InstanceLabelData):
     @property
     def frame_info(self):
         return self._frame_info
+
+    @property
+    def deleted_frames(self):
+        return self._deleted_frames
 
     @property
     def frame_step(self):
@@ -707,6 +712,7 @@ class ProjectData(InstanceLabelData):
 
     def _init_frame_info(self):
         self._frame_info = dict()
+        self._deleted_frames = { (task.id, frame): True for task in self._db_tasks.values() for frame in task.data.deleted_frames }
         original_names = DefaultDict[Tuple[str, str], int](int)
         for task in self._db_tasks.values():
             defaulted_subset = get_defaulted_subset(task.subset, self._subsets)
@@ -716,8 +722,7 @@ class ProjectData(InstanceLabelData):
                     "width": task.data.video.width,
                     "height": task.data.video.height,
                     "subset": defaulted_subset,
-                } for frame in range(task.data.size)
-                if frame not in task.data.deleted_frames})
+                } for frame in range(task.data.size)})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
                     "path": mangle_image_name(db_image.path, defaulted_subset, original_names),
@@ -725,8 +730,7 @@ class ProjectData(InstanceLabelData):
                     "width": db_image.width,
                     "height": db_image.height,
                     "subset": defaulted_subset
-                } for db_image in task.data.images.all()
-                if db_image.id not in task.data.deleted_frames})
+                } for db_image in task.data.images.all()})
 
         self._frame_mapping = {
             (self._db_tasks[frame_ident[0]].subset, self._get_filename(info["path"])): frame_ident
@@ -841,13 +845,14 @@ class ProjectData(InstanceLabelData):
 
         if include_empty:
             for ident in self._frame_info:
-                get_frame(*ident)
+                if ident not in self._deleted_frames:
+                    get_frame(*ident)
 
         for task in self._db_tasks.values():
             anno_manager = AnnotationManager(self._annotation_irs[task.id])
             for shape in sorted(anno_manager.to_shapes(task.data.size),
                     key=lambda shape: shape.get("z_order", 0)):
-                if (task.id, shape['frame']) not in self._frame_info:
+                if (task.id, shape['frame']) not in self._frame_info or (task.id, shape['frame']) in self._deleted_frames:
                     continue
                 if 'track_id' in shape:
                     if shape['outside']:
@@ -868,13 +873,15 @@ class ProjectData(InstanceLabelData):
     def shapes(self):
         for task in self._db_tasks.values():
             for shape in self._annotation_irs[task.id].shapes:
-                yield self._export_labeled_shape(shape, task.id)
+                if (task.id, shape['frame']) not in self._deleted_frames:
+                    yield self._export_labeled_shape(shape, task.id)
 
     @property
     def tracks(self):
         idx = 0
         for task in self._db_tasks.values():
             for track in self._annotation_irs[task.id].tracks:
+                track['shapes'] = list(filter(lambda x: (task.id, x['frame']) not in self._deleted_frames, track['shapes']))
                 tracked_shapes = TrackManager.get_interpolated_shapes(
                     track, 0, task.data.size
                 )
@@ -888,8 +895,8 @@ class ProjectData(InstanceLabelData):
                     label=self._get_label_name(track["label_id"]),
                     group=track["group"],
                     source=track["source"],
-                    shapes=[self._export_tracked_shape(shape, task.id)
-                        for shape in tracked_shapes if shape["frame"] not in task.data.deleted_frames],
+                    shapes=[self._export_tracked_shape(shape, task.id) for shape in tracked_shapes
+                        if (task.id, shape["frame"]) not in self._deleted_frames],
                     task_id=task.id
                 )
                 idx+=1
@@ -898,7 +905,8 @@ class ProjectData(InstanceLabelData):
     def tags(self):
         for task in self._db_tasks.values():
             for tag in self._annotation_irs[task.id].tags:
-                yield self._export_tag(tag, task.id)
+                if (task.id, tag['frame']) not in self._deleted_frames:
+                    yield self._export_tag(tag, task.id)
 
     @property
     def meta(self):
@@ -911,6 +919,10 @@ class ProjectData(InstanceLabelData):
     @property
     def frame_info(self):
         return self._frame_info
+
+    @property
+    def deleted_frames(self):
+        return self._deleted_frames
 
     @property
     def frame_step(self):
@@ -1563,6 +1575,7 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
             'name': subset.name,
             'owner': project_annotation.db_project.owner,
             'subset': subset.name,
+            'organization': project_annotation.db_project.organization,
         }
 
         subset_dataset = subset.as_dataset()

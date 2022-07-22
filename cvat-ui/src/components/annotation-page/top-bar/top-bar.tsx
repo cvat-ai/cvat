@@ -67,6 +67,7 @@ interface Props {
     onSwitchToolsBlockerState(): void;
     onDeleteFrame(): void;
     onRestoreFrame(): void;
+    switchNavigationBlocked(blocked: boolean): void;
     jobInstance: any;
 }
 
@@ -123,6 +124,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onSwitchToolsBlockerState,
         onDeleteFrame,
         onRestoreFrame,
+        switchNavigationBlocked,
         jobInstance,
         isTrainingActive,
     } = props;
@@ -182,6 +184,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         onURLIconClick={onURLIconClick}
                         onDeleteFrame={onDeleteFrame}
                         onRestoreFrame={onRestoreFrame}
+                        switchNavigationBlocked={switchNavigationBlocked}
                     />
                 </Row>
             </Col>

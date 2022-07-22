@@ -404,7 +404,6 @@ export interface NotificationsState {
             redo: null | ErrorState;
             search: null | ErrorState;
             searchEmptyFrame: null | ErrorState;
-            searchNonDeletedFrame: null | ErrorState;
             deleteFrame: null | ErrorState;
             restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;

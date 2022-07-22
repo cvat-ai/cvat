@@ -247,7 +247,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             saturationLevel !== prevProps.saturationLevel
         ) {
             canvasInstance.configure({
-                canvasFilters: `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
+                CSSImageFilter:
+                    `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
             });
         }
 
@@ -691,7 +692,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private initialSetup(): void {
         const {
-            frameData,
             grid,
             gridSize,
             gridColor,
@@ -719,13 +719,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
         canvasInstance.grid(gridSize, gridSize);
 
-        // Filters
-        const backgroundElement = window.document.getElementById('cvat_canvas_background');
-        if (backgroundElement && !frameData.deleted) {
-            const filter = `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`;
-            backgroundElement.style.filter = filter;
-        }
-
+        canvasInstance.configure({
+            CSSImageFilter:
+                `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
+        });
         const canvasWrapperElement = window.document
             .getElementsByClassName('cvat-canvas-container')
             .item(0) as HTMLElement | null;

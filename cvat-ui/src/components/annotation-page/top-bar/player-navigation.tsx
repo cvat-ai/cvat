@@ -30,6 +30,7 @@ interface Props {
     onURLIconClick(): void;
     onDeleteFrame(): void;
     onRestoreFrame(): void;
+    switchNavigationBlocked(blocked: boolean): void;
 }
 
 function PlayerNavigation(props: Props): JSX.Element {
@@ -47,6 +48,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onURLIconClick,
         onDeleteFrame,
         onRestoreFrame,
+        switchNavigationBlocked,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
@@ -59,16 +61,23 @@ function PlayerNavigation(props: Props): JSX.Element {
 
     const showDeleteFrameDialog = useCallback(() => {
         if (!playing) {
+            switchNavigationBlocked(true);
             modal.confirm({
-                title: 'Do you want to delete this frame?',
-                content: 'If you have any annotations on this frame, its will be deleted and unsave progress will be saved. You will be able to restore frame (but not annotations) later.',
+                title: `Do you want to delete frame #${frameNumber}?`,
+                content: 'The frame will not be visible in navigation and exported datasets, but it still can be restored with all the annotations.',
                 className: 'cvat-modal-delete-frame',
                 okText: 'Delete',
                 okType: 'danger',
-                onOk: () => onDeleteFrame(),
+                onOk: () => {
+                    switchNavigationBlocked(false);
+                    onDeleteFrame();
+                },
+                afterClose: () => {
+                    switchNavigationBlocked(false);
+                },
             });
         }
-    }, []);
+    }, [playing, frameNumber]);
 
     return (
         <>
@@ -95,11 +104,11 @@ function PlayerNavigation(props: Props): JSX.Element {
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
                         { (!frameDeleted) ? (
-                            <CVATTooltip title='Mark current frame as deleted'>
+                            <CVATTooltip title='Delete the frame'>
                                 <DeleteOutlined className='cvat-player-delete-frame' onClick={showDeleteFrameDialog} />
                             </CVATTooltip>
                         ) : (
-                            <CVATTooltip title='Restore current frame'>
+                            <CVATTooltip title='Restore the frame'>
                                 <Icon className='cvat-player-restore-frame' onClick={onRestoreFrame} component={RestoreIcon} />
                             </CVATTooltip>
                         )}

@@ -237,6 +237,10 @@ polyline.cvat_canvas_shape_splitting {
     -ms-interpolation-mode: nearest-neighbor;   /* IE8+           */
 }
 
+.cvat_canvas_removed_image {
+    filter: saturate(0) brightness(1.2) contrast(0.75) !important;
+}
+
 #cvat_canvas_wrapper {
     width: calc(100% - 10px);
     height: calc(100% - 10px);
@@ -248,7 +252,7 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 #cvat_canvas_loading_animation {
-    z-index: 2;
+    z-index: 1;
     position: absolute;
     width: 100%;
     height: 100%;
@@ -265,7 +269,7 @@ polyline.cvat_canvas_shape_splitting {
 #cvat_canvas_text_content {
     text-rendering: optimizeSpeed;
     position: absolute;
-    z-index: 4;
+    z-index: 3;
     pointer-events: none;
     width: 100%;
     height: 100%;
@@ -285,7 +289,7 @@ polyline.cvat_canvas_shape_splitting {
 
     pointer-events: none;
     position: absolute;
-    z-index: 5;
+    z-index: 4;
     background: black;
     width: 100%;
     height: 100%;
@@ -294,7 +298,7 @@ polyline.cvat_canvas_shape_splitting {
 
 #cvat_canvas_grid {
     position: absolute;
-    z-index: 3;
+    z-index: 2;
     pointer-events: none;
     width: 100%;
     height: 100%;
@@ -305,22 +309,10 @@ polyline.cvat_canvas_shape_splitting {
     stroke: white;
 }
 
-#cvat_canvas_deleted_frame_overlay {
-    position: absolute;
-    z-index: 2;
-    pointer-events: none;
-    width: 100%;
-    height: 100%;
-}
-
-#cvat_canvas_deleted_frame_overlay_pattern {
-    stroke: gray;
-}
-
 #cvat_canvas_content {
     filter: contrast(120%) saturate(150%);
     position: absolute;
-    z-index: 3;
+    z-index: 2;
     outline: 10px solid black;
     width: 100%;
     height: 100%;
@@ -328,7 +320,7 @@ polyline.cvat_canvas_shape_splitting {
 
 #cvat_canvas_attachment_board {
     position: absolute;
-    z-index: 5;
+    z-index: 4;
     pointer-events: none;
     width: 100%;
     height: 100%;

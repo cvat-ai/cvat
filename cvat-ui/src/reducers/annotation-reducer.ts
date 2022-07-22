@@ -979,7 +979,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
-            const { activatedStateID, states: oldStates, history: oldHistory } = state.annotations;
+            const { activatedStateID } = state.annotations;
             const {
                 states, history, minZ, maxZ,
             } = action.payload;
@@ -989,8 +989,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
-                    states: states || oldStates,
-                    history: history || oldHistory,
+                    states,
+                    history,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
@@ -1241,6 +1241,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.DELETE_FRAME_SUCCESS:
         case AnnotationActionTypes.RESTORE_FRAME_SUCCESS: {
             return {
                 ...state,
@@ -1252,22 +1253,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         fetching: false,
                     },
                 },
-                canvas: {
-                    ...state.canvas,
-                    ready: true,
-                },
-            };
-        }
-        case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    frame: {
-                        ...state.player.frame,
-                        data: action.payload.data,
-                        fetching: false,
-                    },
+                annotations: {
+                    ...state.annotations,
+                    history: action.payload.history,
+                    states: action.payload.states,
                 },
                 canvas: {
                     ...state.canvas,

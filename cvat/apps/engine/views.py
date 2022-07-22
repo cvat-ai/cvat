@@ -54,7 +54,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaSerializer, DataSerializer, ExceptionSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
@@ -911,13 +911,13 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the task',
         responses={
-            '200': DataMetaSerializer,
+            '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
         responses={
-            '200': DataMetaSerializer,
+            '200': DataMetaReadSerializer,
         })
-    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaSerializer,
+    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
         self.get_object() #force to call check_object_permissions
@@ -928,7 +928,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         ).get(pk=pk)
 
         if request.method == 'PATCH':
-            serializer = DataMetaSerializer(instance=db_task.data, data=request.data)
+            serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
             if serializer.is_valid(raise_exception=True):
                 db_task.data = serializer.save()
 
@@ -947,7 +947,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         db_data = db_task.data
         db_data.frames = frame_meta
 
-        serializer = DataMetaSerializer(db_data)
+        serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
     @extend_schema(summary='Export task as a dataset in a specific format',
@@ -1180,13 +1180,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
         responses={
-            '200': DataMetaSerializer,
+            '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
         responses={
-            '200': DataMetaSerializer,
+            '200': DataMetaReadSerializer,
         }, tags=['tasks'], versions=['2.0'])
-    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaSerializer,
+    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
         self.get_object() #force to call check_object_permissions
@@ -1205,7 +1205,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
 
         if request.method == 'PATCH':
-            serializer = DataMetaSerializer(instance=db_data, data=request.data)
+            serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.validated_data['deleted_frames'] = list(filter(
                     lambda frame: frame >= start_frame and frame <= stop_frame,
@@ -1245,7 +1245,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         db_data.frames = frame_meta
 
-        serializer = DataMetaSerializer(db_data)
+        serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
     @extend_schema(summary='The action returns the list of tracked '

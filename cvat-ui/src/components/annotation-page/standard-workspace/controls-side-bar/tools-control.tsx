@@ -62,7 +62,7 @@ interface StateToProps {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
-    frameData: any;
+    frameIsDeleted: boolean;
 }
 
 interface DispatchToProps {
@@ -83,7 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance, labels },
             canvas: { instance: canvasInstance, activeControl },
             player: {
-                frame: { number: frame, data: frameData },
+                frame: { number: frame, data: { deleted: frameIsDeleted } },
             },
             annotations: {
                 zLayer: { cur: curZOrder },
@@ -113,7 +113,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         curZOrder,
         defaultApproxPolyAccuracy,
         toolsBlockerState,
-        frameData,
+        frameIsDeleted,
     };
 }
 
@@ -1109,7 +1109,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated, canvasInstance, labels, frameData,
+            interactors, detectors, trackers, isActivated, canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
             fetching, approxPolyAccuracy, pointsRecieved, mode, portals,
@@ -1136,7 +1136,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        const showAnyContent = !(!labels.length || frameData.deleted);
+        const showAnyContent = labels.length && !frameIsDeleted;
         const showInteractionContent = isActivated && mode === 'interaction' && pointsRecieved;
         const showDetectionContent = fetching && mode === 'detection';
 

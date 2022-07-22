@@ -844,7 +844,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 },
             } :
             {
-                className: 'cvat-tools-control',
+                className: 'cvat-opencv-control',
             };
 
         return !labels.length || frameData.deleted ? (

@@ -21,7 +21,7 @@ interface Props {
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    frameData: any;
+    frameIsDeleted: boolean;
 
     rotateFrame(rotation: Rotation): void;
     selectIssuePosition(enabled: boolean): void;
@@ -29,10 +29,10 @@ interface Props {
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
-        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, selectIssuePosition, frameData,
+        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, selectIssuePosition, frameIsDeleted,
     } = props;
 
-    const controlsDisabled = frameData.deleted;
+    const controlsDisabled = frameIsDeleted;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {

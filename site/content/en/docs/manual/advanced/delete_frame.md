@@ -2,12 +2,13 @@
 title: 'Frame deleting'
 linkTitle: 'Delete frame from task'
 weight: 18
-description: 'This section explains how delete and restore frame from task.'
+description: 'This section explains how delete and restore frame from a task.'
 ---
 
 # Delete frame
 
-You can delete current frame from task. This frame will not be presented either in the UI or in the exported annotation.
+You can delete current frame from a task.
+This frame will not be presented either in the UI or in the exported annotation.
 Thus, it is possible to mark corrupted frames that are not subject to annotation.
 
 1. Go to the Job annotation view and than click on the `Delete frame` button.
@@ -25,7 +26,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
 
 # Configurate deleted frames visability and navigation
 
-If you need to enable showing the deleted frames, you can enable it in the settings.
+If you need to enable showing the deleted frames, you can do it in the settings.
 
 1. Go to the settings and chose `Player` settings.
 

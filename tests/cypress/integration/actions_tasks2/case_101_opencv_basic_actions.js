@@ -174,7 +174,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             cy.get('.cvat-opencv-image-tool').click();
             cy.get('.cvat-opencv-image-tool').should('not.have.class', 'cvat-opencv-image-tool-active');
             cy.get('.cvat-opencv-image-tool').trigger('mouseleave').trigger('mouseout');
-            cy.get('.cvat-tools-control').click();
+            cy.get('.cvat-opencv-control').click();
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
@@ -186,7 +186,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                 .trigger('mouseover')
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }).trigger('keyup');
-            cy.get('.cvat-tools-control').should('have.attr', 'tabindex');
+            cy.get('.cvat-opencv-control').should('have.attr', 'tabindex');
             createOpencvShape.pointsMap.forEach((el) => {
                 cy.get('.cvat-canvas-container').click(el.x + 150, el.y + 50);
             });

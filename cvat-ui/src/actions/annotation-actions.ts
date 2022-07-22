@@ -5,10 +5,12 @@
 import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
-
 import { ThunkAction } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
-import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
+import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
+import {
+    RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
+} from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -183,7 +185,6 @@ export enum AnnotationActionTypes {
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_EMPTY_FRAME_FAILED = 'SEARCH_EMPTY_FRAME_FAILED',
-    SEARCH_NON_DELETED_FRAME_FAILED = 'SEARCH_NON_DELETED_FRAME_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
@@ -830,6 +831,7 @@ export function undoActionAsync(sessionInstance: any, frame: number): ThunkActio
             await sessionInstance.actions.undo();
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const frameData = await sessionInstance.frames.get(frame);
             const [minZ, maxZ] = computeZRange(states);
             await undoLog.close();
 
@@ -840,12 +842,13 @@ export function undoActionAsync(sessionInstance: any, frame: number): ThunkActio
                     states,
                     minZ,
                     maxZ,
+                    frameData,
                 },
             });
 
             const undoOnFrame = undo[1];
-            if (frame !== undoOnFrame) {
-                dispatch(changeFrameAsync(undoOnFrame));
+            if (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0])) {
+                dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
             }
         } catch (error) {
             dispatch({
@@ -880,8 +883,8 @@ export function redoActionAsync(sessionInstance: any, frame: number): ThunkActio
             const history = await sessionInstance.actions.get();
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const [minZ, maxZ] = computeZRange(states);
+            const frameData = await sessionInstance.frames.get(frame);
             await redoLog.close();
-
             dispatch({
                 type: AnnotationActionTypes.REDO_ACTION_SUCCESS,
                 payload: {
@@ -889,12 +892,14 @@ export function redoActionAsync(sessionInstance: any, frame: number): ThunkActio
                     states,
                     minZ,
                     maxZ,
+                    frameData,
                 },
             });
 
             const redoOnFrame = redo[1];
-            if (frame !== redoOnFrame) {
-                dispatch(changeFrameAsync(redoOnFrame));
+
+            if (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0])) {
+                dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
             }
         } catch (error) {
             dispatch({
@@ -1028,15 +1033,16 @@ export function getJobAsync(
                 [job] = await cvat.jobs.get({ jobID: jid });
             }
 
+            // opening correct first frame according to setup
             let frameNumber;
             if (initialFrame === null && !showDeletedFrames) {
-                frameNumber = await job.frames.search({ deleted: false }, job.startFrame, job.stopFrame);
-                if (frameNumber === null) {
-                    frameNumber = job.startFrame;
-                }
+                frameNumber = (await job.frames.search(
+                    { notDeleted: true }, job.startFrame, job.stopFrame,
+                )) || job.startFrame;
             } else {
                 frameNumber = Math.max(Math.min(job.stopFrame, initialFrame || 0), job.startFrame);
             }
+
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
             // to load and decode first chunk
@@ -1134,6 +1140,11 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
         try {
             const saveJobEvent = await sessionInstance.logger.log(LogType.saveJob, {}, true);
 
+            dispatch({
+                type: AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS,
+                payload: { status: 'Saving frames' },
+            });
+            await sessionInstance.frames.save();
             await sessionInstance.annotations.save((status: string) => {
                 dispatch({
                     type: AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS,
@@ -1413,12 +1424,9 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
                     player: { showDeletedFrames },
                 },
                 annotation: {
-                    job: {
-                        instance: jobInstance,
-                    },
+                    annotations: { filters },
                 },
             } = getState();
-            const { filters } = receiveAnnotationsParameters();
 
             const sign = Math.sign(frameTo - frameFrom);
             let frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
@@ -1426,7 +1434,7 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
                 const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
                 if (!isDeleted || showDeletedFrames) {
                     break;
-                } else if (frame + sign >= jobInstance.startFrame && frame + sign <= jobInstance.stopFrame) {
+                } else if (sign > 0 ? frame < frameTo : frame > frameTo) {
                     frame = await sessionInstance.annotations.search(filters, frame + sign, frameTo);
                 } else {
                     frame = null;
@@ -1453,11 +1461,6 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
                 settings: {
                     player: { showDeletedFrames },
                 },
-                annotation: {
-                    job: {
-                        instance: jobInstance,
-                    },
-                },
             } = getState();
 
             const sign = Math.sign(frameTo - frameFrom);
@@ -1466,7 +1469,7 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
                 const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
                 if (!isDeleted || showDeletedFrames) {
                     break;
-                } else if (frame + sign >= jobInstance.startFrame && frame + sign <= jobInstance.stopFrame) {
+                } else if (sign > 0 ? frame < frameTo : frame > frameTo) {
                     frame = await sessionInstance.annotations.searchEmpty(frame + sign, frameTo);
                 } else {
                     frame = null;
@@ -1478,36 +1481,6 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SEARCH_EMPTY_FRAME_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
-export function searchNonDeletedFrameAsync(frameFrom: number, frameTo: number, backwardFrameTo?: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const state: CombinedState = getStore().getState();
-        const {
-            annotation: {
-                job: {
-                    instance: jobInstance,
-                },
-            },
-        } = state;
-
-        try {
-            let frame = await jobInstance.frames.search({ deleted: false }, frameFrom, frameTo);
-            if (frame === null && backwardFrameTo !== undefined) {
-                frame = await jobInstance.frames.search({ deleted: false }, frameFrom, backwardFrameTo);
-            }
-            if (frame !== null) {
-                dispatch(changeFrameAsync(frame));
-            }
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.SEARCH_NON_DELETED_FRAME_FAILED,
                 payload: {
                     error,
                 },
@@ -1765,19 +1738,17 @@ export function switchNavigationBlocked(navigationBlocked: boolean): AnyAction {
     };
 }
 
-export function deleteFrameAsync(): ThunkAction {
+export function deleteFrameAsync(frame: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const {
             annotation: {
-                player: {
-                    frame: {
-                        data: frameData, number: frame,
-                    },
-                },
                 annotations: { filters },
                 job: {
                     instance: jobInstance,
+                },
+                canvas: {
+                    instance: canvasInstance,
                 },
             },
             settings: {
@@ -1787,37 +1758,35 @@ export function deleteFrameAsync(): ThunkAction {
         } = state;
 
         try {
-            dispatch({
-                type: AnnotationActionTypes.DELETE_FRAME,
-            });
+            dispatch({ type: AnnotationActionTypes.DELETE_FRAME });
 
-            let history; let
-                states;
-            const frameStates = await jobInstance.annotations.get(frame, false, []);
-            if (frameStates.length) {
-                await jobInstance.annotations.clear(false, frame, frame, false);
-                await jobInstance.actions.clear();
-                history = await jobInstance.actions.get();
-                await jobInstance.annotations.save();
-                states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            if (canvasInstance &&
+                canvasInstance.mode() !== Canvas2DMode.IDLE &&
+                canvasInstance.mode() !== Canvas3DMode.IDLE) {
+                canvasInstance.cancel();
             }
-
             await jobInstance.frames.delete(frame);
-            const data = await jobInstance.frames.get(frame);
-
             dispatch({
                 type: AnnotationActionTypes.DELETE_FRAME_SUCCESS,
                 payload: {
-                    data,
-                    history,
-                    states,
+                    data: await jobInstance.frames.get(frame),
+                    history: await jobInstance.actions.get(),
+                    states: await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters),
                 },
             });
 
             if (!showDeletedFrames) {
-                dispatch(searchNonDeletedFrameAsync(
-                    frameData.number, frameData.stopFrame, frameData.startFrame,
-                ));
+                let notDeletedFrame = await jobInstance.frames.search(
+                    { notDeleted: true }, frame, jobInstance.stopFrame,
+                );
+                if (notDeletedFrame === null && jobInstance.startFrame !== frame) {
+                    notDeletedFrame = await jobInstance.frames.search(
+                        { notDeleted: true }, frame, jobInstance.startFrame,
+                    );
+                }
+                if (notDeletedFrame !== null) {
+                    dispatch(changeFrameAsync(notDeletedFrame));
+                }
             }
         } catch (error) {
             dispatch({
@@ -1828,32 +1797,32 @@ export function deleteFrameAsync(): ThunkAction {
     };
 }
 
-export function restoreFrameAsync(): ThunkAction {
+export function restoreFrameAsync(frame: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const state: CombinedState = getStore().getState();
         const {
             annotation: {
-                player: {
-                    frame: {
-                        number: frameNumber,
-                    },
-                },
                 job: {
                     instance: jobInstance,
                 },
+                annotations: { filters },
+            },
+            settings: {
+                workspace: { showAllInterpolationTracks },
             },
         } = state;
 
         try {
-            dispatch({
-                type: AnnotationActionTypes.RESTORE_FRAME,
-            });
+            dispatch({ type: AnnotationActionTypes.RESTORE_FRAME });
 
-            await jobInstance.frames.restore(frameNumber);
-            const frameData = await jobInstance.frames.get(frameNumber);
+            await jobInstance.frames.restore(frame);
             dispatch({
                 type: AnnotationActionTypes.RESTORE_FRAME_SUCCESS,
-                payload: { data: frameData },
+                payload: {
+                    data: await jobInstance.frames.get(frame),
+                    history: await jobInstance.actions.get(),
+                    states: await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters),
+                },
             });
         } catch (error) {
             dispatch({
