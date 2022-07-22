@@ -44,7 +44,8 @@ class TestGetJobs:
         response = get_method(user, f'jobs/{jid}', **kwargs)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json(), exclude_paths="root['updated_date']") == {}
+        assert DeepDiff(data, response.json(), exclude_paths="root['updated_date']",
+            ignore_order=True) == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         response = get_method(user, f'jobs/{jid}', **kwargs)
@@ -83,7 +84,8 @@ class TestListJobs:
         response = get_method(user, 'jobs', **kwargs, page_size='all')
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()['results'], exclude_paths="root['updated_date']") == {}
+        assert DeepDiff(data, response.json()['results'], exclude_paths="root['updated_date']",
+            ignore_order=True) == {}
 
     def _test_list_jobs_403(self, user, **kwargs):
         response = get_method(user, 'jobs', **kwargs)
@@ -295,6 +297,7 @@ class TestPatchJob:
             members -= {assignee_id(jobs[jid]), user_id}
             return members.pop()
         return find_new_assignee
+
     @pytest.mark.parametrize('org', [2])
     @pytest.mark.parametrize('role, task_staff, is_allow', [
         ('maintainer', False, True),  ('owner',  False, True),
@@ -314,6 +317,6 @@ class TestPatchJob:
         if is_allow:
             assert response.status_code == HTTPStatus.OK
             assert DeepDiff(expected_data(jid, assignee), response.json(),
-                exclude_paths="root['updated_date']") == {}
+                exclude_paths="root['updated_date']", ignore_order=True) == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
