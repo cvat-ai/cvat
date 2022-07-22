@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped nuclio version to 1.8.14
 - Simplified running REST API tests. Extended CI-nightly workflow
 - REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`)
+- Removed link to OpenVINO documentation (<https://github.com/cvat-ai/cvat/pull/35>)
 
 ### Deprecated
 - TDB
