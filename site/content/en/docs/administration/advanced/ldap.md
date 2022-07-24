@@ -208,4 +208,3 @@ DJANGO_AUTH_LDAP_GROUPS = {
   - Other options that can be used for LDAP authentication in Django.
 - [Django LDAP guide using Active Directory (Unofficial)](https://techexpert.tips/django/django-ldap-authentication-active-directory)
   - This is not specific to CVAT but can provide insight about firewall rules.
-  
