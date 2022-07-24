@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests for import/export annotation, dataset, backup from/to cloud storage
 - Added Python SDK package (`cvat-sdk`)
 - Previews for jobs
+- Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
