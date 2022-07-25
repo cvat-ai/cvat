@@ -5,18 +5,19 @@
 
 [![CI][ci-img]][ci-url]
 [![Gitter chat][gitter-img]][gitter-url]
+[![Discord][discord-img]][discord-url]
 [![Coverage Status][coverage-img]][coverage-url]
 [![server pulls][docker-server-pulls-img]][docker-server-image-url]
 [![ui pulls][docker-ui-pulls-img]][docker-ui-image-url]
 [![DOI][doi-img]][doi-url]
 
 CVAT is an interactive video and image annotation
-tool for computer vision. It is used by tens of thousands of users and 
+tool for computer vision. It is used by tens of thousands of users and
 companies around the world. CVAT is free and open-source.
 
-**A new repo**: CVAT core team moved the active development of the tool 
-to this new repository. Our mission is to help developers, companies and 
-organizations around the world to solve real problems using the Data-centric 
+**A new repo**: CVAT core team moved the active development of the tool
+to this new repository. Our mission is to help developers, companies and
+organizations around the world to solve real problems using the Data-centric
 AI approach.
 
 Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a self-hosted solution:
@@ -66,8 +67,8 @@ for annotation and label refinement.
 
 This is an online version of CVAT. It's free, efficient, and easy to use.
 
-[cvat.ai](https://cvat.ai) runs the latest version of the tool. You can create up 
-to 10 tasks there and upload up to 500Mb of data to annotate. It will only be 
+[cvat.ai](https://cvat.ai) runs the latest version of the tool. You can create up
+to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
 visible to you or people you assign to it.
 
 For now, it does not have [analytics features](https://cvat-ai.github.io/cvat/docs/administration/advanced/analytics/)
@@ -142,8 +143,8 @@ For more information about the supported formats, look at the
 
 ## Deep learning serverless functions for automatic labeling
 
-CVAT supports automatic labelling. It can speed up the annotation process 
-up to 10x. Here is a list of the algorithms we support, and the platforms they 
+CVAT supports automatic labelling. It can speed up the annotation process
+up to 10x. Here is a list of the algorithms we support, and the platforms they
 can be ran on:
 
 <!--lint disable maximum-line-length-->
@@ -185,10 +186,10 @@ connection with your use of FFmpeg.
 
 ## Where to ask questions
 
-[Gitter chat](https://gitter.im/opencv-cvat): you can post CVAT usage related questions there.
+[Gitter chat][gitter-url]: you can post CVAT usage related questions there.
 Typically they get answered fast by the core team or community. There you can also browse other common questions.
 
-[Discord](https://discord.gg/fNR3eXfk6C) is the place to also ask questions or discuss any other stuff related to CVAT.
+[Discord][discord-url] is the place to also ask questions or discuss any other stuff related to CVAT.
 
 [GitHub issues](https://github.com/cvat-ai/cvat/issues): please post them for feature requests or bug reports.
 If it's a bug, please add the steps to reproduce it.
@@ -224,3 +225,6 @@ questions and get our support.
 
 [doi-img]: https://zenodo.org/badge/139156354.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
+
+[discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
+[discord-url]: https://discord.gg/fNR3eXfk6C
