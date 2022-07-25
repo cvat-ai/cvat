@@ -19,12 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests for import/export annotation, dataset, backup from/to cloud storage
 - Added Python SDK package (`cvat-sdk`)
 - Previews for jobs
+- Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
 - Support of Human Pose Estimation (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
 - Simplified running REST API tests. Extended CI-nightly workflow
 - REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`)
+- cvat-ui: Improve UI/UX on label, create task and create project forms (<https://github.com/cvat-ai/cvat/pull/7>)
+- Removed link to OpenVINO documentation (<https://github.com/cvat-ai/cvat/pull/35>)
+- Clarified meaning of chunking for videos
 
 ### Deprecated
 - TDB

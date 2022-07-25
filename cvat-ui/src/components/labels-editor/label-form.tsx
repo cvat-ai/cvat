@@ -34,22 +34,36 @@ export enum AttributeType {
 interface Props {
     label: LabelOptColor | null;
     labelNames?: string[];
-    onSubmit: (label: LabelOptColor | null) => void;
+    onSubmit: (label: LabelOptColor) => void;
     onSkeletonSubmit?: () => SkeletonConfiguration | null;
+    onCancel: () => void;
 }
 
 export default class LabelForm extends React.Component<Props> {
-    private continueAfterSubmit: boolean;
     private formRef: RefObject<FormInstance>;
+    private inputNameRef: RefObject<Input>;
 
     constructor(props: Props) {
         super(props);
-        this.continueAfterSubmit = false;
         this.formRef = React.createRef<FormInstance>();
+        this.inputNameRef = React.createRef<Input>();
     }
 
+    private focus = (): void => {
+        this.inputNameRef.current?.focus({
+            cursor: 'end',
+        });
+    };
+
     private handleSubmit = (values: Store): void => {
-        const { label, onSubmit, onSkeletonSubmit } = this.props;
+        const {
+            label, onSubmit, onSkeletonSubmit, onCancel,
+        } = this.props;
+
+        if (!values.name) {
+            onCancel();
+            return;
+        }
 
         let skeletonConfiguration: SkeletonConfiguration | null = null;
         if (onSkeletonSubmit) {
@@ -88,10 +102,10 @@ export default class LabelForm extends React.Component<Props> {
             // resetFields does not remove existed attributes
             this.formRef.current.setFieldsValue({ attributes: undefined });
             this.formRef.current.resetFields();
-        }
 
-        if (!this.continueAfterSubmit) {
-            onSubmit(null);
+            if (!label) {
+                this.focus();
+            }
         }
     };
 
@@ -392,7 +406,7 @@ export default class LabelForm extends React.Component<Props> {
     };
 
     private renderLabelNameInput(): JSX.Element {
-        const { label, labelNames } = this.props;
+        const { label, labelNames, onCancel } = this.props;
         const value = label ? label.name : '';
 
         return (
@@ -402,7 +416,7 @@ export default class LabelForm extends React.Component<Props> {
                 initialValue={value}
                 rules={[
                     {
-                        required: true,
+                        required: !!label,
                         message: 'Please specify a name',
                     },
                     {
@@ -419,7 +433,16 @@ export default class LabelForm extends React.Component<Props> {
                     },
                 ]}
             >
-                <Input placeholder='Label name' />
+                <Input
+                    ref={this.inputNameRef}
+                    placeholder='Label name'
+                    onKeyUp={(event): void => {
+                        if (event.key === 'Escape' || event.key === 'Esc' || event.keyCode === 27) {
+                            onCancel();
+                        }
+                    }}
+                    autoComplete='off'
+                />
             </Form.Item>
         );
     }
@@ -435,45 +458,26 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderDoneButton(): JSX.Element {
-        return (
-            <CVATTooltip title='Save the label and return'>
-                <Button
-                    style={{ width: '150px' }}
-                    type='primary'
-                    htmlType='submit'
-                    onClick={(): void => {
-                        this.continueAfterSubmit = false;
-                    }}
-                >
-                    Done
-                </Button>
-            </CVATTooltip>
-        );
-    }
-
-    private renderContinueButton(): JSX.Element | null {
+    private renderSaveButton(): JSX.Element {
         const { label } = this.props;
+        const tooltipTitle = label ? 'Save the label and return' : 'Save the label and create one more';
+        const buttonText = label ? 'Done' : 'Continue';
 
-        if (label && label.id as number > 0) return null;
         return (
-            <CVATTooltip title='Save the label and create one more'>
+            <CVATTooltip title={tooltipTitle}>
                 <Button
                     style={{ width: '150px' }}
                     type='primary'
                     htmlType='submit'
-                    onClick={(): void => {
-                        this.continueAfterSubmit = true;
-                    }}
                 >
-                    Continue
+                    {buttonText}
                 </Button>
             </CVATTooltip>
         );
     }
 
     private renderCancelButton(): JSX.Element {
-        const { onSubmit } = this.props;
+        const { onCancel } = this.props;
 
         return (
             <CVATTooltip title='Do not save the label and return'>
@@ -482,7 +486,7 @@ export default class LabelForm extends React.Component<Props> {
                     danger
                     style={{ width: '150px' }}
                     onClick={(): void => {
-                        onSubmit(null);
+                        onCancel();
                     }}
                 >
                     Cancel
@@ -538,6 +542,8 @@ export default class LabelForm extends React.Component<Props> {
 
             this.formRef.current.setFieldsValue({ attributes: convertedAttributes });
         }
+
+        this.focus();
     }
 
     public render(): JSX.Element {
@@ -558,8 +564,7 @@ export default class LabelForm extends React.Component<Props> {
                     </Col>
                 </Row>
                 <Row justify='start' align='middle'>
-                    <Col>{this.renderDoneButton()}</Col>
-                    <Col offset={1}>{this.renderContinueButton()}</Col>
+                    <Col>{this.renderSaveButton()}</Col>
                     <Col offset={1}>{this.renderCancelButton()}</Col>
                 </Row>
             </Form>

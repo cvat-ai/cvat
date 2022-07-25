@@ -139,9 +139,9 @@ For example, the sequence `2.jpeg, 10.jpeg, 1.jpeg` after sorting will be:
 - `natural`: 1.jpeg, 2.jpeg, 10.jpeg
 - `predefined`: 2.jpeg, 10.jpeg, 1.jpeg
 
-### Use zip chunks
+### Use zip/video chunks
 
-Force to use zip chunks as compressed data. Actual for videos only.
+Force to use zip chunks as compressed data. Cut out content for videos only.
 
 ### Use cache
 

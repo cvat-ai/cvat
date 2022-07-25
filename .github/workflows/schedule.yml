@@ -246,6 +246,14 @@ jobs:
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
 
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/lcov.info
+            ${{ github.workspace }}/.coverage
+
   e2e_testing:
     needs: build
     runs-on: ubuntu-latest
@@ -385,10 +393,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: coverage_results
-          path: |
-            ${{ github.workspace }}/tests/.nyc_output
-            ${{ github.workspace }}/.coverage
-            ${{ github.workspace }}/lcov.info
+          path: ${{ github.workspace }}/tests/.nyc_output
 
   coveralls:
     runs-on: ubuntu-latest

@@ -26,9 +26,9 @@ Cypress.Commands.add(
         if (multiAttrParams) {
             cy.updateAttributes(multiAttrParams);
         }
-        cy.contains('button', 'Done').click();
+        cy.contains('button', 'Continue').click();
         cy.get('.cvat-create-project-content').within(() => {
-            cy.contains('Submit').click();
+            cy.contains('button', 'Submit & Continue').click();
         });
         if (expectedResult === 'success') {
             cy.get('.cvat-notification-create-project-success').should('exist').find('[data-icon="close"]').click();
@@ -184,7 +184,6 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click().type(user);
-        cy.wait(300);
     });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')

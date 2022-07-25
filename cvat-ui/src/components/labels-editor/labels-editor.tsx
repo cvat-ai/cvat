@@ -104,48 +104,45 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         this.handleSubmit(savedLabels, unsavedLabels);
     };
 
-    private handleCreate = (label: LabelOptColor | null): void => {
-        if (label === null) {
-            this.setState({ constructorMode: ConstructorMode.SHOW });
-        } else {
-            const { unsavedLabels, savedLabels } = this.state;
-            const newUnsavedLabels = [
-                ...unsavedLabels,
-                {
-                    ...label,
-                    id: idGenerator(),
-                },
-            ];
+    private handleCreate = (label: LabelOptColor): void => {
+        const { unsavedLabels, savedLabels } = this.state;
+        const newUnsavedLabels = [
+            ...unsavedLabels,
+            {
+                ...label,
+                id: idGenerator(),
+            },
+        ];
 
-            this.setState({ unsavedLabels: newUnsavedLabels });
-            this.handleSubmit(savedLabels, newUnsavedLabels);
-        }
+        this.setState({ unsavedLabels: newUnsavedLabels });
+        this.handleSubmit(savedLabels, newUnsavedLabels);
     };
 
-    private handleUpdate = (label: LabelOptColor | null): void => {
+    private handleUpdate = (label: LabelOptColor): void => {
         const { savedLabels, unsavedLabels } = this.state;
 
-        if (label) {
-            const filteredSavedLabels = savedLabels.filter((_label: LabelOptColor) => _label.id !== label.id);
-            const filteredUnsavedLabels = unsavedLabels.filter((_label: LabelOptColor) => _label.id !== label.id);
-            if (label.id as number >= 0) {
-                filteredSavedLabels.push(label);
-                this.setState({
-                    savedLabels: filteredSavedLabels,
-                    constructorMode: ConstructorMode.SHOW,
-                });
-            } else {
-                filteredUnsavedLabels.push(label);
-                this.setState({
-                    unsavedLabels: filteredUnsavedLabels,
-                    constructorMode: ConstructorMode.SHOW,
-                });
-            }
-
-            this.handleSubmit(filteredSavedLabels, filteredUnsavedLabels);
+        const filteredSavedLabels = savedLabels.filter((_label: LabelOptColor) => _label.id !== label.id);
+        const filteredUnsavedLabels = unsavedLabels.filter((_label: LabelOptColor) => _label.id !== label.id);
+        if (label.id as number >= 0) {
+            filteredSavedLabels.push(label);
+            this.setState({
+                savedLabels: filteredSavedLabels,
+                constructorMode: ConstructorMode.SHOW,
+            });
         } else {
-            this.setState({ constructorMode: ConstructorMode.SHOW });
+            filteredUnsavedLabels.push(label);
+            this.setState({
+                unsavedLabels: filteredUnsavedLabels,
+                constructorMode: ConstructorMode.SHOW,
+            });
         }
+
+        this.handleSubmit(filteredSavedLabels, filteredUnsavedLabels);
+        this.setState({ constructorMode: ConstructorMode.SHOW });
+    };
+
+    private handlerCancel = (): void => {
+        this.setState({ constructorMode: ConstructorMode.SHOW });
     };
 
     private handleDelete = (label: LabelOptColor): void => {
@@ -216,6 +213,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         const {
             savedLabels, unsavedLabels, constructorMode, labelForUpdate, creatorType,
         } = this.state;
+        const savedAndUnsavedLabels = [...savedLabels, ...unsavedLabels];
 
         return (
             <Tabs
@@ -232,7 +230,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     )}
                     key='1'
                 >
-                    <RawViewer labels={[...savedLabels, ...unsavedLabels]} onSubmit={this.handleRawSubmit} />
+                    <RawViewer labels={savedAndUnsavedLabels} onSubmit={this.handleRawSubmit} />
                 </Tabs.TabPane>
 
                 <Tabs.TabPane
@@ -246,7 +244,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 >
                     {constructorMode === ConstructorMode.SHOW && (
                         <ConstructorViewer
-                            labels={[...savedLabels, ...unsavedLabels]}
+                            labels={savedAndUnsavedLabels}
                             onUpdate={(label: LabelOptColor): void => {
                                 this.setState({
                                     constructorMode: ConstructorMode.UPDATE,
@@ -263,13 +261,18 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                         />
                     )}
                     {constructorMode === ConstructorMode.UPDATE && labelForUpdate !== null && (
-                        <ConstructorUpdater label={labelForUpdate} onUpdate={this.handleUpdate} />
+                        <ConstructorUpdater
+                            label={labelForUpdate}
+                            onUpdate={this.handleUpdate}
+                            onCancel={this.handlerCancel}
+                        />
                     )}
                     {constructorMode === ConstructorMode.CREATE && (
                         <ConstructorCreator
                             creatorType={creatorType}
                             labelNames={labels.map((l) => l.name)}
                             onCreate={this.handleCreate}
+                            onCancel={this.handlerCancel}
                         />
                     )}
                 </Tabs.TabPane>
