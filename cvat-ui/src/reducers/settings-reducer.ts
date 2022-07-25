@@ -33,6 +33,7 @@ const defaultState: SettingsState = {
         intelligentPolygonCrop: true,
         defaultApproxPolyAccuracy: 9,
         textFontSize: 14,
+        controlPointsSize: 5,
         textPosition: 'auto',
         textContent: 'id,source,label,attributes,descriptions',
         toolsBlockerState: {
@@ -204,6 +205,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     textFontSize: action.payload.fontSize,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_CONTROL_POINTS_SIZE: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    controlPointsSize: action.payload.controlPointsSize,
                 },
             };
         }

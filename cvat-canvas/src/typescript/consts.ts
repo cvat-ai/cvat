@@ -4,7 +4,7 @@
 
 const BASE_STROKE_WIDTH = 1.25;
 const BASE_GRID_WIDTH = 2;
-const BASE_POINT_SIZE = 5;
+const BASE_POINT_SIZE = 4;
 const TEXT_MARGIN = 10;
 const AREA_THRESHOLD = 9;
 const SIZE_THRESHOLD = 3;

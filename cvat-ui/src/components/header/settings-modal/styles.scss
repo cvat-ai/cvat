@@ -33,7 +33,8 @@
 .cvat-workspace-settings-approx-poly-threshold,
 .cvat-workspace-settings-aam-zoom-margin,
 .cvat-workspace-settings-show-frame-tags,
-.cvat-workspace-settings-text-settings {
+.cvat-workspace-settings-text-settings,
+.cvat-workspace-settings-control-points-size {
     margin-bottom: $grid-unit-size * 3;
 
     > div:first-child {
