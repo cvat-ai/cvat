@@ -111,6 +111,7 @@ function FiltersModalComponent(): JSX.Element {
                         { value: 'polygon', title: 'Polygon' },
                         { value: 'cuboid', title: 'Cuboid' },
                         { value: 'ellipse', title: 'Ellipse' },
+                        { value: 'skeleton', title: 'Skeleton' },
                     ],
                 },
             },
