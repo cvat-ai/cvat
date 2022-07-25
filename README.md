@@ -42,7 +42,7 @@ Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a 
 CVAT is used by teams all over the world. If you use us, please drop us a line at
 [contact@cvat.ai](mailto:contact+github@cvat.ai) - and we'll add you to this list.
 
-- [ATLANTIS](https://github.com/smhassanerfani/atlantis) is an open-source dataset for semantic segmentation
+- [ATLANTIS](https://github.com/smhassanerfani/atlantis), an open-source dataset for semantic segmentation
   of waterbody images, depeloped by [iWERS](http://ce.sc.edu/iwers/) group in the
   Department of Civil and Environmental Engineering at University of South Carolina, is using CVAT.
   For developing a semantic segmentation dataset using CVAT, please check
@@ -54,7 +54,7 @@ CVAT is used by teams all over the world. If you use us, please drop us a line a
   and parallelized training pipelines.
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
   to offer annotation services for projects of any size.
-- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
+- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the Human Protocol.
 - [Cogito Tech LLC](https://bit.ly/3klT0h6), a Human-in-the-Loop Workforce Solutions Provider, used CVAT
   in annotation of about 5,000 images for a brand operating in the fashion segment.
 - [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis
@@ -110,7 +110,7 @@ annotation" buttons. [Datumaro](https://github.com/cvat-ai/datumaro)
 dataset framework allows additional dataset transformations via its command
 line tool and Python library.
 
-For more information about supported formats, look at the
+For more information about the supported formats, look at the
 [documentation](https://cvat-ai.github.io/cvat/docs/manual/advanced/formats/).
 
 <!--lint disable maximum-line-length-->
@@ -185,11 +185,12 @@ connection with your use of FFmpeg.
 
 ## Where to ask questions
 
-[Gitter chat](https://gitter.im/opencv-cvat): you can post CVAT usage related there.
-Typically they get answered fast by the core team or community. You can also browse other users
-common questions on our gitter.
+[Gitter chat](https://gitter.im/opencv-cvat): you can post CVAT usage related questions there.
+Typically they get answered fast by the core team or community. There you can also browse other common questions.
 
-[GitHub issues](https://github.com/cvat-ai/cvat/issues): please post your have feature requests or bug reports there.
+[Discord](https://discord.gg/fNR3eXfk6C) is the place to also ask questions or discuss any other stuff related to CVAT.
+
+[GitHub issues](https://github.com/cvat-ai/cvat/issues): please post them for feature requests or bug reports.
 If it's a bug, please add the steps to reproduce it.
 
 [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
