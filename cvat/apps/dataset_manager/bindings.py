@@ -3,28 +3,29 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
-import rq
 import os.path as osp
-from attr import attrib, attrs
+import re
+import sys
 from collections import namedtuple
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
-    NamedTuple, OrderedDict, Tuple, Union, Set)
+                    NamedTuple, OrderedDict, Set, Tuple, Union)
 
 import datumaro.components.annotation as datum_annotation
 import datumaro.components.extractor as datum_extractor
+import rq
+from attr import attrib, attrs
 from datumaro.components.dataset import Dataset
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
 from django.utils import timezone
 
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, DimensionType, AttributeSpec, LabelType
-from cvat.apps.engine.models import Image as Img
-from cvat.apps.engine.models import Label, Project, ShapeType, Task
 from cvat.apps.dataset_manager.formats.utils import get_label_color
+from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.models import AttributeSpec, AttributeType, DimensionType
+from cvat.apps.engine.models import Image as Img
+from cvat.apps.engine.models import Label, LabelType, Project, ShapeType, Task
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import EllipsesToMasks
@@ -291,6 +292,9 @@ class TaskData(InstanceLabelData):
 
                 if db_label.type == str(LabelType.SKELETON):
                     label["svg"] = db_label.skeleton.svg
+
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        label["svg"] = label["svg"].replace(f'data-label-id="{db_sublabel.id}"', f'data-label-name="{db_sublabel.name}"')
 
                 labels.append(('label', label))
 
@@ -1124,14 +1128,24 @@ class CVATDataExtractorMixin:
             datum_annotation.Categories] = {}
 
         label_categories = datum_annotation.LabelCategories(attributes=['occluded'])
+        point_categories = datum_annotation.PointsCategories()
 
         for _, label in labels:
-            label_categories.add(label['name'])
-            for _, attr in label['attributes']:
-                label_categories.attributes.add(attr['name'])
+            if label.get('parent') is None:
+                label_id = label_categories.add(label['name'])
+                for _, attr in label['attributes']:
+                    label_categories.attributes.add(attr['name'])
 
+                if label['type'] == str(LabelType.SKELETON):
+                    labels_from = [int(l[16:-1]) for l in re.findall(f'data-node-from="\\w*"', label['svg'])]
+                    labels_to = [int(l[14:-1]) for l in re.findall(f'data-node-to="\\w*"', label['svg'])]
+                    sublabels = [l[17:-1] for l in re.findall(f'data-label-name="\\w*"', label['svg'])]
+                    joints = [[from_, to_] for from_, to_ in zip(labels_from, labels_to)]
+
+                    point_categories.add(label_id, sublabels, joints)
 
         categories[datum_annotation.AnnotationType.label] = label_categories
+        categories[datum_annotation.AnnotationType.points] = point_categories
 
         return categories
 
@@ -1491,6 +1505,13 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 )
             else:
                 continue
+        elif shape_obj.type == ShapeType.SKELETON:
+            points = []
+            for element in shape_obj.elements:
+                points.extend(element.points)
+            anno = datum_annotation.Points(points,
+                label=anno_label, attributes=anno_attr, group=anno_group,
+                z_order=shape_obj.z_order)
         else:
             raise Exception("Unknown shape type '%s'" % shape_obj.type)
 
@@ -1553,6 +1574,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
     }
 
     label_cat = dm_dataset.categories()[datum_annotation.AnnotationType.label]
+    point_cat = dm_dataset.categories().get(datum_annotation.AnnotationType.points)
 
     root_hint = find_dataset_root(dm_dataset, instance_data)
 
@@ -1608,14 +1630,30 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     source = ann.attributes.pop('source').lower() \
                         if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
 
+                    type = shapes[ann.type]
+                    elements = []
+                    if point_cat and type == ShapeType.POINTS:
+                        type = ShapeType.SKELETON
+                        for i in range(len(ann.points) // 2):
+                            elements.append({
+                                'type': ShapeType.POINTS,
+                                'frame': frame_number,
+                                'label_id': instance_data._get_label_id(point_cat.items[ann.label].labels[i]),
+                                'points': ann.points[2 * i : 2 * i + 2],
+                                'occluded': occluded,
+                                'outside': outside,
+                                'attributes': [],
+                            })
+
+
                     if track_id is None or dm_dataset.format != 'cvat' :
                         instance_data.add_shape(instance_data.LabeledShape(
-                            type=shapes[ann.type],
+                            type=type,
                             frame=frame_number,
                             points=ann.points,
                             label=label_cat.items[ann.label].name,
                             occluded=occluded,
-                            elements=[],
+                            elements=elements,
                             z_order=ann.z_order,
                             group=group_map.get(ann.group, 0),
                             source=source,
