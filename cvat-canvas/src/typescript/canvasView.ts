@@ -2443,7 +2443,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state.shapeType === 'skeleton') {
             state.elements.forEach((element: any) => {
                 if (!(element.clientID in this.svgTexts)) {
-                    this.svgTexts[element.clientID] = this.addText(element, { textContent: 'label, attributes' });
+                    this.svgTexts[element.clientID] = this.addText(element, {
+                        textContent: [
+                            ...(withLabel ? ['label'] : []),
+                            ...(withAttr ? ['attributes'] : []),
+                        ].join(', ') || ' ',
+                    });
                 }
             });
         }
