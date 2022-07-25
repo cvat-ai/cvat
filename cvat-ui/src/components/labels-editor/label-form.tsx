@@ -36,6 +36,7 @@ interface Props {
     labelNames?: string[];
     onSubmit: (label: LabelOptColor) => void;
     onSkeletonSubmit?: () => SkeletonConfiguration | null;
+    resetSkeleton?: () => void;
     onCancel: () => void;
 }
 
@@ -57,7 +58,7 @@ export default class LabelForm extends React.Component<Props> {
 
     private handleSubmit = (values: Store): void => {
         const {
-            label, onSubmit, onSkeletonSubmit, onCancel,
+            label, onSubmit, onSkeletonSubmit, onCancel, resetSkeleton,
         } = this.props;
 
         if (!values.name) {
@@ -102,6 +103,9 @@ export default class LabelForm extends React.Component<Props> {
             // resetFields does not remove existed attributes
             this.formRef.current.setFieldsValue({ attributes: undefined });
             this.formRef.current.resetFields();
+            if (resetSkeleton) {
+                resetSkeleton();
+            }
 
             if (!label) {
                 this.focus();

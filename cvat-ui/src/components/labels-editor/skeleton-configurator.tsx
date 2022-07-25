@@ -505,6 +505,18 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         }
     }
 
+    public reset(): void {
+        this.labels = {};
+        this.nodeCounter = 0;
+        this.elementCounter = 0;
+        if (this.svgRef.current) {
+            const children = Array.from(this.svgRef.current.children);
+            for (const child of children) {
+                child.remove();
+            }
+        }
+    }
+
     public wrappedSubmit(): SkeletonConfiguration {
         const svg = this.svgRef.current;
 

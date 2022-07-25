@@ -28,11 +28,18 @@ function ConstructorUpdater(props: Props): JSX.Element {
         return null;
     }, [skeletonConfiguratorRef]);
 
+    const resetSkeleton = useCallback((): void => {
+        if (skeletonConfiguratorRef.current) {
+            skeletonConfiguratorRef.current.reset();
+        }
+    }, [skeletonConfiguratorRef]);
+
     return (
         <div className='cvat-label-constructor-updater'>
             <LabelForm
                 label={label}
                 onSubmit={onUpdate}
+                resetSkeleton={type === 'skeleton' ? resetSkeleton : undefined}
                 onSkeletonSubmit={type === 'skeleton' ? onSkeletonSubmit : undefined}
                 onCancel={onCancel}
             />

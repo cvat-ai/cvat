@@ -39,6 +39,12 @@ function ConstructorCreator(props: Props): JSX.Element {
         return null;
     }, [skeletonConfiguratorRef]);
 
+    const resetSkeleton = useCallback((): void => {
+        if (skeletonConfiguratorRef.current) {
+            skeletonConfiguratorRef.current.reset();
+        }
+    }, [skeletonConfiguratorRef]);
+
     return (
         <div className='cvat-label-constructor-creator'>
             <LabelForm
@@ -46,6 +52,7 @@ function ConstructorCreator(props: Props): JSX.Element {
                 labelNames={labelNames}
                 onSubmit={onCreate}
                 onSkeletonSubmit={creatorType === 'skeleton' ? onSkeletonSubmit : undefined}
+                resetSkeleton={creatorType === 'skeleton' ? resetSkeleton : undefined}
                 onCancel={onCancel}
             />
             {
