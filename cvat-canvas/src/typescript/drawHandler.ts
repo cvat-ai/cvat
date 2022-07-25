@@ -853,12 +853,12 @@ export class DrawHandlerImpl implements DrawHandler {
 
     // Common settings for rectangle and polyshapes
     private pasteShape(): void {
-        function moveShape(shape: SVG.Shape, x: number, y: number): void {
+        const moveShape = (shape: SVG.Shape, x: number, y: number): void => {
             const { rotation } = shape.transform();
             shape.untransform();
             shape.center(x, y);
             shape.rotate(rotation);
-        }
+        };
 
         const { x: initialX, y: initialY } = this.cursorPosition;
         moveShape(this.drawInstance, initialX, initialY);
@@ -1059,18 +1059,18 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private pastePoints(initialPoints: string): void {
-        function moveShape(shape: SVG.PolyLine, group: SVG.G, x: number, y: number, scale: number): void {
+        const moveShape = (shape: SVG.PolyLine, group: SVG.G, x: number, y: number, scale: number): void => {
             const bbox = shape.bbox();
             shape.move(x - bbox.width / 2, y - bbox.height / 2);
 
             const points = shape.attr('points').split(' ');
-            const radius = this.configuration.controlPointsSize / scale;
+            const radius = this.controlPointsSize / scale;
 
             group.children().forEach((child: SVG.Element, idx: number): void => {
                 const [px, py] = points[idx].split(',');
                 child.move(px - radius / 2, py - radius / 2);
             });
-        }
+        };
 
         const { x: initialX, y: initialY } = this.cursorPosition;
         this.pointsGroup = this.canvas.group();
