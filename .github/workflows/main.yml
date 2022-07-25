@@ -10,10 +10,6 @@ on:
       - 'site/**'
       - '**/*.md'
 
-env:
-  SERVER_IMAGE_TEST_REPO: cvat_server
-  UI_IMAGE_TEST_REPO: cvat_ui
-
 jobs:
   search_cache:
     if: |
@@ -54,12 +50,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
-
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
         with:
@@ -72,20 +62,13 @@ jobs:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
-      - name: CVAT server. Extract metadata (tags, labels) for Docker
-        id: meta-server
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
-
-      - name: CVAT UI. Extract metadata (tags, labels) for Docker
-        id: meta-ui
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.UI_IMAGE_TEST_REPO }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      - name: Create image directory
+        run: |
+          mkdir /tmp/cvat_server
+          mkdir /tmp/cvat_ui
 
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v3
@@ -93,9 +76,8 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
-          push: true
-          tags: ${{ steps.meta-server.outputs.tags }}
-          labels: ${{ steps.meta-server.outputs.labels }}
+          tags: cvat/server
+          outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
         uses: docker/build-push-action@v3
@@ -103,12 +85,23 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
           file: Dockerfile.ui
-          push: true
-          tags: ${{ steps.meta-ui.outputs.tags }}
-          labels: ${{ steps.meta-ui.outputs.labels }}
+          tags: cvat/ui
+          outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
-  unit_testing:
-    needs: [build, search_cache]
+      - name: Upload CVAT server artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/image.tar
+
+      - name: Upload CVAT UI artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/image.tar
+
+  rest_api:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -120,44 +113,73 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: CVAT server. Extract metadata (tags, labels) for Docker
-        id: meta-server
-        uses: docker/metadata-action@master
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
         with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-      - name: CVAT UI. Extract metadata (tags, labels) for Docker
-        id: meta-ui
-        uses: docker/metadata-action@master
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
         with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.UI_IMAGE_TEST_REPO }}
+          name: cvat_ui
+          path: /tmp/cvat_ui/
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
-
-      - name: Pull CVAT images
+      - name: Load Docker images
         run: |
-          docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
-
-          docker pull ${{ steps.meta-ui.outputs.tags }}
-          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui
-
-      - name: Running OPA tests
-        run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
-          chmod +x ./opa
-          ./opa test cvat/apps/iam/rules
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker image ls -a
 
       - name: Running REST API tests
         run: |
           pip3 install --user cvat-sdk/
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/ -k 'GET' -s
-          pytest tests/rest_api/ --stop-services
+
+      - name: Creating a log file from cvat containers
+        if: failure()
+        env:
+          LOGS_DIR: "${{ github.workspace }}/rest_api"
+        run: |
+            mkdir $LOGS_DIR
+            docker logs test_cvat_1 > $LOGS_DIR/cvat.log
+            docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
+
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        env:
+          LOGS_DIR: "${{ github.workspace }}/rest_api"
+        with:
+          name: container_logs
+          path: $LOGS_DIR
+
+  unit_testing:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Load Docker server image
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker image ls -a
+
+      - name: Running OPA tests
+        run: |
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+          chmod +x ./opa
+          ./opa test cvat/apps/iam/rules
 
       - name: Running unit tests
         env:
@@ -190,11 +212,11 @@ jobs:
         env:
           LOGS_DIR: "${{ github.workspace }}/unit_testing"
         with:
-          name: cvat_container_logs
+          name: container_logs
           path: $LOGS_DIR
 
   e2e_testing:
-    needs: [build, search_cache]
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -206,35 +228,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: CVAT server. Extract metadata (tags, labels) for Docker
-        id: meta-server
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
-
-      - name: CVAT UI. Extract metadata (tags, labels) for Docker
-        id: meta-ui
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.UI_IMAGE_TEST_REPO }}
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
-
-      - name: Pull CVAT images
-        run: |
-          docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
-
-          docker pull ${{ steps.meta-ui.outputs.tags }}
-          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui
-
       - uses: actions/setup-node@v2
         with:
             node-version: '16.x'
+
+      - name: Download CVAT server images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
+
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker image ls -a
 
       - name: Run CVAT instance
         run: |
@@ -286,7 +300,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: cvat_container_logs
+          name: container_logs
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
