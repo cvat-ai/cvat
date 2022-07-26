@@ -345,7 +345,7 @@ class TaskData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_tracked_skeletons(shape["elements"], shape["id"])
+            elements=self._export_tracked_skeletons(shape.get("elements", []), shape["id"])
         )
 
     def _export_labeled_skeletons(self, shapes):
@@ -374,7 +374,7 @@ class TaskData(InstanceLabelData):
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_labeled_skeletons(shape["elements"])
+            elements=self._export_labeled_skeletons(shape.get("elements", []))
         )
 
     def _export_shape(self, shape):
@@ -883,7 +883,7 @@ class ProjectData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_tracked_skeleton(shape["elements"], shape["id"]),
+            elements=self._export_tracked_skeleton(shape.get("elements", []), shape["id"]),
         )
 
     def _export_labeled_skeleton(self, shapes: dict, task_id: int, shape_id: int):
@@ -913,7 +913,7 @@ class ProjectData(InstanceLabelData):
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_labeled_skeleton(shape["elements"], task_id, shape["id"]),
+            elements=self._export_labeled_skeleton(shape.get("elements", []), task_id, shape["id"]),
             task_id=task_id,
         )
 

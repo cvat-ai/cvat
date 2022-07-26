@@ -33,7 +33,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
+    ShapeType, StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
 from cvat.apps.engine.task import _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
@@ -192,11 +192,12 @@ class _TaskBackupBase(_BackupBase):
             for attr in shape['attributes']:
                 _update_attribute(attr, label)
 
-            for element in shape["elements"]:
-                label = _update_label(element)
-                for attr in element['attributes']:
-                    _update_attribute(attr, label)
-                self._prepare_meta(allowed_fields, element)
+            if shape['type'] == str(ShapeType.SKELETON):
+                for element in shape["elements"]:
+                    label = _update_label(element)
+                    for attr in element['attributes']:
+                        _update_attribute(attr, label)
+                    self._prepare_meta(allowed_fields, element)
 
             self._prepare_meta(allowed_fields, shape)
 
