@@ -217,7 +217,7 @@ questions and get our support.
 [ci-img]: https://github.com/cvat-ai/cvat/workflows/CI/badge.svg?branch=develop
 [ci-url]: https://github.com/cvat-ai/cvat/actions
 
-[gitter-img]: https://badges.gitter.im/opencv-cvat/gitter.png
+[gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
 [gitter-url]: https://gitter.im/opencv-cvat
 
 [coverage-img]: https://coveralls.io/repos/github/cvat-ai/cvat/badge.svg?branch=develop
