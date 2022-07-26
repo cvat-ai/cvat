@@ -121,17 +121,6 @@ class PatchedProjectWriteRequestTargetStorage(ModelComposed):
     def discriminator():
         return None
 
-    # member type declarations
-    location: LocationEnum  # noqa: E501
-    """
-    [optional]
-    """
-
-    cloud_storage_id: typing.Union[int, none_type]  # noqa: E501
-    """
-    [optional]
-    """
-
     attribute_map = {
         "location": "location",  # noqa: E501
         "cloud_storage_id": "cloud_storage_id",  # noqa: E501

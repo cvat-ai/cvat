@@ -136,16 +136,3 @@
         if not val:
             return None
         return {'{{{discriminatorName}}}': val}{{/discriminator}}
-
-{{#vars}}
-    {{#-first}}
-    # member type declarations
-    {{/-first}}
-    {{name}}: {{> model_templates/type_annotation_cleaned }} # noqa: E501
-    """{{^required}}
-    [optional{{#defaultValue}}, default: {{{.}}}{{/defaultValue}}]{{/required}}{{#isContainer}}
-    {{{dataType}}}{{/isContainer}}{{#description}}
-    {{{.}}}.{{/description}}
-    """
-
-{{/vars}}

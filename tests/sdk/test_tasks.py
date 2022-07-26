@@ -5,38 +5,47 @@
 
 import io
 import os
+import os.path as osp
 from pathlib import Path
+from cvat_sdk.impl.client import CvatClient
 
 import pytest
-from cvat_sdk.usecases.auth import login
-from cvat_sdk.usecases.tasks import create_task, delete_tasks, list_tasks
-from cvat_sdk.usecases.types import ResourceType
+from cvat_sdk.impl.types import ResourceType
 from PIL import Image
 from rest_api.utils.config import USER_PASS
-from rest_api.utils.helpers import generate_image_file
+from rest_api.utils.helpers import generate_image_file, generate_image_files
 
 from .util import make_pbar
 
 
 @pytest.mark.usefixtures("changedb")
 class TestTaskUsecases:
-    def test_can_create_task(
-        self, tmp_path: Path, cvat_client, mock_stdout, users_by_name
-    ):
-        tmp_img = tmp_path / "img.png"
+    @pytest.fixture(autouse=True)
+    def setup(self, tmp_path: Path, cvat_client: CvatClient, mock_stdout: io.StringIO):
+        self.tmp_path = tmp_path
+        self.client = cvat_client
+        self.stdout = mock_stdout
+
+        yield
+
+        self.tmp_path = None
+        self.client = None
+        self.stdout = None
+
+    def test_can_create_task(self, users_by_name):
+        tmp_img = self.tmp_path / "img.png"
         with tmp_img.open("wb") as f:
             f.write(generate_image_file().getvalue())
 
-        user = next(iter(users_by_name.keys()))
+        user = next(iter(users_by_name))
 
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        with cvat_client:
-            login(cvat_client, (user, USER_PASS))
+        with self.client as client:
+            client.login((user, USER_PASS))
 
-            task_id = create_task(
-                cvat_client,
+            task = client.create_task(
                 spec={
                     "name": "test_task",
                     "labels": [{"name": "car"}, {"name": "person"}],
@@ -46,14 +55,59 @@ class TestTaskUsecases:
                 pbar=pbar,
             )
 
-        assert task_id
+            assert task.id
+
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert mock_stdout.getvalue() == ""
+        assert self.stdout.getvalue() == ""
 
-    # def test_can_list_all_tasks(self):
-    #     tasks = list_tasks(self.client)
+    def test_can_create_task_with_local_data(self):
+        username = 'admin1'
+        task_spec = {
+            'name': f'test {username} to create a task with local data',
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [
+                    {
+                        "name": "a",
+                        "mutable": True,
+                        "input_type": "number",
+                        "default_value": "5",
+                        "values": ["4", "5", "6"]
+                    }
+                ]
+            }],
+        }
 
-    #     self.assertEqual(len(tasks), 1)
+        task_data = {
+            'image_quality': 75,
+        }
+
+        task_files = generate_image_files(7)
+        for i, f in enumerate(task_files):
+            fname = self.tmp_path / osp.basename(f.name)
+            with fname.open('wb') as fd:
+                fd.write(f.getvalue())
+                task_files[i] = str(fname)
+
+        with self.client as client:
+            client.login((username, USER_PASS))
+
+            task = client.create_task(
+                spec=task_spec,
+                data_params=task_data,
+                resource_type=ResourceType.LOCAL,
+                resources=task_files)
+
+            assert task.size == 7
+
+
+    # def test_can_list_all_tasks(self,
+    #     tmp_path: Path, cvat_client: CvatClient, mock_stdout: io.StringIO, users_by_name
+    # ):
+    #     tasks = list_tasks(client)
+
+    #     assert len(tasks) == 1
     #     self.assertRegex(self.logger_stream.getvalue(), f".*{self.taskname}.*")
     #     self.assertEqual(self.mock_stdout.getvalue(), "")
 

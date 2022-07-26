@@ -4,18 +4,14 @@
 
 from __future__ import annotations
 
-import logging
 import os
 from contextlib import ExitStack, closing
 from typing import Dict, List, Optional, Tuple
 
 from cvat_sdk import ApiClient
-from cvat_sdk.usecases.client import CvatClient
-from cvat_sdk.usecases.progress import ProgressReporter
-from cvat_sdk.usecases.utils import StreamWithProgress, assert_status
-
-log = logging.getLogger(__name__)
-
+from cvat_sdk.impl.client import CvatClient
+from cvat_sdk.impl.progress import ProgressReporter, StreamWithProgress
+from cvat_sdk.impl.utils import assert_status
 
 MAX_REQUEST_SIZE = 100 * 2**20
 
@@ -57,7 +53,9 @@ class Uploader:
                 pbar.advance(group_size)
 
         for filename in separate_files:
-            self._upload_file_with_tus(url, filename, params=kwargs, pbar=pbar, logger=log.debug)
+            self._upload_file_with_tus(
+                url, filename, params=kwargs, pbar=pbar, logger=self.client.logger.debug
+            )
 
         self._tus_finish_upload(url, params=kwargs)
 

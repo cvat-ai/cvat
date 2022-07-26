@@ -21,8 +21,8 @@ def collect_operations(schema):
     for endpoint_name, endpoint_schema in endpoints.items():
         for method_name, method_schema in endpoint_schema.items():
             method_schema = dict(method_schema)
-            method_schema['method'] = method_name
-            method_schema['endpoint'] = endpoint_name
+            method_schema["method"] = method_name
+            method_schema["endpoint"] = endpoint_name
             operations[method_schema["operationId"]] = method_schema
 
     return operations
@@ -41,9 +41,9 @@ class Processor:
 
         new_name = name
 
-        tokenized_path = operation['endpoint'].split('/')
+        tokenized_path = operation["endpoint"].split("/")
         assert 3 <= len(tokenized_path)
-        assert tokenized_path[0] == '' and tokenized_path[1] == 'api'
+        assert tokenized_path[0] == "" and tokenized_path[1] == "api"
         tokenized_path = tokenized_path[2:]
 
         prefix = tokenized_path[0] + "_"

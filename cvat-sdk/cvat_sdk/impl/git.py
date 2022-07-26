@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from time import sleep
 
-from cvat_sdk.usecases.client import CvatClient
+from cvat_sdk.impl.client import CvatClient
 
 
 def create_git_repo(

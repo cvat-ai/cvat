@@ -10,8 +10,8 @@ import os.path as osp
 from contextlib import closing
 from typing import Optional
 
-from cvat_sdk.usecases.client import CvatClient
-from cvat_sdk.usecases.progress import ProgressReporter
+from cvat_sdk.impl.client import CvatClient
+from cvat_sdk.impl.progress import ProgressReporter
 
 
 class Downloader:

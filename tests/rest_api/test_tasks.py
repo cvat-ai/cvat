@@ -8,12 +8,9 @@ import os.path as osp
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
-from cvat_sdk import models
+from cvat_sdk import models, CvatClient
 from cvat_sdk.apis import TasksApi
-from cvat_sdk.usecases.auth import login
-from cvat_sdk.usecases.client import CvatClient
-from cvat_sdk.usecases.tasks import create_task
-from cvat_sdk.usecases.types import ResourceType
+from cvat_sdk.impl.types import ResourceType
 
 import pytest
 from deepdiff import DeepDiff
@@ -316,45 +313,3 @@ class TestPostTaskData:
         with make_api_client(username) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
-
-    def test_can_create_task_with_local_data(self, tmp_path):
-        username = 'admin1'
-        task_spec = {
-            'name': f'test {username} to create a task with local data',
-            "labels": [{
-                "name": "car",
-                "color": "#ff00ff",
-                "attributes": [
-                    {
-                        "name": "a",
-                        "mutable": True,
-                        "input_type": "number",
-                        "default_value": "5",
-                        "values": ["4", "5", "6"]
-                    }
-                ]
-            }],
-        }
-
-        task_data = {
-            'image_quality': 75,
-        }
-
-        task_files = generate_image_files(7)
-        for i, f in enumerate(task_files):
-            fname = tmp_path / osp.basename(f.name)
-            with fname.open('wb') as fd:
-                fd.write(f.getvalue())
-                task_files[i] = str(fname)
-
-        with CvatClient(BASE_URL) as client:
-            login(client, (username, USER_PASS))
-
-            task_id = create_task(client,
-                spec=models.TaskWriteRequest(**task_spec),
-                data_params=task_data,
-                resource_type=ResourceType.LOCAL,
-                resources=task_files)
-
-            (task, _) = client.api.tasks_api.retrieve(task_id)
-            assert task.size == 7

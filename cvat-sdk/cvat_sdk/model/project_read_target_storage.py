@@ -122,22 +122,6 @@ class ProjectReadTargetStorage(ModelComposed):
     def discriminator():
         return None
 
-    # member type declarations
-    id: int  # noqa: E501
-    """
-    [optional]
-    """
-
-    location: LocationEnum  # noqa: E501
-    """
-    [optional]
-    """
-
-    cloud_storage_id: typing.Union[int, none_type]  # noqa: E501
-    """
-    [optional]
-    """
-
     attribute_map = {
         "id": "id",  # noqa: E501
         "location": "location",  # noqa: E501

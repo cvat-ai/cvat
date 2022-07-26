@@ -8,7 +8,7 @@ import json
 from typing import Any, Dict, List, Union
 
 from cvat_sdk.api_client import Endpoint
-from cvat_sdk.usecases.utils import assert_status
+from cvat_sdk.impl.utils import assert_status
 
 
 def get_paginated_collection(

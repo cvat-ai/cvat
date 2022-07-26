@@ -132,32 +132,6 @@ class ProjectReadOwner(ModelComposed):
     def discriminator():
         return None
 
-    # member type declarations
-    url: str  # noqa: E501
-    """
-    [optional]
-    """
-
-    id: int  # noqa: E501
-    """
-    [optional]
-    """
-
-    username: str  # noqa: E501
-    """
-    Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only..
-    """
-
-    first_name: str  # noqa: E501
-    """
-    [optional]
-    """
-
-    last_name: str  # noqa: E501
-    """
-    [optional]
-    """
-
     attribute_map = {
         "username": "username",  # noqa: E501
         "url": "url",  # noqa: E501
