@@ -193,7 +193,7 @@ class _TaskBackupBase(_BackupBase):
                 _update_attribute(attr, label)
 
             if shape['type'] == str(ShapeType.SKELETON):
-                for element in shape["elements"]:
+                for element in shape['elements']:
                     label = _update_label(element)
                     for attr in element['attributes']:
                         _update_attribute(attr, label)
@@ -208,11 +208,12 @@ class _TaskBackupBase(_BackupBase):
                     _update_attribute(attr, label)
                 self._prepare_meta(allowed_fields, shape)
 
-                for element in shape["elements"]:
-                    label = _update_label(element)
-                    for attr in element['attributes']:
-                        _update_attribute(attr, label)
-                    self._prepare_meta(allowed_fields, element)
+                if shape['type'] == str(ShapeType.SKELETON):
+                    for element in shape['elements']:
+                        label = _update_label(element)
+                        for attr in element['attributes']:
+                            _update_attribute(attr, label)
+                        self._prepare_meta(allowed_fields, element)
 
             for attr in track['attributes']:
                 _update_attribute(attr, label)
