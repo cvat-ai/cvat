@@ -7,6 +7,23 @@ description: 'Answers to frequently asked questions'
 
 <!--lint disable heading-style-->
 
+## How to migrate data from [CVAT.org](https://cvat.org/) to [CVAT.ai](https://app.cvat.ai/)
+
+Please follow the [export tasks and projects guide](/docs/manual/advanced/backup/#backup) to
+download an archive with data which corresponds to your task or project. The backup for a
+project will have all tasks which are inside the project. Thus you don't need to export
+them separately.
+
+Please follow the [import tasks and projects guide](/docs/manual/advanced/backup/#create-from-backup)
+to upload your backup with a task or project to a CVAT instance.
+
+See a quick demo below. It is really a simple process. If your data is huge, it may take some time.
+Please be patient.
+
+![Export and import backup demo](
+  https://user-images.githubusercontent.com/40690625/180879954-44afcd95-1e94-451a-9a60-2f3bd6482cbf.gif)
+
+
 ## How to update CVAT
 
 Before updating, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
