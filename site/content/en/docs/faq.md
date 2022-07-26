@@ -7,7 +7,7 @@ description: 'Answers to frequently asked questions'
 
 <!--lint disable heading-style-->
 
-## How to migrate data from [CVAT.org](https://cvat.org/) to [CVAT.ai](https://app.cvat.ai/)
+## How to migrate data from CVAT.org to CVAT.ai
 
 Please follow the [export tasks and projects guide](/docs/manual/advanced/backup/#backup) to
 download an archive with data which corresponds to your task or project. The backup for a
