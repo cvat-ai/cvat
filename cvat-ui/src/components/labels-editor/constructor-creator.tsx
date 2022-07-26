@@ -11,12 +11,14 @@ import SkeletonConfigurator from './skeleton-configurator';
 interface Props {
     labelNames: string[];
     creatorType: 'basic' | 'skeleton';
-    onCreate: (label: LabelOptColor | null) => void;
+    onCreate: (label: LabelOptColor) => void;
+    onCancel: () => void;
 }
 
 function compareProps(prevProps: Props, nextProps: Props): boolean {
     return (
         prevProps.onCreate === nextProps.onCreate &&
+        prevProps.onCancel === nextProps.onCancel &&
         prevProps.creatorType === nextProps.creatorType &&
         prevProps.labelNames.length === nextProps.labelNames.length &&
         prevProps.labelNames.every((value: string, index: number) => nextProps.labelNames[index] === value)
@@ -24,12 +26,10 @@ function compareProps(prevProps: Props, nextProps: Props): boolean {
 }
 
 function ConstructorCreator(props: Props): JSX.Element {
-    const { onCreate, labelNames, creatorType } = props;
+    const {
+        onCreate, onCancel, labelNames, creatorType,
+    } = props;
     const skeletonConfiguratorRef = useRef<SkeletonConfigurator>(null);
-
-    const onSubmitLabelConf = useCallback((labelConfiguration: LabelOptColor | null) => {
-        onCreate(labelConfiguration);
-    }, [onCreate]);
 
     const onSkeletonSubmit = useCallback((): SkeletonConfiguration | null => {
         if (skeletonConfiguratorRef.current) {
@@ -39,13 +39,21 @@ function ConstructorCreator(props: Props): JSX.Element {
         return null;
     }, [skeletonConfiguratorRef]);
 
+    const resetSkeleton = useCallback((): void => {
+        if (skeletonConfiguratorRef.current) {
+            skeletonConfiguratorRef.current.reset();
+        }
+    }, [skeletonConfiguratorRef]);
+
     return (
         <div className='cvat-label-constructor-creator'>
             <LabelForm
                 label={null}
                 labelNames={labelNames}
-                onSubmit={onSubmitLabelConf}
+                onSubmit={onCreate}
                 onSkeletonSubmit={creatorType === 'skeleton' ? onSkeletonSubmit : undefined}
+                resetSkeleton={creatorType === 'skeleton' ? resetSkeleton : undefined}
+                onCancel={onCancel}
             />
             {
                 creatorType === 'skeleton' && (

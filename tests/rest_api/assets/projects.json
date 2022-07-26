@@ -13,14 +13,20 @@
         {
           "attributes": [],
           "color": "#6080c0",
+          "has_parent": false,
           "id": 16,
-          "name": "cat"
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
           "color": "#406040",
+          "has_parent": false,
           "id": 17,
-          "name": "dog"
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "name": "project4",
@@ -88,14 +94,20 @@
         {
           "attributes": [],
           "color": "#6080c0",
+          "has_parent": false,
           "id": 7,
-          "name": "cat"
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
           "color": "#406040",
+          "has_parent": false,
           "id": 8,
-          "name": "dog"
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "name": "project2",
@@ -156,14 +168,20 @@
             }
           ],
           "color": "#2080c0",
+          "has_parent": false,
           "id": 5,
-          "name": "car"
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
           "color": "#c06060",
+          "has_parent": false,
           "id": 6,
-          "name": "person"
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "name": "project1",

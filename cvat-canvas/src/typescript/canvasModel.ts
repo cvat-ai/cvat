@@ -68,6 +68,7 @@ export interface Configuration {
     colorBy?: string;
     selectedShapeOpacity?: number;
     shapeOpacity?: number;
+    controlPointsSize?: number;
     outlinedBorders?: string | false;
 }
 
@@ -282,6 +283,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 shapeOpacity: 0.2,
                 outlinedBorders: false,
                 textFontSize: consts.DEFAULT_SHAPE_TEXT_SIZE,
+                controlPointsSize: consts.BASE_POINT_SIZE,
                 textPosition: consts.DEFAULT_SHAPE_TEXT_POSITION,
                 textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
@@ -686,6 +688,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.textFontSize === 'number' && configuration.textFontSize >= consts.MINIMUM_TEXT_FONT_SIZE) {
             this.data.configuration.textFontSize = configuration.textFontSize;
+        }
+
+        if (typeof configuration.controlPointsSize === 'number') {
+            this.data.configuration.controlPointsSize = configuration.controlPointsSize;
         }
 
         if (['auto', 'center'].includes(configuration.textPosition)) {

@@ -88,9 +88,10 @@ export class DrawHandlerImpl implements DrawHandler {
     private crosshair: Crosshair;
     private drawData: DrawData;
     private geometry: Geometry;
-    private configuration: Configuration;
     private autoborderHandler: AutoborderHandler;
     private autobordersEnabled: boolean;
+    private controlPointsSize: number;
+    private selectedShapeOpacity: number;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -422,7 +423,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             });
     }
 
@@ -431,7 +432,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             });
 
         const initialPoint: {
@@ -622,7 +623,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             });
 
         this.drawPolyshape();
@@ -691,7 +692,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             });
     }
 
@@ -760,7 +761,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 Array.from(this.pointsGroup.node.children).forEach((child: Element) => {
                     const dataType = child.getAttribute('data-type');
                     if (child.tagName === 'circle' && dataType && dataType.includes('element')) {
-                        child.setAttribute('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
+                        child.setAttribute('r', `${this.controlPointsSize / this.geometry.scale}`);
                         let cx = +(child.getAttribute('cx') as string);
                         let cy = +(child.getAttribute('cy') as string);
                         // todo: check if skeleton from one point
@@ -812,7 +813,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             });
     }
 
@@ -852,12 +853,12 @@ export class DrawHandlerImpl implements DrawHandler {
 
     // Common settings for rectangle and polyshapes
     private pasteShape(): void {
-        function moveShape(shape: SVG.Shape, x: number, y: number): void {
+        const moveShape = (shape: SVG.Shape, x: number, y: number): void => {
             const { rotation } = shape.transform();
             shape.untransform();
             shape.center(x, y);
             shape.rotate(rotation);
-        }
+        };
 
         const { x: initialX, y: initialY } = this.cursorPosition;
         moveShape(this.drawInstance, initialX, initialY);
@@ -875,7 +876,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -912,7 +913,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -950,7 +951,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -974,7 +975,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'face-stroke': 'black',
-                'fill-opacity': this.configuration.selectedShapeOpacity,
+                'fill-opacity': this.selectedShapeOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -992,7 +993,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pointsGroup.children().forEach((child: SVG.Element): void => {
             const dataType = child.attr('data-type');
             if (child.node.tagName === 'circle' && dataType && dataType.includes('element')) {
-                child.attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
+                child.attr('r', `${this.controlPointsSize / this.geometry.scale}`);
                 const labelID = +child.attr('data-label-id');
                 const element = elements.find((_element: any): boolean => _element.label.id === labelID);
                 if (element) {
@@ -1058,18 +1059,18 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private pastePoints(initialPoints: string): void {
-        function moveShape(shape: SVG.PolyLine, group: SVG.G, x: number, y: number, scale: number): void {
+        const moveShape = (shape: SVG.PolyLine, group: SVG.G, x: number, y: number, scale: number): void => {
             const bbox = shape.bbox();
             shape.move(x - bbox.width / 2, y - bbox.height / 2);
 
             const points = shape.attr('points').split(' ');
-            const radius = consts.BASE_POINT_SIZE / scale;
+            const radius = this.controlPointsSize / scale;
 
             group.children().forEach((child: SVG.Element, idx: number): void => {
                 const [px, py] = points[idx].split(',');
                 child.move(px - radius / 2, py - radius / 2);
             });
-        }
+        };
 
         const { x: initialX, y: initialY } = this.cursorPosition;
         this.pointsGroup = this.canvas.group();
@@ -1080,7 +1081,7 @@ export class DrawHandlerImpl implements DrawHandler {
         let numOfPoints = initialPoints.split(' ').length;
         while (numOfPoints) {
             numOfPoints--;
-            const radius = consts.BASE_POINT_SIZE / this.geometry.scale;
+            const radius = this.controlPointsSize / this.geometry.scale;
             const stroke = consts.POINTS_STROKE_WIDTH / this.geometry.scale;
             this.pointsGroup.circle().fill('white').stroke('black').attr({
                 r: radius,
@@ -1203,6 +1204,8 @@ export class DrawHandlerImpl implements DrawHandler {
         configuration: Configuration,
     ) {
         this.autoborderHandler = autoborderHandler;
+        this.controlPointsSize = configuration.controlPointsSize;
+        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.autobordersEnabled = false;
         this.startTimestamp = Date.now();
         this.onDrawDone = onDrawDone;
@@ -1212,7 +1215,6 @@ export class DrawHandlerImpl implements DrawHandler {
         this.canceled = false;
         this.drawData = null;
         this.geometry = geometry;
-        this.configuration = configuration;
         this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
@@ -1231,7 +1233,8 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public configurate(configuration: Configuration): void {
-        this.configuration = configuration;
+        this.controlPointsSize = configuration.controlPointsSize;
+        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
 
         const isFillableRect = this.drawData &&
             this.drawData.shapeType === 'rectangle' &&
@@ -1245,14 +1248,12 @@ export class DrawHandlerImpl implements DrawHandler {
             this.drawInstance.fill({ opacity: configuration.selectedShapeOpacity });
         }
 
-        if (typeof configuration.autoborders === 'boolean') {
-            this.autobordersEnabled = configuration.autoborders;
-            if (this.drawInstance && !this.drawData.initialState) {
-                if (this.autobordersEnabled) {
-                    this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
-                } else {
-                    this.autoborderHandler.autoborder(false);
-                }
+        this.autobordersEnabled = configuration.autoborders;
+        if (this.drawInstance && !this.drawData.initialState) {
+            if (this.autobordersEnabled) {
+                this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
+            } else {
+                this.autoborderHandler.autoborder(false);
             }
         }
     }
@@ -1276,7 +1277,7 @@ export class DrawHandlerImpl implements DrawHandler {
             for (const point of this.pointsGroup.children()) {
                 point.attr({
                     'stroke-width': consts.POINTS_STROKE_WIDTH / geometry.scale,
-                    r: consts.BASE_POINT_SIZE / geometry.scale,
+                    r: this.controlPointsSize / geometry.scale,
                 });
             }
         }
@@ -1291,7 +1292,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
             for (const point of (paintHandler as any).set.members) {
                 point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                point.attr('r', `${consts.BASE_POINT_SIZE / geometry.scale}`);
+                point.attr('r', `${this.controlPointsSize / geometry.scale}`);
             }
         }
     }

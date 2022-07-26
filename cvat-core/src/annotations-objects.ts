@@ -660,7 +660,7 @@ export class Shape extends Drawn {
             rotation: this.rotation,
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 attributeAccumulator.push({
-                    spec_id: attrId,
+                    spec_id: +attrId,
                     value: this.attributes[attrId],
                 });
 
@@ -998,7 +998,7 @@ export class Track extends Drawn {
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 if (!labelAttributes[attrId].mutable) {
                     attributeAccumulator.push({
-                        spec_id: attrId,
+                        spec_id: +attrId,
                         value: this.attributes[attrId],
                     });
                 }
@@ -1017,7 +1017,7 @@ export class Track extends Drawn {
                         (attributeAccumulator, attrId) => {
                             if (labelAttributes[attrId].mutable) {
                                 attributeAccumulator.push({
-                                    spec_id: attrId,
+                                    spec_id: +attrId,
                                     value: this.shapes[frame].attributes[attrId],
                                 });
                             }
@@ -1556,7 +1556,7 @@ export class Tag extends Annotation {
             group: 0, // TODO: why server requires group for tags?
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 attributeAccumulator.push({
-                    spec_id: attrId,
+                    spec_id: +attrId,
                     value: this.attributes[attrId],
                 });
 
@@ -2058,7 +2058,7 @@ export class SkeletonShape extends Shape {
             rotation: 0,
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 attributeAccumulator.push({
-                    spec_id: attrId,
+                    spec_id: +attrId,
                     value: this.attributes[attrId],
                 });
 
@@ -2836,7 +2836,7 @@ export class SkeletonTrack extends Track {
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 if (!labelAttributes[attrId].mutable) {
                     attributeAccumulator.push({
-                        spec_id: attrId,
+                        spec_id: +attrId,
                         value: this.attributes[attrId],
                     });
                 }
@@ -3081,7 +3081,7 @@ export class SkeletonTrack extends Track {
                         attributes: Object.keys(elementData.attributes).reduce(
                             (attributeAccumulator, attrID) => {
                                 attributeAccumulator.push({
-                                    spec_id: attrID,
+                                    spec_id: +attrID,
                                     value: elementData.attributes[attrID],
                                 });
                                 return attributeAccumulator;
@@ -3106,7 +3106,7 @@ export class SkeletonTrack extends Track {
                     (attributeAccumulator, attrID) => {
                         if (labelAttributes[attrID].mutable) {
                             attributeAccumulator.push({
-                                spec_id: attrID,
+                                spec_id: +attrID,
                                 value: skeletonShape.attributes[attrID],
                             });
                         }

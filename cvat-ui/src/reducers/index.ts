@@ -710,6 +710,7 @@ export interface WorkspaceSettingsState {
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
+    controlPointsSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;

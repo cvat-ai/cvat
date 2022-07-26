@@ -26,6 +26,7 @@ export class EditHandlerImpl implements EditHandler {
     private editedShape: SVG.Shape;
     private editLine: SVG.PolyLine;
     private clones: SVG.Polygon[];
+    private controlPointsSize: number;
     private autobordersEnabled: boolean;
     private intelligentCutEnabled: boolean;
 
@@ -299,7 +300,7 @@ export class EditHandlerImpl implements EditHandler {
         if (enabled) {
             (this.editedShape as any).selectize(true, {
                 deepSelect: true,
-                pointSize: (2 * consts.BASE_POINT_SIZE) / getGeometry().scale,
+                pointSize: (2 * this.controlPointsSize) / getGeometry().scale,
                 rotationPoint: false,
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
@@ -387,6 +388,7 @@ export class EditHandlerImpl implements EditHandler {
         this.autoborderHandler = autoborderHandler;
         this.autobordersEnabled = false;
         this.intelligentCutEnabled = false;
+        this.controlPointsSize = consts.BASE_POINT_SIZE;
         this.onEditDone = onEditDone;
         this.canvas = canvas;
         this.editData = null;
@@ -416,20 +418,16 @@ export class EditHandlerImpl implements EditHandler {
     }
 
     public configurate(configuration: Configuration): void {
-        if (typeof configuration.autoborders === 'boolean') {
-            this.autobordersEnabled = configuration.autoborders;
-            if (this.editLine) {
-                if (this.autobordersEnabled) {
-                    this.autoborderHandler.autoborder(true, this.editLine, this.editData.state.clientID);
-                } else {
-                    this.autoborderHandler.autoborder(false);
-                }
+        this.autobordersEnabled = configuration.autoborders;
+        if (this.editLine) {
+            if (this.autobordersEnabled) {
+                this.autoborderHandler.autoborder(true, this.editLine, this.editData.state.clientID);
+            } else {
+                this.autoborderHandler.autoborder(false);
             }
         }
-
-        if (typeof configuration.intelligentPolygonCrop === 'boolean') {
-            this.intelligentCutEnabled = configuration.intelligentPolygonCrop;
-        }
+        this.controlPointsSize = configuration.controlPointsSize || consts.BASE_POINT_SIZE;
+        this.intelligentCutEnabled = configuration.intelligentPolygonCrop;
     }
 
     public transform(geometry: Geometry): void {
@@ -453,7 +451,7 @@ export class EditHandlerImpl implements EditHandler {
 
             for (const point of (paintHandler as any).set.members) {
                 point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                point.attr('r', `${consts.BASE_POINT_SIZE / geometry.scale}`);
+                point.attr('r', `${this.controlPointsSize / geometry.scale}`);
             }
         }
     }

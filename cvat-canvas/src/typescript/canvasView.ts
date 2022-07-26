@@ -545,7 +545,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             ...window.document.getElementsByClassName('svg_select_points_rot'),
         ]) {
             element.setAttribute('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.geometry.scale}`);
-            element.setAttribute('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
+            element.setAttribute('r', `${this.configuration.controlPointsSize / this.geometry.scale}`);
         }
 
         for (const element of window.document.getElementsByClassName('cvat_canvas_poly_direction')) {
@@ -569,7 +569,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             });
             if (object.type === 'circle') {
-                object.attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
+                object.attr('r', `${this.configuration.controlPointsSize / this.geometry.scale}`);
             }
             if (clientID in this.svgTexts) {
                 this.updateTextPosition(this.svgTexts[clientID]);
@@ -897,7 +897,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const getActiveElement = (): ActiveElement => this.activeElement;
             (shape as any).selectize(value, {
                 deepSelect: true,
-                pointSize: (2 * consts.BASE_POINT_SIZE) / this.geometry.scale,
+                pointSize: (2 * this.configuration.controlPointsSize) / this.geometry.scale,
                 rotationPoint: shape.type === 'rect' || shape.type === 'ellipse',
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
@@ -1325,7 +1325,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
+            this.autoborderHandler.configurate(this.configuration);
             this.interactionHandler.configurate(this.configuration);
+            this.transformCanvas();
 
             // remove if exist and not enabled
             // this.setupObjects([]);
@@ -2443,7 +2445,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state.shapeType === 'skeleton') {
             state.elements.forEach((element: any) => {
                 if (!(element.clientID in this.svgTexts)) {
-                    this.svgTexts[element.clientID] = this.addText(element, { textContent: 'label, attributes' });
+                    this.svgTexts[element.clientID] = this.addText(element, {
+                        textContent: [
+                            ...(withLabel ? ['label'] : []),
+                            ...(withAttr ? ['attributes'] : []),
+                        ].join(',') || ' ',
+                    });
                 }
             });
         }
@@ -2622,7 +2629,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .center(cx, cy)
                     .attr({
                         id: `cvat_canvas_shape_${element.clientID}`,
-                        r: consts.BASE_POINT_SIZE / this.geometry.scale,
+                        r: this.configuration.controlPointsSize / this.geometry.scale,
                         'color-rendering': 'optimizeQuality',
                         'shape-rendering': 'geometricprecision',
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,

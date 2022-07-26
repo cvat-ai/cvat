@@ -84,6 +84,7 @@ interface StateToProps {
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
     textFontSize: number;
+    controlPointsSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
     showAllInterpolationTracks: boolean;
@@ -171,6 +172,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 automaticBordering,
                 intelligentPolygonCrop,
                 textFontSize,
+                controlPointsSize,
                 textPosition,
                 textContent,
             },
@@ -214,6 +216,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aamZoomMargin,
         showObjectsTextAlways,
         textFontSize,
+        controlPointsSize,
         textPosition,
         textContent,
         showAllInterpolationTracks,

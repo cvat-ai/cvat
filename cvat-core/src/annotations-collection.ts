@@ -18,7 +18,7 @@
     const ObjectState = require('./object-state').default;
 
     const {
-        HistoryActions, ShapeType, ObjectType, colors,
+        HistoryActions, ShapeType, ObjectType, colors, Source,
     } = require('./enums');
 
     class Collection {
@@ -210,14 +210,14 @@
                     keyframes[object.frame] = {
                         type: shapeType,
                         frame: object.frame,
-                        points: Array.isArray(object.points) ? [...object.points] : undefined,
-                        elements: Array.isArray(object.elements) ? object.elements.map((el) => {
+                        points: object.shapeType === ShapeType.SKELETON ? undefined : [...object.points],
+                        elements: object.shapeType === ShapeType.SKELETON ? object.elements.map((el) => {
                             const { id, clientID, ...rest } = el.toJSON();
                             return rest;
                         }) : undefined,
                         occluded: object.occluded,
                         rotation: object.rotation,
-                        zOrder: object.zOrder,
+                        z_order: object.zOrder,
                         outside: false,
                         attributes: Object.keys(object.attributes).reduce((accumulator, attrID) => {
                             // We save only mutable attributes inside a keyframe
@@ -237,6 +237,7 @@
                         keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
                         keyframes[object.frame + 1].frame++;
+                        keyframes[object.frame + 1].attributes = [];
                         (keyframes[object.frame + 1].elements || []).forEach((el) => {
                             el.outside = keyframes[object.frame + 1].outside;
                             el.frame = keyframes[object.frame + 1].frame;
@@ -246,8 +247,14 @@
                     // If this object is track, iterate through all its
                     // keyframes and push copies to new keyframes
                     const attributes = {}; // id:value
-                    for (const keyframe of Object.keys(object.shapes)) {
-                        const shape = object.shapes[keyframe];
+                    const trackShapes = object.shapes;
+                    const exportedShapes = object.shapeType === ShapeType.SKELETON ?
+                        object.prepareShapesForServer().reduce((acc, val) => {
+                            acc[val.frame] = val;
+                            return acc;
+                        }, {}) : {};
+                    for (const keyframe of Object.keys(trackShapes)) {
+                        const shape = trackShapes[keyframe];
                         // Frame already saved and it is not outside
                         if (keyframe in keyframes && !keyframes[keyframe].outside) {
                             // This shape is outside and non-outside shape already exists
@@ -271,11 +278,16 @@
                         keyframes[keyframe] = {
                             type: shapeType,
                             frame: +keyframe,
-                            points: [...shape.points],
+                            points: object.shapeType === ShapeType.SKELETON ? undefined : [...shape.points],
+                            elements: object.shapeType === ShapeType.SKELETON ?
+                                exportedShapes[keyframe].elements.map((el) => {
+                                    const { id, ...rest } = el;
+                                    return rest;
+                                }) : undefined,
                             rotation: shape.rotation,
                             occluded: shape.occluded,
                             outside: shape.outside,
-                            zOrder: shape.zOrder,
+                            z_order: shape.zOrder,
                             attributes: updatedAttributes ? Object.keys(attributes).reduce((accumulator, attrID) => {
                                 accumulator.push({
                                     spec_id: +attrID,
@@ -381,13 +393,30 @@
             const exported = object.toJSON();
             const position = {
                 type: objectState.shapeType,
-                points: [...objectState.points],
+                points: objectState.shapeType === ShapeType.SKELETON ? undefined : [...objectState.points],
+                elements: objectState.shapeType === ShapeType.SKELETON ? objectState.elements.map((el: ObjectState) => {
+                    const elementAttributes = el.attributes;
+                    return {
+                        attributes: Object.keys(elementAttributes).reduce((acc, attrID) => {
+                            acc.push({
+                                spec_id: +attrID,
+                                value: elementAttributes[attrID],
+                            });
+                            return acc;
+                        }, []),
+                        label_id: el.label.id,
+                        occluded: el.occluded,
+                        outside: el.outside,
+                        points: [...el.points],
+                        type: el.shapeType,
+                    };
+                }) : undefined,
                 rotation: objectState.rotation,
                 occluded: objectState.occluded,
                 outside: objectState.outside,
-                zOrder: objectState.zOrder,
+                z_order: objectState.zOrder,
                 attributes: Object.keys(objectState.attributes).reduce((accumulator, attrID) => {
-                    if (!labelAttributes[attrID].mutable) {
+                    if (labelAttributes[attrID].mutable) {
                         accumulator.push({
                             spec_id: +attrID,
                             value: objectState.attributes[attrID],
@@ -405,14 +434,19 @@
                 label_id: exported.label_id,
                 attributes: exported.attributes,
                 shapes: [],
+                source: Source.MANUAL,
             };
 
             const next = JSON.parse(JSON.stringify(prev));
             next.frame = frame;
-
             next.shapes.push(JSON.parse(JSON.stringify(position)));
+
             exported.shapes.map((shape) => {
                 delete shape.id;
+                (shape.elements || []).forEach((element) => {
+                    delete element.id;
+                });
+
                 if (shape.frame < frame) {
                     prev.shapes.push(JSON.parse(JSON.stringify(shape)));
                 } else if (shape.frame > frame) {
@@ -429,6 +463,9 @@
                 prev.shapes[prev.shapes.length - 2].frame -= 1;
             }
             prev.shapes[prev.shapes.length - 1].outside = true;
+            (prev.shapes[prev.shapes.length - 1].elements || []).forEach((el) => {
+                el.outside = true;
+            });
 
             let clientID = ++this.count;
             const prevTrack = trackFactory(prev, clientID, this.injection);

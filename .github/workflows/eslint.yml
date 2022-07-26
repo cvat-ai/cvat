@@ -26,7 +26,7 @@ jobs:
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            yarn install --frozen-lockfile
+            yarn install --frozen-lockfile && cd tests && yarn install --frozen-lockfile && cd ..
             yarn add eslint-detailed-reporter -D -W
             mkdir -p eslint_report
 

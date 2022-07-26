@@ -62,6 +62,7 @@ interface Props {
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
     textFontSize: number;
+    controlPointsSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
     showAllInterpolationTracks: boolean;
@@ -114,6 +115,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             opacity,
             smoothImage,
             textFontSize,
+            controlPointsSize,
             textPosition,
             textContent,
             colorBy,
@@ -135,6 +137,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showProjections,
             intelligentPolygonCrop,
             selectedShapeOpacity: selectedOpacity,
+            controlPointsSize,
             shapeOpacity: opacity,
             smoothImage,
             colorBy,
@@ -174,6 +177,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameFetching,
             showObjectsTextAlways,
             textFontSize,
+            controlPointsSize,
             textPosition,
             textContent,
             showAllInterpolationTracks,
@@ -195,6 +199,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.selectedOpacity !== selectedOpacity ||
             prevProps.smoothImage !== smoothImage ||
             prevProps.textFontSize !== textFontSize ||
+            prevProps.controlPointsSize !== controlPointsSize ||
             prevProps.textPosition !== textPosition ||
             prevProps.textContent !== textContent ||
             prevProps.colorBy !== colorBy ||
@@ -213,6 +218,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 colorBy,
                 outlinedBorders: outlined ? outlineColor || 'black' : false,
                 textFontSize,
+                controlPointsSize,
                 textPosition,
                 textContent,
             });

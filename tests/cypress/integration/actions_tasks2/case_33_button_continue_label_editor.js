@@ -35,8 +35,7 @@ context('Button "Continue" in label editor.', () => {
             cy.get('.cvat-constructor-viewer-new-item').click();
             cy.get('.cvat-label-constructor-creator').within(() => {
                 cy.contains('button', 'Continue').click();
-                cy.contains('[role="alert"]', 'Please specify a name').should('be.visible');
-                cy.contains('button', 'Cancel').click();
+                cy.get('.cvat-label-constructor-creator').should('not.exist');
             });
         });
     });

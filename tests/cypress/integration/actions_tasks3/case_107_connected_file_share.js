@@ -34,9 +34,7 @@ context('Connected file share.', () => {
                     });
                 });
             });
-        cy.contains('button', 'Submit').click();
-        cy.get('.cvat-notification-create-task-success').should('exist').find('button').click();
-        cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
+        cy.contains('button', 'Submit & Open').click();
         cy.get('.cvat-task-details').should('exist');
     }
 
