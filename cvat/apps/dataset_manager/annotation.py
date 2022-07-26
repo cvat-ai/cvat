@@ -730,14 +730,14 @@ class TrackManager(ObjectManager):
                 shape["elements"] = elements
                 shapes.append(shape)
 
-            elements1 = deepcopy(shape0["elements"])
-            for i, elem in enumerate(elements1):
-                if elem["label_id"] in  elements1:
-                    elements1[i] =  elements1[elem["label_id"]]
-                    elements1[i]["keyframe"] = True
+            elements = deepcopy(shape0["elements"])
+            for i, elem in enumerate(elements):
+                if elem["label_id"] in elements1:
+                    elements[i] =  elements1[elem["label_id"]]
+                    elements[i]["keyframe"] = True
                 else:
-                    elements1[i]["keyframe"] = False
-            shape1["elements"] = elements1
+                    elements[i]["keyframe"] = False
+            shape1["elements"] = elements
 
             return shapes
 
