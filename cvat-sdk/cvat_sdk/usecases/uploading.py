@@ -3,15 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-from contextlib import ExitStack, closing
 
 import logging
 import os
+from contextlib import ExitStack, closing
 from typing import Dict, List, Optional, Tuple
 
 from cvat_sdk import ApiClient
 from cvat_sdk.usecases.client import CvatClient
-from cvat_sdk.usecases.progress_reporter import ProgressReporter
+from cvat_sdk.usecases.progress import ProgressReporter
 from cvat_sdk.usecases.utils import StreamWithProgress, assert_status
 
 log = logging.getLogger(__name__)
@@ -19,12 +19,14 @@ log = logging.getLogger(__name__)
 
 MAX_REQUEST_SIZE = 100 * 2**20
 
+
 class Uploader:
     def __init__(self, client: CvatClient):
         self.client = client
 
-    def upload_files(self, url: str, resources: List[str], *,
-            pbar: Optional[ProgressReporter] = None, **kwargs):
+    def upload_files(
+        self, url: str, resources: List[str], *, pbar: Optional[ProgressReporter] = None, **kwargs
+    ):
         bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
 
         if pbar is not None:
@@ -57,15 +59,15 @@ class Uploader:
         for filename in separate_files:
             self._upload_file_with_tus(url, filename, params=kwargs, pbar=pbar, logger=log.debug)
 
-        self._tus_finish_upload(url, data=kwargs)
+        self._tus_finish_upload(url, params=kwargs)
 
     def upload_file(self, url, filename, *, params=None, pbar=None, logger=None):
-        return self._upload_file_with_tus(url=url, filename=filename,
-            params=params, pbar=pbar, logger=logger)
+        return self._upload_file_with_tus(
+            url=url, filename=filename, params=params, pbar=pbar, logger=logger
+        )
 
     def _split_files_by_requests(
-        self,
-        filenames: List[str]
+        self, filenames: List[str]
     ) -> Tuple[List[Tuple[List[str], int]], List[str], int]:
         bulk_files: Dict[str, int] = {}
         separate_files: Dict[str, int] = {}
@@ -195,23 +197,21 @@ class Uploader:
             url,
             post_params=params,
             headers={
-                "Content-Type": "multipart/form-data",
                 "Upload-Start": "",
-                **self.client.get_common_headers(),
+                **self.client.api.get_common_headers(),
             },
         )
         assert_status(202, response)
         return response
 
-    def _tus_finish_upload(self, url, *, params=None, data=None):
+    def _tus_finish_upload(self, url, *, params=None):
         response = self.client.api.rest_client.POST(
             url,
             headers={
-                "Content-Type": "multipart/form-data",
                 "Upload-Finish": "",
-                **self.client.get_common_headers(),
+                **self.client.api.get_common_headers(),
             },
-            post_params=dict(**(params or {}), **(data or {})),
+            post_params=params,
         )
         assert_status(202, response)
         return response

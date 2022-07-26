@@ -17,7 +17,7 @@ def create_git_repo(
     task_id: int,
     repo_url: str,
     status_check_period: int = 2,
-    use_lfs: bool = True
+    use_lfs: bool = True,
 ):
     common_headers = client.api.get_common_headers()
 

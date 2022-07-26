@@ -4,6 +4,7 @@
 
 
 from typing import Optional
+
 import requests
 
 
@@ -12,10 +13,10 @@ def detect_schema(url: str) -> Optional[str]:
     Attempts to detect URL schema (http or https) if none provided in the URL.
     """
 
-    if url.startswith('http://') or url.startswith('https://'):
+    if url.startswith("http://") or url.startswith("https://"):
         return url
 
-    for schema in ['https://', 'http://']:
+    for schema in ["https://", "http://"]:
         try:
             v = schema + url
             response = requests.request("GET", v)

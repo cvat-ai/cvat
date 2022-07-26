@@ -7,10 +7,7 @@ import json
 import os.path as osp
 from copy import deepcopy
 from http import HTTPStatus
-from io import BytesIO
-from tempfile import TemporaryDirectory
 from time import sleep
-from typing import List
 from cvat_sdk import models
 from cvat_sdk.apis import TasksApi
 from cvat_sdk.usecases.auth import login
@@ -20,27 +17,9 @@ from cvat_sdk.usecases.types import ResourceType
 
 import pytest
 from deepdiff import DeepDiff
-from PIL import Image
 
 from .utils.config import make_api_client, BASE_URL, USER_PASS
-
-
-def generate_image_file(filename, size=(50, 50)):
-    f = BytesIO()
-    image = Image.new('RGB', size=size)
-    image.save(f, 'jpeg')
-    f.name = filename
-    f.seek(0)
-
-    return f
-
-def generate_image_files(count) -> List[BytesIO]:
-    images = []
-    for i in range(count):
-        image = generate_image_file(f'{i}.jpeg')
-        images.append(image)
-
-    return images
+from .utils.helpers import generate_image_files
 
 
 @pytest.mark.usefixtures('dontchangedb')
@@ -338,7 +317,7 @@ class TestPostTaskData:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
-    def test_can_create_task_with_local_data(self):
+    def test_can_create_task_with_local_data(self, tmp_path):
         username = 'admin1'
         task_spec = {
             'name': f'test {username} to create a task with local data',
@@ -361,21 +340,21 @@ class TestPostTaskData:
             'image_quality': 75,
         }
 
-        with TemporaryDirectory() as temp_dir:
-            task_files = generate_image_files(7)
-            for i, f in enumerate(task_files):
-                with open(osp.join(temp_dir, osp.basename(f.name)), 'wb') as fd:
-                    fd.write(f.getvalue())
-                    task_files[i] = osp.join(temp_dir, f.name)
+        task_files = generate_image_files(7)
+        for i, f in enumerate(task_files):
+            fname = tmp_path / osp.basename(f.name)
+            with fname.open('wb') as fd:
+                fd.write(f.getvalue())
+                task_files[i] = str(fname)
 
-            with CvatClient(BASE_URL) as client:
-                login(client, (username, USER_PASS))
+        with CvatClient(BASE_URL) as client:
+            login(client, (username, USER_PASS))
 
-                task_id = create_task(client,
-                    spec=models.TaskWriteRequest(**task_spec),
-                    data_params=task_data,
-                    resource_type=ResourceType.LOCAL,
-                    resources=task_files)
+            task_id = create_task(client,
+                spec=models.TaskWriteRequest(**task_spec),
+                data_params=task_data,
+                resource_type=ResourceType.LOCAL,
+                resources=task_files)
 
-                (task, _) = client.api.tasks_api.retrieve(task_id)
-                assert task.size == 7
+            (task, _) = client.api.tasks_api.retrieve(task_id)
+            assert task.size == 7

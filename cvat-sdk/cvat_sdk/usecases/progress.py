@@ -8,6 +8,8 @@ from __future__ import annotations
 import math
 from typing import Iterable, Optional, Tuple, TypeVar
 
+import tqdm
+
 T = TypeVar("T")
 
 
@@ -113,3 +115,23 @@ class NullProgressReporter(ProgressReporter):
 
     def split(self, count: int) -> Tuple[ProgressReporter]:
         return (self,) * count
+
+
+class TqdmProgressReporter(ProgressReporter):
+    def __init__(self, instance: tqdm.tqdm) -> None:
+        super().__init__()
+        self.tqdm = instance
+
+    @property
+    def period(self) -> float:
+        return 0
+
+    def start(self, total: int, *, desc: Optional[str] = None):
+        self.tqdm.reset(total)
+        self.tqdm.set_description_str(desc)
+
+    def report_status(self, progress: int):
+        self.tqdm.update(progress - self.tqdm.n)
+
+    def advance(self, delta: int):
+        self.tqdm.update(delta)

@@ -15,10 +15,10 @@ class CvatClient:
     """
     Manages session and configuration.
     """
+
     # TODO: Locates resources and APIs.
 
-    def __init__(self, url: str, *,
-            logger: Optional[logging.Logger] = None):
+    def __init__(self, url: str, *, logger: Optional[logging.Logger] = None):
         # TODO: use requests instead of urllib3 in ApiClient
         # TODO: try to autodetect schema
         self._api_map = _CVAT_API_V2(url)

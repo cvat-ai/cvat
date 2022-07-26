@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-from io import BytesIO
 
 import mimetypes
 import os.path as osp
+from io import BytesIO
 from time import sleep
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -16,12 +16,12 @@ from PIL.Image import Image
 from cvat_sdk import ApiException, ApiValueError, models
 from cvat_sdk.usecases.client import CvatClient
 from cvat_sdk.usecases.downloading import Downloader
+from cvat_sdk.usecases.git import create_git_repo
 from cvat_sdk.usecases.helpers import get_paginated_collection
-from cvat_sdk.usecases.progress_reporter import ProgressReporter
+from cvat_sdk.usecases.progress import ProgressReporter
 from cvat_sdk.usecases.types import ResourceType
 from cvat_sdk.usecases.uploading import Uploader
 from cvat_sdk.usecases.utils import assert_status, filter_dict
-from cvat_sdk.usecases.git import create_git_repo
 
 
 def create_task(
@@ -88,6 +88,7 @@ def create_task(
 
     return task.id
 
+
 def upload_task_data(
     client: CvatClient,
     task_id: int,
@@ -104,7 +105,7 @@ def upload_task_data(
 
     data = {}
     if resource_type is ResourceType.LOCAL:
-        pass # handled later
+        pass  # handled later
     elif resource_type is ResourceType.REMOTE:
         data = {f"remote_files[{i}]": f for i, f in enumerate(resources)}
     elif resource_type is ResourceType.SHARE:
@@ -143,6 +144,7 @@ def upload_task_data(
         uploader = Uploader(client)
         uploader.upload_files(url, resources, pbar=pbar, **data)
 
+
 def upload_task_annotations(
     client: CvatClient,
     task_id: int,
@@ -150,7 +152,7 @@ def upload_task_annotations(
     filename: str,
     *,
     status_check_period: int = 2,
-    pbar: Optional[ProgressReporter] = None
+    pbar: Optional[ProgressReporter] = None,
 ):
     """
     Upload annotations for a task in the specified format
@@ -169,17 +171,18 @@ def upload_task_annotations(
     uploader.upload_file(url, filename, pbar=pbar, logger=client.logger.debug, params=params)
 
     while True:
-        response = client.api.rest_client.PUT(url,
-            headers=client.api.get_common_headers(), query_params=params)
+        response = client.api.rest_client.PUT(
+            url, headers=client.api.get_common_headers(), query_params=params
+        )
         if response.status == 201:
             break
 
         sleep(status_check_period)
 
     client.logger.info(
-        f"Upload job for Task ID {task_id} "
-        f"with annotation file {filename} finished"
+        f"Upload job for Task ID {task_id} " f"with annotation file {filename} finished"
     )
+
 
 def list_tasks(
     client: CvatClient, *, return_json: bool = False, **kwargs
@@ -187,8 +190,9 @@ def list_tasks(
     """List all tasks in either basic or JSON format."""
 
     return get_paginated_collection(
-        endpoint=client.api.tasks_api.list, return_json=return_json, **kwargs
+        endpoint=client.api.tasks_api.list_endpoint, return_json=return_json, **kwargs
     )
+
 
 def delete_tasks(client: CvatClient, task_ids: Sequence[int]):
     """
@@ -203,9 +207,9 @@ def delete_tasks(client: CvatClient, task_ids: Sequence[int]):
             client.logger.debug(f"Task ID {task_id} not found")
         else:
             client.logger.debug(
-                f"Failed to delete task ID {task_id}: "
-                f"{response.msg} (status {response.status})"
+                f"Failed to delete task ID {task_id}: " f"{response.msg} (status {response.status})"
             )
+
 
 def download_frames(
     client: CvatClient,
@@ -213,7 +217,7 @@ def download_frames(
     frame_ids: Sequence[int],
     *,
     outdir: str = "",
-    quality: str = "original"
+    quality: str = "original",
 ) -> Image:
     """
     Download the requested frame numbers for a task and save images as
@@ -235,6 +239,7 @@ def download_frames(
 
         outfile = "task_{}_frame_{:06d}{}".format(task_id, frame_id, im_ext)
         im.save(osp.join(outdir, outfile))
+
 
 def tasks_dump(
     client,
@@ -274,6 +279,7 @@ def tasks_dump(
 
     client.logger.info(f"Annotations have been exported to {filename}")
 
+
 def tasks_export(client, task_id, filename, *, completion_check_period=2, pbar=None):
     """Download a task backup"""
     client.logger.info("Waiting for the server to prepare the file...")
@@ -293,7 +299,10 @@ def tasks_export(client, task_id, filename, *, completion_check_period=2, pbar=N
     downloader = Downloader(client)
     downloader.download_file(url + "?action=download", output_path=filename, pbar=pbar)
 
-    client.logger.info(f"Task {task_id} has been exported sucessfully " f"to {osp.abspath(filename)}")
+    client.logger.info(
+        f"Task {task_id} has been exported sucessfully " f"to {osp.abspath(filename)}"
+    )
+
 
 def tasks_import(client, filename, *, completion_check_period=2, pbar=None) -> None:
     """Import a task from a backup file"""

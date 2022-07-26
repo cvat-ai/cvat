@@ -96,7 +96,6 @@ class RESTClientObject(object):
         url,
         query_params=None,
         headers=None,
-        files=None,
         body=None,
         post_params=None,
         *,
@@ -115,7 +114,6 @@ class RESTClientObject(object):
                             when 'Content-Type' is
                             `application/x-www-form-urlencoded`
                             and `multipart/form-data`
-        :param files: file parameters for POST/PUT/PATCH requests
         :param _parse_response: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
@@ -154,6 +152,8 @@ class RESTClientObject(object):
                     request_body = None
                     if body is not None:
                         request_body = json.dumps(body)
+                    elif post_params and method == "POST":
+                        request_body = json.dumps(post_params)
                     r = self.pool_manager.request(
                         method,
                         url,
@@ -163,11 +163,6 @@ class RESTClientObject(object):
                         headers=headers,
                     )
                 elif headers["Content-Type"] == "application/x-www-form-urlencoded":  # noqa: E501
-                    if files:
-                        raise ApiException(
-                            "Files cannot be used when Content-Type "
-                            "is 'application/x-www-form-urlencoded'"
-                        )
                     r = self.pool_manager.request(
                         method,
                         url,
@@ -194,7 +189,7 @@ class RESTClientObject(object):
                 # Pass a `string` parameter directly in the body to support
                 # other content types than Json when `body` argument is
                 # provided in serialized form
-                elif isinstance(body, str) or isinstance(body, bytes) or files:
+                elif isinstance(body, str) or isinstance(body, bytes):
                     request_body = body
                     r = self.pool_manager.request(
                         method,

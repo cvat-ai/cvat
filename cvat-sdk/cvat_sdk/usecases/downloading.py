@@ -4,14 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-from contextlib import closing
-import os
 
+import os
 import os.path as osp
+from contextlib import closing
 from typing import Optional
 
 from cvat_sdk.usecases.client import CvatClient
-from cvat_sdk.usecases.progress_reporter import ProgressReporter
+from cvat_sdk.usecases.progress import ProgressReporter
 
 
 class Downloader:
@@ -53,7 +53,8 @@ class Downloader:
 
                     try:
                         for chunk in response.read_chunked(
-                                chunk_size=CHUNK_SIZE, decode_content=False):
+                            chunk_size=CHUNK_SIZE, decode_content=False
+                        ):
                             if pbar is not None:
                                 pbar.advance(len(chunk))
 
