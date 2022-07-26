@@ -40,7 +40,9 @@ jobs:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
