@@ -6,11 +6,14 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os.path as osp
 import urllib.parse
 from time import sleep
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+
+import attrs
 
 from cvat_sdk import ApiClient, ApiException, ApiValueError, Configuration, models
 from cvat_sdk.impl.git import create_git_repo
@@ -18,7 +21,14 @@ from cvat_sdk.impl.helpers import get_paginated_collection
 from cvat_sdk.impl.progress import ProgressReporter
 from cvat_sdk.impl.tasks import TaskProxy
 from cvat_sdk.impl.types import ResourceType
+from cvat_sdk.impl.uploading import Uploader
 from cvat_sdk.impl.utils import assert_status
+
+
+@attrs.define
+class Config:
+    status_check_period: float = 5
+    """In seconds"""
 
 
 class CvatClient:
@@ -28,12 +38,15 @@ class CvatClient:
 
     # TODO: Locates resources and APIs.
 
-    def __init__(self, url: str, *, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self, url: str, *, logger: Optional[logging.Logger] = None, config: Optional[Config] = None
+    ):
         # TODO: use requests instead of urllib3 in ApiClient
         # TODO: try to autodetect schema
         self._api_map = _CVAT_API_V2(url)
         self.api = ApiClient(Configuration(host=url))
         self.logger = logger or logging.getLogger(__name__)
+        self.config = config or Config()
 
     def __enter__(self):
         self.api.__enter__()
@@ -63,7 +76,7 @@ class CvatClient:
         data_params: Optional[Dict[str, Any]] = None,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
-        status_check_period: int = 5,
+        status_check_period: int = None,
         dataset_repository_url: str = "",
         use_lfs: bool = False,
         pbar: Optional[ProgressReporter] = None,
@@ -74,6 +87,8 @@ class CvatClient:
 
         Returns: id of the created task
         """
+        if status_check_period is None:
+            status_check_period = self.config.status_check_period
 
         if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
             raise ApiValueError(
@@ -82,18 +97,18 @@ class CvatClient:
                 ["labels"],
             )
         (task, _) = self.api.tasks_api.create(spec)
-        self.logger.debug("Created task ID: %s NAME: %s", task.id, task.name)
+        self.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
 
         task = TaskProxy(self, task)
         task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
 
-        self.logger.debug("Awaiting for task %s creation...", task.id)
+        self.logger.info("Awaiting for task %s creation...", task.id)
         status = None
         while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
             sleep(status_check_period)
             (status, _) = self.api.tasks_api.retrieve_status(task.id)
 
-            self.logger.debug(
+            self.logger.info(
                 "Task %s creation status=%s, message=%s",
                 task.id,
                 status.state.value,
@@ -123,12 +138,19 @@ class CvatClient:
 
     def list_tasks(
         self, *, return_json: bool = False, **kwargs
-    ) -> Union[List[models.TaskRead], List[Dict[str, Any]]]:
+    ) -> Union[List[TaskProxy], List[Dict[str, Any]]]:
         """List all tasks in either basic or JSON format."""
 
-        return get_paginated_collection(
-            endpoint=self.api.tasks_api.list_endpoint, return_json=return_json, **kwargs
+        return list(
+            TaskProxy(self, v)
+            for v in get_paginated_collection(
+                endpoint=self.api.tasks_api.list_endpoint, return_json=return_json, **kwargs
+            )
         )
+
+    def retrieve_task(self, task_id: int) -> TaskProxy:
+        (task, _) = self.api.tasks_api.retrieve(task_id)
+        return TaskProxy(self, task)
 
     def delete_tasks(self, task_ids: Sequence[int]):
         """
@@ -138,17 +160,27 @@ class CvatClient:
         for task_id in task_ids:
             (_, response) = self.api.tasks_api.destroy(task_id, _check_status=False)
             if 200 <= response.status <= 299:
-                self.logger.debug(f"Task ID {task_id} deleted")
+                self.logger.info(f"Task ID {task_id} deleted")
             elif response.status == 404:
-                self.logger.debug(f"Task ID {task_id} not found")
+                self.logger.info(f"Task ID {task_id} not found")
             else:
-                self.logger.debug(
+                self.logger.warning(
                     f"Failed to delete task ID {task_id}: "
                     f"{response.msg} (status {response.status})"
                 )
 
-    def create_task_from_backup(self, filename, *, status_check_period=5, pbar=None) -> None:
-        """Import a task from a backup file"""
+    def create_task_from_backup(
+        self,
+        filename: str,
+        *,
+        status_check_period: int = None,
+        pbar: Optional[ProgressReporter] = None,
+    ) -> TaskProxy:
+        """
+        Import a task from a backup file
+        """
+        if status_check_period is None:
+            status_check_period = self.config.status_check_period
 
         url = self.api.tasks_backup()
         params = {"filename": osp.basename(filename)}
@@ -156,23 +188,27 @@ class CvatClient:
         if pbar is None:
             pbar = self._make_pbar("Uploading...")
 
-        response = self._upload_file_with_tus(
-            url, filename, params=params, pbar=pbar, logger=self.logger.debug
+        uploader = Uploader(self)
+        response = uploader.upload_file(
+            url, filename, params=params, pbar=pbar, logger=self.logger.info
         )
-        response_json = response.json()
-        rq_id = response_json["rq_id"]
+        rq_id = json.loads(response.data)["rq_id"]
 
         # check task status
         while True:
             sleep(status_check_period)
 
-            response = self.session.post(url, data={"rq_id": rq_id})
-            if response.status_code == 201:
+            response = self.api.rest_client.POST(
+                url, post_params={"rq_id": rq_id}, headers=self.api.get_common_headers()
+            )
+            if response.status == 201:
                 break
             assert_status(202, response)
 
-        task_id = response.json()["id"]
+        task_id = json.loads(response.data)["id"]
         self.logger.info(f"Task has been imported sucessfully. Task ID: {task_id}")
+
+        return self.retrieve_task(task_id)
 
 
 class _CVAT_API_V2:

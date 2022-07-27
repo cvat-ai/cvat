@@ -133,7 +133,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         fileformat: str,
         filename: str,
         *,
-        status_check_period: int = 2,
+        status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
     ):
         """
@@ -141,10 +141,14 @@ class TaskProxy(ModelProxy, ITaskRead):
         (e.g. 'YOLO ZIP 1.0').
         """
         client = self._client
+        if status_check_period is None:
+            status_check_period = client.config.status_check_period
+
         task_id = self.id
 
         url = client._api_map.make_endpoint_url(
-            client.api.tasks_api.retrieve_annotations_endpoint.path, kwsub={"id": task_id}
+            client.api.tasks_api.retrieve_annotations_endpoint.path,
+            kwsub={"id": task_id},
         )
         params = {"format": fileformat, "filename": osp.basename(filename)}
 
@@ -198,15 +202,18 @@ class TaskProxy(ModelProxy, ITaskRead):
     def download_dataset(
         self,
         format_name: str,
-        file_name: str,
+        filename: str,
         *,
         pbar: Optional[ProgressReporter] = None,
-        status_check_period: int = 2,
+        status_check_period: int = None,
     ) -> None:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
         client = self._client
+        if status_check_period is None:
+            status_check_period = client.config.status_check_period
+
         task_id = self.id
 
         params = {"filename": self.name, "format": format_name}
@@ -224,28 +231,30 @@ class TaskProxy(ModelProxy, ITaskRead):
             endpoint.path, kwsub={"id": task_id}, query_params=params
         )
         downloader = Downloader(client)
-        downloader.download_file(url, output_path=file_name, pbar=pbar)
+        downloader.download_file(url, output_path=filename, pbar=pbar)
 
-        client.logger.info(f"Annotations have been exported to {file_name}")
+        client.logger.info(f"Annotations have been exported to {filename}")
 
     def download_backup(
         self,
         filename: str,
         *,
-        status_check_period: int = 5,
+        status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
     ):
-        """Download a task backup"""
+        """
+        Download a task backup
+        """
         client = self._client
+        if status_check_period is None:
+            status_check_period = client.config.status_check_period
+
         task_id = self.id
 
-        client.logger.info("Waiting for the server to prepare the file...")
-
         endpoint = client.api.tasks_api.retrieve_backup_endpoint
-
-        url = client.api.tasks_id_backup(task_id)
+        client.logger.info("Waiting for the server to prepare the file...")
         while True:
-            (_, response) = endpoint.call_with_http_info(url)
+            (_, response) = endpoint.call_with_http_info(task_id=task_id)
             client.logger.debug("STATUS {}".format(response.status))
             if response.status == 201:
                 break
@@ -258,7 +267,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         downloader.download_file(url, output_path=filename, pbar=pbar)
 
         client.logger.info(
-            f"Task {task_id} has been exported sucessfully " f"to {osp.abspath(filename)}"
+            f"Task {task_id} has been exported sucessfully to {osp.abspath(filename)}"
         )
 
     def fetch(self, force: bool = False):

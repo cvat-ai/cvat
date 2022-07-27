@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat_sdk.impl.progress import TqdmProgressReporter
 from tqdm import tqdm
+
+from cvat_sdk.impl.progress import TqdmProgressReporter
 
 
 def make_pbar(file, **kwargs):

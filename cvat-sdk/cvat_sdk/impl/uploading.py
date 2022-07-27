@@ -23,7 +23,12 @@ class Uploader:
         self.client = client
 
     def upload_files(
-        self, url: str, resources: List[str], *, pbar: Optional[ProgressReporter] = None, **kwargs
+        self,
+        url: str,
+        resources: List[str],
+        *,
+        pbar: Optional[ProgressReporter] = None,
+        **kwargs,
     ):
         bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
 

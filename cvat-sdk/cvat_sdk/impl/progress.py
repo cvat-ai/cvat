@@ -51,7 +51,11 @@ class ProgressReporter:
         pass  # pylint: disable=unnecessary-pass
 
     def iter(
-        self, iterable: Iterable[T], *, total: Optional[int] = None, desc: Optional[str] = None
+        self,
+        iterable: Iterable[T],
+        *,
+        total: Optional[int] = None,
+        desc: Optional[str] = None,
     ) -> Iterable[T]:
         """
         Traverses the iterable and reports progress simultaneously.
@@ -110,7 +114,11 @@ class NullProgressReporter(ProgressReporter):
         pass
 
     def iter(
-        self, iterable: Iterable[T], *, total: Optional[int] = None, desc: Optional[str] = None
+        self,
+        iterable: Iterable[T],
+        *,
+        total: Optional[int] = None,
+        desc: Optional[str] = None,
     ) -> Iterable[T]:
         yield from iterable
 

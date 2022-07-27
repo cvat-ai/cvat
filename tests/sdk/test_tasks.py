@@ -6,14 +6,17 @@
 import io
 import os
 import os.path as osp
+from logging import Logger
 from pathlib import Path
-from cvat_sdk.impl.client import CvatClient
+from typing import Tuple
 
 import pytest
-from cvat_sdk.impl.types import ResourceType
 from PIL import Image
 from rest_api.utils.config import USER_PASS
 from rest_api.utils.helpers import generate_image_file, generate_image_files
+
+from cvat_sdk.impl.client import CvatClient
+from cvat_sdk.impl.types import ResourceType
 
 from .util import make_pbar
 
@@ -21,10 +24,20 @@ from .util import make_pbar
 @pytest.mark.usefixtures("changedb")
 class TestTaskUsecases:
     @pytest.fixture(autouse=True)
-    def setup(self, tmp_path: Path, cvat_client: CvatClient, mock_stdout: io.StringIO):
+    def setup(
+        self,
+        tmp_path: Path,
+        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_cvat_client: CvatClient,
+        fxt_stdout: io.StringIO,
+        users_by_name,
+    ):
         self.tmp_path = tmp_path
-        self.client = cvat_client
-        self.stdout = mock_stdout
+        _, self.logger_stream = fxt_logger
+        self.client = fxt_cvat_client
+        self.stdout = fxt_stdout
+        self.user = next(iter(users_by_name))
+        self.client.login((self.user, USER_PASS))
 
         yield
 
@@ -32,93 +45,111 @@ class TestTaskUsecases:
         self.client = None
         self.stdout = None
 
-    def test_can_create_task(self, users_by_name):
+    @pytest.fixture
+    def fxt_new_task(self):
         tmp_img = self.tmp_path / "img.png"
         with tmp_img.open("wb") as f:
             f.write(generate_image_file().getvalue())
 
-        user = next(iter(users_by_name))
+        task = self.client.create_task(
+            spec={
+                "name": "test_task",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+            resource_type=ResourceType.LOCAL,
+            resources=[tmp_img],
+        )
+
+        return task.id
+
+    def test_can_create_task_with_local_data(self):
+        tmp_img = self.tmp_path / "img.png"
+        with tmp_img.open("wb") as f:
+            f.write(generate_image_file().getvalue())
 
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        with self.client as client:
-            client.login((user, USER_PASS))
-
-            task = client.create_task(
-                spec={
-                    "name": "test_task",
-                    "labels": [{"name": "car"}, {"name": "person"}],
-                },
-                resource_type=ResourceType.LOCAL,
-                resources=[tmp_img],
-                pbar=pbar,
-            )
-
-            assert task.id
-
-        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert self.stdout.getvalue() == ""
-
-    def test_can_create_task_with_local_data(self):
-        username = 'admin1'
         task_spec = {
-            'name': f'test {username} to create a task with local data',
-            "labels": [{
-                "name": "car",
-                "color": "#ff00ff",
-                "attributes": [
-                    {
-                        "name": "a",
-                        "mutable": True,
-                        "input_type": "number",
-                        "default_value": "5",
-                        "values": ["4", "5", "6"]
-                    }
-                ]
-            }],
+            "name": f"test {self.user} to create a task with local data",
+            "labels": [
+                {
+                    "name": "car",
+                    "color": "#ff00ff",
+                    "attributes": [
+                        {
+                            "name": "a",
+                            "mutable": True,
+                            "input_type": "number",
+                            "default_value": "5",
+                            "values": ["4", "5", "6"],
+                        }
+                    ],
+                }
+            ],
         }
 
-        task_data = {
-            'image_quality': 75,
+        data_params = {
+            "image_quality": 75,
         }
 
         task_files = generate_image_files(7)
         for i, f in enumerate(task_files):
             fname = self.tmp_path / osp.basename(f.name)
-            with fname.open('wb') as fd:
+            with fname.open("wb") as fd:
                 fd.write(f.getvalue())
                 task_files[i] = str(fname)
 
-        with self.client as client:
-            client.login((username, USER_PASS))
+        task = self.client.create_task(
+            spec=task_spec,
+            data_params=data_params,
+            resource_type=ResourceType.LOCAL,
+            resources=task_files,
+            pbar=pbar,
+        )
 
-            task = client.create_task(
-                spec=task_spec,
-                data_params=task_data,
-                resource_type=ResourceType.LOCAL,
-                resources=task_files)
+        assert task.size == 7
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
 
-            assert task.size == 7
+    def test_can_retrieve_task(self, fxt_new_task):
+        task_id = fxt_new_task
 
+        task = self.client.retrieve_task(task_id)
 
-    # def test_can_list_all_tasks(self,
-    #     tmp_path: Path, cvat_client: CvatClient, mock_stdout: io.StringIO, users_by_name
-    # ):
-    #     tasks = list_tasks(client)
+        assert task.id == task_id
 
-    #     assert len(tasks) == 1
-    #     self.assertRegex(self.logger_stream.getvalue(), f".*{self.taskname}.*")
-    #     self.assertEqual(self.mock_stdout.getvalue(), "")
+    def test_can_list_tasks(self, fxt_new_task):
+        task_id = fxt_new_task
 
-    # def test_delete_tasks(self):
-    #     delete_tasks(self.client, [self.task_id])
+        tasks = self.client.list_tasks()
 
-    #     tasks = list_tasks(self.client)
+        assert any(t.id == task_id for t in tasks)
+        assert self.stdout.getvalue() == ""
 
-    #     self.assertEqual(len(tasks), 0)
-    #     self.assertRegex(self.mock_stdout.getvalue(), f".*Task ID {self.task_id} deleted.*")
-    #     self.assertEqual(self.mock_stdout.getvalue(), "")
+    def test_can_delete_tasks_by_ids(self, fxt_new_task):
+        task_id = fxt_new_task
+        old_tasks = self.client.list_tasks()
+
+        self.client.delete_tasks([task_id])
+
+        new_tasks = self.client.list_tasks()
+        assert any(t.id == task_id for t in old_tasks)
+        assert all(t.id != task_id for t in new_tasks)
+        assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
+        assert self.stdout.getvalue() == ""
+
+    def test_can_delete_task(self, fxt_new_task):
+        task_id = fxt_new_task
+        task = self.client.retrieve_task(task_id)
+        old_tasks = self.client.list_tasks()
+
+        task.remove()
+
+        new_tasks = self.client.list_tasks()
+        assert any(t.id == task_id for t in old_tasks)
+        assert all(t.id != task_id for t in new_tasks)
+        assert self.stdout.getvalue() == ""
 
     # @scoped
     # def test_tasks_dump(self):

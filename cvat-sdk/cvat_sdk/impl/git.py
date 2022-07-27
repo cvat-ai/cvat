@@ -18,9 +18,12 @@ def create_git_repo(
     *,
     task_id: int,
     repo_url: str,
-    status_check_period: int = 2,
+    status_check_period: int = None,
     use_lfs: bool = True,
 ):
+    if status_check_period is None:
+        status_check_period = client.config.status_check_period
+
     common_headers = client.api.get_common_headers()
 
     response = client.api.rest_client.POST(
