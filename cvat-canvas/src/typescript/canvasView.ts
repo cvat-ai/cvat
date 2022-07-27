@@ -2786,6 +2786,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                             for (const child of skeleton.children()) {
                                 if (child.type === 'circle') {
+                                    const childClientID = child.attr('data-client-id');
+                                    if (state.elements.find((el: any) => el.clientID === childClientID).lock || false) {
+                                        continue;
+                                    }
                                     child.center(
                                         child.cx() - prevXtl + x,
                                         child.cy() - prevYtl + y,
