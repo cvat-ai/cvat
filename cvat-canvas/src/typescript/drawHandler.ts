@@ -92,6 +92,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private autobordersEnabled: boolean;
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
+    private outlinedBorders: string;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -424,6 +425,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             });
     }
 
@@ -433,6 +435,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             });
 
         const initialPoint: {
@@ -624,6 +627,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             });
 
         this.drawPolyshape();
@@ -639,6 +643,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': 0,
+                stroke: this.outlinedBorders,
             });
 
         this.drawPolyshape();
@@ -662,6 +667,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                stroke: this.outlinedBorders,
             });
         this.drawPolyshape();
     }
@@ -693,14 +699,18 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             });
     }
 
     private drawSkeleton(): void {
-        this.drawInstance = this.canvas.rect();
+        this.drawInstance = this.canvas.rect().attr({
+            stroke: this.outlinedBorders,
+        });
         this.pointsGroup = makeSVGFromTemplate(this.drawData.skeletonSVG);
         this.canvas.add(this.pointsGroup);
         this.pointsGroup.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+        this.pointsGroup.attr('stroke', this.outlinedBorders);
 
         let minX = Number.MAX_SAFE_INTEGER;
         let minY = Number.MAX_SAFE_INTEGER;
@@ -877,6 +887,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -914,6 +925,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -952,6 +964,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -963,6 +976,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                stroke: this.outlinedBorders,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -974,8 +988,9 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'face-stroke': 'black',
+                'face-stroke': this.outlinedBorders,
                 'fill-opacity': this.selectedShapeOpacity,
+                stroke: this.outlinedBorders,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -987,7 +1002,10 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.pasteBox(box, 0);
         this.pointsGroup = makeSVGFromTemplate(this.drawData.skeletonSVG);
-        this.pointsGroup.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+        this.pointsGroup.attr({
+            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            stroke: this.outlinedBorders,
+        });
         this.canvas.add(this.pointsGroup);
 
         this.pointsGroup.children().forEach((child: SVG.Element): void => {
@@ -1206,6 +1224,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.autoborderHandler = autoborderHandler;
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
+        this.outlinedBorders = configuration.outlinedBorders || 'black';
         this.autobordersEnabled = false;
         this.startTimestamp = Date.now();
         this.onDrawDone = onDrawDone;
@@ -1235,6 +1254,7 @@ export class DrawHandlerImpl implements DrawHandler {
     public configurate(configuration: Configuration): void {
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
+        this.outlinedBorders = configuration.outlinedBorders || 'black';
 
         const isFillableRect = this.drawData &&
             this.drawData.shapeType === 'rectangle' &&
@@ -1246,6 +1266,14 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
             this.drawInstance.fill({ opacity: configuration.selectedShapeOpacity });
+        }
+
+        if (this.drawInstance && this.drawInstance.attr('stroke')) {
+            this.drawInstance.attr('stroke', this.outlinedBorders);
+        }
+
+        if (this.pointsGroup && this.pointsGroup.attr('stroke')) {
+            this.pointsGroup.attr('stroke', this.outlinedBorders);
         }
 
         this.autobordersEnabled = configuration.autoborders;

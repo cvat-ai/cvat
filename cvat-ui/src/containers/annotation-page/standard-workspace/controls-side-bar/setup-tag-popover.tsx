@@ -148,7 +148,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { selectedLabelID } = this.state;
-        const { normalizedKeyMap, labels } = this.props;
+        const { normalizedKeyMap } = this.props;
 
         return (
             <SetupTagPopoverComponent
