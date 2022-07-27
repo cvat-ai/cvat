@@ -56,7 +56,7 @@ class CvatClient:
 
     def create_task(
         self,
-        spec: models.TaskWriteRequest,
+        spec: models.ITaskWriteRequest,
         resource_type: ResourceType,
         resources: Sequence[str],
         *,
@@ -75,7 +75,7 @@ class CvatClient:
         Returns: id of the created task
         """
 
-        if spec.get("project_id") and spec.get("labels"):
+        if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
             raise ApiValueError(
                 "Can't set labels to a task inside a project. "
                 "Tasks inside a project use project's labels.",
@@ -205,7 +205,7 @@ class _CVAT_API_V2:
     ) -> str:
         url = self.host + path
         if psub or kwsub:
-            url = url.format(*psub, **kwsub)
+            url = url.format(*(psub or []), **(kwsub or {}))
         if query_params:
             url += urllib.parse.urlencode({**query_params, "action": "download"})
         return url

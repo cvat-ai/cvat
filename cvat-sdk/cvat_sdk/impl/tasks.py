@@ -10,31 +10,39 @@ import os.path as osp
 from abc import ABC, abstractmethod
 from io import BytesIO
 from time import sleep
-from typing import Any, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 
 from PIL import Image
 
 from cvat_sdk import models
-from cvat_sdk.impl.client import CvatClient
 from cvat_sdk.impl.downloading import Downloader
 from cvat_sdk.impl.progress import ProgressReporter
 from cvat_sdk.impl.types import ResourceType
 from cvat_sdk.impl.uploading import Uploader
 from cvat_sdk.impl.utils import filter_dict
-from cvat_sdk.model.task_read import TaskReadDTO
 from cvat_sdk.model_utils import OpenApiModel
+from cvat_sdk.models import ITaskRead
+
+if TYPE_CHECKING:
+    from cvat_sdk.impl.client import CvatClient
 
 
 class ModelProxy(ABC):
+    _client: CvatClient
+    _model: OpenApiModel
+
     def __init__(self, client: CvatClient, model: OpenApiModel) -> None:
-        self._client = client
-        self._model = model
+        self.__dict__["_client"] = client
+        self.__dict__["_model"] = model
 
     def __getattr__(self, __name: str) -> Any:
         return self._model[__name]
 
     def __setattr__(self, __name: str, __value: Any) -> None:
-        self._model[__name] = __value
+        if __name in self.__dict__:
+            self.__dict__[__name] = __value
+        else:
+            self._model[__name] = __value
 
     @abstractmethod
     def fetch(self, force: bool = False):
@@ -56,18 +64,9 @@ class ModelProxy(ABC):
         ...
 
 
-# class TaskDTO:
-#     # TODO: autogenerate this (a part of TaskRead / TaskWrite already)
-#     # TODO: join model classes
-
-#     id: int
-#     name: str
-#     # ...
-
-
-class TaskProxy(TaskReadDTO, ModelProxy):
+class TaskProxy(ModelProxy, ITaskRead):
     def __init__(self, client: CvatClient, task: models.TaskRead):
-        super(ModelProxy, self).__init__(client=client, model=task)
+        ModelProxy.__init__(self, client=client, model=task)
 
     def remove(self):
         self._client.api.tasks_api.destroy(self.id)

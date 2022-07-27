@@ -11,6 +11,6 @@
 
 {{#models}}
 {{#model}}
-from {{modelPackage}}.{{classFilename}} import {{classname}}
+from {{modelPackage}}.{{classFilename}} import {{classname}}{{^interfaces}}, I{{classname}}{{/interfaces}}
 {{/model}}
 {{/models}}

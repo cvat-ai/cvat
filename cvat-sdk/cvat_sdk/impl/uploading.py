@@ -6,10 +6,12 @@ from __future__ import annotations
 
 import os
 from contextlib import ExitStack, closing
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from cvat_sdk import ApiClient
-from cvat_sdk.impl.client import CvatClient
+
+if TYPE_CHECKING:
+    from cvat_sdk.impl.client import CvatClient
 from cvat_sdk.impl.progress import ProgressReporter, StreamWithProgress
 from cvat_sdk.impl.utils import assert_status
 

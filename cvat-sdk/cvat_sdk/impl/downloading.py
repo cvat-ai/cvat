@@ -8,9 +8,11 @@ from __future__ import annotations
 import os
 import os.path as osp
 from contextlib import closing
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from cvat_sdk.impl.client import CvatClient
+if TYPE_CHECKING:
+    from cvat_sdk.impl.client import CvatClient
+
 from cvat_sdk.impl.progress import ProgressReporter
 
 

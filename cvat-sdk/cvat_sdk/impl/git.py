@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import json
 from time import sleep
+from typing import TYPE_CHECKING
 
-from cvat_sdk.impl.client import CvatClient
+if TYPE_CHECKING:
+    from cvat_sdk.impl.client import CvatClient
 
 
 def create_git_repo(

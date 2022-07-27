@@ -3,7 +3,7 @@ import logging
 from contextlib import redirect_stdout
 
 import pytest
-from cvat_sdk.impl import CvatClient
+from cvat_sdk import CvatClient
 from rest_api.utils.config import BASE_URL
 
 
