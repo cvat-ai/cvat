@@ -41,11 +41,12 @@ class Downloader:
         if osp.exists(tmp_path):
             raise FileExistsError(f"Can't write temporary file '{tmp_path}' - file exists")
 
-        response = self.client.api.rest_client.GET(url, _request_timeout=timeout)
+        response = self.client.api.rest_client.GET(url, _request_timeout=timeout,
+            headers=self.client.api.get_common_headers(), _parse_response=False)
         with closing(response):
             try:
                 file_size = int(response.getheader("Content-Length", 0))
-            except (ValueError, KeyError):
+            except ValueError:
                 file_size = None
 
             try:
@@ -53,17 +54,15 @@ class Downloader:
                     if pbar is not None:
                         pbar.start(file_size, desc="Downloading")
 
-                    try:
-                        for chunk in response.read_chunked(
-                            chunk_size=CHUNK_SIZE, decode_content=False
-                        ):
-                            if pbar is not None:
-                                pbar.advance(len(chunk))
+                    while True:
+                        chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
+                        if not chunk:
+                            break
 
-                            fd.write(chunk)
-                    finally:
                         if pbar is not None:
-                            pbar.close()
+                            pbar.advance(len(chunk))
+
+                        fd.write(chunk)
 
                 os.rename(tmp_path, output_path)
             except:

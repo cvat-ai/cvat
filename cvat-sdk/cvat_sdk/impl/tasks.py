@@ -221,7 +221,7 @@ class TaskProxy(ModelProxy, ITaskRead):
 
         client.logger.info("Waiting for the server to prepare the file...")
         while True:
-            (_, response) = endpoint.call_with_http_info(task_id, **params)
+            (_, response) = endpoint.call_with_http_info(id=task_id, **params)
             client.logger.debug("STATUS {}".format(response.status))
             if response.status == 201:
                 break
@@ -254,7 +254,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         endpoint = client.api.tasks_api.retrieve_backup_endpoint
         client.logger.info("Waiting for the server to prepare the file...")
         while True:
-            (_, response) = endpoint.call_with_http_info(task_id=task_id)
+            (_, response) = endpoint.call_with_http_info(id=task_id)
             client.logger.debug("STATUS {}".format(response.status))
             if response.status == 201:
                 break

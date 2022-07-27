@@ -151,37 +151,30 @@ class TestTaskUsecases:
         assert all(t.id != task_id for t in new_tasks)
         assert self.stdout.getvalue() == ""
 
-    # @scoped
-    # def test_tasks_dump(self):
-    #     path = os.path.join(settings.SHARE_ROOT, "test_cli.zip")
+    def test_can_download_annotations(self, fxt_new_task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
 
-    #     pbar_out = io.StringIO()
-    #     pbar = make_pbar(file=pbar_out)
+        task_id = fxt_new_task
+        path = str(self.tmp_path / f"task_{task_id}_-cvat.zip")
+        task = self.client.retrieve_task(task_id)
+        task.download_dataset(format_name="CVAT for images 1.1", filename=path, pbar=pbar)
 
-    #     self.cli.tasks_dump(self.task_id, "CVAT for images 1.1", path, pbar=pbar)
-    #     on_exit_do(os.remove, path)
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert osp.isfile(path)
 
-    #     pbar_out = pbar_out.getvalue().strip("\r").split("\r")
+    def test_can_download_backup(self, fxt_new_task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
 
-    #     self.assertTrue(os.path.exists(path))
-    #     self.assertRegex(pbar_out[-1], "100%")
+        task_id = fxt_new_task
+        path = str(self.tmp_path / f"task_{task_id}_-backup.zip")
+        task = self.client.retrieve_task(task_id)
+        task.download_backup(filename=path, pbar=pbar)
 
-    # @scoped
-    # def test_tasks_export(self):
-    #     path = os.path.join(settings.SHARE_ROOT, "test_cli.zip")
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert osp.isfile(path)
 
-    #     pbar_out = io.StringIO()
-    #     pbar = make_pbar(file=pbar_out)
-
-    #     self.cli.tasks_export(self.task_id, path, pbar=pbar)
-    #     on_exit_do(os.remove, path)
-
-    #     pbar_out = pbar_out.getvalue().strip("\r").split("\r")
-
-    #     self.assertTrue(os.path.exists(path))
-    #     self.assertRegex(pbar_out[-1], "100%")
-
-    # @scoped
     # def test_tasks_frame_original(self):
     #     path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
 
@@ -190,7 +183,6 @@ class TestTaskUsecases:
 
     #     self.assertTrue(os.path.exists(path))
 
-    # @scoped
     # def test_tasks_frame(self):
     #     path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
 
@@ -199,7 +191,6 @@ class TestTaskUsecases:
 
     #     self.assertTrue(os.path.exists(path))
 
-    # @scoped
     # def test_tasks_upload(self):
     #     path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
     #     self._generate_coco_file(path)
@@ -215,7 +206,6 @@ class TestTaskUsecases:
     #     self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format("annotation file"))
     #     self.assertRegex(pbar_out[-1], "100%")
 
-    # @scoped
     # def test_tasks_import(self):
     #     anno_path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
     #     self._generate_coco_file(anno_path)

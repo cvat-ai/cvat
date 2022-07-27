@@ -243,5 +243,5 @@ class _CVAT_API_V2:
         if psub or kwsub:
             url = url.format(*(psub or []), **(kwsub or {}))
         if query_params:
-            url += urllib.parse.urlencode({**query_params, "action": "download"})
+            url += '?' + urllib.parse.urlencode({**query_params, "action": "download"})
         return url
