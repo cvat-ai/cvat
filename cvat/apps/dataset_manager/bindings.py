@@ -1507,9 +1507,11 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 continue
         elif shape_obj.type == ShapeType.SKELETON:
             points = []
+            vis = []
             for element in shape_obj.elements:
                 points.extend(element.points)
-            anno = datum_annotation.Points(points,
+                vis.append(1 if element.outside else 2)
+            anno = datum_annotation.Points(points, vis,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)
         else:
@@ -1635,13 +1637,14 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     if point_cat and type == ShapeType.POINTS:
                         type = ShapeType.SKELETON
                         for i in range(len(ann.points) // 2):
+                            vis = ann.visibility[i]
                             elements.append({
                                 'type': ShapeType.POINTS,
                                 'frame': frame_number,
                                 'label_id': instance_data._get_label_id(point_cat.items[ann.label].labels[i]),
                                 'points': ann.points[2 * i : 2 * i + 2],
                                 'occluded': occluded,
-                                'outside': outside,
+                                'outside': ann.visibility[i].value == 1,
                                 'attributes': [],
                             })
 

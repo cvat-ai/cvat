@@ -28,13 +28,25 @@ def _import(src_file, instance_data, load_data_callback=None):
     if zipfile.is_zipfile(src_file):
         with TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(src_file).extractall(tmp_dir)
-
-
-            dataset = Dataset.import_from(tmp_dir, 'coco', env=dm_env)
+            dataset = Dataset.import_from(tmp_dir, 'coco_instances', env=dm_env)
             if load_data_callback is not None:
                 load_data_callback(dataset, instance_data)
             import_dm_annotations(dataset, instance_data)
     else:
         dataset = Dataset.import_from(src_file.name,
             'coco_instances', env=dm_env)
+        import_dm_annotations(dataset, instance_data)
+
+@importer(name='COCO Person Keypoints', ext='JSON, ZIP', version='1.0')
+def _import(src_file, instance_data, load_data_callback=None):
+    if zipfile.is_zipfile(src_file):
+        with TemporaryDirectory() as tmp_dir:
+            zipfile.ZipFile(src_file).extractall(tmp_dir)
+            dataset = Dataset.import_from(tmp_dir, 'coco_person_keypoints', env=dm_env)
+            if load_data_callback is not None:
+                load_data_callback(dataset, instance_data)
+            import_dm_annotations(dataset, instance_data)
+    else:
+        dataset = Dataset.import_from(src_file.name,
+            'coco_person_keypoints', env=dm_env)
         import_dm_annotations(dataset, instance_data)
