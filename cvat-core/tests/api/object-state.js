@@ -14,8 +14,9 @@ window.cvat = require('../../src/api');
 describe('Feature: set attributes for an object state', () => {
     test('set a valid value', () => {
         const state = new window.cvat.classes.ObjectState({
+            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
             objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
+            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
@@ -30,8 +31,9 @@ describe('Feature: set attributes for an object state', () => {
 
     test('trying to set a bad value', () => {
         const state = new window.cvat.classes.ObjectState({
+            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
             objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
+            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
@@ -55,8 +57,9 @@ describe('Feature: set attributes for an object state', () => {
 describe('Feature: set points for an object state', () => {
     test('set a valid value', () => {
         const state = new window.cvat.classes.ObjectState({
+            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
             objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
+            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
@@ -67,8 +70,9 @@ describe('Feature: set points for an object state', () => {
 
     test('trying to set a bad value', () => {
         const state = new window.cvat.classes.ObjectState({
+            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
             objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
+            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
@@ -100,7 +104,7 @@ describe('Feature: save object from its state', () => {
         const annotations = await task.annotations.get(0);
         let state = annotations[0];
         expect(state.objectType).toBe(window.cvat.enums.ObjectType.SHAPE);
-        expect(state.shapeType).toBe(window.cvat.enums.ObjectShape.RECTANGLE);
+        expect(state.shapeType).toBe(window.cvat.enums.ShapeType.RECTANGLE);
         state.points = [0, 0, 100, 100];
         state.occluded = true;
         [, state.label] = task.labels;
@@ -118,7 +122,7 @@ describe('Feature: save object from its state', () => {
         const annotations = await task.annotations.get(10);
         let state = annotations[1];
         expect(state.objectType).toBe(window.cvat.enums.ObjectType.TRACK);
-        expect(state.shapeType).toBe(window.cvat.enums.ObjectShape.RECTANGLE);
+        expect(state.shapeType).toBe(window.cvat.enums.ShapeType.RECTANGLE);
 
         state.occluded = true;
         state.lock = true;
@@ -163,12 +167,9 @@ describe('Feature: save object from its state', () => {
         state.occluded = 'false';
         await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
-        const oldPoints = state.points;
         state.occluded = false;
-        state.points = ['100', '50', '100', {}];
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(() => state.points = ['100', '50', '100', {}]).toThrow(window.cvat.exceptions.ArgumentError);
 
-        state.points = oldPoints;
         state.lock = 'true';
         await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
@@ -190,12 +191,9 @@ describe('Feature: save object from its state', () => {
         state.occluded = 'false';
         await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
-        const oldPoints = state.points;
         state.occluded = false;
-        state.points = ['100', '50', '100', {}];
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(() => state.points = ['100', '50', '100', {}]).toThrow(window.cvat.exceptions.ArgumentError);
 
-        state.points = oldPoints;
         state.lock = 'true';
         await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
 

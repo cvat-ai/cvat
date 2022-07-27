@@ -23,11 +23,11 @@ export default class AnnotationsFilter {
             let ybr = Number.MIN_SAFE_INTEGER;
             let [width, height] = [null, null];
 
-            const points = state.points || state.elements.reduce((acc, val) => {
-                acc.push(val.points);
-                return acc;
-            }, []).flat();
             if (state.objectType !== ObjectType.TAG) {
+                const points = state.points || state.elements.reduce((acc, val) => {
+                    acc.push(val.points);
+                    return acc;
+                }, []).flat();
                 points.forEach((coord, idx) => {
                     if (idx % 2) {
                         // y
