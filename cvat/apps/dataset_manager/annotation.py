@@ -93,7 +93,7 @@ class AnnotationIR:
             return shapes[drop_count:]
 
         track = deepcopy(track_)
-        segment_shapes = filter_track_shapes(track['shapes'])
+        segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
         if len(segment_shapes) < len(track['shapes']):
             interpolated_shapes = TrackManager.get_interpolated_shapes(
