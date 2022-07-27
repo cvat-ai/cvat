@@ -4,13 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+import io
 
 import mimetypes
 import os.path as osp
 from abc import ABC, abstractmethod
 from io import BytesIO
 from time import sleep
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from PIL import Image
 
@@ -168,25 +169,40 @@ class TaskProxy(ModelProxy, ITaskRead):
             f"Upload job for Task ID {task_id} with annotation file {filename} finished"
         )
 
+    def retrieve_frame(
+        self,
+        frame_id: int,
+        *,
+        quality: Optional[str] = None,
+    ) -> io.RawIOBase:
+        client = self._client
+        task_id = self.id
+
+        (_, response) = client.api.tasks_api.retrieve_data(
+            task_id, frame_id, quality, type="frame"
+        )
+
+        return BytesIO(response.data)
+
     def download_frames(
         self,
         frame_ids: Sequence[int],
         *,
         outdir: str = "",
         quality: str = "original",
-    ) -> Image:
+        filename_pattern: str = "task_{task_id}_frame_{frame_id:06d}{frame_ext}"
+    ) -> Optional[List[Image.Image]]:
         """
         Download the requested frame numbers for a task and save images as
-        task_<ID>_frame_<FRAME>.jpg.
+        outdir/filename_pattern
         """
-        client = self._client
+        # TODO: add arg descriptions in schema
         task_id = self.id
 
         for frame_id in frame_ids:
-            (_, response) = client.api.tasks_api.retrieve_data(
-                task_id, frame_id, quality, type="frame"
-            )
-            im = Image.open(BytesIO(response.data))
+            frame_bytes = self.retrieve_frame(frame_id, quality=quality)
+
+            im = Image.open(frame_bytes)
             mime_type = im.get_format_mimetype() or "image/jpg"
             im_ext = mimetypes.guess_extension(mime_type)
 
@@ -196,7 +212,7 @@ class TaskProxy(ModelProxy, ITaskRead):
             if im_ext in (".jpe", ".jpeg", None):
                 im_ext = ".jpg"
 
-            outfile = "task_{}_frame_{:06d}{}".format(task_id, frame_id, im_ext)
+            outfile = filename_pattern.format(task_id=task_id, frame_id=frame_id, frame_ext=im_ext)
             im.save(osp.join(outdir, outfile))
 
     def download_dataset(

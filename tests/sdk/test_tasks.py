@@ -9,6 +9,7 @@ import os.path as osp
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
+from cvat_sdk.impl.tasks import TaskProxy
 
 import pytest
 from PIL import Image
@@ -60,7 +61,7 @@ class TestTaskUsecases:
             resources=[tmp_img],
         )
 
-        return task.id
+        return task
 
     def test_can_create_task_with_local_data(self):
         tmp_img = self.tmp_path / "img.png"
@@ -113,14 +114,14 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_retrieve_task(self, fxt_new_task):
-        task_id = fxt_new_task
+        task_id = fxt_new_task.id
 
         task = self.client.retrieve_task(task_id)
 
         assert task.id == task_id
 
     def test_can_list_tasks(self, fxt_new_task):
-        task_id = fxt_new_task
+        task_id = fxt_new_task.id
 
         tasks = self.client.list_tasks()
 
@@ -128,7 +129,7 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_delete_tasks_by_ids(self, fxt_new_task):
-        task_id = fxt_new_task
+        task_id = fxt_new_task.id
         old_tasks = self.client.list_tasks()
 
         self.client.delete_tasks([task_id])
@@ -140,7 +141,7 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_delete_task(self, fxt_new_task):
-        task_id = fxt_new_task
+        task_id = fxt_new_task.id
         task = self.client.retrieve_task(task_id)
         old_tasks = self.client.list_tasks()
 
@@ -155,8 +156,8 @@ class TestTaskUsecases:
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        task_id = fxt_new_task
-        path = str(self.tmp_path / f"task_{task_id}_-cvat.zip")
+        task_id = fxt_new_task.id
+        path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
         task = self.client.retrieve_task(task_id)
         task.download_dataset(format_name="CVAT for images 1.1", filename=path, pbar=pbar)
 
@@ -167,21 +168,31 @@ class TestTaskUsecases:
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        task_id = fxt_new_task
-        path = str(self.tmp_path / f"task_{task_id}_-backup.zip")
+        task_id = fxt_new_task.id
+        path = str(self.tmp_path / f"task_{task_id}-backup.zip")
         task = self.client.retrieve_task(task_id)
         task.download_backup(filename=path, pbar=pbar)
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert osp.isfile(path)
 
-    # def test_tasks_frame_original(self):
-    #     path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
+    @pytest.mark.parametrize('quality', ('compressed', 'original'))
+    def test_can_download_frame(self, fxt_new_task, quality: str):
+        task: TaskProxy = fxt_new_task
 
-    #     self.cli.tasks_frame(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="original")
-    #     on_exit_do(os.remove, path)
+        frame_encoded = task.retrieve_frame(0, quality=quality)
 
-    #     self.assertTrue(os.path.exists(path))
+        assert Image.open(frame_encoded).size != 0
+
+    @pytest.mark.parametrize('quality', ('compressed', 'original'))
+    def test_can_download_frames(self, fxt_new_task, quality: str):
+        task: TaskProxy = fxt_new_task
+
+        frame_id = 0
+        task.download_frames([frame_id], quality=quality, outdir=str(self.tmp_path),
+            filename_pattern="frame-{frame_id}{frame_ext}")
+
+        assert osp.isfile(self.tmp_path / "frame-0.jpg")
 
     # def test_tasks_frame(self):
     #     path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
