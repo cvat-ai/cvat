@@ -2719,7 +2719,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'data-ytl': ytl,
             'data-xbr': xbr,
             'data-ybr': ybr,
-        });
+        }).addClass('cvat_canvas_skeleton_wrapping_rect');
 
         skeleton.node.prepend(wrappingRect.node);
         setupSkeletonEdges(skeleton, SVGElement);
@@ -2734,6 +2734,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         (skeleton as any).selectize = (enabled: boolean) => {
             this.selectize(enabled, wrappingRect);
+            const handler = wrappingRect.remember('_selectHandler');
+            if (enabled && handler) {
+                this.adoptedContent.node.append(handler.nested.node);
+                handler.nested.attr('fill', skeleton.attr('fill'));
+            }
+
             return skeleton;
         };
 
@@ -2771,26 +2777,29 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
                     })
                     .on('dragmove', (e: CustomEvent): void => {
-                        const { instance } = e.target as any;
-                        const [x, y] = [instance.x(), instance.y()];
-                        const prevXtl = +wrappingRect.attr('data-xtl');
-                        const prevYtl = +wrappingRect.attr('data-ytl');
+                        // skeleton elements itself are not updated yet, need to run as macrotask
+                        setTimeout(() => {
+                            const { instance } = e.target as any;
+                            const [x, y] = [instance.x(), instance.y()];
+                            const prevXtl = +wrappingRect.attr('data-xtl');
+                            const prevYtl = +wrappingRect.attr('data-ytl');
 
-                        for (const child of skeleton.children()) {
-                            if (child.type === 'circle') {
-                                child.center(
-                                    child.cx() - prevXtl + x,
-                                    child.cy() - prevYtl + y,
-                                );
+                            for (const child of skeleton.children()) {
+                                if (child.type === 'circle') {
+                                    child.center(
+                                        child.cx() - prevXtl + x,
+                                        child.cy() - prevYtl + y,
+                                    );
+                                }
                             }
-                        }
 
-                        wrappingRect.attr('data-xtl', x);
-                        wrappingRect.attr('data-ytl', y);
-                        wrappingRect.attr('data-xbr', x + instance.width());
-                        wrappingRect.attr('data-ybr', y + instance.height());
+                            wrappingRect.attr('data-xtl', x);
+                            wrappingRect.attr('data-ytl', y);
+                            wrappingRect.attr('data-xbr', x + instance.width());
+                            wrappingRect.attr('data-ybr', y + instance.height());
 
-                        setupSkeletonEdges(skeleton, SVGElement);
+                            setupSkeletonEdges(skeleton, SVGElement);
+                        });
                     })
                     .on('dragend', (e: CustomEvent): void => {
                         skeleton.off('remove.drag');
@@ -2884,7 +2893,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             });
                         })
                         .on('dragmove', (): void => {
-                            setupSkeletonEdges(skeleton, SVGElement);
+                            // element itself is not updated yet, need to run as macrotask
+                            setTimeout(() => {
+                                setupSkeletonEdges(skeleton, SVGElement);
+                            });
                         })
                         .on('dragend', (e: CustomEvent): void => {
                             element.off('remove.drag');
@@ -2942,8 +2954,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     // rotate skeleton instead of wrapping bounding box
                     const { rotation } = wrappingRect.transform();
                     skeleton.rotate(rotation);
-                    wrappingRect.rotate(0);
-                    (e.target as any).instance.remember('_selectHandler').nested.rotate(0);
 
                     const [x, y] = [instance.x(), instance.y()];
                     const prevXtl = +wrappingRect.attr('data-xtl');

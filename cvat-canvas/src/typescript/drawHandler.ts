@@ -774,11 +774,10 @@ export class DrawHandlerImpl implements DrawHandler {
                         child.setAttribute('r', `${this.controlPointsSize / this.geometry.scale}`);
                         let cx = +(child.getAttribute('cx') as string);
                         let cy = +(child.getAttribute('cy') as string);
-                        // todo: check if skeleton from one point
                         const cxOffset = (cx - minX) / (maxX - minX);
                         const cyOffset = (cy - minY) / (maxY - minY);
-                        cx = cxOffset * width;
-                        cy = cyOffset * height;
+                        cx = Number.isNaN(cxOffset) ? 0.5 * width : cxOffset * width;
+                        cy = Number.isNaN(cyOffset) ? 0.5 * height : cyOffset * height;
                         child.setAttribute('cx', `${cx}`);
                         child.setAttribute('cy', `${cy}`);
                     }

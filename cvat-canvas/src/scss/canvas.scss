@@ -237,6 +237,12 @@ g.cvat_canvas_shape_occluded {
     }
 }
 
+.cvat_canvas_skeleton_wrapping_rect {
+    // wrapping rect must not apply transform attribute from selectize.js
+    // otherwise it rotated twice, because we apply the same rotation value to parent element (skeleton itself)
+    transform: none !important;
+}
+
 .cvat_canvas_pixelized {
     image-rendering: optimizeSpeed;             /* Legal fallback */
     image-rendering: -moz-crisp-edges;          /* Firefox        */

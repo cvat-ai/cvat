@@ -303,12 +303,10 @@ export function getSkeletonEdgeCoordinates(edge: SVG.Line): {
     x2 = nodeTo.cx();
     y2 = nodeTo.cy();
 
-    if (nodeFrom.hasClass('cvat_canvas_hidden')) {
-        x1 = x2;
-        y1 = y2;
-    } else if (nodeTo.hasClass('cvat_canvas_hidden')) {
-        x2 = x1;
-        y2 = y1;
+    if (nodeFrom.hasClass('cvat_canvas_hidden') || nodeTo.hasClass('cvat_canvas_hidden')) {
+        edge.addClass('cvat_canvas_hidden');
+    } else {
+        edge.removeClass('cvat_canvas_hidden');
     }
 
     if (nodeFrom.hasClass('cvat_canvas_shape_occluded') || nodeTo.hasClass('cvat_canvas_shape_occluded')) {
