@@ -234,12 +234,13 @@ class JobAnnotation:
     def _save_shapes_to_db(self, shapes):
         db_shapes = []
         db_attrvals = []
-        all_elements = []
+        db_shape_elements = []
+        db_shape_elem_attrs = []
 
         for shape in shapes:
             attributes = shape.pop("attributes", [])
-            elements = shape.pop("elements", [])
-            all_elements.append(elements)
+            shape_elements = shape.pop("elements", [])
+            # all_elements.append(elements)
             # FIXME: need to clamp points (be sure that all of them inside the image)
             # Should we check here or implement a validator?
             db_shape = models.LabeledShape(job=self.db_job, **shape)
@@ -254,9 +255,27 @@ class JobAnnotation:
                 db_attrval.shape_id = len(db_shapes)
                 db_attrvals.append(db_attrval)
 
+            for elem in shape_elements:
+                elem_attributes = elem.pop("attributes", [])
+
+                db_elem = models.LabeledSkeleton(**elem)
+                if db_elem.label_id not in self.db_labels:
+                    raise AttributeError("label_id `{}` is invalid".format(db_elem.label_id))
+                db_elem.shape_id = len(db_shapes)
+
+                for attr in elem_attributes:
+                    db_attr = models.LabeledSkeletonAttributeVal(**attr)
+                    if db_attr.spec_id not in self.db_attributes[db_elem.label_id]["all"]:
+                        raise AttributeError("spec_id `{}` is invalid".format(db_attr.spec_id))
+                    db_attr.skeleton_id = len(db_shape_elements)
+                    db_shape_elem_attrs.append(db_attr)
+
+                db_shape_elements.append(db_elem)
+                elem["attributes"] = elem_attributes
+
             db_shapes.append(db_shape)
             shape["attributes"] = attributes
-            shape["elements"] = elements
+            shape["elements"] = shape_elements
 
         db_shapes = bulk_create(
             db_model=models.LabeledShape,
@@ -276,44 +295,32 @@ class JobAnnotation:
         for shape, db_shape in zip(shapes, db_shapes):
             shape["id"] = db_shape.id
 
-        for db_shape, elems, shape in zip(db_shapes, all_elements, shapes):
-            db_elements = []
-            db_attrs = []
-            for elem in elems:
-                attributes = elem.pop("attributes", [])
+        for db_elem in db_shape_elements:
+            db_elem.shape_id = db_shapes[db_elem.shape_id].id
 
-                db_elem = models.LabeledSkeleton(shape=db_shape, **elem)
-                if db_elem.label_id and db_elem.label_id not in self.db_labels:
-                    raise AttributeError("label_id `{}` is invalid".format(db_elem.label_id))
+        db_shape_elements = bulk_create(
+            db_model=models.LabeledSkeleton,
+            objects=db_shape_elements,
+            flt_param={"shape__job_id": self.db_job.id}
+        )
 
-                for attr in attributes:
-                    db_attr = models.LabeledSkeletonAttributeVal(**attr)
-                    if db_attr.spec_id not in self.db_attributes[db_elem.label_id]["all"]:
-                        raise AttributeError("spec_id `{}` is invalid".format(db_attr.spec_id))
+        for db_attr in db_shape_elem_attrs:
+            db_attr.skeleton_id = db_shape_elements[db_attr.skeleton_id].id
 
-                    db_attr.skeleton_id = len(db_elements)
-                    db_attrs.append(db_attr)
+        bulk_create(
+            db_model=models.LabeledSkeletonAttributeVal,
+            objects=db_shape_elem_attrs,
+            flt_param={}
+        )
 
-                db_elements.append(db_elem)
-                elem["attributes"] = attributes
+        shape_elem_idx = 0
 
-            db_elements = bulk_create(
-                db_model=models.LabeledSkeleton,
-                objects=db_elements,
-                flt_param={"shape_id": db_shape.id}
-            )
+        for shape_idx, shape in enumerate(shapes):
+            shape["id"] = db_shapes[shape_idx].id
 
-            for db_attr in db_attrs:
-                db_attr.skeleton_id = db_elements[db_attr.skeleton_id].id
-
-            bulk_create(
-                db_model=models.LabeledSkeletonAttributeVal,
-                objects=db_attrs,
-                flt_param={}
-            )
-
-            for elem, db_elem in zip(shape['elements'], db_elements):
-                elem["id"] = db_elem.id
+            for elem in shape["elements"]:
+                elem["id"] = db_shape_elements[shape_elem_idx].id
+                shape_elem_idx += 1
 
         self.ir_data.shapes = shapes
 
