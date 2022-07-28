@@ -309,3 +309,44 @@ jobs:
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
+
+  publish_dev_images:
+    if: github.ref == 'refs/heads/develop'
+    needs: [rest_api, unit_testing, e2e_testing]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download CVAT server images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
+
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push to Docker Hub
+        env:
+          SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/server
+          UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/ui
+        run: |
+          docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
+          docker push "${SERVER_IMAGE_REPO}:dev"
+
+          docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
+          docker push "${UI_IMAGE_REPO}:dev"
