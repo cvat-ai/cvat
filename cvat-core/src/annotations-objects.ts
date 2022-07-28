@@ -199,7 +199,7 @@ class Annotation {
     protected serverID: number | null;
     protected parentID: number | null;
     protected group: number;
-    protected label: Label;
+    public label: Label;
     protected frame: number;
     protected removed: boolean;
     protected lock: boolean;
@@ -2757,7 +2757,7 @@ export class SkeletonTrack extends Track {
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
             },
-        )) as any as Track[];
+        )).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id) as any as Track[];
     }
 
     _saveRotation(rotation: number, frame: number): void {
