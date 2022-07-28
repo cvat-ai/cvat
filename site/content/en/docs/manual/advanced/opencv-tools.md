@@ -9,7 +9,8 @@ The tool based on [Open CV](https://opencv.org/) Computer Vision library
 which is an open-source product that includes many CV algorithms.
 Some of these algorithms can be used to simplify the annotation process.
 
-First step to work with OpenCV is to load it into CVAT. Click on the toolbar icon, then click `Load OpenCV`.
+First step to work with OpenCV is to load it into CVAT.
+Click on the toolbar icon, library will be downloaded automatically.
 
 ![](/images/image198.jpg)
 

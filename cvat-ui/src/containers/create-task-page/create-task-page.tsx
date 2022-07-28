@@ -23,7 +23,7 @@ interface DispatchToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onCreate: (data: CreateTaskData): void => dispatch(createTaskAsync(data)),
+        onCreate: (data: CreateTaskData): Promise<any> => dispatch(createTaskAsync(data)),
     };
 }
 

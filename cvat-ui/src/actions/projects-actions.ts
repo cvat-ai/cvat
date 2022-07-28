@@ -89,7 +89,7 @@ export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): Thun
             getState().projects.gettingQuery,
             tasksQuery,
         ));
-        const query: Partial<TasksQuery> = {
+        const query: TasksQuery = {
             ...state.projects.tasksGettingQuery,
             ...tasksQuery,
         };
@@ -149,8 +149,10 @@ export function createProjectAsync(data: any): ThunkAction {
         try {
             const savedProject = await projectInstance.save();
             dispatch(projectActions.createProjectSuccess(savedProject.id));
+            return savedProject;
         } catch (error) {
             dispatch(projectActions.createProjectFailed(error));
+            throw error;
         }
     };
 }

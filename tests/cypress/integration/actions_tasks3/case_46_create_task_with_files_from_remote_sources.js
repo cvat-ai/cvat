@@ -30,14 +30,14 @@ context('Create a task with files from remote sources.', () => {
             cy.addNewLabel(labelName);
             cy.contains('Remote sources').click();
             cy.get('.cvat-file-selector-remote').type(wrongUrl);
-            cy.get('.cvat-create-task-submit-section').click();
+            cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-notice-create-task-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-create-task-failed');
         });
 
         it('Set correct URL to remote file. The task is created.', () => {
             cy.get('.cvat-file-selector-remote').clear().type(correctUrl);
-            cy.get('.cvat-create-task-submit-section').click();
+            cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-create-task-success').should('exist');
             cy.goToTaskList();
             cy.contains('.cvat-item-task-name', taskName).should('exist');

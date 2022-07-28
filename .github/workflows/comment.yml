@@ -1,4 +1,3 @@
-# v0.1.2
 name: Comment
 on:
   issue_comment:
@@ -59,10 +58,6 @@ jobs:
     uses: ./.github/workflows/full.yml
     with:
       ref: ${{ needs.verify_author.outputs.ref }}
-    secrets:
-      DOCKERHUB_CI_WORKSPACE: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}
-      DOCKERHUB_CI_USERNAME: ${{ secrets.DOCKERHUB_CI_USERNAME }}
-      DOCKERHUB_CI_TOKEN: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
   send_status:
     runs-on: ubuntu-latest

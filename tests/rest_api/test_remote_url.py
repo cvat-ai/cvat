@@ -21,12 +21,13 @@ def _post_task_remote_data(username, task_id, resources):
 def _wait_until_task_is_created(username, task_id):
     url = f'tasks/{task_id}/status'
 
-    while True:
+    for _ in range(100):
         response = get_method(username, url)
         response_json = response.json()
         if response_json['state'] == 'Finished' or response_json['state'] == 'Failed':
             return response
         sleep(1)
+    raise Exception('Cannot create task')
 
 
 @pytest.mark.usefixtures('changedb')
