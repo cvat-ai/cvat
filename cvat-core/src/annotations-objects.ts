@@ -199,14 +199,14 @@ class Annotation {
     protected serverID: number | null;
     protected parentID: number | null;
     protected group: number;
-    protected label: Label;
+    public label: Label;
     protected frame: number;
     protected removed: boolean;
     protected lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
     protected source: Source;
-    protected updated: number;
+    public updated: number;
     protected attributes: Record<number, string>;
     protected groupObject: {
         color: string;
@@ -436,9 +436,10 @@ class Annotation {
 
         if (updated.keyframe) {
             checkObjectType('keyframe', data.keyframe, 'boolean', null);
-            if (!this.shapes || (Object.keys(this.shapes).length === 1 && !data.keyframe)) {
+            if (Object.keys(this.shapes).length === 1 && data.frame in this.shapes && !data.keyframe) {
                 throw new ArgumentError(
-                    'Can not remove the latest keyframe of an object. Consider removing the object instead',
+                    `Can not remove the latest keyframe of an object "${data.label.name}".` +
+                    'Consider removing the object instead',
                 );
             }
         }
@@ -582,7 +583,7 @@ class Drawn extends Annotation {
         return fittedPoints;
     }
 
-    private _validateStateBeforeSave(frame: number, data: ObjectState, updated: ObjectState['updateFlags']): number[] {
+    protected _validateStateBeforeSave(frame: number, data: ObjectState, updated: ObjectState['updateFlags']): number[] {
         /* eslint-disable-next-line no-underscore-dangle */
         Annotation.prototype._validateStateBeforeSave.call(this, data, updated);
 
@@ -2756,7 +2757,7 @@ export class SkeletonTrack extends Track {
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
             },
-        )) as any as Track[];
+        )).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id) as any as Track[];
     }
 
     _saveRotation(rotation: number, frame: number): void {
@@ -2855,16 +2856,18 @@ export class SkeletonTrack extends Track {
 
     get(frame: number) {
         const { prev, next } = this.boundedKeyframes(frame);
+        const position = this.getPosition(frame, prev, next);
         const elements = this.elements.map((element) => ({
             ...element.get(frame),
             source: this.source,
             group: this.groupObject,
-            zOrder: this.zOrder,
+            zOrder: position.zOrder,
             rotation: 0,
         }));
 
         return {
-            ...this.getPosition(frame, prev, next),
+            ...position,
+            keyframe: position.keyframe || elements.some((el) => el.keyframe),
             attributes: this.getAttributes(frame),
             descriptions: [...this.descriptions],
             group: this.groupObject,
@@ -2930,11 +2933,16 @@ export class SkeletonTrack extends Track {
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
 
+            const errors = [];
             try {
                 this.history.freeze(true);
                 affectedElements.forEach((element, idx) => {
-                    const annotationContext = this.elements[idx];
-                    annotationContext.save(frame, element);
+                    try {
+                        const annotationContext = this.elements[idx];
+                        annotationContext.save(frame, element);
+                    } catch (error: any) {
+                        errors.push(error);
+                    }
                 });
             } finally {
                 this.history.freeze(false);
@@ -2949,12 +2957,10 @@ export class SkeletonTrack extends Track {
                     for (let i = 0; i < this.elements.length; i++) {
                         if (property) {
                             this.elements[i][property] = undoSkeletonProperties[i];
-                        } else {
-                            if (undoSkeletonShapes[i]) {
-                                this.elements[i].shapes[frame] = undoSkeletonShapes[i];
-                            } else if (redoSkeletonShapes[i]) {
-                                delete this.elements[i].shapes[frame];
-                            }
+                        } if (undoSkeletonShapes[i]) {
+                            this.elements[i].shapes[frame] = undoSkeletonShapes[i];
+                        } else if (redoSkeletonShapes[i]) {
+                            delete this.elements[i].shapes[frame];
                         }
                         this.elements[i].updated = Date.now();
                     }
@@ -2965,12 +2971,10 @@ export class SkeletonTrack extends Track {
                     for (let i = 0; i < this.elements.length; i++) {
                         if (property) {
                             this.elements[i][property] = redoSkeletonProperties[i];
-                        } else {
-                            if (redoSkeletonShapes[i]) {
-                                this.elements[i].shapes[frame] = redoSkeletonShapes[i];
-                            } else if (undoSkeletonShapes[i]) {
-                                delete this.elements[i].shapes[frame];
-                            }
+                        } else if (redoSkeletonShapes[i]) {
+                            this.elements[i].shapes[frame] = redoSkeletonShapes[i];
+                        } else if (undoSkeletonShapes[i]) {
+                            delete this.elements[i].shapes[frame];
                         }
                         this.elements[i].updated = Date.now();
                     }
@@ -2980,16 +2984,22 @@ export class SkeletonTrack extends Track {
                 [this.clientID, ...affectedElements.map((element) => element.clientID)],
                 frame,
             );
+
+            if (errors.length) {
+                throw new Error(`Several errors occured during saving skeleton:\n ${errors.join(';\n')}`);
+            }
         };
 
         const updatedPoints = data.elements.filter((el) => el.updateFlags.points);
         const updatedOccluded = data.elements.filter((el) => el.updateFlags.occluded);
         const updatedOutside = data.elements.filter((el) => el.updateFlags.outside);
+        const updatedKeyframe = data.elements.filter((el) => el.updateFlags.keyframe);
         const updatedHidden = data.elements.filter((el) => el.updateFlags.hidden);
         const updatedLock = data.elements.filter((el) => el.updateFlags.lock);
 
-        updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = false; });
+        updatedOccluded.forEach((el) => { el.updateFlags.occluded = false; });
         updatedOutside.forEach((el) => { el.updateFlags.outside = false; });
+        updatedKeyframe.forEach((el) => { el.updateFlags.keyframe = false; });
         updatedHidden.forEach((el) => { el.updateFlags.hidden = false; });
         updatedLock.forEach((el) => { el.updateFlags.lock = false; });
 
@@ -2998,13 +3008,22 @@ export class SkeletonTrack extends Track {
         }
 
         if (updatedOccluded.length) {
-            updatedOccluded.forEach((el) => { el.updateFlags.oсcluded = true; });
+            updatedOccluded.forEach((el) => { el.updateFlags.occluded = true; });
             updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED);
         }
 
         if (updatedOutside.length) {
             updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
             updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
+        }
+
+        if (updatedKeyframe.length) {
+            updatedKeyframe.forEach((el) => { el.updateFlags.keyframe = true; });
+            // todo: fix extra undo/redo change
+            this._validateStateBeforeSave(frame, data, data.updateFlags);
+            this._saveKeyframe(frame, data.keyframe);
+            data.updateFlags.keyframe = false;
+            updateElements(updatedKeyframe, HistoryActions.CHANGED_KEYFRAME);
         }
 
         if (updatedHidden.length) {
@@ -3025,13 +3044,10 @@ export class SkeletonTrack extends Track {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
         const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
-        const offset = (targetFrame - leftFrame) / (rightKeyframe - leftFrame);
 
         if (leftPosition && rightPosition) {
             return {
-                rotation: (leftPosition.rotation + findAngleDiff(
-                    rightPosition.rotation, leftPosition.rotation,
-                ) * offset + 360) % 360,
+                rotation: 0,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -3043,7 +3059,7 @@ export class SkeletonTrack extends Track {
         if (singlePosition) {
             return {
                 points: undefined,
-                rotation: singlePosition.rotation,
+                rotation: 0,
                 occluded: singlePosition.occluded,
                 zOrder: singlePosition.zOrder,
                 keyframe: targetFrame in this.shapes,
@@ -3065,7 +3081,7 @@ export class SkeletonTrack extends Track {
 
         const result = {};
         for (const keyframe of allKeyframes) {
-            const skeletonShape = this.get(keyframe);
+            const skeletonShape = this.get(+keyframe);
             const shapeElements = [];
             for (let idx = 0; idx < this.elements.length; idx += 1) {
                 const elementData = skeletonShape.elements[idx];
@@ -3095,8 +3111,10 @@ export class SkeletonTrack extends Track {
             result[keyframe] = {
                 id: this.shapes[keyframe]?.serverID,
                 type: this.shapeType,
-                occluded: !!shapeElements.length && shapeElements.every((el) => el.occluded),
-                outside: !!shapeElements.length && shapeElements.every((el) => el.outside),
+                occluded: shapeElements.length === this.label.structure.sublabels.length &&
+                    shapeElements.every((el) => el.occluded),
+                outside: shapeElements.length === this.label.structure.sublabels.length &&
+                    shapeElements.every((el) => el.outside),
                 group: skeletonShape.group.id,
                 source: skeletonShape.source,
                 z_order: skeletonShape.zOrder,

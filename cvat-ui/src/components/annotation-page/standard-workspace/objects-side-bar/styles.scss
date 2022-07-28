@@ -430,8 +430,17 @@
     padding: $grid-unit-size * 0.5;
     border: 1px solid $object-item-border-color;
     border-bottom: 0;
+    padding-top: 1px;
+    padding-left: 1px;
+    padding-right: 1px;
+    padding-bottom: 2px;
 
     &:last-child {
         border-bottom: 1px solid $object-item-border-color;
     }
+}
+
+.cvat-objects-sidebar-state-item-elements.cvat-objects-sidebar-state-active-element {
+    border: 2px dashed $object-item-border-color;
+    padding: 0;
 }

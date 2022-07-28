@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 
@@ -29,6 +29,7 @@ interface Props {
     normalizedKeyMap: Record<string, string>;
     readonly: boolean;
     activated: boolean;
+    activatedElementID: number | null;
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
@@ -41,7 +42,7 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
-    activate(): void;
+    activate(activeElementID?: number): void;
     copy(): void;
     propagate(): void;
     createURL(): void;
@@ -54,28 +55,10 @@ interface Props {
     resetCuboidPerspective(): void;
 }
 
-function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
-    return (
-        nextProps.activated === prevProps.activated &&
-        nextProps.readonly === prevProps.readonly &&
-        nextProps.locked === prevProps.locked &&
-        nextProps.labelID === prevProps.labelID &&
-        nextProps.color === prevProps.color &&
-        nextProps.clientID === prevProps.clientID &&
-        nextProps.serverID === prevProps.serverID &&
-        nextProps.objectType === prevProps.objectType &&
-        nextProps.shapeType === prevProps.shapeType &&
-        nextProps.labels === prevProps.labels &&
-        nextProps.attributes === prevProps.attributes &&
-        nextProps.elements === prevProps.elements &&
-        nextProps.normalizedKeyMap === prevProps.normalizedKeyMap &&
-        nextProps.colorBy === prevProps.colorBy
-    );
-}
-
 function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
+        activatedElementID,
         readonly,
         objectType,
         shapeType,
@@ -112,11 +95,15 @@ function ObjectItemComponent(props: Props): JSX.Element {
         'cvat-objects-sidebar-state-item' :
         'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
+    const activateState = useCallback(() => {
+        activate();
+    }, []);
+
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div className='cvat-objects-sidebar-state-item-color' style={{ background: `${color}` }} />
             <div
-                onMouseEnter={activate}
+                onMouseEnter={activateState}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
                 style={{ backgroundColor: `${color}88` }}
@@ -174,11 +161,16 @@ function ObjectItemComponent(props: Props): JSX.Element {
                             >
                                 {elements.map((element: any) => {
                                     const elementColor = getColor(element, colorBy);
+                                    const elementClassName = element.clientID === activatedElementID ?
+                                        'cvat-objects-sidebar-state-item-elements cvat-objects-sidebar-state-active-element' :
+                                        'cvat-objects-sidebar-state-item-elements';
 
                                     return (
                                         <div
+                                            onMouseEnter={() => activate(element.clientID)}
+                                            onMouseLeave={activateState}
                                             key={element.clientID}
-                                            className='cvat-objects-sidebar-state-item-elements'
+                                            className={elementClassName}
                                             style={{ background: `${elementColor}` }}
                                         >
                                             <Text
@@ -208,4 +200,4 @@ function ObjectItemComponent(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(ObjectItemComponent, objectItemsAreEqual);
+export default React.memo(ObjectItemComponent);

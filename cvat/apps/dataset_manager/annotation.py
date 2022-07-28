@@ -734,9 +734,15 @@ class TrackManager(ObjectManager):
             for i, elem in enumerate(elements):
                 if elem["label_id"] in elements1:
                     elements[i] =  elements1[elem["label_id"]]
+                    elements1.pop(elem["label_id"])
                     elements[i]["keyframe"] = True
                 else:
                     elements[i]["keyframe"] = False
+
+            for elem in elements1.values():
+                elem["keyframe"] = True
+                elements.append(elem)
+
             shape1["elements"] = elements
 
             return shapes
@@ -783,6 +789,10 @@ class TrackManager(ObjectManager):
                         shape["attributes"].append(deepcopy(attr))
                 if not prev_shape["outside"]:
                     shapes.extend(interpolate(prev_shape, shape))
+                else:
+                    if shape["type"] == str(ShapeType.SKELETON):
+                        for element in shape["elements"]:
+                            element["keyframe"] = True
 
             shape["keyframe"] = True
             shapes.append(shape)
