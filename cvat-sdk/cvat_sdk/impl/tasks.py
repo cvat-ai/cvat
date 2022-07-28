@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-import io
 
+import io
 import mimetypes
 import os.path as osp
 from abc import ABC, abstractmethod
@@ -129,9 +129,9 @@ class TaskProxy(ModelProxy, ITaskRead):
             uploader = Uploader(client)
             uploader.upload_files(url, resources, pbar=pbar, **data)
 
-    def upload_annotations(
+    def import_annotations(
         self,
-        fileformat: str,
+        format_name: str,
         filename: str,
         *,
         status_check_period: int = None,
@@ -148,16 +148,18 @@ class TaskProxy(ModelProxy, ITaskRead):
         task_id = self.id
 
         url = client._api_map.make_endpoint_url(
-            client.api.tasks_api.retrieve_annotations_endpoint.path,
+            client.api.tasks_api.create_annotations_endpoint.path,
             kwsub={"id": task_id},
         )
-        params = {"format": fileformat, "filename": osp.basename(filename)}
+        params = {"format": format_name, "filename": osp.basename(filename)}
 
         uploader = Uploader(client)
-        uploader.upload_file(url, filename, pbar=pbar, logger=client.logger.debug, params=params)
+        uploader.upload_file(
+            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+        )
 
         while True:
-            response = client.api.rest_client.PUT(
+            response = client.api.rest_client.POST(
                 url, headers=client.api.get_common_headers(), query_params=params
             )
             if response.status == 201:
@@ -178,9 +180,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         client = self._client
         task_id = self.id
 
-        (_, response) = client.api.tasks_api.retrieve_data(
-            task_id, frame_id, quality, type="frame"
-        )
+        (_, response) = client.api.tasks_api.retrieve_data(task_id, frame_id, quality, type="frame")
 
         return BytesIO(response.data)
 
@@ -190,7 +190,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         *,
         outdir: str = "",
         quality: str = "original",
-        filename_pattern: str = "task_{task_id}_frame_{frame_id:06d}{frame_ext}"
+        filename_pattern: str = "task_{task_id}_frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
         """
         Download the requested frame numbers for a task and save images as
@@ -215,13 +215,14 @@ class TaskProxy(ModelProxy, ITaskRead):
             outfile = filename_pattern.format(task_id=task_id, frame_id=frame_id, frame_ext=im_ext)
             im.save(osp.join(outdir, outfile))
 
-    def download_dataset(
+    def export_dataset(
         self,
         format_name: str,
         filename: str,
         *,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: int = None,
+        include_images: bool = True,
     ) -> None:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
@@ -233,7 +234,10 @@ class TaskProxy(ModelProxy, ITaskRead):
         task_id = self.id
 
         params = {"filename": self.name, "format": format_name}
-        endpoint = client.api.tasks_api.retrieve_annotations_endpoint
+        if include_images:
+            endpoint = client.api.tasks_api.retrieve_dataset_endpoint
+        else:
+            endpoint = client.api.tasks_api.retrieve_annotations_endpoint
 
         client.logger.info("Waiting for the server to prepare the file...")
         while True:
@@ -243,13 +247,14 @@ class TaskProxy(ModelProxy, ITaskRead):
                 break
             sleep(status_check_period)
 
+        params["action"] = "download"
         url = client._api_map.make_endpoint_url(
             endpoint.path, kwsub={"id": task_id}, query_params=params
         )
         downloader = Downloader(client)
         downloader.download_file(url, output_path=filename, pbar=pbar)
 
-        client.logger.info(f"Annotations have been exported to {filename}")
+        client.logger.info(f"Dataset has been exported to {filename}")
 
     def download_backup(
         self,

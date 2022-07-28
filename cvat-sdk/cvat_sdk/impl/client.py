@@ -121,7 +121,7 @@ class CvatClient:
             status = status.state.value
 
         if annotation_path:
-            task.upload_annotations(annotation_format, annotation_path, pbar=pbar)
+            task.import_annotations(annotation_format, annotation_path, pbar=pbar)
 
         if dataset_repository_url:
             create_git_repo(
@@ -183,14 +183,10 @@ class CvatClient:
             status_check_period = self.config.status_check_period
 
         url = self.api.tasks_backup()
-        params = {"filename": osp.basename(filename)}
-
-        if pbar is None:
-            pbar = self._make_pbar("Uploading...")
 
         uploader = Uploader(self)
         response = uploader.upload_file(
-            url, filename, params=params, pbar=pbar, logger=self.logger.info
+            url, filename, pbar=pbar, meta={"filename": osp.basename(filename)}
         )
         rq_id = json.loads(response.data)["rq_id"]
 
@@ -243,5 +239,5 @@ class _CVAT_API_V2:
         if psub or kwsub:
             url = url.format(*(psub or []), **(kwsub or {}))
         if query_params:
-            url += '?' + urllib.parse.urlencode({**query_params, "action": "download"})
+            url += "?" + urllib.parse.urlencode(query_params)
         return url

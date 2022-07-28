@@ -4,12 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os
 import os.path as osp
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
-from cvat_sdk.impl.tasks import TaskProxy
 
 import pytest
 from PIL import Image
@@ -17,6 +15,7 @@ from rest_api.utils.config import USER_PASS
 from rest_api.utils.helpers import generate_image_file, generate_image_files
 
 from cvat_sdk.impl.client import CvatClient
+from cvat_sdk.impl.tasks import TaskProxy
 from cvat_sdk.impl.types import ResourceType
 
 from .util import make_pbar
@@ -47,27 +46,45 @@ class TestTaskUsecases:
         self.stdout = None
 
     @pytest.fixture
-    def fxt_new_task(self):
-        tmp_img = self.tmp_path / "img.png"
-        with tmp_img.open("wb") as f:
-            f.write(generate_image_file().getvalue())
+    def fxt_image_file(self):
+        img_path = self.tmp_path / "img.png"
+        with img_path.open("wb") as f:
+            f.write(generate_image_file(filename=str(img_path)).getvalue())
 
+        return img_path
+
+    @pytest.fixture
+    def fxt_coco_file(self, fxt_image_file):
+        img_filename = fxt_image_file
+        img_size = Image.open(img_filename).size
+        ann_filename = self.tmp_path / "coco.json"
+        self._generate_coco_json(ann_filename, img_info=(img_filename, *img_size))
+
+        yield ann_filename
+
+    @pytest.fixture
+    def fxt_backup_file(self, fxt_new_task: TaskProxy, fxt_coco_file: str):
+        backup_path = self.tmp_path / "backup.zip"
+
+        fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
+        fxt_new_task.download_backup(str(backup_path))
+
+        yield backup_path
+
+    @pytest.fixture
+    def fxt_new_task(self, fxt_image_file):
         task = self.client.create_task(
             spec={
                 "name": "test_task",
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[tmp_img],
+            resources=[fxt_image_file],
         )
 
         return task
 
     def test_can_create_task_with_local_data(self):
-        tmp_img = self.tmp_path / "img.png"
-        with tmp_img.open("wb") as f:
-            f.write(generate_image_file().getvalue())
-
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -152,17 +169,24 @@ class TestTaskUsecases:
         assert all(t.id != task_id for t in new_tasks)
         assert self.stdout.getvalue() == ""
 
-    def test_can_download_annotations(self, fxt_new_task):
+    @pytest.mark.parametrize("include_images", (True, False))
+    def test_can_download_dataset(self, fxt_new_task: TaskProxy, include_images: bool):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
         path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
         task = self.client.retrieve_task(task_id)
-        task.download_dataset(format_name="CVAT for images 1.1", filename=path, pbar=pbar)
+        task.export_dataset(
+            format_name="CVAT for images 1.1",
+            filename=path,
+            pbar=pbar,
+            include_images=include_images,
+        )
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert osp.isfile(path)
+        assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task):
         pbar_out = io.StringIO()
@@ -175,77 +199,62 @@ class TestTaskUsecases:
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert osp.isfile(path)
+        assert self.stdout.getvalue() == ""
 
-    @pytest.mark.parametrize('quality', ('compressed', 'original'))
-    def test_can_download_frame(self, fxt_new_task, quality: str):
-        task: TaskProxy = fxt_new_task
-
-        frame_encoded = task.retrieve_frame(0, quality=quality)
+    @pytest.mark.parametrize("quality", ("compressed", "original"))
+    def test_can_download_frame(self, fxt_new_task: TaskProxy, quality: str):
+        frame_encoded = fxt_new_task.retrieve_frame(0, quality=quality)
 
         assert Image.open(frame_encoded).size != 0
+        assert self.stdout.getvalue() == ""
 
-    @pytest.mark.parametrize('quality', ('compressed', 'original'))
-    def test_can_download_frames(self, fxt_new_task, quality: str):
-        task: TaskProxy = fxt_new_task
-
-        frame_id = 0
-        task.download_frames([frame_id], quality=quality, outdir=str(self.tmp_path),
-            filename_pattern="frame-{frame_id}{frame_ext}")
+    @pytest.mark.parametrize("quality", ("compressed", "original"))
+    def test_can_download_frames(self, fxt_new_task: TaskProxy, quality: str):
+        fxt_new_task.download_frames(
+            [0],
+            quality=quality,
+            outdir=str(self.tmp_path),
+            filename_pattern="frame-{frame_id}{frame_ext}",
+        )
 
         assert osp.isfile(self.tmp_path / "frame-0.jpg")
+        assert self.stdout.getvalue() == ""
 
-    # def test_tasks_frame(self):
-    #     path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
+    def test_can_upload_annotations(self, fxt_new_task: TaskProxy, fxt_coco_file: Path):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
 
-    #     self.cli.tasks_frame(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="compressed")
-    #     on_exit_do(os.remove, path)
+        fxt_new_task.import_annotations(
+            format_name="COCO 1.0", filename=str(fxt_coco_file), pbar=pbar
+        )
 
-    #     self.assertTrue(os.path.exists(path))
+        assert str(fxt_coco_file) in self.logger_stream.getvalue()
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
 
-    # def test_tasks_upload(self):
-    #     path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
-    #     self._generate_coco_file(path)
-    #     on_exit_do(os.remove, path)
+    def test_can_create_from_backup(self, fxt_new_task: TaskProxy, fxt_backup_file: Path):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
 
-    #     pbar_out = io.StringIO()
-    #     pbar = make_pbar(file=pbar_out)
+        task = self.client.create_task_from_backup(str(fxt_backup_file), pbar=pbar)
 
-    #     self.cli.tasks_upload(self.task_id, "COCO 1.0", path, pbar=pbar)
+        assert task.id
+        assert task.id != fxt_new_task.id
+        assert task.size == fxt_new_task.size
+        assert "exported sucessfully" in self.logger_stream.getvalue()
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
 
-    #     pbar_out = pbar_out.getvalue().strip("\r").split("\r")
+    @classmethod
+    def _generate_coco_json(cls, filename, img_info: Tuple[str, int, int]):
+        image_filename, image_width, image_height = img_info
 
-    #     self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format("annotation file"))
-    #     self.assertRegex(pbar_out[-1], "100%")
-
-    # def test_tasks_import(self):
-    #     anno_path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
-    #     self._generate_coco_file(anno_path)
-    #     on_exit_do(os.remove, anno_path)
-
-    #     backup_path = os.path.join(settings.SHARE_ROOT, "task_backup.zip")
-    #     self.cli.tasks_upload(self.task_id, "COCO 1.0", anno_path)
-    #     self.cli.tasks_export(self.task_id, backup_path)
-    #     on_exit_do(os.remove, backup_path)
-
-    #     pbar_out = io.StringIO()
-    #     pbar = make_pbar(file=pbar_out)
-    #     self.cli.tasks_import(backup_path, pbar=pbar)
-
-    #     pbar_out = pbar_out.getvalue().strip("\r").split("\r")
-
-    #     self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format("exported sucessfully"))
-    #     self.assertRegex(pbar_out[-1], "100%")
-
-    def _generate_coco_file(self, path):
-        test_image = Image.open(self.img_file)
-        image_width, image_height = test_image.size
-
-        content = self._generate_coco_anno(
-            os.path.basename(self.img_file),
+        content = cls._generate_coco_anno(
+            osp.basename(image_filename),
             image_width=image_width,
             image_height=image_height,
         )
-        with open(path, "w") as coco:
+        with open(filename, "w") as coco:
             coco.write(content)
 
     @staticmethod

@@ -41,8 +41,12 @@ class Downloader:
         if osp.exists(tmp_path):
             raise FileExistsError(f"Can't write temporary file '{tmp_path}' - file exists")
 
-        response = self.client.api.rest_client.GET(url, _request_timeout=timeout,
-            headers=self.client.api.get_common_headers(), _parse_response=False)
+        response = self.client.api.rest_client.GET(
+            url,
+            _request_timeout=timeout,
+            headers=self.client.api.get_common_headers(),
+            _parse_response=False,
+        )
         with closing(response):
             try:
                 file_size = int(response.getheader("Content-Length", 0))

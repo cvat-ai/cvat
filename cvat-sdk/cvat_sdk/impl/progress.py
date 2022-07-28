@@ -155,7 +155,7 @@ class StreamWithProgress:
             length = len(stream)
 
         self.length = length
-        pbar.reset(length)
+        pbar.start(length)
 
     def read(self, size=-1):
         chunk = self.stream.read(size)

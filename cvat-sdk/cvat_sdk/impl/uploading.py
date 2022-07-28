@@ -5,13 +5,18 @@
 from __future__ import annotations
 
 import os
+import os.path as osp
 from contextlib import ExitStack, closing
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+
+import requests
 
 from cvat_sdk import ApiClient
+from cvat_sdk.rest import RESTClientObject
 
 if TYPE_CHECKING:
     from cvat_sdk.impl.client import CvatClient
+
 from cvat_sdk.impl.progress import ProgressReporter, StreamWithProgress
 from cvat_sdk.impl.utils import assert_status
 
@@ -60,16 +65,50 @@ class Uploader:
                 pbar.advance(group_size)
 
         for filename in separate_files:
-            self._upload_file_with_tus(
-                url, filename, params=kwargs, pbar=pbar, logger=self.client.logger.debug
+            # TODO: check if basename produces invalid paths here, can lead to overwriting
+            self._upload_file_data_with_tus(
+                url,
+                filename,
+                meta={"filename": osp.basename(filename)},
+                pbar=pbar,
+                logger=self.client.logger.debug,
             )
 
-        self._tus_finish_upload(url, params=kwargs)
+        self._tus_finish_upload(url, fields=kwargs)
 
-    def upload_file(self, url, filename, *, params=None, pbar=None, logger=None):
-        return self._upload_file_with_tus(
-            url=url, filename=filename, params=params, pbar=pbar, logger=logger
+    def upload_file(
+        self,
+        url,
+        filename,
+        *,
+        meta: Dict[str, Any],
+        query_params: Dict[str, Any] = None,
+        fields: Optional[Dict[str, Any]] = None,
+        pbar=None,
+        logger=None,
+    ):
+        """
+        Annotation uploads:
+        - have "filename" meta field in chunks
+        - have "filename" and "format" query params in the Upload-Finished request
+
+        Data (image, video, ...) uploads:
+        - have "filename" meta field in chunks
+        - have a number of fields in the Upload-Finished request
+
+        TODO: Backup uploads
+
+        meta['filename'] is always required. It must be set to the "visible" file name or path
+        """
+        # "CVAT-TUS" protocol has 2 extra messages
+        # query params are used only in the extra messages
+        assert meta["filename"]
+
+        self._tus_start_upload(url, query_params=query_params)
+        self._upload_file_data_with_tus(
+            url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
         )
+        return self._tus_finish_upload(url, query_params=query_params, fields=fields)
 
     def _split_files_by_requests(
         self, filenames: List[str]
@@ -111,6 +150,37 @@ class Uploader:
         from tusclient.client import TusClient, Uploader
         from tusclient.request import TusRequest, TusUploadFailed
 
+        class RestClientAdapter:
+            # Provides requests.Session-like interface for REST client
+            # only patch is called in the tus client
+
+            def __init__(self, rest_client: RESTClientObject):
+                self.rest_client = rest_client
+
+            def _request(self, method, url, data=None, json=None, **kwargs):
+                raw = self.rest_client.request(
+                    method=method,
+                    url=url,
+                    headers=kwargs.get("headers"),
+                    query_params=kwargs.get("params"),
+                    post_params=json,
+                    body=data,
+                    _parse_response=False,
+                    _request_timeout=kwargs.get("timeout"),
+                    _check_status=False,
+                )
+
+                result = requests.Response()
+                result._content = raw.data
+                result.raw = raw
+                result.headers.update(raw.headers)
+                result.status_code = raw.status
+                result.reason = raw.msg
+                return result
+
+            def patch(self, *args, **kwargs):
+                return self._request("PATCH", *args, **kwargs)
+
         class MyTusUploader(Uploader):
             # Adjusts the library code for CVAT server
             # Allows to reuse session
@@ -121,7 +191,7 @@ class Uploader:
 
             def _do_request(self):
                 self.request = TusRequest(self)
-                self.request.handle = self._session
+                self.request.handle = RestClientAdapter(self._api_client.rest_client)
                 try:
                     self.request.perform()
                     self.verify_upload()
@@ -166,11 +236,12 @@ class Uploader:
         headers = {}
         headers["Origin"] = api_client.configuration.host
         headers.update(api_client.get_common_headers())
+
         client = TusClient(url, headers=headers)
 
         return MyTusUploader(client=client, api_client=api_client, **kwargs)
 
-    def _upload_file_data_with_tus(self, url, filename, *, params=None, pbar=None, logger=None):
+    def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar=None, logger=None):
         CHUNK_SIZE = 10 * 2**20
 
         file_size = os.stat(filename).st_size
@@ -181,26 +252,18 @@ class Uploader:
 
             tus_uploader = self._make_tus_uploader(
                 self.client.api,
-                url + "/",
-                metadata=params,
+                url=url.rstrip("/") + "/",
+                metadata=meta,
                 file_stream=input_file,
                 chunk_size=CHUNK_SIZE,
                 log_func=logger,
             )
             tus_uploader.upload()
 
-    def _upload_file_with_tus(self, url, filename, *, params=None, pbar=None, logger=None):
-        # "CVAT-TUS" protocol has 2 extra messages
-        self._tus_start_upload(url, params=params)
-        self._upload_file_data_with_tus(
-            url=url, filename=filename, params=params, pbar=pbar, logger=logger
-        )
-        return self._tus_finish_upload(url, params=params)
-
-    def _tus_start_upload(self, url, *, params=None):
+    def _tus_start_upload(self, url, *, query_params=None):
         response = self.client.api.rest_client.POST(
             url,
-            post_params=params,
+            query_params=query_params,
             headers={
                 "Upload-Start": "",
                 **self.client.api.get_common_headers(),
@@ -209,14 +272,15 @@ class Uploader:
         assert_status(202, response)
         return response
 
-    def _tus_finish_upload(self, url, *, params=None):
+    def _tus_finish_upload(self, url, *, query_params=None, fields=None):
         response = self.client.api.rest_client.POST(
             url,
             headers={
                 "Upload-Finish": "",
                 **self.client.api.get_common_headers(),
             },
-            post_params=params,
+            query_params=query_params,
+            post_params=fields,
         )
         assert_status(202, response)
         return response
