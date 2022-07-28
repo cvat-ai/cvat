@@ -785,12 +785,6 @@ class TrackManager(ObjectManager):
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
-            if shape["type"] == str(ShapeType.SKELETON):
-                for elem in shape["elements"]:
-                    if not elem["keyframe"]:
-                        shape["keyframe"] = False
-                        break
-
             shapes.append(shape)
             curr_frame = shape["frame"]
             prev_shape = shape
