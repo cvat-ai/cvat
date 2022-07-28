@@ -2625,6 +2625,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 ytl = Math.min(ytl, cy);
                 xbr = Math.max(xbr, cx);
                 ybr = Math.max(ybr, cy);
+                const templateElement = templateElements.find((el: SVG.Circle) => el.attr('data-label-id') === element.label.id);
                 const circle = skeleton.circle()
                     .center(cx, cy)
                     .attr({
@@ -2633,9 +2634,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'color-rendering': 'optimizeQuality',
                         'shape-rendering': 'geometricprecision',
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                        'data-node-id': templateElements[i].attr('data-node-id'),
-                        'data-element-id': templateElements[i].attr('data-element-id'),
-                        'data-label-id': templateElements[i].attr('data-label-id'),
+                        'data-node-id': templateElement.attr('data-node-id'),
+                        'data-element-id': templateElement.attr('data-element-id'),
+                        'data-label-id': templateElement.attr('data-label-id'),
                         'data-client-id': element.clientID,
                         ...this.getShapeColorization(element, { parentState: state }),
                     }).style({
