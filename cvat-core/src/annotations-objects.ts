@@ -3095,8 +3095,8 @@ export class SkeletonTrack extends Track {
             result[keyframe] = {
                 id: this.shapes[keyframe]?.serverID,
                 type: this.shapeType,
-                occluded: shapeElements.every((el) => el.occluded),
-                outside: shapeElements.every((el) => el.outside),
+                occluded: !!shapeElements.length && shapeElements.every((el) => el.occluded),
+                outside: !!shapeElements.length && shapeElements.every((el) => el.outside),
                 group: skeletonShape.group.id,
                 source: skeletonShape.source,
                 z_order: skeletonShape.zOrder,
