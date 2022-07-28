@@ -227,6 +227,10 @@
         width: $grid-unit-size * 14;
         justify-content: center;
     }
+
+    .ant-progress {
+        margin-left: $grid-unit-size;
+    }
 }
 
 .cvat-opencv-initialization-button {
