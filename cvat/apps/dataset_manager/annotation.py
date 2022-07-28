@@ -789,6 +789,10 @@ class TrackManager(ObjectManager):
                         shape["attributes"].append(deepcopy(attr))
                 if not prev_shape["outside"]:
                     shapes.extend(interpolate(prev_shape, shape))
+                else:
+                    if shape["type"] == str(ShapeType.SKELETON):
+                        for element in shape["elements"]:
+                            element["keyframe"] = True
 
             shape["keyframe"] = True
             shapes.append(shape)
