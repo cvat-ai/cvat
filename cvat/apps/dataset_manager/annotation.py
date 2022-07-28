@@ -734,9 +734,15 @@ class TrackManager(ObjectManager):
             for i, elem in enumerate(elements):
                 if elem["label_id"] in elements1:
                     elements[i] =  elements1[elem["label_id"]]
+                    elements1.pop(elem["label_id"])
                     elements[i]["keyframe"] = True
                 else:
                     elements[i]["keyframe"] = False
+
+            for elem in elements1.values():
+                elem["keyframe"] = True
+                elements.append(elem)
+
             shape1["elements"] = elements
 
             return shapes
