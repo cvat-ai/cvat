@@ -168,6 +168,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                                     return (
                                         <div
                                             onMouseEnter={() => activate(element.clientID)}
+                                            onMouseLeave={activateState}
                                             key={element.clientID}
                                             className={elementClassName}
                                             style={{ background: `${elementColor}` }}
