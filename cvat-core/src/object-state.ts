@@ -447,8 +447,20 @@ export default class ObjectState {
                      * @memberof module:API.cvat.classes.ObjectState
                      * @instance
                      */
-                    get: () => data.keyframe,
+                    get: () => {
+                        if (data.shapeType === ShapeType.SKELETON) {
+                            return data.keyframe || data.elements.some((el) => el.keyframe);
+                        }
+
+                        return data.keyframe;
+                    },
                     set: (keyframe) => {
+                        if (data.shapeType === ShapeType.SKELETON) {
+                            for (const element of this.elements) {
+                                element.keyframe = keyframe;
+                            }
+                        }
+
                         data.updateFlags.keyframe = true;
                         data.keyframe = keyframe;
                     },
