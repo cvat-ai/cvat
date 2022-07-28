@@ -1103,7 +1103,16 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
-                elements=shape.elements,
+                elements=[annotations.TrackedSkeleton(
+                    type=element.type,
+                    label=element.label,
+                    shape_id=element.shape_id,
+                    points=element.points,
+                    occluded=element.occluded,
+                    outside=False,
+                    keyframe=True,
+                    attributes=element.attributes,
+                ) for element in shape.elements],
             )] +
             ( # add a finishing frame if it does not hop over the last frame
             [annotations.TrackedShape(
@@ -1116,7 +1125,16 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + frame_step,
                 attributes=shape.attributes,
-                elements=shape.elements,
+                elements=[annotations.TrackedSkeleton(
+                    type=element.type,
+                    label=element.label,
+                    shape_id=element.shape_id,
+                    points=element.points,
+                    occluded=element.occluded,
+                    outside=True,
+                    keyframe=True,
+                    attributes=element.attributes,
+                ) for element in shape.elements],
             )] if shape.frame + frame_step < \
                     stop_frame \
                else []
@@ -1281,16 +1299,15 @@ def load_anno(file_object, annotations):
                         shape['points'].extend(map(float, pair.split(',')))
 
                 if track is not None:
+                    if shape['type'] == 'skeleton':
+                        skeleton_shape = copy(shape)
+                        shape['elements'] = []
+                        for elem in skeleton_shape['elements']:
+                            if elem['keyframe']:
+                                shape['elements'].append(elem)
+
                     if shape['keyframe']:
                         track.shapes.append(annotations.TrackedShape(**shape))
-                    elif shape['type'] == 'skeleton':
-                        skeleton_shape = copy(shape)
-                        skeleton_shape['elements'] = []
-                        for elem in shape['elements']:
-                            if elem['keyframe']:
-                                skeleton_shape['elements'].append(elem)
-                        if len(skeleton_shape['elements']):
-                            track.shapes.append(annotations.TrackedShape(**skeleton_shape))
                 else:
                     annotations.add_shape(annotations.LabeledShape(**shape))
                 shape = None
