@@ -556,10 +556,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 }
             }
 
-            if (activatedStateID !== result.state.clientID || (
-                typeof event.detail.activatedElementID !== 'undefined' &&
-                activatedElementID !== event.detail.activatedElementID
-            )) {
+            const newActivatedElement = event.detail.activatedElementID || null;
+            if (activatedStateID !== result.state.clientID || activatedElementID !== newActivatedElement) {
                 onActivateObject(result.state.clientID, event.detail.activatedElementID || null);
             }
         }
