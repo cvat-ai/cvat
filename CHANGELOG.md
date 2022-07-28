@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Python SDK package (`cvat-sdk`)
 - Previews for jobs
 - Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
+- OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
 - Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
 
 ### Changed
