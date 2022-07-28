@@ -40,6 +40,7 @@ interface StateToProps {
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
+    activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
@@ -49,7 +50,7 @@ interface StateToProps {
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
-    activateObject: (activatedStateID: number | null) => void;
+    activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     removeObject: (objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
@@ -61,6 +62,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             annotations: {
                 activatedStateID,
+                activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { attributes: jobAttributes, instance: jobInstance, labels },
@@ -89,6 +91,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         jobInstance,
         frameNumber,
         activated: activatedStateID === clientID,
+        activatedElementID,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
@@ -104,8 +107,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateState(state: any): void {
             dispatch(updateAnnotationsAsync([state]));
         },
-        activateObject(activatedStateID: number | null): void {
-            dispatch(activateObjectAction(activatedStateID, null, null));
+        activateObject(activatedStateID: number | null, activatedElementID: number | null): void {
+            dispatch(activateObjectAction(activatedStateID, activatedElementID, null));
         },
         removeObject(objectState: any): void {
             dispatch(removeObjectAction(objectState, false));
@@ -207,13 +210,16 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     };
 
-    private activate = (): void => {
+    private activate = (activeElementID?: number): void => {
         const {
             objectState, ready, activeControl, activateObject, canvasInstance,
         } = this.props;
 
         if (ready && activeControl === ActiveControl.CURSOR) {
-            activateObject(objectState.clientID);
+            activateObject(
+                objectState.clientID,
+                (Number.isInteger(activeElementID) ? activeElementID : null) as number | null,
+            );
             if (canvasInstance instanceof Canvas3d) {
                 canvasInstance.activate(objectState.clientID);
             }
@@ -305,6 +311,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             normalizedKeyMap,
             readonly,
             jobInstance,
+            activatedElementID,
         } = this.props;
 
         return (
@@ -312,6 +319,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 jobInstance={jobInstance}
                 readonly={readonly}
                 activated={activated}
+                activatedElementID={activatedElementID}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
                 clientID={objectState.clientID}

@@ -435,3 +435,7 @@
         border-bottom: 1px solid $object-item-border-color;
     }
 }
+
+.cvat-objects-sidebar-state-item-elements.cvat-objects-sidebar-state-active-element {
+    border: 2px dashed black;
+}
