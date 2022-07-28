@@ -10,7 +10,7 @@ import { CombinedState, ShapeType, ObjectType } from 'reducers';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
-import { Label } from 'components/labels-editor/common';
+import { Label } from 'cvat-core-wrapper';
 
 interface OwnProps {
     shapeType: ShapeType;
@@ -102,7 +102,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             return ['any', shapeType].includes(label.type);
         });
 
-        const defaultLabelID = this.satisfiedLabels.length ? this.satisfiedLabels[0].id : null;
+        const defaultLabelID = this.satisfiedLabels.length ? this.satisfiedLabels[0].id as number : null;
         const defaultRectDrawingMethod = RectDrawingMethod.CLASSIC;
         const defaultCuboidDrawingMethod = CuboidDrawingMethod.CLASSIC;
         this.state = {
@@ -178,9 +178,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangeLabel = (value: Label): void => {
-        this.setState({
-            selectedLabelID: value.id,
-        });
+        this.setState({ selectedLabelID: value.id as number });
     };
 
     public render(): JSX.Element {

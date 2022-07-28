@@ -169,7 +169,7 @@ class TaskData(InstanceLabelData):
     LabeledShape = namedtuple(
         'LabeledShape', 'type, frame, label, points, occluded, attributes, source, elements, rotation, group, z_order')
     LabeledSkeleton = namedtuple(
-        'LabeledSkeleton', 'type, frame, label, points, occluded, outside, attributes')
+        'LabeledSkeleton', 'type, frame, label, points, occluded, outside, attributes, shape_id')
     LabeledShape.__new__.__defaults__ = (0, 0, 0)
     TrackedShape = namedtuple(
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, elements, rotation, source, group, z_order, label, track_id')
@@ -352,7 +352,7 @@ class TaskData(InstanceLabelData):
             elements=self._export_tracked_skeletons(shape.get("elements", []), shape["id"])
         )
 
-    def _export_labeled_skeletons(self, shapes):
+    def _export_labeled_skeletons(self, shapes, shape_id):
         skeletons = []
         for shape in shapes:
             skeletons.append(TaskData.LabeledSkeleton(
@@ -362,6 +362,7 @@ class TaskData(InstanceLabelData):
                 points=shape["points"],
                 occluded=shape["occluded"],
                 outside=shape["outside"],
+                shape_id=shape_id,
                 attributes=self._export_attributes(shape["attributes"]),
             ))
         return skeletons
@@ -378,7 +379,7 @@ class TaskData(InstanceLabelData):
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_labeled_skeletons(shape.get("elements", []))
+            elements=self._export_labeled_skeletons(shape.get("elements", []), shape["id"])
         )
 
     def _export_shape(self, shape):

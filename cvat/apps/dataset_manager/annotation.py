@@ -93,7 +93,7 @@ class AnnotationIR:
             return shapes[drop_count:]
 
         track = deepcopy(track_)
-        segment_shapes = filter_track_shapes(track['shapes'])
+        segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
         if len(segment_shapes) < len(track['shapes']):
             interpolated_shapes = TrackManager.get_interpolated_shapes(
@@ -785,12 +785,6 @@ class TrackManager(ObjectManager):
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
-            if shape["type"] == str(ShapeType.SKELETON):
-                for elem in shape["elements"]:
-                    if not elem["keyframe"]:
-                        shape["keyframe"] = False
-                        break
-
             shapes.append(shape)
             curr_frame = shape["frame"]
             prev_shape = shape

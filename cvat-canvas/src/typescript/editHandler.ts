@@ -29,6 +29,7 @@ export class EditHandlerImpl implements EditHandler {
     private controlPointsSize: number;
     private autobordersEnabled: boolean;
     private intelligentCutEnabled: boolean;
+    private outlinedBorders: string;
 
     private setupTrailingPoint(circle: SVG.Circle): void {
         const head = this.editedShape.attr('points').split(' ').slice(0, this.editData.pointID).join(' ');
@@ -113,16 +114,15 @@ export class EditHandlerImpl implements EditHandler {
             });
         }
 
-        const strokeColor = this.editedShape.attr('stroke');
         (this.editLine as any)
             .addClass('cvat_canvas_shape_drawing')
             .style({
                 'pointer-events': 'none',
                 'fill-opacity': 0,
-                stroke: strokeColor,
             })
             .attr({
                 'data-origin-client-id': this.editData.state.clientID,
+                stroke: this.editedShape.attr('stroke'),
             })
             .on('drawstart drawpoint', (e: CustomEvent): void => {
                 this.transform(this.geometry);
@@ -366,7 +366,9 @@ export class EditHandlerImpl implements EditHandler {
     }
 
     private initEditing(): void {
-        this.editedShape = this.canvas.select(`#cvat_canvas_shape_${this.editData.state.clientID}`).first().clone();
+        this.editedShape = this.canvas
+            .select(`#cvat_canvas_shape_${this.editData.state.clientID}`).first()
+            .clone().attr('stroke', this.outlinedBorders);
         this.setupPoints(true);
         this.startEdit();
         // draw points for this with selected and start editing till another point is clicked
@@ -389,6 +391,7 @@ export class EditHandlerImpl implements EditHandler {
         this.autobordersEnabled = false;
         this.intelligentCutEnabled = false;
         this.controlPointsSize = consts.BASE_POINT_SIZE;
+        this.outlinedBorders = 'black';
         this.onEditDone = onEditDone;
         this.canvas = canvas;
         this.editData = null;
@@ -419,7 +422,14 @@ export class EditHandlerImpl implements EditHandler {
 
     public configurate(configuration: Configuration): void {
         this.autobordersEnabled = configuration.autoborders;
+        this.outlinedBorders = configuration.outlinedBorders || 'black';
+
+        if (this.editedShape) {
+            this.editedShape.attr('stroke', this.outlinedBorders);
+        }
+
         if (this.editLine) {
+            this.editLine.attr('stroke', this.outlinedBorders);
             if (this.autobordersEnabled) {
                 this.autoborderHandler.autoborder(true, this.editLine, this.editData.state.clientID);
             } else {

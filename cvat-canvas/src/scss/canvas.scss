@@ -126,7 +126,6 @@ polyline.cvat_canvas_shape_splitting {
     @extend .cvat_shape_drawing_opacity;
 
     fill: white;
-    stroke: black;
 }
 
 .cvat_canvas_zoom_selection {
@@ -236,6 +235,12 @@ g.cvat_canvas_shape_occluded {
         fill: lightgray;
         stroke: black;
     }
+}
+
+.cvat_canvas_skeleton_wrapping_rect {
+    // wrapping rect must not apply transform attribute from selectize.js
+    // otherwise it rotated twice, because we apply the same rotation value to parent element (skeleton itself)
+    transform: none !important;
 }
 
 .cvat_canvas_pixelized {

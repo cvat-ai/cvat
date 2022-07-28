@@ -2011,7 +2011,7 @@ export class SkeletonShape extends Shape {
         let xbr = 0;
         let ybr = 0;
 
-        const MARGIN = 10;
+        const MARGIN = 20;
         for (let i = 0; i < points.length; i += 2) {
             const x1 = points[i];
             const y1 = points[i + 1];
@@ -2023,10 +2023,10 @@ export class SkeletonShape extends Shape {
             distances.push(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2));
         }
 
-        xtl -= MARGIN / 2;
-        xbr += MARGIN / 2;
-        ytl -= MARGIN / 2;
-        ybr += MARGIN / 2;
+        xtl -= MARGIN;
+        xbr += MARGIN;
+        ytl -= MARGIN;
+        ybr += MARGIN;
 
         if (!(x >= xtl && x <= xbr && y >= ytl && y <= ybr)) {
             // Cursor is outside of a box
@@ -3095,8 +3095,8 @@ export class SkeletonTrack extends Track {
             result[keyframe] = {
                 id: this.shapes[keyframe]?.serverID,
                 type: this.shapeType,
-                occluded: shapeElements.every((el) => el.occluded),
-                outside: shapeElements.every((el) => el.outside),
+                occluded: !!shapeElements.length && shapeElements.every((el) => el.occluded),
+                outside: !!shapeElements.length && shapeElements.every((el) => el.outside),
                 group: skeletonShape.group.id,
                 source: skeletonShape.source,
                 z_order: skeletonShape.zOrder,

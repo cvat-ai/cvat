@@ -114,15 +114,21 @@ export default class ObjectState {
      */
     constructor(serialized: SerializedData) {
         if (!isEnum.call(ObjectType, serialized.objectType)) {
-            throw new Error(`ObjectState must be provided its objectType, got wrong value ${serialized.objectType}`);
+            throw new ArgumentError(
+                `ObjectState must be provided its objectType, got wrong value ${serialized.objectType}`,
+            );
         }
 
         if (!(serialized.label instanceof Label)) {
-            throw new Error(`ObjectState must be provided correct Label, got wrong value ${serialized.label}`);
+            throw new ArgumentError(
+                `ObjectState must be provided correct Label, got wrong value ${serialized.label}`,
+            );
         }
 
         if (!Number.isInteger(serialized.frame)) {
-            throw new Error(`ObjectState must be provided correct frame, got wrong value ${serialized.frame}`);
+            throw new ArgumentError(
+                `ObjectState must be provided correct frame, got wrong value ${serialized.frame}`,
+            );
         }
 
         const updateFlags: UpdateFlags = {} as UpdateFlags;
