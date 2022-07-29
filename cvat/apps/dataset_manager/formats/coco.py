@@ -43,7 +43,7 @@ def _import(src_file, instance_data, load_data_callback=None):
     def remove_extra_annotations(dataset):
         for item in dataset:
             annotations = [ann for ann in item.annotations
-                if ann.type == AnnotationType.points]
+                if ann.type != AnnotationType.bbox]
             item.annotations = annotations
 
     if zipfile.is_zipfile(src_file):
