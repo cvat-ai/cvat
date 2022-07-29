@@ -21,6 +21,7 @@ import {
 } from 'reducers';
 import ObjectStateItemComponent, { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { shift } from 'utils/math';
+import { Label } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
@@ -330,7 +331,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attributes={attributes}
                 elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}
-                labels={labels}
+                labels={labels.filter((label: Label) => [objectState.shapeType, 'any'].includes(label.type))}
                 colorBy={colorBy}
                 activate={this.activate}
                 remove={this.remove}
