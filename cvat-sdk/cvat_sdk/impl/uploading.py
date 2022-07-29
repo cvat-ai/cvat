@@ -10,6 +10,7 @@ from contextlib import ExitStack, closing
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import requests
+import urllib3
 
 from cvat_sdk import ApiClient
 from cvat_sdk.rest import RESTClientObject
@@ -78,27 +79,37 @@ class Uploader:
 
     def upload_file(
         self,
-        url,
-        filename,
+        url: str,
+        filename: str,
         *,
         meta: Dict[str, Any],
         query_params: Dict[str, Any] = None,
         fields: Optional[Dict[str, Any]] = None,
-        pbar=None,
+        pbar: Optional[ProgressReporter] = None,
         logger=None,
-    ):
+    ) -> urllib3.HTTPResponse:
         """
         Annotation uploads:
         - have "filename" meta field in chunks
-        - have "filename" and "format" query params in the Upload-Finished request
+        - have "filename" and "format" query params in the "Upload-Finished" request
+
 
         Data (image, video, ...) uploads:
         - have "filename" meta field in chunks
-        - have a number of fields in the Upload-Finished request
+        - have a number of fields in the "Upload-Finished" request
 
-        TODO: Backup uploads
+
+        Backup uploads:
+        - have "filename" meta field in chunks
+        - have "filename" query params in the "Upload-Finished" request
+
+        OR
+        - have "task_file" field in the POST request data (a file)
 
         meta['filename'] is always required. It must be set to the "visible" file name or path
+
+        Returns:
+            response of the last request (the "Upload-Finished" one)
         """
         # "CVAT-TUS" protocol has 2 extra messages
         # query params are used only in the extra messages
@@ -225,12 +236,18 @@ class Uploader:
                 This is different from the instance attribute 'offset' because this makes an
                 http request to the tus server to retrieve the offset.
                 """
-                resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
-                offset = resp.headers.get("upload-offset")
-                if offset is None:
-                    msg = "Attempt to retrieve offset fails with status {}".format(resp.status_code)
-                    raise tus_uploader.TusCommunicationError(msg, resp.status_code, resp.content)
-                return int(offset)
+                # FIXME: traefik changes HEAD to GET for some reason, and it breaks the protocol
+
+                # Assume we are starting from scratch. This effectively disallows us to resume
+                # old file uploading
+                return 0
+
+                # resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
+                # offset = resp.headers.get("upload-offset")
+                # if offset is None:
+                #     msg = "Attempt to retrieve offset fails with status {}".format(resp.status_code)
+                #     raise tus_uploader.TusCommunicationError(msg, resp.status_code, resp.content)
+                # return int(offset)
 
         # Add headers required by CVAT server
         headers = {}

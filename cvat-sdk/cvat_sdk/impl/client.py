@@ -182,12 +182,11 @@ class CvatClient:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
-        url = self.api.tasks_backup()
-
+        params = {"filename": osp.basename(filename)}
+        url = self._api_map.make_endpoint_url(self.api.tasks_api.create_backup_endpoint.path)
         uploader = Uploader(self)
-        response = uploader.upload_file(
-            url, filename, pbar=pbar, meta={"filename": osp.basename(filename)}
-        )
+        response = uploader.upload_file(url, filename, meta=params, query_params=params, pbar=pbar)
+
         rq_id = json.loads(response.data)["rq_id"]
 
         # check task status
