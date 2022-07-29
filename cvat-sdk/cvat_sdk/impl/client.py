@@ -185,7 +185,9 @@ class CvatClient:
         params = {"filename": osp.basename(filename)}
         url = self._api_map.make_endpoint_url(self.api.tasks_api.create_backup_endpoint.path)
         uploader = Uploader(self)
-        response = uploader.upload_file(url, filename, meta=params, query_params=params, pbar=pbar)
+        response = uploader.upload_file(
+            url, filename, meta=params, query_params=params, pbar=pbar, logger=self.logger.debug
+        )
 
         rq_id = json.loads(response.data)["rq_id"]
 
