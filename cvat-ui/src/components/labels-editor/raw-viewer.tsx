@@ -16,9 +16,13 @@ import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { validateParsedLabel, idGenerator, LabelOptColor } from './common';
 
+function replaceTraillingCommas(value: string): string {
+    return value.replace(/,{1}[\s]*}/g, '}');
+}
+
 function validateLabels(_: RuleObject, value: string): Promise<void> {
     try {
-        const parsed = JSON.parse(value);
+        const parsed = JSON.parse(replaceTraillingCommas(value));
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
@@ -51,6 +55,7 @@ function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
         (label: LabelOptColor): LabelOptColor => ({
             ...label,
             id: (label.id as number) < 0 ? undefined : label.id,
+            svg: label.svg ? label.svg.replaceAll('"', '&quot;') : undefined,
             attributes: label.attributes.map(
                 (attribute: any): RawAttribute => ({
                     ...attribute,
@@ -80,11 +85,16 @@ export default class RawViewer extends React.PureComponent<Props> {
 
     private handleSubmit = (values: Store): void => {
         const { onSubmit, labels } = this.props;
-        const parsed = JSON.parse(values.labels) as RawLabel[];
+        const parsed = JSON.parse(
+            replaceTraillingCommas(values.labels),
+        ) as RawLabel[];
 
         const labelIDs: number[] = [];
         const attrIDs: number[] = [];
         for (const label of parsed) {
+            if (label.svg) {
+                label.svg = label.svg.replaceAll('&quot;', '"');
+            }
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
                 labelIDs.push(label.id);
