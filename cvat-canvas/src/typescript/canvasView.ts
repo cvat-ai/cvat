@@ -2653,7 +2653,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 const mouseover = (e: MouseEvent): void => {
                     const locked = this.drawnStates[state.clientID].lock;
-                    if (!locked) {
+                    if (!locked && !e.ctrlKey) {
                         circle.attr({
                             'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
                         });
@@ -2685,14 +2685,29 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     });
                 };
 
+                const click = (e: MouseEvent): void => {
+                    e.stopPropagation();
+                    this.canvas.dispatchEvent(
+                        new CustomEvent('canvas.clicked', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                state: element,
+                            },
+                        }),
+                    );
+                };
+
                 circle.on('mouseover', mouseover);
                 circle.on('mouseleave', mouseleave);
                 circle.on('mousemove', mousemove);
+                circle.on('click', click);
                 circle.on('remove', () => {
                     circle.off('remove');
                     circle.off('mouseover', mouseover);
                     circle.off('mouseleave', mouseleave);
                     circle.off('mousemove', mousemove);
+                    circle.off('click', click);
                 });
 
                 svgElements[element.clientID] = circle;

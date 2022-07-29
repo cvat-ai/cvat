@@ -331,7 +331,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attributes={attributes}
                 elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}
-                labels={labels.filter((label: Label) => [objectState.shapeType, 'any'].includes(label.type))}
+                labels={labels.filter((label: Label) => (
+                    [objectState.shapeType || objectState.objectType, 'any'].includes(label.type)
+                ))}
                 colorBy={colorBy}
                 activate={this.activate}
                 remove={this.remove}

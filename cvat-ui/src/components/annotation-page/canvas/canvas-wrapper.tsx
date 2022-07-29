@@ -519,8 +519,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasShapeClicked = (e: any): void => {
-        const { clientID } = e.detail.state;
-        const sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
+        const { clientID, parentID } = e.detail.state;
+        let sidebarItem = null;
+        if (Number.isInteger(parentID)) {
+            sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-element-${clientID}`);
+        } else {
+            sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
+        }
+
         if (sidebarItem) {
             sidebarItem.scrollIntoView();
         }

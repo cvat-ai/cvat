@@ -167,6 +167,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
                                     return (
                                         <div
+                                            id={`cvat-objects-sidebar-state-item-element-${element.clientID}`}
                                             onMouseEnter={() => activate(element.clientID)}
                                             onMouseLeave={activateState}
                                             key={element.clientID}
