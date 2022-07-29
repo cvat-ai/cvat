@@ -4,18 +4,15 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os.path as osp
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
-from cvat_sdk import models, CvatClient
 from cvat_sdk.apis import TasksApi
-from cvat_sdk.impl.types import ResourceType
 
 import pytest
 from deepdiff import DeepDiff
 
-from .utils.config import make_api_client, BASE_URL, USER_PASS
+from .utils.config import make_api_client
 from .utils.helpers import generate_image_files
 
 
