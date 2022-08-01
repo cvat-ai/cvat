@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Dict, List, Sequence, Tuple
 
 import tqdm
@@ -24,21 +25,14 @@ class CLI:
 
         self.client.login(credentials)
 
-    def tasks_data(
-        self,
-        task_id: int,
-        *,
-        resource_type: ResourceType,
-        resources: Sequence[str],
-        **kwargs,
-    ) -> None:
-        return self.client.retrieve_task(task_id).upload_data(
-            resource_type=resource_type, resources=resources, pbar=self._make_pbar(), params=kwargs
-        )
-
-    def tasks_list(self, *, use_json_output: bool = True, **kwargs):
+    def tasks_list(self, *, use_json_output: bool = False, **kwargs):
         """List all tasks in either basic or JSON format."""
-        return self.client.list_tasks(return_json=use_json_output, **kwargs)
+        results = self.client.list_tasks(return_json=use_json_output, **kwargs)
+        if use_json_output:
+            print(json.dumps(json.loads(results), indent=2))
+        else:
+            for r in results:
+                print(r.id)
 
     def tasks_create(
         self,
@@ -53,14 +47,11 @@ class CLI:
         dataset_repository_url: str = "",
         lfs: bool = False,
         **kwargs,
-    ) -> int:
+    ) -> None:
         """
-        Create a new task with the given name and labels JSON and
-        add the files to it.
-
-        Returns: id of the created task
+        Create a new task with the given name and labels JSON and add the files to it.
         """
-        return self.client.create_task(
+        task = self.client.create_task(
             spec=models.TaskWriteRequest(name=name, labels=labels, **kwargs),
             resource_type=resource_type,
             resources=resources,
@@ -72,6 +63,7 @@ class CLI:
             use_lfs=lfs,
             pbar=self._make_pbar(),
         )
+        print("Created task id", task.id)
 
     def tasks_delete(self, task_ids: Sequence[int]) -> None:
         """Delete a list of tasks, ignoring those which don't exist."""
@@ -85,10 +77,15 @@ class CLI:
         outdir: str = "",
         quality: str = "original",
     ) -> None:
-        """Download the requested frame numbers for a task and save images as
-        task_<ID>_frame_<FRAME>.jpg."""
+        """
+        Download the requested frame numbers for a task and save images as
+        task_<ID>_frame_<FRAME>.jpg.
+        """
         self.client.retrieve_task(task_id=task_id).download_frames(
-            frame_ids=frame_ids, outdir=outdir, quality=quality
+            frame_ids=frame_ids,
+            outdir=outdir,
+            quality=quality,
+            filename_pattern="task_{task_id}_frame_{frame_id:06d}{frame_ext}",
         )
 
     def tasks_dump(
@@ -103,7 +100,7 @@ class CLI:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
-        return self.client.retrieve_task(task_id=task_id).export_dataset(
+        self.client.retrieve_task(task_id=task_id).export_dataset(
             format_name=fileformat,
             filename=filename,
             pbar=self._make_pbar(),
@@ -116,7 +113,7 @@ class CLI:
     ) -> None:
         """Upload annotations for a task in the specified format
         (e.g. 'YOLO ZIP 1.0')."""
-        return self.client.retrieve_task(task_id=task_id).import_annotations(
+        self.client.retrieve_task(task_id=task_id).import_annotations(
             format_name=fileformat,
             filename=filename,
             status_check_period=status_check_period,
@@ -125,19 +122,15 @@ class CLI:
 
     def tasks_export(self, task_id: str, filename: str, *, status_check_period: int = 2) -> None:
         """Download a task backup"""
-        return self.client.retrieve_task(task_id=task_id).download_backup(
+        self.client.retrieve_task(task_id=task_id).download_backup(
             filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
         )
 
     def tasks_import(self, filename: str, *, status_check_period: int = 2) -> None:
         """Import a task from a backup file"""
-
-        return self.client.create_task_from_backup(
+        self.client.create_task_from_backup(
             filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
         )
-
-    def login(self, credentials: Tuple[str, str]) -> None:
-        self.client.login(credentials=credentials)
 
     def _make_pbar(self, title: str = None) -> TqdmProgressReporter:
         return TqdmProgressReporter(

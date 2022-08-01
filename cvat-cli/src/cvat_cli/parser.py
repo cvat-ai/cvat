@@ -8,6 +8,7 @@ import getpass
 import json
 import logging
 import os
+from distutils.util import strtobool
 
 from cvat_sdk.types import ResourceType
 
@@ -29,6 +30,13 @@ def parse_label_arg(s):
             return json.load(fp)
     else:
         return json.loads(s)
+
+
+def parse_resource_type(s: str) -> ResourceType:
+    try:
+        return ResourceType[s.upper()]
+    except KeyError:
+        return s
 
 
 def make_cmdline_parser() -> argparse.ArgumentParser:
@@ -90,7 +98,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         "resource_type",
         default="local",
         choices=list(ResourceType),
-        type=ResourceType.argparse,
+        type=parse_resource_type,
         help="type of files specified",
     )
     task_create_parser.add_argument("resources", type=str, help="list of paths or URLs", nargs="+")
@@ -113,7 +121,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         "--completion_verification_period",
         dest="status_check_period",
         default=20,
-        type=int,
+        type=float,
         help="""number of seconds to wait until checking
                 if data compression finished (necessary before uploading annotations)""",
     )
@@ -248,6 +256,20 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         default="CVAT for images 1.1",
         help="annotation format (default: %(default)s)",
     )
+    dump_parser.add_argument(
+        "--completion_verification_period",
+        dest="status_check_period",
+        default=3,
+        type=float,
+        help="number of seconds to wait until checking if dataset building finished",
+    )
+    dump_parser.add_argument(
+        "--with-images",
+        type=strtobool,
+        default=False,
+        dest="include_images",
+        help="Whether to include images or not (default: %(default)s)",
+    )
 
     #######################################################################
     # Upload Annotations
@@ -271,11 +293,42 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     export_task_parser = task_subparser.add_parser("export", description="Export a CVAT task.")
     export_task_parser.add_argument("task_id", type=int, help="task ID")
     export_task_parser.add_argument("filename", type=str, help="output file")
+    export_task_parser.add_argument(
+        "--completion_verification_period",
+        dest="status_check_period",
+        default=3,
+        type=float,
+        help="time interval between checks if archive building has been finished, in seconds",
+    )
 
     #######################################################################
     # Import task
     #######################################################################
     import_task_parser = task_subparser.add_parser("import", description="Import a CVAT task.")
     import_task_parser.add_argument("filename", type=str, help="upload file")
+    import_task_parser.add_argument(
+        "--completion_verification_period",
+        dest="status_check_period",
+        default=3,
+        type=float,
+        help="time interval between checks if archive proessing was finished, in seconds",
+    )
 
     return parser
+
+
+def get_action_args(
+    parser: argparse.ArgumentParser, parsed_args: argparse.Namespace
+) -> argparse.Namespace:
+    # FIXME: a hacky way to remove unnecessary args
+    action_args = dict(vars(parsed_args))
+
+    for action in parser._actions:
+        action_args.pop(action.dest, None)
+
+    # remove default args
+    for k, v in dict(action_args).items():
+        if v is None:
+            action_args.pop(k, None)
+
+    return argparse.Namespace(**action_args)

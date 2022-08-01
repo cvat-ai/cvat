@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import mimetypes
+import os
 import os.path as osp
 from abc import ABC, abstractmethod
 from io import BytesIO
@@ -198,6 +199,8 @@ class TaskProxy(ModelProxy, ITaskRead):
         """
         # TODO: add arg descriptions in schema
         task_id = self.id
+
+        os.makedirs(outdir, exist_ok=True)
 
         for frame_id in frame_ids:
             frame_bytes = self.retrieve_frame(frame_id, quality=quality)

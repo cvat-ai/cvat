@@ -141,12 +141,14 @@ class Client:
     ) -> Union[List[TaskProxy], List[Dict[str, Any]]]:
         """List all tasks in either basic or JSON format."""
 
-        return list(
-            TaskProxy(self, v)
-            for v in get_paginated_collection(
-                endpoint=self.api.tasks_api.list_endpoint, return_json=return_json, **kwargs
-            )
+        results = get_paginated_collection(
+            endpoint=self.api.tasks_api.list_endpoint, return_json=return_json, **kwargs
         )
+
+        if return_json:
+            return json.dumps(results)
+
+        return [TaskProxy(self, v) for v in results]
 
     def retrieve_task(self, task_id: int) -> TaskProxy:
         (task, _) = self.api.tasks_api.retrieve(task_id)

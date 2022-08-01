@@ -18,7 +18,7 @@ from cvat_sdk import Client
 from cvat_sdk.impl.tasks import TaskProxy
 from cvat_sdk.types import ResourceType
 
-from .util import make_pbar
+from .util import generate_coco_json, make_pbar
 
 
 @pytest.mark.usefixtures("changedb")
@@ -28,13 +28,13 @@ class TestTaskUsecases:
         self,
         tmp_path: Path,
         fxt_logger: Tuple[Logger, io.StringIO],
-        fxt_cvat_client: Client,
+        fxt_client: Client,
         fxt_stdout: io.StringIO,
         admin_user: str,
     ):
         self.tmp_path = tmp_path
         _, self.logger_stream = fxt_logger
-        self.client = fxt_cvat_client
+        self.client = fxt_client
         self.stdout = fxt_stdout
         self.user = admin_user
         self.client.login((self.user, USER_PASS))
@@ -58,7 +58,7 @@ class TestTaskUsecases:
         img_filename = fxt_image_file
         img_size = Image.open(img_filename).size
         ann_filename = self.tmp_path / "coco.json"
-        self._generate_coco_json(ann_filename, img_info=(img_filename, *img_size))
+        generate_coco_json(ann_filename, img_info=(img_filename, *img_size))
 
         yield ann_filename
 
@@ -244,67 +244,3 @@ class TestTaskUsecases:
         assert "exported sucessfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
-
-    @classmethod
-    def _generate_coco_json(cls, filename, img_info: Tuple[str, int, int]):
-        image_filename, image_width, image_height = img_info
-
-        content = cls._generate_coco_anno(
-            osp.basename(image_filename),
-            image_width=image_width,
-            image_height=image_height,
-        )
-        with open(filename, "w") as coco:
-            coco.write(content)
-
-    @staticmethod
-    def _generate_coco_anno(image_path, image_width, image_height):
-        return """{
-        "categories": [
-            {
-            "id": 1,
-            "name": "car",
-            "supercategory": ""
-            },
-            {
-            "id": 2,
-            "name": "person",
-            "supercategory": ""
-            }
-        ],
-        "images": [
-            {
-            "coco_url": "",
-            "date_captured": "",
-            "flickr_url": "",
-            "license": 0,
-            "id": 0,
-            "file_name": "%(image_path)s",
-            "height": %(image_height)d,
-            "width": %(image_width)d
-            }
-        ],
-        "annotations": [
-            {
-            "category_id": 1,
-            "id": 1,
-            "image_id": 0,
-            "iscrowd": 0,
-            "segmentation": [
-                []
-            ],
-            "area": 17702.0,
-            "bbox": [
-                574.0,
-                407.0,
-                167.0,
-                106.0
-            ]
-            }
-        ]
-        }
-        """ % {
-            "image_path": image_path,
-            "image_height": image_height,
-            "image_width": image_width,
-        }

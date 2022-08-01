@@ -4,8 +4,6 @@
 
 import io
 import logging
-from contextlib import redirect_stdout
-from time import time
 
 import pytest
 from rest_api.utils.config import BASE_URL
@@ -14,13 +12,16 @@ from cvat_sdk import Client
 
 
 @pytest.fixture
-def fxt_stdout():
-    try:
-        _stdout_handler = redirect_stdout(io.StringIO())
-        mock_stdout = _stdout_handler.__enter__()
-        yield mock_stdout
-    finally:
-        _stdout_handler.__exit__(None, None, None)
+def fxt_stdout(capsys):
+    class IoProxy(io.IOBase):
+        def __init__(self, capsys):
+            self.capsys = capsys
+
+        def getvalue(self) -> str:
+            capture = self.capsys.readouterr()
+            return capture.out
+
+    yield IoProxy(capsys)
 
 
 @pytest.fixture
@@ -33,7 +34,7 @@ def fxt_logger():
 
 
 @pytest.fixture
-def fxt_cvat_client(fxt_logger):
+def fxt_client(fxt_logger):
     try:
         logger, _ = fxt_logger
 
@@ -46,11 +47,3 @@ def fxt_cvat_client(fxt_logger):
         yield client
     finally:
         client.close()
-
-
-@pytest.fixture
-def fxt_measure_time():
-    t = time()
-    yield
-    t = time() - t
-    print(t)
