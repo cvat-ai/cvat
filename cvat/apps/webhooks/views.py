@@ -16,15 +16,32 @@ from rest_framework import viewsets
         summary="Method returns a paginated list of webhook according to query parameters",
         responses={"200": WebhookReadSerializer(many=True)},
     ),
+    update=extend_schema(
+        summary="Method updates a webhook by id",
+        responses={"200": WebhookWriteSerializer},
+    ),
+    partial_update=extend_schema(
+        summary="Methods does a partial update of chosen fields in a webhook",
+        responses={"200": WebhookWriteSerializer},
+    ),
     create=extend_schema(
-        summary="Method creates an webhook", responses={"201": WebhookWriteSerializer}
+        summary="Method creates a webhook", responses={"201": WebhookWriteSerializer}
+    ),
+    destroy=extend_schema(
+        summary="Method deletes a webhook",
+        responses={"204": OpenApiResponse(description="The webhook has been deleted")},
     ),
 )
 class WebhookViewSet(viewsets.ModelViewSet):
     queryset = Webhook.objects.all()
     ordering = "-id"
-    http_method_names = ["get", "post"]
-    # TO-DO: setting search, filter fields etc
+    http_method_names = ["get", "post", "delete", "patch", "put"]
+
+    search_fields = ("url", "owner", "type")
+    filter_fields = list(search_fields) + ["id"]
+    ordering_fields = filter_fields
+    lookup_fields = {"owner": "owner__username"}
+    iam_organization_field = "organization"
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
