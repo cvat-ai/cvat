@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,10 +7,9 @@ import logging
 import sys
 from http.client import HTTPConnection
 
-import requests
+from cvat_cli import CLI, make_cmdline_parser
 
-from cvat_cli.core.core import CLI, CVAT_API_V2
-from cvat_cli.core.definition import parser
+from cvat_sdk import exceptions, make_client
 
 log = logging.getLogger(__name__)
 
@@ -32,24 +32,22 @@ def main():
         "create": CLI.tasks_create,
         "delete": CLI.tasks_delete,
         "ls": CLI.tasks_list,
-        "frames": CLI.tasks_frame,
+        "frames": CLI.tasks_frames,
         "dump": CLI.tasks_dump,
         "upload": CLI.tasks_upload,
         "export": CLI.tasks_export,
         "import": CLI.tasks_import,
     }
-    args = parser.parse_args()
+    args = make_cmdline_parser.parse_args()
     config_log(args.loglevel)
-    with requests.Session() as session:
-        api = CVAT_API_V2("%s:%s" % (args.server_host, args.server_port), args.https)
-        cli = CLI(session, api, args.auth)
+
+    with make_client(args.server_host, port=args.server_port) as client:
+        client.logger = log
+
+        cli = CLI(client=client, credentials=args.auth)
         try:
             actions[args.action](cli, **args.__dict__)
-        except (
-            requests.exceptions.HTTPError,
-            requests.exceptions.ConnectionError,
-            requests.exceptions.RequestException,
-        ) as e:
+        except exceptions.ApiException as e:
             log.critical(e)
 
     return 0

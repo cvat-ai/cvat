@@ -242,3 +242,12 @@ class _CVAT_API_V2:
         if query_params:
             url += "?" + urllib.parse.urlencode(query_params)
         return url
+
+
+def make_client(
+    host: str, *, port: int = 8080, credentials: Optional[Tuple[int, int]] = None
+) -> Client:
+    client = Client(url=f"{host}:{port}")
+    if credentials is not None:
+        client.login(credentials)
+    return client

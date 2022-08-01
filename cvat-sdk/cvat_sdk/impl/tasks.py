@@ -301,3 +301,6 @@ class TaskProxy(ModelProxy, ITaskRead):
 
     def update(self, **kwargs):
         return super().update(**kwargs)
+
+    def __str__(self) -> str:
+        return str(self._model)

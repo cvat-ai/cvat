@@ -1,3 +1,4 @@
+cvat-sdk==2.0
 Pillow>=6.2.0
 requests>=2.20.1
 tuspy==0.2.5

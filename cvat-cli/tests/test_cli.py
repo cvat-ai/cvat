@@ -10,13 +10,12 @@ from contextlib import closing, redirect_stdout
 
 import cvat.apps.engine.log as log
 from cvat.apps.engine.tests.test_rest_api import create_db_users, generate_image_file
+from cvat_cli.core import CLI, CVAT_API_V2, ResourceType
 from datumaro.util.scope import on_exit_do, scoped
 from django.conf import settings
 from PIL import Image
 from rest_framework.test import APITestCase, RequestsClient
 from tqdm import tqdm
-
-from cvat_cli.core import CLI, CVAT_API_V2, ResourceType
 
 
 class TestCLI(APITestCase):
@@ -164,7 +163,7 @@ class TestTaskOperations(APITestCase):
     def test_tasks_frame_original(self):
         path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
 
-        self.cli.tasks_frame(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="original")
+        self.cli.tasks_frames(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="original")
         on_exit_do(os.remove, path)
 
         self.assertTrue(os.path.exists(path))
@@ -173,7 +172,7 @@ class TestTaskOperations(APITestCase):
     def test_tasks_frame(self):
         path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
 
-        self.cli.tasks_frame(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="compressed")
+        self.cli.tasks_frames(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="compressed")
         on_exit_do(os.remove, path)
 
         self.assertTrue(os.path.exists(path))

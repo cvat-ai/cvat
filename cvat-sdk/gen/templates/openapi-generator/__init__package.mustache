@@ -20,4 +20,4 @@ from {{packageName}}.exceptions import ApiException
 __import__('sys').setrecursionlimit({{{.}}})
 {{/recursionLimit}}
 
-from {{packageName}}.impl.client import CvatClient
+from {{packageName}}.impl.client import Client, make_client
