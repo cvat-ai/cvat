@@ -84,11 +84,12 @@ class CLI:
         *,
         outdir: str = "",
         quality: str = "original",
-        **kwargs,
     ) -> None:
         """Download the requested frame numbers for a task and save images as
         task_<ID>_frame_<FRAME>.jpg."""
-        self.client.retrieve_task(task_id=task_id).download_frames(frame_ids=frame_ids)
+        self.client.retrieve_task(task_id=task_id).download_frames(
+            frame_ids=frame_ids, outdir=outdir, quality=quality
+        )
 
     def tasks_dump(
         self,
@@ -96,8 +97,8 @@ class CLI:
         fileformat: str,
         filename: str,
         *,
-        status_check_period=2,
-        include_images=False,
+        status_check_period: int = 2,
+        include_images: bool = False,
     ) -> None:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
