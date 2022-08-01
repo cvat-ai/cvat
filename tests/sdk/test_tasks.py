@@ -14,7 +14,7 @@ from PIL import Image
 from rest_api.utils.config import USER_PASS
 from rest_api.utils.helpers import generate_image_file, generate_image_files
 
-from cvat_sdk.impl.client import Client
+from cvat_sdk import Client
 from cvat_sdk.impl.tasks import TaskProxy
 from cvat_sdk.types import ResourceType
 
@@ -30,13 +30,13 @@ class TestTaskUsecases:
         fxt_logger: Tuple[Logger, io.StringIO],
         fxt_cvat_client: Client,
         fxt_stdout: io.StringIO,
-        users_by_name,
+        admin_user: str,
     ):
         self.tmp_path = tmp_path
         _, self.logger_stream = fxt_logger
         self.client = fxt_cvat_client
         self.stdout = fxt_stdout
-        self.user = next(iter(users_by_name))
+        self.user = admin_user
         self.client.login((self.user, USER_PASS))
 
         yield

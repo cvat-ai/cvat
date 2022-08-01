@@ -4,7 +4,7 @@
 
 from tqdm import tqdm
 
-from cvat_sdk.impl.progress import TqdmProgressReporter
+from cvat_sdk.helpers import TqdmProgressReporter
 
 
 def make_pbar(file, **kwargs):

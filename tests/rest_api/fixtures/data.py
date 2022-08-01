@@ -282,3 +282,10 @@ def filter_tasks_with_shapes(annotations):
 @pytest.fixture(scope='session')
 def tasks_with_shapes(tasks, filter_tasks_with_shapes):
     return filter_tasks_with_shapes(tasks)
+
+@pytest.fixture(scope='session')
+def admin_user(users):
+    for user in users:
+        if user["is_superuser"] and user["is_active"]:
+            return user["username"]
+    raise Exception("Can't find any admin user in the test DB")
