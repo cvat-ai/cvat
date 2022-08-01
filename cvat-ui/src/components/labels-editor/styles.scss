@@ -145,6 +145,16 @@ textarea.ant-input.cvat-raw-labels-viewer {
     position: absolute;
     bottom: 0;
     margin-bottom: $grid-unit-size;
+
+    > button,
+    > span {
+        width: 45%;
+
+        button,
+        .ant-upload {
+            width: 100%;
+        }
+    }
 }
 
 .cvat-skeleton-configurator-shape-buttons {
@@ -155,18 +165,6 @@ textarea.ant-input.cvat-raw-labels-viewer {
             margin-bottom: 8px;
             width: 100%;
             max-width: 180px;
-        }
-    }
-}
-
-.cvat-skeleton-configurator-svg-buttons {
-    > button,
-    > span {
-        width: 45%;
-
-        button,
-        .ant-upload {
-            width: 100%;
         }
     }
 }
