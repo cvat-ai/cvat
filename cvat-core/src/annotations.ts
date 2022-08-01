@@ -17,16 +17,16 @@
     const jobCache = new WeakMap();
     const taskCache = new WeakMap();
 
-    function getCache(sessionType) {
-        if (sessionType === 'task') {
+    function getCache(instanceType) {
+        if (instanceType === 'task') {
             return taskCache;
         }
 
-        if (sessionType === 'job') {
+        if (instanceType === 'job') {
             return jobCache;
         }
 
-        throw new ScriptingError(`Unknown session type was received ${sessionType}`);
+        throw new ScriptingError(`Unknown session type was received ${instanceType}`);
     }
 
     async function getAnnotationsFromServer(annotatableInstance) {
@@ -43,7 +43,7 @@
             for (let i = startFrame; i <= stopFrame; i++) {
                 frameMeta[i] = await annotatableInstance.frames.get(i);
             }
-            frameMeta.deleted_frames = await getDeletedFrames(sessionType, session.id);
+            frameMeta.deleted_frames = await getDeletedFrames(instanceType, annotatableInstance.id);
 
             const history = new AnnotationsHistory();
             const collection = new Collection({
@@ -306,12 +306,12 @@
         return serverProxy.projects.importDataset(annotatableInstance.id, format, file, updateStatusCallback);
     }
 
-    function getHistory(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function getHistory(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).history;
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).history;
         }
 
         throw new DataError(
