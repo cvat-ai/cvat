@@ -4657,7 +4657,7 @@
   "model": "engine.manifest",
   "pk": 2,
   "fields": {
-    "filename": "manifest.jsonl",
+    "filename": "sub/manifest.jsonl",
     "cloud_storage": 2
   }
 },
@@ -4699,7 +4699,7 @@
       "business2"
     ],
     "created_date": "2022-03-17T07:23:59.305Z",
-    "updated_date": "2022-03-17T07:23:59.309Z",
+    "updated_date": "2022-07-13T12:46:45.587Z",
     "credentials": "minio_access_key minio_secret_key",
     "credentials_type": "KEY_SECRET_KEY_PAIR",
     "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
