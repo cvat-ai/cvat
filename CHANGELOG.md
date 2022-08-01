@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.2.0] - Unreleased
 ### Added
-- TDB
+- Add ability to optionally use a Redis password by parametrizing (<https://github.com/openvinotoolkit/cvat/pull/4786>)
 
 ### Changed
 - TDB
