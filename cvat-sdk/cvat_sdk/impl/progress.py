@@ -5,11 +5,8 @@
 
 from __future__ import annotations
 
-import io
 import math
 from typing import Iterable, Optional, Tuple, TypeVar
-
-import tqdm
 
 T = TypeVar("T")
 
@@ -124,51 +121,3 @@ class NullProgressReporter(ProgressReporter):
 
     def split(self, count: int) -> Tuple[ProgressReporter]:
         return (self,) * count
-
-
-class TqdmProgressReporter(ProgressReporter):
-    def __init__(self, instance: tqdm.tqdm) -> None:
-        super().__init__()
-        self.tqdm = instance
-
-    @property
-    def period(self) -> float:
-        return 0
-
-    def start(self, total: int, *, desc: Optional[str] = None):
-        self.tqdm.reset(total)
-        self.tqdm.set_description_str(desc)
-
-    def report_status(self, progress: int):
-        self.tqdm.update(progress - self.tqdm.n)
-
-    def advance(self, delta: int):
-        self.tqdm.update(delta)
-
-
-class StreamWithProgress:
-    def __init__(self, stream: io.RawIOBase, pbar: ProgressReporter, length: Optional[int] = None):
-        self.stream = stream
-        self.pbar = pbar
-
-        if hasattr(stream, "__len__"):
-            length = len(stream)
-
-        self.length = length
-        pbar.start(length)
-
-    def read(self, size=-1):
-        chunk = self.stream.read(size)
-        if chunk is not None:
-            self.pbar.advance(len(chunk))
-        return chunk
-
-    def __len__(self):
-        return self.length
-
-    def seek(self, pos, start=0):
-        self.stream.seek(pos, start)
-        self.pbar.report_status(pos)
-
-    def tell(self):
-        return self.stream.tell()

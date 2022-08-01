@@ -18,8 +18,9 @@ from cvat_sdk.rest import RESTClientObject
 if TYPE_CHECKING:
     from cvat_sdk.impl.client import Client
 
-from cvat_sdk.impl.progress import ProgressReporter, StreamWithProgress
-from cvat_sdk.impl.utils import assert_status
+from cvat_sdk.helpers import StreamWithProgress
+from cvat_sdk.impl.progress import ProgressReporter
+from cvat_sdk.utils import assert_status
 
 MAX_REQUEST_SIZE = 100 * 2**20
 

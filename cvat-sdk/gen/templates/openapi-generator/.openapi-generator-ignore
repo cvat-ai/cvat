@@ -25,6 +25,8 @@
 # For safety
 /config
 /gen
+/helpers.py
+/utils.py
 /types.py
 
 # Don't generate these files
