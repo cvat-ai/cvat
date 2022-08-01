@@ -49,10 +49,10 @@ context('Filtering, sorting jobs.', () => {
             cy.get('.cvat-task-jobs-table')
                 .contains('a', `Job #${$job}`)
                 .parents('.cvat-task-jobs-table-row').within(() => {
-                    cy.get('.cvat-job-item-stage').invoke('text').should('equal', stage);
-                    cy.get('.cvat-job-item-state').invoke('text').should('equal', state);
+                    cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', stage);
+                    cy.get('.cvat-job-item-state').should('have.text', state);
                     cy.get('.cvat-job-item-assignee')
-                        .find('[type="search"]')
+                        .find('input')
                         .invoke('val')
                         .should('equal', assignee);
                 });
@@ -201,7 +201,7 @@ context('Filtering, sorting jobs.', () => {
         it('Sorting jobs by assignee.', () => {
             const sortAssignee = [];
             cy.contains('.cvat-job-item-assignee', 'Assignee').click().trigger('mouseout');
-            cy.get('.cvat-job-item-assignee').find('[type="search"]').each((element) => {
+            cy.get('.cvat-job-item-assignee').find('input').each((element) => {
                 sortAssignee.push(element.val());
             }).then(() => {
                 expect(sortAssignee).to.deep.equal([secondUserName, secondUserName, '']);

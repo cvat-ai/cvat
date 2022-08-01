@@ -2,13 +2,15 @@
   "name": "cvat-data",
   "version": "1.0.2",
   "description": "",
-  "main": "src/js/cvat-data.js",
+  "main": "src/ts/cvat-data.ts",
   "scripts": {
-    "patch": "cd src/js && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
-    "build": "npm run patch; webpack --config ./webpack.config.js",
-    "server": "npm run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+    "patch": "cd src/ts && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
+    "build": "yarn run patch; webpack --config ./webpack.config.js",
+    "server": "yarn run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "yarn run type-check -- --watch"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",
@@ -19,6 +21,6 @@
   "devDependencies": {},
   "dependencies": {
     "async-mutex": "^0.3.2",
-    "jszip": "3.7.1"
+    "jszip": "3.10.0"
   }
 }

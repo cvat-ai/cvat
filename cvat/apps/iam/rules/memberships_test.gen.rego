@@ -10563,11 +10563,11 @@ test_scope_CHANGE_ROLE_context_ORGANIZATION_ownership_NONE_privilege_NONE_member
 
 
 # memberships_test.gen.rego.py
-# # Copyright (C) 2021 Intel Corporation
+# # Copyright (C) 2021-2022 Intel Corporation
 # #
 # # SPDX-License-Identifier: MIT
 #
-# # Copyright (C) 2021 Intel Corporation
+# # Copyright (C) 2021-2022 Intel Corporation
 # #
 # # SPDX-License-Identifier: MIT
 #

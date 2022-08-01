@@ -1,5 +1,5 @@
 <!--
- Copyright (C) 2021 Intel Corporation
+ Copyright (C) 2021-2022 Intel Corporation
 
  SPDX-License-Identifier: MIT
 -->
@@ -19,20 +19,18 @@ the server calling REST API directly (as it done by users).
 
 ## How to run?
 
-1. Execute commands below to run docker containers:
-   ```console
-   export MINIO_ACCESS_KEY="minio_access_key"
-   export MINIO_SECRET_KEY="minio_secret_key"
-   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml up -d --build
-   ```
 1. After that please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
    Generally, you have to install requirements and run the following command from
    the root directory of the cloned CVAT repository:
 
    ```console
-   pip3 install --user -r tests/rest_api/requirements.txt
+   pip install cvat-sdk/
+   pip install -r tests/rest_api/requirements.txt
    pytest tests/rest_api/
    ```
+
+   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
+   to get more information about tests running.
 
 ## How to upgrade testing assets?
 
@@ -69,8 +67,8 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec cvat python manage.py dumpdata --indent 2 > assets/cvat_db/data.json
-docker exec cvat tar -cjv /home/django/data > assets/cvat_db/cvat_data.tar.bz2
+docker exec test_cvat_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes > assets/cvat_db/data.json
+docker exec test_cvat_1 tar -cjv /home/django/data > assets/cvat_db/cvat_data.tar.bz2
 ```
 
 > Note: if you won't be use --indent options or will be use with other value
@@ -90,8 +88,8 @@ python utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat assets/cvat_db/data.json | docker exec -i cvat python manage.py loaddata --format=json -
-cat assets/cvat_db/cvat_data.tar.bz2 | docker exec -i cvat tar --strip 3 -C /home/django/data/ -xj
+cat assets/cvat_db/data.json | docker exec -i test_cvat_1 python manage.py loaddata --format=json -
+cat assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_1 tar --strip 3 -C /home/django/data/ -xj
 ```
 
 ## Assets directory structure
@@ -173,9 +171,9 @@ Assets directory has two parts:
 1. If your test infrastructure has been corrupted and you have errors during db restoring.
    You should to create (or recreate) `cvat` database:
    ```
-   docker exec cvat_db dropdb --if-exists cvat
-   docker exec cvat_db createdb cvat
-   docker exec cvat python manage.py migrate
+   docker exec test_cvat_db_1 dropdb --if-exists cvat
+   docker exec test_cvat_db_1 createdb cvat
+   docker exec test_cvat_1 python manage.py migrate
    ```
 
 1. Perform migrate when some relation does not exists. Example of error message:
@@ -184,7 +182,7 @@ Assets directory has two parts:
    ```
    Solution:
    ```
-   docker exec cvat python manage.py migrate
+   docker exec test_cvat_1 python manage.py migrate
    ```
 
 1. If for some reason you need to recreate cvat database, but using `dropdb`
@@ -196,6 +194,6 @@ Assets directory has two parts:
    In this case you should terminate all existent connections for cvat database,
    you can perform it with command:
    ```
-   docker exec cvat_db psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql
+   docker exec test_cvat_db_1 psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql
    ```
 

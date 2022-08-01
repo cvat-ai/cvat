@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,18 +17,20 @@ interface ConstructorViewerProps {
 }
 
 export default function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
-    const { onCreate } = props;
+    const {
+        onCreate, labels, onUpdate, onDelete,
+    } = props;
     const list = [
         <Button key='create' type='ghost' onClick={onCreate} className='cvat-constructor-viewer-new-item'>
             Add label
             <PlusCircleOutlined />
         </Button>,
     ];
-    for (const label of props.labels) {
+    for (const label of labels) {
         list.push(
             <ConstructorViewerItem
-                onUpdate={props.onUpdate}
-                onDelete={props.onDelete}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
                 label={label}
                 key={label.id}
                 color={label.color}

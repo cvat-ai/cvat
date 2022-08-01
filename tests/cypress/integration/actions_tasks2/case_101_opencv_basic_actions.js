@@ -80,7 +80,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
             cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-control-popover').find('.cvat-opencv-initialization-button').click();
+            cy.get('.cvat-opencv-control-popover').within(() => {
+                cy.contains('OpenCV is loading').should('not.exist');
+            });
             // Intelligent cissors button be visible
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
         });
@@ -174,7 +176,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             cy.get('.cvat-opencv-image-tool').click();
             cy.get('.cvat-opencv-image-tool').should('not.have.class', 'cvat-opencv-image-tool-active');
             cy.get('.cvat-opencv-image-tool').trigger('mouseleave').trigger('mouseout');
-            cy.get('.cvat-tools-control').click();
+            cy.get('.cvat-opencv-control').click();
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
@@ -186,7 +188,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                 .trigger('mouseover')
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }).trigger('keyup');
-            cy.get('.cvat-tools-control').should('have.attr', 'tabindex');
+            cy.get('.cvat-opencv-control').should('have.attr', 'tabindex');
             createOpencvShape.pointsMap.forEach((el) => {
                 cy.get('.cvat-canvas-container').click(el.x + 150, el.y + 50);
             });
@@ -194,16 +196,17 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         });
 
         it('Create a shape with "TrackerMIL". Track it for several frames.', () => {
-            // Track shape and move from 0 to 1 frame to init tracker
-            // We will start testing tracking from 2 frame because it's a bit unstable on inintialization
+            // We will start testing tracking from 2-d frame because it's a bit unstable on inintialization
             cy.createOpenCVTrack(createOpencvTrackerShape);
             cy.goToNextFrame(1);
+            cy.get('.cvat-tracking-notice').should('not.exist');
             cy.get('#cvat_canvas_shape_3')
                 .then((shape) => {
                     const x = Math.round(shape.attr('x'));
                     const y = Math.round(shape.attr('y'));
                     for (let i = 2; i < imagesCount; i++) {
                         cy.goToNextFrame(i);
+                        cy.get('.cvat-tracking-notice').should('not.exist');
                         // In the beginning of this test we created images with text
                         // On each frame text is moved by 5px on x and y axis,
                         // so we expect shape to be close to real text positions

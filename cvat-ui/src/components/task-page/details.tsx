@@ -241,6 +241,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             <UserSelector
                 value={assignee}
                 onSelect={(value: User | null): void => {
+                    if (taskInstance?.assignee?.id === value?.id) return;
                     taskInstance.assignee = value;
                     onTaskUpdate(taskInstance);
                 }}

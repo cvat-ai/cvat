@@ -7,21 +7,21 @@ module.exports = {
     env: {
         node: true,
         browser: true,
-        es6: true,
+        es2020: true,
     },
     parserOptions: {
         sourceType: 'module',
-        ecmaVersion: 2018,
+        parser: '@typescript-eslint/parser',
     },
     ignorePatterns: [
         '.eslintrc.js',
         'lint-staged.config.js',
     ],
-    plugins: ['security', 'no-unsanitized', 'eslint-plugin-header', 'import'],
+    plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'eslint-plugin-header', 'import'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
         'airbnb-base', 'plugin:import/errors', 'plugin:import/warnings',
-        'plugin:import/typescript',
+        'plugin:import/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
     rules: {
         'header/header': [2, 'line', [{
@@ -51,5 +51,21 @@ module.exports = {
         'security/detect-object-injection': 0, // the rule is relevant for user input data on the node.js environment
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
         'import/prefer-default-export': 0, // works incorrect with interfaces
+
+        '@typescript-eslint/no-explicit-any': 0,
+        '@typescript-eslint/indent': ['error', 4],
+        '@typescript-eslint/lines-between-class-members': 0,
+        '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+        '@typescript-eslint/ban-types': [
+            'error',
+            {
+                types: {
+                    '{}': false, // TODO: try to fix with Record<string, unknown>
+                    object: false, // TODO: try to fix with Record<string, unknown>
+                    Function: false, // TODO: try to fix somehow
+                },
+            },
+        ],
     },
 };

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,10 +17,12 @@ interface Props {
 
 export default class BasicConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
+    private inputRef: RefObject<Input>;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
+        this.inputRef = React.createRef<Input>();
     }
 
     public submit(): Promise<void> {
@@ -41,6 +43,12 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
         }
     }
 
+    public focus(): void {
+        if (this.inputRef.current) {
+            this.inputRef.current.focus();
+        }
+    }
+
     public render(): JSX.Element {
         return (
             <Form ref={this.formRef} layout='vertical'>
@@ -55,7 +63,7 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                         },
                     ]}
                 >
-                    <Input />
+                    <Input ref={this.inputRef} />
                 </Form.Item>
             </Form>
         );

@@ -1,7 +1,7 @@
 ---
 title: 'XML annotation format'
 linkTitle: 'XML annotation format'
-weight: 21
+weight: 22
 ---
 
 <!--lint disable heading-style-->

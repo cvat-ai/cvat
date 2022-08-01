@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,6 +14,7 @@ import ObjectsListContainer from 'containers/annotation-page/standard-workspace/
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import CanvasPointContextMenuComponent from 'components/annotation-page/canvas/canvas-point-context-menu';
 import IssueAggregatorComponent from 'components/annotation-page/review/issues-aggregator';
+import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
@@ -25,6 +26,7 @@ export default function StandardWorkspaceComponent(): JSX.Element {
             <CanvasContextMenuContainer />
             <CanvasPointContextMenuComponent />
             <IssueAggregatorComponent />
+            <RemoveConfirmComponent />
         </Layout>
     );
 }

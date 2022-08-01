@@ -7,8 +7,9 @@ from http import HTTPStatus
 from deepdiff import DeepDiff
 from copy import deepcopy
 
-from .utils.config import post_method, patch_method
+from rest_api.utils.config import post_method, patch_method
 
+@pytest.mark.usefixtures('changedb')
 class TestPostIssues:
     def _test_check_response(self, user, data, is_allow, **kwargs):
         response = post_method(user, 'issues', data, **kwargs)
@@ -77,8 +78,7 @@ class TestPostIssues:
         }
 
         self._test_check_response(username, data, is_allow, org_id=org)
-
-
+@pytest.mark.usefixtures('changedb')
 class TestPatchIssues:
     def _test_check_response(self, user, issue_id, data, is_allow, **kwargs):
         response = patch_method(user, f'issues/{issue_id}', data,

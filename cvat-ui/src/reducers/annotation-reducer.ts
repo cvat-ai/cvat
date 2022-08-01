@@ -108,6 +108,10 @@ const defaultState: AnnotationState = {
         objectState: null,
         frames: 50,
     },
+    remove: {
+        objectState: null,
+        force: false,
+    },
     statistics: {
         visible: false,
         collecting: false,
@@ -471,7 +475,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
+        case AnnotationActionTypes.REMEMBER_OBJECT: {
             const { payload } = action;
 
             let { activeControl } = state.canvas;
@@ -724,6 +728,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REMOVE_OBJECT: {
+            const { objectState, force } = action.payload;
+            return {
+                ...state,
+                remove: {
+                    ...state.remove,
+                    objectState,
+                    force,
+                },
+            };
+        }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
             const contextMenuClientID = state.canvas.contextMenu.clientID;
@@ -746,6 +761,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         clientID: objectState.clientID === contextMenuClientID ? null : contextMenuClientID,
                         visible: objectState.clientID === contextMenuClientID ? false : contextMenuVisible,
                     },
+                },
+                remove: {
+                    objectState: null,
+                    force: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.REMOVE_OBJECT_FAILED: {
+            return {
+                ...state,
+                remove: {
+                    objectState: null,
+                    force: false,
                 },
             };
         }
@@ -1221,6 +1249,63 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     navigationBlocked: action.payload.navigationBlocked,
+                },
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME:
+        case AnnotationActionTypes.RESTORE_FRAME: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        fetching: true,
+                    },
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME_FAILED:
+        case AnnotationActionTypes.RESTORE_FRAME_FAILED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        fetching: false,
+                    },
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME_SUCCESS:
+        case AnnotationActionTypes.RESTORE_FRAME_SUCCESS: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        data: action.payload.data,
+                        fetching: false,
+                    },
+                },
+                annotations: {
+                    ...state.annotations,
+                    history: action.payload.history,
+                    states: action.payload.states,
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: true,
                 },
             };
         }

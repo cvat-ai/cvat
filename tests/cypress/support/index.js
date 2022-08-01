@@ -13,13 +13,6 @@ require('./commands_organizations');
 require('@cypress/code-coverage/support');
 require('cypress-real-events/support');
 
-before(() => {
-    if (Cypress.browser.family !== 'chromium') {
-        cy.visit('/');
-    }
-    cy.closeModalUnsupportedPlatform();
-});
-
 // Chrome: ResizeObserver loop limit exceeded
 // Firefox: ResizeObserver loop completed with undelivered notifications
 const resizeObserverLoopErr = 'ResizeObserver loop';

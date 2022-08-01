@@ -169,7 +169,54 @@
                 "--settings",
                 "cvat.settings.testing",
                 "cvat/apps",
-                "utils/cli"
+                "cvat-cli/"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: REST API tests",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "module": "pytest",
+            "args": [
+                "tests/rest_api/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "api client: Postprocess generator output",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/cvat-sdk/gen/postprocess.py",
+            "args": [
+                "--schema", "${workspaceFolder}/cvat-sdk/schema/schema.yml",
+                "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "server: Generate REST API Schema",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "spectacular",
+                "--file",
+                "schema.yml"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",

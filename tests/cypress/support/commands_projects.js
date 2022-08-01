@@ -26,9 +26,9 @@ Cypress.Commands.add(
         if (multiAttrParams) {
             cy.updateAttributes(multiAttrParams);
         }
-        cy.contains('button', 'Done').click();
+        cy.contains('button', 'Continue').click();
         cy.get('.cvat-create-project-content').within(() => {
-            cy.contains('Submit').click();
+            cy.contains('button', 'Submit & Continue').click();
         });
         if (expectedResult === 'success') {
             cy.get('.cvat-notification-create-project-success').should('exist').find('[data-icon="close"]').click();
@@ -140,9 +140,13 @@ Cypress.Commands.add('backupProject', (projectName) => {
 });
 
 Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
-    cy.intercept('POST', '/api/projects/backup?**').as('restoreProject');
+    cy.intercept({ method: /PATCH|POST/, url: /\/api\/projects\/backup.*/ }).as('restoreProject');
     cy.get('.cvat-create-project-dropdown').click();
     cy.get('.cvat-import-project').click().find('input[type=file]').attachFile(archiveWithBackup);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 204);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
     cy.contains('Project has been created succesfully')
@@ -180,7 +184,6 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click().type(user);
-        cy.wait(300);
     });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')

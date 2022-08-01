@@ -74,7 +74,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const fakeCredentialsData = {
         accountName: 'X'.repeat(24),
         sessionToken: 'X'.repeat(300),
-        key: 'X'.repeat(20),
+        key: 'X'.repeat(128),
         secretKey: 'X'.repeat(40),
         keyFile: new File([], 'fakeKey.json'),
     };
@@ -332,7 +332,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={20}
+                            maxLength={128}
                             visibilityToggle={keyVisibility}
                             onChange={() => setKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('key', 'key')}

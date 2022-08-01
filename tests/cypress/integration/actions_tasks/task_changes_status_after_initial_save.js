@@ -50,10 +50,15 @@ context('Delete a label from a task.', () => {
         });
 
         it('Create object, save annotation, state should be "in progress"', () => {
+            cy.intercept('GET', /\/api\/users.*/).as('searchUsers');
             cy.openJob();
             cy.createRectangle(rectangleData);
             cy.saveJob();
             cy.interactMenu('Open the task');
+            cy.wait('@searchUsers');
+            cy.get('.cvat-task-jobs-table-row').each(() => {
+                cy.wait('@searchUsers');
+            });
             cy.reload();
             cy.get('td.cvat-job-item-state').invoke('text').should('equal', 'in progress');
         });

@@ -15,9 +15,10 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # Install Node.js 16
+  # Install Node.js 16 and yarn
   curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
   sudo apt-get install -y nodejs
+  sudo npm install --global yarn
   ```
 
   MacOS 10.15
@@ -50,7 +51,7 @@ description: 'Installing a development environment for different operating syste
 - Install CVAT on your local host:
 
   ```bash
-  git clone https://github.com/openvinotoolkit/cvat
+  git clone https://github.com/cvat-ai/cvat
   cd cvat && mkdir logs keys
   python3 -m venv .env
   . .env/bin/activate
@@ -77,8 +78,30 @@ description: 'Installing a development environment for different operating syste
   >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
   >  git checkout master
   > ```
+  > if you are still facing error `Running setup.py install for av ... error`, you may try more radical variant
+  > ```
+  >  cd "$(brew --repo homebrew/core)"
+  >  git checkout addd616edc9134f057e33694c420f4900be59db8
+  >  brew uninstall ffmpeg --force
+  >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+  >  git checkout master
+  > ```
+  >
+  > If you faced with error `Failed building wheel for h5py`, you may need install `hdf5`
+  > ```
+  > brew install hdf5
+  > export HDF5_DIR="$(brew --prefix hdf5)"
+  > pip install --no-binary=h5py h5py
+  > ```
+  > If you faced with error
+  > `OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']`.
+  > You may fix this using
+  > ```
+  > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
+  > ```
   > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit `cvat/requirements/base.txt`.
   > Change `tensorflow` to `tensorflow-macos`
+  > May need to downgrade version Python to 3.9.* or upgrade version `tensorflow-macos`
 
 - Create a super user for CVAT:
 
@@ -89,7 +112,7 @@ description: 'Installing a development environment for different operating syste
 - Install npm packages for UI (run the following command from CVAT root directory):
 
   ```bash
-  npm ci
+  yarn --frozen-lockfile
   ```
 
   > Note for Mac users
@@ -112,11 +135,11 @@ description: 'Installing a development environment for different operating syste
 - Start npm UI debug server (run the following command from CVAT root directory):
   - If you want to run CVAT in localhost:
     ```sh
-    npm run start:cvat-ui
+    yarn run start:cvat-ui
      ```
   - If you want to access CVAT from outside of your host:
     ```sh
-    CVAT_UI_HOST='<YOUR_HOST_IP>' npm run start:cvat-ui
+    CVAT_UI_HOST='<YOUR_HOST_IP>' yarn run start:cvat-ui
     ```
 - Open a new terminal window.
 - Run VScode from the virtual environment (run the following command from CVAT root directory):
@@ -134,6 +157,7 @@ description: 'Installing a development environment for different operating syste
 
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
+Instructions for running tests locally are available [here](/site/content/en/docs/contributing/running-tests.md).
 
 ## Note for Windows users
 
@@ -153,3 +177,8 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 - You might have to manually start the redis server in wsl before you can start the configuration inside
   Visual Studio Code. You can do this with `sudo service redis-server start`. Alternatively you can also
   use a redis docker image instead of using the redis-server locally.
+
+## Note for Mac users
+
+- You might have to manually start the redis server. You can do this with `redis-server`.
+Alternatively you can also use a redis docker image instead of using the redis-server locally.

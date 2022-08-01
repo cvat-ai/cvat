@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,7 @@ import {
     switchTextFontSize,
     switchTextPosition,
     switchTextContent,
+    switchShowingTagsOnFrame,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -35,6 +36,7 @@ interface StateToProps {
     textFontSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
+    showTagsOnFrame: boolean;
 }
 
 interface DispatchToProps {
@@ -49,6 +51,7 @@ interface DispatchToProps {
     onChangeTextFontSize(fontSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
+    onSwitchShowingTagsOnFrame(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -65,6 +68,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textFontSize,
         textPosition,
         textContent,
+        showTagsOnFrame,
     } = workspace;
 
     return {
@@ -79,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textFontSize,
         textPosition,
         textContent,
+        showTagsOnFrame,
     };
 }
 
@@ -117,6 +122,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onChangeTextContent(textContent: string[]): void {
             const serialized = textContent.join(',');
             dispatch(switchTextContent(serialized));
+        },
+        onSwitchShowingTagsOnFrame(enabled: boolean): void {
+            dispatch(switchShowingTagsOnFrame(enabled));
         },
     };
 }

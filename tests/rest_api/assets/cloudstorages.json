@@ -1,8 +1,30 @@
 {
-  "count": 2,
+  "count": 3,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "created_date": "2022-06-29T12:56:18.257000Z",
+      "credentials_type": "KEY_SECRET_KEY_PAIR",
+      "description": "Bucket for importing and exporting annotations and backups",
+      "display_name": "Import/Export bucket",
+      "id": 3,
+      "manifests": [
+        "manifest.jsonl"
+      ],
+      "organization": 2,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "provider_type": "AWS_S3_BUCKET",
+      "resource": "importexportbucket",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "updated_date": "2022-06-29T12:56:18.264000Z"
+    },
     {
       "created_date": "2022-03-17T07:23:59.305000Z",
       "credentials_type": "KEY_SECRET_KEY_PAIR",

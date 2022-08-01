@@ -42,6 +42,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 newIssuePosition: null,
             };
         }
+        case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
+            return {
+                ...state,
+                newIssuePosition: null,
+            };
+        }
         case ReviewActionTypes.SUBMIT_REVIEW: {
             const { jobId } = action.payload;
             return {

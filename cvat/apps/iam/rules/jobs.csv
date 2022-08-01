@@ -33,6 +33,14 @@ view:data,Job,Sandbox,None,,GET,/jobs/{id}/data,Admin,N/A
 view:data,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data,None,N/A
 view:data,Job,Organization,None,,GET,/jobs/{id}/data,User,Maintainer
 view:data,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data,None,Worker
+view:metadata,Job,Sandbox,None,,GET,/jobs/{id}/data/meta,Admin,N/A
+view:metadata,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data/meta,None,N/A
+view:metadata,Job,Organization,None,,GET,/jobs/{id}/data/meta,User,Maintainer
+view:metadata,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data/meta,None,Worker
+update:metadata,Job,Sandbox,None,,PATCH,/jobs/{id}/data/meta,Admin,N/A
+update:metadata,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/data/meta,Worker,N/A
+update:metadata,Job,Organization,None,,PATCH,/jobs/{id}/data/meta,User,Maintainer
+update:metadata,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/data/meta,Worker,Worker
 view:commits,Job,Sandbox,None,,GET,/jobs/{id}/commits,Admin,N/A
 view:commits,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/commits,None,N/A
 view:commits,Job,Organization,None,,GET,/jobs/{id}/commits,User,Maintainer

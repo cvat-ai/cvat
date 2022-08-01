@@ -65,6 +65,7 @@ export interface Configuration {
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
     creationOpacity?: number;
+    CSSImageFilter?: string;
 }
 
 export interface BrushTool {
@@ -189,6 +190,7 @@ export enum Mode {
 
 export interface CanvasModel {
     readonly imageBitmap: boolean;
+    readonly imageIsDeleted: boolean;
     readonly image: Image | null;
     readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
     readonly objects: any[];
@@ -250,6 +252,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         imageID: number | null;
         imageOffset: number;
         imageSize: Size;
+        imageIsDeleted: boolean;
         focusData: FocusData;
         gridSize: Size;
         left: number;
@@ -298,6 +301,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 0,
                 width: 0,
             },
+            imageIsDeleted: false,
             focusData: {
                 clientID: 0,
                 padding: 0,
@@ -430,7 +434,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
-        if (frameData.number === this.data.imageID && !this.data.configuration.forceFrameUpdate) {
+        if (frameData.number === this.data.imageID &&
+            frameData.deleted === this.data.imageIsDeleted &&
+            !this.data.configuration.forceFrameUpdate
+        ) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -455,6 +462,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 };
 
                 this.data.image = data;
+                this.data.imageIsDeleted = frameData.deleted;
+                if (this.data.imageIsDeleted) {
+                    this.data.angle = 0;
+                }
                 this.notify(UpdateReasons.IMAGE_CHANGED);
                 this.data.zLayer = zLayer;
                 this.data.objects = objectStates;
@@ -500,7 +511,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public rotate(rotationAngle: number): void {
-        if (this.data.angle !== rotationAngle) {
+        if (this.data.angle !== rotationAngle && !this.data.imageIsDeleted) {
             this.data.angle = (360 + Math.floor(rotationAngle / 90) * 90) % 360;
             this.fit();
         }
@@ -744,6 +755,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.creationOpacity = configuration.creationOpacity;
         }
 
+        if (typeof configuration.CSSImageFilter === 'string') {
+            this.data.configuration.CSSImageFilter = configuration.CSSImageFilter;
+        }
+
         this.notify(UpdateReasons.CONFIG_UPDATED);
     }
 
@@ -800,6 +815,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get imageBitmap(): boolean {
         return this.data.imageBitmap;
+    }
+
+    public get imageIsDeleted(): boolean {
+        return this.data.imageIsDeleted;
     }
 
     public get image(): Image | null {

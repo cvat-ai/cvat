@@ -1,23 +1,57 @@
 # Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import json
+from copy import deepcopy
 from http import HTTPStatus
-from deepdiff import DeepDiff
+from io import BytesIO
+from time import sleep
+from cvat_sdk.apis import TasksApi
+from cvat_sdk.models import DataRequest, RqStatus, TaskWriteRequest, PatchedTaskWriteRequest
+
 import pytest
+from deepdiff import DeepDiff
+from PIL import Image
 
-from .utils.config import get_method, post_method, patch_method
+from .utils.config import make_api_client
 
+
+def generate_image_file(filename, size=(50, 50)):
+    f = BytesIO()
+    image = Image.new('RGB', size=size)
+    image.save(f, 'jpeg')
+    f.name = filename
+    f.seek(0)
+
+    return f
+
+def generate_image_files(count):
+    images = []
+    for i in range(count):
+        image = generate_image_file(f'{i}.jpeg')
+        images.append(image)
+
+    return images
+
+
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
-        response = get_method(user, f'projects/{project_id}/tasks', **kwargs)
-        response_data = response.json()
-        assert response.status_code == HTTPStatus.OK
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.projects_api.list_tasks(project_id, **kwargs,
+                _parse_response=False)
+            assert response.status == HTTPStatus.OK
+            response_data = json.loads(response.data)
+
         assert DeepDiff(data, response_data['results'], ignore_order=True, exclude_paths=exclude_paths) == {}
 
     def _test_task_list_403(self, user, project_id, **kwargs):
-        response = get_method(user, f'projects/{project_id}/tasks', **kwargs)
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.projects_api.list_tasks(project_id, **kwargs,
+                _parse_response=False, _check_status=False)
+            assert response.status == HTTPStatus.FORBIDDEN
 
     def _test_users_to_see_task_list(self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs):
         if is_staff:
@@ -36,15 +70,15 @@ class TestGetTasks:
         for task in tasks:
             staff_users = [user for user in users if is_task_staff(user['id'], task['id'])]
             assert len(staff_users)
+
             for user in staff_users:
-                response = get_method(user['username'], f'tasks', **kwargs)
-                response_data = response.json()
-                assert response.status_code == HTTPStatus.OK
+                with make_api_client(user['username']) as api_client:
+                    (_, response) = api_client.tasks_api.list(**kwargs, _parse_response=False)
+                    assert response.status == HTTPStatus.OK
+                    response_data = json.loads(response.data)
+
                 assert any(_task['id'] == task['id'] for _task in response_data['results'])
 
-    # [sandbox] admin can see task data in project even he has no ownerships in this project
-    # [sandbox] business cannot see task data in project if he has no ownerships in this project
-    # [sandbox] user that has one of these ownerships: [Project:owner, Project:assignee] can see task data
     @pytest.mark.parametrize('project_id', [1])
     @pytest.mark.parametrize('groups, is_staff, is_allow', [
         ('admin', False, True),
@@ -57,18 +91,14 @@ class TestGetTasks:
 
         self._test_users_to_see_task_list(project_id, tasks, users, is_staff, is_allow, is_project_staff)
 
-    # [sandbox] user that has one of these ownerships: [Owner, Assignee] can see task data
     @pytest.mark.parametrize('project_id, groups', [(1, 'user')])
-    def test_task_assigneed_to_see_task(self, project_id, groups, users, tasks, find_users, is_task_staff):
+    def test_task_assigned_to_see_task(self, project_id, groups, users, tasks, find_users, is_task_staff):
         users = find_users(privilege=groups)
         tasks = list(filter(lambda x: x['project_id'] == project_id and x['assignee'], tasks))
         assert len(tasks)
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff)
 
-    # [organization] maintainer can see task data even if he has no ownerships in corresponding Project, Task
-    # [organization] supervisor cannot see task data if he has no ownerships in corresponding Project, Task
-    # [organization] worker (as role) that has one of these ownerships: [Project:owner, Project:assignee], can see task data
     @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 2)])
     @pytest.mark.parametrize('role, is_staff, is_allow', [
         ('maintainer', False, True),
@@ -81,7 +111,6 @@ class TestGetTasks:
 
         self._test_users_to_see_task_list(project_id, tasks, users, is_staff, is_allow, is_project_staff, org=org['slug'])
 
-    # [organization] worker (as role) that has one of these ownerships: [Owner, Assignee], can see task data
     @pytest.mark.parametrize('org, project_id, role', [
         ({'id': 2, 'slug': 'org2'}, 2, 'worker')
     ])
@@ -93,14 +122,18 @@ class TestGetTasks:
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org['slug'])
 
 
+@pytest.mark.usefixtures('changedb')
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
-        response = post_method(user, '/tasks', spec, **kwargs)
-        assert response.status_code == HTTPStatus.CREATED
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.tasks_api.create(TaskWriteRequest(**spec), **kwargs)
+            assert response.status == HTTPStatus.CREATED
 
     def _test_create_task_403(self, user, spec, **kwargs):
-        response = post_method(user, '/tasks', spec, **kwargs)
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.tasks_api.create(TaskWriteRequest(**spec), **kwargs,
+                _parse_response=False, _check_status=False)
+            assert response.status == HTTPStatus.FORBIDDEN
 
     def _test_users_to_create_task_in_project(self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs):
         if is_staff:
@@ -121,9 +154,6 @@ class TestPostTasks:
             else:
                 self._test_create_task_403(username, spec, **kwargs)
 
-    # [sandbox] admin can create task in project even he has no ownerships in this project
-    # [sandbox] business cannot create task in project if he has no ownerships in this project
-    # [sandbox] user that has one of these ownerships: [Project:owner, Project:assignee] and has less than 10 task can create task in project
     @pytest.mark.parametrize('project_id', [1])
     @pytest.mark.parametrize('groups, is_staff, is_allow', [
         ('admin', False, True),
@@ -134,7 +164,6 @@ class TestPostTasks:
         users = find_users(privilege=groups)
         self._test_users_to_create_task_in_project(project_id, users, is_staff, is_allow, is_project_staff)
 
-    # [organization] worker cannot create task in project even he has no ownerships in this project
     @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 2)])
     @pytest.mark.parametrize('role, is_staff, is_allow', [
         ('worker', False, False),
@@ -143,6 +172,7 @@ class TestPostTasks:
         users = find_users(org=org['id'], role=role)
         self._test_users_to_create_task_in_project(project_id, users, is_staff, is_allow, is_project_staff, org=org['slug'])
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetData:
     _USERNAME = 'user1'
 
@@ -152,24 +182,26 @@ class TestGetData:
         ('image/x.point-cloud-data', 6),
     ])
     def test_frame_content_type(self, content_type, task_id):
-        response = get_method(self._USERNAME, f'tasks/{task_id}/data', type='frame', quality='original', number=0)
-        assert response.status_code == HTTPStatus.OK
-        assert response.headers['Content-Type'] == content_type
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_data(task_id,
+                type='frame', quality='original', number=0)
+            assert response.status == HTTPStatus.OK
+            assert response.headers['Content-Type'] == content_type
 
-
+@pytest.mark.usefixtures('changedb')
 class TestPatchTaskAnnotations:
-    def _test_check_respone(self, is_allow, response, data=None):
+    def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
-            assert response.status_code == HTTPStatus.OK
-            assert DeepDiff(data, response.json(),
+            assert response.status == HTTPStatus.OK
+            assert DeepDiff(data, json.loads(response.data),
                 exclude_paths="root['version']") == {}
         else:
-            assert response.status_code == HTTPStatus.FORBIDDEN
+            assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.fixture(scope='class')
     def request_data(self, annotations):
         def get_data(tid):
-            data = annotations['task'][str(tid)].copy()
+            data = deepcopy(annotations['task'][str(tid)])
             data['shapes'][0].update({'points': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data['version'] += 1
             return data
@@ -190,10 +222,14 @@ class TestPatchTaskAnnotations:
         username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
 
         data = request_data(tid)
-        response = patch_method(username, f'tasks/{tid}/annotations', data,
-            org_id=org, action='update')
+        with make_api_client(username) as api_client:
+            patched_data = PatchedTaskWriteRequest(**deepcopy(data))
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=tid, action='update', org=org,
+                patched_task_write_request=patched_data,
+                _parse_response=False, _check_status=False)
 
-        self._test_check_respone(is_allow, response, data)
+        self._test_check_response(is_allow, response, data)
 
     @pytest.mark.parametrize('org', [2])
     @pytest.mark.parametrize('role, task_staff, is_allow', [
@@ -209,7 +245,89 @@ class TestPatchTaskAnnotations:
         username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
-        response = patch_method(username, f'tasks/{tid}/annotations', data,
-            org_id=org, action='update')
+        with make_api_client(username) as api_client:
+            patched_data = PatchedTaskWriteRequest(**deepcopy(data))
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=tid, org_id=org, action='update',
+                patched_task_write_request=patched_data,
+                _parse_response=False, _check_status=False)
 
-        self._test_check_respone(is_allow, response, data)
+        self._test_check_response(is_allow, response, data)
+
+@pytest.mark.usefixtures('dontchangedb')
+class TestGetTaskDataset:
+    def _test_export_project(self, username, tid, **kwargs):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_dataset(id=tid, **kwargs)
+            assert response.status == HTTPStatus.ACCEPTED
+
+            (_, response) = api_client.tasks_api.retrieve_dataset(id=tid, **kwargs)
+            assert response.status == HTTPStatus.CREATED
+
+            (_, response) = api_client.tasks_api.retrieve_dataset(id=tid, **kwargs, action='download')
+            assert response.status == HTTPStatus.OK
+
+    def test_admin_can_export_task_dataset(self, tasks_with_shapes):
+        task = tasks_with_shapes[0]
+        self._test_export_project('admin1', task['id'], format='CVAT for images 1.1')
+
+@pytest.mark.usefixtures("changedb")
+class TestPostTaskData:
+    @staticmethod
+    def _wait_until_task_is_created(api: TasksApi, task_id: int) -> RqStatus:
+        for _ in range(100):
+            (status, _) = api.retrieve_status(task_id)
+            if status.state.value in ['Finished', 'Failed']:
+                return status
+            sleep(1)
+        raise Exception('Cannot create task')
+
+    def _test_create_task(self, username, spec, data, files):
+        with make_api_client(username) as api_client:
+            (task, response) = api_client.tasks_api.create(TaskWriteRequest(**spec))
+            assert response.status == HTTPStatus.CREATED
+
+            task_data = DataRequest(**data, client_files=list(files.values()))
+            (_, response) = api_client.tasks_api.create_data(task.id, task_data,
+                _content_type="multipart/form-data")
+            assert response.status == HTTPStatus.ACCEPTED
+
+            status = self._wait_until_task_is_created(api_client.tasks_api, task.id)
+            assert status.state.value == 'Finished'
+
+        return task.id
+
+    def test_can_create_task_with_defined_start_and_stop_frames(self):
+        username = 'admin1'
+        task_spec = {
+            'name': f'test {username} to create a task with defined start and stop frames',
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [
+                    {
+                        "name": "a",
+                        "mutable": True,
+                        "input_type": "number",
+                        "default_value": "5",
+                        "values": ["4", "5", "6"]
+                    }
+                ]
+            }],
+        }
+
+        task_data = {
+            'image_quality': 75,
+            'start_frame': 2,
+            'stop_frame': 5
+        }
+        task_files = {
+            f'client_files[{i}]': image for i, image in enumerate(generate_image_files(7))
+        }
+
+        task_id = self._test_create_task(username, task_spec, task_data, task_files)
+
+        # check task size
+        with make_api_client(username) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            assert task.size == 4

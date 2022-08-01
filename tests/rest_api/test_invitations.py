@@ -1,11 +1,12 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
 import pytest
-from .utils.config import post_method
+from rest_api.utils.config import post_method
 
+@pytest.mark.usefixtures('changedb')
 class TestCreateInvitations:
     def _test_post_invitation_201(self, user, data, invitee, **kwargs):
         response = post_method(user, 'invitations', data, **kwargs)
@@ -21,7 +22,7 @@ class TestCreateInvitations:
 
     @staticmethod
     def get_non_member_users(memberships, users):
-        organization_users = set(m['user']['id'] for m in memberships if m['user'] != None)
+        organization_users = set(m['user']['id'] for m in memberships if m['user'] is not None)
         non_member_users = [u for u in users if u['id'] not in organization_users]
 
         return non_member_users
@@ -29,7 +30,7 @@ class TestCreateInvitations:
     @staticmethod
     def get_member(role, memberships, org_id):
         member = [m['user'] for m in memberships if m['role'] == role and
-            m['organization'] == org_id and m['user'] != None][0]
+            m['organization'] == org_id and m['user'] is not None][0]
 
         return member
 

@@ -56,10 +56,18 @@ export:dataset,Task,Sandbox,None,,GET,/tasks/{id}/dataset?format=,Admin,N/A
 export:dataset,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset?format=,None,N/A
 export:dataset,Task,Organization,None,,GET,/tasks/{id}/dataset?format=,User,Maintainer
 export:dataset,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset?format=,None,Worker
-view:data,Task,Sandbox,None,,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",Admin,N/A
-view:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",None,N/A
-view:data,Task,Organization,None,,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",User,Maintainer
-view:data,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",None,Worker
+view:data,Task,Sandbox,None,,GET,/tasks/{id}/data,Admin,N/A
+view:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/data,None,N/A
+view:data,Task,Organization,None,,GET,/tasks/{id}/data,User,Maintainer
+view:data,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/data,None,Worker
+view:metadata,Task,Sandbox,None,,GET,/tasks/{id}/data/meta,Admin,N/A
+view:metadata,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/data/meta,None,N/A
+view:metadata,Task,Organization,None,,GET,/tasks/{id}/data/meta,User,Maintainer
+view:metadata,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/data/meta,None,Worker
+update:metadata,Task,Sandbox,None,,PATCH,/tasks/{id}/data/meta,Admin,N/A
+update:metadata,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,PATCH,/tasks/{id}/data/meta,Worker,N/A
+update:metadata,Task,Organization,None,,PATCH,/tasks/{id}/data/meta,User,Maintainer
+update:metadata,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,PATCH,/tasks/{id}/data/meta,Worker,Worker
 upload:data,Task,Sandbox,None,,POST,/tasks/{id}/data,Admin,N/A
 upload:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,POST,/tasks/{id}/data,Worker,N/A
 upload:data,Task,Organization,None,,POST,/tasks/{id}/data,User,Maintainer

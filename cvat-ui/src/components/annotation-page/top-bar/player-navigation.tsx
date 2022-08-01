@@ -1,42 +1,54 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import { LinkOutlined } from '@ant-design/icons';
+import Icon, { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 
+import { RestoreIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
+import modal from 'antd/lib/modal';
 
 interface Props {
     startFrame: number;
     stopFrame: number;
+    playing: boolean;
     frameNumber: number;
     frameFilename: string;
+    frameDeleted: boolean;
     focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<Input>;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
+    onDeleteFrame(): void;
+    onRestoreFrame(): void;
+    switchNavigationBlocked(blocked: boolean): void;
 }
 
 function PlayerNavigation(props: Props): JSX.Element {
     const {
         startFrame,
         stopFrame,
+        playing,
         frameNumber,
         frameFilename,
+        frameDeleted,
         focusFrameInputShortcut,
         inputFrameRef,
         onSliderChange,
         onInputChange,
         onURLIconClick,
+        onDeleteFrame,
+        onRestoreFrame,
+        switchNavigationBlocked,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
@@ -46,6 +58,26 @@ function PlayerNavigation(props: Props): JSX.Element {
             setFrameInputValue(frameNumber);
         }
     }, [frameNumber]);
+
+    const showDeleteFrameDialog = useCallback(() => {
+        if (!playing) {
+            switchNavigationBlocked(true);
+            modal.confirm({
+                title: `Do you want to delete frame #${frameNumber}?`,
+                content: 'The frame will not be visible in navigation and exported datasets, but it still can be restored with all the annotations.',
+                className: 'cvat-modal-delete-frame',
+                okText: 'Delete',
+                okType: 'danger',
+                onOk: () => {
+                    switchNavigationBlocked(false);
+                    onDeleteFrame();
+                },
+                afterClose: () => {
+                    switchNavigationBlocked(false);
+                },
+            });
+        }
+    }, [playing, frameNumber]);
 
     return (
         <>
@@ -71,6 +103,15 @@ function PlayerNavigation(props: Props): JSX.Element {
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
+                        { (!frameDeleted) ? (
+                            <CVATTooltip title='Delete the frame'>
+                                <DeleteOutlined className='cvat-player-delete-frame' onClick={showDeleteFrameDialog} />
+                            </CVATTooltip>
+                        ) : (
+                            <CVATTooltip title='Restore the frame'>
+                                <Icon className='cvat-player-restore-frame' onClick={onRestoreFrame} component={RestoreIcon} />
+                            </CVATTooltip>
+                        )}
                     </Col>
                 </Row>
             </Col>

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,6 +76,11 @@
 
 .cvat-repository-format-select {
     width: 100%;
+}
+
+.cvat-task-page {
+    position: relative;
+    height: 100%;
 }
 
 .cvat-task-job-list {

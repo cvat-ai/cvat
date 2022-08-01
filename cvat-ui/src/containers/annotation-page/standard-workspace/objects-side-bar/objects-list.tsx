@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,12 +9,12 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
-    removeObjectAsync,
     changeFrameAsync,
     collapseObjectItems,
     changeGroupColorAsync,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
+    removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
@@ -46,7 +46,7 @@ interface StateToProps {
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
     collapseStates(states: any[], value: boolean): void;
-    removeObject: (sessionInstance: any, objectState: any, force: boolean) => void;
+    removeObject: (objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeFrame(frame: number): void;
@@ -116,8 +116,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         collapseStates(states: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(states, collapsed));
         },
-        removeObject(sessionInstance: any, objectState: any, force: boolean): void {
-            dispatch(removeObjectAsync(sessionInstance, objectState, force));
+        removeObject(objectState: any, force: boolean): void {
+            dispatch(removeObjectAction(objectState, force));
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
@@ -248,7 +248,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             statesHidden,
             statesLocked,
             activatedStateID,
-            jobInstance,
             maxZLayer,
             minZLayer,
             keyMap,
@@ -377,7 +376,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedStated();
                 if (state && !readonly) {
-                    removeObject(jobInstance, state, event ? event.shiftKey : false);
+                    removeObject(state, event ? event.shiftKey : false);
                 }
             },
             CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {

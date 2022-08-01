@@ -1,8 +1,40 @@
 {
-  "count": 10,
+  "count": 11,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 17,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 16,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 17,
+          "name": "dog"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 4,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 4,
+      "task_id": 13,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/17"
+    },
     {
       "assignee": {
         "first_name": "Worker",
@@ -38,6 +70,7 @@
       "status": "annotation",
       "stop_frame": 10,
       "task_id": 11,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/16"
     },
     {
@@ -82,6 +115,7 @@
       "status": "annotation",
       "stop_frame": 19,
       "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/14"
     },
     {
@@ -126,6 +160,7 @@
       "status": "validation",
       "stop_frame": 14,
       "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/13"
     },
     {
@@ -170,6 +205,7 @@
       "status": "validation",
       "stop_frame": 9,
       "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/12"
     },
     {
@@ -220,6 +256,7 @@
       "status": "annotation",
       "stop_frame": 4,
       "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/11"
     },
     {
@@ -257,6 +294,7 @@
       "status": "annotation",
       "stop_frame": 13,
       "task_id": 8,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/10"
     },
     {
@@ -288,6 +326,7 @@
       "status": "annotation",
       "stop_frame": 10,
       "task_id": 7,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/9"
     },
     {
@@ -313,6 +352,7 @@
       "status": "annotation",
       "stop_frame": 0,
       "task_id": 6,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/8"
     },
     {
@@ -344,6 +384,7 @@
       "status": "annotation",
       "stop_frame": 24,
       "task_id": 5,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/7"
     },
     {
@@ -381,6 +422,7 @@
       "status": "annotation",
       "stop_frame": 22,
       "task_id": 2,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/2"
     }
   ]

@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,7 +27,7 @@ services:
 
   cvat:
     container_name: cvat
-    image: openvino/cvat_server
+    image: cvat/server:${CVAT_VERSION:-latest}
     restart: always
     depends_on:
       - cvat_redis
@@ -52,10 +52,12 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   cvat_ui:
     container_name: cvat_ui
-    image: openvino/cvat_ui
+    image: cvat/ui:${CVAT_VERSION:-latest}
     restart: always
     depends_on:
       - cvat

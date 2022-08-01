@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -70,8 +70,8 @@ class AnnotationIR:
         prev_shape = None
         for shape in track['shapes']:
             if prev_shape and not prev_shape['outside'] and \
-                has_overlap(prev_shape['frame'], shape['frame']):
-                    return True
+                    has_overlap(prev_shape['frame'], shape['frame']):
+                return True
             prev_shape = shape
 
         if not prev_shape['outside'] and prev_shape['frame'] <= stop:

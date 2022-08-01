@@ -116,6 +116,9 @@ export interface TasksState {
         backups: {
             [tid: number]: boolean;
         };
+        jobUpdates: {
+            [jid: number]: boolean,
+        };
     };
 }
 
@@ -255,10 +258,17 @@ export interface ShareState {
     root: ShareItem;
 }
 
+export interface ModelAttribute {
+    name: string;
+    values: string[];
+    input_type: 'select' | 'number' | 'checkbox' | 'radio' | 'text';
+}
+
 export interface Model {
     id: string;
     name: string;
     labels: string[];
+    attributes: Record<string, ModelAttribute[]>;
     framework: string;
     description: string;
     type: string;
@@ -404,6 +414,8 @@ export interface NotificationsState {
             redo: null | ErrorState;
             search: null | ErrorState;
             searchEmptyFrame: null | ErrorState;
+            deleteFrame: null | ErrorState;
+            restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
         };
         boundaries: {
@@ -626,6 +638,10 @@ export interface AnnotationState {
         objectState: any | null;
         frames: number;
     };
+    remove: {
+        objectState: any;
+        force: boolean;
+    }
     statistics: {
         collecting: boolean;
         visible: boolean;
@@ -677,6 +693,7 @@ export interface PlayerSettingsState {
     resetZoom: boolean;
     rotateAll: boolean;
     smoothImage: boolean;
+    showDeletedFrames: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -699,6 +716,7 @@ export interface WorkspaceSettingsState {
     textFontSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
+    showTagsOnFrame: boolean;
 }
 
 export interface ShapesSettingsState {

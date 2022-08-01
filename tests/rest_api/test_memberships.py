@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,8 +6,9 @@ import pytest
 from http import HTTPStatus
 from deepdiff import DeepDiff
 
-from .utils.config import get_method, patch_method
+from rest_api.utils.config import get_method, patch_method
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetMemberships:
     def _test_can_see_memberships(self, user, data, **kwargs):
         response = get_method(user, 'memberships', **kwargs)
@@ -40,8 +41,7 @@ class TestGetMemberships:
         non_org1_users = ['user2', 'worker3']
         for user in non_org1_users:
             self._test_cannot_see_memberships(user, org_id=1)
-
-
+@pytest.mark.usefixtures('changedb')
 class TestPatchMemberships:
     _ORG = 2
 

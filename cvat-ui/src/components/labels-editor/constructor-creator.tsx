@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,8 @@ import { Label } from './common';
 
 interface Props {
     labelNames: string[];
-    onCreate: (label: Label | null) => void;
+    onCreate: (label: Label) => void;
+    onCancel: () => void;
 }
 
 function compareProps(prevProps: Props, nextProps: Props): boolean {
@@ -30,10 +31,10 @@ function compareProps(prevProps: Props, nextProps: Props): boolean {
 }
 
 function ConstructorCreator(props: Props): JSX.Element {
-    const { onCreate, labelNames } = props;
+    const { onCreate, onCancel, labelNames } = props;
     return (
         <div className='cvat-label-constructor-creator'>
-            <LabelForm label={null} onSubmit={onCreate} labelNames={labelNames} />
+            <LabelForm label={null} onSubmit={onCreate} labelNames={labelNames} onCancel={onCancel} />
         </div>
     );
 }

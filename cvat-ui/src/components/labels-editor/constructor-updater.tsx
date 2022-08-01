@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,15 +9,16 @@ import { Label } from './common';
 
 interface Props {
     label: Label;
-    onUpdate: (label: Label | null) => void;
+    onUpdate: (label: Label) => void;
+    onCancel: () => void;
 }
 
 export default function ConstructorUpdater(props: Props): JSX.Element {
-    const { label, onUpdate } = props;
+    const { label, onUpdate, onCancel } = props;
 
     return (
         <div className='cvat-label-constructor-updater'>
-            <LabelForm label={label} onSubmit={onUpdate} />
+            <LabelForm label={label} onSubmit={onUpdate} onCancel={onCancel} />
         </div>
     );
 }

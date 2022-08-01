@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -21,6 +21,7 @@ services:
     command:
       - "--providers.docker.exposedByDefault=false"
       - "--providers.docker.network=cvat"
+      - '--providers.file.directory=/etc/traefik/rules'
       - "--entryPoints.web.address=:80"
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"

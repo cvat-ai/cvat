@@ -8,6 +8,7 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
+import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { TasksState, Task } from './interfaces';
 
 const defaultState: TasksState = {
@@ -38,6 +39,7 @@ const defaultState: TasksState = {
             error: '',
         },
         backups: {},
+        jobUpdates: {},
     },
     importing: false,
 };
@@ -55,7 +57,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: true,
                 hideEmpty: true,
                 count: 0,
-                current: [],
                 gettingQuery: action.payload.updateQuery ? { ...action.payload.query } : state.gettingQuery,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
@@ -70,6 +71,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 ...state,
                 initialized: true,
                 fetching: false,
+                updating: false,
                 count: action.payload.count,
                 current: combinedWithPreviews,
             };
@@ -313,25 +315,34 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             };
         }
         case TasksActionTypes.UPDATE_JOB: {
-            return {
-                ...state,
-                updating: true,
-            };
-        }
-        case TasksActionTypes.UPDATE_JOB_SUCCESS: {
-            const { jobInstance } = action.payload;
-            const idx = state.current.findIndex((task: Task) => task.instance.id === jobInstance.taskId);
-            const newCurrent = idx === -1 ?
-                state.current : [...(state.current.splice(idx, 1), state.current)];
+            const { jobID } = action.payload;
+            const { jobUpdates } = state.activities;
 
             return {
                 ...state,
-                current: newCurrent,
-                gettingQuery: state.gettingQuery.id === jobInstance.taskId ? {
-                    ...state.gettingQuery,
-                    id: null,
-                } : state.gettingQuery,
-                updating: false,
+                updating: true,
+                activities: {
+                    ...state.activities,
+                    jobUpdates: {
+                        ...jobUpdates,
+                        ...Object.fromEntries([[jobID, true]]),
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_JOB_SUCCESS:
+        case TasksActionTypes.UPDATE_JOB_FAILED: {
+            const { jobID } = action.payload;
+            const { jobUpdates } = state.activities;
+
+            delete jobUpdates[jobID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    jobUpdates: omit(jobUpdates, [jobID]),
+                },
             };
         }
         case TasksActionTypes.HIDE_EMPTY_TASKS: {
@@ -348,6 +359,12 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     modalVisible: action.payload.visible,
                     taskId: action.payload.taskId,
                 },
+            };
+        }
+        case AnnotationActionTypes.CLOSE_JOB: {
+            return {
+                ...state,
+                updating: false,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ context('Check feedback button.', () => {
                 .within(() => {
                     cy.get('a').then(($a) => {
                         expect($a.length).be.equal(3);
-                        expect($a[0].href).be.eq('https://github.com/openvinotoolkit/cvat');
+                        expect($a[0].href).be.eq('https://github.com/cvat-ai/cvat');
                         expect($a[1].href).be.eq('https://gitter.im/opencv-cvat/public');
                         expect($a[2].href).be.eq($a[1].href);
                     });

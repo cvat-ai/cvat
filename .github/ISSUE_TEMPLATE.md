@@ -1,11 +1,5 @@
-<!---
-Copyright (C) 2020-2021 Intel Corporation
-
-SPDX-License-Identifier: MIT
--->
-
 ### My actions before raising this issue
-- [ ] Read/searched [the docs](https://github.com/opencv/cvat/tree/master#documentation)
+- [ ] Read/searched [the docs](https://github.com/cvat-ai/cvat/tree/master#documentation)
 - [ ] Searched [past issues](/issues)
 
 <!--- Provide a general summary of the issue in the Title above -->
@@ -49,5 +43,3 @@ the bug in -->
     <summary>Logs from `cvat` container</summary>
     </details>
 
-### Next steps
-You may [join our Gitter](https://gitter.im/opencv-cvat/public) channel for community support.

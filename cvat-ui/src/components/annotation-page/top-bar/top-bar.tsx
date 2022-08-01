@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ interface Props {
     savingStatuses: string[];
     frameNumber: number;
     frameFilename: string;
+    frameDeleted: boolean;
     inputFrameRef: React.RefObject<Input>;
     startFrame: number;
     stopFrame: number;
@@ -64,6 +65,9 @@ interface Props {
     onRedoClick(): void;
     onFinishDraw(): void;
     onSwitchToolsBlockerState(): void;
+    onDeleteFrame(): void;
+    onRestoreFrame(): void;
+    switchNavigationBlocked(blocked: boolean): void;
     jobInstance: any;
 }
 
@@ -76,6 +80,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         playing,
         frameNumber,
         frameFilename,
+        frameDeleted,
         inputFrameRef,
         startFrame,
         stopFrame,
@@ -117,6 +122,9 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onRedoClick,
         onFinishDraw,
         onSwitchToolsBlockerState,
+        onDeleteFrame,
+        onRestoreFrame,
+        switchNavigationBlocked,
         jobInstance,
         isTrainingActive,
     } = props;
@@ -165,13 +173,18 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     <PlayerNavigation
                         startFrame={startFrame}
                         stopFrame={stopFrame}
+                        playing={playing}
                         frameNumber={frameNumber}
                         frameFilename={frameFilename}
+                        frameDeleted={frameDeleted}
                         focusFrameInputShortcut={focusFrameInputShortcut}
                         inputFrameRef={inputFrameRef}
                         onSliderChange={onSliderChange}
                         onInputChange={onInputChange}
                         onURLIconClick={onURLIconClick}
+                        onDeleteFrame={onDeleteFrame}
+                        onRestoreFrame={onRestoreFrame}
+                        switchNavigationBlocked={switchNavigationBlocked}
                     />
                 </Row>
             </Col>

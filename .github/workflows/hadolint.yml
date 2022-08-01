@@ -1,7 +1,7 @@
-name: Linter
+name: HadoLint
 on: pull_request
 jobs:
-  HadoLint:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

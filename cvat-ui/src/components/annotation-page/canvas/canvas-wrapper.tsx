@@ -18,6 +18,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 import ContextImage from '../standard-workspace/context-image/context-image';
@@ -70,6 +71,7 @@ interface Props {
     keyMap: KeyMap;
     canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
+    showTagsOnFrame: boolean;
     onSetupCanvas: () => void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
@@ -246,11 +248,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             contrastLevel !== prevProps.contrastLevel ||
             saturationLevel !== prevProps.saturationLevel
         ) {
-            const backgroundElement = window.document.getElementById('cvat_canvas_background');
-            if (backgroundElement) {
-                const filter = `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`;
-                backgroundElement.style.filter = filter;
-            }
+            canvasInstance.configure({
+                CSSImageFilter:
+                    `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
+            });
         }
 
         if (
@@ -658,7 +659,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (frameData !== null && canvasInstance) {
             canvasInstance.setup(
                 frameData,
-                annotations.filter((e) => e.objectType !== ObjectType.TAG),
+                frameData.deleted ? [] : annotations.filter((e) => e.objectType !== ObjectType.TAG),
                 curZLayer,
             );
         }
@@ -693,13 +694,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
         canvasInstance.grid(gridSize, gridSize);
 
-        // Filters
-        const backgroundElement = window.document.getElementById('cvat_canvas_background');
-        if (backgroundElement) {
-            const filter = `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`;
-            backgroundElement.style.filter = filter;
-        }
-
+        canvasInstance.configure({
+            CSSImageFilter:
+                `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
+        });
         const canvasWrapperElement = window.document
             .getElementsByClassName('cvat-canvas-container')
             .item(0) as HTMLElement | null;
@@ -755,6 +753,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             keyMap,
             switchableAutomaticBordering,
             automaticBordering,
+            showTagsOnFrame,
             onSwitchAutomaticBordering,
             onSwitchZLayer,
             onAddZLayer,
@@ -818,6 +817,13 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         <PlusCircleOutlined onClick={onAddZLayer} />
                     </CVATTooltip>
                 </div>
+
+                {showTagsOnFrame ? (
+                    <div className='cvat-canvas-frame-tags'>
+                        <FrameTags />
+                    </div>
+                ) : null}
+                ;
             </Layout.Content>
         );
     }

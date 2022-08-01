@@ -1,11 +1,12 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from django.urls import path, re_path
 from django.conf import settings
 from django.urls.conf import include
-from rest_auth.views import (
+from dj_rest_auth.views import (
     LoginView, LogoutView, PasswordChangeView,
     PasswordResetView, PasswordResetConfirmView)
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView

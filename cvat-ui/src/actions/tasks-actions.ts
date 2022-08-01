@@ -345,7 +345,7 @@ function createTaskUpdateStatus(status: string): AnyAction {
 }
 
 export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<any> => {
         const description: any = {
             name: data.basic.name,
             labels: data.labels,
@@ -417,8 +417,10 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
                 dispatch(createTaskUpdateStatus(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : '')));
             });
             dispatch(createTaskSuccess(savedTask.id));
+            return savedTask;
         } catch (error) {
             dispatch(createTaskFailed(error));
+            throw error;
         }
     };
 }
@@ -441,19 +443,28 @@ export function updateTaskSuccess(task: any, taskID: number): AnyAction {
     return action;
 }
 
-function updateJob(): AnyAction {
+function updateTaskFailed(error: any, task: any): AnyAction {
     const action = {
-        type: TasksActionTypes.UPDATE_JOB,
-        payload: { },
+        type: TasksActionTypes.UPDATE_TASK_FAILED,
+        payload: { error, task },
     };
 
     return action;
 }
 
-function updateJobSuccess(jobInstance: any): AnyAction {
+function updateJob(jobID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_JOB,
+        payload: { jobID },
+    };
+
+    return action;
+}
+
+function updateJobSuccess(jobInstance: any, jobID: number): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_JOB_SUCCESS,
-        payload: { jobInstance },
+        payload: { jobID, jobInstance },
     };
 
     return action;
@@ -463,15 +474,6 @@ function updateJobFailed(jobID: number, error: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_JOB_FAILED,
         payload: { jobID, error },
-    };
-
-    return action;
-}
-
-function updateTaskFailed(error: any, task: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.UPDATE_TASK_FAILED,
-        payload: { error, task },
     };
 
     return action;
@@ -503,9 +505,9 @@ export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, C
 export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            dispatch(updateJob());
+            dispatch(updateJob(jobInstance.id));
             const newJob = await jobInstance.save();
-            dispatch(updateJobSuccess(newJob));
+            dispatch(updateJobSuccess(newJob, newJob.id));
         } catch (error) {
             dispatch(updateJobFailed(jobInstance.id, error));
         }

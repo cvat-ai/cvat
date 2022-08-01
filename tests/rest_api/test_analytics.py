@@ -4,8 +4,9 @@
 
 import pytest
 from http import HTTPStatus
-from .utils.config import server_get
+from rest_api.utils.config import server_get
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetAnalytics:
     endpoint = 'analytics/app/kibana'
     def _test_can_see(self, user):

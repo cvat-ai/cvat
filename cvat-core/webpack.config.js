@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,17 +12,31 @@ const nodeConfig = {
     target: 'node',
     mode: 'development',
     devtool: 'source-map',
-    entry: './src/api.js',
+    entry: './src/api.ts',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat-core.node.js',
         libraryTarget: 'commonjs',
     },
+    resolve: {
+        extensions: ['.ts', '.js'],
+    },
     module: {
         rules: [
             {
-                test: /.js?$/,
+                test: /.ts?$/,
                 exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        plugins: [
+                            '@babel/plugin-proposal-class-properties',
+                            '@babel/plugin-proposal-optional-chaining',
+                        ],
+                        presets: ['@babel/preset-env', '@babel/typescript'],
+                        sourceType: 'unambiguous',
+                    },
+                },
             },
         ],
     },
@@ -36,7 +50,7 @@ const webConfig = {
     mode: 'production',
     devtool: 'source-map',
     entry: {
-        'cvat-core': './src/api.js',
+        'cvat-core': './src/api.ts',
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -44,15 +58,22 @@ const webConfig = {
         library: 'cvat',
         libraryTarget: 'window',
     },
+    resolve: {
+        extensions: ['.ts', '.js'],
+    },
     module: {
         rules: [
             {
-                test: /.js?$/,
+                test: /.ts?$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: ['@babel/preset-env'],
+                        plugins: [
+                            '@babel/plugin-proposal-class-properties',
+                            '@babel/plugin-proposal-optional-chaining',
+                        ],
+                        presets: ['@babel/preset-env', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -63,7 +84,8 @@ const webConfig = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/static/engine/js/3rdparty/',
-                        name: '[name].[contenthash].js',
+                        filename: '[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
@@ -74,7 +96,8 @@ const webConfig = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/static/engine/js/',
-                        name: '[name].[contenthash].js',
+                        filename: '[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },

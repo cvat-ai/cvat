@@ -1,7 +1,7 @@
 ---
 title: 'Review'
 linkTitle: 'Review'
-weight: 24
+weight: 25
 description: 'Guide to using the Review mode for task validation.'
 ---
 

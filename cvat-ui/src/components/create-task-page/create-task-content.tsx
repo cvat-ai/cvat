@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -85,31 +85,21 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         if (projectId) {
             this.handleProjectIdChange(projectId);
         }
+
+        this.focusToForm();
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const { status, history, taskId } = this.props;
+    private resetState = (): void => {
+        this.basicConfigurationComponent.current?.resetFields();
+        this.advancedConfigurationComponent.current?.resetFields();
 
-        if (status === 'CREATED' && prevProps.status !== 'CREATED') {
-            const btn = <Button onClick={() => history.push(`/tasks/${taskId}`)}>Open task</Button>;
+        this.fileManagerContainer.reset();
 
-            notification.info({
-                message: 'The task has been created',
-                btn,
-                className: 'cvat-notification-create-task-success',
-            });
-
-            this.basicConfigurationComponent.current?.resetFields();
-            this.advancedConfigurationComponent.current?.resetFields();
-
-            this.fileManagerContainer.reset();
-
-            this.setState((state) => ({
-                ...defaultState,
-                projectId: state.projectId,
-            }));
-        }
-    }
+        this.setState((state) => ({
+            ...defaultState,
+            projectId: state.projectId,
+        }));
+    };
 
     private validateLabelsOrProject = (): boolean => {
         const { projectId, labels } = this.state;
@@ -170,13 +160,42 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
-    private handleSubmitClick = (): void => {
+    private focusToForm = (): void => {
+        this.basicConfigurationComponent.current?.focus();
+    };
+
+    private handleSubmitAndOpen = (): void => {
+        const { history } = this.props;
+
+        this.handleSubmit()
+            .then((createdTask) => {
+                const { id } = createdTask;
+                history.push(`/tasks/${id}`);
+            })
+            .catch(() => {});
+    };
+
+    private handleSubmitAndContinue = (): void => {
+        this.handleSubmit()
+            .then(() => {
+                notification.info({
+                    message: 'The task has been created',
+                    className: 'cvat-notification-create-task-success',
+                });
+            })
+            .then(this.resetState)
+            .then(this.focusToForm)
+            .catch(() => {});
+    };
+
+    private handleSubmit = (): Promise<any> => new Promise((resolve, reject) => {
         if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
                 description: 'A task must contain at least one label or belong to some project',
                 className: 'cvat-notification-create-task-fail',
             });
+            reject();
             return;
         }
 
@@ -186,35 +205,43 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 description: 'A task must contain at least one file',
                 className: 'cvat-notification-create-task-fail',
             });
+            reject();
             return;
         }
 
-        if (this.basicConfigurationComponent.current) {
-            this.basicConfigurationComponent.current
-                .submit()
-                .then(() => {
-                    if (this.advancedConfigurationComponent.current) {
-                        return this.advancedConfigurationComponent.current.submit();
-                    }
-                    return Promise.resolve();
-                })
-                .then((): void => {
-                    const { onCreate } = this.props;
-                    onCreate(this.state);
-                })
-                .catch((error: Error | ValidateErrorEntity): void => {
-                    notification.error({
-                        message: 'Could not create a task',
-                        description: (error as ValidateErrorEntity).errorFields ?
-                            (error as ValidateErrorEntity).errorFields
-                                .map((field) => `${field.name} : ${field.errors.join(';')}`)
-                                .map((text: string): JSX.Element => <div>{text}</div>) :
-                            error.toString(),
-                        className: 'cvat-notification-create-task-fail',
-                    });
-                });
+        if (!this.basicConfigurationComponent.current) {
+            reject();
+            return;
         }
-    };
+
+        this.basicConfigurationComponent.current
+            .submit()
+            .then(() => {
+                if (this.advancedConfigurationComponent.current) {
+                    return this.advancedConfigurationComponent.current.submit();
+                }
+                return Promise.resolve();
+            })
+            .then((): void => {
+                const { onCreate } = this.props;
+                return onCreate(this.state);
+            })
+            .then((cratedTask) => {
+                resolve(cratedTask);
+            })
+            .catch((error: Error | ValidateErrorEntity): void => {
+                notification.error({
+                    message: 'Could not create a task',
+                    description: (error as ValidateErrorEntity).errorFields ?
+                        (error as ValidateErrorEntity).errorFields
+                            .map((field) => `${field.name} : ${field.errors.join(';')}`)
+                            .map((text: string): JSX.Element => <div>{text}</div>) :
+                        error.toString(),
+                    className: 'cvat-notification-create-task-fail',
+                });
+                reject(error);
+            });
+    });
 
     private renderBasicBlock(): JSX.Element {
         return (
@@ -332,6 +359,23 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
+    private renderActions(): JSX.Element {
+        return (
+            <Row justify='end' gutter={5}>
+                <Col>
+                    <Button type='primary' onClick={this.handleSubmitAndOpen}>
+                        Submit & Open
+                    </Button>
+                </Col>
+                <Col>
+                    <Button type='primary' onClick={this.handleSubmitAndContinue}>
+                        Submit & Continue
+                    </Button>
+                </Col>
+            </Row>
+        );
+    }
+
     public render(): JSX.Element {
         const { status } = this.props;
         const loading = !!status && status !== 'CREATED' && status !== 'FAILED';
@@ -349,11 +393,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}
 
-                <Col span={18}>{loading ? <Alert message={status} /> : null}</Col>
-                <Col span={6} className='cvat-create-task-submit-section'>
-                    <Button loading={loading} disabled={loading} type='primary' onClick={this.handleSubmitClick}>
-                        Submit
-                    </Button>
+                <Col span={24} className='cvat-create-task-content-footer'>
+                    {loading ? <Alert message={status} /> : this.renderActions()}
                 </Col>
             </Row>
         );

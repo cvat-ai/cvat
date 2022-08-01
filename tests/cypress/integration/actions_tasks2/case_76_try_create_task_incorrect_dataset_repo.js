@@ -21,7 +21,7 @@ context('Try to create a task with an incorrect dataset repository.', () => {
     const directoryToArchive = imagesFolder;
     const incorrectDatasetRepoUrl = 'dummyrepo.local';
     const incorrectDatasetRepoUrlHttps = 'https://dummyrepo.local';
-    const repositoryWithMissingAccess = 'https://github.com/openvinotoolkit/cvat';
+    const repositoryWithMissingAccess = 'https://github.com/cvat-ai/cvat';
 
     before(() => {
         cy.visit('auth/login');
@@ -45,7 +45,7 @@ context('Try to create a task with an incorrect dataset repository.', () => {
 
         it('Set dummy dataset repository.', () => {
             cy.get('#repository').type(incorrectDatasetRepoUrlHttps);
-            cy.get('.cvat-create-task-submit-section').click();
+            cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-notice-create-task-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-create-task-failed');
             cy.get('#repository').clear();
@@ -53,7 +53,7 @@ context('Try to create a task with an incorrect dataset repository.', () => {
 
         it('Set repository with missing access.', () => {
             cy.get('#repository').type(repositoryWithMissingAccess);
-            cy.get('.cvat-create-task-submit-section').click();
+            cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-notice-create-task-failed').should('exist');
             cy.get('.cvat-create-task-clone-repository-fail').should('exist');
         });

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,9 +16,7 @@ context('Check if the UI not to crash after remove a tag', () => {
     describe(`Testing issue "${issueId}"`, () => {
         it('Add a tag', () => {
             cy.changeWorkspace('Tag annotation');
-            cy.get('.cvat-tag-annotation-sidebar-buttons').within(() => {
-                cy.get('button').contains('Add tag').click({ force: true });
-            });
+            cy.get('.cvat-add-tag-button').click({ force: true });
             cy.changeWorkspace('Standard');
         });
         it('Remove the tag', () => {

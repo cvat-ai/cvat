@@ -1,5 +1,5 @@
 
-# Copyright (C) 2019-2021 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -206,6 +206,7 @@ class TaskData(InstanceLabelData):
         return d
 
     def _init_frame_info(self):
+        self._deleted_frames = { k: True for k in self._db_task.data.deleted_frames }
         if hasattr(self._db_task.data, 'video'):
             self._frame_info = {frame: {
                 "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
@@ -375,16 +376,18 @@ class TaskData(InstanceLabelData):
 
         if include_empty:
             for idx in self._frame_info:
-                get_frame(idx)
+                if idx not in self._deleted_frames:
+                    get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
         shape_data = ''
         for shape in sorted(anno_manager.to_shapes(self._db_task.data.size),
                 key=lambda shape: shape.get("z_order", 0)):
-            if shape['frame'] not in self._frame_info:
+            if shape['frame'] not in self._frame_info or shape['frame'] in self._deleted_frames:
                 # After interpolation there can be a finishing frame
                 # outside of the task boundaries. Filter it out to avoid errors.
                 # https://github.com/openvinotoolkit/cvat/issues/2827
+                # Also we skipped deleted frames here
                 continue
             if 'track_id' in shape:
                 if shape['outside']:
@@ -401,6 +404,8 @@ class TaskData(InstanceLabelData):
                     get_frame(shape['frame']).labels.update({label.id: label})
 
         for tag in self._annotation_ir.tags:
+            if tag['frame'] not in self._frame_info or tag['frame'] in self._deleted_frames:
+                continue
             get_frame(tag['frame']).tags.append(self._export_tag(tag))
 
         return iter(frames.values())
@@ -408,11 +413,13 @@ class TaskData(InstanceLabelData):
     @property
     def shapes(self):
         for shape in self._annotation_ir.shapes:
-            yield self._export_labeled_shape(shape)
+            if shape["frame"] not in self._deleted_frames:
+                yield self._export_labeled_shape(shape)
 
     @property
     def tracks(self):
         for idx, track in enumerate(self._annotation_ir.tracks):
+            track['shapes'] = list(filter(lambda x: x['frame'] not in self._deleted_frames, track['shapes']))
             tracked_shapes = TrackManager.get_interpolated_shapes(
                 track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
@@ -427,13 +434,14 @@ class TaskData(InstanceLabelData):
                 group=track["group"],
                 source=track["source"],
                 shapes=[self._export_tracked_shape(shape)
-                    for shape in tracked_shapes],
+                    for shape in tracked_shapes if shape["frame"] not in self._deleted_frames],
             )
 
     @property
     def tags(self):
         for tag in self._annotation_ir.tags:
-            yield self._export_tag(tag)
+            if tag["frame"] not in self._deleted_frames:
+                yield self._export_tag(tag)
 
     @property
     def meta(self):
@@ -537,6 +545,10 @@ class TaskData(InstanceLabelData):
     @property
     def frame_info(self):
         return self._frame_info
+
+    @property
+    def deleted_frames(self):
+        return self._deleted_frames
 
     @property
     def frame_step(self):
@@ -700,6 +712,7 @@ class ProjectData(InstanceLabelData):
 
     def _init_frame_info(self):
         self._frame_info = dict()
+        self._deleted_frames = { (task.id, frame): True for task in self._db_tasks.values() for frame in task.data.deleted_frames }
         original_names = DefaultDict[Tuple[str, str], int](int)
         for task in self._db_tasks.values():
             defaulted_subset = get_defaulted_subset(task.subset, self._subsets)
@@ -832,13 +845,14 @@ class ProjectData(InstanceLabelData):
 
         if include_empty:
             for ident in self._frame_info:
-                get_frame(*ident)
+                if ident not in self._deleted_frames:
+                    get_frame(*ident)
 
         for task in self._db_tasks.values():
             anno_manager = AnnotationManager(self._annotation_irs[task.id])
             for shape in sorted(anno_manager.to_shapes(task.data.size),
                     key=lambda shape: shape.get("z_order", 0)):
-                if (task.id, shape['frame']) not in self._frame_info:
+                if (task.id, shape['frame']) not in self._frame_info or (task.id, shape['frame']) in self._deleted_frames:
                     continue
                 if 'track_id' in shape:
                     if shape['outside']:
@@ -849,6 +863,8 @@ class ProjectData(InstanceLabelData):
                 get_frame(task.id, shape['frame']).labeled_shapes.append(exported_shape)
 
             for tag in self._annotation_irs[task.id].tags:
+                if (task.id, tag['frame']) not in self._frame_info:
+                    continue
                 get_frame(task.id, tag['frame']).tags.append(self._export_tag(tag, task.id))
 
         return iter(frames.values())
@@ -857,13 +873,15 @@ class ProjectData(InstanceLabelData):
     def shapes(self):
         for task in self._db_tasks.values():
             for shape in self._annotation_irs[task.id].shapes:
-                yield self._export_labeled_shape(shape, task.id)
+                if (task.id, shape['frame']) not in self._deleted_frames:
+                    yield self._export_labeled_shape(shape, task.id)
 
     @property
     def tracks(self):
         idx = 0
         for task in self._db_tasks.values():
             for track in self._annotation_irs[task.id].tracks:
+                track['shapes'] = list(filter(lambda x: (task.id, x['frame']) not in self._deleted_frames, track['shapes']))
                 tracked_shapes = TrackManager.get_interpolated_shapes(
                     track, 0, task.data.size
                 )
@@ -877,8 +895,8 @@ class ProjectData(InstanceLabelData):
                     label=self._get_label_name(track["label_id"]),
                     group=track["group"],
                     source=track["source"],
-                    shapes=[self._export_tracked_shape(shape, task.id)
-                        for shape in tracked_shapes],
+                    shapes=[self._export_tracked_shape(shape, task.id) for shape in tracked_shapes
+                        if (task.id, shape["frame"]) not in self._deleted_frames],
                     task_id=task.id
                 )
                 idx+=1
@@ -887,7 +905,8 @@ class ProjectData(InstanceLabelData):
     def tags(self):
         for task in self._db_tasks.values():
             for tag in self._annotation_irs[task.id].tags:
-                yield self._export_tag(tag, task.id)
+                if (task.id, tag['frame']) not in self._deleted_frames:
+                    yield self._export_tag(tag, task.id)
 
     @property
     def meta(self):
@@ -900,6 +919,10 @@ class ProjectData(InstanceLabelData):
     @property
     def frame_info(self):
         return self._frame_info
+
+    @property
+    def deleted_frames(self):
+        return self._deleted_frames
 
     @property
     def frame_step(self):
@@ -1413,7 +1436,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
     if isinstance(instance_data, ProjectData):
         for sub_dataset, task_data in instance_data.split_dataset(dm_dataset):
-            # FIXME: temporary workaround for cvat format, will be removed after migration importer to datumaro
+            # FIXME: temporary workaround for cvat format
+            # will be removed after migration importer to datumaro
             sub_dataset._format = dm_dataset.format
             import_dm_annotations(sub_dataset, task_data)
         return
@@ -1456,6 +1480,12 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
             try:
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
+
+                attributes = [
+                    instance_data.Attribute(name=n, value=str(v))
+                    for n, v in ann.attributes.items()
+                ]
+
                 if ann.type in shapes:
                     if ann.type == datum_annotation.AnnotationType.cuboid_3d:
                         try:
@@ -1464,44 +1494,50 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                             ann.points = ann.points
                         ann.z_order = 0
 
+                    # Use safe casting to bool instead of plain reading
+                    # because in some formats return type can be different
+                    # from bool / None
+                    # https://github.com/openvinotoolkit/datumaro/issues/719
+                    occluded = cast(ann.attributes.pop('occluded', None), bool) is True
+                    keyframe = cast(ann.attributes.get('keyframe', None), bool) is True
+                    outside = cast(ann.attributes.pop('outside', None), bool) is True
+
                     track_id = ann.attributes.pop('track_id', None)
+                    source = ann.attributes.pop('source').lower() \
+                        if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
+
                     if track_id is None or dm_dataset.format != 'cvat' :
                         instance_data.add_shape(instance_data.LabeledShape(
                             type=shapes[ann.type],
                             frame=frame_number,
                             points=ann.points,
                             label=label_cat.items[ann.label].name,
-                            occluded=ann.attributes.pop('occluded', None) == True,
+                            occluded=occluded,
                             z_order=ann.z_order,
                             group=group_map.get(ann.group, 0),
-                            source=str(ann.attributes.pop('source')).lower() \
-                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
-                            attributes=[instance_data.Attribute(name=n, value=str(v))
-                                for n, v in ann.attributes.items()],
+                            source=source,
+                            attributes=attributes,
                         ))
                         continue
 
-                    if ann.attributes.get('keyframe', None) == True or ann.attributes.get('outside', None) == True:
+                    if keyframe or outside:
                         track = instance_data.TrackedShape(
                             type=shapes[ann.type],
                             frame=frame_number,
-                            occluded=ann.attributes.pop('occluded', None) == True,
-                            outside=ann.attributes.pop('outside', None) == True,
-                            keyframe=ann.attributes.get('keyframe', None) == True,
+                            occluded=occluded,
+                            outside=outside,
+                            keyframe=keyframe,
                             points=ann.points,
                             z_order=ann.z_order,
-                            source=str(ann.attributes.pop('source')).lower() \
-                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
-                            attributes=[instance_data.Attribute(name=n, value=str(v))
-                                for n, v in ann.attributes.items()],
+                            source=source,
+                            attributes=attributes,
                         )
 
                         if track_id not in tracks:
                             tracks[track_id] = instance_data.Track(
                                 label=label_cat.items[ann.label].name,
                                 group=group_map.get(ann.group, 0),
-                                source=str(ann.attributes.pop('source')).lower() \
-                                    if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                                source=source,
                                 shapes=[],
                             )
 
@@ -1513,8 +1549,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
                         source='manual',
-                        attributes=[instance_data.Attribute(name=n, value=str(v))
-                            for n, v in ann.attributes.items()],
+                        attributes=attributes,
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
@@ -1554,6 +1589,7 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
             'name': subset.name,
             'owner': project_annotation.db_project.owner,
             'subset': subset.name,
+            'organization': project_annotation.db_project.organization,
         }
 
         subset_dataset = subset.as_dataset()

@@ -63,7 +63,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                         'user': {
                             'role': self.org_role,
                         },
-                    } if self.org_id != None else None
+                    } if self.org_id is not None else None
                 }
             }
         }
@@ -210,7 +210,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 'role': self.role,
                 'organization': {
                     'id': self.org_id
-                } if self.org_id != None else None
+                } if self.org_id is not None else None
             }
 
         return data
@@ -417,7 +417,8 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
             'destroy': 'delete',
             'content': 'list:content',
             'preview': 'view',
-            'status': 'view'
+            'status': 'view',
+            'actions': 'view',
         }.get(view.action)]
 
     def get_resource(self):
@@ -427,7 +428,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
                 'owner': { 'id': self.user_id },
                 'organization': {
                     'id': self.org_id
-                } if self.org_id != None else None,
+                } if self.org_id is not None else None,
                 'user': {
                     'num_resources': Organization.objects.filter(
                         owner=self.user_id).count()
@@ -498,6 +499,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('dataset', 'GET'): 'export:dataset',
             ('export_backup', 'GET'): 'export:backup',
             ('import_backup', 'POST'): 'import:backup',
+            ('append_backup_chunk', 'PATCH'): 'import:backup',
+            ('append_backup_chunk', 'HEAD'): 'import:backup',
         }.get((view.action, request.method))
 
         scopes = []
@@ -618,9 +621,9 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = TaskPermission.create_scope_create(request, org_id)
                 # We don't create a project, just move it. Thus need to decrease
                 # the number of resources.
-                if obj != None:
+                if obj is not None:
                     perm.payload['input']['resource']['user']['num_resources'] -= 1
-                    if obj.project != None:
+                    if obj.project is not None:
                         ValidationError('Cannot change the organization for '
                             'a task inside a project')
                 permissions.append(perm)
@@ -649,13 +652,16 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_annotations_chunk', 'PATCH'): 'update:annotations',
             ('append_annotations_chunk', 'HEAD'): 'update:annotations',
             ('dataset_export', 'GET'): 'export:dataset',
+            ('metadata', 'GET'): 'view:metadata',
+            ('metadata', 'PATCH'): 'update:metadata',
             ('data', 'GET'): 'view:data',
-            ('data_info', 'GET'): 'view:data',
             ('data', 'POST'): 'upload:data',
             ('append_data_chunk', 'PATCH'): 'upload:data',
             ('append_data_chunk', 'HEAD'): 'upload:data',
             ('jobs', 'GET'): 'view',
             ('import_backup', 'POST'): 'import:backup',
+            ('append_backup_chunk', 'PATCH'): 'import:backup',
+            ('append_backup_chunk', 'HEAD'): 'import:backup',
             ('export_backup', 'GET'): 'export:backup',
         }.get((view.action, request.method))
 
@@ -797,6 +803,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('append_annotations_chunk', 'PATCH'): 'update:annotations',
             ('append_annotations_chunk', 'HEAD'): 'update:annotations',
             ('data', 'GET'): 'view:data',
+            ('metadata','GET'): 'view:metadata',
+            ('metadata','PATCH'): 'update:metadata',
             ('issues', 'GET'): 'view',
             ('commits', 'GET'): 'view:commits'
         }.get((view.action, request.method))
@@ -1047,7 +1055,8 @@ class PolicyEnforcer(BasePermission):
 
     @staticmethod
     def is_metadata_request(request, view):
-        return request.method == 'OPTIONS' or view.action == 'metadata'
+        return request.method == 'OPTIONS' \
+            or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
 
 class IsMemberInOrganization(BasePermission):
     message = 'You should be an active member in the organization.'

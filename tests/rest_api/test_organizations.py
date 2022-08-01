@@ -1,11 +1,12 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
 import pytest
-from .utils.config import get_method, options_method, patch_method, delete_method
+from rest_api.utils.config import get_method, options_method, patch_method, delete_method
 from deepdiff import DeepDiff
+from copy import deepcopy
 
 class TestMetadataOrganizations:
     _ORG = 2
@@ -33,6 +34,7 @@ class TestMetadataOrganizations:
         response = options_method(user, f'organizations/{self._ORG}')
         assert response.status_code == HTTPStatus.OK
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetOrganizations:
     _ORG = 2
 
@@ -60,6 +62,7 @@ class TestGetOrganizations:
         else:
             assert response.status_code == HTTPStatus.NOT_FOUND
 
+@pytest.mark.usefixtures('changedb')
 class TestPatchOrganizations:
     _ORG = 2
 
@@ -70,7 +73,7 @@ class TestPatchOrganizations:
 
     @pytest.fixture(scope='class')
     def expected_data(self, organizations, request_data):
-        data = organizations[self._ORG].copy()
+        data = deepcopy(organizations[self._ORG])
         data.update(request_data)
         return data
 
@@ -100,6 +103,7 @@ class TestPatchOrganizations:
         else:
             assert response.status_code != HTTPStatus.OK
 
+@pytest.mark.usefixtures('changedb')
 class TestDeleteOrganizations:
     _ORG = 2
 
