@@ -20,9 +20,9 @@ from cvat_sdk.impl.git import create_git_repo
 from cvat_sdk.impl.helpers import get_paginated_collection
 from cvat_sdk.impl.progress import ProgressReporter
 from cvat_sdk.impl.tasks import TaskProxy
-from cvat_sdk.impl.types import ResourceType
 from cvat_sdk.impl.uploading import Uploader
 from cvat_sdk.impl.utils import assert_status
+from cvat_sdk.types import ResourceType
 
 
 @attrs.define

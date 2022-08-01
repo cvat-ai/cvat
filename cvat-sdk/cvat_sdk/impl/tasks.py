@@ -18,11 +18,11 @@ from PIL import Image
 from cvat_sdk import models
 from cvat_sdk.impl.downloading import Downloader
 from cvat_sdk.impl.progress import ProgressReporter
-from cvat_sdk.impl.types import ResourceType
 from cvat_sdk.impl.uploading import Uploader
 from cvat_sdk.impl.utils import filter_dict
 from cvat_sdk.model_utils import OpenApiModel
 from cvat_sdk.models import ITaskRead
+from cvat_sdk.types import ResourceType
 
 if TYPE_CHECKING:
     from cvat_sdk.impl.client import Client

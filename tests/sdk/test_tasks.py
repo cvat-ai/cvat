@@ -16,7 +16,7 @@ from rest_api.utils.helpers import generate_image_file, generate_image_files
 
 from cvat_sdk.impl.client import Client
 from cvat_sdk.impl.tasks import TaskProxy
-from cvat_sdk.impl.types import ResourceType
+from cvat_sdk.types import ResourceType
 
 from .util import make_pbar
 

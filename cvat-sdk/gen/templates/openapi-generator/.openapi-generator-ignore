@@ -25,6 +25,7 @@
 # For safety
 /config
 /gen
+/types.py
 
 # Don't generate these files
 /git_push.sh
