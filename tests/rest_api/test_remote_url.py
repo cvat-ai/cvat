@@ -21,12 +21,13 @@ def _post_task_remote_data(username, task_id, resources):
 def _wait_until_task_is_created(username, task_id):
     url = f'tasks/{task_id}/status'
 
-    while True:
+    for _ in range(100):
         response = get_method(username, url)
         response_json = response.json()
         if response_json['state'] == 'Finished' or response_json['state'] == 'Failed':
             return response
         sleep(1)
+    raise Exception('Cannot create task')
 
 
 @pytest.mark.usefixtures('changedb')
@@ -56,6 +57,6 @@ class TestGetAnalytics:
 
     def test_can_create(self, find_users):
         user = find_users(privilege='admin')[0]['username']
-        remote_resources = ['https://openvinotoolkit.github.io/cvat/favicons/favicon-32x32.png']
+        remote_resources = ['https://cvat-ai.github.io/cvat/favicons/favicon-32x32.png']
 
         self._test_can_create(user, self.task_id, remote_resources)

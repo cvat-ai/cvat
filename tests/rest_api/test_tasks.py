@@ -8,12 +8,19 @@ from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
 from cvat_sdk.apis import TasksApi
+from cvat_sdk import models
 
 import pytest
 from deepdiff import DeepDiff
 
 from .utils.config import make_api_client
 from .utils.helpers import generate_image_files
+
+def get_cloud_storage_content(username, cloud_storage_id, manifest):
+    with make_api_client(username) as api_client:
+        (_, response) = api_client.cloud_storages_api.cloudstorages_retrieve_content(cloud_storage_id, manifest_path=manifest)
+        data = json.loads(response.data)
+        return data
 
 
 @pytest.mark.usefixtures('dontchangedb')
@@ -252,23 +259,27 @@ class TestGetTaskDataset:
         self._test_export_project('admin1', task['id'], format='CVAT for images 1.1')
 
 @pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_cvat_data")
 class TestPostTaskData:
+    _USERNAME = 'admin1'
+
     @staticmethod
     def _wait_until_task_is_created(api: TasksApi, task_id: int) -> models.RqStatus:
-        while True:
+        for _ in range(100):
             (status, _) = api.retrieve_status(task_id)
             if status.state.value in ['Finished', 'Failed']:
                 return status
             sleep(1)
+        raise Exception('Cannot create task')
 
-    def _test_create_task(self, username, spec, data, files):
+    def _test_create_task(self, username, spec, data, content_type, **kwargs):
         with make_api_client(username) as api_client:
             (task, response) = api_client.tasks_api.create(models.TaskWriteRequest(**spec))
             assert response.status == HTTPStatus.CREATED
 
-            task_data = models.DataRequest(**data, client_files=list(files.values()))
+            task_data = models.DataRequest(**data)
             (_, response) = api_client.tasks_api.create_data(task.id, task_data,
-                _content_type="multipart/form-data")
+                _content_type=content_type, **kwargs)
             assert response.status == HTTPStatus.ACCEPTED
 
             status = self._wait_until_task_is_created(api_client.tasks_api, task.id)
@@ -277,9 +288,8 @@ class TestPostTaskData:
         return task.id
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
-        username = 'admin1'
         task_spec = {
-            'name': f'test {username} to create a task with defined start and stop frames',
+            'name': f'test {self._USERNAME} to create a task with defined start and stop frames',
             "labels": [{
                 "name": "car",
                 "color": "#ff00ff",
@@ -298,15 +308,38 @@ class TestPostTaskData:
         task_data = {
             'image_quality': 75,
             'start_frame': 2,
-            'stop_frame': 5
-        }
-        task_files = {
-            f'client_files[{i}]': image for i, image in enumerate(generate_image_files(7))
+            'stop_frame': 5,
+            'client_files': generate_image_files(7),
         }
 
-        task_id = self._test_create_task(username, task_spec, task_data, task_files)
+        task_id = self._test_create_task(self._USERNAME, task_spec, task_data, content_type="multipart/form-data")
 
         # check task size
-        with make_api_client(username) as api_client:
+        with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
+
+    @pytest.mark.parametrize('cloud_storage_id, manifest, org', [
+        (1, 'manifest.jsonl',         ''), # public bucket
+        (2, 'sub/manifest.jsonl', 'org2'), # private bucket
+    ])
+    def test_create_task_with_cloud_storage_files(self, cloud_storage_id, manifest, org):
+        cloud_storage_content = get_cloud_storage_content(self._USERNAME, cloud_storage_id, manifest)
+        cloud_storage_content.append(manifest)
+
+        task_spec = {
+            "name": f"Task with files from cloud storage {cloud_storage_id}",
+            "labels": [{
+                "name": "car",
+            }],
+        }
+
+        data_spec = {
+            'image_quality': 75,
+            'use_cache': True,
+            'storage': 'cloud_storage',
+            'cloud_storage_id': cloud_storage_id,
+            'server_files': cloud_storage_content,
+        }
+
+        _ = self._test_create_task(self._USERNAME, task_spec, data_spec, content_type="application/json", org=org)

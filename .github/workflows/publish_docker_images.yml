@@ -19,8 +19,8 @@ jobs:
       - name: Push to Docker Hub
         env:
           DOCKERHUB_WORKSPACE: ${{ secrets.DOCKERHUB_WORKSPACE }}
-          SERVER_IMAGE_REPO: 'cvat_server'
-          UI_IMAGE_REPO: 'cvat_ui'
+          SERVER_IMAGE_REPO: 'server'
+          UI_IMAGE_REPO: 'ui'
         run: |
           docker tag "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}"
           docker push "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}"

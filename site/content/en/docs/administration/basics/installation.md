@@ -89,6 +89,11 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   docker-compose up -d
   ```
 
+- Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to install (e.g `v2.1.0`, `dev`):
+  ```bash
+  CVAT_VERSION=dev docker-compose up -d
+  ```
+
 - Alternative: if you want to build the images locally with unreleased changes
   run the following command. It will take some time to build CVAT images.
 
@@ -389,7 +394,7 @@ your cloud storage as a FUSE and use it later as a share.
 
 You can enable email verification for newly registered users.
 Specify these options in the
-[settings file](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py) to configure Django allauth
+[settings file](https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py) to configure Django allauth
 to enable email verification (ACCOUNT_EMAIL_VERIFICATION = 'mandatory').
 Access is denied until the user's email address is verified.
 

@@ -30,6 +30,7 @@ from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
     extend_schema_view, extend_schema
 )
+from drf_spectacular.plumbing import build_array_type, build_basic_type
 
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -1895,7 +1896,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
         ],
         responses={
-            '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='A manifest content'),
+            '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
         })
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
@@ -1906,6 +1907,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             if not db_storage.manifests.count():
                 raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
+            manifest_prefix = os.path.dirname(manifest_path)
             file_status = storage.get_file_status(manifest_path)
             if file_status == CloudStorageStatus.NOT_FOUND:
                 raise FileNotFoundError(errno.ENOENT,
@@ -1921,7 +1923,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
             # need to update index
             manifest.set_index()
-            manifest_files = manifest.data
+            manifest_files = [os.path.join(manifest_prefix, f) for f in manifest.data]
             return Response(data=manifest_files, content_type="text/plain")
 
         except CloudStorageModel.DoesNotExist:
@@ -1958,6 +1960,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                     raise Exception('Cannot get the cloud storage preview. There is no manifest file')
                 preview_path = None
                 for manifest_model in db_storage.manifests.all():
+                    manifest_prefix = os.path.dirname(manifest_model.filename)
                     full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
                     if not os.path.exists(full_manifest_path) or \
                             datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
@@ -1971,7 +1974,8 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                     if not len(manifest):
                         continue
                     preview_info = manifest[0]
-                    preview_path = ''.join([preview_info['name'], preview_info['extension']])
+                    preview_filename = ''.join([preview_info['name'], preview_info['extension']])
+                    preview_path = os.path.join(manifest_prefix, preview_filename)
                     break
                 if not preview_path:
                     msg = 'Cloud storage {} does not contain any images'.format(pk)

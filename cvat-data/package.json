@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check -- --watch"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",
@@ -21,6 +21,6 @@
   "devDependencies": {},
   "dependencies": {
     "async-mutex": "^0.3.2",
-    "jszip": "3.7.1"
+    "jszip": "3.10.0"
   }
 }

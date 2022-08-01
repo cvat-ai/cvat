@@ -734,7 +734,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **cloudstorages_retrieve_content**
-> {str: (bool, date, datetime, dict, float, int, list, str, none_type)} cloudstorages_retrieve_content(id)
+> [str] cloudstorages_retrieve_content(id)
 
 Method returns a manifest content
 
@@ -826,7 +826,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**{str: (bool, date, datetime, dict, float, int, list, str, none_type)}**
+**[str]**
 
 ### Authorization
 

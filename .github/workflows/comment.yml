@@ -1,4 +1,3 @@
-# v0.1.2
 name: Comment
 on:
   issue_comment:
@@ -33,7 +32,7 @@ jobs:
         uses: actions/github-script@v3
         with:
           script: |
-            core.setFailed('User that send comment with run command is not collaborator')
+            core.setFailed('User that send comment with /check command is not collaborator')
 
       - name: Get branch name
         id: get-ref
@@ -59,10 +58,6 @@ jobs:
     uses: ./.github/workflows/full.yml
     with:
       ref: ${{ needs.verify_author.outputs.ref }}
-    secrets:
-      DOCKERHUB_WORKSPACE: ${{ secrets.DOCKERHUB_WORKSPACE }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   send_status:
     runs-on: ubuntu-latest

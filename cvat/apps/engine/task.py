@@ -348,8 +348,20 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
             db_data.cloud_storage.get_storage_dirname()
         )
+        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
         cloud_storage_manifest.set_index()
-        sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+        if cloud_storage_manifest_prefix:
+            sorted_media_without_manifest_prefix = [
+                os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+            ]
+            sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
+            def _add_prefix(properties):
+                file_name = properties['name']
+                properties['name'] = os.path.join(cloud_storage_manifest_prefix, file_name)
+                return properties
+            content = list(map(_add_prefix, raw_content))
+        else:
+            sequence, content = cloud_storage_manifest.get_subset(sorted_media)
         sorted_content = (i[1] for i in sorted(zip(sequence, content)))
         manifest.create(sorted_content)
 

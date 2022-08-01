@@ -345,7 +345,7 @@ function createTaskUpdateStatus(status: string): AnyAction {
 }
 
 export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<any> => {
         const description: any = {
             name: data.basic.name,
             labels: data.labels,
@@ -417,8 +417,10 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
                 dispatch(createTaskUpdateStatus(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : '')));
             });
             dispatch(createTaskSuccess(savedTask.id));
+            return savedTask;
         } catch (error) {
             dispatch(createTaskFailed(error));
+            throw error;
         }
     };
 }

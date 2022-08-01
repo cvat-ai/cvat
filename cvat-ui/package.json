@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.39.0",
+  "version": "1.40.1",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -17,7 +17,7 @@
     "not IE 11",
     "> 2%"
   ],
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "dependencies": {
     "@ant-design/icons": "^4.6.3",

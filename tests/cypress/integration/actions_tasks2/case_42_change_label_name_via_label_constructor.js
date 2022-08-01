@@ -17,15 +17,18 @@ context('Changing a label name via label constructor.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Set empty label name. Press "Done" button. Alert exist.', () => {
+        it('Set empty label name. Press "Continue" button. Label name is not created. Label constructor is closed.', () => {
             cy.get('.cvat-constructor-viewer-new-item').click(); // Open label constructor
-            cy.contains('[type="submit"]', 'Done').click();
-            cy.contains('[role="alert"]', 'Please specify a name').should('exist').and('be.visible');
+            cy.contains('[type="submit"]', 'Continue').click();
+            cy.get('.cvat-label-constructor-creator').should('not.exist');
+            cy.get('.cvat-constructor-viewer').should('be.visible');
         });
 
-        it('Change label name to any other correct value. Press "Done" button. The label created.', () => {
+        it('Change label name to any other correct value. Press "Continue" button. The label created.', () => {
+            cy.get('.cvat-constructor-viewer-new-item').click(); // Open label constructor
             cy.get('[placeholder="Label name"]').type(firstLabelName);
-            cy.contains('[type="submit"]', 'Done').click({ force: true });
+            cy.contains('[type="submit"]', 'Continue').click({ force: true });
+            cy.contains('[type="button"]', 'Cancel').click(); // Close label constructor
             cy.get('.cvat-constructor-viewer-item').should('exist').and('have.text', firstLabelName);
         });
 
