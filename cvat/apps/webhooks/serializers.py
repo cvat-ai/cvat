@@ -23,6 +23,14 @@ class WebhookReadSerializer(serializers.ModelSerializer):
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if ret.get("type", "") == WebhookTypeChoice.ORGANIZATION.value:
+            ret.pop(WebhookTypeChoice.ORGANIZATION.value)
+        elif ret.get("type", "") == WebhookTypeChoice.PROJECT.value:
+            ret.pop(WebhookTypeChoice.PROJECT.value)
+        return ret
+
     class Meta:
         model = Webhook
         fields = [
@@ -30,7 +38,6 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "url",
             "type",
             "content_type",
-            "secret",
             "is_active",
             "enable_ssl",
             "created_date",
