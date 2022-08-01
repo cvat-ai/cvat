@@ -148,29 +148,17 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-skeleton-configurator-shape-buttons {
-    button.cvat-skeleton-configurator-point-button,
-    button.cvat-skeleton-configurator-rect-button,
-    button.cvat-skeleton-configurator-ellipse-button,
-    button.cvat-skeleton-configurator-polygon-button {
-        width: 100%;
-        padding: 0;
+    .ant-radio-group {
+        text-align: center;
 
-        > span {
-            transform: scale(0.6);
-            transition: all 0.5s;
-        }
-
-        &:hover {
-            &:not(:disabled) {
-                > span {
-                    transform: scale(0.7);
-                }
-            }
+        label {
+            margin-bottom: 8px;
+            width: 100%;
+            max-width: 180px;
         }
     }
 }
 
-.cvat-skeleton-configurator-action-buttons,
 .cvat-skeleton-configurator-svg-buttons {
     > button,
     > span {

@@ -4,15 +4,15 @@ import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import Alert from 'antd/lib/alert';
+import Radio from 'antd/lib/radio';
 import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
-import Icon, { PictureOutlined } from '@ant-design/icons';
+import { PictureOutlined } from '@ant-design/icons';
 
+import GlobalHotKeys from 'utils/mousetrap-react';
+import ShortcutsContext from 'components/shortcuts.context';
 import { ShapeType } from 'cvat-core-wrapper';
 import consts from 'consts';
-import {
-    EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
-} from 'icons';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -40,6 +40,7 @@ interface State {
 }
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
+    static contextType = ShortcutsContext;
     static defaultProps = {
         disabled: false,
     };
@@ -210,12 +211,52 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     )) {
                         element.remove();
                     }
+                } else if (element.tagName === 'line') {
+                    if (!this.setupEdge(svgRef.current, element as SVGLineElement)) {
+                        element.remove();
+                    }
                 }
             }
             this.setupTextLabels();
         }
 
         return false;
+    };
+
+    private setupEdge = (svg: SVGSVGElement, edge: SVGLineElement): boolean => {
+        const dataType = edge.getAttribute('data-type');
+        const dataNodeFrom = edge.getAttribute('data-node-from');
+        const dataNodeTo = edge.getAttribute('data-node-to');
+        const nodeFrom = svg.querySelector(`[data-node-id="${dataNodeFrom}"]`);
+        const nodeTo = svg.querySelector(`[data-node-id="${dataNodeTo}"]`);
+
+        if (dataType !== 'edge' || !nodeFrom || !nodeTo) {
+            return false;
+        }
+
+        const onClick = (): void => {
+            if (edge) {
+                edge.remove();
+            }
+        };
+
+        edge.addEventListener('mouseenter', () => {
+            const { activeTool: currentActiveTool } = this.state;
+            if (edge && currentActiveTool === 'delete') {
+                edge.setAttribute('stroke', 'red');
+                edge.addEventListener('click', onClick);
+            }
+        });
+
+        edge.addEventListener('mouseleave', () => {
+            const { activeTool: currentActiveTool } = this.state;
+            if (edge && currentActiveTool === 'delete') {
+                edge.setAttribute('stroke', 'black');
+                edge.removeEventListener('click', onClick);
+            }
+        });
+
+        return true;
     };
 
     private setupCircle = (
@@ -317,7 +358,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         stroke: 'black',
                         'data-type': 'edge',
                         'data-node-from': nodeID,
-                        'stroke-width': '0.1',
+                        'stroke-width': '0.5',
                     });
 
                     svg.prepend(line);
@@ -342,6 +383,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         y2: circle.getAttribute('cy'),
                         'data-node-to': nodeID,
                     });
+                    this.setupEdge(this.svgRef.current as SVGSVGElement, line);
                 }
             }
         });
@@ -584,9 +626,26 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const {
             activeTool, contextMenuVisible, contextMenuElement, error,
         } = this.state;
+        const keyMap = this.context;
 
         return (
             <Row className='cvat-skeleton-configurator' style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
+                <GlobalHotKeys
+                    keyMap={{
+                        CANCEL_SKELETON_EDGE: keyMap.CANCEL_SKELETON_EDGE,
+                    }}
+                    handlers={{
+                        CANCEL_SKELETON_EDGE: () => {
+                            const { activeTool: currentActiveTool } = this.state;
+                            if (currentActiveTool === 'join') {
+                                const shape = this.findNotFinishedEdge();
+                                if (shape) {
+                                    shape.remove();
+                                }
+                            }
+                        },
+                    }}
+                />
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
                     <SkeletonElementContextMenu
                         elementID={contextMenuElement}
@@ -608,6 +667,9 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                 }
                                 this.setupTextLabels();
                             }
+                        }}
+                        onCancel={() => {
+                            this.setState({ contextMenuVisible: false });
                         }}
                     />
                 ) : null}
@@ -637,62 +699,25 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             <p className='ant-upload-text'>Click or drag an image to this area</p>
                         </Upload.Dragger>
                     </div>
-                    <Row justify='space-between' className='cvat-skeleton-configurator-shape-buttons'>
-                        <Col span={5}>
-                            <Button
-                                type={activeTool === 'point' ? 'dashed' : 'default'}
-                                className='cvat-skeleton-configurator-point-button'
-                                size='large'
-                                shape='round'
-                                icon={<Icon component={PointIcon} />}
-                                onClick={() => this.setState({ activeTool: 'point' })}
-                            />
+                    <Row justify='center' className='cvat-skeleton-configurator-shape-buttons'>
+                        <Col span={24}>
+                            <Radio.Group
+                                value={activeTool}
+                                onChange={(e) => {
+                                    this.setState({ activeTool: e.target.value });
+                                }}
+                            >
+                                <Radio.Button defaultChecked value='point'>
+                                    Add or move a point
+                                </Radio.Button>
+                                <Radio.Button value='join'>
+                                    Setup an edge
+                                </Radio.Button>
+                                <Radio.Button value='delete'>
+                                    Delete an element
+                                </Radio.Button>
+                            </Radio.Group>
                         </Col>
-                        <Col span={5}>
-                            <Button
-                                className='cvat-skeleton-configurator-rect-button'
-                                size='large'
-                                shape='round'
-                                disabled
-                                title='Not implemented'
-                                icon={<Icon component={RectangleIcon} />}
-                            />
-                        </Col>
-                        <Col span={5}>
-                            <Button
-                                className='cvat-skeleton-configurator-ellipse-button'
-                                size='large'
-                                shape='round'
-                                disabled
-                                title='Not implemented'
-                                icon={<Icon component={EllipseIcon} />}
-                            />
-                        </Col>
-                        <Col span={5}>
-                            <Button
-                                className='cvat-skeleton-configurator-polygon-button'
-                                size='large'
-                                shape='round'
-                                disabled
-                                title='Not implemented'
-                                icon={<Icon component={PolygonIcon} />}
-                            />
-                        </Col>
-                    </Row>
-                    <Row justify='space-between' className='cvat-skeleton-configurator-action-buttons'>
-                        <Button
-                            type={activeTool === 'join' ? 'dashed' : 'default'}
-                            onClick={() => this.setState({ activeTool: 'join' })}
-                        >
-                            Join
-                        </Button>
-                        <Button
-                            type={activeTool === 'delete' ? 'dashed' : 'default'}
-                            onClick={() => this.setState({ activeTool: 'delete' })}
-                            danger
-                        >
-                            Delete
-                        </Button>
                     </Row>
                     <Row justify='space-between' className='cvat-skeleton-configurator-svg-buttons'>
                         <Button

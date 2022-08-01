@@ -420,6 +420,13 @@ const defaultKeyMap = ({
         action: 'keydown',
         applicable: [DimensionType.DIM_3D],
     },
+    CANCEL_SKELETON_EDGE: {
+        name: 'Cancel skeleton drawing',
+        description: 'Interrupts drawing a new skeleton edge',
+        sequences: ['esc'],
+        action: 'keydown',
+        applicable: [DimensionType.DIM_3D],
+    },
 } as any) as KeyMap;
 
 const defaultState: ShortcutsState = {
