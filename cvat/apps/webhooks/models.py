@@ -7,8 +7,8 @@ from cvat.apps.organizations.models import Organization
 
 
 class WebhookTypeChoice(str, Enum):
-    ORGANIZATION = "Organization"
-    PROJECT = "Project"
+    ORGANIZATION = "organization"
+    PROJECT = "project"
 
     @classmethod
     def choices(cls):
@@ -61,3 +61,20 @@ class Webhook(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("url", "secret", "enable_ssl", "type", "content_type")
+        constraints = [
+            models.CheckConstraint(
+                name="webhooks_project_or_organization",
+                check=(
+                    models.Q(
+                        type=WebhookTypeChoice.PROJECT.value,
+                        project_id__isnull=False,
+                        organization_id__isnull=True,
+                    ) | \
+                    models.Q(
+                        type=WebhookTypeChoice.ORGANIZATION.value,
+                        project_id__isnull=True,
+                        organization_id__isnull=False,
+                    )
+                ),
+            )
+        ]
