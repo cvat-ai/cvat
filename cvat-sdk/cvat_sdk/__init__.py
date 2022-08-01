@@ -21,6 +21,6 @@ from cvat_sdk.exceptions import (
     ApiValueError,
     OpenApiException,
 )
-from cvat_sdk.impl.client import CvatClient
+from cvat_sdk.impl.client import Client
 
 from .version import VERSION as __version__

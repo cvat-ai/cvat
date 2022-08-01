@@ -16,7 +16,7 @@ from cvat_sdk import ApiClient
 from cvat_sdk.rest import RESTClientObject
 
 if TYPE_CHECKING:
-    from cvat_sdk.impl.client import CvatClient
+    from cvat_sdk.impl.client import Client
 
 from cvat_sdk.impl.progress import ProgressReporter, StreamWithProgress
 from cvat_sdk.impl.utils import assert_status
@@ -25,7 +25,7 @@ MAX_REQUEST_SIZE = 100 * 2**20
 
 
 class Uploader:
-    def __init__(self, client: CvatClient):
+    def __init__(self, client: Client):
         self.client = client
 
     def upload_files(

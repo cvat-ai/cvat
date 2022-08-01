@@ -67,3 +67,4 @@ target/
 
 # Workflow
 schema/
+.openapi-generator/

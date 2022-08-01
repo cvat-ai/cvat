@@ -10,7 +10,7 @@ from time import time
 import pytest
 from rest_api.utils.config import BASE_URL
 
-from cvat_sdk import CvatClient
+from cvat_sdk import Client
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def fxt_cvat_client(fxt_logger):
     try:
         logger, _ = fxt_logger
 
-        client = CvatClient(BASE_URL, logger=logger)
+        client = Client(BASE_URL, logger=logger)
         api_client = client.api
         for k in api_client.configuration.logger:
             api_client.configuration.logger[k] = logger

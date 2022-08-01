@@ -11,13 +11,13 @@ from contextlib import closing
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from cvat_sdk.impl.client import CvatClient
+    from cvat_sdk.impl.client import Client
 
 from cvat_sdk.impl.progress import ProgressReporter
 
 
 class Downloader:
-    def __init__(self, client: CvatClient):
+    def __init__(self, client: Client):
         self.client = client
 
     def download_file(

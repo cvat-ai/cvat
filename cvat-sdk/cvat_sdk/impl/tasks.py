@@ -25,14 +25,14 @@ from cvat_sdk.model_utils import OpenApiModel
 from cvat_sdk.models import ITaskRead
 
 if TYPE_CHECKING:
-    from cvat_sdk.impl.client import CvatClient
+    from cvat_sdk.impl.client import Client
 
 
 class ModelProxy(ABC):
-    _client: CvatClient
+    _client: Client
     _model: OpenApiModel
 
-    def __init__(self, client: CvatClient, model: OpenApiModel) -> None:
+    def __init__(self, client: Client, model: OpenApiModel) -> None:
         self.__dict__["_client"] = client
         self.__dict__["_model"] = model
 
@@ -66,7 +66,7 @@ class ModelProxy(ABC):
 
 
 class TaskProxy(ModelProxy, ITaskRead):
-    def __init__(self, client: CvatClient, task: models.TaskRead):
+    def __init__(self, client: Client, task: models.TaskRead):
         ModelProxy.__init__(self, client=client, model=task)
 
     def remove(self):

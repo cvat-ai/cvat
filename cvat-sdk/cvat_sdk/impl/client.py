@@ -31,7 +31,7 @@ class Config:
     """In seconds"""
 
 
-class CvatClient:
+class Client:
     """
     Manages session and configuration.
     """

@@ -10,11 +10,11 @@ from time import sleep
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from cvat_sdk.impl.client import CvatClient
+    from cvat_sdk.impl.client import Client
 
 
 def create_git_repo(
-    client: CvatClient,
+    client: Client,
     *,
     task_id: int,
     repo_url: str,
