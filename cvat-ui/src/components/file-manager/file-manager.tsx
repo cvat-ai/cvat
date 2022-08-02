@@ -9,17 +9,17 @@ import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import Upload, { RcFile } from 'antd/lib/upload';
+import { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import { FormInstance } from 'antd/lib/form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
-import { InboxOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
 import { CloudStorage } from 'reducers/interfaces';
 import CloudStorageTab from './cloud-storages-tab';
+import LocalFiles from './local-files';
 
 export interface Files {
     local: File[];
@@ -122,16 +122,9 @@ export class FileManager extends React.PureComponent<Props, State> {
 
         return (
             <Tabs.TabPane className='cvat-file-manager-local-tab' key='local' tab='My computer'>
-                <Upload.Dragger
-                    multiple
-                    listType='text'
-                    fileList={files.local as any[]}
-                    showUploadList={
-                        files.local.length < 5 && {
-                            showRemoveIcon: false,
-                        }
-                    }
-                    beforeUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
+                <LocalFiles
+                    files={files.local}
+                    onUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
                         this.setState({
                             files: {
                                 ...files,
@@ -140,19 +133,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                         });
                         return false;
                     }}
-                >
-                    <p className='ant-upload-drag-icon'>
-                        <InboxOutlined />
-                    </p>
-                    <p className='ant-upload-text'>Click or drag files to this area</p>
-                    <p className='ant-upload-hint'>Support for a bulk images or a single video</p>
-                </Upload.Dragger>
-                {files.local.length >= 5 && (
-                    <>
-                        <br />
-                        <Text className='cvat-text-color'>{`${files.local.length} files selected`}</Text>
-                    </>
-                )}
+                />
             </Tabs.TabPane>
         );
     }
