@@ -38,5 +38,11 @@ Relevant links:
 
 ## How to test
 
-API client tests are integrated into REST API tests (`/tests/rest_api/`).
+API client tests are integrated into REST API tests (`/tests/python/rest_api`)
+and SDK tests are placed next to them (`/tests/python/sdk`).
+To execute, run:
+```bash
+pytest tests/python/rest_api tests/python/sdk
+```
+
 To allow editing of the package, install it with `pip install -e cvat-sdk/`.

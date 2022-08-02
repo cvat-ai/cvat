@@ -159,11 +159,12 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
           docker image ls -a
 
-      - name: Running REST API tests
+      - name: Running REST API and SDK tests
         run: |
           pip3 install --user cvat-sdk/
-          pip3 install --user -r tests/rest_api/requirements.txt
-          pytest tests/rest_api/ -s -v
+          pip3 install --user cvat-cli/
+          pip3 install --user -r tests/python/requirements.txt
+          pytest tests/python -s -v
 
       - name: Creating a log file from cvat containers
         if: failure()
