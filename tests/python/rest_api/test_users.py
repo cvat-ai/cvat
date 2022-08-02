@@ -29,7 +29,7 @@ class TestGetUsers:
                 response_data = json.loads(response.data)
             elif id_ is None:
                 response_data = get_paginated_collection(api_client.users_api.list_endpoint,
-                    return_json=True)
+                    return_json=True, **kwargs)
             else:
                 (_, response) = api_client.users_api.retrieve(id_, **kwargs,
                     _parse_response=False)

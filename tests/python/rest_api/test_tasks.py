@@ -18,8 +18,8 @@ from shared.utils.helpers import generate_image_files
 
 def get_cloud_storage_content(username, cloud_storage_id, manifest):
     with make_api_client(username) as api_client:
-        (_, response) = api_client.cloud_storages_api.cloudstorages_retrieve_content(cloud_storage_id, manifest_path=manifest)
-        data = json.loads(response.data)
+        (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id,
+            manifest_path=manifest)
         return data
 
 
@@ -274,7 +274,7 @@ class TestPostTaskData:
 
     def _test_create_task(self, username, spec, data, content_type, **kwargs):
         with make_api_client(username) as api_client:
-            (task, response) = api_client.tasks_api.create(models.TaskWriteRequest(**spec))
+            (task, response) = api_client.tasks_api.create(models.TaskWriteRequest(**spec), **kwargs)
             assert response.status == HTTPStatus.CREATED
 
             task_data = models.DataRequest(**data)
@@ -312,7 +312,8 @@ class TestPostTaskData:
             'client_files': generate_image_files(7),
         }
 
-        task_id = self._test_create_task(self._USERNAME, task_spec, task_data, content_type="multipart/form-data")
+        task_id = self._test_create_task(self._USERNAME, task_spec, task_data,
+            content_type="multipart/form-data")
 
         # check task size
         with make_api_client(self._USERNAME) as api_client:
@@ -342,4 +343,5 @@ class TestPostTaskData:
             'server_files': cloud_storage_content,
         }
 
-        _ = self._test_create_task(self._USERNAME, task_spec, data_spec, content_type="application/json", org=org)
+        self._test_create_task(self._USERNAME, task_spec, data_spec,
+            content_type="application/json", org=org)
