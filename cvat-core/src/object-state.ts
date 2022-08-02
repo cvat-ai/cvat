@@ -499,8 +499,8 @@ const { Source } = require('./enums');
          */
         static rle2Mask(rle) {
             const [left, top, right, bottom] = rle.slice(-4);
-            const width = right - left;
-            const height = bottom - top;
+            const width = right - left + 1;
+            const height = bottom - top + 1;
             const decoded = Array(width * height).fill(0);
             const latestIdx = rle.length - 4;
             let decodedIdx = 0;
@@ -529,15 +529,23 @@ const { Source } = require('./enums');
          * @throws {module:API.cvat.exceptions.ArgumentError}
          */
         static mask2Rle(mask) {
-            return mask.reduce((acc, val, idx, arr) => {
+            return mask.reduce<number[]>((acc, val, idx, arr) => {
                 if (idx > 0) {
                     if (arr[idx - 1] === val) {
                         acc[acc.length - 1] += 1;
                     } else {
                         acc.push(1);
                     }
+
+                    return acc;
+                }
+
+                if (val > 0) {
+                    // 0, 0, 0, 1 => [3, 1]
+                    // 1, 1, 0, 0 => [0, 2, 2]
+                    acc.push(0, 1);
                 } else {
-                    acc.push(val > 0 ? 0 : 1);
+                    acc.push(1);
                 }
 
                 return acc;

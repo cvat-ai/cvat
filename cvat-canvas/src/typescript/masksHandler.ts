@@ -35,6 +35,8 @@ export class MasksHandlerImpl implements MasksHandler {
     private isDrawing: boolean;
     private isEditing: boolean;
     private isPolygonDrawing: boolean;
+    private isMaskDrawing: boolean;
+    private isMouseDown: boolean;
     private drawablePolygon: null | fabric.Polyline;
     private drawData: DrawData | null;
     private editData: MasksEditData | null;
@@ -42,7 +44,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private objectStates: any[];
     private startTimestamp: number;
     private geometry: Geometry;
-    private drawnObjects: (fabric.Path | fabric.Polygon)[];
+    private drawnObjects: (fabric.Path | fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line)[];
     private drawingOpacity: number;
 
     private keepDrawnPolygon(): void {
@@ -129,6 +131,17 @@ export class MasksHandlerImpl implements MasksHandler {
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
 
+        let prevMovePosition : { x: number | null; y: number | null } = {
+            x: null,
+            y: null,
+        };
+        window.document.addEventListener('mouseup', () => {
+            // todo: clear the callback when element is removed
+            this.isMouseDown = false;
+            prevMovePosition.x = null;
+            prevMovePosition.y = null;
+        });
+
         this.canvas.on('mouse:dblclick', (options: fabric.IEvent<MouseEvent>) => {
             if (!this.drawablePolygon) return;
             const points = this.drawablePolygon.get('points').slice(0, -2); // removed the latest two points just added
@@ -138,6 +151,7 @@ export class MasksHandlerImpl implements MasksHandler {
         });
 
         this.canvas.on('mouse:down', (options: fabric.IEvent<MouseEvent>) => {
+            this.isMouseDown = true;
             if (this.isPolygonDrawing) {
                 const point = new fabric.Point(options.e.offsetX, options.e.offsetY);
                 if (!this.drawablePolygon) {
@@ -171,15 +185,104 @@ export class MasksHandlerImpl implements MasksHandler {
                     ]);
                 }
                 this.canvas.renderAll();
+            } else if (this.isMaskDrawing) {
+                // remember mousedown
             }
         });
 
         this.canvas.on('mouse:move', (e: fabric.IEvent<MouseEvent>) => {
-            if (!this.drawablePolygon) return;
-            const points = this.drawablePolygon.get('points');
-            if (points.length) {
-                points[points.length - 1].setX(e.e.offsetX);
-                points[points.length - 1].setY(e.e.offsetY);
+            const position = { x: e.pointer.x, y: e.pointer.y };
+            console.log(position);
+            if (this.drawablePolygon) {
+                const points = this.drawablePolygon.get('points');
+                if (points.length) {
+                    points[points.length - 1].setX(e.e.offsetX);
+                    points[points.length - 1].setY(e.e.offsetY);
+                    this.canvas.renderAll();
+                }
+            } else if (this.isMaskDrawing && this.isMouseDown) {
+                const brush = this.drawData.brushTool;
+                let color = fabric.Color.fromHex(brush.color);
+                if (brush.type === 'eraser') {
+                    color = fabric.Color.fromHex('#ffffff');
+                }
+                color.setAlpha(0.5);
+                if (brush.type === 'eraser') {
+                    color = fabric.Color.fromHex('#ffffff');
+                    color.setAlpha(1);
+                }
+
+                if (brush.form === 'circle') {
+                    const circle = new fabric.Circle({
+                        selectable: false,
+                        evented: false,
+                        radius: brush.size / 2,
+                        fill: color.toRgba(),
+                        left: position.x - brush.size / 2,
+                        top: position.y - brush.size / 2,
+                    });
+
+                    if (this.drawData.brushTool?.type === 'eraser') {
+                        circle.globalCompositeOperation = 'destination-out';
+                    } else {
+                        circle.globalCompositeOperation = 'xor';
+                    }
+
+                    this.canvas.add(circle);
+                    this.drawnObjects.push(circle);
+                } else if (brush.form === 'square') {
+                    const rect = new fabric.Rect({
+                        selectable: false,
+                        evented: false,
+                        width: brush.size,
+                        height: brush.size,
+                        fill: color.toRgba(),
+                        left: position.x - brush.size / 2,
+                        top: position.y - brush.size / 2,
+                    });
+
+                    if (brush.type === 'eraser') {
+                        rect.globalCompositeOperation = 'destination-out';
+                    } else {
+                        rect.globalCompositeOperation = 'xor';
+                    }
+
+                    this.canvas.add(rect);
+                    this.drawnObjects.push(rect);
+                }
+
+                if (prevMovePosition.x !== null && prevMovePosition.y !== null) {
+                    const dx = position.x - prevMovePosition.x;
+                    const dy = position.y - prevMovePosition.y;
+                    if (Math.sqrt(dx ** 2 + dy ** 2) > this.drawData.brushTool?.size / 2) {
+                        const line = new fabric.Line([
+                            prevMovePosition.x - brush.size / 2,
+                            prevMovePosition.y - brush.size / 2,
+                            position.x - brush.size / 2,
+                            position.y - brush.size / 2,
+                        ], {
+                            stroke: color.toRgba(),
+                            strokeWidth: brush.size,
+                            selectable: false,
+                            evented: false,
+                        });
+
+                        if (brush.type === 'eraser') {
+                            line.globalCompositeOperation = 'destination-out';
+                        } else {
+                            line.globalCompositeOperation = 'xor';
+                        }
+
+                        line.strokeLineCap = brush.form === 'circle' ? 'round' : 'square';
+
+
+                        this.canvas.add(line);
+                        this.drawnObjects.push(line);
+                    }
+                }
+
+                prevMovePosition.x = position.x;
+                prevMovePosition.y = position.y;
                 this.canvas.renderAll();
             }
         });
@@ -224,7 +327,9 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public draw(drawData: DrawData): void {
         if (drawData.enabled && drawData.shapeType === 'mask') {
-            this.canvas.isDrawingMode = true;
+            if (drawData.brushTool?.type === 'brush') {
+                this.isMaskDrawing = true;
+            }
             if (!this.isDrawing) {
                 // initialize new drawing process
                 this.canvas.getElement().parentElement.style.display = 'block';
@@ -233,24 +338,24 @@ export class MasksHandlerImpl implements MasksHandler {
             } else if (['polygon-plus', 'polygon-minus'].includes(drawData.brushTool?.type)) {
                 if (!this.isPolygonDrawing) {
                     this.isPolygonDrawing = true;
-                    this.canvas.isDrawingMode = false;
+                    this.isMaskDrawing = false;
                 }
             } else if (this.isPolygonDrawing && this.drawablePolygon) {
                 this.keepDrawnPolygon();
                 this.isPolygonDrawing = false;
             }
 
-            if (drawData.brushTool) {
-                this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-                this.canvas.freeDrawingBrush.width = drawData.brushTool.size || 10;
-                this.canvas.freeDrawingBrush.strokeLineCap = drawData.brushTool.form === 'circle' ? 'round' : 'square';
-                let color = fabric.Color.fromHex(drawData.brushTool.color);
-                if (drawData.brushTool.type === 'eraser') {
-                    color = fabric.Color.fromHex('#ffffff');
-                }
-                color.setAlpha(this.drawingOpacity);
-                this.canvas.freeDrawingBrush.color = color.toRgba();
-            }
+            // if (drawData.brushTool) {
+            //     this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
+            //     this.canvas.freeDrawingBrush.width = drawData.brushTool.size || 10;
+            //     this.canvas.freeDrawingBrush.strokeLineCap = drawData.brushTool.form === 'circle' ? 'round' : 'square';
+            //     let color = fabric.Color.fromHex(drawData.brushTool.color);
+            //     if (drawData.brushTool.type === 'eraser') {
+            //         color = fabric.Color.fromHex('#ffffff');
+            //     }
+            //     color.setAlpha(this.drawingOpacity);
+            //     this.canvas.freeDrawingBrush.color = color.toRgba();
+            // }
             this.drawData = drawData;
         } else if (this.isDrawing) {
             // todo: make a smarter validation
@@ -276,7 +381,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const imageData = this.canvas.toCanvasElement()
                     .getContext('2d').getImageData(
                         wrappingBbox.left, wrappingBbox.top,
-                        wrappingBbox.right - wrappingBbox.left, wrappingBbox.bottom - wrappingBbox.top,
+                        wrappingBbox.right - wrappingBbox.left + 1, wrappingBbox.bottom - wrappingBbox.top + 1,
                     ).data;
 
                 let alpha = [];
@@ -284,41 +389,41 @@ export class MasksHandlerImpl implements MasksHandler {
                     alpha.push(imageData[i] > 0 ? 1 : 0);
                 }
 
-                if (this.drawData.brushTool?.removeUnderlyingPixels) {
-                    for (const state of this.objectStates) {
-                        const [left, top, right, bottom] = state.points.slice(-4);
-                        const [stateWidth, stateHeight] = [Math.floor(right - left), Math.floor(bottom - top)];
-                        // todo: check box intersection to optimize
-                        const points = state.points.slice(0, -4);
-                        for (let i = 0; i < alpha.length - 4; i++) {
-                            if (!alpha[i]) continue;
-                            const x = (i % (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.left;
-                            const y = Math.trunc(i / (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.top;
-                            const translatedX = x - left;
-                            const translatedY = y - top;
-                            if (translatedX >= 0 && translatedX < stateWidth &&
-                                translatedY >= 0 && translatedY < stateHeight) {
-                                const j = translatedY * stateWidth + translatedX;
-                                points[j] = 0;
-                            }
-                        }
+                // if (this.drawData.brushTool?.removeUnderlyingPixels) {
+                //     for (const state of this.objectStates) {
+                //         const [left, top, right, bottom] = state.points.slice(-4);
+                //         const [stateWidth, stateHeight] = [Math.floor(right - left), Math.floor(bottom - top)];
+                //         // todo: check box intersection to optimize
+                //         const points = state.points.slice(0, -4);
+                //         for (let i = 0; i < alpha.length - 4; i++) {
+                //             if (!alpha[i]) continue;
+                //             const x = (i % (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.left;
+                //             const y = Math.trunc(i / (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.top;
+                //             const translatedX = x - left;
+                //             const translatedY = y - top;
+                //             if (translatedX >= 0 && translatedX < stateWidth &&
+                //                 translatedY >= 0 && translatedY < stateHeight) {
+                //                 const j = translatedY * stateWidth + translatedX;
+                //                 points[j] = 0;
+                //             }
+                //         }
 
-                        points.push(left, top, right, bottom);
+                //         points.push(left, top, right, bottom);
 
-                        // todo: do not edit shapes here because it creates more history actions
-                        const event: CustomEvent = new CustomEvent('canvas.edited', {
-                            bubbles: false,
-                            cancelable: true,
-                            detail: {
-                                state,
-                                points,
-                                rotation: 0,
-                            },
-                        });
+                //         // todo: do not edit shapes here because it creates more history actions
+                //         const event: CustomEvent = new CustomEvent('canvas.edited', {
+                //             bubbles: false,
+                //             cancelable: true,
+                //             detail: {
+                //                 state,
+                //                 points,
+                //                 rotation: 0,
+                //             },
+                //         });
 
-                        this.dispatchEvent(event);
-                    }
-                }
+                //         this.dispatchEvent(event);
+                //     }
+                // }
 
                 alpha = alpha.reduce<number[]>((acc, val, idx, arr) => {
                     if (idx > 0) {
@@ -327,8 +432,16 @@ export class MasksHandlerImpl implements MasksHandler {
                         } else {
                             acc.push(1);
                         }
+
+                        return acc;
+                    }
+
+                    if (val > 0) {
+                        // 0, 0, 0, 1 => [3, 1]
+                        // 1, 1, 0, 0 => [0, 2, 2]
+                        acc.push(0, 1);
                     } else {
-                        acc.push(val > 0 ? 0 : 1);
+                        acc.push(1);
                     }
 
                     return acc;

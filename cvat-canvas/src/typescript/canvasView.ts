@@ -2543,13 +2543,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const canvas = document.createElement('canvas');
-        canvas.width = right - left;
-        canvas.height = bottom - top;
+        canvas.width = right - left + 1;
+        canvas.height = bottom - top + 1;
         canvas.getContext('2d').putImageData(
             new ImageData(
                 new Uint8ClampedArray(imageBitmap),
-                right - left,
-                bottom - top,
+                canvas.width,
+                canvas.height,
             ), 0, 0,
         );
         const dataURL = canvas.toDataURL('image/png');
