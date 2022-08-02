@@ -7,9 +7,13 @@ import Alert from 'antd/lib/alert';
 import Radio from 'antd/lib/radio';
 import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
-import { PictureOutlined } from '@ant-design/icons';
+import Icon, {
+    DeleteOutlined, DownloadOutlined, LineOutlined, PictureOutlined, UploadOutlined,
+} from '@ant-design/icons';
 
+import { PointIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
 import { ShapeType } from 'cvat-core-wrapper';
 import consts from 'consts';
@@ -289,7 +293,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             circle.setAttribute('stroke-width', '0.1');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
-                text.setAttribute('fill', 'white');
+                text.setAttribute('fill', 'darkorange');
             }
         });
 
@@ -473,7 +477,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             x: +cx + TEXT_MARGIN,
                             y: +cy - TEXT_MARGIN,
                             stroke: 'black',
-                            fill: 'white',
+                            fill: 'darkorange',
                             'stroke-width': 0.1,
                             'data-for-element-id': elementID,
                         });
@@ -673,13 +677,9 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         }}
                     />
                 ) : null}
-                <Col span={16} className='cvat-skeleton-canvas-wrapper'>
-                    <canvas ref={canvasRef} className='cvat-skeleton-configurator-canvas' />
-                    <svg width={100} height={100} ref={svgRef} className='cvat-skeleton-configurator-svg' />
-                </Col>
-                <Col span={7} offset={1}>
+                <div>
                     <div className='cvat-skeleton-configurator-image-dragger'>
-                        <Upload.Dragger
+                        <Upload
                             showUploadList={false}
                             beforeUpload={(file: RcFile) => {
                                 if (!file.type.startsWith('image/')) {
@@ -694,10 +694,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             }}
                         >
                             <p className='ant-upload-drag-icon'>
-                                <PictureOutlined />
+                                <CVATTooltip title='Upload a background image'>
+                                    <Button icon={<PictureOutlined />} />
+                                </CVATTooltip>
                             </p>
-                            <p className='ant-upload-text'>Click or drag an image to this area</p>
-                        </Upload.Dragger>
+                        </Upload>
                     </div>
                     <Row justify='center' className='cvat-skeleton-configurator-shape-buttons'>
                         <Col span={24}>
@@ -707,49 +708,58 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                     this.setState({ activeTool: e.target.value });
                                 }}
                             >
-                                <Radio.Button defaultChecked value='point'>
-                                    Add or move a point
-                                </Radio.Button>
-                                <Radio.Button value='join'>
-                                    Setup an edge
-                                </Radio.Button>
-                                <Radio.Button value='delete'>
-                                    Delete an element
-                                </Radio.Button>
+                                <CVATTooltip title='Click canvas to add a point or drag it'>
+                                    <Radio.Button defaultChecked value='point'>
+                                        <Icon component={PointIcon} />
+                                    </Radio.Button>
+                                </CVATTooltip>
+
+                                <CVATTooltip title='Click two points to setup an edge'>
+                                    <Radio.Button value='join'>
+                                        <LineOutlined />
+                                    </Radio.Button>
+                                </CVATTooltip>
+
+                                <CVATTooltip title='Click an element to remove it'>
+                                    <Radio.Button value='delete'>
+                                        <DeleteOutlined />
+                                    </Radio.Button>
+                                </CVATTooltip>
                             </Radio.Group>
                         </Col>
                     </Row>
                     <Row justify='space-between' className='cvat-skeleton-configurator-svg-buttons'>
-                        <Button
-                            type='default'
-                            onClick={() => {
-                                if (svgRef.current) {
-                                    this.setupTextLabels(false);
+                        <CVATTooltip title='Download skeleton as SVG'>
+                            <Button
+                                type='default'
+                                icon={<DownloadOutlined />}
+                                onClick={() => {
+                                    if (svgRef.current) {
+                                        this.setupTextLabels(false);
 
-                                    const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
-                                    desc.setAttribute('data-description-type', 'labels-specification');
-                                    (desc as SVGDescElement).textContent = JSON.stringify(this.labels);
-                                    svgRef.current.appendChild(desc);
+                                        const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+                                        desc.setAttribute('data-description-type', 'labels-specification');
+                                        (desc as SVGDescElement).textContent = JSON.stringify(this.labels);
+                                        svgRef.current.appendChild(desc);
 
-                                    const text = svgRef.current.innerHTML;
-                                    desc.remove();
+                                        const text = svgRef.current.innerHTML;
+                                        desc.remove();
 
-                                    this.setupTextLabels();
-                                    const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
-                                    const url = URL.createObjectURL(blob);
-                                    const anchor = window.document.getElementById('downloadAnchor');
-                                    if (anchor) {
-                                        (anchor as HTMLAnchorElement).href = url;
-                                        (anchor as HTMLAnchorElement).click();
-                                        setTimeout(() => {
-                                            URL.revokeObjectURL(url);
-                                        });
+                                        this.setupTextLabels();
+                                        const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
+                                        const url = URL.createObjectURL(blob);
+                                        const anchor = window.document.getElementById('downloadAnchor');
+                                        if (anchor) {
+                                            (anchor as HTMLAnchorElement).href = url;
+                                            (anchor as HTMLAnchorElement).click();
+                                            setTimeout(() => {
+                                                URL.revokeObjectURL(url);
+                                            });
+                                        }
                                     }
-                                }
-                            }}
-                        >
-                            Save
-                        </Button>
+                                }}
+                            />
+                        </CVATTooltip>
                         <Upload
                             showUploadList={false}
                             beforeUpload={(file: RcFile) => {
@@ -788,10 +798,16 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                 return false;
                             }}
                         >
-                            <Button type='default'>Upload</Button>
+                            <CVATTooltip title='Upload a skeleton from SVG'>
+                                <Button icon={<UploadOutlined />} type='default' />
+                            </CVATTooltip>
                         </Upload>
                     </Row>
-                </Col>
+                </div>
+                <div className='cvat-skeleton-canvas-wrapper'>
+                    <canvas ref={canvasRef} className='cvat-skeleton-configurator-canvas' />
+                    <svg width={100} height={100} ref={svgRef} className='cvat-skeleton-configurator-svg' />
+                </div>
                 { error !== null && <Alert type='error' message={error} /> }
             </Row>
         );
