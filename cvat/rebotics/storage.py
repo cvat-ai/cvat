@@ -57,15 +57,6 @@ class BaseS3StorageWithPathMixin(object):
 
 
 class CustomAWSMediaStorage(BaseS3StorageWithPathMixin, S3Boto3Storage):
-    # location = setting('AWS_LOCATION', '')
-    # bucket_name = setting('AWS_STORAGE_BUCKET_NAME')
-    # querystring_auth = setting('AWS_QUERYSTRING_AUTH', True)
-    # access_key = setting('AWS_S3_ACCESS_KEY_ID')
-    # secret_key = setting('AWS_S3_SECRET_ACCESS_KEY')
-    # endpoint_url = setting('AWS_S3_ENDPOINT_URL')
-    # default_acl = setting('AWS_DEFAULT_ACL', '')
-    # querystring_expire = setting('AWS_QUERYSTRING_EXPIRE')
-
     def url(self, name, parameters=None, expire=None, **kwargs):
         # Preserve the trailing slash after normalizing the path.
         # TODO: Handle force_http=not self.secure_urls like in s3boto
@@ -88,13 +79,6 @@ class CustomAWSMediaStorage(BaseS3StorageWithPathMixin, S3Boto3Storage):
             return url
 
         return self._strip_signing_parameters(url)
-
-
-# class CustomAWSStaticStorage(BaseS3StorageWithPathMixin, StaticStorage):
-#     location = setting('STATIC_STORAGE_LOCATION', '')
-#     bucket_name = setting('AWS_S3_STATIC_STORAGE_BUCKET_NAME')
-#     querystring_auth = setting('AWS_STATIC_QUERYSTRING_AUTH', False)
-#     default_acl = setting('AWS_S3_STATIC_ACL', 'public-read')
 
 
 def create_pre_signed_post(file_field):
