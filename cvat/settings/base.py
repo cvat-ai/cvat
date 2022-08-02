@@ -571,9 +571,36 @@ VERSION_TRACKER_URL = os.getenv(
 )
 
 # Media storage settings
+# not the default, because it's used only for some file fields.
 AWS_FILE_STORAGE = 'cvat.rebotics.storage.CustomAWSMediaStorage'
 
-# AWS s3 storage settings for media storage.
+# AWS s3 storage settings for media storage and s3 client.
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
+
+# for our s3 buckets it has format bucket-{region}-{service}-media-{instance}
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_IMGGAL_STORAGE_BUCKET_NAME = os.getenv('AWS_IMGGAL_STORAGE_BUCKET_NAME')
+
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
+if not AWS_S3_REGION_NAME:
+    match = re.match(r'bucket-([a-z0-9-]+?)-([a-z0-9]+)-media-([a-z0-9]+)', AWS_STORAGE_BUCKET_NAME)
+    if match:
+        AWS_S3_REGION_NAME = match[1]
+    else:
+        AWS_S3_REGION_NAME = None  # treat empty string as None
+
+# not used for s3, all settings are extracted by boto3 client from iam role in the container metadata.
+s3_key_id = os.getenv('AWS_S3_ACCESS_KEY_ID')
+s3_secret_key = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
+if s3_key_id and s3_secret_key:
+    AWS_S3_ACCESS_KEY_ID = s3_key_id
+    AWS_S3_SECRET_ACCESS_KEY = s3_secret_key
+
+AWS_LOCATION = os.getenv('AWS_LOCATION', '')
+
+# minio does not accept 'virtual', so it has to be auto or 'path' for it.
+AWS_S3_ADDRESSING_STYLE = os.getenv('AWS_S3_ADRESSING_STYLE', 'virtual')
+
 AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_DEFAULT_ACL = 'private'
 AWS_S3_FILE_OVERWRITE = False
@@ -582,15 +609,6 @@ AWS_QUERYSTRING_EXPIRE = 604800
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=3600',
 }
-
-AWS_S3_ADDRESSING_STYLE = os.getenv('AWS_S3_ADRESSING_STYLE', 'virtual')
-AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
-AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
-if not AWS_S3_REGION_NAME:  # treat empty string as None
-    AWS_S3_REGION_NAME = None
-AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
 
 USE_S3 = True
 USE_CACHE_S3 = True

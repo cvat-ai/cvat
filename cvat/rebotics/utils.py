@@ -1,4 +1,5 @@
 from enum import Enum
+from django.conf import settings
 
 
 class InjectionError(AttributeError):
@@ -52,3 +53,8 @@ class ChoicesEnum(Enum):
 class StrEnum(str, Enum):
     def __str__(self):
         return self.value
+
+
+def setting(name, default=None):
+    # obtain settings which may be not initialized.
+    return getattr(settings, name, default)
