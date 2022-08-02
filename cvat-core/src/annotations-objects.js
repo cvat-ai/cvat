@@ -1932,6 +1932,9 @@
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
+            // Voxel: Override offset to prevent interpolation
+            offset = 0;
+
             const copyLeft = {
                 ...leftPosition,
                 points: [...leftPosition.points, leftPosition.points[0], leftPosition.points[1]],
