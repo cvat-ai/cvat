@@ -24,12 +24,12 @@ const core = getCore();
 
 interface Props {
     taskMode: string;
-    loaders: any[];
-    dumpers: any[];
-    loadActivity: string | null;
+    // loaders: any[];
+    // dumpers: any[];
+    // loadActivity: string | null;
     jobInstance: any;
     onClickMenu(params: MenuInfo): void;
-    onUploadAnnotations(format: string, file: File): void;
+    // onUploadAnnotations(format: string, file: File): void;
     stopFrame: number;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -47,13 +47,13 @@ export enum Actions {
 
 function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Element {
     const {
-        loaders,
-        loadActivity,
+        // loaders,
+        // loadActivity,
         jobInstance,
         stopFrame,
         history,
         onClickMenu,
-        onUploadAnnotations,
+        // onUploadAnnotations,
         removeAnnotations,
         setForceExitAnnotationFlag,
         saveAnnotations,
@@ -192,7 +192,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
 
     return (
         <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
-            {LoadSubmenu({
+            {/* {LoadSubmenu({
                 loaders,
                 loadActivity,
                 onFileUpload: (format: string, file: File): void => {
@@ -214,7 +214,8 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                 },
                 menuKey: Actions.LOAD_JOB_ANNO,
                 taskDimension: jobInstance.dimension,
-            })}
+            })} */}
+            <Menu.Item key={Actions.LOAD_JOB_ANNO}>Upload annotations</Menu.Item>
             <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import { Storage } from 'reducers/interfaces';
 
 export enum ExportActionTypes {
     OPEN_EXPORT_MODAL = 'OPEN_EXPORT_MODAL',
@@ -10,16 +11,21 @@ export enum ExportActionTypes {
     EXPORT_DATASET = 'EXPORT_DATASET',
     EXPORT_DATASET_SUCCESS = 'EXPORT_DATASET_SUCCESS',
     EXPORT_DATASET_FAILED = 'EXPORT_DATASET_FAILED',
+    EXPORT_BACKUP = 'EXPORT_BACKUP',
+    EXPORT_BACKUP_SUCCESS = 'EXPORT_BACKUP_SUCCESS',
+    EXPORT_BACKUP_FAILED = 'EXPORT_BACKUP_FAILED',
 }
 
 export const exportActions = {
-    openExportModal: (instance: any) => createAction(ExportActionTypes.OPEN_EXPORT_MODAL, { instance }),
+    openExportModal: (instance: any, resource: 'dataset' | 'backup' | null) => (
+        createAction(ExportActionTypes.OPEN_EXPORT_MODAL, { instance, resource })
+    ),
     closeExportModal: () => createAction(ExportActionTypes.CLOSE_EXPORT_MODAL),
     exportDataset: (instance: any, format: string) => (
         createAction(ExportActionTypes.EXPORT_DATASET, { instance, format })
     ),
-    exportDatasetSuccess: (instance: any, format: string) => (
-        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format })
+    exportDatasetSuccess: (instance: any, format: string, isLocal: boolean) => (
+        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format, isLocal })
     ),
     exportDatasetFailed: (instance: any, format: string, error: any) => (
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
@@ -28,6 +34,15 @@ export const exportActions = {
             error,
         })
     ),
+    exportBackup: (instanceId: number) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP, { instanceId })
+    ),
+    exportBackupSuccess: (instanceId: number) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instanceId })
+    ),
+    exportBackupFailed: (instanceId: number, error: any) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instanceId, error })
+    ),
 };
 
 export const exportDatasetAsync = (
@@ -35,17 +50,36 @@ export const exportDatasetAsync = (
     format: string,
     name: string,
     saveImages: boolean,
+    targetStorage: Storage | null,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
     try {
-        const url = await instance.annotations.exportDataset(format, saveImages, name);
-        const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-        downloadAnchor.href = url;
-        downloadAnchor.click();
-        dispatch(exportActions.exportDatasetSuccess(instance, format));
+        const result = await instance.annotations.exportDataset(format, saveImages, name, targetStorage);
+        if (result) {
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = result;
+            downloadAnchor.click();
+        }
+        dispatch(exportActions.exportDatasetSuccess(instance, format, !!result));
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, format, error));
+    }
+};
+
+export const exportBackupAsync = (instance: any, fileName: string, targetStorage: Storage | null): ThunkAction => async (dispatch) => {
+    dispatch(exportActions.exportBackup(instance.id));
+
+    try {
+        const result = await instance.export(fileName, targetStorage);
+        if (result) {
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = result;
+            downloadAnchor.click();
+        }
+        dispatch(exportActions.exportBackupSuccess(instance.id));
+    } catch (error) {
+        dispatch(exportActions.exportBackupFailed(instance.id, error as Error));
     }
 };
 

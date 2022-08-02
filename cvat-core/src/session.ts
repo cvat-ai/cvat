@@ -25,6 +25,7 @@
     const { Label } = require('./labels');
     const User = require('./user');
     const Issue = require('./issue');
+    const { Storage } = require('./storage');
     const { FieldUpdateTrigger, checkObjectType } = require('./common');
 
     function buildDuplicatedAPI(prototype) {
@@ -151,13 +152,14 @@
                         return result;
                     },
 
-                    async exportDataset(format, saveImages, customName = '') {
+                    async exportDataset(format, saveImages, customName = '', targetStorage = null) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             prototype.annotations.exportDataset,
                             format,
                             saveImages,
                             customName,
+                            targetStorage
                         );
                         return result;
                     },
@@ -1204,6 +1206,8 @@
                 dimension: undefined,
                 cloud_storage_id: undefined,
                 sorting_method: undefined,
+                source_storage: undefined,
+                target_storage: undefined,
             };
 
             const updateTrigger = new FieldUpdateTrigger();
@@ -1748,6 +1752,40 @@
                          */
                         get: () => data.sorting_method,
                     },
+                    /**
+                     * Source storage for import resources.
+                     * @name sourceStorage
+                     * @type {module:API.cvat.classes.Storage}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    sourceStorage: {
+                        get: () => data.source_storage,
+                        set: (sourceStorage) => {
+                            if (typeof sourceStorage !== Storage) {
+                                throw new ArgumentError('Type of value must be Storage');
+                            }
+                            data.source_storage = sourceStorage;
+                        },
+                    },
+                    /**
+                     * Target storage for export resources.
+                     * @name targetStorage
+                     * @type {module:API.cvat.classes.Storage}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    targetStorage: {
+                        get: () => data.target_storage,
+                        set: (targetStorage) => {
+                            if (typeof targetStorage !== Storage) {
+                                throw new ArgumentError('Type of value must be Storage');
+                            }
+                            data.target_storage = targetStorage;
+                        },
+                    },
                     _internalData: {
                         get: () => data,
                     },
@@ -1867,8 +1905,13 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async export() {
-            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.export);
+        async export(fileName: string, targetStorage: Storage | null) {
+            const result = await PluginRegistry.apiWrapper.call(
+                this,
+                Task.prototype.export,
+                fileName,
+                targetStorage
+            );
             return result;
         }
 
@@ -1882,8 +1925,8 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        static async import(file) {
-            const result = await PluginRegistry.apiWrapper.call(this, Task.import, file);
+        static async import(storage, file, fileName) {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.import, storage, file, fileName);
             return result;
         }
     }
@@ -2194,8 +2237,8 @@
         return result;
     };
 
-    Job.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
-        const result = await exportDataset(this, format, customName, saveImages);
+    Job.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName, targetStorage) {
+        const result = await exportDataset(this, format, customName, saveImages, targetStorage);
         return result;
     };
 
@@ -2300,7 +2343,7 @@
             return new Task(data);
         }
 
-        const taskSpec = {
+        const taskSpec: any = {
             name: this.name,
             labels: this.labels.map((el) => el.toJSON()),
         };
@@ -2319,6 +2362,14 @@
         }
         if (typeof this.subset !== 'undefined') {
             taskSpec.subset = this.subset;
+        }
+
+        if (this.targetStorage) {
+            taskSpec.target_storage = this.targetStorage;
+        }
+
+        if (this.sourceStorage) {
+            taskSpec.source_storage = this.sourceStorage;
         }
 
         const taskDataSpec = {
@@ -2359,14 +2410,14 @@
         return result;
     };
 
-    Task.prototype.export.implementation = async function () {
-        const result = await serverProxy.tasks.export(this.id);
+    Task.prototype.export.implementation = async function (fileName: string, targetStorage: Storage | null) {
+        const result = await serverProxy.tasks.export(this.id, fileName, targetStorage);
         return result;
     };
 
-    Task.import.implementation = async function (file) {
+    Task.import.implementation = async function (storage, file, fileName) {
         // eslint-disable-next-line no-unsanitized/method
-        const result = await serverProxy.tasks.import(file);
+        const result = await serverProxy.tasks.import(storage, file, fileName);
         return result;
     };
 
@@ -2608,8 +2659,8 @@
         return result;
     };
 
-    Task.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
-        const result = await exportDataset(this, format, customName, saveImages);
+    Task.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName, targetStorage) {
+        const result = await exportDataset(this, format, customName, saveImages, targetStorage);
         return result;
     };
 

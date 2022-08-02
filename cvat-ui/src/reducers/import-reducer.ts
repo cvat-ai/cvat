@@ -4,55 +4,155 @@
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
 
-import { ImportState } from './interfaces';
+import { ImportDatasetState } from './interfaces';
 
-const defaultState: ImportState = {
-    progress: 0.0,
-    status: '',
-    instance: null,
-    importingId: null,
-    modalVisible: false,
+import getCore from 'cvat-core-wrapper';
+
+const core = getCore();
+
+const defaultProgress = 0.0;
+const defaultStatus = '';
+
+function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
+    let field: 'projects' | 'tasks' | 'jobs';
+    if  (instance instanceof core.classes.Project) {
+        field = 'projects';
+    } else if (instance instanceof core.classes.Task) {
+        field = 'tasks';
+    } else { // job
+        field = 'jobs';
+    }
+    return field;
+}
+
+const defaultState: ImportDatasetState = {
+    // projects: {},
+    // tasks: {},
+    // jobs: {},
+    //resource: null,
+    // progress: 0.0,
+    // status: '',
+    // instance: null,
+    // importingId: null,
+    // modalVisible: false,
+    projects: {
+        activities: {},
+        importingId: null,
+        progress: defaultProgress,
+        status: defaultStatus,
+        instance: null,
+        modalVisible: false,
+    },
+    tasks: {
+        activities: {},
+        importingId: null,
+        progress: defaultProgress,
+        status: defaultStatus,
+        instance: null,
+        modalVisible: false,
+    },
+    jobs: {
+        activities: {},
+        importingId: null,
+        progress: defaultProgress,
+        status: defaultStatus,
+        instance: null,
+        modalVisible: false,
+    },
+    instanceType: null,
+    resource: null,
 };
 
-export default (state: ImportState = defaultState, action: ImportActions): ImportState => {
+export default (state: ImportDatasetState = defaultState, action: ImportActions): ImportDatasetState => {
     switch (action.type) {
         case ImportActionTypes.OPEN_IMPORT_MODAL:
+            const { instance, instanceType, resource } = action.payload;
+            const activitiesField = defineActititiesField(instance);
+
             return {
                 ...state,
-                modalVisible: true,
-                instance: action.payload.instance,
+                [activitiesField]: {
+                    ...state[activitiesField],
+                    modalVisible: true,
+                    instance: instance,
+                },
+                instanceType: instanceType,
+                resource: resource,
             };
         case ImportActionTypes.CLOSE_IMPORT_MODAL: {
+            const { instance } = action.payload;
+            const activitiesField = defineActititiesField(instance);
+
             return {
                 ...state,
-                modalVisible: false,
-                instance: null,
+                [activitiesField]: {
+                    ...state[activitiesField],
+                    modalVisible: false,
+                    instance: null,
+                },
+                resource: null,
             };
         }
         case ImportActionTypes.IMPORT_DATASET: {
-            const { id } = action.payload;
+            const { format, instance } = action.payload;
+
+            const activitiesField = defineActititiesField(instance);
+
+            const activities = state[activitiesField]?.activities;
+            activities[instance.id] = instance.id in activities ? activities[instance.id] : format;
 
             return {
                 ...state,
-                importingId: id,
-                status: 'The file is being uploaded to the server',
+                [activitiesField]: {
+                    activities: {
+                        ...activities,
+                    },
+                    status: 'The file is being uploaded to the server',
+                },
+                //importingId: id,
             };
         }
-        case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
-            const { progress, status } = action.payload;
+        case ImportActionTypes.IMPORT_UPDATE_STATUS: {
+            const { progress, status, instance } = action.payload;
+
+            const activitiesField = defineActititiesField(instance);
             return {
                 ...state,
-                progress,
-                status,
+                [activitiesField]: {
+                    ...state[activitiesField],
+                    progress,
+                    status,
+                }
             };
         }
         case ImportActionTypes.IMPORT_DATASET_FAILED:
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
+            const { instance } = action.payload;
+
+            const activitiesField = defineActititiesField(instance);
+            const activities = state[activitiesField]?.activities;
+            delete activities[instance.id];
+
             return {
                 ...state,
-                progress: defaultState.progress,
-                status: defaultState.status,
-                importingId: null,
+                [activitiesField]: {
+                    ...state[activitiesField],
+                    progress: defaultProgress,
+                    status: defaultStatus,
+                    // importingId: null,
+                    instance: null,
+                    activities: {
+                        ...activities
+                    },
+                },
+                instanceType: null,
+                // progress: defaultState.progress,
+                // status: defaultState.status,
+                // // importingId: null,
+                // instance: null,
+                // [instances]: {
+                //     ...activities,
+                // }
             };
         }
         default:

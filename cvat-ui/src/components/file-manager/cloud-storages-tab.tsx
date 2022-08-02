@@ -5,17 +5,11 @@
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Form from 'antd/lib/form';
-import notification from 'antd/lib/notification';
-import AutoComplete from 'antd/lib/auto-complete';
-import Input from 'antd/lib/input';
-import { debounce } from 'lodash';
 
 import Select from 'antd/lib/select';
-import getCore from 'cvat-core-wrapper';
 import { CloudStorage } from 'reducers/interfaces';
-import { AzureProvider, GoogleCloudProvider, S3Provider } from 'icons';
-import { ProviderType } from 'utils/enums';
 import CloudStorageFiles from './cloud-storages-files';
+import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 
 interface Props {
     formRef: any;
@@ -27,60 +21,14 @@ interface Props {
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
 
-async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
-    try {
-        const data = await getCore().cloudStorages.get(filter);
-        return data;
-    } catch (error) {
-        notification.error({
-            message: 'Could not fetch a list of cloud storages',
-            description: error.toString(),
-        });
-    }
-
-    return [];
-}
-
 const { Option } = Select;
-
-const searchCloudStoragesWrapper = debounce((phrase, setList) => {
-    const filter = {
-        filter: JSON.stringify({
-            and: [{
-                '==': [{ var: 'display_name' }, phrase],
-            }],
-        }),
-    };
-    searchCloudStorages(filter).then((list) => {
-        setList(list);
-    });
-}, 500);
 
 export default function CloudStorageTab(props: Props): JSX.Element {
     const { searchPhrase, setSearchPhrase } = props;
-    const [initialList, setInitialList] = useState<CloudStorage[]>([]);
-    const [list, setList] = useState<CloudStorage[]>([]);
     const {
         formRef, cloudStorage, selectedFiles, onSelectFiles, onSelectCloudStorage,
     } = props;
     const [selectedManifest, setSelectedManifest] = useState<string | null>(null);
-
-    useEffect(() => {
-        searchCloudStorages({}).then((data) => {
-            setInitialList(data);
-            if (!list.length) {
-                setList(data);
-            }
-        });
-    }, []);
-
-    useEffect(() => {
-        if (!searchPhrase) {
-            setList(initialList);
-        } else {
-            searchCloudStoragesWrapper(searchPhrase, setList);
-        }
-    }, [searchPhrase, initialList]);
 
     useEffect(() => {
         if (cloudStorage) {
@@ -94,24 +42,18 @@ export default function CloudStorageTab(props: Props): JSX.Element {
         }
     }, [selectedManifest]);
 
-    const onBlur = (): void => {
-        if (!searchPhrase && cloudStorage) {
-            onSelectCloudStorage(null);
-        } else if (searchPhrase) {
-            const potentialStorages = list.filter((_cloudStorage) => _cloudStorage.displayName.includes(searchPhrase));
-            if (potentialStorages.length === 1) {
-                const potentialStorage = potentialStorages[0];
-                setSearchPhrase(potentialStorage.displayName);
-                // eslint-disable-next-line prefer-destructuring
-                potentialStorage.manifestPath = potentialStorage.manifests[0];
-                onSelectCloudStorage(potentialStorage);
-            }
-        }
-    };
-
     return (
         <Form ref={formRef} className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
-            <Form.Item
+
+            <SelectCloudStorage
+                searchPhrase={searchPhrase}
+                cloudStorage={cloudStorage}
+                setSearchPhrase={setSearchPhrase}
+                onSelectCloudStorage={onSelectCloudStorage}
+                // cloudStoragesList={list}
+                // setCloudStoragesList={setList}
+            />
+            {/* <Form.Item
                 label='Select cloud storage'
                 name='cloudStorageSelect'
                 rules={[{ required: true, message: 'Please, specify a cloud storage' }]}
@@ -153,7 +95,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 >
                     <Input />
                 </AutoComplete>
-            </Form.Item>
+            </Form.Item> */}
 
             {cloudStorage ? (
                 <Form.Item

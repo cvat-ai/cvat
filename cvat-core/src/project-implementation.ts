@@ -7,6 +7,7 @@
     const { getPreview } = require('./frames');
 
     const { Project } = require('./project');
+    const { Storage } = require('./storage');
     const { exportDataset, importDataset } = require('./annotations');
 
     function implementProject(projectClass) {
@@ -30,7 +31,7 @@
             }
 
             // initial creating
-            const projectSpec = {
+            const projectSpec: any = {
                 name: this.name,
                 labels: this.labels.map((el) => el.toJSON()),
             };
@@ -41,6 +42,14 @@
 
             if (this.trainingProject) {
                 projectSpec.training_project = this.trainingProject;
+            }
+
+            if (this.targetStorage) {
+                projectSpec.target_storage = this.targetStorage;
+            }
+
+            if (this.sourceStorage) {
+                projectSpec.source_storage = this.sourceStorage;
             }
 
             const project = await serverProxy.projects.create(projectSpec);
@@ -64,26 +73,30 @@
             format,
             saveImages,
             customName,
+            targetStorage
         ) {
-            const result = exportDataset(this, format, customName, saveImages);
+            const result = exportDataset(this, format, customName, saveImages, targetStorage);
             return result;
         };
         projectClass.prototype.annotations.importDataset.implementation = async function (
             format,
+            useDefaultSettings,
+            sourceStorage,
             file,
-            updateStatusCallback,
+            fileName,
+            updateStatusCallback
         ) {
-            return importDataset(this, format, file, updateStatusCallback);
+            return importDataset(this, format, useDefaultSettings, sourceStorage, file, fileName, updateStatusCallback);
         };
 
-        projectClass.prototype.backup.implementation = async function () {
-            const result = await serverProxy.projects.backupProject(this.id);
+        projectClass.prototype.export.implementation = async function (fileName: string, targetStorage: Storage | null) {
+            const result = await serverProxy.projects.export(this.id, fileName, targetStorage);
             return result;
         };
 
-        projectClass.restore.implementation = async function (file) {
-            const result = await serverProxy.projects.restoreProject(file);
-            return result.id;
+        projectClass.import.implementation = async function (storage, file, fileName) {
+            const result = await serverProxy.projects.import(storage, file, fileName);
+            return result;
         };
 
         return projectClass;

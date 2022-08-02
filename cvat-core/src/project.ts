@@ -8,6 +8,7 @@
     const { Label } = require('./labels');
     const User = require('./user');
     const { FieldUpdateTrigger } = require('./common');
+    const { Storage } = require('./storage');
 
     /**
      * Class representing a project
@@ -35,6 +36,9 @@
                 training_project: undefined,
                 task_ids: undefined,
                 dimension: undefined,
+                source_storage: undefined,
+                target_storage: undefined,
+                labels: undefined,
             };
 
             const updateTrigger = new FieldUpdateTrigger();
@@ -241,6 +245,40 @@
                             updateTrigger.update('trainingProject');
                         },
                     },
+                    /**
+                     * Source storage for import resources.
+                     * @name sourceStorage
+                     * @type {module:API.cvat.classes.Storage}
+                     * @memberof module:API.cvat.classes.Project
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    sourceStorage: {
+                        get: () => data.source_storage,
+                        set: (sourceStorage) => {
+                            if (typeof sourceStorage !== Storage) {
+                                throw new ArgumentError('Type of value must be Storage');
+                            }
+                            data.source_storage = sourceStorage;
+                        },
+                    },
+                    /**
+                     * Target storage for export resources.
+                     * @name targetStorage
+                     * @type {module:API.cvat.classes.Storage}
+                     * @memberof module:API.cvat.classes.Project
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    targetStorage: {
+                        get: () => data.target_storage,
+                        set: (targetStorage) => {
+                            if (typeof targetStorage !== Storage) {
+                                throw new ArgumentError('Type of value must be Storage');
+                            }
+                            data.target_storage = targetStorage;
+                        },
+                    },
                     _internalData: {
                         get: () => data,
                     },
@@ -317,14 +355,19 @@
          * @throws {module:API.cvat.exceptions.PluginError}
          * @returns {string} URL to get result archive
          */
-        async backup() {
-            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.backup);
+        async export(fileName: string, targetStorage: Storage | null) {
+            const result = await PluginRegistry.apiWrapper.call(
+                this,
+                Project.prototype.export,
+                fileName,
+                targetStorage
+            );
             return result;
         }
 
         /**
          * Method restores a project from a backup
-         * @method restore
+         * @method import
          * @memberof module:API.cvat.classes.Project
          * @readonly
          * @instance
@@ -333,8 +376,8 @@
          * @throws {module:API.cvat.exceptions.PluginError}
          * @returns {number} ID of the imported project
          */
-        static async restore(file) {
-            const result = await PluginRegistry.apiWrapper.call(this, Project.restore, file);
+        static async import(storage, file, fileName) {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.import, storage, file, fileName);
             return result;
         }
     }
@@ -344,23 +387,27 @@
         Object.freeze({
             annotations: Object.freeze({
                 value: {
-                    async exportDataset(format, saveImages, customName = '') {
+                    async exportDataset(format, saveImages, customName = '', targetStorage = null) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             Project.prototype.annotations.exportDataset,
                             format,
                             saveImages,
                             customName,
+                            targetStorage
                         );
                         return result;
                     },
-                    async importDataset(format, file, updateStatusCallback = null) {
+                    async importDataset(format, useDefaultSettings, sourceStorage, file = null, fileName = null, updateStatusCallback = null) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             Project.prototype.annotations.importDataset,
                             format,
+                            useDefaultSettings,
+                            sourceStorage,
                             file,
-                            updateStatusCallback,
+                            fileName,
+                            updateStatusCallback
                         );
                         return result;
                     },

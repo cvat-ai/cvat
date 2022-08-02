@@ -19,12 +19,15 @@ import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
 
+import { importBackupActions } from 'actions/import-backup-actions';
+import { useDispatch } from 'react-redux';
+
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
 
 interface Props {
-    onImportProject(file: File): void;
+    // onImportProject(file: File): void;
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
@@ -33,8 +36,9 @@ interface Props {
 }
 
 function TopBarComponent(props: Props): JSX.Element {
+    const dispatch = useDispatch();
     const {
-        importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportProject,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch,// onImportProject,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const prevImporting = usePrevious(importing);
@@ -101,7 +105,7 @@ function TopBarComponent(props: Props): JSX.Element {
                                 >
                                     Create a new project
                                 </Button>
-                                <Upload
+                                {/* <Upload
                                     accept='.zip'
                                     multiple={false}
                                     showUploadList={false}
@@ -110,17 +114,18 @@ function TopBarComponent(props: Props): JSX.Element {
                                         return false;
                                     }}
                                     className='cvat-import-project'
+                                > */}
+                                <Button
+                                    className='cvat-import-project-button'
+                                    type='primary'
+                                    disabled={importing}
+                                    icon={<UploadOutlined />}
+                                    onClick={() => dispatch(importBackupActions.openImportModal('project'))}
                                 >
-                                    <Button
-                                        className='cvat-import-project-button'
-                                        type='primary'
-                                        disabled={importing}
-                                        icon={<UploadOutlined />}
-                                    >
-                                        Create from backup
-                                        {importing && <LoadingOutlined className='cvat-import-project-button-loading' />}
-                                    </Button>
-                                </Upload>
+                                    Create from backup
+                                    {importing && <LoadingOutlined className='cvat-import-project-button-loading' />}
+                                </Button>
+                                {/* </Upload> */}
                             </div>
                         )}
                     >

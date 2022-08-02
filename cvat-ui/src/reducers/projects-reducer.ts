@@ -39,7 +39,7 @@ const defaultState: ProjectsState = {
         },
         backups: {},
     },
-    restoring: false,
+    importing: false,
 };
 
 export default (state: ProjectsState = defaultState, action: AnyAction): ProjectsState => {
@@ -235,14 +235,14 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case ProjectsActionTypes.RESTORE_PROJECT: {
             return {
                 ...state,
-                restoring: true,
+                importing: true,
             };
         }
         case ProjectsActionTypes.RESTORE_PROJECT_FAILED:
         case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
             return {
                 ...state,
-                restoring: false,
+                importing: false,
             };
         }
 

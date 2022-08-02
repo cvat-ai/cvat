@@ -22,7 +22,7 @@ import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
-import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
+import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
@@ -241,7 +241,7 @@ export default function ProjectPageComponent(): JSX.Element {
 
             <MoveTaskModal />
             <ModelRunnerDialog />
-            <ImportDatasetModal />
+            {/* <ImportDatasetModal /> */}
         </Row>
     );
 }

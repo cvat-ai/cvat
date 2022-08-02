@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
 import Empty from 'antd/lib/empty';
@@ -14,6 +15,9 @@ import Menu from 'antd/lib/menu';
 import { MenuInfo } from 'rc-menu/lib/interface';
 
 import { useCardHeightHOC } from 'utils/hooks';
+
+import { exportActions } from 'actions/export-actions';
+import { importActions } from 'actions/import-actions';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
@@ -28,6 +32,7 @@ interface Props {
 }
 
 function JobCardComponent(props: Props): JSX.Element {
+    const dispatch = useDispatch();
     const { job, preview } = props;
     const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
@@ -97,6 +102,7 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
                     <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
                     <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
+                    <Menu.Item key='export_job' onClick={() => dispatch(exportActions.openExportModal(job, 'dataset'))}>Export job</Menu.Item>
                 </Menu>
             )}
             >

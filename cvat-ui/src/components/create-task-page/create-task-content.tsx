@@ -22,6 +22,8 @@ import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
 
+import { StorageLocation } from 'reducers/interfaces';
+
 export interface CreateTaskData {
     projectId: number | null;
     basic: BaseConfiguration;
@@ -55,6 +57,16 @@ const defaultState = {
         useZipChunks: true,
         useCache: true,
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
+        sourceStorage: {
+            location: StorageLocation.LOCAL,
+            cloudStorageId: null,
+        },
+        targetStorage: {
+            location: StorageLocation.LOCAL,
+            cloudStorageId: null,
+        },
+        useProjectSourceStorage: true,
+        useProjectTargetStorage: true,
     },
     labels: [],
     files: {
@@ -151,6 +163,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): void => {
+        // todo fixme
         this.setState({
             advanced: { ...values },
         });
@@ -168,6 +181,26 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             ...values,
             activeFileManagerTab: key,
         });
+    };
+
+    private handleUseProjectSourceStorageChange = (value: boolean): void => {
+
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                useProjectSourceStorage: value,
+            }
+        }));
+    };
+
+    private handleUseProjectTargetStorageChange = (value: boolean): void => {
+
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                useProjectTargetStorage: value,
+            }
+        }));
     };
 
     private handleSubmitClick = (): void => {
@@ -314,7 +347,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderAdvancedBlock(): JSX.Element {
         const { installedGit, dumpers } = this.props;
-        const { activeFileManagerTab } = this.state;
+        const { activeFileManagerTab, projectId } = this.state;
+
+        const { useProjectSourceStorage, useProjectTargetStorage } = this.state.advanced;
         return (
             <Col span={24}>
                 <Collapse>
@@ -325,6 +360,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             activeFileManagerTab={activeFileManagerTab}
                             ref={this.advancedConfigurationComponent}
                             onSubmit={this.handleSubmitAdvancedConfiguration}
+                            projectId={projectId}
+                            useProjectSourceStorage={useProjectSourceStorage}
+                            useProjectTargetStorage={useProjectTargetStorage}
+                            onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
+                            onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
                         />
                     </Collapse.Panel>
                 </Collapse>

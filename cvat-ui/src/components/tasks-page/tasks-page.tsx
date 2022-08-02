@@ -17,7 +17,7 @@ import { TasksQuery, Indexable } from 'reducers/interfaces';
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
-import { getTasksAsync, hideEmptyTasks, importTaskAsync } from 'actions/tasks-actions';
+import { getTasksAsync, hideEmptyTasks } from 'actions/tasks-actions';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -139,7 +139,7 @@ function TasksPageComponent(props: Props): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
-                onImportTask={(file: File) => dispatch(importTaskAsync(file))}
+                //onImportTask={(file: File) => dispatch(importTaskAsync(file))}
                 importing={importing}
             />
             { fetching ? (

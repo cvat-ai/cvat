@@ -258,7 +258,7 @@
         );
     }
 
-    async function exportDataset(instance, format, name, saveImages = false) {
+    async function exportDataset(instance, format, name, saveImages = false, targetStorage = null) {
         if (!(format instanceof String || typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
@@ -271,17 +271,18 @@
 
         let result = null;
         if (instance instanceof Task) {
-            result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages);
+            result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages, targetStorage);
         } else if (instance instanceof Job) {
-            result = await serverProxy.tasks.exportDataset(instance.taskId, format, name, saveImages);
+            // TODO need to check. Was  serverProxy.tasks.exportDataset(instance.taskId...
+            result = await serverProxy.jobs.exportDataset(instance.id, format, name, saveImages, targetStorage);
         } else {
-            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages);
+            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages, targetStorage);
         }
 
         return result;
     }
 
-    function importDataset(instance, format, file, updateStatusCallback = () => {}) {
+    function importDataset(instance, format, useDefaultSettings, sourceStorage, file = null, fileName = null, updateStatusCallback = () => {}) {
         if (!(typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
@@ -291,10 +292,10 @@
         if (!(typeof updateStatusCallback === 'function')) {
             throw new ArgumentError('Callback should be a function');
         }
-        if (!(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
+        if (!((fileName || file.name).endsWith('.zip'))) {
             throw new ArgumentError('File should be file instance with ZIP extension');
         }
-        return serverProxy.projects.importDataset(instance.id, format, file, updateStatusCallback);
+        return serverProxy.projects.importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, fileName, updateStatusCallback);
     }
 
     function getHistory(session) {

@@ -12,6 +12,7 @@ import Select from 'antd/lib/select';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Form, { FormInstance } from 'antd/lib/form';
+import Collapse from 'antd/lib/collapse';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
@@ -21,6 +22,11 @@ import { CombinedState } from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
 import CreateProjectContext from './create-project.context';
+import { StorageLocation, StorageState } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import StorageField from 'components/storage/storage';
+import StorageForm from 'components/storage/storage-form';
+import Space from 'antd/lib/space';
 
 const { Option } = Select;
 
@@ -97,8 +103,15 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     );
 }
 
-function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
-    return (
+interface AdvancedConfigurationFormProps {
+    formRef: RefObject<FormInstance>;
+    sourceStorageFormRef: RefObject<FormInstance>;
+    targetStorageFormRef: RefObject<FormInstance>;
+}
+
+function AdvancedConfigurationForm(props: AdvancedConfigurationFormProps): JSX.Element {
+    const { formRef, sourceStorageFormRef, targetStorageFormRef } = props;
+        return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
                 name='bug_tracker'
@@ -119,6 +132,26 @@ function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstanc
             >
                 <Input />
             </Form.Item>
+            <Row justify='space-between'>
+                <Col span={12}>
+                    <StorageForm
+                        formRef={sourceStorageFormRef}
+                        projectId={null}
+                        storageLabel='Source storage'
+                        storageDescription='Specify source storage for import resources like annotation, backups'
+                        onChangeStorage={(value) => console.log(value)}
+                    />
+                </Col>
+                <Col span={12}>
+                    <StorageForm
+                        formRef={targetStorageFormRef}
+                        projectId={null}
+                        storageLabel='Target storage'
+                        storageDescription='Specify target storage for export resources like annotation, backups'
+                        onChangeStorage={(value) => console.log(value)}
+                    />
+                </Col>
+            </Row>
         </Form>
     );
 }
@@ -129,6 +162,8 @@ export default function CreateProjectContent(): JSX.Element {
     const nameFormRef = useRef<FormInstance>(null);
     const adaptiveAutoAnnotationFormRef = useRef<FormInstance>(null);
     const advancedFormRef = useRef<FormInstance>(null);
+    const sourceStorageFormRef = useRef<FormInstance>(null);
+    const targetStorageFormRef = useRef<FormInstance>(null);
     const dispatch = useDispatch();
     const history = useHistory();
 
@@ -143,6 +178,8 @@ export default function CreateProjectContent(): JSX.Element {
             // Clear new project forms
             if (nameFormRef.current) nameFormRef.current.resetFields();
             if (advancedFormRef.current) advancedFormRef.current.resetFields();
+            sourceStorageFormRef.current?.resetFields();
+            targetStorageFormRef.current?.resetFields();
             setProjectLabels([]);
 
             notification.info({
@@ -160,11 +197,25 @@ export default function CreateProjectContent(): JSX.Element {
         if (nameFormRef.current && advancedFormRef.current) {
             const basicValues = await nameFormRef.current.validateFields();
             const advancedValues = await advancedFormRef.current.validateFields();
+            const sourceStorageValues = await sourceStorageFormRef.current?.validateFields();
+            const targetStorageValues = await targetStorageFormRef.current?.validateFields();
+
+            let sourceStorage = {
+                location: sourceStorageValues['location'] || StorageLocation.LOCAL,
+                cloud_storage_id: sourceStorageValues['cloudStorageId'] || null,
+            };
+            let targetStorage = {
+                location: targetStorageValues['location'] ||StorageLocation.LOCAL,
+                cloud_storage_id: targetStorageValues['cloudStorageId'] || null,
+            };
+
             const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
             projectData = {
                 ...projectData,
                 ...advancedValues,
                 name: basicValues.name,
+                source_storage: sourceStorage,
+                target_storage: targetStorage,
             };
 
             if (adaptiveAutoAnnotationValues) {
@@ -199,7 +250,15 @@ export default function CreateProjectContent(): JSX.Element {
                 />
             </Col>
             <Col span={24}>
-                <AdvancedConfigurationForm formRef={advancedFormRef} />
+                <Collapse>
+                    <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
+                        <AdvancedConfigurationForm
+                            formRef={advancedFormRef}
+                            sourceStorageFormRef={sourceStorageFormRef}
+                            targetStorageFormRef={targetStorageFormRef}
+                        />
+                    </Collapse.Panel>
+                </Collapse>
             </Col>
             <Col span={24}>
                 <Button type='primary' onClick={onSumbit}>

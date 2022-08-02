@@ -18,20 +18,22 @@ import {
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
+import { importActions } from 'actions/import-actions';
 import getCore from 'cvat-core-wrapper';
 
 const core = getCore();
 
 interface StateToProps {
-    annotationFormats: any;
+    // annotationFormats: any;
     jobInstance: any;
     stopFrame: number;
-    loadActivity: string | null;
+    // loadActivity: string | null;
 }
 
 interface DispatchToProps {
-    loadAnnotations(job: any, loader: any, file: File): void;
-    showExportModal(jobInstance: any): void;
+    // loadAnnotations(job: any, loader: any, file: File): void;
+    showExportModal: (jobInstance: any, resource: 'dataset' | 'backup' | null) => void;
+    showImportModal: (jobInstance: any, resource: 'dataset' | 'backup' | null) => void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
@@ -41,36 +43,39 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            activities: { loads: jobLoads },
+            // activities: { loads: jobLoads },
             job: {
                 instance: jobInstance,
                 instance: { stopFrame },
             },
         },
-        formats: { annotationFormats },
-        tasks: {
-            activities: { loads },
-        },
+        // formats: { annotationFormats },
+        // tasks: {
+        //     activities: { loads },
+        // },
     } = state;
 
-    const taskID = jobInstance.taskId;
-    const jobID = jobInstance.id;
+    // const taskID = jobInstance.taskId;
+    // const jobID = jobInstance.id;
 
     return {
-        loadActivity: taskID in loads || jobID in jobLoads ? loads[taskID] || jobLoads[jobID] : null,
+        // loadActivity: taskID in loads || jobID in jobLoads ? loads[taskID] || jobLoads[jobID] : null,
         jobInstance,
         stopFrame,
-        annotationFormats,
+        // annotationFormats,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        loadAnnotations(job: any, loader: any, file: File): void {
-            dispatch(uploadJobAnnotationsAsync(job, loader, file));
+        // loadAnnotations(job: any, loader: any, file: File): void {
+        //     dispatch(uploadJobAnnotationsAsync(job, loader, file));
+        // },
+        showExportModal(taskInstance: any, resource: 'dataset' | 'backup' | null): void {
+            dispatch(exportActions.openExportModal(taskInstance, resource));
         },
-        showExportModal(jobInstance: any): void {
-            dispatch(exportActions.openExportModal(jobInstance));
+        showImportModal(taskInstance: any, resource: 'dataset' | 'backup' | null): void {
+            dispatch(importActions.openImportModal(taskInstance, 'task', resource));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
             dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
@@ -93,28 +98,34 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
         stopFrame,
-        annotationFormats: { loaders, dumpers },
+        // annotationFormats: { loaders, dumpers },
         history,
-        loadActivity,
-        loadAnnotations,
+        // loadActivity,
+        // loadAnnotations,
         showExportModal,
+        showImportModal,
         removeAnnotations,
         setForceExitAnnotationFlag,
         saveAnnotations,
         updateJob,
     } = props;
 
-    const onUploadAnnotations = (format: string, file: File): void => {
-        const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
-        if (loader && file) {
-            loadAnnotations(jobInstance, loader, file);
-        }
-    };
+    // const onUploadAnnotations = (format: string, file: File): void => {
+    //     const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
+    //     if (loader && file) {
+    //         loadAnnotations(jobInstance, loader, file);
+    //     }
+    // };
 
     const onClickMenu = (params: MenuInfo): void => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
-            showExportModal(jobInstance);
+            core.tasks.get({ id: jobInstance.taskId }).then((response: any) => {
+                if (response.length) {
+                    const [taskInstance] = response;
+                    showExportModal(taskInstance, 'dataset');
+                }
+            });
         } else if (action === Actions.RENEW_JOB) {
             jobInstance.state = core.enums.JobState.NEW;
             jobInstance.stage = JobStage.ANNOTATION;
@@ -131,16 +142,23 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             [, jobInstance.state] = action.split(':');
             updateJob(jobInstance);
             window.location.reload();
+        } else if (action === Actions.LOAD_JOB_ANNO) {
+            core.tasks.get({ id: jobInstance.taskId }).then((response: any) => {
+                if (response.length) {
+                    const [taskInstance] = response;
+                    showImportModal(taskInstance, 'dataset');
+                }
+            });
         }
     };
 
     return (
         <AnnotationMenuComponent
             taskMode={jobInstance.mode}
-            loaders={loaders}
-            dumpers={dumpers}
-            loadActivity={loadActivity}
-            onUploadAnnotations={onUploadAnnotations}
+            // loaders={loaders}
+            // dumpers={dumpers}
+            //loadActivity={loadActivity}
+            // onUploadAnnotations={onUploadAnnotations}
             onClickMenu={onClickMenu}
             removeAnnotations={removeAnnotations}
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}

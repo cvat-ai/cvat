@@ -12,11 +12,15 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Checkbox from 'antd/lib/checkbox';
 import Input from 'antd/lib/input';
-import Form from 'antd/lib/form';
+import Form, { FormInstance } from 'antd/lib/form';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, StorageLocation, Storage } from 'reducers/interfaces';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import getCore from 'cvat-core-wrapper';
+import Switch from 'antd/lib/switch';
+import { Space } from 'antd';
+
+import StorageForm from 'components/storage/storage-form';
 
 const core = getCore();
 
@@ -26,39 +30,89 @@ type FormValues = {
     customName: string | undefined;
 };
 
-function ExportDatasetModal(): JSX.Element {
+function ExportDatasetModal(): JSX.Element | null {
     const [instanceType, setInstanceType] = useState('');
     const [activities, setActivities] = useState<string[]>([]);
+    const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
     const [form] = Form.useForm();
+    const targetStorageForm = React.createRef<FormInstance>();
+    const [targetStorage, setTargetStorage] = useState<Storage | null>(null);
+    const [defaultStorageLocation, setDefaultStorageLocation] = useState<string | null>(null);
+    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
+    const [helpMessage, setHelpMessage] = useState('');
     const dispatch = useDispatch();
+    const resource = useSelector((state: CombinedState) => state.export.resource);
     const instance = useSelector((state: CombinedState) => state.export.instance);
     const modalVisible = useSelector((state: CombinedState) => state.export.modalVisible);
     const dumpers = useSelector((state: CombinedState) => state.formats.annotationFormats.dumpers);
-    const { tasks: taskExportActivities, projects: projectExportActivities } = useSelector(
+    const { tasks: taskExportActivities, projects: projectExportActivities, jobs: jobExportActivities } = useSelector(
         (state: CombinedState) => state.export,
     );
 
     const initActivities = (): void => {
-        if (instance instanceof core.classes.Project) {
-            setInstanceType(`project #${instance.id}`);
-            setActivities(projectExportActivities[instance.id] || []);
-        } else if (instance) {
-            const taskID = instance instanceof core.classes.Task ? instance.id : instance.taskId;
-            setInstanceType(`task #${taskID}`);
-            setActivities(taskExportActivities[taskID] || []);
-            if (instance.mode === 'interpolation' && instance.dimension === '2d') {
-                form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
-            } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
-                form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
+        if (resource === 'dataset') {
+            if (instance instanceof core.classes.Project) {
+                setInstanceType(`project #${instance.id}`);
+                setActivities(projectExportActivities[instance.id]?.dataset || []);
+            // TODO need refactoring
+            } else if (instance instanceof core.classes.Task) {
+                //const taskID = instance instanceof core.classes.Task ? instance.id : instance.taskId;
+                const taskID = instance.id;
+                setInstanceType(`task #${taskID}`);
+                setActivities(taskExportActivities[taskID]?.dataset || []);
+                if (instance.mode === 'interpolation' && instance.dimension === '2d') {
+                    form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
+                } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
+                    form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
+                }
+            } else if (instance instanceof core.classes.Job) {
+                setInstanceType(`job #${instance.id}`);
+                setActivities(jobExportActivities[instance.id]?.dataset || []);
+                if (instance.mode === 'interpolation' && instance.dimension === '2d') {
+                    form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
+                } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
+                    form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
+                }
             }
         }
     };
 
     useEffect(() => {
         initActivities();
-    }, [instance?.id, instance instanceof core.classes.Project, taskExportActivities, projectExportActivities]);
+    }, [instance?.id, resource, instance instanceof core.classes.Project, taskExportActivities, projectExportActivities, jobExportActivities]);
+
+
+    useEffect(() => {
+        if (instance && resource === 'dataset') {
+            if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
+                setDefaultStorageLocation((instance.targetStorage) ?
+                    instance.targetStorage.location : null);
+                setDefaultStorageCloudId((instance.targetStorage) ?
+                    instance.targetStorage.cloud_storage_id
+                : null);
+            } else {
+                core.tasks.get({ id: instance.taskId }).then((response: any) => {
+                    if (response.length) {
+                        const [taskInstance] = response;
+                        setDefaultStorageLocation((taskInstance.targetStorage) ?
+                            taskInstance.targetStorage.location : null);
+                        setDefaultStorageCloudId((taskInstance.targetStorage) ?
+                            taskInstance.targetStorage.cloud_storage_id
+                        : null);
+                    }
+                });
+            }
+        }
+    }, [instance?.id, resource, instance?.targetStorage]);
+
+    useEffect(() => {
+        setHelpMessage(
+            `Export to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
+            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
+    }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
+        targetStorageForm.current?.resetFields();
         form.resetFields();
         dispatch(exportActions.closeExportModal());
     };
@@ -72,23 +126,35 @@ function ExportDatasetModal(): JSX.Element {
                     values.selectedFormat as string,
                     values.customName ? `${values.customName}.zip` : '',
                     values.saveImages,
+                    targetStorage,
                 ),
             );
             closeModal();
             Notification.info({
                 message: 'Dataset export started',
+                // TODO is it neede to correct description message
                 description:
                     `Dataset export was started for ${instanceType}. ` +
                     'Download will start automatically as soon as the dataset is ready.',
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
-        [instance, instanceType],
+        [instance, instanceType, targetStorage],
     );
+
+    const onChangeTargetStorage = (value: Storage): void => {
+        setTargetStorage({
+            ...value,
+        } as Storage)
+    }
+
+    if (resource !== 'dataset') {
+        return null;
+    }
 
     return (
         <Modal
-            title={`Export ${instanceType} as a dataset`}
+            title={<Text strong>{`Export ${instanceType} as a dataset`}</Text>}
             visible={modalVisible}
             onCancel={closeModal}
             onOk={() => form.submit()}
@@ -98,8 +164,9 @@ function ExportDatasetModal(): JSX.Element {
             <Form
                 name='Export dataset'
                 form={form}
-                labelCol={{ span: 8 }}
-                wrapperCol={{ span: 16 }}
+                layout='vertical'
+                // labelCol={{ span: 8 }}
+                // wrapperCol={{ span: 16 }}
                 initialValues={
                     {
                         selectedFormat: undefined,
@@ -111,7 +178,7 @@ function ExportDatasetModal(): JSX.Element {
             >
                 <Form.Item
                     name='selectedFormat'
-                    label='Export format'
+                    label={<Text strong>Export format</Text>}
                     rules={[{ required: true, message: 'Format must be selected' }]}
                 >
                     <Select placeholder='Select dataset format' className='cvat-modal-export-select'>
@@ -138,16 +205,36 @@ function ExportDatasetModal(): JSX.Element {
                             )}
                     </Select>
                 </Form.Item>
-                <Form.Item name='saveImages' valuePropName='checked' wrapperCol={{ offset: 8, span: 16 }}>
-                    <Checkbox>Save images</Checkbox>
-                </Form.Item>
-                <Form.Item label='Custom name' name='customName'>
+                {/* wrapperCol={{ offset: 8, span: 16 }} */}
+                {/*valuePropName='checked'*/}
+
+
+                <Space>
+                    <Form.Item name='saveImages'>
+                        <Switch />
+                    </Form.Item>
+                    <Text strong>Save images</Text>
+                </Space>
+
+                <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
                     <Input
                         placeholder='Custom name for a dataset'
                         suffix='.zip'
                         className='cvat-modal-export-filename-input'
                     />
                 </Form.Item>
+                <StorageForm
+                    formRef={targetStorageForm}
+                    // FIXME rename to instanse?
+                    storageLabel='Target storage'
+                    projectId={instance?.id}
+                    switchDescription='Use default settings'
+                    switchHelpMessage={helpMessage}
+                    useProjectStorage={useDefaultTargetStorage}
+                    storageDescription='Specify target storage for export dataset'
+                    onChangeUseProjectStorage={(value: boolean) => setUseDefaultTargetStorage(value)}
+                    onChangeStorage={(value: Storage) => onChangeTargetStorage(value)}
+                />
             </Form>
         </Modal>
     );

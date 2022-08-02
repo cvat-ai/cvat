@@ -426,6 +426,20 @@
         RANDOM: 'random',
     });
 
+    /**
+     * Types of storage locations
+     * @enum {string}
+     * @name StorageLocation
+     * @memberof module:API.cvat.enums
+     * @property {string} LOCAL 'local'
+     * @property {string} CLOUD_STORAGE 'cloud_storage'
+     * @readonly
+     */
+    const StorageLocation = Object.freeze({
+        LOCAL: 'local',
+        CLOUD_STORAGE: 'cloud_storage',
+    });
+
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -446,5 +460,6 @@
         CloudStorageCredentialsType,
         MembershipRole,
         SortingMethod,
+        StorageLocation,
     };
 })();

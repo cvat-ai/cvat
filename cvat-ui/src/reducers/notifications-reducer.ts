@@ -21,6 +21,7 @@ import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
+import { ImportBackupActionTypes } from 'actions/import-backup-actions';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
@@ -128,10 +129,12 @@ const defaultState: NotificationsState = {
         exporting: {
             dataset: null,
             annotation: null,
+            backup: null,
         },
         importing: {
             dataset: null,
             annotation: null,
+            backup: null,
         },
         cloudStorages: {
             creating: null,
@@ -168,6 +171,16 @@ const defaultState: NotificationsState = {
         },
         projects: {
             restoringDone: '',
+        },
+        exporting: {
+            dataset: '',
+            annotation: '',
+            backup: '',
+        },
+        importing: {
+            dataset: '',
+            annotation: '',
+            backup: '',
         },
     },
 };
@@ -372,19 +385,64 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
+            const { instance, isLocal } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    exporting: {
+                        ...state.messages.exporting,
+                        dataset:
+                            `Dataset for resource ${instance.id} have been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
+                            // `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                    },
+                },
+            };
+        }
         case ImportActionTypes.IMPORT_DATASET_FAILED: {
-            const instanceID = action.payload.instance.id;
+            const instanceID = action.payload.instanceId;
             return {
                 ...state,
                 errors: {
                     ...state.errors,
-                    exporting: {
-                        ...state.errors.exporting,
+                    importing: {
+                        ...state.errors.importing,
                         dataset: {
                             message:
                                 'Could not import dataset to the ' +
                                 `<a href="/projects/${instanceID}" target="_blank">` +
                                 `project ${instanceID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ImportBackupActionTypes.IMPORT_BACKUP_SUCCESS: {
+            const { instance } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    importing: {
+                        ...state.messages.importing,
+                        backup:
+                            `The ${instance.name}  ${instance.id} has been restored successfully`,
+                    },
+                },
+            };
+        }
+        case ImportBackupActionTypes.IMPORT_BACKUP_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    importing: {
+                        ...state.errors.importing,
+                        backup: {
+                            message:
+                                'Could not restore backup ',
                             reason: action.payload.error.toString(),
                         },
                     },

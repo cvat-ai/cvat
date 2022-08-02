@@ -4,9 +4,10 @@
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { PercentageOutlined } from '@ant-design/icons';
+import { PercentageOutlined, QuestionCircleFilled } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Select from 'antd/lib/select';
+import { Space, Switch, Tooltip } from 'antd';
 import Radio from 'antd/lib/radio';
 import Checkbox from 'antd/lib/checkbox';
 import Form, { FormInstance, RuleObject, RuleRender } from 'antd/lib/form';
@@ -14,6 +15,13 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
+import { StorageLocation, StorageState } from 'reducers/interfaces';
+
+import StorageForm from 'components/storage/storage-form';
+
+import getCore from 'cvat-core-wrapper';
+
+const core = getCore();
 
 const { Option } = Select;
 
@@ -40,6 +48,10 @@ export interface AdvancedConfiguration {
     useCache: boolean;
     copyData?: boolean;
     sortingMethod: SortingMethod;
+    useProjectSourceStorage: boolean | null;
+    useProjectTargetStorage: boolean | null;
+    sourceStorage?: StorageState;
+    targetStorage?: StorageState;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -49,11 +61,27 @@ const initialValues: AdvancedConfiguration = {
     useCache: true,
     copyData: false,
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
+    useProjectSourceStorage: null,
+    useProjectTargetStorage: null,
+
+    sourceStorage: {
+        location: StorageLocation.LOCAL,
+        cloudStorageId: null,
+    },
+    targetStorage: {
+        location: StorageLocation.LOCAL,
+        cloudStorageId: null,
+    }
 };
 
 interface Props {
     onSubmit(values: AdvancedConfiguration): void;
+    onChangeUseProjectSourceStorage(value: boolean): void;
+    onChangeUseProjectTargetStorage(value: boolean): void;
     installedGit: boolean;
+    projectId: number | null;
+    useProjectSourceStorage?: boolean | null;
+    useProjectTargetStorage?: boolean | null;
     activeFileManagerTab: string;
     dumpers: []
 }
@@ -139,18 +167,70 @@ const validateStopFrame: RuleRender = ({ getFieldValue }): RuleObject => ({
 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
+    private sourceStorageFormRef: RefObject<FormInstance>;
+    private targetStorageFormRef: RefObject<FormInstance>;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
+        this.sourceStorageFormRef = React.createRef<FormInstance>();
+        this.targetStorageFormRef = React.createRef<FormInstance>();
     }
 
     public submit(): Promise<void> {
-        const { onSubmit } = this.props;
+        const { onSubmit, projectId } = this.props;
         if (this.formRef.current) {
             return this.formRef.current.validateFields().then(
                 (values: Store): Promise<void> => {
                     const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
+
+                    // TODO need to refactor this one
+                    // TODO add validation form for source and target storages
+                    // tODO use this
+                    // const values = await advancedFormRef.current.validateFields();
+                    let sourceStorage;
+                    let targetStorage;
+                    if (!!projectId) {
+                        let projectSourceStorage;
+                        let projectTargetStorage;
+                        core.projects.get({ id: projectId }).then((response: any) => {
+                            if (response.length) {
+                                const [project] = response;
+                                projectSourceStorage = project.sourceStorage;
+                                projectTargetStorage = project.targetStorage;
+                            }
+                        });
+
+                        const useProjectSourceStorage = values.useProjectSourceStorage;
+                        const useProjectTargetStorage = values.useProjectTargetStorage;
+                        if (useProjectSourceStorage) {
+                            sourceStorage = projectSourceStorage;
+                        } else {
+                            sourceStorage = {
+                                location: this.sourceStorageFormRef.current?.getFieldValue('location'),
+                                cloudStorageId: this.sourceStorageFormRef.current?.getFieldValue('cloudStorageId'),
+                            }
+                        }
+                        if (useProjectTargetStorage) {
+                            targetStorage = projectTargetStorage;
+                        } else {
+                            targetStorage = {
+                                location: this.targetStorageFormRef.current?.getFieldValue('location'),
+                                cloudStorageId: this.targetStorageFormRef.current?.getFieldValue('cloudStorageId'),
+                            }
+                        }
+                    } else {
+                        sourceStorage = {
+                            location: this.sourceStorageFormRef.current?.getFieldValue('location'),
+                            cloudStorageId: this.sourceStorageFormRef.current?.getFieldValue('cloudStorageId'),
+                        }
+
+                        targetStorage = {
+                            location: this.targetStorageFormRef.current?.getFieldValue('location'),
+                            cloudStorageId: this.targetStorageFormRef.current?.getFieldValue('cloudStorageId'),
+                        }
+                    }
+
                     const entries = Object.entries(values).filter(
                         (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                     );
@@ -158,6 +238,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
+                        sourceStorage,
+                        targetStorage,
                     });
                     return Promise.resolve();
                 },
@@ -171,6 +253,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         if (this.formRef.current) {
             this.formRef.current.resetFields();
         }
+        this.sourceStorageFormRef.current?.resetFields();
+        this.targetStorageFormRef.current?.resetFields();
     }
 
     /* eslint-disable class-methods-use-this */
@@ -201,15 +285,15 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
                 help='Specify how to sort images. It is not relevant for videos.'
             >
-                <Radio.Group>
-                    <Radio value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
+                <Radio.Group buttonStyle="solid">
+                    <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
                         Lexicographical
-                    </Radio>
-                    <Radio value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio>
-                    <Radio value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
+                    </Radio.Button>
+                    <Radio.Button value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio.Button>
+                    <Radio.Button value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
                         Predefined
-                    </Radio>
-                    <Radio value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio>
+                    </Radio.Button>
+                    <Radio.Button value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio.Button>
                 </Radio.Group>
             </Form.Item>
         );
@@ -291,15 +375,18 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderGitLFSBox(): JSX.Element {
         return (
-            <Form.Item
-                help='If annotation files are large, you can use git LFS feature'
-                name='lfs'
-                valuePropName='checked'
-            >
-                <Checkbox>
-                    <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
-                </Checkbox>
-            </Form.Item>
+            <Space>
+                <Form.Item
+                    name='lfs'
+                    valuePropName='checked'
+                >
+                    <Switch />
+                </Form.Item>
+                <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
+                <Tooltip title='If annotation files are large, you can use git LFS feature.'>
+                    <QuestionCircleFilled style={{opacity: 0.5}}/>
+                </Tooltip>
+            </Space>
         );
     }
 
@@ -374,25 +461,32 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderUzeZipChunks(): JSX.Element {
         return (
-            <Form.Item
-                help='Force to use zip chunks as compressed data. Actual for videos only.'
-                name='useZipChunks'
-                valuePropName='checked'
-            >
-                <Checkbox>
-                    <Text className='cvat-text-color'>Use zip chunks</Text>
-                </Checkbox>
-            </Form.Item>
+            <Space>
+                <Form.Item
+                    name='useZipChunks'
+                    valuePropName='checked'
+                >
+                    <Switch defaultChecked/>
+                </Form.Item>
+                <Text className='cvat-text-color'>Use zip chunks</Text>
+                <Tooltip title='Force to use zip chunks as compressed data. Actual for videos only.'>
+                    <QuestionCircleFilled style={{opacity: 0.5}}/>
+                </Tooltip>
+            </Space>
         );
     }
 
     private renderCreateTaskMethod(): JSX.Element {
         return (
-            <Form.Item help='Using cache to store data.' name='useCache' valuePropName='checked'>
-                <Checkbox>
-                    <Text className='cvat-text-color'>Use cache</Text>
-                </Checkbox>
-            </Form.Item>
+            <Space>
+                <Form.Item name='useCache' valuePropName='checked'>
+                    <Switch defaultChecked/>
+                </Form.Item>
+                <Text className='cvat-text-color'>Use cache</Text>
+                <Tooltip title='Using cache to store data.'>
+                    <QuestionCircleFilled style={{opacity: 0.5}}/>
+                </Tooltip>
+            </Space>
         );
     }
 
@@ -423,6 +517,47 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderSourceStorage(): JSX.Element {
+        const {
+            projectId,
+            useProjectSourceStorage,
+            onChangeUseProjectSourceStorage,
+        } = this.props;
+        return (
+            <StorageForm
+                formRef={this.sourceStorageFormRef}
+                projectId={projectId}
+                storageLabel='Source storage'
+                switchDescription='Use project source storage'
+                storageDescription='Specify source storage for import resources like annotation, backups'
+                useProjectStorage={useProjectSourceStorage}
+                onChangeStorage={(value) => console.log(value)}
+                onChangeUseProjectStorage={onChangeUseProjectSourceStorage}
+            />
+        );
+    }
+
+    private renderTargetStorage(): JSX.Element {
+        const {
+            projectId,
+            useProjectTargetStorage,
+            onChangeUseProjectTargetStorage,
+        } = this.props;
+        return (
+            <StorageForm
+                formRef={this.targetStorageFormRef}
+                projectId={projectId}
+                storageLabel='Target storage'
+                switchDescription='Use project target storage'
+                storageDescription='Specify target storage for export resources like annotation, backups                '
+                useProjectStorage={useProjectTargetStorage}
+                onChangeStorage={(value) => console.log(value)}
+                onChangeUseProjectStorage={onChangeUseProjectTargetStorage}
+
+            />
+        );
+    }
+
     public render(): JSX.Element {
         const { installedGit, activeFileManagerTab } = this.props;
         return (
@@ -436,10 +571,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     </Row>
                 ) : null}
                 <Row>
-                    <Col>{this.renderUzeZipChunks()}</Col>
-                </Row>
-                <Row>
-                    <Col>{this.renderCreateTaskMethod()}</Col>
+                    <Col span={12}>{this.renderUzeZipChunks()}</Col>
+                    <Col span={12}>{this.renderCreateTaskMethod()}</Col>
                 </Row>
                 <Row justify='start'>
                     <Col span={7}>{this.renderImageQuality()}</Col>
@@ -469,6 +602,10 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row>
                     <Col span={24}>{this.renderBugTracker()}</Col>
+                </Row>
+                <Row>
+                    <Col span={12}> {this.renderSourceStorage()} </Col>
+                    <Col span={12}> {this.renderTargetStorage()} </Col>
                 </Row>
             </Form>
         );

@@ -581,16 +581,24 @@
             }
 
             function exportDataset(instanceType) {
-                return async function (id, format, name, saveImages) {
+                return async function (id, format, name, saveImages, targetStorage = null) {
                     const { backendAPI } = config;
                     const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
-                    const params = {
+                    const params: any = {
                         ...enableOrganization(),
                         format,
                     };
 
                     if (name) {
                         params.filename = name.replace(/\//g, '_');
+                    }
+
+                    params.use_default_location = !targetStorage.location;
+                    if (!!targetStorage.location) {
+                        params.location = targetStorage.location;
+                        if (targetStorage.cloudStorageId) {
+                            params.cloud_storage_id = targetStorage.cloudStorageId;
+                        }
                     }
 
                     return new Promise((resolve, reject) => {
@@ -602,9 +610,16 @@
                                 .then((response) => {
                                     if (response.status === 202) {
                                         setTimeout(request, 3000);
-                                    } else {
+                                    } else if (response.status === 201) {
                                         params.action = 'download';
-                                        resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
+                                        if (response.data['location'] === 'cloud_storage') {
+                                            setTimeout(request, 3000);
+                                        }
+                                        else {
+                                            resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
+                                        }
+                                    } else {
+                                        resolve();
                                     }
                                 })
                                 .catch((errorData) => {
@@ -617,38 +632,25 @@
                 };
             }
 
-            async function importDataset(id, format, file, onUpdate) {
+            async function importDataset(id, format, useDefaultLocation, sourceStorage, file, fileName, onUpdate) {
                 const { backendAPI, origin } = config;
-                const params = {
+                const params: any = {
                     ...enableOrganization(),
                     format,
-                    filename: file.name,
+                    filename: (file) ? file.name : fileName,
                 };
-                const uploadConfig = {
-                    chunkSize: config.uploadChunkSize * 1024 * 1024,
-                    endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
-                    totalSentSize: 0,
-                    totalSize: file.size,
-                    onUpdate: (percentage) => {
-                        onUpdate('The dataset is being uploaded to the server', percentage);
-                    },
-                };
+
+                params.use_default_location = useDefaultLocation;
+                if (!useDefaultLocation) {
+                    params.location = sourceStorage.location;
+                    if (sourceStorage.cloudStorageId) {
+                        params.cloud_storage_id = sourceStorage.cloudStorageId;
+                    }
+                }
+
                 const url = `${backendAPI}/projects/${id}/dataset`;
 
-                try {
-                    await Axios.post(url,
-                        new FormData(), {
-                            params,
-                            proxy: config.proxy,
-                            headers: { 'Upload-Start': true },
-                        });
-                    await chunkUpload(file, uploadConfig);
-                    await Axios.post(url,
-                        new FormData(), {
-                            params,
-                            proxy: config.proxy,
-                            headers: { 'Upload-Finish': true },
-                        });
+                async function wait() {
                     return new Promise((resolve, reject) => {
                         async function requestStatus() {
                             try {
@@ -672,16 +674,64 @@
                         }
                         setTimeout(requestStatus, 2000);
                     });
-                } catch (errorData) {
-                    throw generateError(errorData);
+                }
+
+                if (sourceStorage.location === 'cloud_storage') {
+                    try {
+                        await Axios.post(url,
+                            new FormData(), {
+                                params,
+                                proxy: config.proxy,
+                            });
+                        await wait();
+                    } catch (errorData) {
+                        throw generateError(errorData);
+                    }
+                } else {
+                    const uploadConfig = {
+                        chunkSize: config.uploadChunkSize * 1024 * 1024,
+                        endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
+                        totalSentSize: 0,
+                        totalSize: file.size,
+                        onUpdate: (percentage) => {
+                            onUpdate('The dataset is being uploaded to the server', percentage);
+                        },
+                    };
+
+                    try {
+                        await Axios.post(url,
+                            new FormData(), {
+                                params,
+                                proxy: config.proxy,
+                                headers: { 'Upload-Start': true },
+                            });
+                        await chunkUpload(file, uploadConfig);
+                        await Axios.post(url,
+                            new FormData(), {
+                                params,
+                                proxy: config.proxy,
+                                headers: { 'Upload-Finish': true },
+                            });
+                        await wait();
+                    } catch (errorData) {
+                        throw generateError(errorData);
+                    }
                 }
             }
 
-            async function exportTask(id) {
+            async function exportTask(id, fileName, targetStorage) {
                 const { backendAPI } = config;
-                const params = {
+                const params: any = {
                     ...enableOrganization(),
+                    filename: fileName,
+                    use_default_location: !targetStorage,
                 };
+                if (!!targetStorage) {
+                    params.location = targetStorage.location;
+                    if (targetStorage.cloudStorageId) {
+                        params.cloud_storage_id = targetStorage.cloudStorageId;
+                    }
+                }
                 const url = `${backendAPI}/tasks/${id}/backup`;
 
                 return new Promise((resolve, reject) => {
@@ -693,9 +743,15 @@
                             });
                             if (response.status === 202) {
                                 setTimeout(request, 3000);
-                            } else {
+                            } else if (response.status === 201) {
                                 params.action = 'download';
-                                resolve(`${url}?${new URLSearchParams(params).toString()}`);
+                                if (response.data['location'] === 'cloud_storage') {
+                                    setTimeout(request, 3000);
+                                } else {
+                                    resolve(`${url}?${new URLSearchParams(params).toString()}`);
+                                }
+                            } else {
+                                resolve();
                             }
                         } catch (errorData) {
                             reject(generateError(errorData));
@@ -706,62 +762,92 @@
                 });
             }
 
-            async function importTask(file) {
+            async function importTask(storage, file, fileName) {
+                async function wait(taskData, response) {
+                    return new Promise((resolve, reject) => {
+                        async function checkStatus() {
+                            try {
+                                taskData.set('rq_id', response.data.rq_id);
+                                response = await Axios.post(url, taskData, {
+                                    proxy: config.proxy,
+                                    params,
+                                });
+                                if (response.status === 202) {
+                                    setTimeout(checkStatus, 3000);
+                                } else {
+                                    // to be able to get the task after it was created, pass frozen params
+                                    const importedTask = await getTasks({ id: response.data.id, ...params });
+                                    resolve(importedTask[0]);
+                                }
+                            } catch (errorData) {
+                                reject(generateError(errorData));
+                            }
+                        }
+                        setTimeout(checkStatus);
+                    });
+                }
+
                 const { backendAPI } = config;
                 // keep current default params to 'freeze" them during this request
-                const params = enableOrganization();
-
-                const taskData = new FormData();
-                const uploadConfig = {
-                    chunkSize: config.uploadChunkSize * 1024 * 1024,
-                    endpoint: `${origin}${backendAPI}/tasks/backup/`,
-                    totalSentSize: 0,
-                    totalSize: file.size,
+                const params: any = {
+                    ...enableOrganization(),
+                    location: storage.location,
                 };
 
                 const url = `${backendAPI}/tasks/backup`;
-                await Axios.post(url,
-                    new FormData(), {
-                        params,
-                        proxy: config.proxy,
-                        headers: { 'Upload-Start': true },
-                    });
-                const { filename } = await chunkUpload(file, uploadConfig);
-                let response = await Axios.post(url,
-                    new FormData(), {
-                        params: { ...params, filename },
-                        proxy: config.proxy,
-                        headers: { 'Upload-Finish': true },
-                    });
+                const taskData = new FormData();
+                let response;
 
-                return new Promise((resolve, reject) => {
-                    async function checkStatus() {
-                        try {
-                            taskData.set('rq_id', response.data.rq_id);
-                            response = await Axios.post(url, taskData, {
-                                proxy: config.proxy,
-                                params,
-                            });
-                            if (response.status === 202) {
-                                setTimeout(checkStatus, 3000);
-                            } else {
-                                // to be able to get the task after it was created, pass frozen params
-                                const importedTask = await getTasks({ id: response.data.id, ...params });
-                                resolve(importedTask[0]);
-                            }
-                        } catch (errorData) {
-                            reject(generateError(errorData));
-                        }
-                    }
+                if (storage.cloudStorageId) {
+                    params.cloud_storage_id = storage.cloudStorageId;
+                }
 
-                    setTimeout(checkStatus);
-                });
+                if (storage.location === 'cloud_storage') {
+                    params.filename = fileName;
+                    response = await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                        });
+                } else {
+                    const uploadConfig = {
+                        chunkSize: config.uploadChunkSize * 1024 * 1024,
+                        endpoint: `${origin}${backendAPI}/tasks/backup/`,
+                        totalSentSize: 0,
+                        totalSize: file.size,
+                    };
+                    await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Start': true },
+                        });
+                    const { filename } = await chunkUpload(file, uploadConfig);
+                    response = await Axios.post(url,
+                        new FormData(), {
+                            params: { ...params, filename },
+                            proxy: config.proxy,
+                            headers: { 'Upload-Finish': true },
+                        });
+                }
+                return await wait(taskData, response);
             }
 
-            async function backupProject(id) {
+            async function exportProject(id, fileName: string, targetStorage: Storage | null) {
                 const { backendAPI } = config;
                 // keep current default params to 'freeze" them during this request
-                const params = enableOrganization();
+                const params: any = {
+                    ...enableOrganization(),
+                    filename: fileName,
+                    use_default_location: !targetStorage,
+                };
+
+                if (!!targetStorage) {
+                    params.location = targetStorage.location;
+                    if (targetStorage.cloudStorageId) {
+                        params.cloud_storage_id = targetStorage.cloudStorageId;
+                    }
+                }
                 const url = `${backendAPI}/projects/${id}/backup`;
 
                 return new Promise((resolve, reject) => {
@@ -773,9 +859,15 @@
                             });
                             if (response.status === 202) {
                                 setTimeout(request, 3000);
-                            } else {
+                            } else if (response.status === 201) {
                                 params.action = 'download';
-                                resolve(`${url}?${new URLSearchParams(params).toString()}`);
+                                if (response.data['location'] === 'cloud_storage') {
+                                    setTimeout(request, 3000);
+                                } else {
+                                    resolve(`${url}?${new URLSearchParams(params).toString()}`);
+                                }
+                            } else {
+                                resolve();
                             }
                         } catch (errorData) {
                             reject(generateError(errorData));
@@ -786,56 +878,76 @@
                 });
             }
 
-            async function restoreProject(file) {
-                const { backendAPI } = config;
-                // keep current default params to 'freeze" them during this request
-                const params = enableOrganization();
+            async function importProject(storage, file, fileName) {
+                async function wait(projectData, response) {
+                    return new Promise((resolve, reject) => {
+                        async function request() {
+                            try {
+                                projectData.set('rq_id', response.data.rq_id);
+                                response = await Axios.post(`${backendAPI}/projects/backup`, projectData, {
+                                    proxy: config.proxy,
+                                    params,
+                                });
+                                if (response.status === 202) {
+                                    setTimeout(request, 3000);
+                                } else {
+                                    // to be able to get the task after it was created, pass frozen params
+                                    const restoredProject = await getProjects({ id: response.data.id, ...params });
+                                    resolve(restoredProject[0]);
+                                }
+                            } catch (errorData) {
+                                reject(generateError(errorData));
+                            }
+                        }
 
-                const projectData = new FormData();
-                const uploadConfig = {
-                    chunkSize: config.uploadChunkSize * 1024 * 1024,
-                    endpoint: `${origin}${backendAPI}/projects/backup/`,
-                    totalSentSize: 0,
-                    totalSize: file.size,
+                        setTimeout(request);
+                    });
                 };
 
+                const { backendAPI } = config;
+                // keep current default params to 'freeze" them during this request
+                const params: any = {
+                    ...enableOrganization(),
+                    location: storage.location,
+                }
+                if (storage.cloudStorageId) {
+                    params.cloud_storage_id = storage.cloudStorageId;
+                }
+
                 const url = `${backendAPI}/projects/backup`;
-                await Axios.post(url,
-                    new FormData(), {
-                        params,
-                        proxy: config.proxy,
-                        headers: { 'Upload-Start': true },
-                    });
-                const { filename } = await chunkUpload(file, uploadConfig);
-                let response = await Axios.post(url,
-                    new FormData(), {
-                        params: { ...params, filename },
-                        proxy: config.proxy,
-                        headers: { 'Upload-Finish': true },
-                    });
+                const projectData = new FormData();
+                let response;
 
-                return new Promise((resolve, reject) => {
-                    async function request() {
-                        try {
-                            projectData.set('rq_id', response.data.rq_id);
-                            response = await Axios.post(`${backendAPI}/projects/backup`, projectData, {
-                                proxy: config.proxy,
-                                params,
-                            });
-                            if (response.status === 202) {
-                                setTimeout(request, 3000);
-                            } else {
-                                // to be able to get the task after it was created, pass frozen params
-                                const restoredProject = await getProjects({ id: response.data.id, ...params });
-                                resolve(restoredProject[0]);
-                            }
-                        } catch (errorData) {
-                            reject(generateError(errorData));
+                if (storage.location === 'cloud_storage') {
+                    params.filename = fileName;
+                    response = await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                        });
+                } else {
+                    const uploadConfig = {
+                        chunkSize: config.uploadChunkSize * 1024 * 1024,
+                        endpoint: `${origin}${backendAPI}/projects/backup/`,
+                        totalSentSize: 0,
+                        totalSize: file.size,
+                    };
+                    await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Start': true },
+                        });
+                    const { filename } = await chunkUpload(file, uploadConfig);
+                    response = await Axios.post(url,
+                        new FormData(), {
+                            params: { ...params, filename },
+                            proxy: config.proxy,
+                            headers: { 'Upload-Finish': true },
                         }
-                    }
-
-                    setTimeout(request);
-                });
+                    );
+                }
+                return await wait(projectData, response);
             }
 
             async function createTask(taskSpec, taskDataSpec, onUpdate) {
@@ -1907,8 +2019,8 @@
                             create: createProject,
                             delete: deleteProject,
                             exportDataset: exportDataset('projects'),
-                            backupProject,
-                            restoreProject,
+                            export: exportProject,
+                            import: importProject,
                             importDataset,
                         }),
                         writable: false,
@@ -1931,6 +2043,7 @@
                         value: Object.freeze({
                             get: getJobs,
                             save: saveJob,
+                            exportDataset: exportDataset('jobs'),
                         }),
                         writable: false,
                     },

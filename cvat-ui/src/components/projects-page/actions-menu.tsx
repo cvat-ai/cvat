@@ -9,7 +9,7 @@ import Menu from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import { CombinedState } from 'reducers/interfaces';
-import { deleteProjectAsync, backupProjectAsync } from 'actions/projects-actions';
+import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 
@@ -17,6 +17,7 @@ interface Props {
     projectInstance: any;
 }
 
+// TODO refactor export project backup
 export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     const { projectInstance } = props;
 
@@ -42,15 +43,15 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
 
     return (
         <Menu selectable={false} className='cvat-project-actions-menu'>
-            <Menu.Item key='export-dataset' onClick={() => dispatch(exportActions.openExportModal(projectInstance))}>
+            <Menu.Item key='export-dataset' onClick={() => dispatch(exportActions.openExportModal(projectInstance, 'dataset'))}>
                 Export dataset
             </Menu.Item>
-            <Menu.Item key='import-dataset' onClick={() => dispatch(importActions.openImportModal(projectInstance))}>
+            <Menu.Item key='import-dataset' onClick={() => dispatch(importActions.openImportModal(projectInstance, 'project', 'dataset'))}>
                 Import dataset
             </Menu.Item>
             <Menu.Item
                 disabled={exportIsActive}
-                onClick={() => dispatch(backupProjectAsync(projectInstance))}
+                onClick={() => dispatch(exportActions.openExportModal(projectInstance, 'backup'))}
                 icon={exportIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
             >
                 Backup Project

@@ -63,20 +63,20 @@ const projectActions = {
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
     ),
-    backupProject: (projectId: number) => createAction(ProjectsActionTypes.BACKUP_PROJECT, { projectId }),
-    backupProjectSuccess: (projectID: number) => (
-        createAction(ProjectsActionTypes.BACKUP_PROJECT_SUCCESS, { projectID })
-    ),
-    backupProjectFailed: (projectID: number, error: any) => (
-        createAction(ProjectsActionTypes.BACKUP_PROJECT_FAILED, { projectId: projectID, error })
-    ),
-    restoreProject: () => createAction(ProjectsActionTypes.RESTORE_PROJECT),
-    restoreProjectSuccess: (projectID: number) => (
-        createAction(ProjectsActionTypes.RESTORE_PROJECT_SUCCESS, { projectID })
-    ),
-    restoreProjectFailed: (error: any) => (
-        createAction(ProjectsActionTypes.RESTORE_PROJECT_FAILED, { error })
-    ),
+    // backupProject: (projectId: number) => createAction(ProjectsActionTypes.BACKUP_PROJECT, { projectId }),
+    // backupProjectSuccess: (projectID: number) => (
+    //     createAction(ProjectsActionTypes.BACKUP_PROJECT_SUCCESS, { projectID })
+    // ),
+    // backupProjectFailed: (projectID: number, error: any) => (
+    //     createAction(ProjectsActionTypes.BACKUP_PROJECT_FAILED, { projectId: projectID, error })
+    // ),
+    // restoreProject: () => createAction(ProjectsActionTypes.RESTORE_PROJECT),
+    // restoreProjectSuccess: (projectID: number) => (
+    //     createAction(ProjectsActionTypes.RESTORE_PROJECT_SUCCESS, { projectID })
+    // ),
+    // restoreProjectFailed: (error: any) => (
+    //     createAction(ProjectsActionTypes.RESTORE_PROJECT_FAILED, { error })
+    // ),
 };
 
 export type ProjectActions = ActionUnion<typeof projectActions>;
@@ -189,30 +189,32 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
     };
 }
 
-export function restoreProjectAsync(file: File): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(projectActions.restoreProject());
-        try {
-            const projectInstance = await cvat.classes.Project.restore(file);
-            dispatch(projectActions.restoreProjectSuccess(projectInstance));
-        } catch (error) {
-            dispatch(projectActions.restoreProjectFailed(error));
-        }
-    };
-}
+// export function restoreProjectAsync(storage: any, file: File | null, fileName: string | null): ThunkAction {
+//     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+//         dispatch(projectActions.restoreProject());
+//         try {
+//             const projectInstance = await cvat.classes.Project.restore(storage, file, fileName);
+//             dispatch(projectActions.restoreProjectSuccess(projectInstance));
+//         } catch (error) {
+//             dispatch(projectActions.restoreProjectFailed(error));
+//         }
+//     };
+// }
 
-export function backupProjectAsync(projectInstance: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(projectActions.backupProject(projectInstance.id));
+// export function backupProjectAsync(projectInstance: any): ThunkAction {
+//     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+//         dispatch(projectActions.backupProject(projectInstance.id));
 
-        try {
-            const url = await projectInstance.backup();
-            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-            downloadAnchor.href = url;
-            downloadAnchor.click();
-            dispatch(projectActions.backupProjectSuccess(projectInstance.id));
-        } catch (error) {
-            dispatch(projectActions.backupProjectFailed(projectInstance.id, error));
-        }
-    };
-}
+//         try {
+//             const result = await projectInstance.backup();
+//             if (result) {
+//                 const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+//                 downloadAnchor.href = result;
+//                 downloadAnchor.click();
+//             }
+//             dispatch(projectActions.backupProjectSuccess(projectInstance.id));
+//         } catch (error) {
+//             dispatch(projectActions.backupProjectFailed(projectInstance.id, error));
+//         }
+//     };
+// }

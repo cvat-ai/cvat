@@ -23,8 +23,8 @@ interface Props {
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
     onClickMenu: (params: MenuInfo) => void;
-    onUploadAnnotations: (format: string, file: File) => void;
-    exportIsActive: boolean;
+    // onUploadAnnotations: (format: string, file: File) => void;
+    // exportIsActive: boolean;
 }
 
 export enum Actions {
@@ -35,6 +35,7 @@ export enum Actions {
     MOVE_TASK_TO_PROJECT = 'move_task_to_project',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     EXPORT_TASK = 'export_task',
+    IMPORT_TASK = 'import_task',
 }
 
 function ActionsMenuComponent(props: Props): JSX.Element {
@@ -44,10 +45,10 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         inferenceIsActive,
         loaders,
         onClickMenu,
-        onUploadAnnotations,
+        // onUploadAnnotations,
         loadActivity,
         taskDimension,
-        exportIsActive,
+        // exportIsActive,
     } = props;
 
     const onClickMenuWrapper = useCallback(
@@ -79,7 +80,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
 
     return (
         <Menu selectable={false} className='cvat-actions-menu' onClick={onClickMenuWrapper}>
-            {LoadSubmenu({
+            {/* {LoadSubmenu({
                 loaders,
                 loadActivity,
                 onFileUpload: (format: string, file: File): void => {
@@ -101,7 +102,8 @@ function ActionsMenuComponent(props: Props): JSX.Element {
                 },
                 menuKey: Actions.LOAD_TASK_ANNO,
                 taskDimension,
-            })}
+            })} */}
+            <Menu.Item key={Actions.LOAD_TASK_ANNO}>Upload annotations</Menu.Item>
             <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             {!!bugTracker && <Menu.Item key={Actions.OPEN_BUG_TRACKER}>Open bug tracker</Menu.Item>}
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
@@ -109,8 +111,8 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             </Menu.Item>
             <Menu.Item
                 key={Actions.EXPORT_TASK}
-                disabled={exportIsActive}
-                icon={exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
+                // disabled={exportIsActive}
+                // icon={exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
             >
                 Backup Task
             </Menu.Item>

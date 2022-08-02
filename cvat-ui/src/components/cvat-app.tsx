@@ -24,6 +24,9 @@ import GlobalErrorBoundary from 'components/global-error-boundary/global-error-b
 
 import ShortcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
+import ExportBackupModal from 'components/export-backup/export-backup-modal';
+import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
+import ImportBackupModal from 'components/import-backup/import-backup-modal';
 import ModelsPageContainer from 'containers/models-page/models-page';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
@@ -391,6 +394,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
                                 <ExportDatasetModal />
+                                <ExportBackupModal />
+                                <ImportDatasetModal />
+                                <ImportBackupModal />
                                 {/* eslint-disable-next-line */}
                                 <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                             </Layout.Content>

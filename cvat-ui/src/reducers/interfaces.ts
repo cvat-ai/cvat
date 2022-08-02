@@ -55,7 +55,7 @@ export interface ProjectsState {
             [projectId: number]: boolean;
         }
     };
-    restoring: boolean;
+    //importing: boolean;
 }
 
 export interface TasksQuery {
@@ -124,20 +124,68 @@ export interface TasksState {
 
 export interface ExportState {
     tasks: {
-        [tid: number]: string[];
+        [tid: number]: {
+            'dataset': string[],
+            'backup': boolean,
+        };
     };
     projects: {
-        [pid: number]: string[];
+        [pid: number]: {
+            'dataset': string[],
+            'backup': boolean,
+        };
     };
+    jobs: {
+        [jid: number]: {
+            'dataset': string[],
+            'backup': boolean,
+        };
+    }
     instance: any;
+    resource: 'dataset' | 'backup' | null;
     modalVisible: boolean;
 }
 
-export interface ImportState {
+export interface ImportResourceState {
+    activities: {
+        [oid: number]: string; // loader name
+    };
     importingId: number | null;
     progress: number;
     status: string;
     instance: any;
+    //resource: 'dataset' | 'annotation' | null;
+    modalVisible: boolean;
+}
+
+export interface ImportDatasetState {
+    // tasks: {
+    //     [tid: number]: string; // loader name
+    // };
+    // projects: {
+    //     [pid: number]: string; // loader name
+    // };
+    // jobs: {
+    //     [jid: number]:  string; // loader name
+    // }
+    // // TODO is it possible to remove the restriction of importing only one resource at a time
+    // importingId: number | null;
+    // progress: number;
+    // status: string;
+    // instance: any;
+    // //resource: 'dataset' | 'annotation' | null;
+    // modalVisible: boolean;
+    projects: ImportResourceState | null;
+    tasks: ImportResourceState | null;
+    jobs: ImportResourceState | null;
+    instanceType: 'project' | 'task' | 'job' | null;
+    resource: any;
+}
+
+export interface ImportBackupState {
+    isTaskImported: boolean;
+    isProjectImported: boolean;
+    instanceType: 'project' | 'task' | null;
     modalVisible: boolean;
 }
 
@@ -438,10 +486,12 @@ export interface NotificationsState {
         exporting: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
+            backup: null | ErrorState;
         };
         importing: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
+            backup: null | ErrorState;
         };
         cloudStorages: {
             creating: null | ErrorState;
@@ -478,7 +528,17 @@ export interface NotificationsState {
         };
         projects: {
             restoringDone: string;
-        }
+        };
+        exporting: {
+            dataset: string,
+            annotation: string,
+            backup: string,
+        };
+        importing: {
+            dataset: string,
+            annotation: string,
+            backup: string,
+        };
     };
 }
 
@@ -735,6 +795,16 @@ export interface ShortcutsState {
     normalizedKeyMap: Record<string, string>;
 }
 
+export enum StorageLocation {
+    LOCAL = 'local',
+    CLOUD_STORAGE = 'cloud_storage',
+}
+
+export interface Storage {
+    location: StorageLocation;
+    cloudStorageId: number | null | undefined;
+}
+
 export enum ReviewStatus {
     ACCEPTED = 'accepted',
     REJECTED = 'rejected',
@@ -784,7 +854,8 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
-    import: ImportState;
+    import: ImportDatasetState;
+    importBackup: ImportBackupState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
 }
