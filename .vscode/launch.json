@@ -185,7 +185,7 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
-                "tests/rest_api/"
+                "tests/python/rest_api/"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
@@ -199,7 +199,7 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
-                "tests/sdk/"
+                "tests/python/sdk/"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
@@ -213,7 +213,7 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
-                "tests/cli/"
+                "tests/python/cli/"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
