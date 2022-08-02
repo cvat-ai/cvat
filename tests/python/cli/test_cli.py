@@ -46,7 +46,7 @@ class TestCLI:
 
     @pytest.fixture
     def fxt_image_file(self):
-        img_path = self.tmp_path / "img.png"
+        img_path = self.tmp_path / "img_0.png"
         with img_path.open("wb") as f:
             f.write(generate_image_file(filename=str(img_path)).getvalue())
 
@@ -174,41 +174,13 @@ class TestCLI:
             "task_{}_frame_{:06d}.jpg".format(fxt_new_task.id, i) for i in range(2)
         }
 
-    # @scoped
-    # def test_tasks_upload(self):
-    #     path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
-    #     self._generate_coco_file(path)
-    #     on_exit_do(os.remove, path)
+    def test_can_upload_annotations(self, fxt_new_task: TaskProxy, fxt_coco_file: Path):
+        self.run_cli("upload", str(fxt_new_task.id), str(fxt_coco_file), "--format", "COCO 1.0")
 
-    #     with closing(io.StringIO()) as pbar_out:
-    #         pbar = tqdm(file=pbar_out, mininterval=0)
+    def test_can_create_from_backup(self, fxt_new_task: TaskProxy, fxt_backup_file: Path):
+        stdout = self.run_cli("import", str(fxt_backup_file))
 
-    #         self.cli.tasks_upload(self.task_id, "COCO 1.0", path, pbar=pbar)
-
-    #         pbar_out = pbar_out.getvalue().strip("\r").split("\r")
-
-    #     self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format("annotation file"))
-    #     self.assertRegex(pbar_out[-1], "100%")
-
-    # @scoped
-    # def test_tasks_import(self):
-    #     anno_path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
-    #     self._generate_coco_file(anno_path)
-    #     on_exit_do(os.remove, anno_path)
-
-    #     backup_path = os.path.join(settings.SHARE_ROOT, "task_backup.zip")
-    #     with closing(io.StringIO()) as pbar_out:
-    #         pbar = tqdm(file=pbar_out, mininterval=0)
-    #         self.cli.tasks_upload(self.task_id, "COCO 1.0", anno_path, pbar=pbar)
-    #         self.cli.tasks_export(self.task_id, backup_path, pbar=pbar)
-    #         on_exit_do(os.remove, backup_path)
-
-    #     with closing(io.StringIO()) as pbar_out:
-    #         pbar = tqdm(file=pbar_out, mininterval=0)
-
-    #         self.cli.tasks_import(backup_path, pbar=pbar)
-
-    #         pbar_out = pbar_out.getvalue().strip("\r").split("\r")
-
-    #     self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format("exported sucessfully"))
-    #     self.assertRegex(pbar_out[-1], "100%")
+        task_id = int(stdout.split()[-1])
+        assert task_id
+        assert task_id != fxt_new_task.id
+        assert self.client.retrieve_task(task_id).size == fxt_new_task.size
