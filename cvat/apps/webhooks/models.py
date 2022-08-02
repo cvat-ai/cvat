@@ -30,7 +30,7 @@ class WebhookContentTypeChoice(str, Enum):
 
 
 class Webhook(models.Model):
-    url = models.URLField()
+    target_url = models.URLField()
 
     events = models.CharField(max_length=4096, default="")
     type = models.CharField(max_length=16, choices=WebhookTypeChoice.choices())
@@ -60,7 +60,7 @@ class Webhook(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = ("url", "secret", "enable_ssl", "type", "content_type")
+        unique_together = ("target_url", "secret", "enable_ssl", "type", "content_type")
         constraints = [
             models.CheckConstraint(
                 name="webhooks_project_or_organization",
@@ -78,3 +78,19 @@ class Webhook(models.Model):
                 ),
             )
         ]
+
+class WebhookDelivery(models.Model):
+    webhook = models.ForeignKey(
+        Webhook, on_delete=models.CASCADE, related_name="deliveries"
+    )
+    event = models.CharField(max_length=64)
+
+    # TO-DO: define status_code field more accurate (as CharField with choices, or with specific validation)
+    status_code = models.IntegerField(default=0)
+
+    data = models.JSONField(default=dict)
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
