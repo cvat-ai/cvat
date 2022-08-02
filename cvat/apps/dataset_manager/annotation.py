@@ -454,9 +454,11 @@ class TrackManager(ObjectManager):
 
         def simple_interpolation(shape0, shape1):
             shapes = []
+            distance = shape1["frame"] - shape0["frame"]
             diff = np.subtract(shape1["points"], shape0["points"])
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                offset = (frame - shape0["frame"]) / distance
                 # Voxel: Override offset to disable interpolation
                 offset = 0
                 points = shape0["points"] + diff * offset
