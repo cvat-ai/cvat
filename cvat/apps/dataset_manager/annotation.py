@@ -459,6 +459,8 @@ class TrackManager(ObjectManager):
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
+                # Voxel: Override offset to disable interpolation
+                offset = 0
                 points = shape0["points"] + diff * offset
 
                 shapes.append(copy_shape(shape0, frame, points.tolist()))
