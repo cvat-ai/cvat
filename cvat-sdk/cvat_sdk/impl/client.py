@@ -67,6 +67,17 @@ class Client:
         assert "csrftoken" in self.api.cookies
         self.api.set_default_header("Authorization", "Token " + auth.key)
 
+    def _has_credentials(self):
+        return (
+            ("sessionid" in self.api.cookies)
+            or ("csrftoken" in self.api.cookies)
+            or (self.api.get_common_headers().get("Authorization", ""))
+        )
+
+    def logout(self):
+        if self._has_credentials():
+            self.api.auth_api.create_logout()
+
     def create_task(
         self,
         spec: models.ITaskWriteRequest,
