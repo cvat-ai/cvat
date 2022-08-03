@@ -68,7 +68,7 @@ from cvat.apps.engine.serializers import (
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.mixins import UploadMixin, AnnotationMixin, SerializeMixin, UpdateModelMixin
 
 from . import models, task
 from .log import clogger, slogger
@@ -1219,7 +1219,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
         })
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, UploadMixin, AnnotationMixin):
+    mixins.RetrieveModelMixin, UpdateModelMixin, UploadMixin, AnnotationMixin):
     queryset = Job.objects.all()
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -1277,6 +1277,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         status=status.HTTP_400_BAD_REQUEST)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
+
 
     @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
         parameters=[
@@ -1400,6 +1401,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+
     @extend_schema(methods=['PATCH'],
         operation_id='jobs_partial_update_annotations_file',
         summary="Allows to upload an annotation file chunk. "
@@ -1414,6 +1416,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
+
 
     @extend_schema(summary='Export job as a dataset in a specific format',
         parameters=[
@@ -1453,6 +1456,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             callback=dm.views.export_job_as_dataset
         )
 
+
     @extend_schema(
         summary='Method returns list of issues for the job',
         responses={
@@ -1466,6 +1470,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             context={'request': request}, many=True)
 
         return Response(serializer.data)
+
 
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
@@ -1493,6 +1498,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data, db_job)
+
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
         responses={
@@ -1563,6 +1569,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
+
 
     @extend_schema(summary='The action returns the list of tracked '
         'changes for the job', responses={
