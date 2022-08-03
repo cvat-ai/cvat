@@ -394,8 +394,52 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     exporting: {
                         ...state.messages.exporting,
                         dataset:
-                            `Dataset for resource ${instance.id} have been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
-                            // `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            `Dataset for resource ${instance.id} has been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
+                    },
+                },
+            };
+        }
+        case ExportActionTypes.EXPORT_BACKUP_FAILED: {
+            const { instanceId, instanceType}  = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    exporting: {
+                        ...state.errors.exporting,
+                        backup: {
+                            message:
+                                `Could not export the ${instanceType} №${instanceId}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
+            const { instanceId, instanceType, isLocal } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    exporting: {
+                        ...state.messages.exporting,
+                        backup:
+                            `Backup for the ${instanceType} №${instanceId} has been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
+            const { instance, resource } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    importing: {
+                        ...state.messages.importing,
+                        [resource]:
+                            `The ${resource} for resource ${instance.id} has been uploaded`,
                     },
                 },
             };
@@ -420,7 +464,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ImportBackupActionTypes.IMPORT_BACKUP_SUCCESS: {
-            const { instance } = action.payload;
+            const { instanceId, instanceType } = action.payload;
             return {
                 ...state,
                 messages: {
@@ -428,12 +472,14 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.messages.importing,
                         backup:
-                            `The ${instance.name}  ${instance.id} has been restored successfully`,
+                            `The ${instanceType} has been restored succesfully.
+                            Click <a href="/${instanceType}s/${instanceId}">here</a> to open`,
                     },
                 },
             };
         }
         case ImportBackupActionTypes.IMPORT_BACKUP_FAILED: {
+            const { instanceType } = action.payload;
             return {
                 ...state,
                 errors: {
@@ -442,7 +488,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.importing,
                         backup: {
                             message:
-                                'Could not restore backup ',
+                                `Could not restore ${instanceType} backup.`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -550,49 +596,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.EXPORT_TASK_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        exporting: {
-                            message: 'Could not export the task',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.IMPORT_TASK_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        importing: {
-                            message: 'Could not import the task',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
-            const taskID = action.payload.task.id;
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    tasks: {
-                        ...state.messages.tasks,
-                        importingDone: `Task has been imported succesfully <a href="/tasks/${taskID}">Open task</a>`,
-                    },
-                },
-            };
-        }
         case TasksActionTypes.UPDATE_JOB_FAILED: {
             const jobID = action.payload.jobInstance.id;
             return {
@@ -675,51 +678,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-project-failed',
                         },
-                    },
-                },
-            };
-        }
-        case ProjectsActionTypes.BACKUP_PROJECT_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    projects: {
-                        ...state.errors.projects,
-                        backuping: {
-                            message: `Could not backup the project #${action.payload.projectId}`,
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case ProjectsActionTypes.RESTORE_PROJECT_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    projects: {
-                        ...state.errors.projects,
-                        restoring: {
-                            message: 'Could not restore the project',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
-            const { projectID } = action.payload;
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    projects: {
-                        ...state.messages.projects,
-                        restoringDone:
-                            `Project has been created succesfully.
-                             Click <a href="/projects/${projectID}">here</a> to open`,
                     },
                 },
             };

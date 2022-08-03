@@ -593,8 +593,8 @@
                         params.filename = name.replace(/\//g, '_');
                     }
 
-                    params.use_default_location = !targetStorage.location;
-                    if (!!targetStorage.location) {
+                    params.use_default_location = !targetStorage || !targetStorage?.location;
+                    if (!!targetStorage?.location) {
                         params.location = targetStorage.location;
                         if (targetStorage.cloudStorageId) {
                             params.cloud_storage_id = targetStorage.cloudStorageId;
@@ -683,7 +683,6 @@
                                 params,
                                 proxy: config.proxy,
                             });
-                        await wait();
                     } catch (errorData) {
                         throw generateError(errorData);
                     }
@@ -712,10 +711,14 @@
                                 proxy: config.proxy,
                                 headers: { 'Upload-Finish': true },
                             });
-                        await wait();
                     } catch (errorData) {
                         throw generateError(errorData);
                     }
+                }
+                try {
+                    return await wait();
+                } catch (errorData) {
+                    throw generateError(errorData);
                 }
             }
 
@@ -1423,37 +1426,29 @@
             }
 
             // Session is 'task' or 'job'
-            async function uploadAnnotations(session, id, file, format) {
+            async function uploadAnnotations(session, id, format, useDefaultLocation, sourceStorage, file, fileName) {
                 const { backendAPI, origin } = config;
-                const params = {
+                const params: any = {
                     ...enableOrganization(),
                     format,
-                    filename: file.name,
+                    filename: (file) ? file.name : fileName,
                 };
-                const chunkSize = config.uploadChunkSize * 1024 * 1024;
-                const uploadConfig = {
-                    chunkSize,
-                    endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
-                };
-                try {
-                    await Axios.post(`${backendAPI}/${session}s/${id}/annotations`,
-                        new FormData(), {
-                            params,
-                            proxy: config.proxy,
-                            headers: { 'Upload-Start': true },
-                        });
-                    await chunkUpload(file, uploadConfig);
-                    await Axios.post(`${backendAPI}/${session}s/${id}/annotations`,
-                        new FormData(), {
-                            params,
-                            proxy: config.proxy,
-                            headers: { 'Upload-Finish': true },
-                        });
+                params.use_default_location = useDefaultLocation;
+                if (!useDefaultLocation) {
+                    params.location = sourceStorage.location;
+                    if (sourceStorage.cloudStorageId) {
+                        params.cloud_storage_id = sourceStorage.cloudStorageId;
+                    }
+                }
+
+                const url = `${backendAPI}/${session}s/${id}/annotations`;
+
+                async function wait() {
                     return new Promise((resolve, reject) => {
                         async function requestStatus() {
                             try {
                                 const response = await Axios.put(
-                                    `${backendAPI}/${session}s/${id}/annotations`,
+                                    url,
                                     new FormData(),
                                     {
                                         params,
@@ -1471,6 +1466,47 @@
                         }
                         setTimeout(requestStatus);
                     });
+                }
+
+                if (sourceStorage.location === 'cloud_storage') {
+                    try {
+                        await Axios.post(url,
+                            new FormData(), {
+                                params,
+                                proxy: config.proxy,
+                            });
+                    } catch (errorData) {
+                        throw generateError(errorData);
+                    }
+                } else {
+                    const chunkSize = config.uploadChunkSize * 1024 * 1024;
+                    const uploadConfig = {
+                        chunkSize,
+                        endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
+                    };
+
+                    try {
+                        await Axios.post(url,
+                            new FormData(), {
+                                params,
+                                proxy: config.proxy,
+                                headers: { 'Upload-Start': true },
+                            });
+                        await chunkUpload(file, uploadConfig);
+                        await Axios.post(url,
+                            new FormData(), {
+                                params,
+                                proxy: config.proxy,
+                                headers: { 'Upload-Finish': true },
+                            });
+
+                    } catch (errorData) {
+                        throw generateError(errorData);
+                    }
+                }
+
+                try {
+                    return await wait();
                 } catch (errorData) {
                     throw generateError(errorData);
                 }

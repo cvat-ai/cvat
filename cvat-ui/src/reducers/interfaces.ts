@@ -51,11 +51,7 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
-        backups: {
-            [projectId: number]: boolean;
-        }
     };
-    //importing: boolean;
 }
 
 export interface TasksQuery {
@@ -88,7 +84,6 @@ export interface JobsState {
 }
 
 export interface TasksState {
-    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
@@ -112,9 +107,6 @@ export interface TasksState {
             taskId: number | null;
             status: string;
             error: string;
-        };
-        backups: {
-            [tid: number]: boolean;
         };
         jobUpdates: {
             [jid: number]: boolean,
@@ -153,9 +145,9 @@ export interface ImportResourceState {
     importingId: number | null;
     progress: number;
     status: string;
-    instance: any;
+    // instance: any;
     //resource: 'dataset' | 'annotation' | null;
-    modalVisible: boolean;
+    //modalVisible: boolean;
 }
 
 export interface ImportDatasetState {
@@ -178,8 +170,11 @@ export interface ImportDatasetState {
     projects: ImportResourceState | null;
     tasks: ImportResourceState | null;
     jobs: ImportResourceState | null;
-    instanceType: 'project' | 'task' | 'job' | null;
+    //instanceType: 'project' | 'task' | 'job' | null;
+    importing: boolean;
+    instance: any;
     resource: any;
+    modalVisible: boolean;
 }
 
 export interface ImportBackupState {

@@ -17,12 +17,11 @@ interface Props {
     projectInstance: any;
 }
 
-// TODO refactor export project backup
 export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     const { projectInstance } = props;
 
     const dispatch = useDispatch();
-    const activeBackups = useSelector((state: CombinedState) => state.projects.activities.backups);
+    const activeBackups = useSelector((state: CombinedState) => state.export.projects);
     const exportIsActive = projectInstance.id in activeBackups;
 
     const onDeleteProject = useCallback((): void => {
@@ -46,7 +45,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item key='export-dataset' onClick={() => dispatch(exportActions.openExportModal(projectInstance, 'dataset'))}>
                 Export dataset
             </Menu.Item>
-            <Menu.Item key='import-dataset' onClick={() => dispatch(importActions.openImportModal(projectInstance, 'project', 'dataset'))}>
+            <Menu.Item key='import-dataset' onClick={() => dispatch(importActions.openImportModal(projectInstance, 'dataset'))}>
                 Import dataset
             </Menu.Item>
             <Menu.Item

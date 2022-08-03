@@ -926,19 +926,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, job, history } = action.payload;
-            const { loads } = state.activities;
+            const { states, history } = action.payload;
+            // const { loads } = state.activities;
 
-            delete loads[job.id];
+            // delete loads[job.id];
 
             return {
                 ...state,
-                activities: {
-                    ...state.activities,
-                    loads: {
-                        ...loads,
-                    },
-                },
+                // activities: {
+                //     ...state.activities,
+                //     loads: {
+                //         ...loads,
+                //     },
+                // },
                 annotations: {
                     ...state.annotations,
                     history,

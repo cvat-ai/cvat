@@ -38,10 +38,8 @@ const defaultState: TasksState = {
             status: '',
             error: '',
         },
-        backups: {},
         jobUpdates: {},
     },
-    importing: false,
 };
 
 export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
@@ -162,49 +160,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                         ...deletes,
                     },
                 },
-            };
-        }
-        case TasksActionTypes.EXPORT_TASK: {
-            const { taskID } = action.payload;
-            const { backups } = state.activities;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    backups: {
-                        ...backups,
-                        ...Object.fromEntries([[taskID, true]]),
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_TASK_FAILED:
-        case TasksActionTypes.EXPORT_TASK_SUCCESS: {
-            const { taskID } = action.payload;
-            const { backups } = state.activities;
-
-            delete backups[taskID];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    backups: omit(backups, [taskID]),
-                },
-            };
-        }
-        case TasksActionTypes.IMPORT_TASK: {
-            return {
-                ...state,
-                importing: true,
-            };
-        }
-        case TasksActionTypes.IMPORT_TASK_FAILED:
-        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
-            return {
-                ...state,
-                importing: false,
             };
         }
         case TasksActionTypes.CREATE_TASK: {

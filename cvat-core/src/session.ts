@@ -32,12 +32,15 @@
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
-                    async upload(file, loader) {
+                    async upload(format, useDefaultLocation, sourceStorage, file, fileName) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             prototype.annotations.upload,
+                            format,
+                            useDefaultLocation,
+                            sourceStorage,
                             file,
-                            loader,
+                            fileName,
                         );
                         return result;
                     },
@@ -2222,8 +2225,8 @@
         return result;
     };
 
-    Job.prototype.annotations.upload.implementation = async function (file, loader) {
-        const result = await uploadAnnotations(this, file, loader);
+    Job.prototype.annotations.upload.implementation = async function (format, useDefaultLocation, sourceStorage, file, fileName) {
+        const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file, fileName);
         return result;
     };
 
@@ -2644,8 +2647,8 @@
         return result;
     };
 
-    Task.prototype.annotations.upload.implementation = async function (file, loader) {
-        const result = await uploadAnnotations(this, file, loader);
+    Task.prototype.annotations.upload.implementation = async function (format, useDefaultLocation, sourceStorage, file, fileName) {
+        const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file, fileName);
         return result;
     };
 

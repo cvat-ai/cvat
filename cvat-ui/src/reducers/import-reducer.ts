@@ -40,44 +40,49 @@ const defaultState: ImportDatasetState = {
         importingId: null,
         progress: defaultProgress,
         status: defaultStatus,
-        instance: null,
-        modalVisible: false,
+        // instance: null,
+        // modalVisible: false,
     },
     tasks: {
         activities: {},
         importingId: null,
         progress: defaultProgress,
         status: defaultStatus,
-        instance: null,
-        modalVisible: false,
+        // instance: null,
+        // modalVisible: false,
     },
     jobs: {
         activities: {},
         importingId: null,
         progress: defaultProgress,
         status: defaultStatus,
-        instance: null,
-        modalVisible: false,
+        // instance: null,
+        // modalVisible: false,
     },
-    instanceType: null,
+    instance: null,
+    importing: false,
+    // instanceType: null,
     resource: null,
+    modalVisible: false,
 };
 
 export default (state: ImportDatasetState = defaultState, action: ImportActions): ImportDatasetState => {
     switch (action.type) {
         case ImportActionTypes.OPEN_IMPORT_MODAL:
-            const { instance, instanceType, resource } = action.payload;
+            const { instance, resource } = action.payload;
             const activitiesField = defineActititiesField(instance);
 
             return {
                 ...state,
                 [activitiesField]: {
                     ...state[activitiesField],
-                    modalVisible: true,
-                    instance: instance,
+                    // modalVisible: true,
+                    // instance: instance,
                 },
-                instanceType: instanceType,
+                // instanceType: instanceType,
+                instance: instance,
                 resource: resource,
+                modalVisible: true,
             };
         case ImportActionTypes.CLOSE_IMPORT_MODAL: {
             const { instance } = action.payload;
@@ -87,10 +92,11 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                 ...state,
                 [activitiesField]: {
                     ...state[activitiesField],
-                    modalVisible: false,
-                    instance: null,
+                    // modalVisible: false,
                 },
                 resource: null,
+                instance: null,
+                modalVisible: false,
             };
         }
         case ImportActionTypes.IMPORT_DATASET: {
@@ -109,6 +115,7 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                     },
                     status: 'The file is being uploaded to the server',
                 },
+                importing: true,
                 //importingId: id,
             };
         }
@@ -140,12 +147,15 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                     progress: defaultProgress,
                     status: defaultStatus,
                     // importingId: null,
-                    instance: null,
+                    //instance: null,
                     activities: {
                         ...activities
                     },
                 },
-                instanceType: null,
+                //instanceType: null,
+                instance: null,
+                resource: null,
+                importing: false,
                 // progress: defaultState.progress,
                 // status: defaultState.status,
                 // // importingId: null,

@@ -5,6 +5,10 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { Storage } from 'reducers/interfaces';
 
+import getCore from 'cvat-core-wrapper';
+
+const core = getCore();
+
 export enum ExportActionTypes {
     OPEN_EXPORT_MODAL = 'OPEN_EXPORT_MODAL',
     CLOSE_EXPORT_MODAL = 'CLOSE_EXPORT_MODAL',
@@ -37,11 +41,11 @@ export const exportActions = {
     exportBackup: (instanceId: number) => (
         createAction(ExportActionTypes.EXPORT_BACKUP, { instanceId })
     ),
-    exportBackupSuccess: (instanceId: number) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instanceId })
+    exportBackupSuccess: (instanceId: number, instanceType: 'task' | 'project', isLocal: boolean) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instanceId, instanceType, isLocal })
     ),
-    exportBackupFailed: (instanceId: number, error: any) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instanceId, error })
+    exportBackupFailed: (instanceId: number, instanceType: 'task' | 'project', error: any) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instanceId, instanceType, error })
     ),
 };
 
@@ -69,6 +73,7 @@ export const exportDatasetAsync = (
 
 export const exportBackupAsync = (instance: any, fileName: string, targetStorage: Storage | null): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance.id));
+    const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
         const result = await instance.export(fileName, targetStorage);
@@ -77,9 +82,9 @@ export const exportBackupAsync = (instance: any, fileName: string, targetStorage
             downloadAnchor.href = result;
             downloadAnchor.click();
         }
-        dispatch(exportActions.exportBackupSuccess(instance.id));
+        dispatch(exportActions.exportBackupSuccess(instance.id, instanceType, !!result));
     } catch (error) {
-        dispatch(exportActions.exportBackupFailed(instance.id, error as Error));
+        dispatch(exportActions.exportBackupFailed(instance.id, instanceType,  error as Error));
     }
 };
 

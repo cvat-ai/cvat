@@ -22,7 +22,6 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
-import { uploadJobAnnotationsAsync } from 'actions/annotation-actions';
 
 import ImportDatasetStatusModal from './import-dataset-status-modal';
 import Space from 'antd/lib/space';
@@ -63,41 +62,30 @@ function ImportDatasetModal(): JSX.Element | null {
     const dispatch = useDispatch();
 
     const resource = useSelector((state: CombinedState) =>  state.import.resource);
-    const instanceT = useSelector((state: CombinedState) =>  state.import.instanceType);
+    const instance = useSelector((state: CombinedState) =>  state.import.instance);
     const projectsImportState = useSelector((state: CombinedState) => state.import.projects);
     const tasksImportState = useSelector((state: CombinedState) => state.import.tasks);
     const jobsImportState = useSelector((state: CombinedState) => state.import.jobs);
 
-    const [modalVisible, setModalVisible] = useState(false);
-    const [instance, setInstance] = useState<any>(null);
+    const importing = useSelector((state: CombinedState) => state.import.importing);
 
-    useEffect(() => {
-        if (instanceT === 'project' && projectsImportState) {
-            setModalVisible(projectsImportState.modalVisible);
-            setInstance(projectsImportState.instance);
-        } else if (instanceT === 'task' && tasksImportState) {
-            setModalVisible(tasksImportState.modalVisible);
-            setInstance(tasksImportState.instance);
-        } else if (instanceT === 'job' && jobsImportState) {
-            setModalVisible(jobsImportState.modalVisible);
-            setInstance(jobsImportState.instance);
-        }
-    }, [instanceT, projectsImportState, tasksImportState, jobsImportState])
+    const [selectedLoader, setSelectedLoader] = useState<any>(null);
 
-    // const modalVisible = useSelector((state: CombinedState) => {
+    const isDataset = useCallback((): boolean => {
+        return resource === 'dataset';
+    }, [resource]);
 
-    // });
-    //const instance = useSelector((state: CombinedState) => state.import.instance);
-    //const currentImportId = useSelector((state: CombinedState) => state.import.importingId);
+    const isAnnotation = useCallback((): boolean => {
+        return resource === 'annotation';
+    }, [resource]);
 
+    const modalVisible = useSelector((state: CombinedState) => state.import.modalVisible);
 
-    // todo need to remove one of state item or form item
     const [useDefaultSettings, setUseDefaultSettings] = useState(true);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState<string>('');
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
     const [selectedSourceStorage, setSelectedSourceStorage] = useState<Storage | null>(null);
-
 
     const [uploadParams, setUploadParams] = useState<UploadParams | null>(null);
 
@@ -125,6 +113,7 @@ function ImportDatasetModal(): JSX.Element | null {
                         : null);
                     }
                 });
+                setInstanceType(`job #${instance.id}`);
             }
         }
     }, [instance?.id, resource, instance?.sourceStorage]);
@@ -141,9 +130,15 @@ function ImportDatasetModal(): JSX.Element | null {
             <Upload.Dragger
                 listType='text'
                 fileList={file ? [file] : ([] as any[])}
+                accept='.zip,.json,.xml'
                 beforeUpload={(_file: RcFile): boolean => {
-                    if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                        message.error('Only ZIP archive is supported');
+                    if (!selectedLoader) {
+                        message.warn('Please select a format first');
+                    } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
+                        message.error('Only ZIP archive is supported for import a dataset');
+                    } else if (isAnnotation() &&
+                            !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[1])) {
+                        message.error(`For ${selectedLoader.name} format only files with ${selectedLoader.format.toLowerCase()} extension can be used`);
                     } else {
                         setFile(_file);
                     }
@@ -176,13 +171,10 @@ function ImportDatasetModal(): JSX.Element | null {
         form.resetFields();
         setFile(null);
         dispatch(importActions.closeImportModal(instance));
-    }, [form]);
+    }, [form, instance]);
 
     const onUpload = () => {
         if (uploadParams && uploadParams.resource) {
-            // if (instance instanceof core.classes.Job) {
-            //     dispatch(uploadJobAnnotationsAsync(instance, loader, file));
-            // }
             dispatch(importDatasetAsync(
                 instance, uploadParams.selectedFormat as string,
                 uploadParams.useDefaultSettings, uploadParams.sourceStorage,
@@ -220,7 +212,7 @@ function ImportDatasetModal(): JSX.Element | null {
                 });
                 return;
             }
-            const fileName = (values.location === StorageLocation.CLOUD_STORAGE) ? values.fileName : null;
+            const fileName = values.fileName || null;
             const sourceStorage = {
                 location: (values.location) ? values.location : defaultStorageLocation,
                 cloudStorageId: (values.location) ? values.cloudStorageId : defaultStorageCloudId,
@@ -235,20 +227,15 @@ function ImportDatasetModal(): JSX.Element | null {
                 fileName: fileName || null
             });
 
-            if (resource === 'annotation') {
+            if (isAnnotation()) {
                 confirmUpload();
             } else {
                 onUpload();
             }
             closeModal();
         },
-        // another dependensis like instance type
-        [instance?.id, file, useDefaultSettings],
+        [instance?.id, file, useDefaultSettings, resource, defaultStorageLocation],
     );
-
-    // if (!(resource in ['dataset', 'annotation'])) {
-    //     return null;
-    // }
 
     return (
         <>
@@ -256,15 +243,18 @@ function ImportDatasetModal(): JSX.Element | null {
                 title={(
                     <>
                         <Text>Import {resource} to {instanceType}</Text>
-                        <CVATTooltip
-                            title={
-                                instance && !instance.labels.length ?
-                                    'Labels will be imported from dataset' :
-                                    'Labels from project will be used'
-                            }
-                        >
-                            <QuestionCircleOutlined className='cvat-modal-import-header-question-icon' />
-                        </CVATTooltip>
+                        {
+                            instance instanceof core.classes.Project &&
+                            <CVATTooltip
+                                title={
+                                    instance && !instance.labels.length ?
+                                        'Labels will be imported from dataset' :
+                                        'Labels from project will be used'
+                                }
+                            >
+                                <QuestionCircleOutlined className='cvat-modal-import-header-question-icon' />
+                            </CVATTooltip>
+                        }
                     </>
                 )}
                 visible={modalVisible}
@@ -284,7 +274,16 @@ function ImportDatasetModal(): JSX.Element | null {
                         label='Import format'
                         rules={[{ required: true, message: 'Format must be selected' }]}
                     >
-                        <Select placeholder='Select dataset format' className='cvat-modal-import-select'>
+                        <Select
+                            placeholder={`Select ${resource} format`}
+                            className='cvat-modal-import-select'
+                            onChange={(_format: string) => {
+                                const [_loader] = importers.filter(
+                                    (importer: any): boolean => importer.name === _format
+                                );
+                                setSelectedLoader(_loader);
+                            }}
+                        >
                             {importers
                                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
                                 .filter(
@@ -295,9 +294,7 @@ function ImportDatasetModal(): JSX.Element | null {
                                 )
                                 .map(
                                     (importer: any): JSX.Element => {
-                                        // const pending = currentImportId !== null;
-                                        // FIXME
-                                        const pending = false;
+                                        const pending = importing;
                                         const disabled = !importer.enabled || pending;
                                         return (
                                             <Select.Option
@@ -335,16 +332,17 @@ function ImportDatasetModal(): JSX.Element | null {
                     </Space>
 
                     {useDefaultSettings && defaultStorageLocation === StorageLocation.LOCAL && uploadLocalFile()}
+                    {useDefaultSettings && defaultStorageLocation === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {!useDefaultSettings && <StorageField
                         label='Source storage'
-                        description='Specify source storage for import dataset'
+                        description={`Specify source storage for import ${resource}`}
                         onChangeStorage={(value: Storage) => setSelectedSourceStorage(value)}
                     />}
                     {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}
                 </Form>
             </Modal>
-            {resource === 'dataset' && <ImportDatasetStatusModal />}
+            {isDataset() && <ImportDatasetStatusModal />}
         </>
     );
 }

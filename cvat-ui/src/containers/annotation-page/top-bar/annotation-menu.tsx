@@ -12,7 +12,6 @@ import { CombinedState, JobStage } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
 import { updateJobAsync } from 'actions/tasks-actions';
 import {
-    uploadJobAnnotationsAsync,
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
@@ -31,9 +30,8 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    // loadAnnotations(job: any, loader: any, file: File): void;
-    showExportModal: (jobInstance: any, resource: 'dataset' | 'backup' | null) => void;
-    showImportModal: (jobInstance: any, resource: 'dataset' | 'backup' | null) => void;
+    showExportModal: (jobInstance: any, resource: 'dataset' | 'backup') => void;
+    showImportModal: (jobInstance: any, resource: 'dataset' | 'annotation') => void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
@@ -68,14 +66,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        // loadAnnotations(job: any, loader: any, file: File): void {
-        //     dispatch(uploadJobAnnotationsAsync(job, loader, file));
-        // },
-        showExportModal(taskInstance: any, resource: 'dataset' | 'backup' | null): void {
+        showExportModal(taskInstance: any, resource: 'dataset' | 'backup'): void {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
-        showImportModal(taskInstance: any, resource: 'dataset' | 'backup' | null): void {
-            dispatch(importActions.openImportModal(taskInstance, 'task', resource));
+        showImportModal(taskInstance: any, resource: 'dataset' | 'annotation'): void {
+            dispatch(importActions.openImportModal(taskInstance, resource));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
             dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
@@ -143,12 +138,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             updateJob(jobInstance);
             window.location.reload();
         } else if (action === Actions.LOAD_JOB_ANNO) {
-            core.tasks.get({ id: jobInstance.taskId }).then((response: any) => {
-                if (response.length) {
-                    const [taskInstance] = response;
-                    showImportModal(taskInstance, 'dataset');
-                }
-            });
+            showImportModal(jobInstance, 'annotation');
         }
     };
 

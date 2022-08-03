@@ -24,23 +24,23 @@ export const importBackupActions = {
     ),
     closeImportModal: () => createAction(ImportBackupActionTypes.CLOSE_IMPORT_MODAL),
     importBackup: () => createAction(ImportBackupActionTypes.IMPORT_BACKUP),
-    importBackupSuccess: (instance: any) => (
-        createAction(ImportBackupActionTypes.IMPORT_BACKUP_SUCCESS, { instance })
+    importBackupSuccess: (instanceId: number, instanceType: 'project' | 'task') => (
+        createAction(ImportBackupActionTypes.IMPORT_BACKUP_SUCCESS, { instanceId, instanceType })
     ),
-    importBackupFailed: (error: any) => (
-        createAction(ImportBackupActionTypes.IMPORT_BACKUP_FAILED, { error })
+    importBackupFailed: (instanceType: 'project' | 'task', error: any) => (
+        createAction(ImportBackupActionTypes.IMPORT_BACKUP_FAILED, { instanceType, error })
     ),
 };
 
-export const importBackupAsync = (instanceType: 'project' | 'task' | null, storage: any, file: File | null, fileName: string | null): ThunkAction => (
+export const importBackupAsync = (instanceType: 'project' | 'task', storage: any, file: File | null, fileName: string | null): ThunkAction => (
     async (dispatch) => {
         dispatch(importBackupActions.importBackup());
         try {
             const inctanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
             const instance = await inctanceClass.import(storage, file, fileName);
-            dispatch(importBackupActions.importBackupSuccess(instance));
+            dispatch(importBackupActions.importBackupSuccess(instance.id, instanceType));
         } catch (error) {
-            dispatch(importBackupActions.importBackupFailed(error));
+            dispatch(importBackupActions.importBackupFailed(instanceType, error));
         }
 });
 

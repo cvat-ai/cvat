@@ -223,12 +223,9 @@
         );
     }
 
-    async function uploadAnnotations(session, file, loader) {
+    async function uploadAnnotations(session, format, useDefaultLocation, sourceStorage, file, fileName) {
         const sessionType = session instanceof Task ? 'task' : 'job';
-        if (!(loader instanceof Loader)) {
-            throw new ArgumentError('A loader must be instance of Loader class');
-        }
-        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, loader.name);
+        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, format, useDefaultLocation, sourceStorage, file, fileName);
     }
 
     function importAnnotations(session, data) {

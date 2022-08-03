@@ -33,8 +33,8 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
             return {
                 ...state,
                 modalVisible: false,
-                instance: null,
-                resource: null,
+                // instance: null,
+                // resource: null,
             };
         case ExportActionTypes.EXPORT_DATASET: {
             const { instance, format } = action.payload;
@@ -51,16 +51,18 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                 field = 'jobs';
             }
 
-
-            // deepCopy(instance instanceof core.classes.Project ? state.projects : state.tasks);
-            // const instanceId = instance instanceof core.classes.Project ||
-            //     instance instanceof core.classes.Task ? instance.id : instance.taskId;
             const instanceId = instance.id;
 
+            if (!activities[instanceId]) {
+                activities[instanceId] = {
+                    'dataset': [],
+                    'backup': false,
+                }
+            }
             activities[instanceId].dataset =
                 instanceId in activities && !activities[instanceId].dataset.includes(format) ?
                     [...activities[instanceId].dataset, format] :
-                    activities[instanceId].dataset || [format];
+                    activities[instanceId]?.dataset || [format];
 
             return {
                 ...state,
@@ -82,29 +84,8 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                 activities = deepCopy(state.jobs);
                 field = 'jobs';
             }
-            // switch (typeof instance) {
-            //     case core.classes.Project: {
-            //         activities = deepCopy(state.projects);
-            //         field = 'projects';
-            //         break;
-            //     }
-            //     case core.classes.Task: {
-            //         activities = deepCopy(state.tasks);
-            //         field = 'tasks';
-            //         break;
-            //     }
-            //     case core.classes.Job: {
-            //         activities = deepCopy(state.jobs);
-            //         field = 'jobs';
-            //         break;
-            //     }
-            //     default:
-            // }
-            const instanceId = instance.id;
 
-            // const activities = deepCopy(instance instanceof core.classes.Project ? state.projects : state.tasks);
-            // const instanceId = instance instanceof core.classes.Project ||
-            //     instance instanceof core.classes.Task ? instance.id : instance.taskId;
+            const instanceId = instance.id;
 
             activities[instanceId].dataset = activities[instanceId].dataset.filter(
                 (exporterName: string): boolean => exporterName !== format,
@@ -115,44 +96,66 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                 ...{[field]: activities},
             };
         }
-        case ExportActionTypes.EXPORT_TASK: {
-            const { taskId } = action.payload;
-            //const { backups } = state;
+        case ExportActionTypes.EXPORT_BACKUP: {
+            const { instanceId } = action.payload;
+            const { instance } = state;
+
+            let activities;
+            let field;
+            if (instance instanceof core.classes.Project) {
+                activities = deepCopy(state.projects);
+                field = 'projects';
+            } else if (instance instanceof core.classes.Task) {
+                activities = deepCopy(state.tasks);
+                field = 'tasks';
+            } else {
+                activities = deepCopy(state.jobs);
+                field = 'jobs';
+            }
+
+            activities[instanceId] = {
+                ...activities[instanceId],
+                'backup': true,
+            }
 
             return {
                 ...state,
-                tasks: {
-                    ...state.tasks,
-                    [taskId]: {
-                        ...state.tasks[taskId],
-                        'backup': true,
-                    }
-
+                [field]: {
+                    ...activities,
                 }
-                // : {
-                //     ...backups,
-                //     ...Object.fromEntries([[taskId, true]]),
-                // },
             };
         }
-        case ExportActionTypes.EXPORT_TASK_FAILED:
-        case ExportActionTypes.EXPORT_TASK_SUCCESS: {
-            const { taskId } = action.payload;
-            // const { backup } = state.tasks[taskId];
+        case ExportActionTypes.EXPORT_BACKUP_FAILED:
+        case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
+            const { instanceId } = action.payload;
 
-            // delete backup;
+            const { instance } = state;
 
-            // TODO taskid maybe undefined?
+            let activities;
+            let field;
+            if (instance instanceof core.classes.Project) {
+                activities = deepCopy(state.projects);
+                field = 'projects';
+            } else if (instance instanceof core.classes.Task) {
+                activities = deepCopy(state.tasks);
+                field = 'tasks';
+            } else {
+                activities = deepCopy(state.jobs);
+                field = 'jobs';
+            }
+
+            activities[instanceId] = {
+                ...activities[instanceId],
+                'backup': false,
+            }
+
             return {
                 ...state,
-                tasks: {
-                    ...state.tasks,
-                    [taskId]: {
-                        ...state.tasks[taskId],
-                        'backup': false,
-                    }
-                }
-                // backups: omit(backups, [taskId]),
+                [field]: {
+                    ...activities,
+                },
+                instance: null,
+                resource: null,
             };
         }
         default:

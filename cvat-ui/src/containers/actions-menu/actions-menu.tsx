@@ -70,7 +70,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
         showImportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null): void => {
-            dispatch(importActions.openImportModal(taskInstance, 'task', 'annotation'));
+            dispatch(importActions.openImportModal(taskInstance, 'annotation'));
         },
         deleteTask: (taskInstance: any): void => {
             dispatch(deleteTaskAsync(taskInstance));
