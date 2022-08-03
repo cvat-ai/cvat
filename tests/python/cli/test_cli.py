@@ -9,14 +9,13 @@ import os
 from pathlib import Path
 
 import pytest
+from cvat_sdk import exceptions, make_client
+from cvat_sdk.impl.tasks import TaskProxy
+from cvat_sdk.types import ResourceType
 from PIL import Image
 from sdk.util import generate_coco_json
 from shared.utils.config import BASE_URL, USER_PASS
 from shared.utils.helpers import generate_image_file
-
-from cvat_sdk import exceptions, make_client
-from cvat_sdk.impl.tasks import TaskProxy
-from cvat_sdk.types import ResourceType
 
 from .util import generate_images, run_cli
 

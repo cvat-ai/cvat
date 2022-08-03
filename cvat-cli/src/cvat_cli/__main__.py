@@ -8,10 +8,10 @@ import sys
 from http.client import HTTPConnection
 from typing import List
 
+from cvat_sdk import exceptions, make_client
+
 from cvat_cli.cli import CLI
 from cvat_cli.parser import get_action_args, make_cmdline_parser
-
-from cvat_sdk import exceptions, make_client
 
 logger = logging.getLogger(__name__)
 

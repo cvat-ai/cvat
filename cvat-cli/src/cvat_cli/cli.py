@@ -9,7 +9,6 @@ import json
 from typing import Dict, List, Sequence, Tuple
 
 import tqdm
-
 from cvat_sdk import Client, models
 from cvat_sdk.helpers import TqdmProgressReporter
 from cvat_sdk.types import ResourceType
