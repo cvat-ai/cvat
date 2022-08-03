@@ -9,12 +9,13 @@ import uuid
 from django.conf import settings
 from django.core.cache import cache
 from distutils.util import strtobool
-from rest_framework import status
+from rest_framework import status, mixins
 from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
+from cvat.apps.webhooks.signals import signal_update
 
 class TusFile:
     _tus_cache_timeout = 3600
@@ -315,3 +316,13 @@ class SerializeMixin:
             file_name = request.query_params.get("filename", "")
             return import_func(request, filename=file_name)
         return self.upload_data(request)
+
+class UpdateModelMixin(mixins.UpdateModelMixin):
+    def perform_update(self, serializer):
+        old_values = {
+            attr: serializer.to_representation(serializer.instance).get(attr, None)
+            for attr in self.request.data.keys()
+        }
+
+        super().perform_update(serializer)
+        signal_update.send(self, serializer=serializer, old_values=old_values)
