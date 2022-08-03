@@ -21,11 +21,11 @@ from cvat_sdk.types import ResourceType
 from .util import generate_coco_json, make_pbar
 
 
-@pytest.mark.usefixtures("changedb")
 class TestTaskUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
+        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
         fxt_logger: Tuple[Logger, io.StringIO],
         fxt_client: Client,

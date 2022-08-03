@@ -227,6 +227,9 @@ def services(request):
 
 @pytest.fixture(scope="function")
 def changedb():
+    # Note that autouse fixtures are executed first within their scope, so be aware of the order
+    # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
+    # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
     restore_db()
 
 

@@ -279,7 +279,7 @@ class ApiClient(object):
         headers = {}
         headers.update(self.default_headers)
         if self.cookies:
-            headers['Cookie'] = self.cookies.output(attrs=[], header="", sep="").strip()
+            headers['Cookie'] = self.cookies.output(attrs=[], header="", sep=";").strip()
         return headers
 
     def _update_cookies_from_response(self, response: HTTPResponse):

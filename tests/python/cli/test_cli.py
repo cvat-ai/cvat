@@ -21,11 +21,11 @@ from cvat_sdk.types import ResourceType
 from .util import generate_images, run_cli
 
 
-@pytest.mark.usefixtures("changedb")
 class TestCLI:
     @pytest.fixture(autouse=True)
     def setup(
         self,
+        changedb,  # force fixture call order to allow DB setup
         fxt_stdout: io.StringIO,
         tmp_path: Path,
         admin_user: str,
