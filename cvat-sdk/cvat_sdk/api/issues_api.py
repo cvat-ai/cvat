@@ -305,6 +305,7 @@ class IssuesApi(object):
                 "all": [
                     "id",
                     "x_organization",
+                    "action",
                     "org",
                     "org_id",
                     "patched_issue_write_request",
@@ -313,15 +314,20 @@ class IssuesApi(object):
                     "id",
                 ],
                 "nullable": [],
-                "enum": [],
+                "enum": [
+                    "action",
+                ],
                 "validation": [],
             },
             root_map={
                 "validations": {},
-                "allowed_values": {},
+                "allowed_values": {
+                    ("action",): {"UPDATE": "update"},
+                },
                 "openapi_types": {
                     "id": (int,),
                     "x_organization": (str,),
+                    "action": (str,),
                     "org": (str,),
                     "org_id": (int,),
                     "patched_issue_write_request": (PatchedIssueWriteRequest,),
@@ -329,12 +335,14 @@ class IssuesApi(object):
                 "attribute_map": {
                     "id": "id",
                     "x_organization": "X-Organization",
+                    "action": "action",
                     "org": "org",
                     "org_id": "org_id",
                 },
                 "location_map": {
                     "id": "path",
                     "x_organization": "header",
+                    "action": "query",
                     "org": "query",
                     "org_id": "query",
                     "patched_issue_write_request": "body",
@@ -764,6 +772,7 @@ class IssuesApi(object):
 
         Keyword Args:
             x_organization (str): [optional]
+            action (str): [optional] if omitted the server will use the default value of "update"
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             patched_issue_write_request (PatchedIssueWriteRequest): [optional]

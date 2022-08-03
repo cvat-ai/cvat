@@ -1601,6 +1601,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an issue',
+        parameters=[OpenApiParameter('action', type=OpenApiTypes.STR, enum=['update'], required=False)],
         responses={
             '200': IssueWriteSerializer,
         }),
