@@ -25,9 +25,9 @@ class WebhookReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        if ret.get("type", "") == WebhookTypeChoice.ORGANIZATION.value:
+        if ret.get("type", "") == WebhookTypeChoice.PROJECT.value:
             ret.pop(WebhookTypeChoice.ORGANIZATION.value)
-        elif ret.get("type", "") == WebhookTypeChoice.PROJECT.value:
+        elif ret.get("type", "") == WebhookTypeChoice.ORGANIZATION.value:
             ret.pop(WebhookTypeChoice.PROJECT.value)
         return ret
 
@@ -59,7 +59,6 @@ class WebhookWriteSerializer(serializers.ModelSerializer):
         write_only=True, allow_null=True, required=False
     )
 
-    # TO-DO: require one and only one not null field from these two
     organization_id = serializers.IntegerField(
         write_only=True, allow_null=True, required=False
     )
