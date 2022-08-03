@@ -115,7 +115,7 @@ class Client:
                 status.message,
             )
 
-            if status == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
+            if status.state.value == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
                 raise ApiException(status=status.state.value, reason=status.message)
 
             status = status.state.value

@@ -14,7 +14,7 @@ from PIL import Image
 from shared.utils.config import USER_PASS
 from shared.utils.helpers import generate_image_file, generate_image_files
 
-from cvat_sdk import Client
+from cvat_sdk import Client, exceptions
 from cvat_sdk.impl.tasks import TaskProxy
 from cvat_sdk.types import ResourceType
 
@@ -128,6 +128,26 @@ class TestTaskUsecases:
 
         assert task.size == 7
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+    def test_cant_create_task_with_no_data(self):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_spec = {
+            "name": f"test {self.user} to create a task with no data",
+            "labels": [{"name": "car",}],
+        }
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self.client.create_task(
+                spec=task_spec,
+                resource_type=ResourceType.LOCAL,
+                resources=[],
+                pbar=pbar,
+            )
+
+        assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
     def test_can_retrieve_task(self, fxt_new_task):
