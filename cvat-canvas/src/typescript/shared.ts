@@ -239,4 +239,34 @@ export function translateFromCanvas(offset: number, points: number[]): number[] 
     return points.map((coord: number): number => coord - offset);
 }
 
+export function computeWrappingBox(points: number[], margin = 0): Box & BBox {
+    let xtl = Number.MAX_SAFE_INTEGER;
+    let ytl = Number.MAX_SAFE_INTEGER;
+    let xbr = Number.MIN_SAFE_INTEGER;
+    let ybr = Number.MIN_SAFE_INTEGER;
+
+    for (let i = 0; i < points.length; i += 2) {
+        const [x, y] = [points[i], points[i + 1]];
+        xtl = Math.min(xtl, x);
+        ytl = Math.min(ytl, y);
+        xbr = Math.max(xbr, x);
+        ybr = Math.max(ybr, y);
+    }
+
+    const box = {
+        xtl: xtl - margin,
+        ytl: ytl - margin,
+        xbr: xbr + margin,
+        ybr: ybr + margin,
+    };
+
+    return {
+        ...box,
+        x: box.xtl,
+        y: box.ytl,
+        width: box.xbr - box.xtl,
+        height: box.ybr - box.ytl,
+    };
+}
+
 export type PropType<T, Prop extends keyof T> = T[Prop];
