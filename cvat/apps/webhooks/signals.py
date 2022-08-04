@@ -13,11 +13,14 @@ def send_webhooks(webhooks, data):
             webhook.target_url,
             json=data
         )
+        # TO-DO: process response more carefully
         WebhookDelivery.objects.create(
             webhook_id=webhook.id,
             event=data["event"],
             status_code=response.status_code,
-            changed_fields=','.join(list(data["before_update"].keys()))
+            changed_fields=','.join(list(data["before_update"].keys())),
+            request=data,
+            response=response.text
         )
 
 

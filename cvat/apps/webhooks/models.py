@@ -47,6 +47,7 @@ class Webhook(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
+
     # questionable: should we keep webhook if owner has been deleted?
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -68,7 +69,6 @@ class Webhook(models.Model):
                     models.Q(
                         type=WebhookTypeChoice.PROJECT.value,
                         project_id__isnull=False,
-                        organization_id__isnull=True,
                     ) | \
                     models.Q(
                         type=WebhookTypeChoice.ORGANIZATION.value,
@@ -91,6 +91,9 @@ class WebhookDelivery(models.Model):
 
     delivered_at = models.DateTimeField(auto_now_add=True)
     changed_fields = models.CharField(max_length=4096, default="")
+
+    request = models.JSONField(default=dict)
+    response = models.JSONField(default=dict)
 
     class Meta:
         default_permissions = ()

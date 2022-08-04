@@ -109,7 +109,9 @@ class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
             "status_code",
             "redelivery",
             "delivered_at",
-            "changed_fields"
+            "changed_fields",
+            "request",
+            "response"
         )
         read_only_fields = fields
 
