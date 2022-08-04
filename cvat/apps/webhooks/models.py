@@ -86,11 +86,11 @@ class WebhookDelivery(models.Model):
     event = models.CharField(max_length=64)
 
     # TO-DO: define status_code field more accurate (as CharField with choices, or with specific validation)
-    status_code = models.IntegerField(default=0)
+    status_code = models.IntegerField()
+    redelivery = models.BooleanField(default=False)
 
-    data = models.JSONField(default=dict)
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
+    delivered_at = models.DateTimeField(auto_now_add=True)
+    changed_fields = models.CharField(max_length=4096, default="")
 
     class Meta:
         default_permissions = ()
