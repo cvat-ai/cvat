@@ -14,6 +14,7 @@ import Icon, {
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 
+import getCore from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
@@ -67,6 +68,7 @@ function BrushTools(): React.ReactPortal {
 
     useEffect(() => {
         const label = labels.find((_label: any) => _label.id === activeLabelID);
+        getCore().config.removeUnderlyingMaskPixels = removeUnderlyingPixels;
         if (visible && label && canvasInstance instanceof Canvas) {
             if (canvasInstance.mode() === CanvasMode.DRAW) {
                 canvasInstance.draw({

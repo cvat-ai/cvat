@@ -701,6 +701,9 @@ function build() {
              * @memberof module:API.cvat.config
              * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
+             * @property {number} removeUnderlyingMaskPixels defines if after adding/changing
+             * a mask it should remove overlapped pixels from other objects
+             * @memberof module:API.cvat.config
              */
             get backendAPI() {
                 return config.backendAPI;

@@ -8,4 +8,5 @@ module.exports = {
     organizationID: null,
     origin: '',
     uploadChunkSize: 100,
+    removeUnderlyingMaskPixels: false,
 };

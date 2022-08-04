@@ -1135,7 +1135,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.masksHandler = new MasksHandlerImpl(
             this.onDrawDone.bind(this),
             this.controller.draw.bind(this.controller),
-            this.canvas.dispatchEvent.bind(this.canvas),
             this.onEditStart,
             this.onEditDone,
             this.masksContent,
@@ -1388,7 +1387,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.resetSelectedObjects();
             }
             this.setupObjects(this.controller.objects);
-            this.masksHandler.setupStates(this.controller.objects);
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
             }

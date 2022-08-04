@@ -15,7 +15,6 @@ export interface MasksHandler {
     draw(drawData: DrawData): void;
     edit(state: MasksEditData): void;
     transform(geometry: Geometry): void;
-    setupStates(objectStates: any[]): void;
     cancel(): void;
     enabled: boolean;
 }
@@ -43,8 +42,6 @@ export class MasksHandlerImpl implements MasksHandler {
     private canvas: fabric.Canvas;
 
     private editData: MasksEditData | null;
-    private dispatchEvent: (event: Event) => void;
-    private objectStates: any[];
 
     private latestMousePos: { x: number; y: number; };
     private startTimestamp: number;
@@ -117,7 +114,6 @@ export class MasksHandlerImpl implements MasksHandler {
             prevDrawData?: DrawData,
         ) => void,
         onDrawRepeat: (data: DrawData) => void,
-        dispatchEvent: (event: Event) => void,
         onEditStart: (state: any) => void,
         onEditDone: (state: any, points: number[]) => void,
         canvas: HTMLCanvasElement,
@@ -127,14 +123,12 @@ export class MasksHandlerImpl implements MasksHandler {
         this.drawData = null;
         this.editData = null;
         this.drawnObjects = [];
-        this.objectStates = [];
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
         this.onDrawDone = onDrawDone;
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
-        this.dispatchEvent = dispatchEvent;
         this.canvas = new fabric.Canvas(canvas, { containerClass: 'cvat_masks_canvas_wrapper', fireRightClick: true, selection: false });
         this.canvas.imageSmoothingEnabled = false;
 
@@ -407,42 +401,6 @@ export class MasksHandlerImpl implements MasksHandler {
                         alpha.push(imageData[i] > 0 ? 1 : 0);
                     }
 
-                    // if (this.drawData.brushTool?.removeUnderlyingPixels) {
-                    //     for (const state of this.objectStates) {
-                    //         const [left, top, right, bottom] = state.points.slice(-4);
-                    //         const [stateWidth, stateHeight] = [Math.floor(right - left), Math.floor(bottom - top)];
-                    //         // todo: check box intersection to optimize
-                    //         const points = state.points.slice(0, -4);
-                    //         for (let i = 0; i < alpha.length - 4; i++) {
-                    //             if (!alpha[i]) continue;
-                    //             const x = (i % (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.left;
-                    //             const y = Math.trunc(i / (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.top;
-                    //             const translatedX = x - left;
-                    //             const translatedY = y - top;
-                    //             if (translatedX >= 0 && translatedX < stateWidth &&
-                    //                 translatedY >= 0 && translatedY < stateHeight) {
-                    //                 const j = translatedY * stateWidth + translatedX;
-                    //                 points[j] = 0;
-                    //             }
-                    //         }
-
-                    //         points.push(left, top, right, bottom);
-
-                    //         // todo: do not edit shapes here because it creates more history actions
-                    //         const event: CustomEvent = new CustomEvent('canvas.edited', {
-                    //             bubbles: false,
-                    //             cancelable: true,
-                    //             detail: {
-                    //                 state,
-                    //                 points,
-                    //                 rotation: 0,
-                    //             },
-                    //         });
-
-                    //         this.dispatchEvent(event);
-                    //     }
-                    // }
-
                     alpha = alpha.reduce<number[]>((acc, val, idx, arr) => {
                         if (idx > 0) {
                             if (arr[idx - 1] === val) {
@@ -557,10 +515,6 @@ export class MasksHandlerImpl implements MasksHandler {
             this.releaseDraw();
         }
         this.editData = editData;
-    }
-
-    public setupStates(objectStates: any[]): void {
-        this.objectStates = objectStates;
     }
 
     get enabled(): boolean {
