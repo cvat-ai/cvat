@@ -46,6 +46,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private dispatchEvent: (event: Event) => void;
     private objectStates: any[];
 
+    private latestMousePos: { x: number; y: number; };
     private startTimestamp: number;
     private geometry: Geometry;
     private drawingOpacity: number;
@@ -138,12 +139,10 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.imageSmoothingEnabled = false;
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
-        const prevMovePosition : { x: number | null; y: number | null } = { x: null, y: null };
+        this.latestMousePos = { x: -1, y: -1 };
         window.document.addEventListener('mouseup', () => {
             // todo: clear the callback when element is removed
             this.isMouseDown = false;
-            prevMovePosition.x = null;
-            prevMovePosition.y = null;
         });
 
         this.canvas.on('mouse:dblclick', (e: fabric.IEvent<MouseEvent>) => {
@@ -248,13 +247,13 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
 
                 // add line to smooth the mask
-                if (prevMovePosition.x !== null && prevMovePosition.y !== null) {
-                    const dx = position.x - prevMovePosition.x;
-                    const dy = position.y - prevMovePosition.y;
+                if (this.latestMousePos.x !== -1 && this.latestMousePos.y !== -1) {
+                    const dx = position.x - this.latestMousePos.x;
+                    const dy = position.y - this.latestMousePos.y;
                     if (Math.sqrt(dx ** 2 + dy ** 2) > this.drawData.brushTool?.size / 2) {
                         const line = new fabric.Line([
-                            prevMovePosition.x - tool.size / 2,
-                            prevMovePosition.y - tool.size / 2,
+                            this.latestMousePos.x - tool.size / 2,
+                            this.latestMousePos.y - tool.size / 2,
                             position.x - tool.size / 2,
                             position.y - tool.size / 2,
                         ], {
@@ -270,9 +269,6 @@ export class MasksHandlerImpl implements MasksHandler {
                         }
                     }
                 }
-
-                prevMovePosition.x = position.x;
-                prevMovePosition.y = position.y;
                 this.canvas.renderAll();
             } else if (this.tool.type.startsWith('polygon-') && this.drawablePolygon) {
                 // update the polygon position
@@ -283,6 +279,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
                 this.canvas.renderAll();
             }
+            this.latestMousePos.x = position.x;
+            this.latestMousePos.y = position.y;
         });
     }
 
@@ -321,19 +319,18 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public draw(drawData: DrawData): void {
         if (drawData.enabled && drawData.shapeType === 'mask' && drawData.brushTool) {
-            const { tool: prevTool } = this;
-
-            // remove the previous brush marker if not relevant anymore
-            if (prevTool?.form !== drawData.brushTool.form ||
-                prevTool?.size !== drawData.brushTool.size) {
-                this.removeBrushMarker();
-            }
-
             this.tool = { ...drawData.brushTool };
 
             // setup new brush marker
+            this.removeBrushMarker();
             if (['brush', 'eraser'].includes(this.tool.type)) {
-                const common = { evented: false, selectable: false, opacity: 0.75 };
+                const common = {
+                    evented: false,
+                    selectable: false,
+                    opacity: 0.75,
+                    left: this.latestMousePos.x - this.tool.size / 2,
+                    top: this.latestMousePos.y - this.tool.size / 2,
+                };
                 this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
                     ...common,
                     radius: this.tool.size / 2,
