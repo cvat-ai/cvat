@@ -44,7 +44,7 @@ spec:
         - kind: SHELL
           value: '["conda", "run", "-n", "transt", "/bin/bash", "-c"]'
         - kind: RUN
-          value: git clone https://github.com/dschoerk/TransT trans-t
+          value: git clone --depth 1 --branch v1.0 https://github.com/dschoerk/TransT trans-t
 
         - kind: RUN
           value: pip install torch==1.7.1+cpu torchvision==0.8.2+cpu torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
