@@ -1,9 +1,16 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 
-from .models import Webhook
-from .serializers import WebhookReadSerializer, WebhookWriteSerializer
+from .models import Webhook, WebhookDelivery
+from .serializers import (
+    WebhookReadSerializer,
+    WebhookWriteSerializer,
+    WebhookDeliveryReadSerializer
+)
+
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.decorators import action
 
 
 @extend_schema(tags=["webhooks"])
@@ -48,3 +55,56 @@ class WebhookViewSet(viewsets.ModelViewSet):
             return WebhookReadSerializer
         else:
             return WebhookWriteSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+    @extend_schema(
+        summary="Method return a list of deliveries for a specific webhook",
+        responses={
+            '200': WebhookDeliveryReadSerializer(many=True),
+        }
+    )
+    @action(
+        detail=True,
+        methods=['GET'],
+        serializer_class=WebhookDeliveryReadSerializer
+    )
+    def deliveries(self, request, pk):
+        self.get_object()
+        queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by('-delivered_at')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = WebhookDeliveryReadSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = WebhookDeliveryReadSerializer(
+            queryset, many=True, context={"request": request}
+        )
+
+        return Response(serializer.data)
+
+
+    @extend_schema(
+        summary="Method return a specific delivery for a specific webhook",
+        responses={
+            '200': WebhookDeliveryReadSerializer,
+        }
+    )
+    @action(
+        detail=True,
+        methods=['GET'],
+        url_path=r'deliveries/(?P<delivery_id>\d+)',
+        serializer_class=WebhookDeliveryReadSerializer
+    )
+    def retrieve_delivery(self, request, pk, delivery_id):
+        self.get_object()
+        queryset = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
+        serializer = WebhookDeliveryReadSerializer(
+            queryset, context={'request': request}
+        )
+        return Response(serializer.data)
