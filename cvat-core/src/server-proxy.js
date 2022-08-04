@@ -1129,7 +1129,13 @@
                             type: 'preview',
                         },
                         proxy: config.proxy,
+                    });
+                    response = await Axios.get(response.data['url'], {
                         responseType: 'blob',
+                        transformRequest: (data, headers) => {
+                            delete headers.common['Authorization'];
+                            return data;
+                        },
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
@@ -1167,7 +1173,7 @@
 
                 let response = null;
                 try {
-                    response = await workerAxios.get(`${backendAPI}/${url}`, {
+                    response = await Axios.get(`${backendAPI}/${url}`, {
                         params: {
                             ...enableOrganization(),
                             quality: 'compressed',
@@ -1175,9 +1181,13 @@
                             number: chunk,
                         },
                         proxy: config.proxy,
+                    });
+                    response = await workerAxios.get(response.data['url'], {
                         responseType: 'arraybuffer',
+                        removeAuthHeader: true,
                     });
                 } catch (errorData) {
+                    console.log(errorData);
                     throw generateError({
                         message: '',
                         response: {

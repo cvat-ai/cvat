@@ -519,7 +519,10 @@ class DataChunkGetter:
                 buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
                 if settings.USE_CACHE_S3:
                     # buff is an url to s3 storage, return url + mime in a json response
-                    return HttpResponseRedirect(buff, content_type=mime_type)
+                    return Response(data={
+                        'url': buff,
+                        'mime': mime_type
+                    })
                 else:
                     # buff is an io, return its contents in response
                     buff.seek(0)
@@ -546,7 +549,9 @@ class DataChunkGetter:
                 return sendfile(request, path)
             try:
                 url = s3_client.get_presigned_url(frame_provider.get_s3_preview())
-                return HttpResponseRedirect(url)
+                # need to manually handle redirect on frontend to avoid
+                # 400 error from s3.
+                return Response(data={'url': url})
             except Exception as e:
                 slogger.glob.warning(str(e))
                 raise Http404('Preview not found')

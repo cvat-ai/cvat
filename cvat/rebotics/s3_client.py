@@ -20,8 +20,8 @@ class S3Client:
             s3_key_id = setting('AWS_S3_ACCESS_KEY_ID')
             s3_secret_key = setting('AWS_S3_SECRET_ACCESS_KEY')
             if s3_key_id and s3_secret_key:
-                kwargs['AWS_S3_ACCESS_KEY_ID'] = s3_key_id
-                kwargs['AWS_S3_SECRET_ACCESS_KEY'] = s3_secret_key
+                kwargs['aws_access_key_id'] = s3_key_id
+                kwargs['aws_secret_access_key'] = s3_secret_key
             self._client = boto3.client("s3", **kwargs)
         else:
             self._client = client
