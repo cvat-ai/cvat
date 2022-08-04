@@ -52,7 +52,7 @@
     "react-dom": "^16.14.0",
     "react-moment": "^1.1.1",
     "react-redux": "^7.2.5",
-    "react-resizable": "^1.11.1",
+    "react-resizable": "^3.0.4",
     "react-router": "^5.1.0",
     "react-router-dom": "^5.1.0",
     "react-share": "^4.4.0",
