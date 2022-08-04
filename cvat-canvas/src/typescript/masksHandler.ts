@@ -31,8 +31,6 @@ export class MasksHandlerImpl implements MasksHandler {
     private onEditStart: (state: any) => void;
     private onEditDone: (state: any, points: number[]) => void;
 
-    private dispatchEvent: (event: Event) => void;
-
     private isDrawing: boolean;
     private isEditing: boolean;
     private isMouseDown: boolean;
@@ -41,8 +39,10 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private tool: DrawData['brushTool'] | null;
     private drawData: DrawData | null;
-    private editData: MasksEditData | null;
     private canvas: fabric.Canvas;
+
+    private editData: MasksEditData | null;
+    private dispatchEvent: (event: Event) => void;
     private objectStates: any[];
 
     private startTimestamp: number;
@@ -312,11 +312,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.canvas.renderAll();
             }
 
-            if (this.canvas.freeDrawingBrush?.color) {
-                const color = fabric.Color.fromRgba(this.canvas.freeDrawingBrush.color);
-                color.setAlpha(this.drawingOpacity);
-                this.canvas.freeDrawingBrush.color = color.toRgba();
-            }
+            // TODO: can we change opacity for all drawn objects?
         }
     }
 
