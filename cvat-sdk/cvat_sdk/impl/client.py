@@ -14,15 +14,15 @@ from time import sleep
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import attrs
+import urllib3
 
 from cvat_sdk import ApiClient, ApiException, ApiValueError, Configuration, models
-from cvat_sdk.helpers import get_paginated_collection
+from cvat_sdk.helpers import expect_status, get_paginated_collection
 from cvat_sdk.impl.git import create_git_repo
 from cvat_sdk.impl.progress import ProgressReporter
 from cvat_sdk.impl.tasks import TaskProxy
 from cvat_sdk.impl.uploading import Uploader
 from cvat_sdk.types import ResourceType
-from cvat_sdk.helpers import expect_status
 
 
 @attrs.define
@@ -117,7 +117,7 @@ class Client:
         status = None
         while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
             sleep(status_check_period)
-            (status, _) = self.api.tasks_api.retrieve_status(task.id)
+            (status, response) = self.api.tasks_api.retrieve_status(task.id)
 
             self.logger.info(
                 "Task %s creation status=%s, message=%s",
@@ -127,7 +127,9 @@ class Client:
             )
 
             if status.state.value == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
-                raise ApiException(status=status.state.value, reason=status.message)
+                raise ApiException(
+                    status=status.state.value, reason=status.message, http_resp=response
+                )
 
             status = status.state.value
 
@@ -203,22 +205,50 @@ class Client:
         )
 
         rq_id = json.loads(response.data)["rq_id"]
-
-        # check task status
-        while True:
-            sleep(status_check_period)
-
-            response = self.api.rest_client.POST(
-                url, post_params={"rq_id": rq_id}, headers=self.api.get_common_headers()
-            )
-            if response.status == 201:
-                break
-            expect_status(202, response)
+        response = self.wait_for_completion(
+            url,
+            success_status=201,
+            positive_statuses=[202],
+            post_params={"rq_id": rq_id},
+            status_check_period=status_check_period,
+        )
 
         task_id = json.loads(response.data)["id"]
         self.logger.info(f"Task has been imported sucessfully. Task ID: {task_id}")
 
         return self.retrieve_task(task_id)
+
+    def wait_for_completion(
+        self: Client,
+        url: str,
+        *,
+        success_status: int,
+        status_check_period: Optional[int] = None,
+        query_params: Optional[Dict[str, Any]] = None,
+        post_params: Optional[Dict[str, Any]] = None,
+        positive_statuses: Optional[Sequence[int]] = None,
+    ) -> urllib3.HTTPResponse:
+        if status_check_period is None:
+            status_check_period = self.config.status_check_period
+
+        positive_statuses = set(positive_statuses) | {success_status}
+
+        while True:
+            sleep(status_check_period)
+
+            response = self.api.rest_client.POST(
+                url,
+                headers=self.api.get_common_headers(),
+                query_params=query_params,
+                post_params=post_params,
+            )
+
+            self.logger.debug("STATUS %s", response.status)
+            expect_status(positive_statuses, response)
+            if response.status == success_status:
+                break
+
+        return response
 
 
 class _CVAT_API_V2:

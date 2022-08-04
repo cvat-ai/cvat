@@ -8,10 +8,9 @@ from __future__ import annotations
 import os
 import os.path as osp
 from contextlib import closing
-from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, Optional
+
 from cvat_sdk.api_client import Endpoint
-from cvat_sdk.helpers import expect_status
 
 if TYPE_CHECKING:
     from cvat_sdk.impl.client import Client
@@ -79,32 +78,33 @@ class Downloader:
                 os.unlink(tmp_path)
                 raise
 
-    def prepare_and_download_file_from_endpoint(self,
-        endpoint: Endpoint, filename: str, *,
+    def prepare_and_download_file_from_endpoint(
+        self,
+        endpoint: Endpoint,
+        filename: str,
+        *,
         url_params: Optional[Dict[str, Any]] = None,
         query_params: Optional[Dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None
+        status_check_period: Optional[int] = None,
     ):
         client = self._client
         if status_check_period is None:
             status_check_period = client.config.status_check_period
 
         client.logger.info("Waiting for the server to prepare the file...")
-        while True:
-            (_, response) = endpoint.call_with_http_info(**url_params, **query_params)
 
-            client.logger.debug("STATUS {}".format(response.status))
-            if response.status == 201:
-                break
-            expect_status(202, response)
-
-            sleep(status_check_period)
-
-        query_params = dict(query_params or {})
-        query_params["action"] = "download"
         url = client._api_map.make_endpoint_url(
             endpoint.path, kwsub=url_params, query_params=query_params
         )
+        client.wait_for_completion(
+            url,
+            positive_statuses=[202],
+            success_status=201,
+            status_check_period=status_check_period,
+        )
+
+        query_params = dict(query_params or {})
+        query_params["action"] = "download"
         downloader = Downloader(client)
         downloader.download_file(url, output_path=filename, pbar=pbar)

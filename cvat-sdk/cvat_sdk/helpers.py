@@ -88,8 +88,9 @@ class StreamWithProgress:
     def tell(self):
         return self.stream.tell()
 
+
 def expect_status(codes: Union[int, Iterable[int]], response: urllib3.HTTPResponse) -> None:
-    if not hasattr(codes, '__iter__'):
+    if not hasattr(codes, "__iter__"):
         codes = [codes]
 
     if response.status in codes:
@@ -98,5 +99,6 @@ def expect_status(codes: Union[int, Iterable[int]], response: urllib3.HTTPRespon
     if 300 <= response.status <= 500:
         raise exceptions.ApiException(response.status, reason=response.msg, http_resp=response)
     else:
-        raise exceptions.ApiException(response.status,
-            reason="Unexpected status code received", http_resp=response)
+        raise exceptions.ApiException(
+            response.status, reason="Unexpected status code received", http_resp=response
+        )

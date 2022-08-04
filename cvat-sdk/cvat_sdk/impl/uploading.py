@@ -13,6 +13,7 @@ import requests
 import urllib3
 
 from cvat_sdk import ApiClient
+from cvat_sdk.api_client import Endpoint
 from cvat_sdk.rest import RESTClientObject
 
 if TYPE_CHECKING:
@@ -124,6 +125,30 @@ class Uploader:
             url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
         )
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
+
+    def upload_annotation_file_and_wait(
+        self,
+        endpoint: Endpoint,
+        filename: str,
+        format_name: str,
+        *,
+        url_params: Optional[Dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        url = self._client._api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
+        params = {"format": format_name, "filename": osp.basename(filename)}
+        self.upload_file(
+            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+        )
+
+        self._client.wait_for_completion(
+            url,
+            success_status=201,
+            positive_statuses=[202],
+            status_check_period=status_check_period,
+            query_params=params,
+        )
 
     def _split_files_by_requests(
         self, filenames: List[str]

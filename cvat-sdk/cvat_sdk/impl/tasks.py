@@ -10,13 +10,11 @@ import mimetypes
 import os
 import os.path as osp
 from io import BytesIO
-from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from PIL import Image
 
 from cvat_sdk import models
-from cvat_sdk.helpers import expect_status
 from cvat_sdk.impl.downloading import Downloader
 from cvat_sdk.impl.model_proxy import ModelProxy
 from cvat_sdk.impl.progress import ProgressReporter
@@ -29,7 +27,6 @@ if TYPE_CHECKING:
     from cvat_sdk.impl.client import Client
 
 
-
 class TaskProxy(ModelProxy, ITaskRead):
     def __init__(self, client: Client, task: models.TaskRead):
         ModelProxy.__init__(self, client=client, model=task)
@@ -40,8 +37,10 @@ class TaskProxy(ModelProxy, ITaskRead):
 
     def commit(self, force: bool = False):
         # TODO: implement revision checking
-        self._client.api.tasks_api.partial_update(self.id,
-            patched_task_write_request=models.PatchedTaskWriteRequest(**self._model.to_dict()))
+        self._client.api.tasks_api.partial_update(
+            self.id,
+            patched_task_write_request=models.PatchedTaskWriteRequest(**self._model.to_dict()),
+        )
 
     def remove(self):
         self._client.api.tasks_api.destroy(self.id)
@@ -108,43 +107,23 @@ class TaskProxy(ModelProxy, ITaskRead):
         format_name: str,
         filename: str,
         *,
-        status_check_period: int = None,
+        status_check_period: Optional[int] = None,
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Upload annotations for a task in the specified format
-        (e.g. 'YOLO ZIP 1.0').
+        Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
-        client = self._client
-        if status_check_period is None:
-            status_check_period = client.config.status_check_period
-
-        task_id = self.id
-
-        url = client._api_map.make_endpoint_url(
-            client.api.tasks_api.create_annotations_endpoint.path,
-            kwsub={"id": task_id},
-        )
-        params = {"format": format_name, "filename": osp.basename(filename)}
-
-        uploader = Uploader(client)
-        uploader.upload_file(
-            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+        uploader = Uploader(self._client)
+        uploader.upload_annotation_file_and_wait(
+            self._client.api.tasks_api.create_annotations_endpoint,
+            filename,
+            format_name,
+            url_params={"id": self.id},
+            pbar=pbar,
+            status_check_period=status_check_period,
         )
 
-        while True:
-            response = client.api.rest_client.POST(
-                url, headers=client.api.get_common_headers(), query_params=params
-            )
-            if response.status == 201:
-                break
-            expect_status(202, response)
-
-            sleep(status_check_period)
-
-        client.logger.info(
-            f"Upload job for Task ID {task_id} with annotation file {filename} finished"
-        )
+        self._client.logger.info(f"Annotation file '{filename}' for task #{self.id} uploaded")
 
     def retrieve_frame(
         self,
@@ -152,7 +131,9 @@ class TaskProxy(ModelProxy, ITaskRead):
         *,
         quality: Optional[str] = None,
     ) -> io.RawIOBase:
-        (_, response) = self._client.api.tasks_api.retrieve_data(self.id, frame_id, quality, type="frame")
+        (_, response) = self._client.api.tasks_api.retrieve_data(
+            self.id, frame_id, quality, type="frame"
+        )
         return BytesIO(response.data)
 
     def download_frames(
@@ -164,8 +145,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         filename_pattern: str = "task_{task_id}_frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
         """
-        Download the requested frame numbers for a task and save images as
-        outdir/filename_pattern
+        Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
         # TODO: add arg descriptions in schema
         os.makedirs(outdir, exist_ok=True)
@@ -192,7 +172,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         filename: str,
         *,
         pbar: Optional[ProgressReporter] = None,
-        status_check_period: int = None,
+        status_check_period: Optional[int] = None,
         include_images: bool = True,
     ) -> None:
         """
@@ -203,9 +183,14 @@ class TaskProxy(ModelProxy, ITaskRead):
         else:
             endpoint = self._client.api.tasks_api.retrieve_annotations_endpoint
         downloader = Downloader(self._client)
-        downloader.prepare_and_download_file_from_endpoint(endpoint=endpoint, filename=filename,
-            url_params={"id": self.id}, query_params={"format": format_name},
-            pbar=pbar, status_check_period=status_check_period)
+        downloader.prepare_and_download_file_from_endpoint(
+            endpoint=endpoint,
+            filename=filename,
+            url_params={"id": self.id},
+            query_params={"format": format_name},
+            pbar=pbar,
+            status_check_period=status_check_period,
+        )
 
         self._client.logger.info(f"Dataset for task {self.id} has been downloaded to {filename}")
 
@@ -222,7 +207,10 @@ class TaskProxy(ModelProxy, ITaskRead):
         downloader = Downloader(self._client)
         downloader.prepare_and_download_file_from_endpoint(
             self._client.api.tasks_api.retrieve_backup_endpoint,
-            filename=filename, pbar=pbar, status_check_period=status_check_period,
-            url_params={'id': self.id})
+            filename=filename,
+            pbar=pbar,
+            status_check_period=status_check_period,
+            url_params={"id": self.id},
+        )
 
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
