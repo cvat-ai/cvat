@@ -223,3 +223,89 @@ class TestPatchIssues:
 
         data = request_data(issue_id)
         self._test_check_response(username, issue_id, data, is_allow, org_id=org)
+
+
+@pytest.mark.usefixtures("changedb")
+class TestDeleteIssues:
+    def _test_check_response(self, user, issue_id, expect_success, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.issues_api.destroy(
+                issue_id,
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        if expect_success:
+            assert response.status == HTTPStatus.NO_CONTENT
+
+            (_, response) = client.issues_api.retrieve(
+                issue_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.NOT_FOUND
+        else:
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("org", [""])
+    @pytest.mark.parametrize(
+        "privilege, issue_staff, issue_admin, expect_success",
+        [
+            ("admin", True, None, True),
+            ("admin", False, None, True),
+            ("business", True, None, True),
+            ("business", False, None, False),
+            ("user", True, None, True),
+            ("user", False, None, False),
+            ("worker", False, True, True),
+            ("worker", True, False, False),
+            ("worker", False, False, False),
+        ],
+    )
+    def test_user_delete_issue(
+        self,
+        org,
+        privilege,
+        issue_staff,
+        issue_admin,
+        expect_success,
+        find_issue_staff_user,
+        find_users,
+        issues_by_org,
+    ):
+        users = find_users(privilege=privilege)
+        issues = issues_by_org[org]
+        username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
+
+        self._test_check_response(username, issue_id, expect_success)
+
+    @pytest.mark.parametrize("org", [2])
+    @pytest.mark.parametrize(
+        "role, issue_staff, issue_admin, expect_success",
+        [
+            ("maintainer", True, None, True),
+            ("maintainer", False, None, True),
+            ("supervisor", True, None, True),
+            ("supervisor", False, None, False),
+            ("owner", True, None, True),
+            ("owner", False, None, True),
+            ("worker", False, True, True),
+            ("worker", True, False, False),
+            ("worker", False, False, False),
+        ],
+    )
+    def test_org_member_delete_issue(
+        self,
+        org,
+        role,
+        issue_staff,
+        issue_admin,
+        expect_success,
+        find_issue_staff_user,
+        find_users,
+        issues_by_org,
+    ):
+        users = find_users(role=role, org=org)
+        issues = issues_by_org[org]
+        username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
+
+        self._test_check_response(username, issue_id, expect_success, org_id=org)
