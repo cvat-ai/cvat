@@ -125,7 +125,6 @@ class TestPatchIssues:
             (_, response) = client.issues_api.partial_update(
                 issue_id,
                 patched_issue_write_request=models.PatchedIssueWriteRequest(**data),
-                action="update",
                 **kwargs,
                 _parse_response=False,
                 _check_status=False,

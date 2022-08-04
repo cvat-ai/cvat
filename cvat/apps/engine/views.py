@@ -69,7 +69,7 @@ from cvat.apps.engine.serializers import (
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 
 from . import models, task
 from .log import clogger, slogger
@@ -258,7 +258,10 @@ class ServerViewSet(viewsets.ViewSet):
             '200': ProjectWriteSerializer,
         })
 )
-class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, SerializeMixin):
+class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+):
     queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
         queryset=models.Label.objects.order_by('id')
     ))
@@ -270,7 +273,6 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
-    http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options')
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -667,11 +669,6 @@ class DataChunkGetter:
     retrieve=extend_schema(
         summary='Method returns details of a specific task',
         responses=TaskReadSerializer),
-    update=extend_schema(
-        summary='Method updates a task by id',
-        responses={
-            '200': TaskWriteSerializer,
-        }),
     destroy=extend_schema(
         summary='Method deletes a specific task, all attached jobs, annotations, and data',
         responses={
@@ -683,12 +680,14 @@ class DataChunkGetter:
             '200': TaskWriteSerializer,
         })
 )
-class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, SerializeMixin):
+class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+):
     queryset = Task.objects.prefetch_related(
             Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
             "segment_set__job_set")
-    http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options', 'put')
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -1208,11 +1207,6 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
         responses={
             '200': JobReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates a job by id',
-        responses={
-            '200': JobWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a job',
         responses={
@@ -1220,7 +1214,8 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
         })
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, UploadMixin, AnnotationMixin):
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
+):
     queryset = Job.objects.all()
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -1594,14 +1589,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': IssueReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates an issue by id',
-        responses={
-            '200': IssueWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an issue',
-        parameters=[OpenApiParameter('action', type=OpenApiTypes.STR, enum=['update'], required=False)],
         responses={
             '200': IssueWriteSerializer,
         }),
@@ -1616,9 +1605,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The issue has been deleted'),
         })
 )
-class IssueViewSet(viewsets.ModelViewSet):
+class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
     queryset = Issue.objects.all().order_by('-id')
-    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
     iam_organization_field = 'job__segment__task__organization'
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved']
@@ -1673,11 +1664,6 @@ class IssueViewSet(viewsets.ModelViewSet):
         responses={
             '200':CommentReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates a comment by id',
-        responses={
-            '200': CommentWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a comment',
         responses={
@@ -1694,9 +1680,11 @@ class IssueViewSet(viewsets.ModelViewSet):
             '204': OpenApiResponse(description='The comment has been deleted'),
         })
 )
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
     queryset = Comment.objects.all().order_by('-id')
-    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
     iam_organization_field = 'issue__job__segment__task__organization'
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id']
@@ -1754,9 +1742,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         })
 )
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete', 'options']
     search_fields = ('username', 'first_name', 'last_name')
     iam_organization_field = 'memberships__organization'
 
@@ -1832,8 +1819,10 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '201': CloudStorageWriteSerializer,
         })
 )
-class CloudStorageViewSet(viewsets.ModelViewSet):
-    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
     queryset = CloudStorageModel.objects.all().prefetch_related('data')
 
     search_fields = ('provider_type', 'display_name', 'resource',

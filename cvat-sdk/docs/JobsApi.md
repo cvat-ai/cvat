@@ -17,7 +17,6 @@ Method | HTTP request | Description
 [**jobs_retrieve_data**](JobsApi.md#jobs_retrieve_data) | **GET** /api/jobs/{id}/data | Method returns data for a specific job
 [**jobs_retrieve_data_meta**](JobsApi.md#jobs_retrieve_data_meta) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 [**jobs_retrieve_dataset**](JobsApi.md#jobs_retrieve_dataset) | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
-[**jobs_update**](JobsApi.md#jobs_update) | **PUT** /api/jobs/{id} | Method updates a job by id
 [**jobs_update_annotations**](JobsApi.md#jobs_update_annotations) | **PUT** /api/jobs/{id}/annotations/ | Method performs an update of all annotations in a specific job
 
 
@@ -1545,125 +1544,6 @@ void (empty response body)
 **201** | Output file is ready for downloading |  -  |
 **202** | Exporting has been started |  -  |
 **405** | Format is not available |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **jobs_update**
-> JobWrite jobs_update(id)
-
-Method updates a job by id
-
-### Example
-
-* Api Key Authentication (SignatureAuthentication):
-* Basic Authentication (basicAuth):
-* Api Key Authentication (cookieAuth):
-* Api Key Authentication (tokenAuth):
-
-```python
-import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.job_write import JobWrite
-from cvat_sdk.model.job_write_request import JobWriteRequest
-from pprint import pprint
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: SignatureAuthentication
-configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
-
-# Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
-    username = 'YOUR_USERNAME',
-    password = 'YOUR_PASSWORD'
-)
-
-# Configure API key authorization: cookieAuth
-configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
-
-# Configure API key authorization: tokenAuth
-configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = jobs_api.JobsApi(api_client)
-    id = 1 # int | A unique integer value identifying this job.
-    x_organization = "X-Organization_example" # str |  (optional)
-    org = "org_example" # str | Organization unique slug (optional)
-    org_id = 1 # int | Organization identifier (optional)
-    job_write_request = JobWriteRequest(
-        assignee=1,
-        stage=JobStage("annotation"),
-        state=OperationStatus("new"),
-    ) # JobWriteRequest |  (optional)
-
-    # example passing only required values which don't have defaults set
-    try:
-        # Method updates a job by id
-        api_response = api_instance.jobs_update(id)
-        pprint(api_response)
-    except cvat_sdk.ApiException as e:
-        print("Exception when calling JobsApi->jobs_update: %s\n" % e)
-
-    # example passing only required values which don't have defaults set
-    # and optional values
-    try:
-        # Method updates a job by id
-        api_response = api_instance.jobs_update(id, x_organization=x_organization, org=org, org_id=org_id, job_write_request=job_write_request)
-        pprint(api_response)
-    except cvat_sdk.ApiException as e:
-        print("Exception when calling JobsApi->jobs_update: %s\n" % e)
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **id** | **int**| A unique integer value identifying this job. |
- **x_organization** | **str**|  | [optional]
- **org** | **str**| Organization unique slug | [optional]
- **org_id** | **int**| Organization identifier | [optional]
- **job_write_request** | [**JobWriteRequest**](JobWriteRequest.md)|  | [optional]
-
-### Return type
-
-[**JobWrite**](JobWrite.md)
-
-### Authorization
-
-[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
-
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

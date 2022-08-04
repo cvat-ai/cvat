@@ -537,7 +537,6 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
     x_organization = "X-Organization_example" # str |  (optional)
-    action = "update" # str |  (optional) if omitted the server will use the default value of "update"
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
     patched_issue_write_request = PatchedIssueWriteRequest(
@@ -563,7 +562,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in an issue
-        api_response = api_instance.issues_partial_update(id, x_organization=x_organization, action=action, org=org, org_id=org_id, patched_issue_write_request=patched_issue_write_request)
+        api_response = api_instance.issues_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_issue_write_request=patched_issue_write_request)
         pprint(api_response)
     except cvat_sdk.ApiException as e:
         print("Exception when calling IssuesApi->issues_partial_update: %s\n" % e)
@@ -576,7 +575,6 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this issue. |
  **x_organization** | **str**|  | [optional]
- **action** | **str**|  | [optional] if omitted the server will use the default value of "update"
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
  **patched_issue_write_request** | [**PatchedIssueWriteRequest**](PatchedIssueWriteRequest.md)|  | [optional]

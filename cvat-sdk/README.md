@@ -167,7 +167,6 @@ Class | Method | HTTP request | Description
 *JobsApi* | [**jobs_retrieve_data**](docs/JobsApi.md#jobs_retrieve_data) | **GET** /api/jobs/{id}/data | Method returns data for a specific job
 *JobsApi* | [**jobs_retrieve_data_meta**](docs/JobsApi.md#jobs_retrieve_data_meta) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 *JobsApi* | [**jobs_retrieve_dataset**](docs/JobsApi.md#jobs_retrieve_dataset) | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
-*JobsApi* | [**jobs_update**](docs/JobsApi.md#jobs_update) | **PUT** /api/jobs/{id} | Method updates a job by id
 *JobsApi* | [**jobs_update_annotations**](docs/JobsApi.md#jobs_update_annotations) | **PUT** /api/jobs/{id}/annotations/ | Method performs an update of all annotations in a specific job
 *LambdaApi* | [**lambda_create_functions**](docs/LambdaApi.md#lambda_create_functions) | **POST** /api/lambda/functions/{func_id} | 
 *LambdaApi* | [**lambda_create_requests**](docs/LambdaApi.md#lambda_create_requests) | **POST** /api/lambda/requests | Method calls the function
@@ -228,7 +227,6 @@ Class | Method | HTTP request | Description
 *TasksApi* | [**tasks_retrieve_data_meta**](docs/TasksApi.md#tasks_retrieve_data_meta) | **GET** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
 *TasksApi* | [**tasks_retrieve_dataset**](docs/TasksApi.md#tasks_retrieve_dataset) | **GET** /api/tasks/{id}/dataset | Export task as a dataset in a specific format
 *TasksApi* | [**tasks_retrieve_status**](docs/TasksApi.md#tasks_retrieve_status) | **GET** /api/tasks/{id}/status | When task is being created the method returns information about a status of the creation process
-*TasksApi* | [**tasks_update**](docs/TasksApi.md#tasks_update) | **PUT** /api/tasks/{id} | Method updates a task by id
 *TasksApi* | [**tasks_update_annotations**](docs/TasksApi.md#tasks_update_annotations) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 *UsersApi* | [**users_destroy**](docs/UsersApi.md#users_destroy) | **DELETE** /api/users/{id} | Method deletes a specific user from the server
 *UsersApi* | [**users_list**](docs/UsersApi.md#users_list) | **GET** /api/users | Method provides a paginated list of users registered on the server
