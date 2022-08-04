@@ -18,16 +18,19 @@ from cvat_sdk.rest import RESTClientObject
 if TYPE_CHECKING:
     from cvat_sdk.impl.client import Client
 
-from cvat_sdk.helpers import StreamWithProgress
+from cvat_sdk.helpers import StreamWithProgress, expect_status
 from cvat_sdk.impl.progress import ProgressReporter
-from cvat_sdk.utils import assert_status
 
 MAX_REQUEST_SIZE = 100 * 2**20
 
 
 class Uploader:
+    """
+    Implements common uploading protocols
+    """
+
     def __init__(self, client: Client):
-        self.client = client
+        self._client = client
 
     def upload_files(
         self,
@@ -52,16 +55,16 @@ class Uploader:
                         filename,
                         es.enter_context(closing(open(filename, "rb"))).read(),
                     )
-                response = self.client.api.rest_client.POST(
+                response = self._client.api.rest_client.POST(
                     url,
                     post_params=dict(**kwargs, **files),
                     headers={
                         "Content-Type": "multipart/form-data",
                         "Upload-Multiple": "",
-                        **self.client.api.get_common_headers(),
+                        **self._client.api.get_common_headers(),
                     },
                 )
-            assert_status(200, response)
+            expect_status(200, response)
 
             if pbar is not None:
                 pbar.advance(group_size)
@@ -73,7 +76,7 @@ class Uploader:
                 filename,
                 meta={"filename": osp.basename(filename)},
                 pbar=pbar,
-                logger=self.client.logger.debug,
+                logger=self._client.logger.debug,
             )
 
         self._tus_finish_upload(url, fields=kwargs)
@@ -269,7 +272,7 @@ class Uploader:
                 input_file = StreamWithProgress(input_file, pbar, length=file_size)
 
             tus_uploader = self._make_tus_uploader(
-                self.client.api,
+                self._client.api,
                 url=url.rstrip("/") + "/",
                 metadata=meta,
                 file_stream=input_file,
@@ -279,26 +282,26 @@ class Uploader:
             tus_uploader.upload()
 
     def _tus_start_upload(self, url, *, query_params=None):
-        response = self.client.api.rest_client.POST(
+        response = self._client.api.rest_client.POST(
             url,
             query_params=query_params,
             headers={
                 "Upload-Start": "",
-                **self.client.api.get_common_headers(),
+                **self._client.api.get_common_headers(),
             },
         )
-        assert_status(202, response)
+        expect_status(202, response)
         return response
 
     def _tus_finish_upload(self, url, *, query_params=None, fields=None):
-        response = self.client.api.rest_client.POST(
+        response = self._client.api.rest_client.POST(
             url,
             headers={
                 "Upload-Finish": "",
-                **self.client.api.get_common_headers(),
+                **self._client.api.get_common_headers(),
             },
             query_params=query_params,
             post_params=fields,
         )
-        assert_status(202, response)
+        expect_status(202, response)
         return response

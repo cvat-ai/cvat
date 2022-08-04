@@ -9,7 +9,6 @@ import io
 import mimetypes
 import os
 import os.path as osp
-from abc import ABC, abstractmethod
 from io import BytesIO
 from time import sleep
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
@@ -17,10 +16,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 from PIL import Image
 
 from cvat_sdk import models
+from cvat_sdk.helpers import expect_status
 from cvat_sdk.impl.downloading import Downloader
+from cvat_sdk.impl.model_proxy import ModelProxy
 from cvat_sdk.impl.progress import ProgressReporter
 from cvat_sdk.impl.uploading import Uploader
-from cvat_sdk.model_utils import OpenApiModel
 from cvat_sdk.models import ITaskRead
 from cvat_sdk.types import ResourceType
 from cvat_sdk.utils import filter_dict
@@ -29,46 +29,19 @@ if TYPE_CHECKING:
     from cvat_sdk.impl.client import Client
 
 
-class ModelProxy(ABC):
-    _client: Client
-    _model: OpenApiModel
-
-    def __init__(self, client: Client, model: OpenApiModel) -> None:
-        self.__dict__["_client"] = client
-        self.__dict__["_model"] = model
-
-    def __getattr__(self, __name: str) -> Any:
-        return self._model[__name]
-
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        if __name in self.__dict__:
-            self.__dict__[__name] = __value
-        else:
-            self._model[__name] = __value
-
-    @abstractmethod
-    def fetch(self, force: bool = False):
-        """Fetches model data from the server"""
-        ...
-
-    @abstractmethod
-    def commit(self, force: bool = False):
-        """Commits local changes to the server"""
-        ...
-
-    def sync(self):
-        """Pulls server state and commits local model changes"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def update(self, **kwargs):
-        """Updates multiple fields at once"""
-        ...
-
 
 class TaskProxy(ModelProxy, ITaskRead):
     def __init__(self, client: Client, task: models.TaskRead):
         ModelProxy.__init__(self, client=client, model=task)
+
+    def fetch(self, force: bool = False):
+        # TODO: implement revision checking
+        (self._model, _) = self._client.api.tasks_api.retrieve(self.id)
+
+    def commit(self, force: bool = False):
+        # TODO: implement revision checking
+        self._client.api.tasks_api.partial_update(self.id,
+            patched_task_write_request=models.PatchedTaskWriteRequest(**self._model.to_dict()))
 
     def remove(self):
         self._client.api.tasks_api.destroy(self.id)
@@ -165,6 +138,7 @@ class TaskProxy(ModelProxy, ITaskRead):
             )
             if response.status == 201:
                 break
+            expect_status(202, response)
 
             sleep(status_check_period)
 
@@ -178,11 +152,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         *,
         quality: Optional[str] = None,
     ) -> io.RawIOBase:
-        client = self._client
-        task_id = self.id
-
-        (_, response) = client.api.tasks_api.retrieve_data(task_id, frame_id, quality, type="frame")
-
+        (_, response) = self._client.api.tasks_api.retrieve_data(self.id, frame_id, quality, type="frame")
         return BytesIO(response.data)
 
     def download_frames(
@@ -198,8 +168,6 @@ class TaskProxy(ModelProxy, ITaskRead):
         outdir/filename_pattern
         """
         # TODO: add arg descriptions in schema
-        task_id = self.id
-
         os.makedirs(outdir, exist_ok=True)
 
         for frame_id in frame_ids:
@@ -215,7 +183,7 @@ class TaskProxy(ModelProxy, ITaskRead):
             if im_ext in (".jpe", ".jpeg", None):
                 im_ext = ".jpg"
 
-            outfile = filename_pattern.format(task_id=task_id, frame_id=frame_id, frame_ext=im_ext)
+            outfile = filename_pattern.format(task_id=self.id, frame_id=frame_id, frame_ext=im_ext)
             im.save(osp.join(outdir, outfile))
 
     def export_dataset(
@@ -230,34 +198,16 @@ class TaskProxy(ModelProxy, ITaskRead):
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
-        client = self._client
-        if status_check_period is None:
-            status_check_period = client.config.status_check_period
-
-        task_id = self.id
-
-        params = {"filename": self.name, "format": format_name}
         if include_images:
-            endpoint = client.api.tasks_api.retrieve_dataset_endpoint
+            endpoint = self._client.api.tasks_api.retrieve_dataset_endpoint
         else:
-            endpoint = client.api.tasks_api.retrieve_annotations_endpoint
+            endpoint = self._client.api.tasks_api.retrieve_annotations_endpoint
+        downloader = Downloader(self._client)
+        downloader.prepare_and_download_file_from_endpoint(endpoint=endpoint, filename=filename,
+            url_params={"id": self.id}, query_params={"format": format_name},
+            pbar=pbar, status_check_period=status_check_period)
 
-        client.logger.info("Waiting for the server to prepare the file...")
-        while True:
-            (_, response) = endpoint.call_with_http_info(id=task_id, **params)
-            client.logger.debug("STATUS {}".format(response.status))
-            if response.status == 201:
-                break
-            sleep(status_check_period)
-
-        params["action"] = "download"
-        url = client._api_map.make_endpoint_url(
-            endpoint.path, kwsub={"id": task_id}, query_params=params
-        )
-        downloader = Downloader(client)
-        downloader.download_file(url, output_path=filename, pbar=pbar)
-
-        client.logger.info(f"Dataset has been exported to {filename}")
+        self._client.logger.info(f"Dataset for task {self.id} has been downloaded to {filename}")
 
     def download_backup(
         self,
@@ -265,45 +215,14 @@ class TaskProxy(ModelProxy, ITaskRead):
         *,
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
-    ):
+    ) -> None:
         """
         Download a task backup
         """
-        client = self._client
-        if status_check_period is None:
-            status_check_period = client.config.status_check_period
+        downloader = Downloader(self._client)
+        downloader.prepare_and_download_file_from_endpoint(
+            self._client.api.tasks_api.retrieve_backup_endpoint,
+            filename=filename, pbar=pbar, status_check_period=status_check_period,
+            url_params={'id': self.id})
 
-        task_id = self.id
-
-        endpoint = client.api.tasks_api.retrieve_backup_endpoint
-        client.logger.info("Waiting for the server to prepare the file...")
-        while True:
-            (_, response) = endpoint.call_with_http_info(id=task_id)
-            client.logger.debug("STATUS {}".format(response.status))
-            if response.status == 201:
-                break
-            sleep(status_check_period)
-
-        url = client._api_map.make_endpoint_url(
-            endpoint.path, kwsub={"id": task_id}, query_params={"action": "download"}
-        )
-        downloader = Downloader(client)
-        downloader.download_file(url, output_path=filename, pbar=pbar)
-
-        client.logger.info(
-            f"Task {task_id} has been exported sucessfully to {osp.abspath(filename)}"
-        )
-
-    def fetch(self, force: bool = False):
-        # TODO: implement revision checking
-        model, _ = self._client.api.tasks_api.retrieve(self.id)
-        self._model = model
-
-    def commit(self, force: bool = False):
-        return super().commit(force)
-
-    def update(self, **kwargs):
-        return super().update(**kwargs)
-
-    def __str__(self) -> str:
-        return str(self._model)
+        self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")

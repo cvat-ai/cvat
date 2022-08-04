@@ -22,7 +22,7 @@ from cvat_sdk.impl.progress import ProgressReporter
 from cvat_sdk.impl.tasks import TaskProxy
 from cvat_sdk.impl.uploading import Uploader
 from cvat_sdk.types import ResourceType
-from cvat_sdk.utils import assert_status
+from cvat_sdk.helpers import expect_status
 
 
 @attrs.define
@@ -213,7 +213,7 @@ class Client:
             )
             if response.status == 201:
                 break
-            assert_status(202, response)
+            expect_status(202, response)
 
         task_id = json.loads(response.data)["id"]
         self.logger.info(f"Task has been imported sucessfully. Task ID: {task_id}")
