@@ -46,20 +46,20 @@ JOB_CACHE_TTL = DEFAULT_CACHE_TTL
 def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
     try:
         if task_id is not None:
-            db_instance = Task.objects.get(pk=task_id)
             logger = slogger.task[task_id]
             cache_ttl = TASK_CACHE_TTL
             export_fn = task.export_task
+            db_instance = Task.objects.get(pk=task_id)
         elif project_id is not None:
-            db_instance = Project.objects.get(pk=project_id)
             logger = slogger.project[project_id]
             cache_ttl = PROJECT_CACHE_TTL
             export_fn = project.export_project
+            db_instance = Project.objects.get(pk=project_id)
         else:
-            db_instance = Job.objects.get(pk=job_id)
             logger = slogger.job[job_id]
             cache_ttl = JOB_CACHE_TTL
             export_fn = task.export_job
+            db_instance = Job.objects.get(pk=job_id)
 
         cache_dir = get_export_cache_dir(db_instance)
 
