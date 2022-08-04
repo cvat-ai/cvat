@@ -72,7 +72,7 @@ class TestCredentialsManagement:
                     username=username, password1=USER_PASS, password2=USER_PASS, email=email
                 )
             )
-            assert response.status == HTTPStatus.OK
+            assert response.status == HTTPStatus.CREATED
             assert user.username == username
 
         with make_api_client(username) as client:
@@ -91,7 +91,7 @@ class TestCredentialsManagement:
                 )
             )
             assert response.status == HTTPStatus.OK
-            assert info.detail == "New password has been saved"
+            assert info.detail == "New password has been saved."
 
             (_, response) = client.users_api.retrieve_self(
                 _parse_response=False, _check_status=False
