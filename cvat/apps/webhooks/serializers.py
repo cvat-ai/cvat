@@ -16,12 +16,17 @@ class EventsSerializer(serializers.MultipleChoiceField):
 
 
 class WebhookReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(read_only=True)
+    owner = BasicUserSerializer(read_only=True, required=False)
 
     events = EventsSerializer(read_only=True)
 
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
+
+    last_status = serializers.IntegerField(
+        source="deliveries.last.status_code",
+        read_only=True
+    )
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
@@ -47,8 +52,10 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "project",
             "organization",
             "events",
+            "last_status"
         )
         read_only_fields = fields
+
 
 
 class WebhookWriteSerializer(serializers.ModelSerializer):
@@ -84,23 +91,33 @@ class WebhookWriteSerializer(serializers.ModelSerializer):
             "organization_id",
             "events",
         )
+        write_once_fields = ("owner_id", "project_id", "organization_id")
 
     def create(self, validated_data):
         db_webhook = Webhook.objects.create(**validated_data)
         return db_webhook
 
 class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
-    webhook = WebhookReadSerializer(read_only=True)
+    webhook_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = WebhookDelivery
-        fields = ["id", "event", "status_code", "data", "webhook"]
+        fields = (
+            "id",
+            "webhook_id",
+            "event",
+            "status_code",
+            "redelivery",
+            "delivered_at",
+            "changed_fields"
+        )
         read_only_fields = fields
 
 class WebhookDeliveryWriteSerializer(serializers.ModelSerializer):
-    webhook_id = serializers.IntegerField(write_only=True)
+    def to_representation(self, instance):
+        serializer = WebhookReadSerializer(instance, context=self.context)
+        return serializer.data
 
     class Meta:
         model = WebhookDelivery
-        fields = ["id", "event", "status_code", "data", "webhook"]
-        read_only_fields = fields
+        fields = ("redelivery")
