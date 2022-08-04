@@ -48,10 +48,16 @@ services:
       $${MC_PATH} mb $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
       for BUCKET in $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
       do
-          $${MC_PATH} cp --recursive /storage/ $${BUCKET};
+          if [ $${BUCKET} == $${MINIO_ALIAS}/$${PRIVATE_BUCKET} ]
+          then
+            FULL_PATH=$${BUCKET}/'sub'
+          else
+            FULL_PATH=$${BUCKET}
+          fi
+          $${MC_PATH} cp --recursive /storage/ $${FULL_PATH};
           for i in 1 2;
           do
-              $${MC_PATH} cp /storage/manifest.jsonl $${BUCKET}/manifest_$${i}.jsonl;
+              $${MC_PATH} cp /storage/manifest.jsonl $${FULL_PATH}/manifest_$${i}.jsonl;
           done;
       done;
       $${MC_PATH} policy set public $${MINIO_ALIAS}/$${PUBLIC_BUCKET};

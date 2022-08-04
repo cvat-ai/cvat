@@ -34,6 +34,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private isDrawing: boolean;
     private isEditing: boolean;
     private isMouseDown: boolean;
+    private brushMarker: fabric.Rect | fabric.Circle | null;
     private drawablePolygon: null | fabric.Polygon;
     private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line)[];
 
@@ -76,7 +77,16 @@ export class MasksHandlerImpl implements MasksHandler {
         }
     }
 
+    private removeBrushMarker(): void {
+        if (this.brushMarker) {
+            this.canvas.remove(this.brushMarker);
+            this.brushMarker = null;
+            this.canvas.renderAll();
+        }
+    }
+
     private releaseDraw(): void {
+        this.removeBrushMarker();
         this.canvas.clear();
         this.canvas.renderAll();
         this.canvas.getElement().parentElement.style.display = '';
@@ -89,6 +99,7 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private releaseEdit(): void {
+        this.removeBrushMarker();
         this.canvas.clear();
         this.canvas.renderAll();
         this.canvas.getElement().parentElement.style.display = '';
@@ -117,6 +128,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.drawnObjects = [];
         this.objectStates = [];
         this.drawingOpacity = 0.5;
+        this.brushMarker = null;
         this.onDrawDone = onDrawDone;
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
@@ -124,22 +136,6 @@ export class MasksHandlerImpl implements MasksHandler {
         this.dispatchEvent = dispatchEvent;
         this.canvas = new fabric.Canvas(canvas, { containerClass: 'cvat_masks_canvas_wrapper', fireRightClick: true, selection: false });
         this.canvas.imageSmoothingEnabled = false;
-        // this.canvas.on('path:created', (opt) => {
-        //     if (this.drawData.brushTool?.type === 'eraser') {
-        //         (opt as any).path.globalCompositeOperation = 'destination-out';
-        //     } else {
-        //         (opt as any).path.globalCompositeOperation = 'xor';
-        //     }
-
-        //     let color = new fabric.Color(this.drawData.brushTool?.color || 'white');
-        //     color.setAlpha(0.5);
-        //     if (this.drawData.brushTool.type === 'eraser') {
-        //         color = fabric.Color.fromHex('#ffffff');
-        //         color.setAlpha(1);
-        //     }
-        //     (opt as any).path.stroke = color.toRgba();
-        //     this.drawnObjects.push((opt as any).path);
-        // });
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
         const prevMovePosition : { x: number | null; y: number | null } = { x: null, y: null };
@@ -208,6 +204,13 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.on('mouse:move', (e: fabric.IEvent<MouseEvent>) => {
             const position = { x: e.pointer.x, y: e.pointer.y };
             const { tool, isMouseDown } = this;
+            if (this.brushMarker) {
+                this.brushMarker.left = position.x - tool.size / 2;
+                this.brushMarker.top = position.y - tool.size / 2;
+                this.canvas.bringToFront(this.brushMarker);
+                this.canvas.renderAll();
+            }
+
             if (isMouseDown && ['brush', 'eraser'].includes(tool.type)) {
                 const color = fabric.Color.fromHex(tool.color);
                 color.setAlpha(tool.type === 'eraser' ? 1 : 0.5);
@@ -318,14 +321,37 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public draw(drawData: DrawData): void {
         if (drawData.enabled && drawData.shapeType === 'mask' && drawData.brushTool) {
+            const { tool: prevTool } = this;
+
+            // remove the previous brush marker if not relevant anymore
+            if (prevTool?.form !== drawData.brushTool.form ||
+                prevTool?.size !== drawData.brushTool.size) {
+                this.removeBrushMarker();
+            }
+
             this.tool = { ...drawData.brushTool };
+
+            // setup new brush marker
+            if (['brush', 'eraser'].includes(this.tool.type)) {
+                const common = { evented: false, selectable: false, opacity: 0.75 };
+                this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
+                    ...common,
+                    radius: this.tool.size / 2,
+                }) : new fabric.Rect({
+                    ...common,
+                    width: this.tool.size,
+                    height: this.tool.size,
+                });
+
+                this.canvas.add(this.brushMarker);
+            }
 
             if (!this.isDrawing) {
                 // if drawing not started, let's initialize new process
                 this.canvas.getElement().parentElement.style.display = 'block';
                 this.isDrawing = true;
                 this.startTimestamp = Date.now();
-            } else if (this.drawablePolygon) {
+            } else if (this.drawablePolygon && !this.tool.type.startsWith('polygon-')) {
                 // tool was switched from polygon to brush for example
                 this.keepDrawnPolygon();
             }
