@@ -1,16 +1,25 @@
 from requests import post
 from django.dispatch import receiver, Signal
-from .models import Webhook
+from .models import Webhook, WebhookDelivery
+from cvat.apps.engine.serializers import BasicUserSerializer
 
 signal_update = Signal()
 
 def send_webhooks(webhooks, data):
     print("webhooks", webhooks)
     for webhook in webhooks:
-        post(
+        data.update({'webhook_id': webhook.id})
+        response = post(
             webhook.target_url,
             json=data
         )
+        WebhookDelivery.objects.create(
+            webhook_id=webhook.id,
+            event=data["event"],
+            status_code=response.status_code,
+            changed_fields=','.join(list(data["before_update"].keys()))
+        )
+
 
 @receiver(signal_update)
 def update(sender, serializer=None, old_values=None, **kwargs):
@@ -21,12 +30,13 @@ def update(sender, serializer=None, old_values=None, **kwargs):
     if oid is None and pid is None:
         return
 
+
     event_name = f"{sender.basename}_updated"
     payload = {
         "event": event_name,
         sender.basename: serializer.data,
         "before_update": old_values,
-        "sender": "Not implemented yet"
+        "sender": BasicUserSerializer(sender.request.user, context={"request": sender.request}).data
     }
 
     if oid is not None:
@@ -42,3 +52,4 @@ def update(sender, serializer=None, old_values=None, **kwargs):
             project=pid,
         )
         send_webhooks(webhooks, payload)
+
