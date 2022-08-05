@@ -1,33 +1,21 @@
 // Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
-import React, { useMemo } from 'react';
+import React from 'react';
 
 import Text from 'antd/lib/typography/Text';
-import Alert from 'antd/lib/alert';
 import Upload, { RcFile } from 'antd/lib/upload';
 import { InboxOutlined } from '@ant-design/icons';
 
 interface Props {
     files: File[];
+    isMultiTask: boolean;
     onUpload: (_: RcFile, uploadedFiles: RcFile[]) => boolean;
 }
 
-const getFileMediaType = (file: File): string => file.type.split('/')[0];
-
 export default function LocalFiles(props: Props): JSX.Element {
-    const { files: defaultFiles, onUpload } = props;
-
-    const typeFirstFile: string = useMemo(() => (defaultFiles?.[0] && getFileMediaType(defaultFiles[0])) || 'image', [defaultFiles]);
-    const isAllFileSomeType = useMemo(() => defaultFiles
-        .every((file) => getFileMediaType(file) === typeFirstFile), [defaultFiles]);
-
-    const files = useMemo(() => defaultFiles.map((file) => {
-        const typeFile = file.type.split('/')[0];
-        (file as RcFile & { status: any }).status = typeFirstFile === typeFile ? undefined : 'error';
-        (file as RcFile & { response: any }).response = typeFirstFile === typeFile ? undefined : 'File type doesn`t match with other files';
-        return file;
-    }), [defaultFiles]);
+    const { files, onUpload, isMultiTask } = props;
+    const hintText = isMultiTask ? 'Support for a bulk videos' : 'Support for a bulk images or a single video';
 
     return (
         <>
@@ -37,7 +25,7 @@ export default function LocalFiles(props: Props): JSX.Element {
                 fileList={files as any[]}
                 showUploadList={
                     files.length < 5 && {
-                        showRemoveIcon: !isAllFileSomeType,
+                        showRemoveIcon: false,
                     }
                 }
                 beforeUpload={onUpload}
@@ -46,7 +34,7 @@ export default function LocalFiles(props: Props): JSX.Element {
                     <InboxOutlined />
                 </p>
                 <p className='ant-upload-text'>Click or drag files to this area</p>
-                <p className='ant-upload-hint'>Support for a bulk images or a single video</p>
+                <p className='ant-upload-hint'>{ hintText }</p>
             </Upload.Dragger>
             {files.length >= 5 && (
                 <>
@@ -54,14 +42,6 @@ export default function LocalFiles(props: Props): JSX.Element {
                     <Text className='cvat-text-color'>{`${files.length} files selected`}</Text>
                 </>
             )}
-            {!isAllFileSomeType ? (
-                <Alert
-                    className='cvat-file-manager-local-alert'
-                    type='error'
-                    message={'We can\'t process it. Files of the same media type must be uploaded'}
-                    showIcon
-                />
-            ) : null}
         </>
     );
 }

@@ -108,11 +108,6 @@ export interface TasksState {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
-        creates: {
-            taskId: number | null;
-            status: string;
-            error: string;
-        };
         backups: {
             [tid: number]: boolean;
         };
@@ -246,11 +241,13 @@ export interface ShareFileInfo {
     // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
+    contentType: string;
 }
 
 export interface ShareItem {
     name: string;
     type: 'DIR' | 'REG';
+    contentType: string;
     children: ShareItem[];
 }
 

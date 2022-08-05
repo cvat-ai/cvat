@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Modal from 'antd/lib/modal';
@@ -14,26 +14,30 @@ import TextArea from 'antd/lib/input/TextArea';
 import CreateTaskContent, { CreateTaskData } from './create-task-content';
 
 interface Props {
-    onCreate: (data: CreateTaskData) => void;
-    status: string;
-    error: string;
-    taskId: number | null;
+    onCreate: (data: CreateTaskData, onProgress: (status: string) => void) => Promise<any>;
     installedGit: boolean;
     dumpers: []
 }
 
 export default function CreateTaskPage(props: Props): JSX.Element {
     const {
-        error, status, taskId, onCreate, installedGit, dumpers,
+        onCreate, installedGit, dumpers,
     } = props;
 
     const location = useLocation();
+    const [error, setError] = useState('');
 
     let projectId = null;
     const params = new URLSearchParams(location.search);
     if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
         projectId = +(params.get('projectId') as string);
     }
+    const isMultiTask = params.get('many') === 'true';
+    const handleCreate: typeof onCreate = (...onCreateParams) => onCreate(...onCreateParams)
+        .catch((err) => {
+            setError(err);
+            throw err;
+        });
 
     useEffect(() => {
         if (error) {
@@ -75,12 +79,11 @@ export default function CreateTaskPage(props: Props): JSX.Element {
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>Create a new task</Text>
                 <CreateTaskContent
-                    taskId={taskId}
                     projectId={projectId}
-                    status={status}
-                    onCreate={onCreate}
+                    onCreate={handleCreate}
                     installedGit={installedGit}
                     dumpers={dumpers}
+                    isMultiTask={isMultiTask}
                 />
             </Col>
         </Row>

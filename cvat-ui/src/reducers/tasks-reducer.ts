@@ -33,11 +33,6 @@ const defaultState: TasksState = {
     activities: {
         loads: {},
         deletes: {},
-        creates: {
-            taskId: null,
-            status: '',
-            error: '',
-        },
         backups: {},
         jobUpdates: {},
     },
@@ -205,60 +200,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             return {
                 ...state,
                 importing: false,
-            };
-        }
-        case TasksActionTypes.CREATE_TASK: {
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        taskId: null,
-                        status: '',
-                        error: '',
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.CREATE_TASK_STATUS_UPDATED: {
-            const { status } = action.payload;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        ...state.activities.creates,
-                        status,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.CREATE_TASK_SUCCESS: {
-            const { taskId } = action.payload;
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        ...state.activities.creates,
-                        taskId,
-                        status: 'CREATED',
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.CREATE_TASK_FAILED: {
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        ...state.activities.creates,
-                        status: 'FAILED',
-                        error: action.payload.error.toString(),
-                    },
-                },
             };
         }
         case TasksActionTypes.UPDATE_TASK: {

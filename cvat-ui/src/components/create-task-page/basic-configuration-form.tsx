@@ -4,15 +4,19 @@
 
 import React, { RefObject } from 'react';
 import Input from 'antd/lib/input';
+import Text from 'antd/lib/typography/Text';
+import Tooltip from 'antd/lib/tooltip';
 import Form, { FormInstance } from 'antd/lib/form';
-import { Store } from 'antd/lib/form/interface';
 
 export interface BaseConfiguration {
     name: string;
 }
 
 interface Props {
-    onSubmit(values: BaseConfiguration): void;
+    onChange(values: BaseConfiguration): void;
+    isMultiTask: boolean;
+    exampleMultiTaskName?: string;
+    defaultValue?: string;
 }
 
 export default class BasicConfigurationForm extends React.PureComponent<Props> {
@@ -25,13 +29,23 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
         this.inputRef = React.createRef<Input>();
     }
 
+    componentDidMount(): void {
+        const { defaultValue, onChange } = this.props;
+        onChange({
+            name: defaultValue || '',
+        });
+    }
+
+    private handleChangeName(e: React.ChangeEvent<HTMLInputElement>): void {
+        const { onChange } = this.props;
+        onChange({
+            name: e.target.value,
+        });
+    }
+
     public submit(): Promise<void> {
-        const { onSubmit } = this.props;
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then((values: Store): Promise<void> => {
-                onSubmit({ name: values.name });
-                return Promise.resolve();
-            });
+            return this.formRef.current.validateFields();
         }
 
         return Promise.reject(new Error('Form ref is empty'));
@@ -50,6 +64,8 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
+        const { isMultiTask, exampleMultiTaskName, defaultValue } = this.props;
+
         return (
             <Form ref={this.formRef} layout='vertical'>
                 <Form.Item
@@ -62,9 +78,46 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                             message: 'Task name cannot be empty',
                         },
                     ]}
+                    initialValue={defaultValue}
                 >
-                    <Input ref={this.inputRef} />
+                    <Input
+                        ref={this.inputRef}
+                        onChange={(e) => this.handleChangeName(e)}
+                    />
                 </Form.Item>
+                {isMultiTask ? (
+                    <Text type='secondary'>
+                        <Tooltip title={() => (
+                            <>
+                                You can substitute in the template:
+                                <ul>
+                                    <li>
+                                        some_text - any text
+                                    </li>
+                                    <li>
+                                        {'{{'}
+                                        index
+                                        {'}}'}
+                                        &nbsp;- index file in set
+                                    </li>
+                                    <li>
+                                        {'{{'}
+                                        file_name
+                                        {'}}'}
+                                        &nbsp;- name of file
+                                    </li>
+                                </ul>
+                                Example:&nbsp;
+                                <i>
+                                    {exampleMultiTaskName || 'Task name 1 - video_1.mp4'}
+                                </i>
+                            </>
+                        )}
+                        >
+                            When forming the name, a template is used.
+                        </Tooltip>
+                    </Text>
+                ) : null}
             </Form>
         );
     }

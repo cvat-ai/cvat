@@ -13,11 +13,15 @@ import { ShareItem, CombinedState } from 'reducers/interfaces';
 
 interface OwnProps {
     ref: any;
+    isMultiTask: boolean
     onChangeActiveKey(key: string): void;
+    onUploadLocalFiles(files: File[]): void;
+    onUploadRemoteFiles(urls: string[]): void;
+    onUploadShareFiles(paths: string[]): void;
 }
 
 interface StateToProps {
-    treeData: TreeNodeNormal[];
+    treeData: (TreeNodeNormal & { contentType: string })[];
 }
 
 interface DispatchToProps {
@@ -25,15 +29,16 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    function convert(items: ShareItem[], path?: string): TreeNodeNormal[] {
+    function convert(items: ShareItem[], path?: string): (TreeNodeNormal & { contentType: string })[] {
         return items.map(
-            (item): TreeNodeNormal => {
+            (item): (TreeNodeNormal & { contentType: string }) => {
                 const isLeaf = item.type !== 'DIR';
                 const key = `${path}${item.name}${isLeaf ? '' : '/'}`;
                 return {
                     key,
                     isLeaf,
                     title: item.name || 'root',
+                    contentType: item.type === 'DIR' ? 'DIR' : 'video',
                     children: convert(item.children, key),
                 };
             },
@@ -78,12 +83,24 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { treeData, getTreeData, onChangeActiveKey } = this.props;
+        const {
+            treeData,
+            getTreeData,
+            isMultiTask,
+            onChangeActiveKey,
+            onUploadLocalFiles,
+            onUploadRemoteFiles,
+            onUploadShareFiles,
+        } = this.props;
 
         return (
             <FileManagerComponent
                 treeData={treeData}
+                isMultiTask={isMultiTask}
                 onLoadData={getTreeData}
+                onUploadLocalFiles={onUploadLocalFiles}
+                onUploadRemoteFiles={onUploadRemoteFiles}
+                onUploadShareFiles={onUploadShareFiles}
                 onChangeActiveKey={onChangeActiveKey}
                 ref={(component): void => {
                     this.managerComponentRef = component;

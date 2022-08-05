@@ -37,9 +37,13 @@ interface State {
 }
 
 interface Props {
-    treeData: TreeNodeNormal[];
+    treeData: (TreeNodeNormal & { contentType: string })[];
+    isMultiTask: boolean;
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
     onChangeActiveKey(key: string): void;
+    onUploadLocalFiles(files: File[]): void;
+    onUploadRemoteFiles(urls: string[]): void;
+    onUploadShareFiles(paths: string[]): void;
 }
 
 export class FileManager extends React.PureComponent<Props, State> {
@@ -118,12 +122,14 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderLocalSelector(): JSX.Element {
+        const { isMultiTask, onUploadLocalFiles } = this.props;
         const { files } = this.state;
 
         return (
             <Tabs.TabPane className='cvat-file-manager-local-tab' key='local' tab='My computer'>
                 <LocalFiles
                     files={files.local}
+                    isMultiTask={isMultiTask}
                     onUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
                         this.setState({
                             files: {
@@ -131,6 +137,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                                 local: newLocalFiles,
                             },
                         });
+                        onUploadLocalFiles(newLocalFiles);
                         return false;
                     }}
                 />
@@ -157,7 +164,7 @@ export class FileManager extends React.PureComponent<Props, State> {
         }
 
         const { SHARE_MOUNT_GUIDE_URL } = consts;
-        const { treeData } = this.props;
+        const { treeData, onUploadShareFiles } = this.props;
         const { expandedKeys, files } = this.state;
 
         return (
@@ -193,6 +200,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                                     share: keys,
                                 },
                             });
+                            onUploadShareFiles(keys);
                         }}
                     >
                         {renderTreeNodes(treeData)}
@@ -214,6 +222,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderRemoteSelector(): JSX.Element {
+        const { onUploadRemoteFiles } = this.props;
         const { files } = this.state;
 
         return (
@@ -224,12 +233,14 @@ export class FileManager extends React.PureComponent<Props, State> {
                     rows={6}
                     value={[...files.remote].join('\n')}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+                        const urls = event.target.value.split('\n');
                         this.setState({
                             files: {
                                 ...files,
-                                remote: event.target.value.split('\n'),
+                                remote: urls,
                             },
                         });
+                        onUploadRemoteFiles(urls.filter(Boolean));
                     }}
                 />
             </Tabs.TabPane>
@@ -262,7 +273,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { onChangeActiveKey } = this.props;
+        const { onChangeActiveKey, isMultiTask } = this.props;
         const { active } = this.state;
 
         return (
@@ -281,7 +292,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {this.renderRemoteSelector()}
-                    {this.renderCloudStorageSelector()}
+                    {!isMultiTask && this.renderCloudStorageSelector()}
                 </Tabs>
             </>
         );

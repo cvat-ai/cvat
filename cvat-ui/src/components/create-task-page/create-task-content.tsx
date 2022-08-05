@@ -6,22 +6,27 @@ import React, { RefObject } from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
-import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
 import Collapse from 'antd/lib/collapse';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
+import Alert from 'antd/lib/alert';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 
 import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { Files } from 'components/file-manager/file-manager';
+
+import { getFileContentType, getContentTypeRemoteFile } from 'utils/files';
+
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
+import MultiTasksProgress from './multi-task-progress';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
 
+type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 export interface CreateTaskData {
     projectId: number | null;
     basic: BaseConfiguration;
@@ -29,22 +34,28 @@ export interface CreateTaskData {
     advanced: AdvancedConfiguration;
     labels: any[];
     files: Files;
-    activeFileManagerTab: string;
+    activeFileManagerTab: TabName;
     cloudStorageId: number | null;
 }
 
 interface Props {
-    onCreate: (data: CreateTaskData) => void;
-    status: string;
-    taskId: number | null;
+    onCreate: (data: CreateTaskData, onProgress: (status: string, progress?: number) => void) => Promise<any>;
     projectId: number | null;
     installedGit: boolean;
-    dumpers:[]
+    dumpers:[];
+    isMultiTask: boolean;
 }
 
-type State = CreateTaskData;
+type State = CreateTaskData & {
+    multiTasks: (CreateTaskData & {
+        status: 'pending' | 'progress' | 'failed' | 'completed' | 'cancelled';
+    })[];
+    uploadFileErrorMessage: string;
+    loading: boolean;
+    statusInProgressTask: string;
+};
 
-const defaultState = {
+const defaultState: State = {
     projectId: null,
     basic: {
         name: '',
@@ -65,6 +76,10 @@ const defaultState = {
     },
     activeFileManagerTab: 'local',
     cloudStorageId: null,
+    multiTasks: [],
+    uploadFileErrorMessage: '',
+    loading: false,
+    statusInProgressTask: '',
 };
 
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
@@ -124,6 +139,24 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return !!totalLen;
     };
 
+    private startLoading = (): void => {
+        this.setState({
+            loading: true,
+        });
+    };
+
+    private stopLoading = (): void => {
+        this.setState({
+            loading: false,
+        });
+    };
+
+    private changeStatusInProgressTask = (status: string): void => {
+        this.setState({
+            statusInProgressTask: status,
+        });
+    };
+
     private handleProjectIdChange = (value: null | number): void => {
         const { projectId, subset } = this.state;
 
@@ -134,7 +167,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     };
 
-    private handleSubmitBasicConfiguration = (values: BaseConfiguration): void => {
+    private handleChangeBasicConfiguration = (values: BaseConfiguration): void => {
         this.setState({
             basic: { ...values },
         });
@@ -152,11 +185,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
-    private changeFileManagerTab = (key: string): void => {
-        const values = this.state;
+    private changeFileManagerTab = (value: TabName): void => {
         this.setState({
-            ...values,
-            activeFileManagerTab: key,
+            activeFileManagerTab: value,
         });
     };
 
@@ -164,31 +195,86 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.basicConfigurationComponent.current?.focus();
     };
 
-    private handleSubmitAndOpen = (): void => {
-        const { history } = this.props;
+    private handleUploadLocalFiles = (uploadedFiles: File[]): void => {
+        const { isMultiTask } = this.props;
+        const { files } = this.state;
 
-        this.handleSubmit()
-            .then((createdTask) => {
-                const { id } = createdTask;
-                history.push(`/tasks/${id}`);
-            })
-            .catch(() => {});
+        let uploadFileErrorMessage = '';
+
+        if (!isMultiTask && uploadedFiles.length > 1) {
+            uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk image or single video';
+        } else if (isMultiTask && uploadedFiles.length > 1) {
+            uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
+        }
+
+        this.setState({
+            uploadFileErrorMessage,
+        });
+
+        if (!uploadFileErrorMessage) {
+            this.setState({
+                files: {
+                    ...files,
+                    local: uploadedFiles,
+                },
+            });
+        }
     };
 
-    private handleSubmitAndContinue = (): void => {
-        this.handleSubmit()
-            .then(() => {
-                notification.info({
-                    message: 'The task has been created',
-                    className: 'cvat-notification-create-task-success',
-                });
-            })
-            .then(this.resetState)
-            .then(this.focusToForm)
-            .catch(() => {});
+    private handleUploadRemoteFiles = (urls: string[]): void => {
+        const { isMultiTask } = this.props;
+
+        const { files } = this.state;
+
+        let uploadFileErrorMessage = '';
+
+        if (!isMultiTask && urls.length > 1) {
+            uploadFileErrorMessage = urls.every((it) => getContentTypeRemoteFile(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk image or single video';
+        } else if (isMultiTask && urls.length > 1) {
+            uploadFileErrorMessage = urls.every((it) => getContentTypeRemoteFile(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
+        }
+
+        this.setState({
+            uploadFileErrorMessage,
+        });
+
+        if (!uploadFileErrorMessage) {
+            this.setState({
+                files: {
+                    ...files,
+                    remote: urls,
+                },
+            });
+        }
     };
 
-    private handleSubmit = (): Promise<any> => new Promise((resolve, reject) => {
+    private handleUploadShareFiles = (paths: string[]): void => {
+        const { isMultiTask } = this.props;
+        const { files } = this.state;
+
+        let uploadFileErrorMessage = '';
+
+        if (!isMultiTask && paths.length > 1) {
+            uploadFileErrorMessage = paths.every((it) => getContentTypeRemoteFile(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk image or single video';
+        } else if (isMultiTask && paths.length > 1) {
+            uploadFileErrorMessage = paths.every((it) => getContentTypeRemoteFile(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
+        }
+
+        this.setState({
+            uploadFileErrorMessage,
+        });
+
+        if (!uploadFileErrorMessage) {
+            this.setState({
+                files: {
+                    ...files,
+                    share: paths,
+                },
+            });
+        }
+    };
+
+    private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
         if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
@@ -222,12 +308,42 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 }
                 return Promise.resolve();
             })
-            .then((): void => {
-                const { onCreate } = this.props;
-                return onCreate(this.state);
+            .then(resolve)
+            .catch(reject);
+    });
+
+    private handleSubmitAndOpen = (): void => {
+        const { history } = this.props;
+
+        this.validateBlocks()
+            .then(this.createOneTask)
+            .then((createdTask) => {
+                const { id } = createdTask;
+                history.push(`/tasks/${id}`);
             })
-            .then((cratedTask) => {
-                resolve(cratedTask);
+            .catch(() => {});
+    };
+
+    private handleSubmitAndContinue = (): void => {
+        this.validateBlocks()
+            .then(this.createOneTask)
+            .then(() => {
+                notification.info({
+                    message: 'The task has been created',
+                    className: 'cvat-notification-create-task-success',
+                });
+            })
+            .then(this.resetState)
+            .then(this.focusToForm)
+            .catch(() => {});
+    };
+
+    private createOneTask = (): Promise<any> => new Promise((resolve, reject) => {
+        const { onCreate } = this.props;
+        this.startLoading();
+        onCreate(this.state, this.changeStatusInProgressTask)
+            .then((createdTask) => {
+                resolve(createdTask);
             })
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
@@ -239,16 +355,217 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         error.toString(),
                     className: 'cvat-notification-create-task-fail',
                 });
-                reject(error);
-            });
+                reject();
+            })
+            .finally(this.stopLoading);
     });
 
+    private setStatusOneOfMultiTasks = async (index: number, status: string): Promise<void> => {
+        const { multiTasks } = this.state;
+        const resultTask = {
+            ...multiTasks[index],
+            status,
+        };
+
+        return new Promise((resolve) => {
+            const newMultiTasks: any = [
+                ...multiTasks.slice(0, index),
+                resultTask,
+                ...multiTasks.slice(index + 1),
+            ];
+            this.setState({
+                multiTasks: newMultiTasks,
+            }, resolve);
+        });
+    };
+
+    private createOneOfMultiTasks = async (index: any): Promise<void> => {
+        const { onCreate } = this.props;
+        const { multiTasks } = this.state;
+        const task = multiTasks[index];
+
+        if (task.status !== 'pending') return;
+
+        await this.setStatusOneOfMultiTasks(index, 'progress');
+        try {
+            await onCreate(task, this.changeStatusInProgressTask);
+            await this.setStatusOneOfMultiTasks(index, 'completed');
+        } catch (err) {
+            await this.setStatusOneOfMultiTasks(index, 'failed');
+        }
+    };
+
+    private createMultiTasks = async (): Promise<any> => {
+        const { multiTasks } = this.state;
+        this.startLoading();
+        const { length } = multiTasks;
+        let count = 0;
+        while (count < length) {
+            const promises = [count].map((it) => new Promise((resolve) => {
+                this.createOneOfMultiTasks(it).then(resolve);
+            }));
+            await Promise.all(promises);
+            count++;
+        }
+        this.stopLoading();
+    };
+
+    private addMultiTasks = async (): Promise<void> => new Promise((resolve) => {
+        const {
+            projectId,
+            subset,
+            advanced,
+            labels,
+            files: allFiles,
+            activeFileManagerTab,
+            cloudStorageId,
+        } = this.state;
+
+        const type = 'local';
+        const files = allFiles.local;
+
+        this.setState({
+            multiTasks: files.map((it, index) => ({
+                projectId,
+                basic: {
+                    name: this.getTaskName(index, type),
+                },
+                subset,
+                advanced,
+                labels,
+                files: {
+                    ...allFiles,
+                    [type]: [it],
+                },
+                activeFileManagerTab,
+                cloudStorageId,
+                status: 'pending',
+            }
+            )),
+        }, resolve);
+    });
+
+    private handleSubmitMutliTasks = (): void => {
+        this.validateBlocks()
+            .then(() => {
+                this.addMultiTasks();
+            })
+            .then(() => {
+                notification.info({
+                    message: 'Tasks started to be created',
+                    className: 'cvat-notification-create-task-success',
+                });
+            })
+            .then(this.createMultiTasks)
+            .then(() => {
+                const { multiTasks } = this.state;
+                const countCompleted = multiTasks.filter((item) => item.status === 'completed').length;
+                const countFailed = multiTasks.filter((item) => item.status === 'failed').length;
+                const countCancelled = multiTasks.filter((item) => item.status === 'cancelled').length;
+                const countAll = multiTasks.length;
+
+                notification.info({
+                    message: 'The tasks have been created',
+                    description:
+                        `Completed: ${countCompleted}, failed: ${countFailed},${countCancelled ?
+                            ` cancelled: ${countCancelled},` :
+                            ''} total: ${countAll}, `,
+                    className: 'cvat-notification-create-task-success',
+                });
+            });
+    };
+
+    private handleCancelMultiTasks = (): void => {
+        const { multiTasks } = this.state;
+        let count = 0;
+        const newMultiTasks: any = multiTasks.map((it) => {
+            if (it.status === 'pending') {
+                count++;
+                return {
+                    ...it,
+                    status: 'cancelled',
+                };
+            }
+            return it;
+        });
+        this.setState({
+            multiTasks: newMultiTasks,
+        }, () => {
+            notification.info({
+                message: `Creation of ${count} tasks have been canceled`,
+                className: 'cvat-notification-create-task-success',
+            });
+        });
+    };
+
+    private handleOkMultiTasks = (): void => {
+        const { history } = this.props;
+        history.push('/tasks/');
+    };
+
+    private handleRetryCancelledMultiTasks = (): void => {
+        const { multiTasks } = this.state;
+        const newMultiTasks: any = multiTasks.map((it) => {
+            if (it.status === 'cancelled') {
+                return {
+                    ...it,
+                    status: 'pending',
+                };
+            }
+            return it;
+        });
+        this.setState({
+            multiTasks: newMultiTasks,
+        }, () => {
+            this.createMultiTasks();
+        });
+    };
+
+    private handleRetryFailedMultiTasks = (): void => {
+        const { multiTasks } = this.state;
+        const newMultiTasks: any = multiTasks.map((it) => {
+            if (it.status === 'failed') {
+                return {
+                    ...it,
+                    status: 'pending',
+                };
+            }
+            return it;
+        });
+        this.setState({
+            multiTasks: newMultiTasks,
+        }, () => {
+            this.createMultiTasks();
+        });
+    };
+
+    private getTaskName = (indexFile: number, fileManagerTabName: TabName, defaultFileName = ''): string => {
+        const { isMultiTask } = this.props;
+        const { basic } = this.state;
+        const { files } = this.state;
+        const file = files[fileManagerTabName][indexFile];
+        // TODO get file name for storage and share
+        const fileName = file ? (file as File).name || (file as string) : defaultFileName;
+        return isMultiTask ?
+            basic.name
+                .replaceAll('{{file_name}}', fileName)
+                .replaceAll('{{index}}', indexFile.toString()) :
+            basic.name;
+    };
+
     private renderBasicBlock(): JSX.Element {
+        const { isMultiTask } = this.props;
+        const exampleMultiTaskName = isMultiTask ? this.getTaskName(0, 'local', 'fileName.mp4') : '';
+        const defaultValue = isMultiTask ? '{{file_name}}' : '';
+
         return (
             <Col span={24}>
                 <BasicConfigurationForm
                     ref={this.basicConfigurationComponent}
-                    onSubmit={this.handleSubmitBasicConfiguration}
+                    isMultiTask={isMultiTask}
+                    defaultValue={defaultValue}
+                    exampleMultiTaskName={exampleMultiTaskName}
+                    onChange={this.handleChangeBasicConfiguration}
                 />
             </Col>
         );
@@ -325,17 +642,36 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderFilesBlock(): JSX.Element {
+        const { isMultiTask } = this.props;
+        const { uploadFileErrorMessage } = this.state;
+
         return (
-            <Col span={24}>
-                <Text type='danger'>* </Text>
-                <Text className='cvat-text-color'>Select files</Text>
-                <ConnectedFileManager
-                    onChangeActiveKey={this.changeFileManagerTab}
-                    ref={(container: any): void => {
-                        this.fileManagerContainer = container;
-                    }}
-                />
-            </Col>
+            <>
+                <Col span={24}>
+                    <Text type='danger'>* </Text>
+                    <Text className='cvat-text-color'>Select files</Text>
+                    <ConnectedFileManager
+                        isMultiTask={isMultiTask}
+                        onChangeActiveKey={this.changeFileManagerTab}
+                        onUploadLocalFiles={this.handleUploadLocalFiles}
+                        onUploadRemoteFiles={this.handleUploadRemoteFiles}
+                        onUploadShareFiles={this.handleUploadShareFiles}
+                        ref={(container: any): void => {
+                            this.fileManagerContainer = container;
+                        }}
+                    />
+                </Col>
+                { uploadFileErrorMessage ? (
+                    <Col span={24}>
+                        <Alert
+                            className='cvat-create-task-content-alert'
+                            type='error'
+                            message={uploadFileErrorMessage}
+                            showIcon
+                        />
+                    </Col>
+                ) : null }
+            </>
         );
     }
 
@@ -359,16 +695,21 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
-    private renderActions(): JSX.Element {
+    private renderFooterSingleTask(): JSX.Element {
+        const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
+
+        if (status === 'FAILED' || loading) {
+            return (<Alert message={status} />);
+        }
         return (
             <Row justify='end' gutter={5}>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitAndOpen}>
+                    <Button type='primary' onClick={this.handleSubmitAndOpen} disabled={!!uploadFileErrorMessage}>
                         Submit & Open
                     </Button>
                 </Col>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitAndContinue}>
+                    <Button type='primary' onClick={this.handleSubmitAndContinue} disabled={!!uploadFileErrorMessage}>
                         Submit & Continue
                     </Button>
                 </Col>
@@ -376,9 +717,47 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
+    private renderFooterMutliTasks(): JSX.Element {
+        const {
+            multiTasks: items,
+            uploadFileErrorMessage,
+            files,
+            activeFileManagerTab,
+            loading,
+            statusInProgressTask: status,
+        } = this.state;
+        const currentFiles = files[activeFileManagerTab];
+        const countPending = items.filter((item) => item.status === 'pending').length;
+        const countAll = items.length;
+
+        if ((loading || countPending !== countAll) && currentFiles.length) {
+            return (
+                <MultiTasksProgress
+                    tasks={items}
+                    statusCurrentTask={status}
+                    onOk={this.handleOkMultiTasks}
+                    onCancel={this.handleCancelMultiTasks}
+                    onRetryFailedTasks={this.handleRetryFailedMultiTasks}
+                    onRetryCancelledTasks={this.handleRetryCancelledMultiTasks}
+                />
+            );
+        }
+
+        return (
+            <Row justify='end' gutter={5}>
+                <Col>
+                    <Button type='primary' onClick={this.handleSubmitMutliTasks} disabled={!!uploadFileErrorMessage}>
+                        Submit&nbsp;
+                        {currentFiles.length}
+                        &nbsp;tasks
+                    </Button>
+                </Col>
+            </Row>
+        );
+    }
+
     public render(): JSX.Element {
-        const { status } = this.props;
-        const loading = !!status && status !== 'CREATED' && status !== 'FAILED';
+        const { isMultiTask } = this.props;
 
         return (
             <Row justify='start' align='middle' className='cvat-create-task-content'>
@@ -394,7 +773,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderAdvancedBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
-                    {loading ? <Alert message={status} /> : this.renderActions()}
+                    {isMultiTask ? this.renderFooterMutliTasks() : this.renderFooterSingleTask() }
                 </Col>
             </Row>
         );
