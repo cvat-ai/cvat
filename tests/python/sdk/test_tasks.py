@@ -136,7 +136,11 @@ class TestTaskUsecases:
 
         task_spec = {
             "name": f"test {self.user} to create a task with no data",
-            "labels": [{"name": "car",}],
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
         }
 
         with pytest.raises(exceptions.ApiException) as capture:
@@ -153,25 +157,25 @@ class TestTaskUsecases:
     def test_can_retrieve_task(self, fxt_new_task):
         task_id = fxt_new_task.id
 
-        task = self.client.retrieve_task(task_id)
+        task = TaskProxy.retrieve(self.client, task_id)
 
         assert task.id == task_id
 
     def test_can_list_tasks(self, fxt_new_task):
         task_id = fxt_new_task.id
 
-        tasks = self.client.list_tasks()
+        tasks = TaskProxy.list(self.client)
 
         assert any(t.id == task_id for t in tasks)
         assert self.stdout.getvalue() == ""
 
     def test_can_delete_tasks_by_ids(self, fxt_new_task):
         task_id = fxt_new_task.id
-        old_tasks = self.client.list_tasks()
+        old_tasks = TaskProxy.list(self.client)
 
         self.client.delete_tasks([task_id])
 
-        new_tasks = self.client.list_tasks()
+        new_tasks = TaskProxy.list(self.client)
         assert any(t.id == task_id for t in old_tasks)
         assert all(t.id != task_id for t in new_tasks)
         assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
@@ -179,12 +183,12 @@ class TestTaskUsecases:
 
     def test_can_delete_task(self, fxt_new_task):
         task_id = fxt_new_task.id
-        task = self.client.retrieve_task(task_id)
-        old_tasks = self.client.list_tasks()
+        task = TaskProxy.retrieve(self.client, task_id)
+        old_tasks = TaskProxy.list(self.client)
 
         task.remove()
 
-        new_tasks = self.client.list_tasks()
+        new_tasks = TaskProxy.list(self.client)
         assert any(t.id == task_id for t in old_tasks)
         assert all(t.id != task_id for t in new_tasks)
         assert self.stdout.getvalue() == ""
@@ -196,7 +200,7 @@ class TestTaskUsecases:
 
         task_id = fxt_new_task.id
         path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
-        task = self.client.retrieve_task(task_id)
+        task = TaskProxy.retrieve(self.client, task_id)
         task.export_dataset(
             format_name="CVAT for images 1.1",
             filename=path,
@@ -214,7 +218,7 @@ class TestTaskUsecases:
 
         task_id = fxt_new_task.id
         path = str(self.tmp_path / f"task_{task_id}-backup.zip")
-        task = self.client.retrieve_task(task_id)
+        task = TaskProxy.retrieve(self.client, task_id)
         task.download_backup(filename=path, pbar=pbar)
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
@@ -248,7 +252,7 @@ class TestTaskUsecases:
             format_name="COCO 1.0", filename=str(fxt_coco_file), pbar=pbar
         )
 
-        assert str(fxt_coco_file) in self.logger_stream.getvalue()
+        assert "uploaded" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
@@ -261,6 +265,6 @@ class TestTaskUsecases:
         assert task.id
         assert task.id != fxt_new_task.id
         assert task.size == fxt_new_task.size
-        assert "exported sucessfully" in self.logger_stream.getvalue()
+        assert "imported sucessfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""

@@ -107,10 +107,9 @@ class Client:
                 "Tasks inside a project use project's labels.",
                 ["labels"],
             )
-        (task, _) = self.api.tasks_api.create(spec)
+        task = TaskProxy.create(self, spec=spec)
         self.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
 
-        task = TaskProxy(self, task)
         task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
 
         self.logger.info("Awaiting for task %s creation...", task.id)
@@ -148,24 +147,6 @@ class Client:
         task.fetch()
 
         return task
-
-    def list_tasks(
-        self, *, return_json: bool = False, **kwargs
-    ) -> Union[List[TaskProxy], List[Dict[str, Any]]]:
-        """List all tasks in either basic or JSON format."""
-
-        results = get_paginated_collection(
-            endpoint=self.api.tasks_api.list_endpoint, return_json=return_json, **kwargs
-        )
-
-        if return_json:
-            return json.dumps(results)
-
-        return [TaskProxy(self, v) for v in results]
-
-    def retrieve_task(self, task_id: int) -> TaskProxy:
-        (task, _) = self.api.tasks_api.retrieve(task_id)
-        return TaskProxy(self, task)
 
     def delete_tasks(self, task_ids: Sequence[int]):
         """
@@ -205,7 +186,7 @@ class Client:
         )
 
         rq_id = json.loads(response.data)["rq_id"]
-        response = self.wait_for_completion(
+        response = self._wait_for_completion(
             url,
             success_status=201,
             positive_statuses=[202],
@@ -216,9 +197,9 @@ class Client:
         task_id = json.loads(response.data)["id"]
         self.logger.info(f"Task has been imported sucessfully. Task ID: {task_id}")
 
-        return self.retrieve_task(task_id)
+        return TaskProxy.retrieve(self, task_id)
 
-    def wait_for_completion(
+    def _wait_for_completion(
         self: Client,
         url: str,
         *,
@@ -226,6 +207,7 @@ class Client:
         status_check_period: Optional[int] = None,
         query_params: Optional[Dict[str, Any]] = None,
         post_params: Optional[Dict[str, Any]] = None,
+        method: str = "POST",
         positive_statuses: Optional[Sequence[int]] = None,
     ) -> urllib3.HTTPResponse:
         if status_check_period is None:
@@ -236,8 +218,9 @@ class Client:
         while True:
             sleep(status_check_period)
 
-            response = self.api.rest_client.POST(
-                url,
+            response = self.api.rest_client.request(
+                method=method,
+                url=url,
                 headers=self.api.get_common_headers(),
                 query_params=query_params,
                 post_params=post_params,

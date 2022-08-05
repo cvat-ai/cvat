@@ -142,7 +142,7 @@ class Uploader:
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
 
-        self._client.wait_for_completion(
+        self._client._wait_for_completion(
             url,
             success_status=201,
             positive_statuses=[202],

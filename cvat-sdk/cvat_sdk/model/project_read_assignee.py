@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 from cvat_sdk.exceptions import ApiAttributeError
 from cvat_sdk.model_utils import (  # noqa: F401
     ApiTypeError,
+    IModelData,
     ModelComposed,
     ModelNormal,
     ModelSimple,

@@ -14,9 +14,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from PIL import Image
 
-from cvat_sdk import models
+from cvat_sdk import apis, models
 from cvat_sdk.impl.downloading import Downloader
-from cvat_sdk.impl.model_proxy import ModelProxy
+from cvat_sdk.impl.model_proxy import ModelCrudMixin, ModelProxy
 from cvat_sdk.impl.progress import ProgressReporter
 from cvat_sdk.impl.uploading import Uploader
 from cvat_sdk.models import ITaskRead
@@ -27,23 +27,16 @@ if TYPE_CHECKING:
     from cvat_sdk.impl.client import Client
 
 
-class TaskProxy(ModelProxy, ITaskRead):
-    def __init__(self, client: Client, task: models.TaskRead):
-        ModelProxy.__init__(self, client=client, model=task)
+class TaskProxy(
+    ModelProxy[models.ITaskRead, models.TaskRead, apis.TasksApi], ITaskRead, ModelCrudMixin
+):
+    _api_member_name = "tasks_api"
+    _model_partial_update_arg = "patched_task_write_request"
 
-    def fetch(self, force: bool = False):
-        # TODO: implement revision checking
-        (self._model, _) = self._client.api.tasks_api.retrieve(self.id)
-
-    def commit(self, force: bool = False):
-        # TODO: implement revision checking
-        self._client.api.tasks_api.partial_update(
-            self.id,
-            patched_task_write_request=models.PatchedTaskWriteRequest(**self._model.to_dict()),
-        )
-
-    def remove(self):
-        self._client.api.tasks_api.destroy(self.id)
+    @classmethod
+    def create(cls, client: Client, spec: models.ITaskWriteRequest, **kwargs) -> TaskProxy:
+        # Specifies 'spec' arg type
+        return super().create(client, spec, **kwargs)
 
     def upload_data(
         self,
@@ -56,9 +49,6 @@ class TaskProxy(ModelProxy, ITaskRead):
         """
         Add local, remote, or shared files to an existing task.
         """
-        client = self._client
-        task_id = self.id
-
         params = params or {}
 
         data = {}
@@ -89,18 +79,17 @@ class TaskProxy(ModelProxy, ITaskRead):
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            client.api.tasks_api.create_data(
-                task_id,
+            self.api.create_data(
+                self.id,
                 data_request=models.DataRequest(**data),
                 _content_type="multipart/form-data",
             )
         elif resource_type == ResourceType.LOCAL:
-            url = client._api_map.make_endpoint_url(
-                client.api.tasks_api.create_data_endpoint.path, kwsub={"id": task_id}
+            url = self._client._api_map.make_endpoint_url(
+                self.api.create_data_endpoint.path, kwsub={"id": self.id}
             )
 
-            uploader = Uploader(client)
-            uploader.upload_files(url, resources, pbar=pbar, **data)
+            Uploader(self._client).upload_files(url, resources, pbar=pbar, **data)
 
     def import_annotations(
         self,
@@ -113,9 +102,9 @@ class TaskProxy(ModelProxy, ITaskRead):
         """
         Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
-        uploader = Uploader(self._client)
-        uploader.upload_annotation_file_and_wait(
-            self._client.api.tasks_api.create_annotations_endpoint,
+
+        Uploader(self._client).upload_annotation_file_and_wait(
+            self.api.create_annotations_endpoint,
             filename,
             format_name,
             url_params={"id": self.id},
@@ -131,9 +120,7 @@ class TaskProxy(ModelProxy, ITaskRead):
         *,
         quality: Optional[str] = None,
     ) -> io.RawIOBase:
-        (_, response) = self._client.api.tasks_api.retrieve_data(
-            self.id, frame_id, quality, type="frame"
-        )
+        (_, response) = self.api.retrieve_data(self.id, frame_id, quality, type="frame")
         return BytesIO(response.data)
 
     def download_frames(
@@ -179,11 +166,11 @@ class TaskProxy(ModelProxy, ITaskRead):
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
         if include_images:
-            endpoint = self._client.api.tasks_api.retrieve_dataset_endpoint
+            endpoint = self.api.retrieve_dataset_endpoint
         else:
-            endpoint = self._client.api.tasks_api.retrieve_annotations_endpoint
-        downloader = Downloader(self._client)
-        downloader.prepare_and_download_file_from_endpoint(
+            endpoint = self.api.retrieve_annotations_endpoint
+
+        Downloader(self._client).prepare_and_download_file_from_endpoint(
             endpoint=endpoint,
             filename=filename,
             url_params={"id": self.id},
@@ -204,9 +191,9 @@ class TaskProxy(ModelProxy, ITaskRead):
         """
         Download a task backup
         """
-        downloader = Downloader(self._client)
-        downloader.prepare_and_download_file_from_endpoint(
-            self._client.api.tasks_api.retrieve_backup_endpoint,
+
+        Downloader(self._client).prepare_and_download_file_from_endpoint(
+            self.api.retrieve_backup_endpoint,
             filename=filename,
             pbar=pbar,
             status_check_period=status_check_period,

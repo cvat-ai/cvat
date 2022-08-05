@@ -97,8 +97,9 @@ class Downloader:
         url = client._api_map.make_endpoint_url(
             endpoint.path, kwsub=url_params, query_params=query_params
         )
-        client.wait_for_completion(
+        client._wait_for_completion(
             url,
+            method="GET",
             positive_statuses=[202],
             success_status=201,
             status_check_period=status_check_period,
@@ -106,5 +107,8 @@ class Downloader:
 
         query_params = dict(query_params or {})
         query_params["action"] = "download"
+        url = client._api_map.make_endpoint_url(
+            endpoint.path, kwsub=url_params, query_params=query_params
+        )
         downloader = Downloader(client)
         downloader.download_file(url, output_path=filename, pbar=pbar)

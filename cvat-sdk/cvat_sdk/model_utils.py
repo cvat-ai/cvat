@@ -118,6 +118,12 @@ def composed_model_input_classes(cls):
     return []
 
 
+class IModelData:
+    """
+    The base class for model data. Declares model fields and their types for better introspection
+    """
+
+
 class OpenApiModel(object):
     """The base class for all OpenAPIModels"""
 
