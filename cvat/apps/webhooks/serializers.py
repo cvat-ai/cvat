@@ -1,5 +1,10 @@
 from .event_type import EventTypeChoice
-from .models import Webhook, WebhookContentTypeChoice, WebhookTypeChoice, WebhookDelivery
+from .models import (
+    Webhook,
+    WebhookContentTypeChoice,
+    WebhookTypeChoice,
+    WebhookDelivery,
+)
 from rest_framework import serializers
 from cvat.apps.engine.serializers import BasicUserSerializer
 
@@ -24,8 +29,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
 
     last_status = serializers.IntegerField(
-        source="deliveries.last.status_code",
-        read_only=True
+        source="deliveries.last.status_code", read_only=True
     )
 
     def to_representation(self, instance):
@@ -52,10 +56,9 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "project",
             "organization",
             "events",
-            "last_status"
+            "last_status",
         )
         read_only_fields = fields
-
 
 
 class WebhookWriteSerializer(serializers.ModelSerializer):
@@ -97,6 +100,7 @@ class WebhookWriteSerializer(serializers.ModelSerializer):
         db_webhook = Webhook.objects.create(**validated_data)
         return db_webhook
 
+
 class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
     webhook_id = serializers.IntegerField(read_only=True)
 
@@ -111,15 +115,6 @@ class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
             "delivered_at",
             "changed_fields",
             "request",
-            "response"
+            "response",
         )
         read_only_fields = fields
-
-class WebhookDeliveryWriteSerializer(serializers.ModelSerializer):
-    def to_representation(self, instance):
-        serializer = WebhookReadSerializer(instance, context=self.context)
-        return serializer.data
-
-    class Meta:
-        model = WebhookDelivery
-        fields = ("redelivery")
