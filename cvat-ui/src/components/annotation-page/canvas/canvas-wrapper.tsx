@@ -638,7 +638,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { activatedStateID, onUpdateContextMenu, annotations } = this.props;
 
         const [state] = annotations.filter((el: any) => el.clientID === activatedStateID);
-        if (![ShapeType.CUBOID, ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(state.shapeType)) {
+        if (![ShapeType.CUBOID, ShapeType.RECTANGLE, ShapeType.ELLIPSE, ShapeType.SKELETON].includes(state.shapeType)) {
             onUpdateContextMenu(
                 activatedStateID !== null,
                 e.detail.mouseEvent.clientX,
