@@ -14,7 +14,7 @@ class EventsSerializer(serializers.MultipleChoiceField):
         super().__init__(choices=EventTypeChoice.choices(), *args, **kwargs)
 
     def to_representation(self, value):
-        return super().to_representation(value.split(","))
+        return list(super().to_representation(value.split(",")))
 
     def to_internal_value(self, data):
         return ",".join(super().to_internal_value(data))
