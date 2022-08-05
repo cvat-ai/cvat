@@ -1,10 +1,11 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 
+from .signals import signal_redelivery
 from .models import Webhook, WebhookDelivery
 from .serializers import (
     WebhookReadSerializer,
     WebhookWriteSerializer,
-    WebhookDeliveryReadSerializer
+    WebhookDeliveryReadSerializer,
 )
 
 from rest_framework.permissions import SAFE_METHODS
@@ -51,34 +52,34 @@ class WebhookViewSet(viewsets.ModelViewSet):
     iam_organization_field = "organization"
 
     def get_serializer_class(self):
-        if self.request.method in SAFE_METHODS:
-            return WebhookReadSerializer
+        if self.request.path.endswith("redelivery"):
+            return None
         else:
-            return WebhookWriteSerializer
+            if self.request.method in SAFE_METHODS:
+                return WebhookReadSerializer
+            else:
+                return WebhookWriteSerializer
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-
     @extend_schema(
         summary="Method return a list of deliveries for a specific webhook",
-        responses={
-            '200': WebhookDeliveryReadSerializer(many=True),
-        }
+        responses={"200": WebhookDeliveryReadSerializer(many=True)},
     )
     @action(
-        detail=True,
-        methods=['GET'],
-        serializer_class=WebhookDeliveryReadSerializer
+        detail=True, methods=["GET"], serializer_class=WebhookDeliveryReadSerializer
     )
     def deliveries(self, request, pk):
         self.get_object()
-        queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by('-delivered_at')
+        queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by(
+            "-delivered_at"
+        )
 
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = WebhookDeliveryReadSerializer(
-                page, many=True, context={'request': request}
+                page, many=True, context={"request": request}
             )
             return self.get_paginated_response(serializer.data)
 
@@ -88,23 +89,35 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-
     @extend_schema(
         summary="Method return a specific delivery for a specific webhook",
-        responses={
-            '200': WebhookDeliveryReadSerializer,
-        }
+        responses={"200": WebhookDeliveryReadSerializer},
     )
     @action(
         detail=True,
-        methods=['GET'],
-        url_path=r'deliveries/(?P<delivery_id>\d+)',
-        serializer_class=WebhookDeliveryReadSerializer
+        methods=["GET"],
+        url_path=r"deliveries/(?P<delivery_id>\d+)",
+        serializer_class=WebhookDeliveryReadSerializer,
     )
     def retrieve_delivery(self, request, pk, delivery_id):
         self.get_object()
         queryset = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
         serializer = WebhookDeliveryReadSerializer(
-            queryset, context={'request': request}
+            queryset, context={"request": request}
         )
         return Response(serializer.data)
+
+    @extend_schema(summary="Method redeliver a specific webhook delivery")
+    @action(
+        detail=True,
+        methods=["POST"],
+        url_path=r"deliveries/(?P<delivery_id>\d+)/redelivery",
+    )
+    def redelivery(self, request, pk, delivery_id):
+        delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
+        signal_redelivery.send(
+            sender=self, webhook_id=delivery.webhook_id, request_body=delivery.request
+        )
+
+        # Questionable: should we provide a body for this response?
+        return Response({})
