@@ -6,7 +6,7 @@ import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
-import Form from 'antd/lib/form';
+import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Notification from 'antd/lib/notification';
@@ -29,7 +29,7 @@ import Switch from 'antd/lib/switch';
 import Tooltip from 'antd/lib/tooltip';
 
 import getCore from 'cvat-core-wrapper';
-import StorageField from 'components/storage/storage';
+import StorageField from 'components/storage/storage-field';
 import { Storage } from 'reducers/interfaces';
 import Input from 'antd/lib/input/Input';
 
@@ -40,10 +40,20 @@ const core = getCore();
 
 type FormValues = {
     selectedFormat: string | undefined;
-    location?: string | undefined;
-    cloudStorageId?: number | undefined;
     fileName?: string | undefined;
+    sourceStorage: any;
+    useDefaultSettings: boolean;
 };
+
+const initialValues: FormValues = {
+    selectedFormat: undefined,
+    fileName: undefined,
+    sourceStorage: {
+        location: StorageLocation.LOCAL,
+        cloud_storage_id: undefined,
+    },
+    useDefaultSettings: true,
+}
 
 interface UploadParams {
     resource: 'annotation' | 'dataset' | null;
@@ -133,7 +143,7 @@ function ImportDatasetModal(): JSX.Element | null {
                 accept='.zip,.json,.xml'
                 beforeUpload={(_file: RcFile): boolean => {
                     if (!selectedLoader) {
-                        message.warn('Please select a format first');
+                        message.warn('Please select a format first', 3);
                     } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
                         message.error('Only ZIP archive is supported for import a dataset');
                     } else if (isAnnotation() &&
@@ -156,9 +166,38 @@ function ImportDatasetModal(): JSX.Element | null {
         );
     };
 
+    const validateFileName = (_: RuleObject, value: string): Promise<void> => {
+        if (!selectedLoader) {
+            message.warn('Please select a format first', 3);
+            return Promise.reject();
+        }
+        if (value) {
+            const extension = value.toLowerCase().split('.')[1];
+            if (isAnnotation()) {
+                const allowedExtensions = selectedLoader.format.toLowerCase().split(', ')
+                if (!allowedExtensions.includes(extension)) {
+                    return Promise.reject(new Error(`For ${selectedLoader.name} format only files with ${selectedLoader.format.toLowerCase()} extension can be used`));
+                }
+            }
+            if (isDataset()) {
+                if (extension !== 'zip') {
+                    return Promise.reject(new Error('Only ZIP archive is supported for import a dataset'));
+                }
+            }
+        }
+
+        return Promise.resolve();
+    }
+
     const renderCustomName = (): JSX.Element => {
         return (
-            <Form.Item label={<Text strong>File name</Text>} name='fileName'>
+            <Form.Item
+                label={<Text strong>File name</Text>}
+                name='fileName'
+                hasFeedback
+                dependencies={['selectedFormat']}
+                rules={[{ validator: validateFileName }]}
+            >
                 <Input
                     placeholder='Dataset file name'
                     className='cvat-modal-import-filename-input'
@@ -168,12 +207,13 @@ function ImportDatasetModal(): JSX.Element | null {
     }
 
     const closeModal = useCallback((): void => {
+        setUseDefaultSettings(true);
         form.resetFields();
         setFile(null);
         dispatch(importActions.closeImportModal(instance));
     }, [form, instance]);
 
-    const onUpload = () => {
+    const onUpload = useCallback(() => {
         if (uploadParams && uploadParams.resource) {
             dispatch(importDatasetAsync(
                 instance, uploadParams.selectedFormat as string,
@@ -186,7 +226,7 @@ function ImportDatasetModal(): JSX.Element | null {
                 className: `cvat-notification-notice-import-${uploadParams.resource}-start`,
             });
         }
-    }
+    }, [uploadParams]);
 
     const confirmUpload = () => {
         confirm({
@@ -214,8 +254,8 @@ function ImportDatasetModal(): JSX.Element | null {
             }
             const fileName = values.fileName || null;
             const sourceStorage = {
-                location: (values.location) ? values.location : defaultStorageLocation,
-                cloudStorageId: (values.location) ? values.cloudStorageId : defaultStorageCloudId,
+                location: (values.sourceStorage.location) ? values.sourceStorage.location : defaultStorageLocation,
+                cloudStorageId: (values.sourceStorage.location) ? values.sourceStorage.cloudStorageId : defaultStorageCloudId,
             } as Storage;
 
             setUploadParams({
@@ -265,7 +305,7 @@ function ImportDatasetModal(): JSX.Element | null {
                 <Form
                     name={`Import ${resource}`}
                     form={form}
-                    initialValues={{ selectedFormat: undefined } as FormValues}
+                    initialValues={initialValues}
                     onFinish={handleImport}
                     layout='vertical'
                 >
@@ -273,6 +313,7 @@ function ImportDatasetModal(): JSX.Element | null {
                         name='selectedFormat'
                         label='Import format'
                         rules={[{ required: true, message: 'Format must be selected' }]}
+                        hasFeedback
                     >
                         <Select
                             placeholder={`Select ${resource} format`}
@@ -315,9 +356,9 @@ function ImportDatasetModal(): JSX.Element | null {
                     <Space>
                         <Form.Item
                             name='useDefaultSettings'
+                            valuePropName='checked'
                         >
                             <Switch
-                                defaultChecked
                                 onChange={(value: boolean) => {
                                     setUseDefaultSettings(value);
                                 }}
@@ -334,8 +375,8 @@ function ImportDatasetModal(): JSX.Element | null {
                     {useDefaultSettings && defaultStorageLocation === StorageLocation.LOCAL && uploadLocalFile()}
                     {useDefaultSettings && defaultStorageLocation === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {!useDefaultSettings && <StorageField
-                        label='Source storage'
-                        description={`Specify source storage for import ${resource}`}
+                        locationName={['sourceStorage', 'location']}
+                        selectCloudStorageName={['sourceStorage', 'cloud_storage_id']}
                         onChangeStorage={(value: Storage) => setSelectedSourceStorage(value)}
                     />}
                     {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}

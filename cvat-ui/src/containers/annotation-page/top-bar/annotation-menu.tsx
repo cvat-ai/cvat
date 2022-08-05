@@ -31,7 +31,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     showExportModal: (jobInstance: any, resource: 'dataset' | 'backup') => void;
-    showImportModal: (jobInstance: any, resource: 'dataset' | 'annotation') => void;
+    showImportModal: (jobInstance: any) => void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
@@ -69,8 +69,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         showExportModal(taskInstance: any, resource: 'dataset' | 'backup'): void {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
-        showImportModal(taskInstance: any, resource: 'dataset' | 'annotation'): void {
-            dispatch(importActions.openImportModal(taskInstance, resource));
+        showImportModal(jobInstance: any): void {
+            dispatch(importActions.openImportModal(jobInstance, 'annotation'));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
             dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
@@ -138,7 +138,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             updateJob(jobInstance);
             window.location.reload();
         } else if (action === Actions.LOAD_JOB_ANNO) {
-            showImportModal(jobInstance, 'annotation');
+            showImportModal(jobInstance);
         }
     };
 

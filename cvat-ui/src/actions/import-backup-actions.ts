@@ -11,8 +11,8 @@ import getCore from 'cvat-core-wrapper';
 const core = getCore();
 
 export enum ImportBackupActionTypes {
-    OPEN_IMPORT_MODAL = 'OPEN_IMPORT_MODAL',
-    CLOSE_IMPORT_MODAL = 'CLOSE_IMPORT_MODAL',
+    OPEN_IMPORT_BACKUP_MODAL = 'OPEN_IMPORT_BACKUP_MODAL',
+    CLOSE_IMPORT_BACKUP_MODAL = 'CLOSE_IMPORT_BACKUP_MODAL',
     IMPORT_BACKUP = 'IMPORT_BACKUP',
     IMPORT_BACKUP_SUCCESS = 'IMPORT_BACKUP_SUCCESS',
     IMPORT_BACKUP_FAILED = 'IMPORT_BACKUP_FAILED',
@@ -20,9 +20,9 @@ export enum ImportBackupActionTypes {
 
 export const importBackupActions = {
     openImportModal: (instanceType: 'project' | 'task' | null) => (
-        createAction(ImportBackupActionTypes.OPEN_IMPORT_MODAL, { instanceType })
+        createAction(ImportBackupActionTypes.OPEN_IMPORT_BACKUP_MODAL, { instanceType })
     ),
-    closeImportModal: () => createAction(ImportBackupActionTypes.CLOSE_IMPORT_MODAL),
+    closeImportModal: () => createAction(ImportBackupActionTypes.CLOSE_IMPORT_BACKUP_MODAL),
     importBackup: () => createAction(ImportBackupActionTypes.IMPORT_BACKUP),
     importBackupSuccess: (instanceId: number, instanceType: 'project' | 'task') => (
         createAction(ImportBackupActionTypes.IMPORT_BACKUP_SUCCESS, { instanceId, instanceType })

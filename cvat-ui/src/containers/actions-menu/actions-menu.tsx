@@ -18,6 +18,7 @@ import {
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { importBackupActions } from 'actions/import-backup-actions';
 
 interface OwnProps {
     taskInstance: any;
@@ -33,7 +34,7 @@ interface StateToProps {
 interface DispatchToProps {
     loadAnnotations: (taskInstance: any, loader: any, file: File) => void;
     showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null) => void;
-    showImportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null) => void;
+    showImportModal: (taskInstance: any, isDataset: boolean) => void;
     // showExportBackupModal: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
     deleteTask: (taskInstance: any) => void;
@@ -69,22 +70,19 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null): void => {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
-        showImportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null): void => {
-            dispatch(importActions.openImportModal(taskInstance, 'annotation'));
+        showImportModal: (taskInstance: any, isDataset: boolean): void => {
+            if (isDataset) {
+                dispatch(importActions.openImportModal(taskInstance, 'annotation'));
+            } else {
+                dispatch(importBackupActions.openImportModal('task'));
+            }
         },
         deleteTask: (taskInstance: any): void => {
             dispatch(deleteTaskAsync(taskInstance));
         },
-        // showExportBackupModal: (taskInstance: any): void => {
-        //     dispatch(exportBackupActions.openExportBackupModal(taskInstance));
-        // },
         openRunModelWindow: (taskInstance: any): void => {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
         },
-        // exportTask: (taskInstance: any): void => {
-        //     // fixme
-        //     // dispatch(exportTaskAsync(taskInstance));
-        // },
         openMoveTaskToProjectWindow: (taskId: number): void => {
             dispatch(switchMoveTaskModalVisible(true, taskId));
         },
@@ -107,8 +105,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         // exportTask,
         openMoveTaskToProjectWindow,
     } = props;
-    // const [isExportDatasetModalOpen, setIsExportDatasetModalOpen] = useState(false);
-    // const [isExportBackupModalOpen, setIsExportBackupModalOpen] = useState(false);
 
     function onClickMenu(params: MenuInfo): void | JSX.Element {
         const [action] = params.keyPath;
@@ -122,13 +118,12 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             openRunModelWindow(taskInstance);
         } else if (action === Actions.EXPORT_TASK) {
             showExportModal(taskInstance, 'backup');
-            // exportTask(taskInstance);
         } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
             openMoveTaskToProjectWindow(taskInstance.id);
         } else if (action === Actions.LOAD_TASK_ANNO) {
-            showImportModal(taskInstance, 'dataset');
+            showImportModal(taskInstance, true);
         } else if (action === Actions.IMPORT_TASK) {
-            showImportModal(taskInstance, 'backup');
+            showImportModal(taskInstance, false);
         }
     }
 

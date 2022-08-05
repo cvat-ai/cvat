@@ -255,15 +255,8 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            // TODO: maybe need to move it to optional block
-            source_storage: {
-                location: data.advanced.sourceStorage.location,
-                cloud_storage_id: data.advanced.sourceStorage.cloudStorageId,
-            },
-            target_storage: {
-                location: data.advanced.targetStorage.location,
-                cloud_storage_id: data.advanced.targetStorage.cloudStorageId,
-            },
+            source_storage: data.advanced.sourceStorage,
+            target_storage: data.advanced.targetStorage,
         };
 
         if (data.projectId) {

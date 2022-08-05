@@ -20,7 +20,8 @@ import getCore from 'cvat-core-wrapper';
 import Switch from 'antd/lib/switch';
 import { Space } from 'antd';
 
-import StorageForm from 'components/storage/storage-form';
+// import StorageForm from 'components/storage/storage-form';
+import TargetStorageField from 'components/storage/target-storage-field';
 
 const core = getCore();
 
@@ -28,14 +29,26 @@ type FormValues = {
     selectedFormat: string | undefined;
     saveImages: boolean;
     customName: string | undefined;
+    targetStorage: any;
+    useProjectTargetStorage: boolean;
 };
+
+const initialValues: FormValues = {
+    selectedFormat: undefined,
+    saveImages: false,
+    customName: undefined,
+    targetStorage: {
+        location: undefined,
+        cloud_storage_id: undefined,
+    },
+    useProjectTargetStorage: true,
+}
 
 function ExportDatasetModal(): JSX.Element | null {
     const [instanceType, setInstanceType] = useState('');
     const [activities, setActivities] = useState<string[]>([]);
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
     const [form] = Form.useForm();
-    const targetStorageForm = React.createRef<FormInstance>();
     const [targetStorage, setTargetStorage] = useState<Storage | null>(null);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState<string | null>(null);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
@@ -112,7 +125,7 @@ function ExportDatasetModal(): JSX.Element | null {
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
-        targetStorageForm.current?.resetFields();
+        setUseDefaultTargetStorage(true);
         form.resetFields();
         dispatch(exportActions.closeExportModal());
     };
@@ -167,13 +180,7 @@ function ExportDatasetModal(): JSX.Element | null {
                 layout='vertical'
                 // labelCol={{ span: 8 }}
                 // wrapperCol={{ span: 16 }}
-                initialValues={
-                    {
-                        selectedFormat: undefined,
-                        saveImages: false,
-                        customName: undefined,
-                    } as FormValues
-                }
+                initialValues={initialValues}
                 onFinish={handleExport}
             >
                 <Form.Item
@@ -223,10 +230,8 @@ function ExportDatasetModal(): JSX.Element | null {
                         className='cvat-modal-export-filename-input'
                     />
                 </Form.Item>
-                <StorageForm
-                    formRef={targetStorageForm}
+                <TargetStorageField
                     // FIXME rename to instanse?
-                    storageLabel='Target storage'
                     projectId={instance?.id}
                     switchDescription='Use default settings'
                     switchHelpMessage={helpMessage}

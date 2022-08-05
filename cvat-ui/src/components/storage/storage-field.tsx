@@ -19,18 +19,24 @@ import { Storage } from 'reducers/interfaces';
 const { Option } = Select;
 
 export interface Props {
-    label: string;
-    description: string;
+    //locationLabel: string;
+    locationName: string[];
+    //locationDescription: string;
+    selectCloudStorageName: string[];
     onChangeStorage?: (value: Storage) => void;
 }
 
 export default function StorageField(props: Props): JSX.Element {
-    const { label, description, onChangeStorage } = props;
+    const {
+        locationName,
+        selectCloudStorageName,
+        onChangeStorage
+    } = props;
     const [locationValue, setLocationValue] = useState(StorageLocation.LOCAL);
     const [cloudStorage, setCloudStorage] = useState<CloudStorage | null>(null);
     const [potentialCloudStorage, setPotentialCloudStorage] = useState('');
 
-    function renderCloudStorageId(): JSX.Element {
+    function renderCloudStorage(): JSX.Element {
         return (
             <SelectCloudStorage
                 searchPhrase={potentialCloudStorage}
@@ -38,7 +44,7 @@ export default function StorageField(props: Props): JSX.Element {
                 setSearchPhrase={(cs: string) => {
                     setPotentialCloudStorage(cs);
                 }}
-                name='cloudStorageId'
+                name={selectCloudStorageName}
                 onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => setCloudStorage(_cloudStorage)}
             />
         );
@@ -62,30 +68,18 @@ export default function StorageField(props: Props): JSX.Element {
     return (
         <>
             <Form.Item
-                name='location'
-                label={(
-                    <>
-                        <Space>
-                            {label}
-                            <CVATTooltip title={description}>
-                                <QuestionCircleFilled
-                                    // className='cvat-question-circle-filled-icon'
-                                    style={{ opacity: 0.5 }}
-                                />
-                            </CVATTooltip>
-                        </Space>
-                    </>
-                )}
+                name={locationName}
             >
                 <Select
-                    defaultValue={StorageLocation.LOCAL}
                     onChange={(location: StorageLocation) => setLocationValue(location)}
+                    onClear={() => setLocationValue(StorageLocation.LOCAL)}
+                    allowClear
                 >
                     <Option value={StorageLocation.LOCAL}>Local</Option>
                     <Option value={StorageLocation.CLOUD_STORAGE}>Cloud storage</Option>
                 </Select>
             </Form.Item>
-            {locationValue === StorageLocation.CLOUD_STORAGE && renderCloudStorageId()}
+            {locationValue === StorageLocation.CLOUD_STORAGE && renderCloudStorage()}
         </>
     );
 }

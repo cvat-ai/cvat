@@ -19,13 +19,13 @@ const defaultState: ImportBackupState = {
 
 export default (state: ImportBackupState = defaultState, action: ImportBackupActions): ImportBackupState => {
     switch (action.type) {
-        case ImportBackupActionTypes.OPEN_IMPORT_MODAL:
+        case ImportBackupActionTypes.OPEN_IMPORT_BACKUP_MODAL:
             return {
                 ...state,
                 modalVisible: true,
                 instanceType: action.payload.instanceType,
             };
-        case ImportBackupActionTypes.CLOSE_IMPORT_MODAL: {
+        case ImportBackupActionTypes.CLOSE_IMPORT_BACKUP_MODAL: {
             return {
                 ...state,
                 modalVisible: false,

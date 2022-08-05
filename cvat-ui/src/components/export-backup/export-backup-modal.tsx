@@ -19,13 +19,25 @@ import getCore from 'cvat-core-wrapper';
 import Switch from 'antd/lib/switch';
 import { Space } from 'antd';
 
-import StorageForm from 'components/storage/storage-form';
+import TargetStorageField from 'components/storage/target-storage-field';
 
 const core = getCore();
 
 type FormValues = {
     customName: string | undefined;
+    targetStorage: any;
+    useProjectTargetStorage: boolean;
 };
+
+const initialValues: FormValues = {
+    customName: undefined,
+    targetStorage: {
+        location: undefined,
+        cloud_storage_id: undefined,
+        //cloudStorageId: undefined,
+    },
+    useProjectTargetStorage: true,
+}
 
 function ExportBackupModal(): JSX.Element | null {
     const dispatch = useDispatch();
@@ -38,9 +50,7 @@ function ExportBackupModal(): JSX.Element | null {
     const [useDefaultStorage, setUseDefaultStorage] = useState(true);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState<string | null>(null);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
-    const [storage, setStorage] = useState<Storage | null>(null);
-
-    const storageForm = React.createRef<FormInstance>();
+    // const [storage, setStorage] = useState<Storage | null>(null);
 
     const [helpMessage, setHelpMessage] = useState('');
     const resource = useSelector((state: CombinedState) => state.export.resource);
@@ -88,7 +98,7 @@ function ExportBackupModal(): JSX.Element | null {
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
-        storageForm.current?.resetFields();
+        setUseDefaultStorage(true);
         form.resetFields();
         dispatch(exportActions.closeExportModal());
     };
@@ -100,8 +110,8 @@ function ExportBackupModal(): JSX.Element | null {
                     instance,
                     values.customName ? `${values.customName}.zip` : '',
                     (useDefaultStorage) ? null : {
-                        location: storage?.location,
-                        cloudStorageId: storage?.cloudStorageId,
+                        location: values.targetStorage?.location,
+                        cloudStorageId: values.targetStorage?.cloud_storage_id,
                     } as Storage,
                 ),
             );
@@ -114,19 +124,19 @@ function ExportBackupModal(): JSX.Element | null {
                 className: `cvat-notification-notice-export-backup-start`,
             });
         },
-        [instance, instanceType, storage],
+        [instance, instanceType, useDefaultStorage],
     );
 
-    const onChangeStorage = (value: Storage): void => {
-        setStorage({
-            ...value,
-        } as Storage)
-    }
+    // const onChangeStorage = (value: Storage): void => {
+    //     setStorage({
+    //         ...value,
+    //     } as Storage)
+    // }
 
     if (resource !== 'backup') return null;
 
     return (
-        // TODO add pending on submit buttom
+        // TODO add pending on submit button
         <Modal
             title={<Text strong>{`Export ${instanceType}`}</Text>}
             visible={modalVisible}
@@ -141,11 +151,7 @@ function ExportBackupModal(): JSX.Element | null {
                 layout='vertical'
                 // labelCol={{ span: 8 }}
                 // wrapperCol={{ span: 16 }}
-                initialValues={
-                    {
-                        customName: undefined,
-                    } as FormValues
-                }
+                initialValues={initialValues}
                 onFinish={handleExport}
             >
                 {/* wrapperCol={{ offset: 8, span: 16 }} */}
@@ -158,17 +164,15 @@ function ExportBackupModal(): JSX.Element | null {
                         className='cvat-modal-export-filename-input'
                     />
                 </Form.Item>
-                <StorageForm
-                    formRef={storageForm}
+                <TargetStorageField
                     // FIXME rename to instanse?
-                    storageLabel='Target storage'
                     projectId={instance?.id}
                     switchDescription='Use default settings'
                     switchHelpMessage={helpMessage}
                     useProjectStorage={useDefaultStorage}
                     storageDescription={`Specify target storage for export ${instanceType}`}
                     onChangeUseProjectStorage={(value: boolean) => setUseDefaultStorage(value)}
-                    onChangeStorage={(value: Storage) => onChangeStorage(value)}
+                    onChangeStorage={(value: Storage) => console.log(value)}
                 />
             </Form>
         </Modal>

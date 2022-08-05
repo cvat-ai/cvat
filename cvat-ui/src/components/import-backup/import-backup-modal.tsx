@@ -6,7 +6,7 @@ import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
-import Form from 'antd/lib/form';
+import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Notification from 'antd/lib/notification';
@@ -27,18 +27,25 @@ import Switch from 'antd/lib/switch';
 import Tooltip from 'antd/lib/tooltip';
 
 import getCore from 'cvat-core-wrapper';
-import StorageField from 'components/storage/storage';
+import SourceStorageField from 'components/storage/source-storage-field';
 import { Storage } from 'reducers/interfaces';
 import Input from 'antd/lib/input/Input';
 
 
 type FormValues = {
-    location?: string | undefined;
-    cloudStorageId?: number | undefined;
     fileName?: string | undefined;
+    sourceStorage: any;
 };
 
-function ImportBackupModal(): JSX.Element | null {
+const initialValues: FormValues = {
+    fileName: undefined,
+    sourceStorage: {
+        location: StorageLocation.LOCAL,
+        cloud_storage_id: undefined,
+    }
+}
+
+function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
     const [file, setFile] = useState<File | null>(null);
     const instanceType = useSelector((state: CombinedState) => state.importBackup?.instanceType);
@@ -73,9 +80,24 @@ function ImportBackupModal(): JSX.Element | null {
         );
     };
 
+    const validateFileName = (_: RuleObject, value: string): Promise<void> => {
+        if (value) {
+            const extension = value.toLowerCase().split('.')[1];
+            if (extension !== 'zip') {
+                return Promise.reject(new Error('Only ZIP archive is supported'));
+            }
+        }
+
+        return Promise.resolve();
+    }
+
     const renderCustomName = (): JSX.Element => {
         return (
-            <Form.Item label={<Text strong>File name</Text>} name='fileName'>
+            <Form.Item
+                label={<Text strong>File name</Text>}
+                name='fileName'
+                rules={[{ validator: validateFileName }]}
+            >
                 <Input
                     placeholder='Backup file name'
                     className='cvat-modal-import-filename-input'
@@ -88,7 +110,7 @@ function ImportBackupModal(): JSX.Element | null {
         form.resetFields();
         setFile(null);
         dispatch(importBackupActions.closeImportModal());
-    }, [form]);
+    }, [form, instanceType]);
 
     const handleImport = useCallback(
         (values: FormValues): void => {
@@ -116,9 +138,6 @@ function ImportBackupModal(): JSX.Element | null {
         [instanceType, file],
     );
 
-    if (!instanceType) {
-        return null;
-    }
 
     return (
         <>
@@ -134,10 +153,11 @@ function ImportBackupModal(): JSX.Element | null {
                     form={form}
                     onFinish={handleImport}
                     layout='vertical'
+                    initialValues={initialValues}
                 >
-                    <StorageField
-                        label='Source storage'
-                        description='Specify source storage with backup'
+                    <SourceStorageField
+                        projectId={null}
+                        storageDescription='Specify source storage with backup'
                         onChangeStorage={(value: Storage) => setSelectedSourceStorage(value)}
                     />
                     {selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}

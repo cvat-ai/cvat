@@ -15,9 +15,11 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
-import { StorageLocation, StorageState } from 'reducers/interfaces';
+import { StorageLocation } from 'reducers/interfaces';
 
-import StorageForm from 'components/storage/storage-form';
+// import StorageForm from 'components/storage/storage-form';
+import SourceStorageField from 'components/storage/source-storage-field';
+import TargetStorageField from 'components/storage/target-storage-field';
 
 import getCore from 'cvat-core-wrapper';
 
@@ -50,8 +52,8 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean | null;
     useProjectTargetStorage: boolean | null;
-    sourceStorage?: StorageState;
-    targetStorage?: StorageState;
+    sourceStorage: any;
+    targetStorage: any;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -61,16 +63,16 @@ const initialValues: AdvancedConfiguration = {
     useCache: true,
     copyData: false,
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
-    useProjectSourceStorage: null,
-    useProjectTargetStorage: null,
+    useProjectSourceStorage: true,
+    useProjectTargetStorage: true,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
-        cloudStorageId: null,
+        cloud_storage_id: null,
     },
     targetStorage: {
         location: StorageLocation.LOCAL,
-        cloudStorageId: null,
+        cloud_storage_id: null,
     }
 };
 
@@ -167,14 +169,10 @@ const validateStopFrame: RuleRender = ({ getFieldValue }): RuleObject => ({
 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
-    private sourceStorageFormRef: RefObject<FormInstance>;
-    private targetStorageFormRef: RefObject<FormInstance>;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
-        this.sourceStorageFormRef = React.createRef<FormInstance>();
-        this.targetStorageFormRef = React.createRef<FormInstance>();
     }
 
     public submit(): Promise<void> {
@@ -183,51 +181,41 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             return this.formRef.current.validateFields().then(
                 (values: Store): Promise<void> => {
                     const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
-
-                    // TODO need to refactor this one
-                    // TODO add validation form for source and target storages
-                    // tODO use this
-                    // const values = await advancedFormRef.current.validateFields();
                     let sourceStorage;
                     let targetStorage;
+
+                    const useProjectSourceStorage = values.useProjectSourceStorage;
+                    const useProjectTargetStorage = values.useProjectTargetStorage;
+
                     if (!!projectId) {
                         let projectSourceStorage;
                         let projectTargetStorage;
-                        core.projects.get({ id: projectId }).then((response: any) => {
-                            if (response.length) {
-                                const [project] = response;
-                                projectSourceStorage = project.sourceStorage;
-                                projectTargetStorage = project.targetStorage;
-                            }
-                        });
 
-                        const useProjectSourceStorage = values.useProjectSourceStorage;
-                        const useProjectTargetStorage = values.useProjectTargetStorage;
+                        if (useProjectSourceStorage || useProjectTargetStorage) {
+                            core.projects.get({ id: projectId }).then((response: any) => {
+                                if (response.length) {
+                                    const [project] = response;
+                                    projectSourceStorage = project.sourceStorage;
+                                    projectTargetStorage = project.targetStorage;
+                                }
+                            });
+                        }
+
                         if (useProjectSourceStorage) {
                             sourceStorage = projectSourceStorage;
-                        } else {
-                            sourceStorage = {
-                                location: this.sourceStorageFormRef.current?.getFieldValue('location'),
-                                cloudStorageId: this.sourceStorageFormRef.current?.getFieldValue('cloudStorageId'),
-                            }
                         }
                         if (useProjectTargetStorage) {
                             targetStorage = projectTargetStorage;
-                        } else {
-                            targetStorage = {
-                                location: this.targetStorageFormRef.current?.getFieldValue('location'),
-                                cloudStorageId: this.targetStorageFormRef.current?.getFieldValue('cloudStorageId'),
-                            }
                         }
-                    } else {
+                    }
+                    if (!projectId || !useProjectSourceStorage) {
                         sourceStorage = {
-                            location: this.sourceStorageFormRef.current?.getFieldValue('location'),
-                            cloudStorageId: this.sourceStorageFormRef.current?.getFieldValue('cloudStorageId'),
+                            ...values.sourceStorage,
                         }
-
+                    }
+                    if (!projectId || !useProjectTargetStorage) {
                         targetStorage = {
-                            location: this.targetStorageFormRef.current?.getFieldValue('location'),
-                            cloudStorageId: this.targetStorageFormRef.current?.getFieldValue('cloudStorageId'),
+                            ...values.targetStorage,
                         }
                     }
 
@@ -250,11 +238,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public resetFields(): void {
+        // useProjectSourceStorage(true);
+        // useProjectTargetStorage(true);
         if (this.formRef.current) {
             this.formRef.current.resetFields();
         }
-        this.sourceStorageFormRef.current?.resetFields();
-        this.targetStorageFormRef.current?.resetFields();
     }
 
     /* eslint-disable class-methods-use-this */
@@ -524,10 +512,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             onChangeUseProjectSourceStorage,
         } = this.props;
         return (
-            <StorageForm
-                formRef={this.sourceStorageFormRef}
+            <SourceStorageField
                 projectId={projectId}
-                storageLabel='Source storage'
                 switchDescription='Use project source storage'
                 storageDescription='Specify source storage for import resources like annotation, backups'
                 useProjectStorage={useProjectSourceStorage}
@@ -544,16 +530,13 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             onChangeUseProjectTargetStorage,
         } = this.props;
         return (
-            <StorageForm
-                formRef={this.targetStorageFormRef}
+            <TargetStorageField
                 projectId={projectId}
-                storageLabel='Target storage'
                 switchDescription='Use project target storage'
                 storageDescription='Specify target storage for export resources like annotation, backups                '
                 useProjectStorage={useProjectTargetStorage}
                 onChangeStorage={(value) => console.log(value)}
                 onChangeUseProjectStorage={onChangeUseProjectTargetStorage}
-
             />
         );
     }

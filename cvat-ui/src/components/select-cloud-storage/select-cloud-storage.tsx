@@ -20,7 +20,7 @@ import { ProviderType } from 'utils/enums';
 export interface Props {
     searchPhrase: string;
     cloudStorage: CloudStorage | null;
-    name?: string;
+    name?: string[];
     setSearchPhrase: (searchPhrase: string) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 

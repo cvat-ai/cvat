@@ -51,7 +51,7 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
 
             if (instance instanceof core.classes.Project) {
                 // TODO change importingId
-                if (state.import.instance !== null) {
+                if (state.import.projects?.activities[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
@@ -59,19 +59,18 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
                     dispatch(importActions.importUpdateStatus(instance, Math.floor(progress * 100), message))
                 ));
             } else if (instance instanceof core.classes.Task) {
-                if (state.import.instance !== null) {
+                if (state.import.tasks?.activities[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                // await task.annotations.upload(file, loader);
                 await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, fileName, (message: string, progress: number) => (
                     dispatch(importActions.importUpdateStatus(instance, Math.floor(progress * 100), message))
                 ));
             } else { // job
-                if (state.import.tasks[instance.taskId]) {
+                if (state.import.tasks?.activities[instance.taskId]) {
                     throw Error('Annotations is being uploaded for the task');
                 }
-                if (state.import.jobs[instance.id]) {
+                if (state.import.jobs?.activities[instance.id]) {
                     throw Error('Only one uploading of annotations for a job allowed at the same time');
                 }
                 const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();

@@ -22,13 +22,33 @@ import { CombinedState } from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
 import CreateProjectContext from './create-project.context';
-import { StorageLocation, StorageState } from 'reducers/interfaces';
+import { StorageLocation } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import StorageField from 'components/storage/storage';
-import StorageForm from 'components/storage/storage-form';
+
 import Space from 'antd/lib/space';
 
+import SourceStorageField from 'components/storage/source-storage-field';
+import TargetStorageField from 'components/storage/target-storage-field';
+
 const { Option } = Select;
+
+interface AdvancedConfiguration {
+    sourceStorage: any;
+    targetStorage: any;
+    bug_tracker?: string | null;
+}
+
+const initialValues: AdvancedConfiguration = {
+    bug_tracker: null,
+    sourceStorage: {
+        location: StorageLocation.LOCAL,
+        cloud_storage_id: null,
+    },
+    targetStorage: {
+        location: StorageLocation.LOCAL,
+        cloud_storage_id: null,
+    },
+};
 
 function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
     return (
@@ -105,14 +125,16 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
 
 interface AdvancedConfigurationFormProps {
     formRef: RefObject<FormInstance>;
-    sourceStorageFormRef: RefObject<FormInstance>;
-    targetStorageFormRef: RefObject<FormInstance>;
 }
 
 function AdvancedConfigurationForm(props: AdvancedConfigurationFormProps): JSX.Element {
-    const { formRef, sourceStorageFormRef, targetStorageFormRef } = props;
+    const { formRef } = props;
         return (
-        <Form layout='vertical' ref={formRef}>
+        <Form
+            layout='vertical'
+            ref={formRef}
+            initialValues={initialValues}
+        >
             <Form.Item
                 name='bug_tracker'
                 label='Issue tracker'
@@ -134,19 +156,15 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationFormProps): JSX.E
             </Form.Item>
             <Row justify='space-between'>
                 <Col span={12}>
-                    <StorageForm
-                        formRef={sourceStorageFormRef}
+                    <SourceStorageField
                         projectId={null}
-                        storageLabel='Source storage'
                         storageDescription='Specify source storage for import resources like annotation, backups'
                         onChangeStorage={(value) => console.log(value)}
                     />
                 </Col>
                 <Col span={12}>
-                    <StorageForm
-                        formRef={targetStorageFormRef}
+                    <TargetStorageField
                         projectId={null}
-                        storageLabel='Target storage'
                         storageDescription='Specify target storage for export resources like annotation, backups'
                         onChangeStorage={(value) => console.log(value)}
                     />
@@ -162,8 +180,6 @@ export default function CreateProjectContent(): JSX.Element {
     const nameFormRef = useRef<FormInstance>(null);
     const adaptiveAutoAnnotationFormRef = useRef<FormInstance>(null);
     const advancedFormRef = useRef<FormInstance>(null);
-    const sourceStorageFormRef = useRef<FormInstance>(null);
-    const targetStorageFormRef = useRef<FormInstance>(null);
     const dispatch = useDispatch();
     const history = useHistory();
 
@@ -178,8 +194,7 @@ export default function CreateProjectContent(): JSX.Element {
             // Clear new project forms
             if (nameFormRef.current) nameFormRef.current.resetFields();
             if (advancedFormRef.current) advancedFormRef.current.resetFields();
-            sourceStorageFormRef.current?.resetFields();
-            targetStorageFormRef.current?.resetFields();
+
             setProjectLabels([]);
 
             notification.info({
@@ -197,16 +212,12 @@ export default function CreateProjectContent(): JSX.Element {
         if (nameFormRef.current && advancedFormRef.current) {
             const basicValues = await nameFormRef.current.validateFields();
             const advancedValues = await advancedFormRef.current.validateFields();
-            const sourceStorageValues = await sourceStorageFormRef.current?.validateFields();
-            const targetStorageValues = await targetStorageFormRef.current?.validateFields();
 
-            let sourceStorage = {
-                location: sourceStorageValues['location'] || StorageLocation.LOCAL,
-                cloud_storage_id: sourceStorageValues['cloudStorageId'] || null,
+            const sourceStorage = {
+                ...advancedValues.sourceStorage
             };
-            let targetStorage = {
-                location: targetStorageValues['location'] ||StorageLocation.LOCAL,
-                cloud_storage_id: targetStorageValues['cloudStorageId'] || null,
+            const targetStorage = {
+                ...advancedValues.targetStorage
             };
 
             const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
@@ -252,11 +263,7 @@ export default function CreateProjectContent(): JSX.Element {
             <Col span={24}>
                 <Collapse>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
-                        <AdvancedConfigurationForm
-                            formRef={advancedFormRef}
-                            sourceStorageFormRef={sourceStorageFormRef}
-                            targetStorageFormRef={targetStorageFormRef}
-                        />
+                        <AdvancedConfigurationForm formRef={advancedFormRef} />
                     </Collapse.Panel>
                 </Collapse>
             </Col>
