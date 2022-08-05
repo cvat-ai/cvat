@@ -549,8 +549,17 @@
                 tracks.forEach((track) => {
                     if (track.frame <= endframe) {
                         if (delTrackKeyframesOnly) {
-                            for (const keyframe in track.shapes) {
-                                if (keyframe >= startframe && keyframe <= endframe) { delete track.shapes[keyframe]; }
+                            for (const keyframe of Object.keys(track.shapes)) {
+                                if (+keyframe >= startframe && +keyframe <= endframe) {
+                                    delete track.shapes[keyframe];
+                                    (track.elements || []).forEach((element) => {
+                                        if (keyframe in element.shapes) {
+                                            delete element.shapes[keyframe];
+                                            element.updated = Date.now();
+                                        }
+                                    });
+                                    track.updated = Date.now();
+                                }
                             }
                         } else if (track.frame >= startframe) {
                             const index = tracks.indexOf(track);
@@ -563,7 +572,7 @@
                 this.shapes = {};
                 this.tags = {};
                 this.tracks = [];
-                this.objects = {}; // by id
+                this.objects = {};
                 this.count = 0;
 
                 this.flush = true;
