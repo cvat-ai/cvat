@@ -415,7 +415,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             return;
         }
 
-        if (activeTool === 'point' && svg && event.target === svg) {
+        if (activeTool === 'point' && svg && event.target === svg && event.button === 0) {
             let [x, y] = [0, 0];
             try {
                 [x, y] = toSVGCoord(svg, [event.clientX, event.clientY], true);

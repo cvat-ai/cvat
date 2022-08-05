@@ -78,7 +78,7 @@ export default class LabelForm extends React.Component<Props> {
             name: values.name,
             id: label ? label.id : idGenerator(),
             color: values.color,
-            type: 'any' as LabelOptColor['type'],
+            type: label && label.id as number > 0 ? label?.type : values.type || label?.type || 'any',
             attributes: (values.attributes || []).map((attribute: Store) => {
                 let attrValues: string | string[] = attribute.values;
                 if (!Array.isArray(attrValues)) {
