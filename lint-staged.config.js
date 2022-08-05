@@ -14,6 +14,7 @@ module.exports = (stagedFiles) => {
     const eslintExtensions = ['ts', 'tsx', 'js'].map(makePattern);
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
 
+    const tests = containsInPath('/tests/', eslintFiles);
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
     const cvatCore = containsInPath('/cvat-core/', eslintFiles);
     const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
@@ -22,6 +23,7 @@ module.exports = (stagedFiles) => {
 
     const mapping = {};
     const commands = [];
+    mapping['yarn run precommit:cvat-tests -- '] = tests.join(' ');
     mapping['yarn run precommit:cvat-ui -- '] = cvatUI.join(' ');
     mapping['yarn run precommit:cvat-data -- '] = cvatData.join(' ');
     mapping['yarn run precommit:cvat-core -- '] = cvatCore.join(' ');

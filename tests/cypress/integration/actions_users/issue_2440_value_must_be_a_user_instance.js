@@ -40,7 +40,7 @@ context('Value must be a user instance.', () => {
             cy.get('.cvat-spinner', { timeout: 500 }).should('not.exist');
             // Remove the user's assignment for next tests.
             cy.get('.cvat-task-details-user-block').within(() => {
-                cy.get('[type="search"]').click().clear().type('{Enter}');
+                cy.get('input').click().clear().type('{Enter}');
             });
         });
     });

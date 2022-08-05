@@ -456,8 +456,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 >
                     <Switch defaultChecked/>
                 </Form.Item>
-                <Text className='cvat-text-color'>Use zip chunks</Text>
-                <Tooltip title='Force to use zip chunks as compressed data. Actual for videos only.'>
+                <Text className='cvat-text-color'>Use zip/video chunks</Text>
+                <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
                     <QuestionCircleFilled style={{opacity: 0.5}}/>
                 </Tooltip>
             </Space>

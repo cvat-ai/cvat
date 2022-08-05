@@ -2,7 +2,7 @@
 title: 'Command line interface (CLI)'
 linkTitle: 'CLI'
 weight: 29
-description: 'Guide to working with CVAT tasks in the command line interface. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat-cli).'
+description: 'Guide to working with CVAT tasks in the command line interface. This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/cvat-cli).'
 ---
 
 ## Description
@@ -28,7 +28,7 @@ To access the CLI, you need to have python in environment,
 as well as a clone of the CVAT repository and the necessary modules:
 
 ```bash
-pip install 'git+https://github.com/openvinotoolkit/cvat#subdirectory=cvat-cli'
+pip install 'git+https://github.com/cvat-ai/cvat#subdirectory=cvat-cli'
 ```
 
 You can get help with `cvat-cli --help`.

@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    RefObject, useContext, useEffect, useRef, useState,
+    RefObject, useContext, useRef, useState, useEffect,
 } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Switch from 'antd/lib/switch';
 import Select from 'antd/lib/select';
@@ -18,7 +18,6 @@ import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
 import patterns from 'utils/validation-patterns';
-import { CombinedState } from 'reducers/interfaces';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
 import CreateProjectContext from './create-project.context';
@@ -50,7 +49,10 @@ const initialValues: AdvancedConfiguration = {
     },
 };
 
-function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
+function NameConfigurationForm(
+    { formRef, inputRef }:
+    { formRef: RefObject<FormInstance>, inputRef: RefObject<Input> },
+):JSX.Element {
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item
@@ -64,7 +66,7 @@ function NameConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }
                     },
                 ]}
             >
-                <Input />
+                <Input ref={inputRef} />
             </Form.Item>
         </Form>
     );
@@ -76,7 +78,7 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     return (
         <Form layout='vertical' ref={formRef}>
             <Form.Item name='project_class' hasFeedback label='Class'>
-                <Select value={projectClass.value} onChange={(v) => projectClass.set(v)}>
+                <Select value={projectClass.value} onChange={(v) => projectClass.set?.(v)}>
                     <Option value=''>--Not Selected--</Option>
                     <Option value='OD'>Detection</Option>
                 </Select>
@@ -86,7 +88,7 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
                 <Switch
                     disabled={!projectClassesForTraining.includes(projectClass.value)}
                     checked={trainingEnabled.value}
-                    onClick={() => trainingEnabled.set(!trainingEnabled.value)}
+                    onClick={() => trainingEnabled.set?.(!trainingEnabled.value)}
                 />
             </Form.Item>
 
@@ -176,75 +178,88 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationFormProps): JSX.E
 
 export default function CreateProjectContent(): JSX.Element {
     const [projectLabels, setProjectLabels] = useState<any[]>([]);
-    const shouldShowNotification = useRef(false);
     const nameFormRef = useRef<FormInstance>(null);
+    const nameInputRef = useRef<Input>(null);
     const adaptiveAutoAnnotationFormRef = useRef<FormInstance>(null);
     const advancedFormRef = useRef<FormInstance>(null);
     const dispatch = useDispatch();
     const history = useHistory();
 
-    const newProjectId = useSelector((state: CombinedState) => state.projects.activities.creates.id);
-
     const { isTrainingActive } = useContext(CreateProjectContext);
 
-    useEffect(() => {
-        if (Number.isInteger(newProjectId) && shouldShowNotification.current) {
-            const btn = <Button onClick={() => history.push(`/projects/${newProjectId}`)}>Open project</Button>;
+    const resetForm = (): void => {
+        if (nameFormRef.current) nameFormRef.current.resetFields();
+        if (advancedFormRef.current) advancedFormRef.current.resetFields();
+        setProjectLabels([]);
+    };
 
-            // Clear new project forms
-            if (nameFormRef.current) nameFormRef.current.resetFields();
-            if (advancedFormRef.current) advancedFormRef.current.resetFields();
+    const focusForm = (): void => {
+        nameInputRef.current?.focus();
+    };
 
-            setProjectLabels([]);
+    const submit = async (): Promise<any> => {
+        try {
+            let projectData: Record<string, any> = {};
+            if (nameFormRef.current && advancedFormRef.current) {
+                const basicValues = await nameFormRef.current.validateFields();
+                const advancedValues = await advancedFormRef.current.validateFields();
+                const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
+                const sourceStorage = {
+                    ...advancedValues.sourceStorage
+                };
+                const targetStorage = {
+                    ...advancedValues.targetStorage
+                };
 
+                projectData = {
+                    ...projectData,
+                    ...advancedValues,
+                    name: basicValues.name,
+                    source_storage: sourceStorage,
+                    target_storage: targetStorage,
+                };
+
+                if (adaptiveAutoAnnotationValues) {
+                    projectData.training_project = { ...adaptiveAutoAnnotationValues };
+                }
+            }
+
+            projectData.labels = projectLabels;
+
+            const createdProject = await dispatch(createProjectAsync(projectData));
+            return createdProject;
+        } catch {
+            return false;
+        }
+    };
+
+    const onSubmitAndOpen = async (): Promise<void> => {
+        const createdProject = await submit();
+        if (createdProject) {
+            history.push(`/projects/${createdProject.id}`);
+        }
+    };
+
+    const onSubmitAndContinue = async (): Promise<void> => {
+        const res = await submit();
+        if (res) {
+            resetForm();
             notification.info({
                 message: 'The project has been created',
-                btn,
                 className: 'cvat-notification-create-project-success',
             });
+            focusForm();
         }
-
-        shouldShowNotification.current = true;
-    }, [newProjectId]);
-
-    const onSumbit = async (): Promise<void> => {
-        let projectData: Record<string, any> = {};
-        if (nameFormRef.current && advancedFormRef.current) {
-            const basicValues = await nameFormRef.current.validateFields();
-            const advancedValues = await advancedFormRef.current.validateFields();
-
-            const sourceStorage = {
-                ...advancedValues.sourceStorage
-            };
-            const targetStorage = {
-                ...advancedValues.targetStorage
-            };
-
-            const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
-            projectData = {
-                ...projectData,
-                ...advancedValues,
-                name: basicValues.name,
-                source_storage: sourceStorage,
-                target_storage: targetStorage,
-            };
-
-            if (adaptiveAutoAnnotationValues) {
-                projectData.training_project = { ...adaptiveAutoAnnotationValues };
-            }
-        }
-
-        projectData.labels = projectLabels;
-
-        if (!projectData.name) return;
-
-        dispatch(createProjectAsync(projectData));
     };
+
+    useEffect(() => {
+        focusForm();
+    }, []);
 
     return (
         <Row justify='start' align='middle' className='cvat-create-project-content'>
             <Col span={24}>
-                <NameConfigurationForm formRef={nameFormRef} />
+                <NameConfigurationForm formRef={nameFormRef} inputRef={nameInputRef} />
             </Col>
             {isTrainingActive.value && (
                 <Col span={24}>
@@ -268,9 +283,18 @@ export default function CreateProjectContent(): JSX.Element {
                 </Collapse>
             </Col>
             <Col span={24}>
-                <Button type='primary' onClick={onSumbit}>
-                    Submit
-                </Button>
+                <Row justify='end' gutter={5}>
+                    <Col>
+                        <Button type='primary' onClick={onSubmitAndOpen}>
+                            Submit & Open
+                        </Button>
+                    </Col>
+                    <Col>
+                        <Button type='primary' onClick={onSubmitAndContinue}>
+                            Submit & Continue
+                        </Button>
+                    </Col>
+                </Row>
             </Col>
         </Row>
     );

@@ -1,0 +1,11 @@
+additionalProperties:
+  packageVersion: "2.0-alpha"
+  packageUrl: "https://github.com/cvat-ai/cvat"
+  packageName: "cvat_sdk"
+  initRequiredVars: true
+  generateSourceCodeOnly: false
+  generatorLanguageVersion: '>=3.7'
+globalProperties:
+  generateAliasAsModel: true
+  apiTests: false
+  modelTests: false

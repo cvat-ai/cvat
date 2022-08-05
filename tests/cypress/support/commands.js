@@ -35,9 +35,9 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
-    cy.intercept('/auth/login').as('login');
-    cy.visit('/auth/login'); // clear query parameter "next"
-    cy.wait('@login').then(() => cy.contains('Login').should('exist'));
+    cy.visit('/auth/login');
+    cy.url().should('not.include', '?next=');
+    cy.contains('Login').should('exist');
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
@@ -197,7 +197,7 @@ Cypress.Commands.add(
                 if (multiAttrParams) {
                     cy.updateAttributes(multiAttrParams);
                 }
-                cy.contains('button', 'Done').click();
+                cy.contains('button', 'Continue').click();
             } else {
                 if (attachToProject) {
                     cy.get('.cvat-project-search-field').click();
@@ -217,7 +217,7 @@ Cypress.Commands.add(
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
-            cy.contains('button', 'Submit').click();
+            cy.contains('button', 'Submit & Continue').click();
             if (expectedResult === 'success') {
                 cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
             }
@@ -699,7 +699,8 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
             cy.updateAttributes(additionalAttrs[i]);
         }
     }
-    cy.contains('button', 'Done').click();
+    cy.contains('button', 'Continue').click();
+    cy.contains('button', 'Cancel').click();
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-constructor-viewer').should('be.visible');
     cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${newLabelName}$`)).should('exist');
@@ -711,12 +712,9 @@ Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
             cy.get('.cvat-constructor-viewer-new-item').click();
             for (let j = 0; j < additionalLabels.length; j++) {
                 cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
-                if (j !== additionalLabels.length - 1) {
-                    cy.contains('button', 'Continue').click();
-                } else {
-                    cy.contains('button', 'Done').click();
-                }
+                cy.contains('button', 'Continue').click();
             }
+            cy.contains('button', 'Cancel').click();
         }
     });
 });

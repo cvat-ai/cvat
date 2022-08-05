@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -29,6 +30,7 @@ from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
     extend_schema_view, extend_schema
 )
+from drf_spectacular.plumbing import build_array_type, build_basic_type
 
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -235,6 +237,7 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     create=extend_schema(
         summary='Method creates a new project',
+        request=ProjectWriteSerializer,
         responses={
             '201': ProjectWriteSerializer,
         }),
@@ -250,6 +253,7 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a project',
+        request=ProjectWriteSerializer,
         responses={
             '200': ProjectWriteSerializer,
         })
@@ -270,6 +274,8 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
+        # TODO: fix separation into read and write serializers for requests and responses
+        # probably with drf-rw-serializers
         if self.request.path.endswith('tasks'):
             return TaskReadSerializer
         else:
@@ -338,7 +344,7 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('location', description='Where to import the dataset from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
@@ -350,6 +356,7 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
             OpenApiParameter('filename', description='Dataset file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
+        request=DatasetFileSerializer(required=False),
         responses={
             '202': OpenApiResponse(description='Exporting has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
@@ -404,6 +411,16 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
                     callback=dm.views.export_project_as_dataset
                 )
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='projects_partial_update_dataset_file',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -527,6 +544,16 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='projects_partial_update_backup_file',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
@@ -571,7 +598,7 @@ class DataChunkGetter:
         self.dimension = task_dim
 
 
-    def __call__(self, request, start, stop, db_data):
+    def __call__(self, request, start, stop, db_data, db_object):
         if not db_data:
             raise NotFound(detail='Cannot find requested data')
 
@@ -604,7 +631,7 @@ class DataChunkGetter:
             return HttpResponse(buf.getvalue(), content_type=mime)
 
         elif self.type == 'preview':
-            return sendfile(request, frame_provider.get_preview())
+            return sendfile(request, db_object.get_preview_path())
 
         elif self.type == 'context_image':
             if not (start <= self.number <= stop):
@@ -661,6 +688,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
             Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
             "segment_set__job_set")
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options', 'put')
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -701,6 +729,16 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='tasks_partial_update_backup_file',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
@@ -867,7 +905,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.NUMBER,
+            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
         ],
         responses={
@@ -897,8 +935,18 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
                 self._object.dimension)
 
             return data_getter(request, self._object.data.start_frame,
-                self._object.data.stop_frame, self._object.data)
+                self._object.data.stop_frame, self._object.data, self._object.data)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='tasks_partial_update_data_file',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -1020,6 +1068,17 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='tasks_partial_update_annotations_file',
+        summary="Allows to upload an annotation file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        operation_id='tasks_annotations_file_retrieve_status',
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -1342,6 +1401,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='jobs_partial_update_annotations_file',
+        summary="Allows to upload an annotation file chunk. "
+            "Implements TUS file uploading protocol.",
+        request=OpenApiTypes.BINARY,
+        responses={}
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -1424,7 +1493,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_job.segment.task.dimension)
 
         return data_getter(request, db_job.segment.start_frame,
-            db_job.segment.stop_frame, db_job.segment.task.data)
+            db_job.segment.stop_frame, db_job.segment.task.data, db_job)
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
         responses={
@@ -1703,6 +1772,10 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return queryset
 
     def get_serializer_class(self):
+        # Early exit for drf-spectacular compatibility
+        if getattr(self, 'swagger_fake_view', False):
+            return UserSerializer
+
         user = self.request.user
         if user.is_staff:
             return UserSerializer
@@ -1823,7 +1896,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
         ],
         responses={
-            '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='A manifest content'),
+            '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
         })
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
@@ -1834,6 +1907,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             if not db_storage.manifests.count():
                 raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
+            manifest_prefix = os.path.dirname(manifest_path)
             file_status = storage.get_file_status(manifest_path)
             if file_status == CloudStorageStatus.NOT_FOUND:
                 raise FileNotFoundError(errno.ENOENT,
@@ -1849,7 +1923,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
             # need to update index
             manifest.set_index()
-            manifest_files = manifest.data
+            manifest_files = [os.path.join(manifest_prefix, f) for f in manifest.data]
             return Response(data=manifest_files, content_type="text/plain")
 
         except CloudStorageModel.DoesNotExist:
@@ -1886,6 +1960,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                     raise Exception('Cannot get the cloud storage preview. There is no manifest file')
                 preview_path = None
                 for manifest_model in db_storage.manifests.all():
+                    manifest_prefix = os.path.dirname(manifest_model.filename)
                     full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
                     if not os.path.exists(full_manifest_path) or \
                             datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
@@ -1899,7 +1974,8 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                     if not len(manifest):
                         continue
                     preview_info = manifest[0]
-                    preview_path = ''.join([preview_info['name'], preview_info['extension']])
+                    preview_filename = ''.join([preview_info['name'], preview_info['extension']])
+                    preview_path = os.path.join(manifest_prefix, preview_filename)
                     break
                 if not preview_path:
                     msg = 'Cloud storage {} does not contain any images'.format(pk)
@@ -1916,7 +1992,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                 with NamedTemporaryFile() as temp_image:
                     storage.download_file(preview_path, temp_image.name)
                     reader = ImageListReader([temp_image.name])
-                    preview = reader.get_preview()
+                    preview = reader.get_preview(frame=0)
                     preview.save(db_storage.get_preview_path())
             content_type = mimetypes.guess_type(db_storage.get_preview_path())[0]
             return HttpResponse(open(db_storage.get_preview_path(), 'rb').read(), content_type)

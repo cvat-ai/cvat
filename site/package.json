@@ -11,12 +11,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/openvinotoolkit/cvat.git"
+    "url": "git+https://github.com/cvat-ai/cvat.git"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/openvinotoolkit/cvat/issues"
+    "url": "https://github.com/cvat-ai/cvat/issues"
   },
-  "homepage": "https://github.com/openvinotoolkit/cvat#readme"
+  "homepage": "https://github.com/cvat-ai/cvat#readme"
 }

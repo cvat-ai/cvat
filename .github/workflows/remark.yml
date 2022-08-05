@@ -15,7 +15,7 @@ jobs:
           mkdir -p remark_report
 
           echo "Remark version: "`npx remark --version`
-          npx remark --quiet --report json --no-stdout . 2> ./remark_report/remark_report.json
+          npx remark --quiet --report json --no-stdout -i .remarkignore . 2> ./remark_report/remark_report.json
           get_report=`cat ./remark_report/remark_report.json  | jq -r '.[] | select(.messages | length > 0)'`
           if [[ ! -z ${get_report} ]]; then
             pip install json2html

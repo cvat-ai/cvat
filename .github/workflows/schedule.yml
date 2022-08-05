@@ -6,6 +6,7 @@ on:
 
 env:
   SERVER_IMAGE_TEST_REPO: cvat_server
+  UI_IMAGE_TEST_REPO: instrumentation_cvat_ui
 
 jobs:
   check_updates:
@@ -77,8 +78,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
@@ -86,11 +87,25 @@ jobs:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
+      - name: CVAT UI. Getting cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_ui
+          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
+
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: CVAT UI. Extract metadata (tags, labels) for Docker
+        id: meta-ui
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.UI_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
@@ -106,6 +121,21 @@ jobs:
           push: true
           tags: ${{ steps.meta-server.outputs.tags }}
           labels: ${{ steps.meta-server.outputs.labels }}
+
+      - name: Instrumentation of the code then rebuilding the CVAT UI
+        run: |
+          yarn --frozen-lockfile
+          yarn run coverage
+
+      - name: CVAT UI. Build and push
+        uses: docker/build-push-action@v3
+        with:
+          cache-from: type=local,src=/tmp/cvat_cache_ui
+          context: .
+          file: Dockerfile.ui
+          push: true
+          tags: ${{ steps.meta-ui.outputs.tags }}
+          labels: ${{ steps.meta-ui.outputs.labels }}
 
   unit_testing:
     needs: build
@@ -126,33 +156,65 @@ jobs:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
+      - name: Getting CVAT Logstash cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_logstash
+          key: ${{ runner.os }}-build-logstash-${{ needs.search_cache.outputs.sha }}
+
+      - name: Getting CVAT Elasticsearch cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_elasticsearch
+          key: ${{ runner.os }}-build-elasticsearch-${{ needs.search_cache.outputs.sha }}
+
       - name: Building CVAT UI image
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfile.ui
           cache-from: type=local,src=/tmp/cvat_cache_ui
-          tags: openvino/cvat_ui:latest
+          tags: cvat/ui:latest
+          load: true
+
+      - name: Building CVAT Logstash image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./components/analytics/logstash/
+          file: ./components/analytics/logstash/Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache_logstash
+          build-args: ELK_VERSION=6.8.23
+          tags: cvat_logstash
+          load: true
+
+      - name: Building CVAT Elasticsearch image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./components/analytics/elasticsearch/
+          file: ./components/analytics/elasticsearch/Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache_elasticsearch
+          build-args: ELK_VERSION=6.8.23
+          tags: cvat_elasticsearch
           load: true
 
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
 
       - name: OPA tests
         run: |
@@ -162,6 +224,7 @@ jobs:
 
       - name: REST API tests
         run: |
+          pip3 install --user cvat-sdk/
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/
           pytest tests/rest_api/ --stop-services
@@ -179,13 +242,28 @@ jobs:
           -c 'coverage run -a manage.py test cvat/apps cvat-cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'yarn --frozen-lockfile --ignore-script && yarn workspace cvat-core run test'
+          -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
+
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/lcov.info
+            ${{ github.workspace }}/.coverage
 
   e2e_testing:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+                'actions_objects', 'actions_objects2', 'actions_users',
+                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
+                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2']
     steps:
       - uses: actions/checkout@v2
 
@@ -196,52 +274,41 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Getting CVAT UI cache from the default branch
-        uses: actions/cache@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
-          path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
-
-      - name: Building CVAT UI image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile.ui
-          cache-from: type=local,src=/tmp/cvat_cache_ui
-          tags: openvino/cvat_ui:latest
-          load: true
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
+      - name: CVAT UI. Extract metadata (tags, labels) for Docker
+        id: meta-ui
+        uses: docker/metadata-action@master
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          images: ${{ secrets.DOCKERHUB_CI_USERNAME }}/${{ env.UI_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
 
-      - name: Pull CVAT server image
+      - name: Pull CVAT UI image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
 
-      - name: Instrumentation of the code then rebuilding the CVAT UI
-        run: |
-          yarn --frozen-lockfile
-          yarn run coverage
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml build cvat_ui
+          docker pull ${{ steps.meta-ui.outputs.tags }}
+          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui
 
       - name: Run CVAT instance
         run: |
           docker-compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
-            -f ./tests/docker-compose.email.yml \
             -f tests/docker-compose.file_share.yml \
             -f components/serverless/docker-compose.serverless.yml up -d
 
@@ -288,28 +355,20 @@ jobs:
           cd ./tests
           yarn --frozen-lockfile
 
-          TESTS_3D=('canvas3d_functionality' 'canvas3d_functionality_2')
-          for testset in ${TESTS_3D[@]};
-          do
+          shopt -s extglob
+          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
               --headed \
-              --config-file cypress_canvas3d.json \
               --browser chrome \
-              --spec 'cypress/integration/${testset}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
-            mv ./.nyc_output/out.json ./.nyc_output/out_$testset.json
-          done
-
-          TESTS=('actions_tasks' 'actions_tasks2' 'actions_tasks3' \
-                 'actions_objects' 'actions_objects2' 'actions_users' \
-                 'actions_projects_models' 'actions_organizations' 'issues_prs' \
-                 'issues_prs2' 'canvas3d_functionality' 'canvas3d_functionality_2')
-          for testset in ${TESTS[@]};
-          do
+              --config-file cypress_canvas3d.json \
+              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+            mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
+          else
             npx cypress run \
               --browser chrome \
-              --spec 'cypress/integration/${testset}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
-            mv ./.nyc_output/out.json ./.nyc_output/out_$testset.json
-          done
+              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+            mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
+          fi
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
@@ -334,10 +393,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: coverage_results
-          path: |
-            ${{ github.workspace }}/tests/.nyc_output
-            ${{ github.workspace }}/.coverage
-            ${{ github.workspace }}/lcov.info
+          path: ${{ github.workspace }}/tests/.nyc_output
 
   coveralls:
     runs-on: ubuntu-latest
@@ -346,26 +402,26 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@2
+        uses: docker/setup-buildx-action@v2
 
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
         with:
-          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
           tags:
             type=raw,value=nightly
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
 
       - name: Downloading coverage results
         uses: actions/download-artifact@v2

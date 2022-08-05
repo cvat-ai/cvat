@@ -188,7 +188,7 @@ function ExportDatasetModal(): JSX.Element | null {
                     label={<Text strong>Export format</Text>}
                     rules={[{ required: true, message: 'Format must be selected' }]}
                 >
-                    <Select placeholder='Select dataset format' className='cvat-modal-export-select'>
+                    <Select virtual={false} placeholder='Select dataset format' className='cvat-modal-export-select'>
                         {dumpers
                             .sort((a: any, b: any) => a.name.localeCompare(b.name))
                             .filter((dumper: any): boolean => dumper.dimension === instance?.dimension)

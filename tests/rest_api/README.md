@@ -24,7 +24,8 @@ the server calling REST API directly (as it done by users).
    the root directory of the cloned CVAT repository:
 
    ```console
-   pip3 install --user -r tests/rest_api/requirements.txt
+   pip install cvat-sdk/
+   pip install -r tests/rest_api/requirements.txt
    pytest tests/rest_api/
    ```
 
@@ -66,7 +67,7 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec test_cvat_1 python manage.py dumpdata --indent 2 > assets/cvat_db/data.json
+docker exec test_cvat_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes > assets/cvat_db/data.json
 docker exec test_cvat_1 tar -cjv /home/django/data > assets/cvat_db/cvat_data.tar.bz2
 ```
 
