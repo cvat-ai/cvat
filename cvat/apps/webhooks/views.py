@@ -1,6 +1,7 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from yaml import serialize
 
-from .signals import signal_redelivery
+from .signals import signal_redelivery, signal_ping
 from .models import Webhook, WebhookDelivery
 from .serializers import (
     WebhookReadSerializer,
@@ -52,7 +53,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     iam_organization_field = "organization"
 
     def get_serializer_class(self):
-        if self.request.path.endswith("redelivery"):
+        if self.request.path.endswith("redelivery") or self.request.path.endswith("ping"):
             return None
         else:
             if self.request.method in SAFE_METHODS:
@@ -62,6 +63,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
 
     @extend_schema(
         summary="Method return a list of deliveries for a specific webhook",
@@ -89,6 +91,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+
     @extend_schema(
         summary="Method return a specific delivery for a specific webhook",
         responses={"200": WebhookDeliveryReadSerializer},
@@ -107,6 +110,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data)
 
+
     @extend_schema(summary="Method redeliver a specific webhook delivery")
     @action(
         detail=True,
@@ -120,4 +124,19 @@ class WebhookViewSet(viewsets.ModelViewSet):
         )
 
         # Questionable: should we provide a body for this response?
+        return Response({})
+
+
+    @extend_schema(summary="Method send ping webhook")
+    @action(
+        detail=True,
+        methods=["POST"],
+    )
+    def ping(self, request, pk):
+        instance = self.get_object()
+        serializer = WebhookReadSerializer(instance, context={"request": request})
+
+        signal_ping.send(
+            sender=self,
+            serializer=serializer)
         return Response({})
