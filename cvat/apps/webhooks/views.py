@@ -1,5 +1,4 @@
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from yaml import serialize
 
 from .signals import signal_redelivery, signal_ping
 from .models import Webhook, WebhookDelivery
@@ -120,7 +119,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def redelivery(self, request, pk, delivery_id):
         delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
         signal_redelivery.send(
-            sender=self, webhook_id=delivery.webhook_id, request_body=delivery.request
+            sender=self, data=delivery.request
         )
 
         # Questionable: should we provide a body for this response?
@@ -136,7 +135,5 @@ class WebhookViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
-        signal_ping.send(
-            sender=self,
-            serializer=serializer)
+        signal_ping.send(sender=self, serializer=serializer)
         return Response({})
