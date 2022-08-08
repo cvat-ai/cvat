@@ -7,11 +7,6 @@
     const { ArgumentError } = require('./exceptions');
     const { StorageLocation } = require('./enums');
 
-    interface StorageI {
-        location: typeof StorageLocation,
-        cloud_storage_id?: number,
-    }
-
     /**
      * Class representing a storage for import and export resources
      * @memberof module:API.cvat.classes
@@ -19,7 +14,7 @@
      */
     class Storage {
         location: typeof StorageLocation;
-        cloudStorageID: number;
+        cloudStorageId: number;
         constructor(initialData) {
             const data = {
                 location: undefined,
@@ -55,31 +50,19 @@
                         },
                     },
                     /**
-                     * @name cloudStorageID
+                     * @name cloudStorageId
                      * @type {number}
                      * @memberof module:API.cvat.classes.Storage
                      * @instance
                      */
-                    cloudStorageID: {
+                    cloudStorageId: {
                         get: () => data.cloud_storage_id,
-                        set: (cloudStorageID) => {
-                            data.cloud_storage_id = cloudStorageID;
+                        set: (cloudStorageId) => {
+                            data.cloud_storage_id = cloudStorageId;
                         },
                     },
                 }),
             );
-        }
-
-        toJSON() {
-            const object: StorageI = {
-                location: this.location,
-            };
-
-            if (typeof this.cloudStorageID !== 'undefined') {
-                object.cloud_storage_id = this.cloudStorageID;
-            }
-
-            return object;
         }
     }
 

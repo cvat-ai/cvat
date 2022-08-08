@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +14,18 @@
 
     function enableOrganization() {
         return { org: config.organizationID || '' };
+    }
+
+    function configureStorage(useDefaultLocation: boolean | null, storage: any) {
+        const params: any = { use_default_location: useDefaultLocation, };
+        if (!useDefaultLocation) {
+            params.location = storage.location;
+            if (storage.cloudStorageId) {
+                params.cloud_storage_id = storage.cloudStorageId;
+            }
+        }
+
+        return params;
     }
 
     function removeToken() {
@@ -584,8 +597,9 @@
                 return async function (id, format, name, saveImages, targetStorage = null) {
                     const { backendAPI } = config;
                     const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
-                    const params: any = {
+                    let params: any = {
                         ...enableOrganization(),
+                        ...configureStorage(!!targetStorage?.location, targetStorage),
                         format,
                     };
 
@@ -593,13 +607,6 @@
                         params.filename = name.replace(/\//g, '_');
                     }
 
-                    params.use_default_location = !targetStorage || !targetStorage?.location;
-                    if (!!targetStorage?.location) {
-                        params.location = targetStorage.location;
-                        if (targetStorage.cloudStorageId) {
-                            params.cloud_storage_id = targetStorage.cloudStorageId;
-                        }
-                    }
 
                     return new Promise((resolve, reject) => {
                         async function request() {
@@ -634,19 +641,13 @@
 
             async function importDataset(id, format, useDefaultLocation, sourceStorage, file, fileName, onUpdate) {
                 const { backendAPI, origin } = config;
-                const params: any = {
+                let params: any = {
                     ...enableOrganization(),
+                    ...configureStorage(useDefaultLocation, sourceStorage),
                     format,
                     filename: (file) ? file.name : fileName,
                 };
 
-                params.use_default_location = useDefaultLocation;
-                if (!useDefaultLocation) {
-                    params.location = sourceStorage.location;
-                    if (sourceStorage.cloudStorageId) {
-                        params.cloud_storage_id = sourceStorage.cloudStorageId;
-                    }
-                }
 
                 const url = `${backendAPI}/projects/${id}/dataset`;
 
@@ -726,15 +727,9 @@
                 const { backendAPI } = config;
                 const params: any = {
                     ...enableOrganization(),
+                    ...configureStorage(!targetStorage, targetStorage),
                     filename: fileName,
-                    use_default_location: !targetStorage,
                 };
-                if (!!targetStorage) {
-                    params.location = targetStorage.location;
-                    if (targetStorage.cloudStorageId) {
-                        params.cloud_storage_id = targetStorage.cloudStorageId;
-                    }
-                }
                 const url = `${backendAPI}/tasks/${id}/backup`;
 
                 return new Promise((resolve, reject) => {
@@ -836,21 +831,15 @@
                 return await wait(taskData, response);
             }
 
-            async function exportProject(id, fileName: string, targetStorage: Storage | null) {
+            async function exportProject(id, fileName: string, targetStorage: any) {
                 const { backendAPI } = config;
                 // keep current default params to 'freeze" them during this request
                 const params: any = {
                     ...enableOrganization(),
+                    ...configureStorage(!targetStorage, targetStorage),
                     filename: fileName,
-                    use_default_location: !targetStorage,
                 };
 
-                if (!!targetStorage) {
-                    params.location = targetStorage.location;
-                    if (targetStorage.cloudStorageId) {
-                        params.cloud_storage_id = targetStorage.cloudStorageId;
-                    }
-                }
                 const url = `${backendAPI}/projects/${id}/backup`;
 
                 return new Promise((resolve, reject) => {
@@ -1430,16 +1419,10 @@
                 const { backendAPI, origin } = config;
                 const params: any = {
                     ...enableOrganization(),
+                    ...configureStorage(useDefaultLocation, sourceStorage),
                     format,
                     filename: (file) ? file.name : fileName,
                 };
-                params.use_default_location = useDefaultLocation;
-                if (!useDefaultLocation) {
-                    params.location = sourceStorage.location;
-                    if (sourceStorage.cloudStorageId) {
-                        params.cloud_storage_id = sourceStorage.cloudStorageId;
-                    }
-                }
 
                 const url = `${backendAPI}/${session}s/${id}/annotations`;
 

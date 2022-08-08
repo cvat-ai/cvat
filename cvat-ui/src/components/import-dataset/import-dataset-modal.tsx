@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +33,6 @@ import getCore from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import { Storage } from 'reducers/interfaces';
 import Input from 'antd/lib/input/Input';
-
 
 const { confirm } = Modal;
 
@@ -97,7 +97,28 @@ function ImportDatasetModal(): JSX.Element | null {
     const [helpMessage, setHelpMessage] = useState('');
     const [selectedSourceStorage, setSelectedSourceStorage] = useState<Storage | null>(null);
 
-    const [uploadParams, setUploadParams] = useState<UploadParams | null>(null);
+    const [uploadParams, setUploadParams] = useState<UploadParams>({
+        useDefaultSettings: true,
+    } as UploadParams);
+
+    useEffect(() => {
+        setUploadParams({
+            ...uploadParams,
+            resource,
+            sourceStorage: {
+                location: defaultStorageLocation,
+                cloudStorageId: defaultStorageCloudId,
+            } as Storage,
+        } as UploadParams)
+    }, [resource, defaultStorageLocation, defaultStorageCloudId]);
+
+    useEffect(() => {
+        if (importing) {
+            setUploadParams({
+                useDefaultSettings: true,
+            } as UploadParams);
+        }
+    }, [importing])
 
     useEffect(() => {
         if (instance && modalVisible) { // && resource === 'dataset'
@@ -147,10 +168,14 @@ function ImportDatasetModal(): JSX.Element | null {
                     } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
                         message.error('Only ZIP archive is supported for import a dataset');
                     } else if (isAnnotation() &&
-                            !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[1])) {
+                            !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[_file.name.split('.').length - 1])) {
                         message.error(`For ${selectedLoader.name} format only files with ${selectedLoader.format.toLowerCase()} extension can be used`);
                     } else {
                         setFile(_file);
+                        setUploadParams({
+                            ...uploadParams,
+                            file: _file,
+                        } as UploadParams);
                     }
                     return false;
                 }}
@@ -172,9 +197,9 @@ function ImportDatasetModal(): JSX.Element | null {
             return Promise.reject();
         }
         if (value) {
-            const extension = value.toLowerCase().split('.')[1];
+            const extension = value.toLowerCase().split('.')[value.split('.').length - 1];
             if (isAnnotation()) {
-                const allowedExtensions = selectedLoader.format.toLowerCase().split(', ')
+                const allowedExtensions = selectedLoader.format.toLowerCase().split(', ');
                 if (!allowedExtensions.includes(extension)) {
                     return Promise.reject(new Error(`For ${selectedLoader.name} format only files with ${selectedLoader.format.toLowerCase()} extension can be used`));
                 }
@@ -201,6 +226,14 @@ function ImportDatasetModal(): JSX.Element | null {
                 <Input
                     placeholder='Dataset file name'
                     className='cvat-modal-import-filename-input'
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        if (e.target.value) {
+                            setUploadParams({
+                                ...uploadParams,
+                                fileName: e.target.value,
+                            } as UploadParams)
+                        }}
+                    }
                 />
             </Form.Item>
         );
@@ -213,20 +246,20 @@ function ImportDatasetModal(): JSX.Element | null {
         dispatch(importActions.closeImportModal(instance));
     }, [form, instance]);
 
-    const onUpload = useCallback(() => {
+    const onUpload = () => {
         if (uploadParams && uploadParams.resource) {
             dispatch(importDatasetAsync(
                 instance, uploadParams.selectedFormat as string,
                 uploadParams.useDefaultSettings, uploadParams.sourceStorage,
                 uploadParams.file, uploadParams.fileName));
-            const resource = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
+            const _resource = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
-                message: `${resource} import started`,
-                description: `${resource} import was started for ${instanceType}. `,
+                message: `${_resource} import started`,
+                description: `${_resource} import was started for ${instanceType}. `,
                 className: `cvat-notification-notice-import-${uploadParams.resource}-start`,
             });
         }
-    }, [uploadParams]);
+    };
 
     const confirmUpload = () => {
         confirm({
@@ -252,20 +285,6 @@ function ImportDatasetModal(): JSX.Element | null {
                 });
                 return;
             }
-            const fileName = values.fileName || null;
-            const sourceStorage = {
-                location: (values.sourceStorage.location) ? values.sourceStorage.location : defaultStorageLocation,
-                cloudStorageId: (values.sourceStorage.location) ? values.sourceStorage.cloudStorageId : defaultStorageCloudId,
-            } as Storage;
-
-            setUploadParams({
-                resource,
-                selectedFormat: values.selectedFormat || null,
-                useDefaultSettings,
-                sourceStorage,
-                file: file || null,
-                fileName: fileName || null
-            });
 
             if (isAnnotation()) {
                 confirmUpload();
@@ -274,7 +293,7 @@ function ImportDatasetModal(): JSX.Element | null {
             }
             closeModal();
         },
-        [instance?.id, file, useDefaultSettings, resource, defaultStorageLocation],
+        [instance?.id, uploadParams],
     );
 
     return (
@@ -323,6 +342,10 @@ function ImportDatasetModal(): JSX.Element | null {
                                     (importer: any): boolean => importer.name === _format
                                 );
                                 setSelectedLoader(_loader);
+                                setUploadParams({
+                                    ...uploadParams,
+                                    selectedFormat: _format
+                                } as UploadParams);
                             }}
                         >
                             {importers
@@ -361,6 +384,10 @@ function ImportDatasetModal(): JSX.Element | null {
                             <Switch
                                 onChange={(value: boolean) => {
                                     setUseDefaultSettings(value);
+                                    setUploadParams({
+                                        ...uploadParams,
+                                        useDefaultSettings: value,
+                                    } as UploadParams)
                                 }}
                             />
                         </Form.Item>
@@ -377,7 +404,17 @@ function ImportDatasetModal(): JSX.Element | null {
                     {!useDefaultSettings && <StorageField
                         locationName={['sourceStorage', 'location']}
                         selectCloudStorageName={['sourceStorage', 'cloud_storage_id']}
-                        onChangeStorage={(value: Storage) => setSelectedSourceStorage(value)}
+                        onChangeStorage={(value: Storage) => {
+                            setSelectedSourceStorage(value);
+                            setUploadParams({
+                                ...uploadParams,
+                                sourceStorage: {
+                                    location: (value.location) ? value.location : defaultStorageLocation,
+                                    cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
+                                } as Storage,
+                            } as UploadParams);
+                            console.log('after update storage: ', uploadParams);
+                        }}
                     />}
                     {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}

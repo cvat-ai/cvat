@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,53 +51,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 cloudStorage={cloudStorage}
                 setSearchPhrase={setSearchPhrase}
                 onSelectCloudStorage={onSelectCloudStorage}
-                // cloudStoragesList={list}
-                // setCloudStoragesList={setList}
             />
-            {/* <Form.Item
-                label='Select cloud storage'
-                name='cloudStorageSelect'
-                rules={[{ required: true, message: 'Please, specify a cloud storage' }]}
-                valuePropName='label'
-            >
-                <AutoComplete
-                    onBlur={onBlur}
-                    value={searchPhrase}
-                    placeholder='Search...'
-                    showSearch
-                    onSearch={(phrase: string) => {
-                        setSearchPhrase(phrase);
-                    }}
-                    options={list.map((_cloudStorage) => ({
-                        value: _cloudStorage.id.toString(),
-                        label: (
-                            <span
-                                className='cvat-cloud-storage-select-provider'
-                            >
-                                {_cloudStorage.providerType === ProviderType.AWS_S3_BUCKET && <S3Provider />}
-                                {_cloudStorage.providerType === ProviderType.AZURE_CONTAINER && <AzureProvider />}
-                                {
-                                    _cloudStorage.providerType === ProviderType.GOOGLE_CLOUD_STORAGE &&
-                                    <GoogleCloudProvider />
-                                }
-                                {_cloudStorage.displayName}
-                            </span>
-                        ),
-                    }))}
-                    onSelect={(value: string) => {
-                        const selectedCloudStorage =
-                            list.filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
-                        // eslint-disable-next-line prefer-destructuring
-                        selectedCloudStorage.manifestPath = selectedCloudStorage.manifests[0];
-                        onSelectCloudStorage(selectedCloudStorage);
-                        setSearchPhrase(selectedCloudStorage?.displayName || '');
-                    }}
-                    allowClear
-                >
-                    <Input />
-                </AutoComplete>
-            </Form.Item> */}
-
             {cloudStorage ? (
                 <Form.Item
                     label='Select manifest file'

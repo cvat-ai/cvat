@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,8 +17,6 @@ import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
 import { StorageLocation } from 'reducers/interfaces';
-
-// import StorageForm from 'components/storage/storage-form';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
@@ -238,8 +237,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public resetFields(): void {
-        // useProjectSourceStorage(true);
-        // useProjectTargetStorage(true);
         if (this.formRef.current) {
             this.formRef.current.resetFields();
         }
@@ -449,18 +446,18 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderUzeZipChunks(): JSX.Element {
         return (
-            <Space>
-                <Form.Item
-                    name='useZipChunks'
-                    valuePropName='checked'
-                >
-                    <Switch defaultChecked/>
-                </Form.Item>
-                <Text className='cvat-text-color'>Use zip/video chunks</Text>
-                <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
-                    <QuestionCircleFilled style={{opacity: 0.5}}/>
-                </Tooltip>
-            </Space>
+                <Space>
+                    <Form.Item
+                        name='useZipChunks'
+                        valuePropName='checked'
+                    >
+                        <Switch />
+                    </Form.Item>
+                    <Text className='cvat-text-color'>Use zip/video chunks</Text>
+                    <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
+                        <QuestionCircleFilled style={{opacity: 0.5}}/>
+                    </Tooltip>
+                </Space>
         );
     }
 
@@ -517,7 +514,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 switchDescription='Use project source storage'
                 storageDescription='Specify source storage for import resources like annotation, backups'
                 useProjectStorage={useProjectSourceStorage}
-                onChangeStorage={(value) => console.log(value)}
                 onChangeUseProjectStorage={onChangeUseProjectSourceStorage}
             />
         );
@@ -535,7 +531,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 switchDescription='Use project target storage'
                 storageDescription='Specify target storage for export resources like annotation, backups                '
                 useProjectStorage={useProjectTargetStorage}
-                onChangeStorage={(value) => console.log(value)}
                 onChangeUseProjectStorage={onChangeUseProjectTargetStorage}
             />
         );

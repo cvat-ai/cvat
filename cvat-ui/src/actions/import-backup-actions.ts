@@ -1,10 +1,8 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
-import { CombinedState } from 'reducers/interfaces';
-import { getProjectsAsync } from './projects-actions';
 import { Storage } from 'reducers/interfaces';
 import getCore from 'cvat-core-wrapper';
 
@@ -32,7 +30,7 @@ export const importBackupActions = {
     ),
 };
 
-export const importBackupAsync = (instanceType: 'project' | 'task', storage: any, file: File | null, fileName: string | null): ThunkAction => (
+export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | null, fileName: string | null): ThunkAction => (
     async (dispatch) => {
         dispatch(importBackupActions.importBackup());
         try {

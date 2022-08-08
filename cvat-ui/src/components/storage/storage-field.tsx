@@ -4,24 +4,18 @@
 
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
-import { QuestionCircleFilled } from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Form from 'antd/lib/form';
-
 import { CloudStorage } from 'reducers/interfaces';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import { StorageLocation } from 'reducers/interfaces';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
-import Space from 'antd/lib/space';
 
 import { Storage } from 'reducers/interfaces';
 
 const { Option } = Select;
 
 export interface Props {
-    //locationLabel: string;
     locationName: string[];
-    //locationDescription: string;
     selectCloudStorageName: string[];
     onChangeStorage?: (value: Storage) => void;
 }

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -59,11 +60,11 @@ const defaultState = {
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
         sourceStorage: {
             location: StorageLocation.LOCAL,
-            cloudStorageId: null,
+            cloud_storage_id: null,
         },
         targetStorage: {
             location: StorageLocation.LOCAL,
-            cloudStorageId: null,
+            cloud_storage_id: null,
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
@@ -153,7 +154,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): void => {
-        // todo fixme
         this.setState({
             advanced: { ...values },
         });
@@ -174,7 +174,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUseProjectSourceStorageChange = (value: boolean): void => {
-
         this.setState((state) => ({
             advanced: {
                 ...state.advanced,
@@ -184,7 +183,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUseProjectTargetStorageChange = (value: boolean): void => {
-
         this.setState((state) => ({
             advanced: {
                 ...state.advanced,

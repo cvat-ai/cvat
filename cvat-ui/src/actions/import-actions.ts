@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +20,7 @@ export enum ImportActionTypes {
     IMPORT_DATASET = 'IMPORT_DATASET',
     IMPORT_DATASET_SUCCESS = 'IMPORT_DATASET_SUCCESS',
     IMPORT_DATASET_FAILED = 'IMPORT_DATASET_FAILED',
-    IMPORT_UPDATE_STATUS = 'IMPORT_UPDATE_STATUS',
+    IMPORT_DATASET_UPDATE_STATUS = 'IMPORT_DATASET_UPDATE_STATUS',
 }
 
 export const importActions = {
@@ -39,8 +40,8 @@ export const importActions = {
             error,
         })
     ),
-    importUpdateStatus: (instance: any, progress: number, status: string) => (
-        createAction(ImportActionTypes.IMPORT_UPDATE_STATUS, { instance, progress, status })
+    importDatasetUpdateStatus: (instance: any, progress: number, status: string) => (
+        createAction(ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS, { instance, progress, status })
     ),
 };
 
@@ -50,13 +51,12 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
             const state: CombinedState = getState();
 
             if (instance instanceof core.classes.Project) {
-                // TODO change importingId
                 if (state.import.projects?.activities[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
                 await instance.annotations.importDataset(format, useDefaultSettings, sourceStorage, file, fileName, (message: string, progress: number) => (
-                    dispatch(importActions.importUpdateStatus(instance, Math.floor(progress * 100), message))
+                    dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
                 ));
             } else if (instance instanceof core.classes.Task) {
                 if (state.import.tasks?.activities[instance.id]) {
@@ -64,7 +64,7 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
                 }
                 dispatch(importActions.importDataset(instance, format));
                 await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, fileName, (message: string, progress: number) => (
-                    dispatch(importActions.importUpdateStatus(instance, Math.floor(progress * 100), message))
+                    dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
                 ));
             } else { // job
                 if (state.import.tasks?.activities[instance.taskId]) {

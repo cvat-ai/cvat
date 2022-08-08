@@ -119,7 +119,7 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                 //importingId: id,
             };
         }
-        case ImportActionTypes.IMPORT_UPDATE_STATUS: {
+        case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
             const { progress, status, instance } = action.payload;
 
             const activitiesField = defineActititiesField(instance);

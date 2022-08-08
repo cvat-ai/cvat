@@ -9,15 +9,12 @@ import Notification from 'antd/lib/notification';
 import { useSelector, useDispatch } from 'react-redux';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
-import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
-import Form, { FormInstance } from 'antd/lib/form';
+import Form from 'antd/lib/form';
 
-import { CombinedState, StorageLocation, Storage } from 'reducers/interfaces';
+import { CombinedState, Storage } from 'reducers/interfaces';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
 import getCore from 'cvat-core-wrapper';
-import Switch from 'antd/lib/switch';
-import { Space } from 'antd';
 
 import TargetStorageField from 'components/storage/target-storage-field';
 
@@ -34,24 +31,18 @@ const initialValues: FormValues = {
     targetStorage: {
         location: undefined,
         cloud_storage_id: undefined,
-        //cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
 }
 
 function ExportBackupModal(): JSX.Element | null {
     const dispatch = useDispatch();
-
-    const [instanceType, setInstanceType] = useState('');
-
-    const [activity, setActivity] = useState(false);
     const [form] = Form.useForm();
-
+    const [instanceType, setInstanceType] = useState('');
+    const [activity, setActivity] = useState(false);
     const [useDefaultStorage, setUseDefaultStorage] = useState(true);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState<string | null>(null);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
-    // const [storage, setStorage] = useState<Storage | null>(null);
-
     const [helpMessage, setHelpMessage] = useState('');
     const resource = useSelector((state: CombinedState) => state.export.resource);
     const instance = useSelector((state: CombinedState) => state.export.instance);
@@ -127,12 +118,6 @@ function ExportBackupModal(): JSX.Element | null {
         [instance, instanceType, useDefaultStorage],
     );
 
-    // const onChangeStorage = (value: Storage): void => {
-    //     setStorage({
-    //         ...value,
-    //     } as Storage)
-    // }
-
     if (resource !== 'backup') return null;
 
     return (
@@ -149,14 +134,9 @@ function ExportBackupModal(): JSX.Element | null {
                 name={`Export ${instanceType}`}
                 form={form}
                 layout='vertical'
-                // labelCol={{ span: 8 }}
-                // wrapperCol={{ span: 16 }}
                 initialValues={initialValues}
                 onFinish={handleExport}
             >
-                {/* wrapperCol={{ offset: 8, span: 16 }} */}
-                {/*valuePropName='checked'*/}
-
                 <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
                     <Input
                         placeholder='Custom name for a backup file'
@@ -172,7 +152,6 @@ function ExportBackupModal(): JSX.Element | null {
                     useProjectStorage={useDefaultStorage}
                     storageDescription={`Specify target storage for export ${instanceType}`}
                     onChangeUseProjectStorage={(value: boolean) => setUseDefaultStorage(value)}
-                    onChangeStorage={(value: Storage) => console.log(value)}
                 />
             </Form>
         </Modal>

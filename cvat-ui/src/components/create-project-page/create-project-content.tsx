@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,10 +23,6 @@ import LabelsEditor from 'components/labels-editor/labels-editor';
 import { createProjectAsync } from 'actions/projects-actions';
 import CreateProjectContext from './create-project.context';
 import { StorageLocation } from 'reducers/interfaces';
-import CVATTooltip from 'components/common/cvat-tooltip';
-
-import Space from 'antd/lib/space';
-
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
@@ -125,18 +122,9 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     );
 }
 
-interface AdvancedConfigurationFormProps {
-    formRef: RefObject<FormInstance>;
-}
-
-function AdvancedConfigurationForm(props: AdvancedConfigurationFormProps): JSX.Element {
-    const { formRef } = props;
+function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
         return (
-        <Form
-            layout='vertical'
-            ref={formRef}
-            initialValues={initialValues}
-        >
+        <Form layout='vertical' ref={formRef} initialValues={initialValues}>
             <Form.Item
                 name='bug_tracker'
                 label='Issue tracker'
@@ -161,14 +149,12 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationFormProps): JSX.E
                     <SourceStorageField
                         projectId={null}
                         storageDescription='Specify source storage for import resources like annotation, backups'
-                        onChangeStorage={(value) => console.log(value)}
                     />
                 </Col>
                 <Col span={12}>
                     <TargetStorageField
                         projectId={null}
                         storageDescription='Specify target storage for export resources like annotation, backups'
-                        onChangeStorage={(value) => console.log(value)}
                     />
                 </Col>
             </Row>
@@ -200,23 +186,17 @@ export default function CreateProjectContent(): JSX.Element {
     const submit = async (): Promise<any> => {
         try {
             let projectData: Record<string, any> = {};
-            if (nameFormRef.current && advancedFormRef.current) {
+            if (nameFormRef.current) {
                 const basicValues = await nameFormRef.current.validateFields();
-                const advancedValues = await advancedFormRef.current.validateFields();
+                const advancedValues = await advancedFormRef.current?.validateFields();
                 const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
-                const sourceStorage = {
-                    ...advancedValues.sourceStorage
-                };
-                const targetStorage = {
-                    ...advancedValues.targetStorage
-                };
 
                 projectData = {
                     ...projectData,
                     ...advancedValues,
                     name: basicValues.name,
-                    source_storage: sourceStorage,
-                    target_storage: targetStorage,
+                    source_storage: advancedValues?.sourceStorage,
+                    target_storage: advancedValues?.targetStorage,
                 };
 
                 if (adaptiveAutoAnnotationValues) {

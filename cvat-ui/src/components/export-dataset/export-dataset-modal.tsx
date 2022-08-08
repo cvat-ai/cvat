@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,17 +11,13 @@ import { useSelector, useDispatch } from 'react-redux';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
-import Checkbox from 'antd/lib/checkbox';
 import Input from 'antd/lib/input';
-import Form, { FormInstance } from 'antd/lib/form';
-
-import { CombinedState, StorageLocation, Storage } from 'reducers/interfaces';
+import Form from 'antd/lib/form';
+import { CombinedState, Storage, StorageLocation } from 'reducers/interfaces';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import getCore from 'cvat-core-wrapper';
 import Switch from 'antd/lib/switch';
 import { Space } from 'antd';
-
-// import StorageForm from 'components/storage/storage-form';
 import TargetStorageField from 'components/storage/target-storage-field';
 
 const core = getCore();
@@ -38,7 +35,7 @@ const initialValues: FormValues = {
     saveImages: false,
     customName: undefined,
     targetStorage: {
-        location: undefined,
+        location: StorageLocation.LOCAL,
         cloud_storage_id: undefined,
     },
     useProjectTargetStorage: true,
@@ -69,7 +66,6 @@ function ExportDatasetModal(): JSX.Element | null {
                 setActivities(projectExportActivities[instance.id]?.dataset || []);
             // TODO need refactoring
             } else if (instance instanceof core.classes.Task) {
-                //const taskID = instance instanceof core.classes.Task ? instance.id : instance.taskId;
                 const taskID = instance.id;
                 setInstanceType(`task #${taskID}`);
                 setActivities(taskExportActivities[taskID]?.dataset || []);
@@ -145,7 +141,6 @@ function ExportDatasetModal(): JSX.Element | null {
             closeModal();
             Notification.info({
                 message: 'Dataset export started',
-                // TODO is it neede to correct description message
                 description:
                     `Dataset export was started for ${instanceType}. ` +
                     'Download will start automatically as soon as the dataset is ready.',
@@ -178,8 +173,6 @@ function ExportDatasetModal(): JSX.Element | null {
                 name='Export dataset'
                 form={form}
                 layout='vertical'
-                // labelCol={{ span: 8 }}
-                // wrapperCol={{ span: 16 }}
                 initialValues={initialValues}
                 onFinish={handleExport}
             >
@@ -212,10 +205,6 @@ function ExportDatasetModal(): JSX.Element | null {
                             )}
                     </Select>
                 </Form.Item>
-                {/* wrapperCol={{ offset: 8, span: 16 }} */}
-                {/*valuePropName='checked'*/}
-
-
                 <Space>
                     <Form.Item name='saveImages'>
                         <Switch />

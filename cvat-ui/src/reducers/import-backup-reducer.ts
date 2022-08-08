@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,14 +31,6 @@ export default (state: ImportBackupState = defaultState, action: ImportBackupAct
                 modalVisible: false,
             };
         }
-        // case ImportBackupActionTypes.IMPORT_UPDATE_STATUS: {
-        //     const { progress, status } = action.payload;
-        //     return {
-        //         ...state,
-        //         progress,
-        //         status,
-        //     };
-        // }
         case ImportBackupActionTypes.IMPORT_BACKUP: {
             const { instanceType } = state;
             const field = (instanceType === 'project') ? 'isProjectImported' : 'isTaskImported';

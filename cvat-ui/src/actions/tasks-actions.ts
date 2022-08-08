@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +8,6 @@ import { ThunkAction } from 'redux-thunk';
 import { TasksQuery, CombinedState, Indexable } from 'reducers/interfaces';
 import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
-
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();

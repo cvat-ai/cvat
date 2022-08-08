@@ -23,7 +23,6 @@ export default function LoadSubmenu(props: Props): JSX.Element {
         menuKey, loaders, loadActivity, onFileUpload, taskDimension,
     } = props;
 
-    // TODO update it
     return (
         <Menu.SubMenu key={menuKey} title='Upload annotations'>
             {loaders

@@ -14,7 +14,7 @@ export interface Props {
     switchHelpMessage?: string;
     storageDescription?: string;
     useProjectStorage?: boolean | null;
-    onChangeStorage: (values: Storage) => void;
+    onChangeStorage?: (values: Storage) => void;
     onChangeUseProjectStorage?: (value: boolean) => void;
 }
 

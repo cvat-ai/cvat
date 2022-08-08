@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { RefObject, useState } from 'react';
-import Form, { FormInstance } from 'antd/lib/form';
+import React from 'react';
+import Form from 'antd/lib/form';
 
 import Text from 'antd/lib/typography/Text';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import StorageField from './storage-field';
-import { Storage, StorageLocation } from 'reducers/interfaces';
+import { Storage } from 'reducers/interfaces';
 import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleFilled, QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -24,7 +24,7 @@ export interface Props {
     switchHelpMessage?: string;
     storageDescription?: string;
     useProjectStorage?: boolean | null;
-    onChangeStorage: (values: Storage) => void;
+    onChangeStorage?: (values: Storage) => void;
     onChangeUseProjectStorage?: (value: boolean) => void;
 }
 

@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1758,19 +1759,13 @@
                     /**
                      * Source storage for import resources.
                      * @name sourceStorage
-                     * @type {module:API.cvat.classes.Storage}
+                      * @type {module:API.cvat.classes.Storage}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     sourceStorage: {
                         get: () => data.source_storage,
-                        set: (sourceStorage) => {
-                            if (typeof sourceStorage !== Storage) {
-                                throw new ArgumentError('Type of value must be Storage');
-                            }
-                            data.source_storage = sourceStorage;
-                        },
                     },
                     /**
                      * Target storage for export resources.
@@ -1782,12 +1777,6 @@
                      */
                     targetStorage: {
                         get: () => data.target_storage,
-                        set: (targetStorage) => {
-                            if (typeof targetStorage !== Storage) {
-                                throw new ArgumentError('Type of value must be Storage');
-                            }
-                            data.target_storage = targetStorage;
-                        },
                     },
                     _internalData: {
                         get: () => data,
