@@ -1157,6 +1157,7 @@ def load_anno(file_object, annotations):
     tag = None
     image_is_opened = False
     attributes = None
+    elem_attributes = None
     for ev, el in context:
         if ev == 'start':
             if el.tag == 'track':
@@ -1176,14 +1177,15 @@ def load_anno(file_object, annotations):
                     task_data=annotations
                 ))
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
-                attributes = []
                 if shape and shape['type'] == 'skeleton':
+                    elem_attributes = []
                     element = {
-                        'attributes': attributes,
+                        'attributes': elem_attributes,
                         'points': [],
                         'type': 'rectangle' if el.tag == 'box' else el.tag
                     }
                 else:
+                    attributes = []
                     shape = {
                         'attributes': attributes,
                         'points': [],
@@ -1200,7 +1202,12 @@ def load_anno(file_object, annotations):
                     'source': str(el.attrib.get('source', 'manual'))
                 }
         elif ev == 'end':
-            if el.tag == 'attribute' and attributes is not None:
+            if el.tag == 'attribute' and elem_attributes is not None and element is not None:
+                elem_attributes.append(annotations.Attribute(
+                    name=el.attrib['name'],
+                    value=el.text or "",
+                ))
+            if el.tag == 'attribute' and attributes is not None and element is None:
                 attributes.append(annotations.Attribute(
                     name=el.attrib['name'],
                     value=el.text or "",
@@ -1210,7 +1217,7 @@ def load_anno(file_object, annotations):
                     element['frame'] = frame_id
                 else:
                     element['keyframe'] = el.attrib['keyframe'] == "1"
-                element['label_id'] = annotations._get_label_id(el.attrib['label'])
+                element['label'] = el.attrib['label']
 
                 element['occluded'] = el.attrib['occluded'] == '1'
                 element['outside'] = el.attrib['outside'] == '1'
@@ -1247,7 +1254,11 @@ def load_anno(file_object, annotations):
                     for pair in el.attrib['points'].split(';'):
                         element['points'].extend(map(float, pair.split(',')))
 
-                shape['elements'].append(element)
+                if track is not None:
+                    shape['elements'].append(annotations.TrackedSkeleton(**element))
+                else:
+                    shape['elements'].append(annotations.LabeledSkeleton(**element))
+                element = None
 
             elif el.tag in supported_shapes:
                 if track is not None:
@@ -1303,7 +1314,7 @@ def load_anno(file_object, annotations):
                         skeleton_shape = copy(shape)
                         shape['elements'] = []
                         for elem in skeleton_shape['elements']:
-                            if elem['keyframe']:
+                            if elem.keyframe:
                                 shape['elements'].append(elem)
 
                     if shape['keyframe']:

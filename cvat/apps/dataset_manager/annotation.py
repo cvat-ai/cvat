@@ -112,6 +112,9 @@ class AnnotationIR:
 
             for shape in segment_shapes:
                 shape.pop('keyframe', None)
+                if shape['type'] == ShapeType.SKELETON:
+                    for element in shape['elements']:
+                        element.pop('keyframe', None)
 
         track['shapes'] = segment_shapes
         if 0 < len(segment_shapes):

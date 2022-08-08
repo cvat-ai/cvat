@@ -167,15 +167,17 @@ class TaskData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
         'LabeledShape', 'type, frame, label, points, occluded, attributes, source, elements, rotation, group, z_order')
-    LabeledSkeleton = namedtuple(
-        'LabeledSkeleton', 'type, frame, label, points, occluded, outside, attributes, shape_id')
     LabeledShape.__new__.__defaults__ = (0, 0, 0)
+    LabeledSkeleton = namedtuple(
+        'LabeledSkeleton', 'type, frame, points, occluded, outside, attributes, label, shape_id')
+    LabeledSkeleton.__new__.__defaults__ = (None, 0)
     TrackedShape = namedtuple(
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, elements, rotation, source, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, source, shapes')
     TrackedSkeleton = namedtuple(
-        'TrackedSkeleton', 'type, points, occluded, outside, attributes, label, keyframe, shape_id')
+        'TrackedSkeleton', 'type, points, occluded, outside, attributes, keyframe, label, shape_id')
+    TrackedSkeleton.__new__.__defaults__ = (None, 0)
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
@@ -528,6 +530,17 @@ class TaskData(InstanceLabelData):
             )
         ]
         _shape['points'] = list(map(float, _shape['points']))
+
+        _shape['elements'] = [element._asdict() for element in _shape['elements']]
+        for element in _shape['elements']:
+            element['label_id'] = self._get_label_id(element.pop('label'))
+
+            element['attributes'] = [self._import_attribute(element['label_id'], attrib)
+                for attrib in element['attributes']
+                if self._get_mutable_attribute_id(element['label_id'], attrib.name) or (
+                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
+                )
+            ]
         return _shape
 
     def _import_track(self, track):
@@ -553,6 +566,17 @@ class TaskData(InstanceLabelData):
                 )
             ]
             shape['points'] = list(map(float, shape['points']))
+
+            shape['elements'] = [element._asdict() for element in shape['elements']]
+            for element in shape['elements']:
+                element['label_id'] = self._get_label_id(element.pop('label'))
+
+                element['attributes'] = [self._import_attribute(element['label_id'], attrib, mutable=True)
+                    for attrib in element['attributes']
+                    if self._get_mutable_attribute_id(element['label_id'], attrib.name) or (
+                        self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
+                    )
+                ]
 
         return _track
 
