@@ -342,8 +342,8 @@ jobs:
 
       - name: Push to Docker Hub
         env:
-          SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/server
-          UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/ui
+          SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/server
+          UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/ui
         run: |
           docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
           docker push "${SERVER_IMAGE_REPO}:dev"

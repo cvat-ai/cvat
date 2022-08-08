@@ -9,6 +9,8 @@ from rest_framework import serializers
 
 from django.conf import settings
 
+from cvat.apps.iam.forms import ResetPasswordFormEx
+
 class RegisterSerializerEx(RegisterSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
@@ -23,6 +25,10 @@ class RegisterSerializerEx(RegisterSerializer):
         return data
 
 class PasswordResetSerializerEx(PasswordResetSerializer):
+    @property
+    def password_reset_form_class(self):
+        return ResetPasswordFormEx
+
     def get_email_options(self):
         domain = None
         if hasattr(settings, 'UI_HOST') and settings.UI_HOST:
@@ -30,6 +36,5 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
             if hasattr(settings, 'UI_PORT') and settings.UI_PORT:
                 domain += ':{}'.format(settings.UI_PORT)
         return {
-            'email_template_name': 'authentication/password_reset_email.html',
             'domain_override': domain
         }
