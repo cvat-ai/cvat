@@ -1,4 +1,5 @@
 attrs >= 21.4.0
 python_dateutil >= 2.5.3
 tqdm >= 4.64.0
+tuspy == 0.2.5 # have it fixed, because SDK has lots of patched TUS code
 urllib3 >= 1.25.3
