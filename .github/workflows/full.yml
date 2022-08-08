@@ -5,6 +5,7 @@ on:
       ref:
         type: string
         required: true
+  workflow_dispatch:
 
 env:
   WORKFLOW_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -8,7 +8,7 @@ import Radio from 'antd/lib/radio';
 import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
 import Icon, {
-    DeleteOutlined, DownloadOutlined, LineOutlined, PictureOutlined, UploadOutlined,
+    DeleteOutlined, DownloadOutlined, DragOutlined, LineOutlined, PictureOutlined, UploadOutlined,
 } from '@ant-design/icons';
 
 import { PointIcon } from 'icons';
@@ -36,7 +36,7 @@ interface Props {
 }
 
 interface State {
-    activeTool: 'point' | 'join' | 'delete';
+    activeTool: 'point' | 'join' | 'delete' | 'drag';
     contextMenuVisible: boolean;
     contextMenuElement: number | null;
     image: RcFile | null;
@@ -103,7 +103,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         window.document.addEventListener('mouseup', this.onDocumentMouseUp);
         if (svg) {
             svg.setAttribute('viewBox', '0 0 100 100');
-            svg.addEventListener('click', this.onSVGClick);
+            svg.addEventListener('mousedown', this.onSVGClick);
             svg.addEventListener('mousemove', this.onSVGMouseMove);
         }
 
@@ -159,7 +159,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const svg = svgRef.current;
 
         if (svg) {
-            svg.removeEventListener('click', this.onSVGClick);
+            svg.removeEventListener('mousedown', this.onSVGClick);
             svg.removeEventListener('mousemove', this.onSVGMouseMove);
         }
 
@@ -299,7 +299,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         circle.addEventListener('mousedown', (e: MouseEvent) => {
             const { activeTool: currentActiveTool } = this.state;
-            if (e.button === 0 && currentActiveTool === 'point') {
+            if (e.button === 0 && currentActiveTool === 'drag') {
                 this.draggableElement = circle;
             }
         });
@@ -415,7 +415,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             return;
         }
 
-        if (activeTool === 'point' && svg) {
+        if (activeTool === 'point' && svg && event.target === svg && event.button === 0) {
             let [x, y] = [0, 0];
             try {
                 [x, y] = toSVGCoord(svg, [event.clientX, event.clientY], true);
@@ -708,9 +708,15 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                     this.setState({ activeTool: e.target.value });
                                 }}
                             >
-                                <CVATTooltip title='Click canvas to add a point or drag it'>
+                                <CVATTooltip title='Click the canvas to add a point'>
                                     <Radio.Button defaultChecked value='point'>
                                         <Icon component={PointIcon} />
+                                    </Radio.Button>
+                                </CVATTooltip>
+
+                                <CVATTooltip title='Click and drag points'>
+                                    <Radio.Button defaultChecked value='drag'>
+                                        <DragOutlined />
                                     </Radio.Button>
                                 </CVATTooltip>
 

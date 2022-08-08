@@ -162,6 +162,8 @@ textarea.ant-input.cvat-raw-labels-viewer {
     .ant-radio-group {
         text-align: center;
         width: $grid-unit-size * 5;
+        margin-top: $grid-unit-size * 3;
+        margin-bottom: $grid-unit-size * 3;
 
         label {
             padding: 0;

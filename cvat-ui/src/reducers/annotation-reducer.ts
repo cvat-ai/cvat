@@ -38,6 +38,7 @@ const defaultState: AnnotationState = {
             type: ContextMenuType.CANVAS_SHAPE,
             pointID: null,
             clientID: null,
+            parentID: null,
         },
         instance: null,
         ready: false,
@@ -978,6 +979,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 visible, left, top, type, pointID,
             } = action.payload;
 
+            const { activatedElementID, activatedStateID } = state.annotations;
+
             return {
                 ...state,
                 canvas: {
@@ -989,7 +992,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         top,
                         type,
                         pointID,
-                        clientID: state.annotations.activatedStateID,
+                        clientID: Number.isInteger(activatedElementID) ? activatedElementID : activatedStateID,
+                        parentID: Number.isInteger(activatedElementID) ? activatedStateID : null,
                     },
                 },
             };
