@@ -1,5 +1,7 @@
 from enum import Enum
 from django.conf import settings
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 
 class InjectionError(AttributeError):
@@ -58,3 +60,20 @@ class StrEnum(str, Enum):
 def setting(name, default=None):
     # obtain settings which may be not initialized.
     return getattr(settings, name, default)
+
+
+class DateAwareModel(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name=_("Date created"))
+    date_modified = models.DateTimeField(auto_now=True, verbose_name=_("Date modified"))
+    date_display_format = "%Y-%m-%d %H:%M:%S"
+
+    class Meta:
+        abstract = True
+
+    @property
+    def date_created_display(self):
+        return self.date_created.strftime(self.date_display_format)
+
+    @property
+    def date_modified_display(self):
+        return self.date_modified.strftime(self.date_display_format)

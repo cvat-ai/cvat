@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
+    'cvat.apps.rebotics',
 ]
 
 SITE_ID = 1
@@ -569,6 +570,12 @@ VERSION_TRACKER_URL = os.getenv(
     'VERSION_TRACKER_URL',
     'https://versions.fyn.rocks/api/v1/track-version',
 )
+
+ADMIN_URL = os.getenv(
+    'ADMIN_URL',
+    'https://localhost:8002' if ENVIRONMENT == 'local' else 'https://{}-admin.rebotics.net'.format(ENVIRONMENT),
+)
+
 
 # Media storage settings
 # not the default, because it's used only for some file fields.
