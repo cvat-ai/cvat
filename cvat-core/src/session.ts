@@ -1759,7 +1759,7 @@
                     /**
                      * Source storage for import resources.
                      * @name sourceStorage
-                      * @type {module:API.cvat.classes.Storage}
+                     * @type {module:API.cvat.classes.Storage}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}

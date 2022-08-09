@@ -1,11 +1,10 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
-
 import { ImportDatasetState } from './interfaces';
-
 import getCore from 'cvat-core-wrapper';
 
 const core = getCore();
@@ -26,42 +25,26 @@ function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
 }
 
 const defaultState: ImportDatasetState = {
-    // projects: {},
-    // tasks: {},
-    // jobs: {},
-    //resource: null,
-    // progress: 0.0,
-    // status: '',
-    // instance: null,
-    // importingId: null,
-    // modalVisible: false,
     projects: {
         activities: {},
         importingId: null,
         progress: defaultProgress,
         status: defaultStatus,
-        // instance: null,
-        // modalVisible: false,
     },
     tasks: {
         activities: {},
         importingId: null,
         progress: defaultProgress,
         status: defaultStatus,
-        // instance: null,
-        // modalVisible: false,
     },
     jobs: {
         activities: {},
         importingId: null,
         progress: defaultProgress,
         status: defaultStatus,
-        // instance: null,
-        // modalVisible: false,
     },
     instance: null,
     importing: false,
-    // instanceType: null,
     resource: null,
     modalVisible: false,
 };
@@ -76,10 +59,7 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                 ...state,
                 [activitiesField]: {
                     ...state[activitiesField],
-                    // modalVisible: true,
-                    // instance: instance,
                 },
-                // instanceType: instanceType,
                 instance: instance,
                 resource: resource,
                 modalVisible: true,
@@ -92,7 +72,6 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                 ...state,
                 [activitiesField]: {
                     ...state[activitiesField],
-                    // modalVisible: false,
                 },
                 resource: null,
                 instance: null,
@@ -114,9 +93,9 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                         ...activities,
                     },
                     status: 'The file is being uploaded to the server',
+                    importingId: instance.id,
                 },
                 importing: true,
-                //importingId: id,
             };
         }
         case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
@@ -146,23 +125,14 @@ export default (state: ImportDatasetState = defaultState, action: ImportActions)
                     ...state[activitiesField],
                     progress: defaultProgress,
                     status: defaultStatus,
-                    // importingId: null,
-                    //instance: null,
+                    importingId: null,
                     activities: {
                         ...activities
                     },
                 },
-                //instanceType: null,
                 instance: null,
                 resource: null,
                 importing: false,
-                // progress: defaultState.progress,
-                // status: defaultState.status,
-                // // importingId: null,
-                // instance: null,
-                // [instances]: {
-                //     ...activities,
-                // }
             };
         }
         default:

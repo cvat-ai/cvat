@@ -597,9 +597,9 @@
                 return async function (id, format, name, saveImages, targetStorage = null) {
                     const { backendAPI } = config;
                     const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
-                    let params: any = {
+                    const params: any = {
                         ...enableOrganization(),
-                        ...configureStorage(!!targetStorage?.location, targetStorage),
+                        ...configureStorage(!targetStorage?.location, targetStorage),
                         format,
                     };
 
@@ -641,7 +641,7 @@
 
             async function importDataset(id, format, useDefaultLocation, sourceStorage, file, fileName, onUpdate) {
                 const { backendAPI, origin } = config;
-                let params: any = {
+                const params: any = {
                     ...enableOrganization(),
                     ...configureStorage(useDefaultLocation, sourceStorage),
                     format,

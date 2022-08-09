@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -82,8 +83,6 @@ export default function ProjectsPageComponent(): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
-                // TODO
-                // onImportProject={(file: File) => dispatch(restoreProjectAsync(file))}
                 importing={importing}
             />
             { fetching ? (
@@ -92,7 +91,6 @@ export default function ProjectsPageComponent(): JSX.Element {
                 </div>
             ) : content }
             <FeedbackComponent />
-            {/* <ImportDatasetModal /> */}
         </div>
     );
 }

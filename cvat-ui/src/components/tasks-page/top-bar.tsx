@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,25 +10,19 @@ import { Row, Col } from 'antd/lib/grid';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Upload from 'antd/lib/upload';
 import Input from 'antd/lib/input';
-
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers/interfaces';
 import { usePrevious } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
-
-import { importActions } from 'actions/import-actions';
 import { importBackupActions } from 'actions/import-backup-actions';
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
 
-// TODO update a task backup import
 interface VisibleTopBarProps {
-    // onImportTask(file: File): void;
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
@@ -38,7 +33,7 @@ interface VisibleTopBarProps {
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const dispatch = useDispatch();
     const {
-        importing, query, onApplyFilter, onApplySorting, onApplySearch, // onImportTask,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
@@ -104,16 +99,6 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                 >
                                     Create a new task
                                 </Button>
-                                {/* <Upload
-                                    accept='.zip'
-                                    multiple={false}
-                                    showUploadList={false}
-                                    beforeUpload={(file: File): boolean => {
-                                        onImportTask(file);
-                                        return false;
-                                    }}
-                                    className='cvat-import-task'
-                                > */}
                                 <Button
                                     className='cvat-import-task-button'
                                     type='primary'
@@ -124,7 +109,6 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     Create from backup
                                     {importing && <LoadingOutlined />}
                                 </Button>
-                                {/* </Upload> */}
                             </div>
                         )}
                     >

@@ -270,7 +270,6 @@ export class FileManager extends React.PureComponent<Props, State> {
                     onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
                         this.setState({ cloudStorage: _cloudStorage });
                     }}
-                    // TODO: move this logic into select cloud storage component
                     searchPhrase={potentialCloudStorage}
                     setSearchPhrase={(_potentialCloudStorage: string) => {
                         this.setState({ potentialCloudStorage: _potentialCloudStorage });

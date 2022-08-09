@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,8 +10,6 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Input from 'antd/lib/input';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
-import Upload from 'antd/lib/upload';
-
 import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers/interfaces';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
@@ -27,7 +26,6 @@ const FilteringComponent = ResourceFilterHOC(
 );
 
 interface Props {
-    // onImportProject(file: File): void;
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
@@ -38,7 +36,7 @@ interface Props {
 function TopBarComponent(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const {
-        importing, query, onApplyFilter, onApplySorting, onApplySearch,// onImportProject,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const prevImporting = usePrevious(importing);
@@ -105,16 +103,6 @@ function TopBarComponent(props: Props): JSX.Element {
                                 >
                                     Create a new project
                                 </Button>
-                                {/* <Upload
-                                    accept='.zip'
-                                    multiple={false}
-                                    showUploadList={false}
-                                    beforeUpload={(file: File): boolean => {
-                                        onImportProject(file);
-                                        return false;
-                                    }}
-                                    className='cvat-import-project'
-                                > */}
                                 <Button
                                     className='cvat-import-project-button'
                                     type='primary'
@@ -125,7 +113,6 @@ function TopBarComponent(props: Props): JSX.Element {
                                     Create from backup
                                     {importing && <LoadingOutlined className='cvat-import-project-button-loading' />}
                                 </Button>
-                                {/* </Upload> */}
                             </div>
                         )}
                     >

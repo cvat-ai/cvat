@@ -446,18 +446,18 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderUzeZipChunks(): JSX.Element {
         return (
-                <Space>
-                    <Form.Item
-                        name='useZipChunks'
-                        valuePropName='checked'
-                    >
-                        <Switch />
-                    </Form.Item>
-                    <Text className='cvat-text-color'>Use zip/video chunks</Text>
-                    <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
-                        <QuestionCircleFilled style={{opacity: 0.5}}/>
-                    </Tooltip>
-                </Space>
+            <Space>
+                <Form.Item
+                    name='useZipChunks'
+                    valuePropName='checked'
+                >
+                    <Switch />
+                </Form.Item>
+                <Text className='cvat-text-color'>Use zip/video chunks</Text>
+                <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
+                    <QuestionCircleFilled style={{opacity: 0.5}}/>
+                </Tooltip>
+            </Space>
         );
     }
 

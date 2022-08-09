@@ -207,7 +207,7 @@ function ExportDatasetModal(): JSX.Element | null {
                 </Form.Item>
                 <Space>
                     <Form.Item name='saveImages'>
-                        <Switch />
+                        <Switch className='cvat-modal-export-save-images'/>
                     </Form.Item>
                     <Text strong>Save images</Text>
                 </Space>

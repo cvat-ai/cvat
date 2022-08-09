@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +8,6 @@ import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-
 import { CombinedState, JobStage } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
 import { updateJobAsync } from 'actions/tasks-actions';
@@ -23,10 +23,8 @@ import getCore from 'cvat-core-wrapper';
 const core = getCore();
 
 interface StateToProps {
-    // annotationFormats: any;
     jobInstance: any;
     stopFrame: number;
-    // loadActivity: string | null;
 }
 
 interface DispatchToProps {
@@ -41,26 +39,16 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            // activities: { loads: jobLoads },
             job: {
                 instance: jobInstance,
                 instance: { stopFrame },
             },
         },
-        // formats: { annotationFormats },
-        // tasks: {
-        //     activities: { loads },
-        // },
     } = state;
 
-    // const taskID = jobInstance.taskId;
-    // const jobID = jobInstance.id;
-
     return {
-        // loadActivity: taskID in loads || jobID in jobLoads ? loads[taskID] || jobLoads[jobID] : null,
         jobInstance,
         stopFrame,
-        // annotationFormats,
     };
 }
 
@@ -93,10 +81,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
         stopFrame,
-        // annotationFormats: { loaders, dumpers },
         history,
-        // loadActivity,
-        // loadAnnotations,
         showExportModal,
         showImportModal,
         removeAnnotations,
@@ -104,13 +89,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         saveAnnotations,
         updateJob,
     } = props;
-
-    // const onUploadAnnotations = (format: string, file: File): void => {
-    //     const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
-    //     if (loader && file) {
-    //         loadAnnotations(jobInstance, loader, file);
-    //     }
-    // };
 
     const onClickMenu = (params: MenuInfo): void => {
         const [action] = params.keyPath;
@@ -145,10 +123,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     return (
         <AnnotationMenuComponent
             taskMode={jobInstance.mode}
-            // loaders={loaders}
-            // dumpers={dumpers}
-            //loadActivity={loadActivity}
-            // onUploadAnnotations={onUploadAnnotations}
             onClickMenu={onClickMenu}
             removeAnnotations={removeAnnotations}
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}

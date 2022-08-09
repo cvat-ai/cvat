@@ -2,30 +2,23 @@
 //
 // SPDX-License-Identifier: MIT
 
-// import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Form from 'antd/lib/form';
 import notification from 'antd/lib/notification';
 import AutoComplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
 import { debounce } from 'lodash';
-
-import Select from 'antd/lib/select';
-import getCore from 'cvat-core-wrapper';
 import { CloudStorage } from 'reducers/interfaces';
 import { AzureProvider, GoogleCloudProvider, S3Provider } from 'icons';
 import { ProviderType } from 'utils/enums';
-
-
+import getCore from 'cvat-core-wrapper';
 export interface Props {
     searchPhrase: string;
     cloudStorage: CloudStorage | null;
     name?: string[];
     setSearchPhrase: (searchPhrase: string) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
-
 }
-const { Option } = Select;
 
 async function searchCloudStorages(filter: Record<string, string>): Promise<CloudStorage[]> {
     try {

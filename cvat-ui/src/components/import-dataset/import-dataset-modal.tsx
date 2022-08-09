@@ -13,22 +13,16 @@ import Select from 'antd/lib/select';
 import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
-
 import { StorageLocation } from 'reducers/interfaces';
-
 import {
     UploadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
-
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
-
 import ImportDatasetStatusModal from './import-dataset-status-modal';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
-import Tooltip from 'antd/lib/tooltip';
-
 import getCore from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import { Storage } from 'reducers/interfaces';
@@ -66,20 +60,26 @@ interface UploadParams {
 
 function ImportDatasetModal(): JSX.Element | null {
     const [form] = Form.useForm();
+    const dispatch = useDispatch();
     const [instanceType, setInstanceType] = useState('');
     const [file, setFile] = useState<File | null>(null);
+    const [selectedLoader, setSelectedLoader] = useState<any>(null);
+    const [useDefaultSettings, setUseDefaultSettings] = useState(true);
+    const [defaultStorageLocation, setDefaultStorageLocation] = useState('');
+    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
+    const [helpMessage, setHelpMessage] = useState('');
+    const [selectedSourceStorage, setSelectedSourceStorage] = useState<Storage | null>(null);
+    const [uploadParams, setUploadParams] = useState<UploadParams>({
+        useDefaultSettings: true,
+    } as UploadParams);
     const importers = useSelector((state: CombinedState) => state.formats.annotationFormats.loaders);
-    const dispatch = useDispatch();
-
     const resource = useSelector((state: CombinedState) =>  state.import.resource);
     const instance = useSelector((state: CombinedState) =>  state.import.instance);
     const projectsImportState = useSelector((state: CombinedState) => state.import.projects);
     const tasksImportState = useSelector((state: CombinedState) => state.import.tasks);
     const jobsImportState = useSelector((state: CombinedState) => state.import.jobs);
-
     const importing = useSelector((state: CombinedState) => state.import.importing);
-
-    const [selectedLoader, setSelectedLoader] = useState<any>(null);
+    const modalVisible = useSelector((state: CombinedState) => state.import.modalVisible);
 
     const isDataset = useCallback((): boolean => {
         return resource === 'dataset';
@@ -88,18 +88,6 @@ function ImportDatasetModal(): JSX.Element | null {
     const isAnnotation = useCallback((): boolean => {
         return resource === 'annotation';
     }, [resource]);
-
-    const modalVisible = useSelector((state: CombinedState) => state.import.modalVisible);
-
-    const [useDefaultSettings, setUseDefaultSettings] = useState(true);
-    const [defaultStorageLocation, setDefaultStorageLocation] = useState<string>('');
-    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
-    const [helpMessage, setHelpMessage] = useState('');
-    const [selectedSourceStorage, setSelectedSourceStorage] = useState<Storage | null>(null);
-
-    const [uploadParams, setUploadParams] = useState<UploadParams>({
-        useDefaultSettings: true,
-    } as UploadParams);
 
     useEffect(() => {
         setUploadParams({
@@ -121,7 +109,7 @@ function ImportDatasetModal(): JSX.Element | null {
     }, [importing])
 
     useEffect(() => {
-        if (instance && modalVisible) { // && resource === 'dataset'
+        if (instance && modalVisible) {
             if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
                 setDefaultStorageLocation((instance.sourceStorage) ?
                     instance.sourceStorage.location : null);
@@ -281,7 +269,7 @@ function ImportDatasetModal(): JSX.Element | null {
         (values: FormValues): void => {
             if (file === null && !values.fileName) {
                 Notification.error({
-                    message: 'No dataset file specified',
+                    message: `No ${uploadParams.resource} file specified`,
                 });
                 return;
             }
@@ -392,14 +380,12 @@ function ImportDatasetModal(): JSX.Element | null {
                             />
                         </Form.Item>
                         <Text strong>Use default settings</Text>
-                        <Tooltip
-                            title={helpMessage}
-                        >
+                        <CVATTooltip title={helpMessage}>
                             <QuestionCircleOutlined/>
-                        </Tooltip>
+                        </CVATTooltip>
                     </Space>
 
-                    {useDefaultSettings && defaultStorageLocation === StorageLocation.LOCAL && uploadLocalFile()}
+                    {useDefaultSettings && (defaultStorageLocation === StorageLocation.LOCAL || defaultStorageLocation === null) && uploadLocalFile()}
                     {useDefaultSettings && defaultStorageLocation === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {!useDefaultSettings && <StorageField
                         locationName={['sourceStorage', 'location']}
@@ -413,14 +399,13 @@ function ImportDatasetModal(): JSX.Element | null {
                                     cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
                                 } as Storage,
                             } as UploadParams);
-                            console.log('after update storage: ', uploadParams);
                         }}
                     />}
                     {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}
                 </Form>
             </Modal>
-            {isDataset() && <ImportDatasetStatusModal />}
+            <ImportDatasetStatusModal />
         </>
     );
 }

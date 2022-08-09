@@ -3,12 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ImportBackupActions, ImportBackupActionTypes } from 'actions/import-backup-actions';
-
 import { ImportBackupState } from './interfaces';
-
-import getCore from 'cvat-core-wrapper';
-
-const core = getCore();
 
 const defaultState: ImportBackupState = {
     isTaskImported: false,

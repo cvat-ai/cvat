@@ -1,11 +1,10 @@
-// (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React from 'react';
 import Form from 'antd/lib/form';
-
 import Text from 'antd/lib/typography/Text';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
@@ -53,7 +52,7 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                             valuePropName='checked'
                         >
                             <Switch
-                                // defaultChecked
+                                className='cvat-use-default-location'
                                 onChange={(value: boolean) => {
                                     if (onChangeUseProjectStorage) {
                                         onChangeUseProjectStorage(value)

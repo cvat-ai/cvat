@@ -1,4 +1,4 @@
-// (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,6 @@ import Form from 'antd/lib/form';
 import { CloudStorage } from 'reducers/interfaces';
 import { StorageLocation } from 'reducers/interfaces';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
-
 import { Storage } from 'reducers/interfaces';
 
 const { Option } = Select;
@@ -61,9 +60,7 @@ export default function StorageField(props: Props): JSX.Element {
 
     return (
         <>
-            <Form.Item
-                name={locationName}
-            >
+            <Form.Item name={locationName}>
                 <Select
                     onChange={(location: StorageLocation) => setLocationValue(location)}
                     onClear={() => setLocationValue(StorageLocation.LOCAL)}

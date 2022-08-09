@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,23 +15,20 @@ import { CombinedState } from 'reducers/interfaces';
 
 const core = getCore();
 
-function ImportDatasetStatusModal(): JSX.Element {
+function ImportDatasetStatusModal(): JSX.Element | null {
     const importing = useSelector((state: CombinedState) => state.import.importing);
-    const instance = useSelector((state: CombinedState) => state.import.instance);
-    const progress = useSelector((state: CombinedState) => {
-        if (instance instanceof core.classes.Project) {
-            return state.import.projects?.progress;
-        }
-    });
+    const importingId = useSelector((state: CombinedState) => state.import.projects?.importingId);
+    const progress = useSelector((state: CombinedState) => state.import.projects?.progress);
     const status = useSelector((state: CombinedState) => {
-        if (instance instanceof core.classes.Project) {
-            return state.import.projects?.status;
-        }
+        return state.import.projects?.status;
     });
 
+    if (!importingId) {
+        return null;
+    }
     return (
         <Modal
-            title={`Importing a dataset for the project #${instance.id}`}
+            title={`Importing a dataset for the project #${importingId}`}
             visible={importing}
             closable={false}
             footer={null}

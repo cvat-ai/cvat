@@ -1,15 +1,14 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
 import { CombinedState } from 'reducers/interfaces';
-
 import { modelsActions } from 'actions/models-actions';
 import {
     loadAnnotationsAsync,
@@ -28,17 +27,14 @@ interface StateToProps {
     annotationFormats: any;
     loadActivity: string | null;
     inferenceIsActive: boolean;
-    // exportIsActive: boolean;
 }
 
 interface DispatchToProps {
     loadAnnotations: (taskInstance: any, loader: any, file: File) => void;
     showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null) => void;
     showImportModal: (taskInstance: any, isDataset: boolean) => void;
-    // showExportBackupModal: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
     deleteTask: (taskInstance: any) => void;
-    // exportTask: (taskInstance: any) => void;
     openMoveTaskToProjectWindow: (taskInstance: any) => void;
 }
 
@@ -50,7 +46,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         formats: { annotationFormats },
         tasks: {
-            activities: { loads }, //backups
+            activities: { loads },
         },
     } = state;
 
@@ -58,7 +54,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         loadActivity: tid in loads ? loads[tid] : null,
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
-        // exportIsActive: tid in backups,
     };
 }
 
@@ -95,14 +90,10 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         annotationFormats: { loaders, dumpers },
         loadActivity,
         inferenceIsActive,
-        // exportIsActive,
-        // loadAnnotations,
         showExportModal,
         showImportModal,
-        //showExportBackupModal,
         deleteTask,
         openRunModelWindow,
-        // exportTask,
         openMoveTaskToProjectWindow,
     } = props;
 
@@ -127,13 +118,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         }
     }
 
-    // function onUploadAnnotations(format: string, file: File): void {
-    //     const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
-    //     if (loader && file) {
-    //         loadAnnotations(taskInstance, loader, file);
-    //     }
-    // }
-
     return (
         <ActionsMenuComponent
             taskID={taskInstance.id}
@@ -144,9 +128,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             loadActivity={loadActivity}
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
-            // onUploadAnnotations={onUploadAnnotations}
             taskDimension={taskInstance.dimension}
-            // exportIsActive={exportIsActive}
         />
     );
 }

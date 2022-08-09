@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,11 +14,8 @@ import Dropdown from 'antd/lib/dropdown';
 import Menu from 'antd/lib/menu';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-
 import { useCardHeightHOC } from 'utils/hooks';
-
 import { exportActions } from 'actions/export-actions';
-import { importActions } from 'actions/import-actions';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',

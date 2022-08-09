@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -145,32 +146,12 @@ export interface ImportResourceState {
     importingId: number | null;
     progress: number;
     status: string;
-    // instance: any;
-    //resource: 'dataset' | 'annotation' | null;
-    //modalVisible: boolean;
 }
 
 export interface ImportDatasetState {
-    // tasks: {
-    //     [tid: number]: string; // loader name
-    // };
-    // projects: {
-    //     [pid: number]: string; // loader name
-    // };
-    // jobs: {
-    //     [jid: number]:  string; // loader name
-    // }
-    // // TODO is it possible to remove the restriction of importing only one resource at a time
-    // importingId: number | null;
-    // progress: number;
-    // status: string;
-    // instance: any;
-    // //resource: 'dataset' | 'annotation' | null;
-    // modalVisible: boolean;
     projects: ImportResourceState | null;
     tasks: ImportResourceState | null;
     jobs: ImportResourceState | null;
-    //instanceType: 'project' | 'task' | 'job' | null;
     importing: boolean;
     instance: any;
     resource: any;

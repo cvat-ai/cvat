@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +13,6 @@ import message from 'antd/lib/message';
 import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-
 import { TasksQuery, Indexable } from 'reducers/interfaces';
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
@@ -139,7 +139,6 @@ function TasksPageComponent(props: Props): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
-                //onImportTask={(file: File) => dispatch(importTaskAsync(file))}
                 importing={importing}
             />
             { fetching ? (
