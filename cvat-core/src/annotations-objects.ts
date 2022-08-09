@@ -1329,9 +1329,41 @@
     class MaskShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.getMasksOnFrame = injection.getMasksOnFrame;
             [this.points, [this.left, this.top, this.right, this.bottom]] = ObjectState.rle2Mask(this.points);
             this.pinned = true;
             this.shapeType = ObjectShape.MASK;
+        }
+
+        _removeUnderlyingPixels(points, rotation, frame) {
+            const others = this.getMasksOnFrame(frame).filter((mask: MaskShape) => mask.clientID !== this.clientID);
+            const othersBoxes = others.map((state) => {
+                const [left, top, right, bottom] = state.points.slice(-4);
+                return { left, top, right, bottom };
+            });
+            const width = this.right - this.left + 1;
+
+            for (let i = 0; i < this.points.length; i += 4) {
+                let x = i % width + this.left;
+                let y = Math.trunc(i / width) + this.top;
+                for (const other of others) {
+                    const box = {
+                        left: other.left,
+                        top: other.top,
+                        right: other.right,
+                        bottom: other.bottom
+                    };
+                    const translatedX = x - box.left;
+                    const translatedY = y - box.top;
+                    const [otherWidth, otherHeight] = [box.right - box.left + 1, box.bottom - box.top + 1];
+                    if (translatedX >= 0 && translatedX < otherWidth &&
+                        translatedY >= 0 && translatedY < otherHeight) {
+                        const j = translatedY * otherWidth + translatedX;
+                        other.points[j] = 0;
+                        other.updated = Date.now();
+                    }
+                }
+            }
         }
 
         _savePoints(points, rotation, frame) {

@@ -118,7 +118,8 @@
             this.history = data.history;
             this.shapes = {}; // key is a frame
             this.tags = {}; // key is a frame
-            this.masks = {}; // key is a frame
+
+            // TODO: do we need masks as separated field?
             this.tracks = [];
             this.objects = {}; // key is a client id
             this.count = 0;
@@ -132,6 +133,8 @@
                 frameMeta: this.frameMeta,
                 history: this.history,
                 groupColors: {},
+                getMasksOnFrame: (frame: number) => this.shapes[frame]
+                    .filter((object) => object.objectShape === ObjectType.MASK),
             };
         }
 
@@ -195,13 +198,6 @@
                     }, [])
                     .filter((tag) => !tag.removed)
                     .map((tag) => tag.toJSON()),
-                masks: Object.values(this.masks)
-                    .reduce((accumulator, frameMasks) => {
-                        accumulator.push(...frameMasks);
-                        return accumulator;
-                    }, [])
-                    .filter((mask) => !mask.removed)
-                    .map((mask) => mask.toJSON()),
             };
 
             return data;
@@ -211,9 +207,8 @@
             const { tracks } = this;
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
-            const masks = this.masks[frame] || [];
 
-            const objects = [].concat(tracks, shapes, tags, masks);
+            const objects = [].concat(tracks, shapes, tags);
             const visible = {
                 models: [],
                 data: [],
@@ -843,6 +838,11 @@
             // eslint-disable-next-line no-unsanitized/method
             const imported = this.import(constructed);
             const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+            for (const object of importedArray) {
+                if (object.shapeType === ObjectShape.MASK) {
+                    object._removeUnderlyingPixels(object.points, object.rotation, object.frame);
+                }
+            }
 
             if (objectStates.length) {
                 this.history.do(
