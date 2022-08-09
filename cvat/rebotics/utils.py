@@ -77,3 +77,12 @@ class DateAwareModel(models.Model):
     @property
     def date_modified_display(self):
         return self.date_modified.strftime(self.date_display_format)
+
+
+def fix_between(value, min, max):
+    """fixes a value between min and max"""
+    if value < min:
+        return min
+    if value > max:
+        return max
+    return value
