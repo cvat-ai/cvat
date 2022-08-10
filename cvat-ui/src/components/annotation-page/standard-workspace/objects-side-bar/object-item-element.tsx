@@ -40,7 +40,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
             id={`cvat-objects-sidebar-state-item-element-${element.clientID}`}
             onMouseEnter={activate}
             onMouseLeave={onMouseLeave}
-            key={element.clientID}
+            key={clientID}
             className={elementClassName}
             style={{ background: `${elementColor}` }}
         >
@@ -55,8 +55,8 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
             {!!element.label.attributes.length && (
                 <ItemDetailsContainer
                     readonly={readonly}
-                    parentID={clientID}
-                    clientID={element.clientID}
+                    parentID={parentID}
+                    clientID={clientID}
                 />
             )}
         </div>
