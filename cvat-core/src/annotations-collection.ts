@@ -598,11 +598,60 @@
                 total: 0,
             };
 
+            const sep = '{{cvat.skeleton.lbl.sep}}';
+            const fillBody = (spec, prefix = ''): void => {
+                const pref = prefix ? `${prefix}${sep}` : '';
+                for (const label of spec) {
+                    const { name } = label;
+                    labels[`${pref}${name}`] = JSON.parse(JSON.stringify(body));
+
+                    if (label?.structure?.sublabels) {
+                        fillBody(label.structure.sublabels, `${pref}${name}`);
+                    }
+                }
+            };
+
             const total = JSON.parse(JSON.stringify(body));
-            for (const label of Object.values(this.labels)) {
-                const { name } = label;
-                labels[name] = JSON.parse(JSON.stringify(body));
-            }
+            fillBody(Object.values(this.labels).filter((label) => !label.hasParent));
+
+            const scanTrack = (track, prefix = ''): void => {
+                const pref = prefix ? `${prefix}${sep}` : '';
+                const label = `${pref}${track.label.name}`;
+                labels[label][track.shapeType].track++;
+                const keyframes = Object.keys(track.shapes)
+                    .sort((a, b) => +a - +b)
+                    .map((el) => +el);
+
+                let prevKeyframe = keyframes[0];
+                let visible = false;
+                for (const keyframe of keyframes) {
+                    if (visible) {
+                        const interpolated = keyframe - prevKeyframe - 1;
+                        labels[label].interpolated += interpolated;
+                        labels[label].total += interpolated;
+                    }
+                    visible = !track.shapes[keyframe].outside;
+                    prevKeyframe = keyframe;
+
+                    if (visible) {
+                        labels[label].manually++;
+                        labels[label].total++;
+                    }
+                }
+
+                const lastKey = keyframes[keyframes.length - 1];
+                if (lastKey !== this.stopFrame && !track.shapes[lastKey].outside) {
+                    const interpolated = this.stopFrame - lastKey;
+                    labels[label].interpolated += interpolated;
+                    labels[label].total += interpolated;
+                }
+
+                if (track.shapeType === ShapeType.SKELETON) {
+                    track.elements.forEach((element) => {
+                        scanTrack(element, label);
+                    });
+                }
+            };
 
             for (const object of Object.values(this.objects)) {
                 if (object.removed) {
@@ -625,42 +674,20 @@
                     labels[label].tag++;
                     labels[label].manually++;
                     labels[label].total++;
+                } else if (objectType === 'track') {
+                    scanTrack(object);
                 } else {
                     const { shapeType } = object;
-                    labels[label][shapeType][objectType]++;
-
-                    if (objectType === 'track') {
-                        const keyframes = Object.keys(object.shapes)
-                            .sort((a, b) => +a - +b)
-                            .map((el) => +el);
-
-                        let prevKeyframe = keyframes[0];
-                        let visible = false;
-
-                        for (const keyframe of keyframes) {
-                            if (visible) {
-                                const interpolated = keyframe - prevKeyframe - 1;
-                                labels[label].interpolated += interpolated;
-                                labels[label].total += interpolated;
-                            }
-                            visible = !object.shapes[keyframe].outside;
-                            prevKeyframe = keyframe;
-
-                            if (visible) {
-                                labels[label].manually++;
-                                labels[label].total++;
-                            }
-                        }
-
-                        const lastKey = keyframes[keyframes.length - 1];
-                        if (lastKey !== this.stopFrame && !object.shapes[lastKey].outside) {
-                            const interpolated = this.stopFrame - lastKey;
-                            labels[label].interpolated += interpolated;
-                            labels[label].total += interpolated;
-                        }
-                    } else {
-                        labels[label].manually++;
-                        labels[label].total++;
+                    labels[label][shapeType].shape++;
+                    labels[label].manually++;
+                    labels[label].total++;
+                    if (shapeType === ShapeType.SKELETON) {
+                        object.elements.forEach((element) => {
+                            const combinedName = [label, element.label.name].join(sep);
+                            labels[combinedName][element.shapeType].shape++;
+                            labels[combinedName].manually++;
+                            labels[combinedName].total++;
+                        });
                     }
                 }
             }

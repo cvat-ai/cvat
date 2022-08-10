@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, QuestionCircleOutlined, RightOutlined } from '@ant-design/icons';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
@@ -149,6 +149,21 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         {
             title: <Text strong> Label </Text>,
             dataIndex: 'label',
+            render: (text: string) => {
+                const sep = '{{cvat.skeleton.lbl.sep}}';
+                if (text.split(sep).length > 1) {
+                    const [label, part] = text.split(sep);
+                    return (
+                        <>
+                            <Text strong>{label}</Text>
+                            {' \u2B95 '}
+                            <Text strong>{part}</Text>
+                        </>
+                    );
+                }
+
+                return (<Text strong>{text}</Text>);
+            },
             fixed: 'left',
             key: 'label',
             width: 120,
