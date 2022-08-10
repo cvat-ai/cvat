@@ -52,7 +52,9 @@ class WebhookViewSet(viewsets.ModelViewSet):
     iam_organization_field = "organization"
 
     def get_serializer_class(self):
-        if self.request.path.endswith("redelivery") or self.request.path.endswith("ping"):
+        if self.request.path.endswith("redelivery") or self.request.path.endswith(
+            "ping"
+        ):
             return None
         else:
             if self.request.method in SAFE_METHODS:
@@ -62,7 +64,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
-
 
     @extend_schema(
         summary="Method return a list of deliveries for a specific webhook",
@@ -90,7 +91,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-
     @extend_schema(
         summary="Method return a specific delivery for a specific webhook",
         responses={"200": WebhookDeliveryReadSerializer},
@@ -109,7 +109,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data)
 
-
     @extend_schema(summary="Method redeliver a specific webhook delivery")
     @action(
         detail=True,
@@ -118,19 +117,13 @@ class WebhookViewSet(viewsets.ModelViewSet):
     )
     def redelivery(self, request, pk, delivery_id):
         delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
-        signal_redelivery.send(
-            sender=self, data=delivery.request
-        )
+        signal_redelivery.send(sender=self, data=delivery.request)
 
         # Questionable: should we provide a body for this response?
         return Response({})
 
-
     @extend_schema(summary="Method send ping webhook")
-    @action(
-        detail=True,
-        methods=["POST"],
-    )
+    @action(detail=True, methods=["POST"])
     def ping(self, request, pk):
         instance = self.get_object()
         serializer = WebhookReadSerializer(instance, context={"request": request})

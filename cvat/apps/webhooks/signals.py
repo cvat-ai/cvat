@@ -1,6 +1,7 @@
 import django_rq
 from requests import post
 from django.dispatch import receiver, Signal
+from .event_type import EventTypeChoice
 from .models import Webhook, WebhookDelivery
 from cvat.apps.engine.serializers import BasicUserSerializer
 
@@ -10,7 +11,11 @@ signal_ping = Signal()
 
 
 def send_webhook(webhook, data, redelivery):
+    import time
+
+    start_time = time.time()
     response = post(webhook.target_url, json=data)
+    print("total time", time.time() - start_time)
     WebhookDelivery.objects.create(
         webhook_id=webhook.id,
         event=data["event"],
@@ -24,31 +29,28 @@ def send_webhook(webhook, data, redelivery):
 
 def add_to_queue(webhook, payload, redelivery=False):
     queue = django_rq.get_queue("webhooks")
-    queue.enqueue_call(
-        func=send_webhook,
-        args=(webhook, payload, redelivery)
-    )
+    queue.enqueue_call(func=send_webhook, args=(webhook, payload, redelivery))
 
 
 def payload(data, request):
     return {
         **data,
-        "sender": BasicUserSerializer(
-            request.user, context={"request": request}
-        ).data
+        "sender": BasicUserSerializer(request.user, context={"request": request}).data,
     }
 
 
 @receiver(signal_update)
 def update(sender, serializer=None, old_values=None, **kwargs):
-    # Add validation for sender.basename
+    event_name = f"{sender.basename}_updated"
     oid = serializer.instance.segment.task.organization
     pid = serializer.data["project_id"]
+
+    if event_name not in map(lambda a: a[1], EventTypeChoice.choices()):
+        return
 
     if oid is None and pid is None:
         return
 
-    event_name = f"{sender.basename}_updated"
     data = {
         "event": event_name,
         sender.basename: serializer.data,
@@ -64,7 +66,7 @@ def update(sender, serializer=None, old_values=None, **kwargs):
     if pid is not None:
         webhooks = Webhook.objects.filter(events__contains=event_name, project=pid)
         for webhook in webhooks:
-            payload.update({"webhook_id": webhook.id})
+            data.update({"webhook_id": webhook.id})
             add_to_queue(webhook, payload(data, sender.request))
 
 
@@ -75,8 +77,5 @@ def redelivery(sender, data=None, **kwargs):
 
 @receiver(signal_ping)
 def ping(sender, serializer=None, **kwargs):
-    data = {
-        "event": "ping",
-        "webhook": serializer.data,
-    }
+    data = {"event": "ping", "webhook": serializer.data}
     add_to_queue(serializer.instance, payload(data, sender.request))
