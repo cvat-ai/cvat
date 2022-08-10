@@ -652,8 +652,6 @@
                     labels[label].interpolated += interpolated;
                     labels[label].total += interpolated;
                 }
-
-
             };
 
             for (const object of Object.values(this.objects)) {
