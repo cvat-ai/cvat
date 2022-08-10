@@ -4759,6 +4759,26 @@
   }
 },
 {
+  "model": "webhooks.webhook",
+  "pk": 1,
+  "fields": {
+    "target_url": "http://example.com",
+    "events": "job_updated",
+    "type": "organization",
+    "content_type": "application/json",
+    "secret": "OHehfhN3omJIFhp2Vzq7AwdXLPXpO0IIxyEO4ENO",
+    "is_active": true,
+    "enable_ssl": false,
+    "created_date": "2022-08-09T12:17:50.042Z",
+    "updated_date": "2022-08-09T12:17:50.042Z",
+    "owner": [
+      "admin1"
+    ],
+    "project": null,
+    "organization": 1
+  }
+},
+{
   "model": "admin.logentry",
   "pk": 1,
   "fields": {

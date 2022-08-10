@@ -1,0 +1,29 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "content_type": "application/json",
+      "created_date": "2022-08-09T12:17:50.042000Z",
+      "enable_ssl": false,
+      "events": [
+        "job_updated"
+      ],
+      "id": 1,
+      "is_active": true,
+      "organization": 1,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "target_url": "http://example.com",
+      "type": "organization",
+      "updated_date": "2022-08-09T12:17:50.042000Z",
+      "url": "http://localhost:8080/api/webhooks/1"
+    }
+  ]
+}
