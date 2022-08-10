@@ -21,7 +21,7 @@ spec:
     #baseImage: ubuntu:20.04
 
     # GPU only
-    baseImage: nvidia/cuda:11.1-devel-ubuntu20.04
+    baseImage: nvidia/cuda:11.7.0-devel-ubuntu20.04
 
     directives:
       preCopy:
