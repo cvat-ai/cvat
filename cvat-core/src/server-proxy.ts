@@ -761,6 +761,17 @@
             }
 
             async function importTask(storage, file, fileName) {
+                const { backendAPI } = config;
+                // keep current default params to 'freeze" them during this request
+                const params: any = {
+                    ...enableOrganization(),
+                    location: storage.location,
+                };
+
+                const url = `${backendAPI}/tasks/backup`;
+                const taskData = new FormData();
+                let response;
+
                 async function wait(taskData, response) {
                     return new Promise((resolve, reject) => {
                         async function checkStatus() {
@@ -784,17 +795,6 @@
                         setTimeout(checkStatus);
                     });
                 }
-
-                const { backendAPI } = config;
-                // keep current default params to 'freeze" them during this request
-                const params: any = {
-                    ...enableOrganization(),
-                    location: storage.location,
-                };
-
-                const url = `${backendAPI}/tasks/backup`;
-                const taskData = new FormData();
-                let response;
 
                 if (storage.cloudStorageId) {
                     params.cloud_storage_id = storage.cloudStorageId;
@@ -871,6 +871,20 @@
             }
 
             async function importProject(storage, file, fileName) {
+                const { backendAPI } = config;
+                // keep current default params to 'freeze" them during this request
+                const params: any = {
+                    ...enableOrganization(),
+                    location: storage.location,
+                }
+                if (storage.cloudStorageId) {
+                    params.cloud_storage_id = storage.cloudStorageId;
+                }
+
+                const url = `${backendAPI}/projects/backup`;
+                const projectData = new FormData();
+                let response;
+
                 async function wait(projectData, response) {
                     return new Promise((resolve, reject) => {
                         async function request() {
@@ -895,20 +909,6 @@
                         setTimeout(request);
                     });
                 };
-
-                const { backendAPI } = config;
-                // keep current default params to 'freeze" them during this request
-                const params: any = {
-                    ...enableOrganization(),
-                    location: storage.location,
-                }
-                if (storage.cloudStorageId) {
-                    params.cloud_storage_id = storage.cloudStorageId;
-                }
-
-                const url = `${backendAPI}/projects/backup`;
-                const projectData = new FormData();
-                let response;
 
                 if (storage.location === 'cloud_storage') {
                     params.filename = fileName;

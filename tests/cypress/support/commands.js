@@ -845,7 +845,7 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
-        cy.get('.cvat-modal-export-task').find('[type="checkbox"]').should('not.be.checked').check();
+        cy.get('.cvat-modal-export-task').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
     if (archiveCustomeName) {
         cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(archiveCustomeName);

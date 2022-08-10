@@ -164,7 +164,6 @@ function ImportBackupModal(): JSX.Element {
                     {selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}
                 </Form>
             </Modal>
-            {/* <ImportBackupStatusModal /> */}
         </>
     );
 }

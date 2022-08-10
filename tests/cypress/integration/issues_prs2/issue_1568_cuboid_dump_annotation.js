@@ -40,7 +40,7 @@ context('Dump annotation if cuboid created.', () => {
         });
 
         it('Error notification is not exists.', () => {
-            cy.get('.ant-notification-notice').should('not.exist');
+            cy.get('.ant-notification-notice-error').should('not.exist');
         });
     });
 });
