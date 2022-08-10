@@ -2621,10 +2621,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (element.shapeType === 'points') {
                 const points: number[] = element.points as number[];
                 const [cx, cy] = this.translateToCanvas(points);
-                xtl = Math.min(xtl, cx);
-                ytl = Math.min(ytl, cy);
-                xbr = Math.max(xbr, cx);
-                ybr = Math.max(ybr, cy);
+
+                if (!element.outside) {
+                    xtl = Math.min(xtl, cx);
+                    ytl = Math.min(ytl, cy);
+                    xbr = Math.max(xbr, cx);
+                    ybr = Math.max(ybr, cy);
+                }
+
                 const templateElement = templateElements.find((el: SVG.Circle) => el.attr('data-label-id') === element.label.id);
                 const circle = skeleton.circle()
                     .center(cx, cy)
