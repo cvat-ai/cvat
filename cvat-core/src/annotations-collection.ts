@@ -639,18 +639,21 @@
                     }
                 }
 
-                const lastKey = keyframes[keyframes.length - 1];
-                if (lastKey !== this.stopFrame && !track.shapes[lastKey].outside) {
+                let lastKey = keyframes[keyframes.length - 1];
+                if (track.shapeType === ShapeType.SKELETON) {
+                    track.elements.forEach((element) => {
+                        scanTrack(element, label);
+                        lastKey = Math.max(lastKey, ...Object.keys(element.shapes).map((key) => +key));
+                    });
+                }
+
+                if (lastKey !== this.stopFrame && !track.get(lastKey).outside) {
                     const interpolated = this.stopFrame - lastKey;
                     labels[label].interpolated += interpolated;
                     labels[label].total += interpolated;
                 }
 
-                if (track.shapeType === ShapeType.SKELETON) {
-                    track.elements.forEach((element) => {
-                        scanTrack(element, label);
-                    });
-                }
+
             };
 
             for (const object of Object.values(this.objects)) {
@@ -669,7 +672,7 @@
                     throw new ScriptingError(`Unexpected object type: "${objectType}"`);
                 }
 
-                const label = object.label.name;
+                const { name: label } = object.label;
                 if (objectType === 'tag') {
                     labels[label].tag++;
                     labels[label].manually++;
