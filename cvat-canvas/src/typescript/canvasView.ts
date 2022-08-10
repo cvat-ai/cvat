@@ -2674,11 +2674,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 };
 
-                const mousemove = (e: MouseEvent): void => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                };
-
                 const mouseleave = (): void => {
                     circle.attr({
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
@@ -2700,13 +2695,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 circle.on('mouseover', mouseover);
                 circle.on('mouseleave', mouseleave);
-                circle.on('mousemove', mousemove);
                 circle.on('click', click);
                 circle.on('remove', () => {
                     circle.off('remove');
                     circle.off('mouseover', mouseover);
                     circle.off('mouseleave', mouseleave);
-                    circle.off('mousemove', mousemove);
                     circle.off('click', click);
                 });
 
