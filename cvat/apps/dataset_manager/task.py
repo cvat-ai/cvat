@@ -205,7 +205,6 @@ class JobAnnotation:
             for shape in shapes:
                 attributes = shape.pop("attributes", [])
                 shape_elements = shape.pop("elements", [])
-                # all_elements.append(elements)
                 # FIXME: need to clamp points (be sure that all of them inside the image)
                 # Should we check here or implement a validator?
                 db_shape = models.LabeledShape(job=self.db_job, parent=parent_shape, **shape)
@@ -406,6 +405,7 @@ class JobAnnotation:
             'group',
             'source',
             'occluded',
+            'outside',
             'z_order',
             'rotation',
             'points',

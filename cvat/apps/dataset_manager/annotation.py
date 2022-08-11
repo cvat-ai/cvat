@@ -96,6 +96,9 @@ class AnnotationIR:
         segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
         if len(segment_shapes) < len(track['shapes']):
+            if len(track["elements"]):
+                for element in track["elements"]:
+                    element = cls._slice_track(element, start, stop)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
@@ -112,9 +115,6 @@ class AnnotationIR:
 
             for shape in segment_shapes:
                 shape.pop('keyframe', None)
-                if shape['type'] == ShapeType.SKELETON:
-                    for element in shape['elements']:
-                        element.pop('keyframe', None)
 
         track['shapes'] = segment_shapes
         if 0 < len(segment_shapes):
@@ -364,12 +364,24 @@ class TrackManager(ObjectManager):
     def to_shapes(self, end_frame):
         shapes = []
         for idx, track in enumerate(self.objects):
+            track_shapes = []
             for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
                 shape["track_id"] = idx
                 shape["attributes"] += track["attributes"]
-                shapes.append(shape)
+                shape["elements"] = []
+                track_shapes.append(shape)
+
+            if len(track["elements"]):
+                element_tracks = TrackManager(track["elements"])
+                element_shapes = element_tracks.to_shapes(end_frame)
+
+                for i in range(len(element_shapes) // len(track_shapes)):
+                    for track_shape, element in zip(track_shapes, element_shapes[len(track_shapes) * i : len(track_shapes) * (i + 1)]):
+                        track_shape["elements"].append(element)
+
+            shapes.extend(track_shapes)
         return shapes
 
     @staticmethod
@@ -438,13 +450,6 @@ class TrackManager(ObjectManager):
             copied["frame"] = frame
             if rotation is not None:
                 copied["rotation"] = rotation
-            if points is not None:
-                copied["points"] = points
-            return copied
-
-        def copy_skeleton(source, points=None):
-            copied = deepcopy(source)
-            copied["keyframe"] = False
             if points is not None:
                 copied["points"] = points
             return copied
@@ -705,48 +710,9 @@ class TrackManager(ObjectManager):
 
         def skeleton_interpolation(shape0, shape1):
             shapes = []
-            distance = shape1["frame"] - shape0["frame"]
-
-            elements1 = {}
-            for elem in shape1["elements"]:
-                elements1[elem["label_id"]] = elem
-
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                offset = (frame - shape0["frame"]) / distance
-                rotation = (shape0["rotation"] + find_angle_diff(
-                    shape1["rotation"], shape0["rotation"],
-                ) * offset + 360) % 360
-
-                elements = []
-                for elem0 in shape0["elements"]:
-                    if elem0["label_id"] in  elements1:
-                        elem1 =  elements1[elem0["label_id"]]
-
-                        elems_diff = np.subtract(elem1["points"], elem0["points"])
-                        points = elem0["points"] + elems_diff * offset
-
-                        elements.append(copy_skeleton(elem0, points.tolist()))
-                    else:
-                        elements.append(copy_skeleton(elem0))
-
-                shape = copy_shape(shape0, frame, rotation=rotation)
-                shape["elements"] = elements
+                shape = copy_shape(shape0, frame)
                 shapes.append(shape)
-
-            elements = deepcopy(shape0["elements"])
-            for i, elem in enumerate(elements):
-                if elem["label_id"] in elements1:
-                    elements[i] =  elements1[elem["label_id"]]
-                    elements1.pop(elem["label_id"])
-                    elements[i]["keyframe"] = True
-                else:
-                    elements[i]["keyframe"] = False
-
-            for elem in elements1.values():
-                elem["keyframe"] = True
-                elements.append(elem)
-
-            shape1["elements"] = elements
 
             return shapes
 
@@ -780,9 +746,6 @@ class TrackManager(ObjectManager):
         shapes = []
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
-        if track["shapes"][0]["type"] == ShapeType.SKELETON:
-            for elem in track["shapes"][0]["elements"]:
-                elem["keyframe"] = True
 
         for shape in track["shapes"]:
             if prev_shape:
@@ -792,10 +755,6 @@ class TrackManager(ObjectManager):
                         shape["attributes"].append(deepcopy(attr))
                 if not prev_shape["outside"]:
                     shapes.extend(interpolate(prev_shape, shape))
-                else:
-                    if shape["type"] == str(ShapeType.SKELETON):
-                        for element in shape["elements"]:
-                            element["keyframe"] = True
 
             shape["keyframe"] = True
             shapes.append(shape)

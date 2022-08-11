@@ -359,6 +359,27 @@ class TaskData(InstanceLabelData):
             attributes=self._export_attributes(tag["attributes"]),
         )
 
+    def _export_track(self, track, idx):
+        track['shapes'] = list(filter(lambda x: x['frame'] not in self._deleted_frames, track['shapes']))
+        tracked_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, self._db_task.data.size)
+        for tracked_shape in tracked_shapes:
+            tracked_shape["attributes"] += track["attributes"]
+            tracked_shape["track_id"] = idx
+            tracked_shape["group"] = track["group"]
+            tracked_shape["source"] = track["source"]
+            tracked_shape["label_id"] = track["label_id"]
+
+        idx += 1
+        return TaskData.Track(
+            label=self._get_label_name(track["label_id"]),
+            group=track["group"],
+            source=track["source"],
+            shapes=[self._export_tracked_shape(shape)
+                for shape in tracked_shapes if shape["frame"] not in self._deleted_frames],
+            elements=[self._export_track(element, idx) for element in track.get("elements", [])]
+        )
+
     @staticmethod
     def _export_label(label):
         return TaskData.Labels(
@@ -432,24 +453,9 @@ class TaskData(InstanceLabelData):
 
     @property
     def tracks(self):
-        for idx, track in enumerate(self._annotation_ir.tracks):
-            track['shapes'] = list(filter(lambda x: x['frame'] not in self._deleted_frames, track['shapes']))
-            tracked_shapes = TrackManager.get_interpolated_shapes(
-                track, 0, self._db_task.data.size)
-            for tracked_shape in tracked_shapes:
-                tracked_shape["attributes"] += track["attributes"]
-                tracked_shape["track_id"] = idx
-                tracked_shape["group"] = track["group"]
-                tracked_shape["source"] = track["source"]
-                tracked_shape["label_id"] = track["label_id"]
-
-            yield TaskData.Track(
-                label=self._get_label_name(track["label_id"]),
-                group=track["group"],
-                source=track["source"],
-                shapes=[self._export_tracked_shape(shape)
-                    for shape in tracked_shapes if shape["frame"] not in self._deleted_frames],
-            )
+        idx = 0
+        for track in self._annotation_ir.tracks:
+            yield self._export_track(track, idx)
 
     @property
     def tags(self):
@@ -494,17 +500,8 @@ class TaskData(InstanceLabelData):
             )
         ]
         _shape['points'] = list(map(float, _shape['points']))
+        _shape['elements'] = [self._import_shape(element) for element in _shape.get('elements', [])]
 
-        _shape['elements'] = [element._asdict() for element in _shape['elements']]
-        for element in _shape['elements']:
-            element['label_id'] = self._get_label_id(element.pop('label'))
-
-            element['attributes'] = [self._import_attribute(element['label_id'], attrib)
-                for attrib in element['attributes']
-                if self._get_mutable_attribute_id(element['label_id'], attrib.name) or (
-                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
-                )
-            ]
         return _shape
 
     def _import_track(self, track):
@@ -515,6 +512,7 @@ class TaskData(InstanceLabelData):
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
+        _track['elements'] = [self._import_track(element) for element in _track.get('elements', [])]
         for shape in _track['shapes']:
             shape['frame'] = self.rel_frame_id(int(shape['frame']))
             _track['attributes'] = [self._import_attribute(label_id, attrib)
@@ -530,17 +528,6 @@ class TaskData(InstanceLabelData):
                 )
             ]
             shape['points'] = list(map(float, shape['points']))
-
-            shape['elements'] = [element._asdict() for element in shape['elements']]
-            for element in shape['elements']:
-                element['label_id'] = self._get_label_id(element.pop('label'))
-
-                element['attributes'] = [self._import_attribute(element['label_id'], attrib, mutable=True)
-                    for attrib in element['attributes']
-                    if self._get_mutable_attribute_id(element['label_id'], attrib.name) or (
-                        self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
-                    )
-                ]
 
         return _track
 
@@ -628,7 +615,6 @@ class ProjectData(InstanceLabelData):
         points: List[float] = attrib()
         occluded: bool = attrib()
         attributes: List[InstanceLabelData.Attribute] = attrib()
-        elements: List['ProjectData.LabeledShape'] = attrib()
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         rotation: int = attrib(default=0)
@@ -636,6 +622,7 @@ class ProjectData(InstanceLabelData):
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
         outside: bool = attrib(default=False)
+        elements: List['ProjectData.LabeledShape'] = attrib(default=[])
 
     @attrs
     class TrackedShape:
@@ -661,7 +648,7 @@ class ProjectData(InstanceLabelData):
         group: int = attrib(default=0)
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
-        parent: str = attrib(default=None)
+        elements: List['ProjectData.Track'] = attrib(default=[])
 
     @attrs
     class Tag:
@@ -865,6 +852,30 @@ class ProjectData(InstanceLabelData):
             task_id=task_id
         )
 
+    def _export_track(self, track: dict, task_id: int, task_size: int, idx: int):
+        track['shapes'] = list(filter(lambda x: (task_id, x['frame']) not in self._deleted_frames, track['shapes']))
+        tracked_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, task_size
+        )
+        for tracked_shape in tracked_shapes:
+            tracked_shape["attributes"] += track["attributes"]
+            tracked_shape["track_id"] = idx
+            tracked_shape["group"] = track["group"]
+            tracked_shape["source"] = track["source"]
+            tracked_shape["label_id"] = track["label_id"]
+
+        idx += 1
+
+        return ProjectData.Track(
+            label=self._get_label_name(track["label_id"]),
+            group=track["group"],
+            source=track["source"],
+            shapes=[self._export_tracked_shape(shape, task_id) for shape in tracked_shapes
+                if (task_id, shape["frame"]) not in self._deleted_frames],
+            task_id=task_id,
+            elements=[self._export_track(element, task_id, task_size, idx) for element in track.get("elements", [])]
+        )
+
     def group_by_frame(self, include_empty=False):
         frames: Dict[Tuple[str, int], ProjectData.Frame] = {}
         def get_frame(task_id: int, idx: int) -> ProjectData.Frame:
@@ -923,25 +934,7 @@ class ProjectData(InstanceLabelData):
         idx = 0
         for task in self._db_tasks.values():
             for track in self._annotation_irs[task.id].tracks:
-                track['shapes'] = list(filter(lambda x: (task.id, x['frame']) not in self._deleted_frames, track['shapes']))
-                tracked_shapes = TrackManager.get_interpolated_shapes(
-                    track, 0, task.data.size
-                )
-                for tracked_shape in tracked_shapes:
-                    tracked_shape["attributes"] += track["attributes"]
-                    tracked_shape["track_id"] = idx
-                    tracked_shape["group"] = track["group"]
-                    tracked_shape["source"] = track["source"]
-                    tracked_shape["label_id"] = track["label_id"]
-                yield ProjectData.Track(
-                    label=self._get_label_name(track["label_id"]),
-                    group=track["group"],
-                    source=track["source"],
-                    shapes=[self._export_tracked_shape(shape, task.id) for shape in tracked_shapes
-                        if (task.id, shape["frame"]) not in self._deleted_frames],
-                    task_id=task.id
-                )
-                idx+=1
+                yield self._export_track(track, task.id, task.data.size, idx)
 
     @property
     def tags(self):
@@ -1581,6 +1574,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                 group=group_map.get(ann.group, 0),
                                 source=source,
                                 shapes=[],
+                                elements=[],
                             )
 
                         tracks[track_id].shapes.append(track)
