@@ -45,7 +45,7 @@ def update(sender, serializer=None, old_values=None, **kwargs):
     oid = serializer.instance.segment.task.organization
     pid = serializer.data["project_id"]
 
-    if event_name not in map(lambda a: a[1], EventTypeChoice.choices()):
+    if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
     if oid is None and pid is None:
