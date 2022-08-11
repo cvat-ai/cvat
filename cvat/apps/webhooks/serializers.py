@@ -10,17 +10,22 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 
 
 class EventTypeValidator:
-    def __call__(self, attrs):
-        events = set(EventsSerializer().to_representation(attrs["events"]))
+    requires_context = True
+
+    def __call__(self, attrs, serializer):
+        webhook_type = attrs.get("type")
+        if webhook_type is None:
+            webhook_type = serializer.instance.type
+        events = set(EventTypesSerializer().to_representation(attrs["events"]))
         if (
-            attrs["type"] == WebhookTypeChoice.PROJECT
+            webhook_type == WebhookTypeChoice.PROJECT
             and not events.issubset(set(ProjectEvents.events))
         ) or (
-            attrs["type"] == WebhookTypeChoice.ORGANIZATION
+            webhook_type == WebhookTypeChoice.ORGANIZATION
             and not events.issubset(set(OrganizationEvents.events))
         ):
             raise serializers.ValidationError(
-                f"Invalid events list for {attrs['type']} webhook"
+                f"Invalid events list for {webhook_type} webhook"
             )
 
 
