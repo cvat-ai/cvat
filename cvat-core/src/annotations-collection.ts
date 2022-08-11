@@ -129,7 +129,7 @@
             const tags = this.tags[frame] || [];
 
             const objects = [].concat(tracks, shapes, tags);
-            const visible = []
+            const visible = [];
 
             for (const object of objects) {
                 if (object.removed) {
@@ -137,7 +137,7 @@
                 }
 
                 const stateData = object.get(frame);
-                if (!allTracks && stateData.outside && !stateData.keyframe) {
+                if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
                     continue;
                 }
 
@@ -814,16 +814,35 @@
                                     rotation: state.rotation || 0,
                                     type: state.shapeType,
                                     z_order: state.zOrder,
-                                    elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
-                                        type: element.shapeType,
-                                        label_id: element.label.id,
-                                        occluded: element.occluded || false,
-                                        outside: element.outside || false,
-                                        points: [...element.points],
-                                        attributes: [],
-                                    })) : undefined,
                                 },
                             ],
+                            elements: state.shapeType === 'skeleton' ? state.elements.map((element) => {
+                                const elementAttrValues = Object.keys(state.attributes)
+                                    .reduce(convertAttributes.bind(state), []);
+                                const elementAttributes = element.label.attributes.reduce((accumulator, attribute) => {
+                                    accumulator[attribute.id] = attribute;
+                                    return accumulator;
+                                }, {});
+
+                                return ({
+                                    attributes: elementAttrValues
+                                        .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                    frame: state.frame,
+                                    group: 0,
+                                    label_id: element.label.id,
+                                    shapes: [{
+                                        frame: state.frame,
+                                        type: element.shapeType,
+                                        points: [...element.points],
+                                        zOrder: state.zOrder,
+                                        outside: element.outside || false,
+                                        occluded: element.occluded || false,
+                                        rotation: element.rotation || 0,
+                                        attributes: elementAttrValues
+                                            .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                    }],
+                                });
+                            }) : undefined,
                         });
                     } else {
                         throw new ArgumentError(
