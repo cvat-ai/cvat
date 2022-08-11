@@ -6,27 +6,31 @@ from .models import (
     WebhookDelivery,
 )
 from rest_framework import serializers
-from cvat.apps.engine.serializers import BasicUserSerializer
+from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
 
 class EventTypeValidator:
     requires_context = True
 
+    def get_webhook_type(self, attrs, serializer):
+        if serializer.instance is not None:
+            return serializer.instance.type
+        return attrs.get("type")
+
     def __call__(self, attrs, serializer):
-        webhook_type = attrs.get("type")
-        if webhook_type is None:
-            webhook_type = serializer.instance.type
-        events = set(EventTypesSerializer().to_representation(attrs["events"]))
-        if (
-            webhook_type == WebhookTypeChoice.PROJECT
-            and not events.issubset(set(ProjectEvents.events))
-        ) or (
-            webhook_type == WebhookTypeChoice.ORGANIZATION
-            and not events.issubset(set(OrganizationEvents.events))
-        ):
-            raise serializers.ValidationError(
-                f"Invalid events list for {webhook_type} webhook"
-            )
+        if attrs.get("events") is not None:
+            webhook_type = self.get_webhook_type(attrs, serializer)
+            events = set(EventTypesSerializer().to_representation(attrs["events"]))
+            if (
+                webhook_type == WebhookTypeChoice.PROJECT
+                and not events.issubset(set(ProjectEvents.events))
+            ) or (
+                webhook_type == WebhookTypeChoice.ORGANIZATION
+                and not events.issubset(set(OrganizationEvents.events))
+            ):
+                raise serializers.ValidationError(
+                    f"Invalid events list for {webhook_type} webhook"
+                )
 
 
 class EventTypesSerializer(serializers.MultipleChoiceField):
@@ -88,7 +92,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class WebhookWriteSerializer(serializers.ModelSerializer):
+class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     events = EventTypesSerializer(write_only=True)
 
     # Q: should be owner_id required or not?
@@ -121,7 +125,7 @@ class WebhookWriteSerializer(serializers.ModelSerializer):
             "organization_id",
             "events",
         )
-        write_once_fields = ("type" "owner_id", "project_id", "organization_id")
+        write_once_fields = ("type", "owner_id", "project_id", "organization_id")
         validators = [EventTypeValidator()]
 
     def create(self, validated_data):
