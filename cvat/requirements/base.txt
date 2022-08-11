@@ -18,7 +18,7 @@ requests==2.26.0
 rq==1.5.1
 rq-scheduler==0.10.0
 sqlparse==0.4.2
-django-sendfile2==0.6.1
+django-sendfile2==0.7.0
 dj-pagination==2.5.0
 python-logstash-async==2.2.0
 rules==2.2
