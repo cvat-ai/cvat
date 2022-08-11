@@ -63,6 +63,10 @@ class WebhookReadSerializer(serializers.ModelSerializer):
         source="deliveries.last.status_code", read_only=True
     )
 
+    last_delivery_date = serializers.DateTimeField(
+        source="deliveries.last.delivered_at", read_only=True
+    )
+
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         if ret.get("type", "") == WebhookTypeChoice.PROJECT.value:
@@ -77,6 +81,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "id",
             "url",
             "target_url",
+            "description",
             "type",
             "content_type",
             "is_active",
@@ -88,6 +93,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "organization",
             "events",
             "last_status",
+            "last_delivery_date",
         )
         read_only_fields = fields
 
@@ -115,6 +121,7 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         model = Webhook
         fields = (
             "target_url",
+            "description",
             "type",
             "content_type",
             "secret",
