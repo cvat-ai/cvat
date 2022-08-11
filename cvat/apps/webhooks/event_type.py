@@ -1,3 +1,6 @@
+from .models import WebhookTypeChoice
+
+
 class Events:
     RESOURCES = {
         "project",
@@ -16,37 +19,39 @@ class Events:
         for resource in resources:
             if resource not in cls.RESOURCES:
                 continue
-            ret |= set(f"{resource}_{action}" for action in cls.RESOURCES)
+            ret |= set(f"{resource}_{action}" for action in cls.ACTIONS)
         return ret
-
-    @classmethod
-    def all(cls):
-        return set(
-            f"{resource}_{action}"
-            for resource in cls.RESOURCES
-            for action in cls.ACTIONS
-        ) | set(("organization_updated",))
 
 
 class EventTypeChoice:
     @classmethod
     def choices(cls):
-        return sorted((val, val.upper()) for val in Events.all())
+        return sorted((val, val.upper()) for val in AllEvents.events)
+
+
+class AllEvents:
+    webhook_type = "all"
+    events = list(
+        set(
+            f"{resource}_{action}"
+            for resource in Events.RESOURCES
+            for action in Events.ACTIONS
+        )
+        | set(("organization_updated",))
+    )
 
 
 class ProjectEvents:
-    @classmethod
-    def available_values(cls):
-        return set(("project_updated",)) | Events.select(
-            ["job", "task", "issue", "comment"]
-        )
+    webhook_type = WebhookTypeChoice.PROJECT
+    events = list(
+        set(("project_updated",)) | Events.select(["job", "task", "issue", "comment"])
+    )
 
 
 class OrganizationEvents:
-    @classmethod
-    def available_values(cls):
-        return (
-            set(("organization_updated",))
-            | Events.select(["membership", "invitation", "project"])
-            | ProjectEvents.choices()
-        )
+    webhook_type = WebhookTypeChoice.ORGANIZATION
+    events = list(
+        set(("organization_updated",))
+        | Events.select(["membership", "invitation", "project"])
+        | set(ProjectEvents.events)
+    )

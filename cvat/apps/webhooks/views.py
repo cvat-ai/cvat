@@ -1,17 +1,24 @@
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+    extend_schema_view,
+)
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import SAFE_METHODS
+from rest_framework.response import Response
 
-from .signals import signal_redelivery, signal_ping
-from .models import Webhook, WebhookDelivery
+from .event_type import AllEvents, OrganizationEvents, ProjectEvents
+from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 from .serializers import (
+    EventsSerializer,
+    WebhookDeliveryReadSerializer,
     WebhookReadSerializer,
     WebhookWriteSerializer,
-    WebhookDeliveryReadSerializer,
 )
-
-from rest_framework.permissions import SAFE_METHODS
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework.decorators import action
+from .signals import signal_ping, signal_redelivery
 
 
 @extend_schema(tags=["webhooks"])
@@ -64,6 +71,37 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    @extend_schema(
+        summary="Method return a list of available webhook events",
+        parameters=[
+            OpenApiParameter(
+                "type",
+                description="Type of webhook",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=False,
+            )
+        ],
+        responses={"200": OpenApiResponse(EventsSerializer)},
+    )
+    @action(detail=False, methods=["GET"], serializer_class=EventsSerializer)
+    def events(self, request):
+        webhook_type = request.query_params.get("type", "all")
+        events = None
+        if webhook_type == "all":
+            events = AllEvents
+        elif webhook_type == WebhookTypeChoice.PROJECT:
+            events = ProjectEvents
+        elif webhook_type == WebhookTypeChoice.ORGANIZATION:
+            events = OrganizationEvents
+
+        if events is None:
+            return Response(
+                "Incorrect value of type parameter", status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(EventsSerializer().to_representation(events))
 
     @extend_schema(
         summary="Method return a list of deliveries for a specific webhook",

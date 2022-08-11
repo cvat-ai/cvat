@@ -2,7 +2,6 @@ from enum import Enum
 
 from django.db import models
 from django.contrib.auth.models import User
-from .event_type import EventTypeChoice
 from cvat.apps.engine.models import Project
 from cvat.apps.organizations.models import Organization
 
@@ -33,6 +32,7 @@ class WebhookContentTypeChoice(str, Enum):
 class Webhook(models.Model):
     target_url = models.URLField()
 
+    events = models.CharField(max_length=4096, default="")
     type = models.CharField(max_length=16, choices=WebhookTypeChoice.choices())
     content_type = models.CharField(
         max_length=64,
@@ -93,16 +93,6 @@ class WebhookDelivery(models.Model):
 
     request = models.JSONField(default=dict)
     response = models.JSONField(default=dict)
-
-    class Meta:
-        default_permissions = ()
-
-
-class WebhookEvent(models.Model):
-    webhook = models.ForeignKey(
-        Webhook, on_delete=models.CASCADE, related_name="events"
-    )
-    name = models.CharField(max_length=64, choices=EventTypeChoice.choices())
 
     class Meta:
         default_permissions = ()
