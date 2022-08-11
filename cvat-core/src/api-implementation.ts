@@ -24,6 +24,7 @@ const config = require('./config');
     const { Project } = require('./project');
     const { CloudStorage } = require('./cloud-storage');
     const Organization = require('./organization');
+    const Webhook = require('./webhook');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -284,6 +285,12 @@ const config = require('./config');
 
         cvat.organizations.deactivate.implementation = async () => {
             config.organizationID = null;
+        };
+
+        cvat.webhooks.get.implementation = async () => {
+            const webhooksData = await serverProxy.webhooks.get();
+            const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
+            return webhooks;
         };
 
         return cvat;

@@ -22,6 +22,7 @@ import exportReducer from './export-reducer';
 import importReducer from './import-reducer';
 import cloudStoragesReducer from './cloud-storages-reducer';
 import organizationsReducer from './organizations-reducer';
+import webhooksReducer from './webhooks-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -44,5 +45,6 @@ export default function createRootReducer(): Reducer {
         import: importReducer,
         cloudStorages: cloudStoragesReducer,
         organizations: organizationsReducer,
+        webhooks: webhooksReducer,
     });
 }

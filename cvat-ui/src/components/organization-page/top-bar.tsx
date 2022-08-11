@@ -15,9 +15,10 @@ import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
+
 import {
     EditTwoTone, EnvironmentOutlined,
-    MailOutlined, PhoneOutlined, PlusCircleOutlined, DeleteOutlined,
+    MailOutlined, PhoneOutlined, PlusCircleOutlined, DeleteOutlined, MoreOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -26,11 +27,18 @@ import {
     removeOrganizationAsync,
     updateOrganizationAsync,
 } from 'actions/organization-actions';
+import { Dropdown, Menu } from 'antd';
+import { useHistory } from 'react-router-dom';
 
 export interface Props {
     organizationInstance: any;
     userInstance: any;
     fetchMembers: () => void;
+}
+
+export enum MenuActions {
+    SET_WEBHOOKS = 'SET_WEBHOOKS',
+    REMOVE_ORGANIZATION = 'REMOVE_ORGANIZATION',
 }
 
 function OrganizationTopBar(props: Props): JSX.Element {
@@ -62,14 +70,90 @@ function OrganizationTopBar(props: Props): JSX.Element {
     let organizationName = name;
     let organizationDescription = description;
     let organizationContacts = contact;
+    const history = useHistory();
+
+    // TODO: make types for menu
+    // function onClickMenuWrapper (params: any): void {
+
+    // }
     return (
         <>
             <Row justify='space-between'>
                 <Col span={24}>
                     <div className='cvat-organization-top-bar-descriptions'>
-                        <Text>
-                            <Text className='cvat-title'>{`Organization: ${slug} `}</Text>
-                        </Text>
+                        <Row justify='space-between'>
+                            <Col>
+                                <Text>
+                                    <Text className='cvat-title'>{`Organization: ${slug} `}</Text>
+                                </Text>
+                            </Col>
+                            <Col>
+                                {/* TODO: make menu more elegant */}
+                                {/* TODO: move Remove organization to Menu */}
+                                <Dropdown overlay={() => (
+                                    <Menu>
+                                        <Menu.Item key={MenuActions.SET_WEBHOOKS}>
+                                            <a
+                                                href='/organization/webhooks'
+                                                onClick={(e: React.MouseEvent) => {
+                                                    e.preventDefault();
+                                                    history.push('/organization/webhooks');
+                                                    return false;
+                                                }}
+                                            >
+                                                Set webhooks
+                                            </a>
+                                        </Menu.Item>
+                                        {owner && userID === owner.id ? (
+                                            <Menu.Item
+                                                key={MenuActions.REMOVE_ORGANIZATION}
+                                                onClick={() => {
+                                                    const modal = Modal.confirm({
+                                                        onOk: () => {
+                                                            dispatch(removeOrganizationAsync(organizationInstance));
+                                                        },
+                                                        content: (
+                                                            <div className='cvat-remove-organization-submit'>
+                                                                <Text type='warning'>
+                                                                    To remove the organization,
+                                                                    enter its short name below
+                                                                </Text>
+                                                                <Input
+                                                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                                                                        modal.update({
+                                                                            okButtonProps: {
+                                                                                disabled:
+                                                                    event.target.value !== organizationInstance.slug,
+                                                                                danger: true,
+                                                                            },
+                                                                        });
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        ),
+                                                        okButtonProps: {
+                                                            disabled: true,
+                                                            danger: true,
+                                                        },
+                                                        okText: 'Remove',
+                                                    });
+                                                }}
+                                            >
+                                                Remove organization
+                                            </Menu.Item>
+                                        ) : null}
+                                    </Menu>
+                                )}
+                                >
+                                    <Button size='middle' className='cvat-organization-page-actions-button'>
+                                        <Text className='cvat-text-color'>Actions</Text>
+                                        <MoreOutlined className='cvat-menu-icon' />
+                                    </Button>
+                                </Dropdown>
+                            </Col>
+
+                        </Row>
+
                         <Text
                             editable={{
                                 onChange: (value: string) => {
@@ -211,44 +295,6 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 }}
                             >
                                 Leave organization
-                            </Button>
-                        ) : null}
-                        {owner && userID === owner.id ? (
-                            <Button
-                                type='primary'
-                                danger
-                                onClick={() => {
-                                    const modal = Modal.confirm({
-                                        onOk: () => {
-                                            dispatch(removeOrganizationAsync(organizationInstance));
-                                        },
-                                        content: (
-                                            <div className='cvat-remove-organization-submit'>
-                                                <Text type='warning'>
-                                                    To remove the organization, enter its short name below
-                                                </Text>
-                                                <Input
-                                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                                                        modal.update({
-                                                            okButtonProps: {
-                                                                disabled:
-                                                                    event.target.value !== organizationInstance.slug,
-                                                                danger: true,
-                                                            },
-                                                        });
-                                                    }}
-                                                />
-                                            </div>
-                                        ),
-                                        okButtonProps: {
-                                            disabled: true,
-                                            danger: true,
-                                        },
-                                        okText: 'Remove',
-                                    });
-                                }}
-                            >
-                                Remove organization
                             </Button>
                         ) : null}
                         <Button

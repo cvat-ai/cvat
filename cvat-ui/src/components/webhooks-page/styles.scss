@@ -1,0 +1,69 @@
+// Copyright (C) 2022 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+@import '../../base.scss';
+@import '../../styles.scss';
+
+.cvat-webhooks-list {
+    height: 100%;
+    overflow-y: auto;
+    margin-top: $grid-unit-size*2.5;
+}
+
+.cvat-webhooks-list-item {
+    width: 100%;
+    height: 100px;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    padding-top: 20px;
+    background: $background-color-1;
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+}
+
+.cvat-webhook-status-unavailable {
+    color: gray;
+    fill: gray;
+}
+
+.cvat-webhook-info-text {
+    margin-right: $grid-unit-size;
+}
+
+.cvat-item-ping-webhook-button {
+    margin-right: $grid-unit-size*3;
+}
+
+.cvat-webhooks-page-actions-button {
+    margin-right: $grid-unit-size;
+    margin-top: $grid-unit-size;
+    display: flex;
+    align-items: center;
+    padding: $grid-unit-size;
+    line-height: $grid-unit-size*2;
+}
+
+.cvat-webhooks-page {
+    width: 100%;
+    height: 100%;
+    padding-top: $grid-unit-size*1.5;
+
+    > div:nth-child(3) {
+        height: 83%;
+    }
+}
+
+.cvat-webhooks-page-search-bar {
+    width: $grid-unit-size * 32;
+}
+
+.cvat-webhooks-page-filters-wrapper {
+    display: inline-block;
+}
+
+.cvat-webhooks-add-wrapper {
+    display: inline-block;
+}

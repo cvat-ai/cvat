@@ -1876,6 +1876,67 @@
                 return response.data;
             }
 
+            // TODO change parameters to work with projects also
+            // TODO add proper server call
+            async function getWebhooks(orgSlug, page, pageSize) {
+                return [
+                    {
+                        id: 1,
+                        target_url: 'http://google.com/',
+                        description: 'Sample webhook',
+                        content_type: 'application/json',
+                        owner: {
+                            first_name: '',
+                            id: 1,
+                            last_name: '',
+                            url: 'http://localhost:7000/api/users/1',
+                            username: 'kirill',
+                        },
+                        enable_ssl: true,
+                        is_active: true,
+                        created_date: '2022-08-01T08:32:47.546561Z',
+                        updated_date: '2022-08-01T09:32:47.546561Z',
+                        events: [{ id: 1, name: 'event1', description: 'desc1' }],
+                    },
+                    {
+                        id: 2,
+                        target_url: 'http://google.net/',
+                        description: 'Example webhook',
+                        enable_ssl: true,
+                        is_active: true,
+                        content_type: 'application/json',
+                        owner: {
+                            first_name: '',
+                            id: 1,
+                            last_name: '',
+                            url: 'http://localhost:7000/api/users/1',
+                            username: 'kirill',
+                        },
+                        created_date: '2022-08-02T08:32:47.546561Z',
+                        updated_date: '2022-08-02T09:32:47.546561Z',
+                        events: [{ id: 2, name: 'event2', description: 'desc2' }, { id: 3, name: 'event3', description: 'desc3' }],
+                    },
+                    {
+                        id: 3,
+                        target_url: 'http://google.qqq/',
+                        description: 'Example webhook two',
+                        enable_ssl: true,
+                        is_active: true,
+                        content_type: 'application/json',
+                        owner: {
+                            first_name: '',
+                            id: 1,
+                            last_name: '',
+                            url: 'http://localhost:7000/api/users/1',
+                            username: 'kirill',
+                        },
+                        created_date: '2022-08-03T08:32:47.546561Z',
+                        updated_date: '2022-08-03T09:32:47.546561Z',
+                        events: [{ id: 3, name: 'event3', description: 'desc3' }],
+                    },
+                ];
+            }
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -2032,6 +2093,14 @@
                             invite: inviteOrganizationMembers,
                             updateMembership: updateOrganizationMembership,
                             deleteMembership: deleteOrganizationMembership,
+                        }),
+                        writable: false,
+                    },
+
+                    // TODO add other methods
+                    webhooks: {
+                        value: Object.freeze({
+                            get: getWebhooks,
                         }),
                         writable: false,
                     },

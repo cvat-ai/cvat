@@ -767,6 +767,11 @@ export interface OrganizationState {
     updatingMember: boolean;
 }
 
+export interface WebhooksState {
+    current: any[],
+    fetching: boolean;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -787,6 +792,7 @@ export interface CombinedState {
     import: ImportState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
+    webhooks: WebhooksState;
 }
 
 export enum DimensionType {
