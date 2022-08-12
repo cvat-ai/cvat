@@ -11,7 +11,6 @@ import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-m
 import { CombinedState } from 'reducers/interfaces';
 import { modelsActions } from 'actions/models-actions';
 import {
-    loadAnnotationsAsync,
     deleteTaskAsync,
     switchMoveTaskModalVisible,
 } from 'actions/tasks-actions';
@@ -30,7 +29,6 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    loadAnnotations: (taskInstance: any, loader: any, file: File) => void;
     showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null) => void;
     showImportModal: (taskInstance: any, isDataset: boolean) => void;
     openRunModelWindow: (taskInstance: any) => void;
@@ -59,9 +57,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        loadAnnotations: (taskInstance: any, loader: any, file: File): void => {
-            dispatch(loadAnnotationsAsync(taskInstance, loader, file));
-        },
         showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null): void => {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },

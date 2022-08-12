@@ -32,7 +32,6 @@ export enum Actions {
     MOVE_TASK_TO_PROJECT = 'move_task_to_project',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     EXPORT_TASK = 'export_task',
-    IMPORT_TASK = 'import_task',
 }
 
 function ActionsMenuComponent(props: Props): JSX.Element {

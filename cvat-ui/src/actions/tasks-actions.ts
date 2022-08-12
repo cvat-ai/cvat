@@ -16,9 +16,6 @@ export enum TasksActionTypes {
     GET_TASKS = 'GET_TASKS',
     GET_TASKS_SUCCESS = 'GET_TASKS_SUCCESS',
     GET_TASKS_FAILED = 'GET_TASKS_FAILED',
-    LOAD_ANNOTATIONS = 'LOAD_ANNOTATIONS',
-    LOAD_ANNOTATIONS_SUCCESS = 'LOAD_ANNOTATIONS_SUCCESS',
-    LOAD_ANNOTATIONS_FAILED = 'LOAD_ANNOTATIONS_FAILED',
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
@@ -95,64 +92,6 @@ export function getTasksAsync(query: TasksQuery, updateQuery = true): ThunkActio
 
         dispatch(getInferenceStatusAsync());
         dispatch(getTasksSuccess(array, await Promise.all(promises), result.count));
-    };
-}
-
-function loadAnnotations(task: any, loader: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.LOAD_ANNOTATIONS,
-        payload: {
-            task,
-            loader,
-        },
-    };
-
-    return action;
-}
-
-function loadAnnotationsSuccess(task: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS,
-        payload: {
-            task,
-        },
-    };
-
-    return action;
-}
-
-function loadAnnotationsFailed(task: any, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.LOAD_ANNOTATIONS_FAILED,
-        payload: {
-            task,
-            error,
-        },
-    };
-
-    return action;
-}
-
-export function loadAnnotationsAsync(
-    task: any,
-    loader: any,
-    file: File,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const store = getCVATStore();
-            const state: CombinedState = store.getState();
-            if (state.tasks.activities.loads[task.id]) {
-                throw Error('Only one loading of annotations for a task allowed at the same time');
-            }
-            dispatch(loadAnnotations(task, loader));
-            await task.annotations.upload(file, loader);
-        } catch (error) {
-            dispatch(loadAnnotationsFailed(task, error));
-            return;
-        }
-
-        dispatch(loadAnnotationsSuccess(task));
     };
 }
 

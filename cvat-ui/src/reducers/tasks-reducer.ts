@@ -81,40 +81,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 initialized: true,
                 fetching: false,
             };
-        case TasksActionTypes.LOAD_ANNOTATIONS: {
-            const { task } = action.payload;
-            const { loader } = action.payload;
-            const { loads } = state.activities;
-
-            loads[task.id] = task.id in loads ? loads[task.id] : loader.name;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    loads: {
-                        ...loads,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.LOAD_ANNOTATIONS_FAILED:
-        case TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS: {
-            const { task } = action.payload;
-            const { loads } = state.activities;
-
-            delete loads[task.id];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    loads: {
-                        ...loads,
-                    },
-                },
-            };
-        }
         case TasksActionTypes.DELETE_TASK: {
             const { taskID } = action.payload;
             const { deletes } = state.activities;
