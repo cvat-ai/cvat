@@ -4148,7 +4148,7 @@ custom-error-instance@2.1.1:
   dependencies:
     axios "^0.27.2"
     browser-or-node "^2.0.0"
-    cvat-data "file:../.cache/yarn/v6/npm-cvat-core-5.1.0-691cfaa6-09da-4a22-bebe-75b93c8a2fef-1659597670543/node_modules/cvat-data"
+    cvat-data "file:../.cache/yarn/v6/npm-cvat-core-5.1.0-2e9b8366-5bf2-402f-b971-501362d8683c-1660289212044/node_modules/cvat-data"
     detect-browser "^5.2.1"
     error-stack-parser "^2.0.2"
     form-data "^4.0.0"
@@ -4786,11 +4786,6 @@ eslint-plugin-cypress@^2.11.2:
   integrity sha512-c2W/uPADl5kospNDihgiLc7n87t5XhUbFDoTl6CfVkmG+kDAb5Ux10V9PoLPu9N+r7znpc+iQlcmAqT1A/89HA==
   dependencies:
     globals "^11.12.0"
-
-eslint-plugin-header@^3.1.0:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-header/-/eslint-plugin-header-3.1.1.tgz#6ce512432d57675265fac47292b50d1eff11acd6"
-  integrity sha512-9vlKxuJ4qf793CmeeSrZUvVClw6amtpghq3CuWcB5cUNnWHQhgcqy5eF8oVKFk1G3Y/CbchGfEaw3wiIJaNmVg==
 
 eslint-plugin-import@^2.22.1:
   version "2.26.0"

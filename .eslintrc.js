@@ -17,17 +17,13 @@ module.exports = {
         '.eslintrc.js',
         'lint-staged.config.js',
     ],
-    plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'eslint-plugin-header', 'import'],
+    plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'import'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
         'airbnb-base', 'plugin:import/errors', 'plugin:import/warnings',
         'plugin:import/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
     rules: {
-        'header/header': [2, 'line', [{
-            pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
-            template: ' Copyright (C) 2022 Intel Corporation'
-        }, '', ' SPDX-License-Identifier: MIT']],
         'no-plusplus': 0,
         'no-continue': 0,
         'no-console': 0,
