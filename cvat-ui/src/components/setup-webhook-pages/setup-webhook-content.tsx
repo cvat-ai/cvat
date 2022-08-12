@@ -173,7 +173,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         contentType: WebhookContentType.APPLICATION_JSON,
                         eventsMethod: EventsMethod.SEND_EVERYTHING,
                         enableSSL: true,
-                        active: true,
+                        isActive: true,
                     }}
                 >
                     <Form.Item
