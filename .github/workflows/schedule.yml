@@ -224,6 +224,11 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          cd cvat-sdk/
+          gen/generate.sh
+          cd ..
+
           pip3 install --user cvat-sdk/
           pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
