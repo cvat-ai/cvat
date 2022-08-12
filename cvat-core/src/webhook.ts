@@ -7,19 +7,13 @@ import User from './user';
 const PluginRegistry = require('./plugins');
 const serverProxy = require('./server-proxy');
 
-interface WebhookEvent {
-    id?: number;
-    name: string;
-    description: string;
-}
-
 interface RawWebhookData {
     id?: number;
     type: 'project' | 'organization';
     target_url: string;
     organization_id?: number;
     project_id?: number;
-    events: WebhookEvent[];
+    events: string[];
     content_type: 'application/json';
     secret?: string;
     enable_ssl: boolean;
@@ -33,18 +27,19 @@ interface RawWebhookData {
 export default class Webhook {
     public readonly id?: number;
     public readonly type: RawWebhookData['type'];
-    public readonly targetURL: string;
-    public readonly events: WebhookEvent[];
-    public readonly contentType: RawWebhookData['content_type'];
-    public readonly description?: string;
     public readonly organizationID?: number;
     public readonly projectID?: number;
-    public readonly secret?: string;
-    public readonly isActive?: boolean;
-    public readonly enableSSL: boolean;
     public readonly owner?: User;
     public readonly createdDate?: string;
     public readonly updatedDate?: string;
+
+    public targetURL: string;
+    public events: string[];
+    public contentType: RawWebhookData['content_type'];
+    public description?: string;
+    public secret?: string;
+    public isActive?: boolean;
+    public enableSSL: boolean;
 
     static async events(): Promise<string[]> {
         return serverProxy.webhooks.events();
@@ -89,12 +84,24 @@ export default class Webhook {
                 },
                 targetURL: {
                     get: () => data.target_url,
+                    set: (value: string) => {
+                        // todo: make validation
+                        data.target_url = value;
+                    },
                 },
                 events: {
                     get: () => data.events,
+                    set: (events: string[]) => {
+                        // todo: make validation
+                        data.events = [...events];
+                    },
                 },
                 contentType: {
                     get: () => data.content_type,
+                    set: (value: RawWebhookData['content_type']) => {
+                        // todo: make validation
+                        data.content_type = value;
+                    },
                 },
                 organizationID: {
                     get: () => data.organization_id,
@@ -104,15 +111,31 @@ export default class Webhook {
                 },
                 description: {
                     get: () => data.description,
+                    set: (value: string) => {
+                        // todo: make validation
+                        data.description = value;
+                    },
                 },
                 secret: {
                     get: () => data.secret,
+                    set: (value: string) => {
+                        // todo: make validation
+                        data.secret = value;
+                    },
                 },
                 isActive: {
                     get: () => data.is_active,
+                    set: (value: boolean) => {
+                        // todo: make validation
+                        data.is_active = value;
+                    },
                 },
                 enableSSL: {
                     get: () => data.enable_ssl,
+                    set: (value: boolean) => {
+                        // todo: make validation
+                        data.enable_ssl = value;
+                    },
                 },
                 owner: {
                     get: () => data.owner,
@@ -196,9 +219,15 @@ Object.defineProperties(Webhook.prototype.save, {
         writable: false,
         enumerable: false,
         value: async function implementation() {
-            console.log(this);
             if (Number.isInteger(this.id)) {
-                const result = await serverProxy.webhook.update(this.id, this.toJSON());
+                const body = this.toJSON();
+                const supportedUpdateFields = ['description', 'targetURL', 'secret', 'contentType', 'isActive', 'enableSSL', 'events'];
+                for (const key in body) {
+                    if (!supportedUpdateFields.includes(key)) {
+                        delete body[key];
+                    }
+                }
+                const result = await serverProxy.webhooks.update(this.id, this.toJSON());
                 return new Webhook(result);
             }
 

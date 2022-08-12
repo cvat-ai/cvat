@@ -43,7 +43,7 @@ interface Props {
     webhook?: any;
 }
 
-function groupEvents(events: string[]): string[] {
+export function groupEvents(events: string[]): string[] {
     return Array.from(
         new Set(events.map((event: string) => event.split('_')[0])),
     );
@@ -51,8 +51,9 @@ function groupEvents(events: string[]): string[] {
 
 function collectEvents(method: EventsMethod, submittedGroups: Record<string, any>, allEvents: string[]): string[] {
     return method === EventsMethod.SEND_EVERYTHING ? allEvents : (() => {
-        const events = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event_') && value).map(([key]) => key);
-        return allEvents.filter((event) => events.includes(event.split('_')[0]));
+        const submittedEvents = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event_') && value).map(([key]) => key)
+            .map((event: string) => event.split('_')[1]);
+        return allEvents.filter((event) => submittedEvents.includes(event.split('_')[0]));
     })();
 }
 
@@ -63,7 +64,7 @@ function throwError(message: string, error: any): void {
         console.log(stringified);
     }
 
-    notification.info({
+    notification.error({
         message,
         description: stringified.length > MAX_LENGTH ? 'Open the browser console to get details' : stringified,
     });
@@ -72,6 +73,7 @@ function throwError(message: string, error: any): void {
 function SetupWebhookContent(props: Props): JSX.Element {
     const { webhook } = props;
     const [form] = Form.useForm();
+    const [rerender, setRerender] = useState(false);
     const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
     const organization = useSelector((state: CombinedState) => state.organizations.current);
 
@@ -94,7 +96,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 contentType: webhook.contentType,
                 secret: webhook.secret,
                 enableSSL: webhook.enableSSL,
-                active: webhook.active,
+                isActive: webhook.isActive,
                 events: webhook.events,
                 eventsMethod,
             };
@@ -104,6 +106,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
             });
 
             form.setFieldsValue(data);
+            setRerender(!rerender);
         }
     }, [webhook, webhookEvents]);
 
@@ -111,11 +114,11 @@ function SetupWebhookContent(props: Props): JSX.Element {
         form.validateFields().then((values: Store): void => {
             if (webhook) {
                 webhook.description = values.description;
-                webhook.targetURL = values.description;
-                webhook.secret = values.description;
-                webhook.contentType = values.description;
-                webhook.isActive = values.description;
-                webhook.enableSSL = values.description;
+                webhook.targetURL = values.targetURL;
+                webhook.secret = values.secret;
+                webhook.contentType = values.contentType;
+                webhook.isActive = values.isActive;
+                webhook.enableSSL = values.enableSSL;
                 webhook.events = collectEvents(values.eventsMethod, values, webhookEvents);
 
                 webhook.save().then(() => {
@@ -133,8 +136,8 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     content_type: values.contentType,
                     secret: values.secret,
                     enable_ssl: values.enableSSL,
-                    is_active: values.active,
-                    organization_id: organization.id, // TODO: temporary hardcoded
+                    is_active: values.isActive,
+                    organization_id: organization.id, // TODO: temporary hardcoded for organizations
                     events: collectEvents(values.eventsMethod, values, webhookEvents),
                 };
                 const WebhookClass = getCore().classes.Webhook;
@@ -154,7 +157,8 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
     const onEventsMethodChange = useCallback((event: RadioChangeEvent): void => {
         form.setFieldsValue({ eventsMethod: event.target.value });
-    }, []);
+        setRerender(!rerender);
+    }, [rerender]);
 
     return (
         <Row justify='start' align='middle' className='cvat-create-webhook-content'>
@@ -224,7 +228,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     </Form.Item>
                     <Form.Item
                         help='CVAT will deliver events for active webhooks only'
-                        name='active'
+                        name='isActive'
                         valuePropName='checked'
                     >
                         <Checkbox>

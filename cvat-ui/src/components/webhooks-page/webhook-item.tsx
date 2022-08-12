@@ -3,14 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
-import {
-    Col, Row, Button, Menu, Dropdown,
-} from 'antd';
-import Text from 'antd/lib/typography/Text';
+import React from 'react';
 import { useHistory } from 'react-router';
 import moment from 'moment';
+import { Col, Row } from 'antd/lib/grid';
+import Button from 'antd/lib/button';
+import Menu from 'antd/lib/menu';
+import Dropdown from 'antd/lib/dropdown';
+import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
+
+import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
 
 export interface WebhookItemProps {
     webhookInstance: any;
@@ -20,7 +23,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     const history = useHistory();
     const { webhookInstance } = props;
     const {
-        id, description, updatedDate, createdDate, owner, targetUrl, events,
+        id, description, updatedDate, createdDate, owner, targetURL, events,
     } = webhookInstance;
 
     const updated = moment(updatedDate).fromNow();
@@ -49,11 +52,11 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
             </Col>
             <Col span={6} offset={1}>
                 <Text type='secondary' className='cvat-webhook-info-text'>URL:</Text>
-                <Text>{targetUrl}</Text>
+                <Text>{targetURL}</Text>
             </Col>
             <Col span={7}>
                 <Text type='secondary' className='cvat-webhook-info-text'>Events:</Text>
-                <Text>{events.map((event) => event.name).join(', ')}</Text>
+                <Text>{groupEvents(events).join(', ')}</Text>
             </Col>
             <Col span={3}>
                 <Row justify='end'>
