@@ -22,6 +22,7 @@ export interface WebhookItemProps {
 
 function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     const [isRemoved, setIsRemoved] = useState<boolean>(false);
+    const [pingFetching, setPingFetching] = useState<boolean>(false);
     const history = useHistory();
     const { webhookInstance } = props;
     const {
@@ -66,10 +67,14 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                         <Button
                             className='cvat-item-ping-webhook-button'
                             type='primary'
+                            disabled={pingFetching}
+                            loading={pingFetching}
                             ghost
-                            href={`/webhooks/${id}`}
-                            onClick={(e: React.MouseEvent): void => {
-                                e.preventDefault();
+                            onClick={(): void => {
+                                setPingFetching(true);
+                                webhookInstance.ping().finally(() => {
+                                    setPingFetching(false);
+                                });
                             }}
                         >
                             Ping
@@ -80,7 +85,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                     <Col>
                         <Dropdown overlay={() => (
                             <Menu>
-                                <Menu.Item>
+                                <Menu.Item key='edit'>
                                     <a
                                         href={`/webhooks/${id}`}
                                         onClick={(e: React.MouseEvent) => {
@@ -93,6 +98,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                                     </a>
                                 </Menu.Item>
                                 <Menu.Item
+                                    key='delete'
                                     onClick={() => {
                                         Modal.confirm({
                                             title: 'Are you sure you want to remove the hook?',
