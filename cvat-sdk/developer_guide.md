@@ -14,7 +14,7 @@ python manage.py spectacular --file schema.yml && mkdir -p cvat-sdk/schema/ && m
 
 2. Generate package code (call from the package root directory):
 ```bash
-# pip install -r requirements/development.txt
+# pip install -r gen/requirements.txt
 
 ./gen/generate.sh
 ```

@@ -14,8 +14,8 @@ import urllib3
 
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.rest import RESTClientObject
+from cvat_sdk.core.helpers import StreamWithProgress, expect_status
 from cvat_sdk.core.progress import ProgressReporter
-from cvat_sdk.helpers import StreamWithProgress, expect_status
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client

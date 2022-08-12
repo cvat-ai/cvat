@@ -6,7 +6,7 @@ import os.path as osp
 import textwrap
 from typing import Tuple
 
-from cvat_sdk.helpers import TqdmProgressReporter
+from cvat_sdk.core.helpers import TqdmProgressReporter
 from tqdm import tqdm
 
 

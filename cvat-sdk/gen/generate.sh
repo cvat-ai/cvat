@@ -6,6 +6,8 @@
 
 set -e
 
+GENERATOR_VERSION="v6.0.1"
+
 VERSION="2.0-alpha"
 LIB_NAME="cvat_sdk"
 LAYER1_LIB_NAME="${LIB_NAME}/api_client"
@@ -20,7 +22,7 @@ cp "${TEMPLATE_DIR}/templates/openapi-generator/.openapi-generator-ignore" "${DS
 # Pass template dir here
 # https://github.com/OpenAPITools/openapi-generator/issues/8420
 docker run --rm -v "$PWD":"/local" \
-    openapitools/openapi-generator-cli generate \
+    openapitools/openapi-generator-cli:${GENERATOR_VERSION} generate \
         -t "/local/${TEMPLATE_DIR}/templates/openapi-generator/" \
         -i "/local/schema/schema.yml" \
         --config "/local/${TEMPLATE_DIR}/generator-config.yml" \

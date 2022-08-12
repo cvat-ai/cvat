@@ -18,11 +18,11 @@ import urllib3
 
 from cvat_sdk.api_client import ApiClient, ApiException, ApiValueError, Configuration, models
 from cvat_sdk.core.git import create_git_repo
+from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.tasks import TaskProxy
 from cvat_sdk.core.types import ResourceType
 from cvat_sdk.core.uploading import Uploader
-from cvat_sdk.helpers import expect_status
 
 
 @attrs.define
