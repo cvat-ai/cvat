@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,13 +18,14 @@ const config = require('./config');
         checkObjectType,
     } = require('./common');
 
-    const User = require('./user');
+    const User = require('./user').default;
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task, Job } = require('./session');
     const { Project } = require('./project');
     const { CloudStorage } = require('./cloud-storage');
     const Organization = require('./organization');
+    const Webhook = require('./webhook');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -284,6 +286,12 @@ const config = require('./config');
 
         cvat.organizations.deactivate.implementation = async () => {
             config.organizationID = null;
+        };
+
+        cvat.webhooks.get.implementation = async () => {
+            const webhooksData = await serverProxy.webhooks.get();
+            const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
+            return webhooks;
         };
 
         return cvat;
