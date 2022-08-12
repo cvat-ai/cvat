@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +24,7 @@
         JobStage, JobState, HistoryActions,
     } = require('./enums');
     const { Label } = require('./labels');
-    const User = require('./user');
+    const User = require('./user').default;
     const Issue = require('./issue');
     const { FieldUpdateTrigger, checkObjectType } = require('./common');
 

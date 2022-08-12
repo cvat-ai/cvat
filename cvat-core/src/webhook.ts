@@ -2,14 +2,37 @@
 //
 // SPDX-License-Identifier: MIT
 
-/**
-     * Class representing a webhook
-     * @memberof module:API.cvat.classes
-     * @hideconstructor
-     */
-class Webhook {
-    constructor(initialData) {
-        const data = {
+import User from './user';
+
+interface RawWebhookData {
+    id?: number;
+    target_url: string;
+    events: string[];
+    content_type: 'application/json';
+    secret: string;
+    enable_ssl: boolean;
+    description?: string;
+    is_active?: boolean;
+    owner?: any;
+    created_date?: string;
+    updated_date?: string;
+}
+
+export default class Webhook {
+    public readonly id?: number;
+    public readonly targetUrl: string;
+    public readonly events: string[];
+    public readonly contentType: 'application/json';
+    public readonly description?: string;
+    public readonly secret: string;
+    public readonly isActive?: boolean;
+    public readonly enableSSL: boolean;
+    public readonly owner?: User;
+    public readonly createdDate?: string;
+    public readonly updatedDate?: string;
+
+    constructor(initialData: RawWebhookData) {
+        const data: RawWebhookData = {
             id: null,
             target_url: null,
             events: null,
@@ -28,8 +51,10 @@ class Webhook {
                 data[property] = initialData[property];
             }
         }
-        // TODO: causes strange error, need to invistigate
-        // if (data.owner) data.owner = new User(data.owner);
+
+        if (data.owner) {
+            data.owner = new User(data.owner);
+        }
 
         Object.defineProperties(
             this,
@@ -55,7 +80,7 @@ class Webhook {
                 isActive: {
                     get: () => data.is_active,
                 },
-                enableSsl: {
+                enableSSL: {
                     get: () => data.enable_ssl,
                 },
                 owner: {

@@ -32,7 +32,7 @@ function build() {
         Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
     } = require('./exceptions');
 
-    const User = require('./user');
+    const User = require('./user').default;
     const pjson = require('../package.json');
     const config = require('./config');
 

@@ -18,7 +18,7 @@ const config = require('./config');
         checkObjectType,
     } = require('./common');
 
-    const User = require('./user');
+    const User = require('./user').default;
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task, Job } = require('./session');

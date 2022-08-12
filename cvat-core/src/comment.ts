@@ -1,8 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-const User = require('./user');
+const User = require('./user').default;
 const { ArgumentError } = require('./exceptions');
 
 /**
