@@ -1,23 +1,25 @@
+from urllib import response
 import pytest
 from copy import deepcopy
 from deepdiff import DeepDiff
 from http import HTTPStatus
-from rest_api.utils.config import get_method, patch_method, post_method
+from rest_api.utils.config import get_method, patch_method, post_method, delete_method
 
 @pytest.mark.usefixtures('changedb')
 class TestPostWebhooks:
     webhook_spec = {
-        "content_type": "application/json",
-        "enable_ssl": False,
-        "events": [
-            "task_created",
-            "task_deleted"
+        'description': 'webhook description',
+        'content_type': 'application/json',
+        'enable_ssl': False,
+        'events': [
+            'task_created',
+            'task_deleted'
         ],
-        "is_active": True,
-        "project_id": 1,
-        "secret": "secret",
-        "target_url": "http://example.com",
-        "type": "project",
+        'is_active': True,
+        'project_id': 1,
+        'secret': 'secret',
+        'target_url': 'http://example.com',
+        'type': 'project',
     }
 
     def test_can_create_webhook_for_project(self):
@@ -25,6 +27,87 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.CREATED
         assert 'secret' not in response.json()
+
+    def test_project_owner_can_create_webhook_for_project(self, projects):
+        project_owner = projects[self.webhook_spec['project_id']]['owner']['username']
+        response = post_method(project_owner, 'webhooks', self.webhook_spec)
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert 'secret' not in response.json()
+
+    def test_project_assignee_cannot_create_webhook_for_project(self, projects):
+        pytest.skip('Not implemented yet')
+        project = next((project for project in projects if project.get('assignee')))
+        project_assignee = project['assignee']['username']
+        post_data = deepcopy(self.webhook_spec)
+        post_data['project_id'] = project['id']
+
+        response = post_method(project_assignee, 'webhooks', self.webhook_spec)
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert 'secret' not in response.json()
+
+    def test_can_create_without_unnecessary_fields(self):
+        post_data = deepcopy(self.webhook_spec)
+        post_data.pop('enable_ssl')
+        post_data.pop('content_type')
+        post_data.pop('description')
+        post_data.pop('is_active')
+        post_data.pop('secret')
+
+        response = post_method('admin2', 'webhooks', post_data)
+
+        assert response.status_code == HTTPStatus.CREATED
+
+    def test_cannot_create_without_target_url(self):
+        post_data = deepcopy(self.webhook_spec)
+        post_data.pop('target_url')
+
+        response = post_method('admin2', 'webhooks', post_data)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    def test_cannot_create_without_events_list(self):
+        post_data = deepcopy(self.webhook_spec)
+        post_data.pop('events')
+
+        response = post_method('admin2', 'webhooks', post_data)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    def test_cannot_create_without_type(self):
+        post_data = deepcopy(self.webhook_spec)
+        post_data.pop('type')
+
+        response = post_method('admin2', 'webhooks', post_data)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    def test_cannot_create_without_organization_id(self):
+        post_data = deepcopy(self.webhook_spec)
+        post_data['type'] = 'organization'
+        post_data.pop('project_id')
+
+        response = post_method('admin2', 'webhooks', post_data)
+
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    def test_cannot_create_without_project_id(self):
+        post_data = deepcopy(self.webhook_spec)
+        post_data.pop('project_id')
+
+        response = post_method('admin2', 'webhooks', post_data)
+
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    def test_cannot_create_organization_webhook_when_project_id_is_not_null(self, organizations):
+        post_data = deepcopy(self.webhook_spec)
+        post_data['type'] = 'organization'
+        post_data['organization_id'] = organizations.raw[0]['id']
+
+        response = post_method('admin2', 'webhooks', post_data)
+
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     def test_cannot_create_non_unique_webhook(self):
         response = post_method('admin2', 'webhooks', self.webhook_spec)
@@ -34,55 +117,55 @@ class TestPostWebhooks:
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     def test_cannot_create_for_non_existent_project(self, projects):
-        webhook_spec = deepcopy(self.webhook_spec)
-        webhook_spec['project_id'] = max(a['id'] for a in projects.raw) + 1
+        post_data = deepcopy(self.webhook_spec)
+        post_data['project_id'] = max(a['id'] for a in projects.raw) + 1
 
-        response = post_method('admin2', 'webhooks', webhook_spec)
+        response = post_method('admin2', 'webhooks', post_data)
 
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     def test_cannot_create_for_non_existent_organization(self, organizations):
-        webhook_spec = deepcopy(self.webhook_spec)
-        webhook_spec['type'] = 'organization'
-        webhook_spec['organization_id'] = max(a['id'] for a in organizations.raw) + 1
+        post_data = deepcopy(self.webhook_spec)
+        post_data['type'] = 'organization'
+        post_data['organization_id'] = max(a['id'] for a in organizations.raw) + 1
 
-        response = post_method('admin2', 'webhooks', webhook_spec)
+        response = post_method('admin2', 'webhooks', post_data)
 
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     def test_cannot_create_with_non_supported_type(self):
-        webhook_spec = deepcopy(self.webhook_spec)
-        webhook_spec['type'] = 'some_type'
+        post_data = deepcopy(self.webhook_spec)
+        post_data['type'] = 'some_type'
 
-        response = post_method('admin2', 'webhooks', webhook_spec)
+        response = post_method('admin2', 'webhooks', post_data)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
     def test_cannot_create_with_non_supported_content_type(self):
-        webhook_spec = deepcopy(self.webhook_spec)
-        webhook_spec['content_type'] = ['application/x-www-form-urlencoded']
+        post_data = deepcopy(self.webhook_spec)
+        post_data['content_type'] = ['application/x-www-form-urlencoded']
 
-        response = post_method('admin2', 'webhooks', webhook_spec)
+        response = post_method('admin2', 'webhooks', post_data)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
     @pytest.mark.parametrize('event', ['some_event', 'project_created', 'organization_updated', 'invitation_created'])
     def test_cannot_create_project_webhook_with_non_supported_event_type(self, event):
-        webhook_spec = deepcopy(self.webhook_spec)
-        webhook_spec['events'] = [event]
+        post_data = deepcopy(self.webhook_spec)
+        post_data['events'] = [event]
 
-        response = post_method('admin2', 'webhooks', webhook_spec)
+        response = post_method('admin2', 'webhooks', post_data)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
     @pytest.mark.parametrize('event', ['some_event', 'organization_created'])
     def test_cannot_create_organization_webhook_with_non_supported_event_type(self, event, organizations):
-        webhook_spec = deepcopy(self.webhook_spec)
-        webhook_spec['type'] = 'organization'
-        webhook_spec['organization_id'] = next(iter(organizations))['id']
-        webhook_spec['events'] = [event]
+        post_data = deepcopy(self.webhook_spec)
+        post_data['type'] = 'organization'
+        post_data['organization_id'] = next(iter(organizations))['id']
+        post_data['events'] = [event]
 
-        response = post_method('admin2', 'webhooks', webhook_spec)
+        response = post_method('admin2', 'webhooks', post_data)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
@@ -118,7 +201,7 @@ class TestPatchWebhooks:
         }
         webhook.update(patch_data)
 
-        response = patch_method('admin2', f"webhooks/{self.WID}", patch_data)
+        response = patch_method('admin2', f'webhooks/{self.WID}', patch_data)
 
         assert response.status_code == HTTPStatus.OK
         assert 'secret' not in response.json()
@@ -137,26 +220,29 @@ class TestPatchWebhooks:
             'project_id': next(iter(projects))['id'],
         }
 
-        response = patch_method('admin2', f"webhooks/{self.WID}", patch_data)
+        response = patch_method('admin2', f'webhooks/{self.WID}', patch_data)
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-    def test_cannot_update_organization_of_webhook(self, webhooks, organizations):
-        wid = next(webhook['id'] for webhook in webhooks if webhook['type'] == 'organization')
-        old_oid = webhooks[wid]['organization']
-        new_oid = (set(a['id'] for a in organizations) - {old_oid}).pop()
+    def test_cannot_update_with_nonexistent_contenttype(self):
         patch_data = {
-            'organization_id': new_oid,
+            'content_type': 'application/x-www-form-urlencoded',
         }
 
-        response = patch_method('admin2', f"webhooks/{wid}", patch_data)
-        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+        response = patch_method('admin2', f'webhooks/{self.WID}', patch_data)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
+class TestDeleteWebhooks:
+    def test_can_delete_webhook(self, webhooks):
+        webhook_id = next(iter(webhooks))['id']
 
+        response = get_method('admin2', f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.OK
 
-    # + test_cannot_update_type_of_webhook
-    # test_cannot_update_organization_of_webhook
-    # test_cannot_update_owner_of_webhook
-    # test_cannot_update_with_nonexistent_contenttype
-    # test_cannot_update_date_fields
+        response = delete_method('admin2', f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        response = get_method('admin2', f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
 
