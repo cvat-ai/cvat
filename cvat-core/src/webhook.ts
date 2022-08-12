@@ -4,6 +4,7 @@
 
 import User from './user';
 
+const PluginRegistry = require('./plugins');
 const serverProxy = require('./server-proxy');
 
 interface WebhookEvent {
@@ -14,7 +15,10 @@ interface WebhookEvent {
 
 interface RawWebhookData {
     id?: number;
+    type: 'project' | 'organization';
     target_url: string;
+    organization_id?: number;
+    project_id?: number;
     events: WebhookEvent[];
     content_type: 'application/json';
     secret?: string;
@@ -28,10 +32,13 @@ interface RawWebhookData {
 
 export default class Webhook {
     public readonly id?: number;
+    public readonly type: RawWebhookData['type'];
     public readonly targetURL: string;
     public readonly events: WebhookEvent[];
-    public readonly contentType: 'application/json';
+    public readonly contentType: RawWebhookData['content_type'];
     public readonly description?: string;
+    public readonly organizationID?: number;
+    public readonly projectID?: number;
     public readonly secret?: string;
     public readonly isActive?: boolean;
     public readonly enableSSL: boolean;
@@ -39,12 +46,19 @@ export default class Webhook {
     public readonly createdDate?: string;
     public readonly updatedDate?: string;
 
+    static async events(): Promise<string[]> {
+        return serverProxy.webhooks.events();
+    }
+
     constructor(initialData: RawWebhookData) {
         const data: RawWebhookData = {
             id: undefined,
             target_url: '',
+            type: 'organization',
             events: [],
             content_type: 'application/json',
+            organization_id: undefined,
+            project_id: undefined,
             description: undefined,
             secret: '',
             is_active: undefined,
@@ -70,6 +84,9 @@ export default class Webhook {
                 id: {
                     get: () => data.id,
                 },
+                type: {
+                    get: () => data.type,
+                },
                 targetURL: {
                     get: () => data.target_url,
                 },
@@ -78,6 +95,12 @@ export default class Webhook {
                 },
                 contentType: {
                     get: () => data.content_type,
+                },
+                organizationID: {
+                    get: () => data.organization_id,
+                },
+                projectID: {
+                    get: () => data.project_id,
                 },
                 description: {
                     get: () => data.description,
@@ -107,13 +130,22 @@ export default class Webhook {
     public toJSON(): RawWebhookData {
         const result: RawWebhookData = {
             target_url: this.targetURL,
-            events: this.events.map((event: WebhookEvent) => ({ ...event })),
+            events: [...this.events],
             content_type: this.contentType,
             enable_ssl: this.enableSSL,
+            type: this.type || 'organization', // TODO: Fix hardcoding
         };
 
         if (Number.isInteger(this.id)) {
             result.id = this.id;
+        }
+
+        if (Number.isInteger(this.organizationID)) {
+            result.organization_id = this.organizationID;
+        }
+
+        if (Number.isInteger(this.projectID)) {
+            result.project_id = this.projectID;
         }
 
         if (this.description) {
@@ -163,15 +195,15 @@ Object.defineProperties(Webhook.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: function implementation() {
+        value: async function implementation() {
             console.log(this);
             if (Number.isInteger(this.id)) {
-                // TODO: call patch request
-                return this;
+                const result = await serverProxy.webhook.update(this.id, this.toJSON());
+                return new Webhook(result);
             }
 
-            // TODO: call save request
-            return this;
+            const result = await serverProxy.webhooks.create(this.toJSON());
+            return new Webhook(result);
         },
     },
 });

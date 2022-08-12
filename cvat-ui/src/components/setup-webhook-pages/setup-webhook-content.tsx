@@ -3,15 +3,22 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { Store } from 'antd/lib/form/interface';
 import { Row, Col } from 'antd/lib/grid';
 import Form from 'antd/lib/form';
-import { Store } from 'antd/lib/form/interface';
-
 import Text from 'antd/lib/typography/Text';
-import {
-    Button, Checkbox, Input, Radio, Select,
-} from 'antd';
+import Button from 'antd/lib/button';
+import Checkbox from 'antd/lib/checkbox/Checkbox';
+import Input from 'antd/lib/input';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Select from 'antd/lib/select';
+
+import getCore from 'cvat-core-wrapper';
+import { notification } from 'antd';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers/interfaces';
 
 export enum WebhookContentType {
     APPLICATION_JSON = 'application/json',
@@ -33,23 +40,57 @@ export interface SetupWebhookData {
 }
 
 interface Props {
-    webhook?: any
+    webhook?: any;
+}
+
+function groupEvents(events: string[]): string[] {
+    return Array.from(
+        new Set(events.map((event: string) => event.split('_')[0])),
+    );
+}
+
+function collectEvents(method: EventsMethod, submittedGroups: Record<string, any>, allEvents: string[]): string[] {
+    return method === EventsMethod.SEND_EVERYTHING ? allEvents : (() => {
+        const events = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event_') && value).map(([key]) => key);
+        return allEvents.filter((event) => events.includes(event.split('_')[0]));
+    })();
+}
+
+function throwError(message: string, error: any): void {
+    const stringified = error.toString();
+    const MAX_LENGTH = 300;
+    if (stringified.length > MAX_LENGTH) {
+        console.log(stringified);
+    }
+
+    notification.info({
+        message,
+        description: stringified.length > MAX_LENGTH ? 'Open the browser console to get details' : stringified,
+    });
 }
 
 function SetupWebhookContent(props: Props): JSX.Element {
-    const [form] = Form.useForm();
     const { webhook } = props;
-    const [showIndividualEvents, setShowIndividualEvents] = useState(false);
+    const [form] = Form.useForm();
+    const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+    const organization = useSelector((state: CombinedState) => state.organizations.current);
+
+    useEffect(() => {
+        const core = getCore();
+        core.classes.Webhook.events().then((events: string[]) => {
+            setWebhookEvents(events);
+        });
+    }, []);
+
     useEffect(() => {
         if (webhook) {
-            const maxEvents = 10;
-            const eventsMethod = webhook.events.length === maxEvents ?
-                EventsMethod.SEND_EVERYTHING :
+            const maxEvents = webhookEvents.length;
+            const eventsMethod = webhook.events.length === maxEvents ? EventsMethod.SEND_EVERYTHING :
                 EventsMethod.SELECT_INDIVIDUAL;
-            setShowIndividualEvents(eventsMethod === EventsMethod.SELECT_INDIVIDUAL);
-            const data = {
+
+            const data: Record<string, string | boolean> = {
                 description: webhook.description,
-                targetUrl: webhook.targetUrl,
+                targetURL: webhook.targetURL,
                 contentType: webhook.contentType,
                 secret: webhook.secret,
                 enableSSL: webhook.enableSSL,
@@ -57,25 +98,68 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 events: webhook.events,
                 eventsMethod,
             };
-            webhook.events.forEach((event) => {
-                data[event.name] = true;
+
+            webhook.events.forEach((event: string) => {
+                data[`event_${event.split('_')[0]}`] = true;
             });
+
             form.setFieldsValue(data);
         }
-    }, [webhook]);
+    }, [webhook, webhookEvents]);
 
-    // TODO: events should be fetched
-    const events = [{ id: 1, name: 'event1', description: 'desc1' }, { id: 2, name: 'event2', description: 'desc2' }, { id: 3, name: 'event3', description: 'desc3' }];
-    const handleSubmit = (): Promise<void> => form.validateFields()
-        .then((values: Store): Promise<void> => Promise.resolve());
+    const handleSubmit = useCallback((): void => {
+        form.validateFields().then((values: Store): void => {
+            if (webhook) {
+                webhook.description = values.description;
+                webhook.targetURL = values.description;
+                webhook.secret = values.description;
+                webhook.contentType = values.description;
+                webhook.isActive = values.description;
+                webhook.enableSSL = values.description;
+                webhook.events = collectEvents(values.eventsMethod, values, webhookEvents);
 
-    const onEventsMethodChange = (event) => {
-        setShowIndividualEvents(event.target.value === EventsMethod.SELECT_INDIVIDUAL);
-    };
+                webhook.save().then(() => {
+                    form.resetFields();
+                    notification.info({
+                        message: 'Webhook has been successfully updated',
+                    });
+                }).catch((error: any) => {
+                    throwError('Webhook has not been updated', error);
+                });
+            } else {
+                const rawWebhookData = {
+                    description: values.description,
+                    target_url: values.targetURL,
+                    content_type: values.contentType,
+                    secret: values.secret,
+                    enable_ssl: values.enableSSL,
+                    is_active: values.active,
+                    organization_id: organization.id, // TODO: temporary hardcoded
+                    events: collectEvents(values.eventsMethod, values, webhookEvents),
+                };
+                const WebhookClass = getCore().classes.Webhook;
+                const webhookInstance = new WebhookClass(rawWebhookData);
+
+                webhookInstance.save().then(() => {
+                    form.resetFields();
+                    notification.info({
+                        message: 'Webhook has been successfully added',
+                    });
+                }).catch((error: any) => {
+                    throwError('Webhook has not been created', error);
+                });
+            }
+        });
+    }, [webhookEvents, organization]);
+
+    const onEventsMethodChange = useCallback((event: RadioChangeEvent): void => {
+        form.setFieldsValue({ eventsMethod: event.target.value });
+    }, []);
+
     return (
         <Row justify='start' align='middle' className='cvat-create-webhook-content'>
             <Col span={24}>
-                <Text className='cvat-title'>Create webhook</Text>
+                <Text className='cvat-title'>Setup a webhook</Text>
             </Col>
             <Col span={24}>
                 <Form
@@ -90,20 +174,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 >
                     <Form.Item
                         hasFeedback
-                        name='description'
-                        label={<span>Description</span>}
-                        rules={[
-                            {
-                                required: true,
-                                message: 'Webhook description cannot be empty',
-                            },
-                        ]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        hasFeedback
-                        name='targetUrl'
+                        name='targetURL'
                         label={<span>Target URL</span>}
                         rules={[
                             {
@@ -115,21 +186,24 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         <Input placeholder='https://example.com/postreceive' />
                     </Form.Item>
                     <Form.Item
+                        hasFeedback
+                        name='description'
+                        label={<span>Description</span>}
+                    >
+                        <Input />
+                    </Form.Item>
+                    <Form.Item
+                        hasFeedback
                         name='contentType'
                         label={<span>Content type</span>}
-                        rules={[
-                            {
-                                required: true,
-                            },
-                        ]}
+                        rules={[{ required: true }]}
                     >
                         <Select
-                            placeholder='Select a option and change input text above'
+                            placeholder='Select an option and change input text above'
                         >
                             <Select.Option value={WebhookContentType.APPLICATION_JSON}>
                                 {WebhookContentType.APPLICATION_JSON}
                             </Select.Option>
-                            {/* <Select.Option value='json'>json</Select.Option> */}
                         </Select>
                     </Form.Item>
                     <Form.Item
@@ -140,7 +214,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         <Input />
                     </Form.Item>
                     <Form.Item
-                        help='Verify SSL certificates when delivering payloads.'
+                        help='Verify SSL certificates when delivering payloads'
                         name='enableSSL'
                         valuePropName='checked'
                     >
@@ -149,7 +223,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         </Checkbox>
                     </Form.Item>
                     <Form.Item
-                        help='We will deliver event details when this hook is triggered.'
+                        help='CVAT will deliver events for active webhooks only'
                         name='active'
                         valuePropName='checked'
                     >
@@ -159,12 +233,10 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     </Form.Item>
                     <Form.Item
                         name='eventsMethod'
-                        rules={[
-                            {
-                                required: true,
-                                message: 'The field is required.',
-                            },
-                        ]}
+                        rules={[{
+                            required: true,
+                            message: 'The field is required',
+                        }]}
                     >
                         <Radio.Group onChange={onEventsMethodChange}>
                             <Radio value={EventsMethod.SEND_EVERYTHING} key={EventsMethod.SEND_EVERYTHING}>
@@ -177,24 +249,22 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         </Radio.Group>
                     </Form.Item>
                     {
-                        showIndividualEvents && (
+                        form.getFieldValue('eventsMethod') === EventsMethod.SELECT_INDIVIDUAL && (
                             <Row>
-                                {events.map((event) => (
-                                    <Col span={8} key={event.id}>
+                                {groupEvents(webhookEvents).map((event: string, idx: number) => (
+                                    <Col span={8} key={idx}>
                                         <Form.Item
-                                            help={event.description}
-                                            name={event.name}
+                                            name={`event_${event}`}
                                             valuePropName='checked'
                                         >
                                             <Checkbox>
-                                                <Text className='cvat-text-color'>{event.name}</Text>
+                                                <Text className='cvat-text-color'>{event}</Text>
                                             </Checkbox>
                                         </Form.Item>
                                     </Col>
                                 ))}
 
                             </Row>
-
                         )
                     }
                 </Form>
@@ -213,4 +283,4 @@ function SetupWebhookContent(props: Props): JSX.Element {
     );
 }
 
-export default SetupWebhookContent;
+export default React.memo(SetupWebhookContent);

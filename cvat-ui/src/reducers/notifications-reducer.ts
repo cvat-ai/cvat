@@ -21,6 +21,7 @@ import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
+import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
@@ -149,6 +150,9 @@ const defaultState: NotificationsState = {
             inviting: null,
             updatingMembership: null,
             removingMembership: null,
+        },
+        webhooks: {
+            fetching: null,
         },
     },
     messages: {
@@ -1622,6 +1626,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not fetch a list of jobs',
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-update-organization-membership-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case WebhooksActionsTypes.GET_WEBHOOKS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    webhooks: {
+                        ...state.errors.jobs,
+                        fetching: {
+                            message: 'Could not fetch a list of webhooks',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-get-webhooks-failed',
                         },
                     },
                 },

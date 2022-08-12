@@ -102,7 +102,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                                     return false;
                                                 }}
                                             >
-                                                Set webhooks
+                                                Setup webhooks
                                             </a>
                                         </Menu.Item>
                                         {owner && userID === owner.id ? (

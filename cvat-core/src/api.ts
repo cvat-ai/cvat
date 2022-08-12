@@ -24,7 +24,7 @@ function build() {
     const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
     const Organization = require('./organization');
-    const Webhook = require('./webhook');
+    const Webhook = require('./webhook').default;
 
     const enums = require('./enums');
 

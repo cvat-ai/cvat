@@ -1970,6 +1970,22 @@
                 }
             }
 
+            async function receiveWebhookEvents(): Promise<string[]> {
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.get(`${backendAPI}/webhooks/events`, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    return response.data.events;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -2138,6 +2154,7 @@
                             update: updateWebhook,
                             delete: deleteWebhook,
                             ping: pingWebhook,
+                            events: receiveWebhookEvents,
                         }),
                         writable: false,
                     },
