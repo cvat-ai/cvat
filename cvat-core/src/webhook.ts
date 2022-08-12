@@ -144,18 +144,60 @@ export default class Webhook {
     }
 
     public async save(): Promise<Webhook> {
-        if (Number.isInteger(this.id)) {
-            // TODO: call patch request
-            return this;
-        }
-
-        // TODO: call save request
-        return this;
+        const result = await PluginRegistry.apiWrapper.call(this, Webhook.prototype.save);
+        return result;
     }
 
     public async delete(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Webhook.prototype.delete);
+        return result;
+    }
 
+    public async ping(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Webhook.prototype.ping);
+        return result;
     }
 }
 
-module.exports = Webhook;
+Object.defineProperties(Webhook.prototype.save, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: function implementation() {
+            console.log(this);
+            if (Number.isInteger(this.id)) {
+                // TODO: call patch request
+                return this;
+            }
+
+            // TODO: call save request
+            return this;
+        },
+    },
+});
+
+Object.defineProperties(Webhook.prototype.delete, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation() {
+            if (Number.isInteger(this.id)) {
+                await serverProxy.webhooks.delete(this.id);
+            }
+        },
+    },
+});
+
+Object.defineProperties(Webhook.prototype.ping, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation() {
+            if (Number.isInteger(this.id)) {
+                await serverProxy.webhooks.ping(this.id);
+            } else {
+                throw new Error('The webhook has not been saved on the server yet');
+            }
+        },
+    },
+});
