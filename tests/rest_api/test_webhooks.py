@@ -1,4 +1,3 @@
-from urllib import response
 import pytest
 from copy import deepcopy
 from deepdiff import DeepDiff
