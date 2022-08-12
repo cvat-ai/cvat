@@ -17,12 +17,12 @@ import attrs
 
 from cvat_sdk.api_client import ApiClient, ApiException, ApiValueError, Configuration, models
 from cvat_sdk.core.git import create_git_repo
+from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.tasks import TaskProxy
 from cvat_sdk.core.types import ResourceType
 from cvat_sdk.core.uploading import Uploader
 from cvat_sdk.core.utils import assert_status
-from cvat_sdk.helpers import get_paginated_collection
 
 
 @attrs.define

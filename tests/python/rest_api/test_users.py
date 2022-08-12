@@ -6,7 +6,7 @@
 from http import HTTPStatus
 import json
 import typing
-from cvat_sdk.helpers import get_paginated_collection
+from cvat_sdk.core.helpers import get_paginated_collection
 
 import pytest
 from deepdiff import DeepDiff

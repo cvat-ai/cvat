@@ -11,7 +11,7 @@ from typing import Dict, List, Sequence, Tuple
 import tqdm
 from cvat_sdk import Client, models
 from cvat_sdk.core.types import ResourceType
-from cvat_sdk.helpers import TqdmProgressReporter
+from cvat_sdk.core.helpers import TqdmProgressReporter
 
 
 class CLI:
