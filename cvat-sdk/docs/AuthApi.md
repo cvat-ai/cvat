@@ -1,4 +1,4 @@
-# cvat_sdk.AuthApi
+# cvat_sdk.api_client.AuthApi
 
 All URIs are relative to *http://localhost*
 
@@ -29,14 +29,14 @@ Check the credentials and return the REST Token if the credentials are valid and
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import auth_api
-from cvat_sdk.model.token import Token
-from cvat_sdk.model.login_request import LoginRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import auth_api
+from cvat_sdk.api_client.model.login_request import LoginRequest
+from cvat_sdk.api_client.model.token import Token
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -52,7 +52,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -70,7 +70,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
     login_request = LoginRequest(
@@ -86,7 +86,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_login(login_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_login: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -94,7 +94,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_login(login_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_login: %s\n" % e)
 ```
 
@@ -146,13 +146,13 @@ Calls Django logout method and delete the Token object assigned to the current U
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import auth_api
-from cvat_sdk.model.rest_auth_detail import RestAuthDetail
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import auth_api
+from cvat_sdk.api_client.model.rest_auth_detail import RestAuthDetail
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -168,7 +168,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -186,7 +186,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -198,7 +198,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_logout(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_logout: %s\n" % e)
 ```
 
@@ -249,14 +249,14 @@ Calls Django Auth SetPasswordForm save method.  Accepts the following POST param
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import auth_api
-from cvat_sdk.model.password_change_request import PasswordChangeRequest
-from cvat_sdk.model.rest_auth_detail import RestAuthDetail
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import auth_api
+from cvat_sdk.api_client.model.password_change_request import PasswordChangeRequest
+from cvat_sdk.api_client.model.rest_auth_detail import RestAuthDetail
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -272,7 +272,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -290,7 +290,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
     password_change_request = PasswordChangeRequest(
@@ -306,7 +306,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_password_change(password_change_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_password_change: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -314,7 +314,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_password_change(password_change_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_password_change: %s\n" % e)
 ```
 
@@ -366,14 +366,14 @@ Calls Django Auth PasswordResetForm save method.  Accepts the following POST par
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import auth_api
-from cvat_sdk.model.password_reset_serializer_ex_request import PasswordResetSerializerExRequest
-from cvat_sdk.model.rest_auth_detail import RestAuthDetail
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import auth_api
+from cvat_sdk.api_client.model.rest_auth_detail import RestAuthDetail
+from cvat_sdk.api_client.model.password_reset_serializer_ex_request import PasswordResetSerializerExRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -389,7 +389,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -407,7 +407,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
     password_reset_serializer_ex_request = PasswordResetSerializerExRequest(
@@ -421,7 +421,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_password_reset(password_reset_serializer_ex_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_password_reset: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -429,7 +429,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_password_reset(password_reset_serializer_ex_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_password_reset: %s\n" % e)
 ```
 
@@ -481,14 +481,14 @@ Password reset e-mail link is confirmed, therefore this resets the user's passwo
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import auth_api
-from cvat_sdk.model.password_reset_confirm_request import PasswordResetConfirmRequest
-from cvat_sdk.model.rest_auth_detail import RestAuthDetail
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import auth_api
+from cvat_sdk.api_client.model.password_reset_confirm_request import PasswordResetConfirmRequest
+from cvat_sdk.api_client.model.rest_auth_detail import RestAuthDetail
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -504,7 +504,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -522,7 +522,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
     password_reset_confirm_request = PasswordResetConfirmRequest(
@@ -539,7 +539,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_password_reset_confirm(password_reset_confirm_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_password_reset_confirm: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -547,7 +547,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_password_reset_confirm(password_reset_confirm_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_password_reset_confirm: %s\n" % e)
 ```
 
@@ -597,14 +597,14 @@ Name | Type | Description  | Notes
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import auth_api
-from cvat_sdk.model.restricted_register_request import RestrictedRegisterRequest
-from cvat_sdk.model.restricted_register import RestrictedRegister
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import auth_api
+from cvat_sdk.api_client.model.restricted_register import RestrictedRegister
+from cvat_sdk.api_client.model.restricted_register_request import RestrictedRegisterRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -620,7 +620,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -638,7 +638,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
     restricted_register_request = RestrictedRegisterRequest(
@@ -666,7 +666,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_register(restricted_register_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_register: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -674,7 +674,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.auth_create_register(restricted_register_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_register: %s\n" % e)
 ```
 
@@ -726,13 +726,13 @@ Signed URL contains a token which authenticates a user on the server.Signed URL 
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import auth_api
-from cvat_sdk.model.signing_request import SigningRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import auth_api
+from cvat_sdk.api_client.model.signing_request import SigningRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -748,7 +748,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -766,7 +766,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
     signing_request = SigningRequest(
@@ -781,7 +781,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # This method signs URL for access to the server
         api_response = api_instance.auth_create_signing(signing_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_signing: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -790,7 +790,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # This method signs URL for access to the server
         api_response = api_instance.auth_create_signing(signing_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_create_signing: %s\n" % e)
 ```
 

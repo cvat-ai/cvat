@@ -1,4 +1,3 @@
-# Copyright (C) 2020-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -10,13 +9,13 @@ from pathlib import Path
 from typing import Tuple
 
 import pytest
+from cvat_sdk import Client, exceptions
+from cvat_sdk.core.tasks import TaskProxy
+from cvat_sdk.core.types import ResourceType
 from PIL import Image
+
 from shared.utils.config import USER_PASS
 from shared.utils.helpers import generate_image_file, generate_image_files
-
-from cvat_sdk import Client, exceptions
-from cvat_sdk.impl.tasks import TaskProxy
-from cvat_sdk.types import ResourceType
 
 from .util import generate_coco_json, make_pbar
 

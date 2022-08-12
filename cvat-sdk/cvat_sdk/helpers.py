@@ -12,8 +12,8 @@ import tqdm
 import urllib3
 
 from cvat_sdk import exceptions
-from cvat_sdk.api_client import Endpoint
-from cvat_sdk.impl.progress import ProgressReporter
+from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.progress import ProgressReporter
 
 
 def get_paginated_collection(

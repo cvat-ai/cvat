@@ -1,11 +1,10 @@
-# Copyright (C) 2021-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
 import requests
-from cvat_sdk import ApiClient, Configuration
+from cvat_sdk.api_client import ApiClient, Configuration
 
 ROOT_DIR = __file__[:__file__.rfind(osp.join("utils", ""))]
 ASSETS_DIR = osp.abspath(osp.join(ROOT_DIR, 'assets'))

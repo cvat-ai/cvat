@@ -1,4 +1,3 @@
-# Copyright (C) 2020-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -10,9 +9,10 @@ from pathlib import Path
 
 import pytest
 from cvat_sdk import exceptions, make_client
-from cvat_sdk.impl.tasks import TaskProxy
-from cvat_sdk.types import ResourceType
+from cvat_sdk.core.tasks import TaskProxy
+from cvat_sdk.core.types import ResourceType
 from PIL import Image
+
 from sdk.util import generate_coco_json
 from shared.utils.config import BASE_URL, USER_PASS
 from shared.utils.helpers import generate_image_file
@@ -166,7 +166,14 @@ class TestCLI:
     def test_can_download_task_frames(self, fxt_new_task: TaskProxy, quality: str):
         out_dir = str(self.tmp_path / "downloads")
         self.run_cli(
-            "frames", str(fxt_new_task.id), "0", "1", "--outdir", out_dir, "--quality", quality
+            "frames",
+            str(fxt_new_task.id),
+            "0",
+            "1",
+            "--outdir",
+            out_dir,
+            "--quality",
+            quality,
         )
 
         assert set(os.listdir(out_dir)) == {

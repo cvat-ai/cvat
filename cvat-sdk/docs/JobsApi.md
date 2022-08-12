@@ -1,4 +1,4 @@
-# cvat_sdk.JobsApi
+# cvat_sdk.api_client.JobsApi
 
 All URIs are relative to *http://localhost*
 
@@ -34,13 +34,13 @@ Method allows to upload job annotations
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.job_write_request import JobWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.job_write_request import JobWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -56,7 +56,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -74,7 +74,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -96,7 +96,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to upload job annotations
         api_instance.jobs_create_annotations(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_create_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -104,7 +104,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to upload job annotations
         api_instance.jobs_create_annotations(id, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location, job_write_request=job_write_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_create_annotations: %s\n" % e)
 ```
 
@@ -162,12 +162,12 @@ Method deletes all annotations for a specific job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -183,7 +183,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -201,7 +201,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -213,7 +213,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes all annotations for a specific job
         api_instance.jobs_destroy_annotations(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_destroy_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -221,7 +221,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes all annotations for a specific job
         api_instance.jobs_destroy_annotations(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_destroy_annotations: %s\n" % e)
 ```
 
@@ -271,13 +271,13 @@ Method returns a paginated list of jobs according to query parameters
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.paginated_job_read_list import PaginatedJobReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.paginated_job_read_list import PaginatedJobReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -293,7 +293,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -311,7 +311,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -329,7 +329,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a paginated list of jobs according to query parameters
         api_response = api_instance.jobs_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_list: %s\n" % e)
 ```
 
@@ -383,13 +383,13 @@ The action returns the list of tracked changes for the job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.paginated_job_commit_list import PaginatedJobCommitList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.paginated_job_commit_list import PaginatedJobCommitList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -405,7 +405,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -423,7 +423,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -441,7 +441,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # The action returns the list of tracked changes for the job
         api_response = api_instance.jobs_list_commits(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_list_commits: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -450,7 +450,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # The action returns the list of tracked changes for the job
         api_response = api_instance.jobs_list_commits(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_list_commits: %s\n" % e)
 ```
 
@@ -505,13 +505,13 @@ Method returns list of issues for the job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.paginated_issue_read_list import PaginatedIssueReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.paginated_issue_read_list import PaginatedIssueReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -527,7 +527,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -545,7 +545,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -563,7 +563,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns list of issues for the job
         api_response = api_instance.jobs_list_issues(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_list_issues: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -572,7 +572,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns list of issues for the job
         api_response = api_instance.jobs_list_issues(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_list_issues: %s\n" % e)
 ```
 
@@ -627,14 +627,14 @@ Methods does a partial update of chosen fields in a job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.patched_job_write_request import PatchedJobWriteRequest
-from cvat_sdk.model.job_write import JobWrite
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.patched_job_write_request import PatchedJobWriteRequest
+from cvat_sdk.api_client.model.job_write import JobWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -650,7 +650,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -668,7 +668,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -686,7 +686,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a job
         api_response = api_instance.jobs_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -695,7 +695,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a job
         api_response = api_instance.jobs_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update: %s\n" % e)
 ```
 
@@ -746,13 +746,13 @@ Method performs a partial update of annotations in a specific job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.patched_job_write_request import PatchedJobWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.patched_job_write_request import PatchedJobWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -768,7 +768,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -786,7 +786,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     action = "create" # str | 
@@ -804,7 +804,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method performs a partial update of annotations in a specific job
         api_instance.jobs_partial_update_annotations(action, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -812,7 +812,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method performs a partial update of annotations in a specific job
         api_instance.jobs_partial_update_annotations(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update_annotations: %s\n" % e)
 ```
 
@@ -864,12 +864,12 @@ Allows to upload an annotation file chunk. Implements TUS file uploading protoco
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -885,7 +885,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -903,7 +903,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
@@ -917,7 +917,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
         api_instance.jobs_partial_update_annotations_file(file_id, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update_annotations_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -925,7 +925,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
         api_instance.jobs_partial_update_annotations_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, body=body)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update_annotations_file: %s\n" % e)
 ```
 
@@ -971,13 +971,13 @@ Method returns details of a job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.job_read import JobRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.job_read import JobRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -993,7 +993,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1011,7 +1011,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -1024,7 +1024,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a job
         api_response = api_instance.jobs_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1033,7 +1033,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a job
         api_response = api_instance.jobs_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve: %s\n" % e)
 ```
 
@@ -1083,13 +1083,13 @@ Method returns annotations for a specific job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.labeled_data import LabeledData
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.labeled_data import LabeledData
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1105,7 +1105,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1123,7 +1123,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -1142,7 +1142,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns annotations for a specific job
         api_response = api_instance.jobs_retrieve_annotations(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1151,7 +1151,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns annotations for a specific job
         api_response = api_instance.jobs_retrieve_annotations(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_annotations: %s\n" % e)
 ```
 
@@ -1210,12 +1210,12 @@ Method returns data for a specific job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1231,7 +1231,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1249,7 +1249,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -1264,7 +1264,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns data for a specific job
         api_instance.jobs_retrieve_data(id, number, quality, type)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_data: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1272,7 +1272,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns data for a specific job
         api_instance.jobs_retrieve_data(id, number, quality, type, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_data: %s\n" % e)
 ```
 
@@ -1325,13 +1325,13 @@ Method provides a meta information about media files which are related with the 
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.data_meta_read import DataMetaRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.data_meta_read import DataMetaRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1347,7 +1347,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1365,7 +1365,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -1378,7 +1378,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the job
         api_response = api_instance.jobs_retrieve_data_meta(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_data_meta: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1387,7 +1387,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the job
         api_response = api_instance.jobs_retrieve_data_meta(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_data_meta: %s\n" % e)
 ```
 
@@ -1437,12 +1437,12 @@ Export job as a dataset in a specific format
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1458,7 +1458,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1476,7 +1476,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats
@@ -1494,7 +1494,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Export job as a dataset in a specific format
         api_instance.jobs_retrieve_dataset(format, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_dataset: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1502,7 +1502,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Export job as a dataset in a specific format
         api_instance.jobs_retrieve_dataset(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_dataset: %s\n" % e)
 ```
 
@@ -1561,13 +1561,13 @@ Method performs an update of all annotations in a specific job
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import jobs_api
-from cvat_sdk.model.annotation_file_request import AnnotationFileRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.annotation_file_request import AnnotationFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1583,7 +1583,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1601,7 +1601,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -1616,7 +1616,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method performs an update of all annotations in a specific job
         api_instance.jobs_update_annotations(id, annotation_file_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_update_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1624,7 +1624,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method performs an update of all annotations in a specific job
         api_instance.jobs_update_annotations(id, annotation_file_request, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_update_annotations: %s\n" % e)
 ```
 

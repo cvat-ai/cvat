@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
-from shared.utils.config import BASE_URL
-
 from cvat_sdk import Client
+
+from shared.utils.config import BASE_URL
 
 
 @pytest.fixture

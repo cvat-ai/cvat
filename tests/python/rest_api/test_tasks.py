@@ -7,8 +7,8 @@ import json
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
-from cvat_sdk.apis import TasksApi
-from cvat_sdk import models
+from cvat_sdk.api_client.apis import TasksApi
+from cvat_sdk.api_client import models
 
 import pytest
 from deepdiff import DeepDiff

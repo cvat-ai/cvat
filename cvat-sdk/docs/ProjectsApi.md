@@ -1,4 +1,4 @@
-# cvat_sdk.ProjectsApi
+# cvat_sdk.api_client.ProjectsApi
 
 All URIs are relative to *http://localhost*
 
@@ -33,14 +33,14 @@ Method creates a new project
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
-from cvat_sdk.model.project_write import ProjectWrite
-from cvat_sdk.model.project_write_request import ProjectWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
+from cvat_sdk.api_client.model.project_write import ProjectWrite
+from cvat_sdk.api_client.model.project_write_request import ProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -56,7 +56,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -74,7 +74,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     project_write_request = ProjectWriteRequest(
@@ -116,7 +116,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a new project
         api_response = api_instance.projects_create(project_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -125,7 +125,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a new project
         api_response = api_instance.projects_create(project_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create: %s\n" % e)
 ```
 
@@ -175,13 +175,13 @@ Methods create a project from a backup
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
-from cvat_sdk.model.project_file_request import ProjectFileRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
+from cvat_sdk.api_client.model.project_file_request import ProjectFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -197,7 +197,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -215,7 +215,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     project_file_request = ProjectFileRequest(
@@ -232,7 +232,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Methods create a project from a backup
         api_instance.projects_create_backup(project_file_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create_backup: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -240,7 +240,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Methods create a project from a backup
         api_instance.projects_create_backup(project_file_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create_backup: %s\n" % e)
 ```
 
@@ -294,13 +294,13 @@ Import dataset in specific format as a project
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
-from cvat_sdk.model.dataset_file_request import DatasetFileRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
+from cvat_sdk.api_client.model.dataset_file_request import DatasetFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -316,7 +316,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -334,7 +334,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
@@ -354,7 +354,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Import dataset in specific format as a project
         api_instance.projects_create_dataset(id, dataset_file_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create_dataset: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -362,7 +362,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Import dataset in specific format as a project
         api_instance.projects_create_dataset(id, dataset_file_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create_dataset: %s\n" % e)
 ```
 
@@ -420,12 +420,12 @@ Method deletes a specific project
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -441,7 +441,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -459,7 +459,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
@@ -471,7 +471,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific project
         api_instance.projects_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -479,7 +479,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific project
         api_instance.projects_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_destroy: %s\n" % e)
 ```
 
@@ -529,13 +529,13 @@ Returns a paginated list of projects according to query parameters (12 projects 
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
-from cvat_sdk.model.paginated_polymorphic_project_list import PaginatedPolymorphicProjectList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
+from cvat_sdk.api_client.model.paginated_polymorphic_project_list import PaginatedPolymorphicProjectList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -551,7 +551,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -569,7 +569,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -587,7 +587,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Returns a paginated list of projects according to query parameters (12 projects per page)
         api_response = api_instance.projects_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_list: %s\n" % e)
 ```
 
@@ -641,13 +641,13 @@ Method returns information of the tasks of the project with the selected id
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
-from cvat_sdk.model.paginated_task_read_list import PaginatedTaskReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
+from cvat_sdk.api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -663,7 +663,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -681,7 +681,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
@@ -699,7 +699,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns information of the tasks of the project with the selected id
         api_response = api_instance.projects_list_tasks(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_list_tasks: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -708,7 +708,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns information of the tasks of the project with the selected id
         api_response = api_instance.projects_list_tasks(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_list_tasks: %s\n" % e)
 ```
 
@@ -763,14 +763,14 @@ Methods does a partial update of chosen fields in a project
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
-from cvat_sdk.model.project_write import ProjectWrite
-from cvat_sdk.model.patched_project_write_request import PatchedProjectWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
+from cvat_sdk.api_client.model.project_write import ProjectWrite
+from cvat_sdk.api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -786,7 +786,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -804,7 +804,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
@@ -847,7 +847,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a project
         api_response = api_instance.projects_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -856,7 +856,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a project
         api_response = api_instance.projects_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_project_write_request=patched_project_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update: %s\n" % e)
 ```
 
@@ -907,12 +907,12 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -928,7 +928,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -946,7 +946,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
@@ -959,7 +959,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.projects_partial_update_backup_file(file_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update_backup_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -967,7 +967,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.projects_partial_update_backup_file(file_id, x_organization=x_organization, org=org, org_id=org_id, body=body)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update_backup_file: %s\n" % e)
 ```
 
@@ -1012,12 +1012,12 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1033,7 +1033,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1051,7 +1051,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
@@ -1065,7 +1065,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.projects_partial_update_dataset_file(file_id, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update_dataset_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1073,7 +1073,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.projects_partial_update_dataset_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, body=body)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update_dataset_file: %s\n" % e)
 ```
 
@@ -1119,13 +1119,13 @@ Method returns details of a specific project
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
-from cvat_sdk.model.project_read import ProjectRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
+from cvat_sdk.api_client.model.project_read import ProjectRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1141,7 +1141,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1159,7 +1159,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
@@ -1172,7 +1172,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a specific project
         api_response = api_instance.projects_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1181,7 +1181,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a specific project
         api_response = api_instance.projects_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve: %s\n" % e)
 ```
 
@@ -1231,12 +1231,12 @@ Method allows to download project annotations
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1252,7 +1252,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1270,7 +1270,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats
@@ -1288,7 +1288,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to download project annotations
         api_instance.projects_retrieve_annotations(format, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1296,7 +1296,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to download project annotations
         api_instance.projects_retrieve_annotations(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_annotations: %s\n" % e)
 ```
 
@@ -1356,12 +1356,12 @@ Methods creates a backup copy of a project
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1377,7 +1377,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1395,7 +1395,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
@@ -1412,7 +1412,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Methods creates a backup copy of a project
         api_instance.projects_retrieve_backup(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_backup: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1420,7 +1420,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Methods creates a backup copy of a project
         api_instance.projects_retrieve_backup(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_backup: %s\n" % e)
 ```
 
@@ -1477,12 +1477,12 @@ Export project as a dataset in a specific format
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import projects_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import projects_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1498,7 +1498,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1516,7 +1516,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
@@ -1534,7 +1534,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Export project as a dataset in a specific format
         api_instance.projects_retrieve_dataset(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_dataset: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1542,7 +1542,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Export project as a dataset in a specific format
         api_instance.projects_retrieve_dataset(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_dataset: %s\n" % e)
 ```
 
