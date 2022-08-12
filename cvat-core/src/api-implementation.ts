@@ -288,8 +288,11 @@ const config = require('./config');
             config.organizationID = null;
         };
 
-        cvat.webhooks.get.implementation = async () => {
-            const webhooksData = await serverProxy.webhooks.get();
+        cvat.webhooks.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                page: isInteger,
+            });
+            const webhooksData = await serverProxy.webhooks.get(filter);
             const webhooks = webhooksData.results.map((webhookData) => new Webhook(webhookData));
             webhooks.count = webhooksData.count;
             return webhooks;

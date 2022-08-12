@@ -179,7 +179,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     <Form.Item
                         hasFeedback
                         name='targetURL'
-                        label={<span>Target URL</span>}
+                        label='Target URL'
                         rules={[
                             {
                                 required: true,
@@ -192,14 +192,14 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     <Form.Item
                         hasFeedback
                         name='description'
-                        label={<span>Description</span>}
+                        label='Description'
                     >
                         <Input />
                     </Form.Item>
                     <Form.Item
                         hasFeedback
                         name='contentType'
-                        label={<span>Content type</span>}
+                        label='Content type'
                         rules={[{ required: true }]}
                     >
                         <Select
@@ -211,9 +211,8 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         </Select>
                     </Form.Item>
                     <Form.Item
-                        hasFeedback
                         name='secret'
-                        label={<span>Secret</span>}
+                        label='Secret'
                     >
                         <Input />
                     </Form.Item>
