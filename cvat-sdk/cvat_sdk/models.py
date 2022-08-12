@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat_sdk.api_client.exceptions import *
+from cvat_sdk.api_client.models import *

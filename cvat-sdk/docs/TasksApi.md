@@ -1,4 +1,4 @@
-# cvat_sdk.TasksApi
+# cvat_sdk.api_client.TasksApi
 
 All URIs are relative to *http://localhost*
 
@@ -26,7 +26,6 @@ Method | HTTP request | Description
 [**tasks_retrieve_data_meta**](TasksApi.md#tasks_retrieve_data_meta) | **GET** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
 [**tasks_retrieve_dataset**](TasksApi.md#tasks_retrieve_dataset) | **GET** /api/tasks/{id}/dataset | Export task as a dataset in a specific format
 [**tasks_retrieve_status**](TasksApi.md#tasks_retrieve_status) | **GET** /api/tasks/{id}/status | When task is being created the method returns information about a status of the creation process
-[**tasks_update**](TasksApi.md#tasks_update) | **PUT** /api/tasks/{id} | Method updates a task by id
 [**tasks_update_annotations**](TasksApi.md#tasks_update_annotations) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 
 
@@ -44,14 +43,14 @@ Method provides a meta information about media files which are related with the 
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.patched_job_write_request import PatchedJobWriteRequest
-from cvat_sdk.model.data_meta_read import DataMetaRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.patched_job_write_request import PatchedJobWriteRequest
+from cvat_sdk.api_client.model.data_meta_read import DataMetaRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -67,7 +66,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -85,7 +84,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
@@ -103,7 +102,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the job
         api_response = api_instance.jobs_partial_update_data_meta(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->jobs_partial_update_data_meta: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -112,7 +111,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the job
         api_response = api_instance.jobs_partial_update_data_meta(id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->jobs_partial_update_data_meta: %s\n" % e)
 ```
 
@@ -163,14 +162,14 @@ Method creates a new task in a database without any attached images and videos
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_write import TaskWrite
-from cvat_sdk.model.task_write_request import TaskWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.task_write import TaskWrite
+from cvat_sdk.api_client.model.task_write_request import TaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -186,7 +185,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -204,7 +203,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     task_write_request = TaskWriteRequest(
@@ -247,7 +246,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a new task in a database without any attached images and videos
         api_response = api_instance.tasks_create(task_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -256,7 +255,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a new task in a database without any attached images and videos
         api_response = api_instance.tasks_create(task_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create: %s\n" % e)
 ```
 
@@ -306,13 +305,13 @@ Method allows to upload task annotations from storage
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_write_request import TaskWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.task_write_request import TaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -328,7 +327,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -346,7 +345,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -394,7 +393,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to upload task annotations from storage
         api_instance.tasks_create_annotations(id, task_write_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -402,7 +401,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to upload task annotations from storage
         api_instance.tasks_create_annotations(id, task_write_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create_annotations: %s\n" % e)
 ```
 
@@ -460,13 +459,13 @@ Method recreates a task from an attached task backup file
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_file_request import TaskFileRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.task_file_request import TaskFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -482,7 +481,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -500,7 +499,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     task_file_request = TaskFileRequest(
@@ -517,7 +516,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method recreates a task from an attached task backup file
         api_instance.tasks_create_backup(task_file_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create_backup: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -525,7 +524,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method recreates a task from an attached task backup file
         api_instance.tasks_create_backup(task_file_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create_backup: %s\n" % e)
 ```
 
@@ -579,13 +578,13 @@ Method permanently attaches images or video to a task. Supports tus uploads, see
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.data_request import DataRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.data_request import DataRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -601,7 +600,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -619,7 +618,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -654,7 +653,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
         api_instance.tasks_create_data(id, data_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create_data: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -662,7 +661,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
         api_instance.tasks_create_data(id, data_request, upload_finish=upload_finish, upload_multiple=upload_multiple, upload_start=upload_start, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create_data: %s\n" % e)
 ```
 
@@ -716,12 +715,12 @@ Method deletes a specific task, all attached jobs, annotations, and data
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -737,7 +736,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -755,7 +754,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -767,7 +766,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific task, all attached jobs, annotations, and data
         api_instance.tasks_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -775,7 +774,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific task, all attached jobs, annotations, and data
         api_instance.tasks_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_destroy: %s\n" % e)
 ```
 
@@ -825,12 +824,12 @@ Method deletes all annotations for a specific task
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -846,7 +845,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -864,7 +863,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -876,7 +875,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes all annotations for a specific task
         api_instance.tasks_destroy_annotations(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_destroy_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -884,7 +883,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes all annotations for a specific task
         api_instance.tasks_destroy_annotations(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_destroy_annotations: %s\n" % e)
 ```
 
@@ -934,13 +933,13 @@ Returns a paginated list of tasks according to query parameters (10 tasks per pa
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.paginated_task_read_list import PaginatedTaskReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -956,7 +955,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -974,7 +973,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -992,7 +991,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Returns a paginated list of tasks according to query parameters (10 tasks per page)
         api_response = api_instance.tasks_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_list: %s\n" % e)
 ```
 
@@ -1046,13 +1045,13 @@ Method returns a list of jobs for a specific task
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.paginated_job_read_list import PaginatedJobReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.paginated_job_read_list import PaginatedJobReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1068,7 +1067,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1086,7 +1085,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -1104,7 +1103,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a list of jobs for a specific task
         api_response = api_instance.tasks_list_jobs(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_list_jobs: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1113,7 +1112,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a list of jobs for a specific task
         api_response = api_instance.tasks_list_jobs(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_list_jobs: %s\n" % e)
 ```
 
@@ -1168,14 +1167,14 @@ Methods does a partial update of chosen fields in a task
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_write import TaskWrite
-from cvat_sdk.model.patched_task_write_request import PatchedTaskWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.task_write import TaskWrite
+from cvat_sdk.api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1191,7 +1190,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1209,7 +1208,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -1253,7 +1252,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a task
         api_response = api_instance.tasks_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1262,7 +1261,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a task
         api_response = api_instance.tasks_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update: %s\n" % e)
 ```
 
@@ -1313,14 +1312,14 @@ Method performs a partial update of annotations in a specific task
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_write import TaskWrite
-from cvat_sdk.model.patched_task_write_request import PatchedTaskWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.task_write import TaskWrite
+from cvat_sdk.api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1336,7 +1335,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1354,7 +1353,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     action = "create" # str | 
@@ -1399,7 +1398,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method performs a partial update of annotations in a specific task
         api_response = api_instance.tasks_partial_update_annotations(action, id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1408,7 +1407,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method performs a partial update of annotations in a specific task
         api_response = api_instance.tasks_partial_update_annotations(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_annotations: %s\n" % e)
 ```
 
@@ -1460,12 +1459,12 @@ Allows to upload an annotation file chunk. Implements TUS file uploading protoco
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1481,7 +1480,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1499,7 +1498,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
@@ -1513,7 +1512,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
         api_instance.tasks_partial_update_annotations_file(file_id, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_annotations_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1521,7 +1520,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
         api_instance.tasks_partial_update_annotations_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, body=body)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_annotations_file: %s\n" % e)
 ```
 
@@ -1567,12 +1566,12 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1588,7 +1587,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1606,7 +1605,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
@@ -1619,7 +1618,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.tasks_partial_update_backup_file(file_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_backup_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1627,7 +1626,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.tasks_partial_update_backup_file(file_id, x_organization=x_organization, org=org, org_id=org_id, body=body)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_backup_file: %s\n" % e)
 ```
 
@@ -1672,12 +1671,12 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1693,7 +1692,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1711,7 +1710,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
@@ -1725,7 +1724,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.tasks_partial_update_data_file(file_id, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_data_file: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1733,7 +1732,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
         api_instance.tasks_partial_update_data_file(file_id, id, x_organization=x_organization, org=org, org_id=org_id, body=body)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_data_file: %s\n" % e)
 ```
 
@@ -1779,14 +1778,14 @@ Method provides a meta information about media files which are related with the 
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.patched_task_write_request import PatchedTaskWriteRequest
-from cvat_sdk.model.data_meta_read import DataMetaRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.patched_task_write_request import PatchedTaskWriteRequest
+from cvat_sdk.api_client.model.data_meta_read import DataMetaRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1802,7 +1801,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1820,7 +1819,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -1864,7 +1863,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the task
         api_response = api_instance.tasks_partial_update_data_meta(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_data_meta: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1873,7 +1872,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the task
         api_response = api_instance.tasks_partial_update_data_meta(id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update_data_meta: %s\n" % e)
 ```
 
@@ -1924,13 +1923,13 @@ Method returns details of a specific task
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_read import TaskRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.task_read import TaskRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -1946,7 +1945,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1964,7 +1963,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -1977,7 +1976,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a specific task
         api_response = api_instance.tasks_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1986,7 +1985,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a specific task
         api_response = api_instance.tasks_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve: %s\n" % e)
 ```
 
@@ -2036,12 +2035,12 @@ Method allows to download task annotations
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -2057,7 +2056,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -2075,7 +2074,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -2093,7 +2092,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to download task annotations
         api_instance.tasks_retrieve_annotations(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -2101,7 +2100,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to download task annotations
         api_instance.tasks_retrieve_annotations(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_annotations: %s\n" % e)
 ```
 
@@ -2160,12 +2159,12 @@ Method backup a specified task
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -2181,7 +2180,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -2199,7 +2198,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -2216,7 +2215,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method backup a specified task
         api_instance.tasks_retrieve_backup(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_backup: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -2224,7 +2223,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method backup a specified task
         api_instance.tasks_retrieve_backup(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_backup: %s\n" % e)
 ```
 
@@ -2281,12 +2280,12 @@ Method returns data for a specific task
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -2302,7 +2301,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -2320,7 +2319,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -2335,7 +2334,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns data for a specific task
         api_instance.tasks_retrieve_data(id, number, quality, type)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_data: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -2343,7 +2342,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns data for a specific task
         api_instance.tasks_retrieve_data(id, number, quality, type, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_data: %s\n" % e)
 ```
 
@@ -2396,13 +2395,13 @@ Method provides a meta information about media files which are related with the 
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.data_meta_read import DataMetaRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.data_meta_read import DataMetaRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -2418,7 +2417,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -2436,7 +2435,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -2449,7 +2448,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the task
         api_response = api_instance.tasks_retrieve_data_meta(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_data_meta: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -2458,7 +2457,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a meta information about media files which are related with the task
         api_response = api_instance.tasks_retrieve_data_meta(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_data_meta: %s\n" % e)
 ```
 
@@ -2508,12 +2507,12 @@ Export task as a dataset in a specific format
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -2529,7 +2528,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -2547,7 +2546,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats
@@ -2565,7 +2564,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Export task as a dataset in a specific format
         api_instance.tasks_retrieve_dataset(format, id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_dataset: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -2573,7 +2572,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Export task as a dataset in a specific format
         api_instance.tasks_retrieve_dataset(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_dataset: %s\n" % e)
 ```
 
@@ -2632,13 +2631,13 @@ When task is being created the method returns information about a status of the 
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.rq_status import RqStatus
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.rq_status import RqStatus
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -2654,7 +2653,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -2672,7 +2671,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -2685,7 +2684,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # When task is being created the method returns information about a status of the creation process
         api_response = api_instance.tasks_retrieve_status(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_status: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -2694,7 +2693,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # When task is being created the method returns information about a status of the creation process
         api_response = api_instance.tasks_retrieve_status(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve_status: %s\n" % e)
 ```
 
@@ -2730,151 +2729,6 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **tasks_update**
-> TaskWrite tasks_update(id, task_write_request)
-
-Method updates a task by id
-
-### Example
-
-* Api Key Authentication (SignatureAuthentication):
-* Basic Authentication (basicAuth):
-* Api Key Authentication (cookieAuth):
-* Api Key Authentication (tokenAuth):
-
-```python
-import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_write import TaskWrite
-from cvat_sdk.model.task_write_request import TaskWriteRequest
-from pprint import pprint
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: SignatureAuthentication
-configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
-
-# Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
-    username = 'YOUR_USERNAME',
-    password = 'YOUR_PASSWORD'
-)
-
-# Configure API key authorization: cookieAuth
-configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
-
-# Configure API key authorization: tokenAuth
-configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = tasks_api.TasksApi(api_client)
-    id = 1 # int | A unique integer value identifying this task.
-    task_write_request = TaskWriteRequest(
-        name="name_example",
-        project_id=1,
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        overlap=1,
-        segment_size=1,
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        subset="subset_example",
-        target_storage=PatchedTaskWriteRequestTargetStorage(None),
-        source_storage=PatchedTaskWriteRequestTargetStorage(None),
-    ) # TaskWriteRequest | 
-    x_organization = "X-Organization_example" # str |  (optional)
-    org = "org_example" # str | Organization unique slug (optional)
-    org_id = 1 # int | Organization identifier (optional)
-
-    # example passing only required values which don't have defaults set
-    try:
-        # Method updates a task by id
-        api_response = api_instance.tasks_update(id, task_write_request)
-        pprint(api_response)
-    except cvat_sdk.ApiException as e:
-        print("Exception when calling TasksApi->tasks_update: %s\n" % e)
-
-    # example passing only required values which don't have defaults set
-    # and optional values
-    try:
-        # Method updates a task by id
-        api_response = api_instance.tasks_update(id, task_write_request, x_organization=x_organization, org=org, org_id=org_id)
-        pprint(api_response)
-    except cvat_sdk.ApiException as e:
-        print("Exception when calling TasksApi->tasks_update: %s\n" % e)
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **id** | **int**| A unique integer value identifying this task. |
- **task_write_request** | [**TaskWriteRequest**](TaskWriteRequest.md)|  |
- **x_organization** | **str**|  | [optional]
- **org** | **str**| Organization unique slug | [optional]
- **org_id** | **int**| Organization identifier | [optional]
-
-### Return type
-
-[**TaskWrite**](TaskWrite.md)
-
-### Authorization
-
-[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
-
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **tasks_update_annotations**
 > tasks_update_annotations(id, task_write_request)
 
@@ -2889,13 +2743,13 @@ Method allows to upload task annotations
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import tasks_api
-from cvat_sdk.model.task_write_request import TaskWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import tasks_api
+from cvat_sdk.api_client.model.task_write_request import TaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -2911,7 +2765,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -2929,7 +2783,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
@@ -2973,7 +2827,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to upload task annotations
         api_instance.tasks_update_annotations(id, task_write_request)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_update_annotations: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -2981,7 +2835,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method allows to upload task annotations
         api_instance.tasks_update_annotations(id, task_write_request, x_organization=x_organization, format=format, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_update_annotations: %s\n" % e)
 ```
 

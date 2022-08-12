@@ -1,4 +1,4 @@
-# cvat_sdk.LambdaApi
+# cvat_sdk.api_client.LambdaApi
 
 All URIs are relative to *http://localhost*
 
@@ -26,12 +26,12 @@ Method | HTTP request | Description
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import lambda_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import lambda_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -47,7 +47,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -65,7 +65,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     func_id = "2" # str | 
@@ -76,14 +76,14 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         api_instance.lambda_create_functions(func_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_create_functions: %s\n" % e)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
         api_instance.lambda_create_functions(func_id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_create_functions: %s\n" % e)
 ```
 
@@ -133,12 +133,12 @@ Method calls the function
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import lambda_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import lambda_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -154,7 +154,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -172,7 +172,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -184,7 +184,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method calls the function
         api_instance.lambda_create_requests(x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_create_requests: %s\n" % e)
 ```
 
@@ -233,12 +233,12 @@ Method returns a list of functions
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import lambda_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import lambda_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -254,7 +254,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -272,7 +272,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -284,7 +284,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns a list of functions
         api_instance.lambda_list_functions(x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_list_functions: %s\n" % e)
 ```
 
@@ -333,12 +333,12 @@ Method returns a list of requests
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import lambda_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import lambda_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -354,7 +354,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -372,7 +372,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -384,7 +384,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns a list of requests
         api_instance.lambda_list_requests(x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_list_requests: %s\n" % e)
 ```
 
@@ -433,12 +433,12 @@ Method returns the information about the function
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import lambda_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import lambda_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -454,7 +454,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -472,7 +472,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     func_id = "2" # str | 
@@ -485,7 +485,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns the information about the function
         api_response = api_instance.lambda_retrieve_functions(func_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_retrieve_functions: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -494,7 +494,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns the information about the function
         api_response = api_instance.lambda_retrieve_functions(func_id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_retrieve_functions: %s\n" % e)
 ```
 
@@ -544,12 +544,12 @@ Method returns the status of the request
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import lambda_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import lambda_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -565,7 +565,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -583,7 +583,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     id = 1 # int | Request id
@@ -595,7 +595,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns the status of the request
         api_instance.lambda_retrieve_requests(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_retrieve_requests: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -603,7 +603,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns the status of the request
         api_instance.lambda_retrieve_requests(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_retrieve_requests: %s\n" % e)
 ```
 

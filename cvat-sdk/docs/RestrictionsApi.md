@@ -1,4 +1,4 @@
-# cvat_sdk.RestrictionsApi
+# cvat_sdk.api_client.RestrictionsApi
 
 All URIs are relative to *http://localhost*
 
@@ -18,18 +18,18 @@ Method provides CVAT terms of use
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import restrictions_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import restrictions_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient() as api_client:
+with cvat_sdk.api_client.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = restrictions_api.RestrictionsApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -41,7 +41,7 @@ with cvat_sdk.ApiClient() as api_client:
     try:
         # Method provides CVAT terms of use
         api_instance.restrictions_retrieve_terms_of_use(x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling RestrictionsApi->restrictions_retrieve_terms_of_use: %s\n" % e)
 ```
 
@@ -86,19 +86,19 @@ Method provides user agreements that the user must accept to register
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import restrictions_api
-from cvat_sdk.model.user_agreement import UserAgreement
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import restrictions_api
+from cvat_sdk.api_client.model.user_agreement import UserAgreement
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient() as api_client:
+with cvat_sdk.api_client.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = restrictions_api.RestrictionsApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -111,7 +111,7 @@ with cvat_sdk.ApiClient() as api_client:
         # Method provides user agreements that the user must accept to register
         api_response = api_instance.restrictions_retrieve_user_agreements(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling RestrictionsApi->restrictions_retrieve_user_agreements: %s\n" % e)
 ```
 

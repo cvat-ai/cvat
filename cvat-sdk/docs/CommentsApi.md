@@ -1,4 +1,4 @@
-# cvat_sdk.CommentsApi
+# cvat_sdk.api_client.CommentsApi
 
 All URIs are relative to *http://localhost*
 
@@ -25,14 +25,14 @@ Method creates a comment
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import comments_api
-from cvat_sdk.model.comment_write import CommentWrite
-from cvat_sdk.model.comment_write_request import CommentWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import comments_api
+from cvat_sdk.api_client.model.comment_write_request import CommentWriteRequest
+from cvat_sdk.api_client.model.comment_write import CommentWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -48,7 +48,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -66,7 +66,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = comments_api.CommentsApi(api_client)
     comment_write_request = CommentWriteRequest(
@@ -82,7 +82,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a comment
         api_response = api_instance.comments_create(comment_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_create: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -91,7 +91,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a comment
         api_response = api_instance.comments_create(comment_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_create: %s\n" % e)
 ```
 
@@ -141,12 +141,12 @@ Method deletes a comment
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import comments_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import comments_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -162,7 +162,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -180,7 +180,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = comments_api.CommentsApi(api_client)
     id = 1 # int | A unique integer value identifying this comment.
@@ -192,7 +192,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a comment
         api_instance.comments_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -200,7 +200,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a comment
         api_instance.comments_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_destroy: %s\n" % e)
 ```
 
@@ -250,13 +250,13 @@ Method returns a paginated list of comments according to query parameters
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import comments_api
-from cvat_sdk.model.paginated_comment_read_list import PaginatedCommentReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import comments_api
+from cvat_sdk.api_client.model.paginated_comment_read_list import PaginatedCommentReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -272,7 +272,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -290,7 +290,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = comments_api.CommentsApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -308,7 +308,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a paginated list of comments according to query parameters
         api_response = api_instance.comments_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_list: %s\n" % e)
 ```
 
@@ -362,14 +362,14 @@ Methods does a partial update of chosen fields in a comment
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import comments_api
-from cvat_sdk.model.comment_write import CommentWrite
-from cvat_sdk.model.patched_comment_write_request import PatchedCommentWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import comments_api
+from cvat_sdk.api_client.model.patched_comment_write_request import PatchedCommentWriteRequest
+from cvat_sdk.api_client.model.comment_write import CommentWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -385,7 +385,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -403,7 +403,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = comments_api.CommentsApi(api_client)
     id = 1 # int | A unique integer value identifying this comment.
@@ -420,7 +420,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a comment
         api_response = api_instance.comments_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -429,7 +429,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a comment
         api_response = api_instance.comments_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_comment_write_request=patched_comment_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_partial_update: %s\n" % e)
 ```
 
@@ -480,13 +480,13 @@ Method returns details of a comment
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import comments_api
-from cvat_sdk.model.comment_read import CommentRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import comments_api
+from cvat_sdk.api_client.model.comment_read import CommentRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -502,7 +502,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -520,7 +520,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = comments_api.CommentsApi(api_client)
     id = 1 # int | A unique integer value identifying this comment.
@@ -533,7 +533,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a comment
         api_response = api_instance.comments_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -542,7 +542,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a comment
         api_response = api_instance.comments_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CommentsApi->comments_retrieve: %s\n" % e)
 ```
 

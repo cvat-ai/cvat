@@ -1,4 +1,5 @@
+-r api_client.txt
+
 attrs >= 21.4.0
-python_dateutil >= 2.5.3
 tqdm >= 4.64.0
-urllib3 >= 1.25.3
+tuspy == 0.2.5 # have it pinned, because SDK has lots of patched TUS code

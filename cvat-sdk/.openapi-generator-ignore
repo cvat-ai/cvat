@@ -23,6 +23,7 @@
 #!docs/README.md
 
 # For safety
+/cvat_sdk/__init__.py
 /config
 /gen
 /helpers.py
@@ -31,7 +32,6 @@
 
 # Don't generate these files
 /git_push.sh
-/requirements.txt
 /setup.cfg
 /test-requirements.txt
 /tox.ini

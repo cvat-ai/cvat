@@ -6,9 +6,8 @@ import os.path as osp
 import textwrap
 from typing import Tuple
 
-from tqdm import tqdm
-
 from cvat_sdk.helpers import TqdmProgressReporter
+from tqdm import tqdm
 
 
 def make_pbar(file, **kwargs):

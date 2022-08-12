@@ -1,4 +1,4 @@
-# cvat_sdk.ServerApi
+# cvat_sdk.api_client.ServerApi
 
 All URIs are relative to *http://localhost*
 
@@ -28,14 +28,14 @@ Sends logs to the ELK if it is connected
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import server_api
-from cvat_sdk.model.exception_request import ExceptionRequest
-from cvat_sdk.model.exception import Exception
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import server_api
+from cvat_sdk.api_client.model.exception_request import ExceptionRequest
+from cvat_sdk.api_client.model.exception import Exception
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -51,7 +51,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -69,7 +69,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
     exception_request = ExceptionRequest(
@@ -95,7 +95,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method saves an exception from a client on the server
         api_response = api_instance.server_create_exception(exception_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_create_exception: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -104,7 +104,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method saves an exception from a client on the server
         api_response = api_instance.server_create_exception(exception_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_create_exception: %s\n" % e)
 ```
 
@@ -156,14 +156,14 @@ Sends logs to the ELK if it is connected
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import server_api
-from cvat_sdk.model.log_event import LogEvent
-from cvat_sdk.model.log_event_request import LogEventRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import server_api
+from cvat_sdk.api_client.model.log_event import LogEvent
+from cvat_sdk.api_client.model.log_event_request import LogEventRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -179,7 +179,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -197,7 +197,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
     log_event_request = [
@@ -224,7 +224,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method saves logs from a client on the server
         api_response = api_instance.server_create_logs(log_event_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_create_logs: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -233,7 +233,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method saves logs from a client on the server
         api_response = api_instance.server_create_logs(log_event_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_create_logs: %s\n" % e)
 ```
 
@@ -283,13 +283,13 @@ Returns all files and folders that are on the server along specified path
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import server_api
-from cvat_sdk.model.file_info import FileInfo
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import server_api
+from cvat_sdk.api_client.model.file_info import FileInfo
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -305,7 +305,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -323,7 +323,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -337,7 +337,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Returns all files and folders that are on the server along specified path
         api_response = api_instance.server_list_share(x_organization=x_organization, directory=directory, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_list_share: %s\n" % e)
 ```
 
@@ -387,13 +387,13 @@ Method provides basic CVAT information
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import server_api
-from cvat_sdk.model.about import About
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import server_api
+from cvat_sdk.api_client.model.about import About
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -409,7 +409,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -427,7 +427,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -440,7 +440,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides basic CVAT information
         api_response = api_instance.server_retrieve_about(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_retrieve_about: %s\n" % e)
 ```
 
@@ -489,13 +489,13 @@ Method provides the list of supported annotations formats
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import server_api
-from cvat_sdk.model.dataset_formats import DatasetFormats
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import server_api
+from cvat_sdk.api_client.model.dataset_formats import DatasetFormats
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -511,7 +511,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -529,7 +529,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -542,7 +542,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides the list of supported annotations formats
         api_response = api_instance.server_retrieve_annotation_formats(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_retrieve_annotation_formats: %s\n" % e)
 ```
 
@@ -591,13 +591,13 @@ Method provides allowed plugins
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import server_api
-from cvat_sdk.model.plugins import Plugins
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import server_api
+from cvat_sdk.api_client.model.plugins import Plugins
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -613,7 +613,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -631,7 +631,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -644,7 +644,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides allowed plugins
         api_response = api_instance.server_retrieve_plugins(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ServerApi->server_retrieve_plugins: %s\n" % e)
 ```
 

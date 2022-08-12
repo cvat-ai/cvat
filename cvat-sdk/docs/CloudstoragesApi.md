@@ -1,4 +1,4 @@
-# cvat_sdk.CloudstoragesApi
+# cvat_sdk.api_client.CloudstoragesApi
 
 All URIs are relative to *http://localhost*
 
@@ -29,14 +29,14 @@ Method creates a cloud storage with a specified characteristics
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
-from cvat_sdk.model.cloud_storage_write import CloudStorageWrite
-from cvat_sdk.model.cloud_storage_write_request import CloudStorageWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
+from cvat_sdk.api_client.model.cloud_storage_write_request import CloudStorageWriteRequest
+from cvat_sdk.api_client.model.cloud_storage_write import CloudStorageWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -52,7 +52,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -70,7 +70,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     cloud_storage_write_request = CloudStorageWriteRequest(
@@ -105,7 +105,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a cloud storage with a specified characteristics
         api_response = api_instance.cloudstorages_create(cloud_storage_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_create: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -114,7 +114,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates a cloud storage with a specified characteristics
         api_response = api_instance.cloudstorages_create(cloud_storage_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_create: %s\n" % e)
 ```
 
@@ -164,12 +164,12 @@ Method deletes a specific cloud storage
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -185,7 +185,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -203,7 +203,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
@@ -215,7 +215,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific cloud storage
         api_instance.cloudstorages_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -223,7 +223,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific cloud storage
         api_instance.cloudstorages_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_destroy: %s\n" % e)
 ```
 
@@ -273,13 +273,13 @@ Returns a paginated list of storages according to query parameters
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
-from cvat_sdk.model.paginated_cloud_storage_read_list import PaginatedCloudStorageReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
+from cvat_sdk.api_client.model.paginated_cloud_storage_read_list import PaginatedCloudStorageReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -295,7 +295,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -313,7 +313,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -331,7 +331,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Returns a paginated list of storages according to query parameters
         api_response = api_instance.cloudstorages_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_list: %s\n" % e)
 ```
 
@@ -385,14 +385,14 @@ Methods does a partial update of chosen fields in a cloud storage instance
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
-from cvat_sdk.model.patched_cloud_storage_write_request import PatchedCloudStorageWriteRequest
-from cvat_sdk.model.cloud_storage_write import CloudStorageWrite
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
+from cvat_sdk.api_client.model.patched_cloud_storage_write_request import PatchedCloudStorageWriteRequest
+from cvat_sdk.api_client.model.cloud_storage_write import CloudStorageWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -408,7 +408,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -426,7 +426,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
@@ -462,7 +462,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a cloud storage instance
         api_response = api_instance.cloudstorages_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -471,7 +471,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a cloud storage instance
         api_response = api_instance.cloudstorages_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_cloud_storage_write_request=patched_cloud_storage_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_partial_update: %s\n" % e)
 ```
 
@@ -522,13 +522,13 @@ Method returns details of a specific cloud storage
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
-from cvat_sdk.model.cloud_storage_read import CloudStorageRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
+from cvat_sdk.api_client.model.cloud_storage_read import CloudStorageRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -544,7 +544,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -562,7 +562,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
@@ -575,7 +575,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a specific cloud storage
         api_response = api_instance.cloudstorages_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -584,7 +584,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a specific cloud storage
         api_response = api_instance.cloudstorages_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve: %s\n" % e)
 ```
 
@@ -636,12 +636,12 @@ Method return allowed actions for cloud storage. It's required for reading/writi
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -657,7 +657,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -675,7 +675,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
@@ -688,7 +688,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns allowed actions for the cloud storage
         api_response = api_instance.cloudstorages_retrieve_actions(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_actions: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -697,7 +697,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns allowed actions for the cloud storage
         api_response = api_instance.cloudstorages_retrieve_actions(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_actions: %s\n" % e)
 ```
 
@@ -747,12 +747,12 @@ Method returns a manifest content
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -768,7 +768,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -786,7 +786,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
@@ -800,7 +800,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a manifest content
         api_response = api_instance.cloudstorages_retrieve_content(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_content: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -809,7 +809,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a manifest content
         api_response = api_instance.cloudstorages_retrieve_content(id, x_organization=x_organization, manifest_path=manifest_path, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_content: %s\n" % e)
 ```
 
@@ -860,12 +860,12 @@ Method returns a preview image from a cloud storage
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -881,7 +881,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -899,7 +899,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
@@ -911,7 +911,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns a preview image from a cloud storage
         api_instance.cloudstorages_retrieve_preview(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_preview: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -919,7 +919,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method returns a preview image from a cloud storage
         api_instance.cloudstorages_retrieve_preview(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_preview: %s\n" % e)
 ```
 
@@ -969,12 +969,12 @@ Method returns a cloud storage status
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import cloudstorages_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import cloudstorages_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -990,7 +990,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -1008,7 +1008,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloudstorages_api.CloudstoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
@@ -1021,7 +1021,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a cloud storage status
         api_response = api_instance.cloudstorages_retrieve_status(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_status: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -1030,7 +1030,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a cloud storage status
         api_response = api_instance.cloudstorages_retrieve_status(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling CloudstoragesApi->cloudstorages_retrieve_status: %s\n" % e)
 ```
 

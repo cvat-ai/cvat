@@ -68,3 +68,8 @@ target/
 # Workflow
 schema/
 .openapi-generator/
+
+# Generated code
+cvat_sdk/api_client/
+requirements/
+setup.py

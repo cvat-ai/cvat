@@ -1,4 +1,4 @@
-# cvat_sdk.IssuesApi
+# cvat_sdk.api_client.IssuesApi
 
 All URIs are relative to *http://localhost*
 
@@ -26,14 +26,14 @@ Method creates an issue
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import issues_api
-from cvat_sdk.model.issue_write_request import IssueWriteRequest
-from cvat_sdk.model.issue_write import IssueWrite
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import issues_api
+from cvat_sdk.api_client.model.issue_write_request import IssueWriteRequest
+from cvat_sdk.api_client.model.issue_write import IssueWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -49,7 +49,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -67,7 +67,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     issue_write_request = IssueWriteRequest(
@@ -89,7 +89,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates an issue
         api_response = api_instance.issues_create(issue_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_create: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -98,7 +98,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates an issue
         api_response = api_instance.issues_create(issue_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_create: %s\n" % e)
 ```
 
@@ -148,12 +148,12 @@ Method deletes an issue
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import issues_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import issues_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -169,7 +169,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -187,7 +187,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
@@ -199,7 +199,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes an issue
         api_instance.issues_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -207,7 +207,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes an issue
         api_instance.issues_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_destroy: %s\n" % e)
 ```
 
@@ -257,13 +257,13 @@ Method returns a paginated list of issues according to query parameters
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import issues_api
-from cvat_sdk.model.paginated_issue_read_list import PaginatedIssueReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import issues_api
+from cvat_sdk.api_client.model.paginated_issue_read_list import PaginatedIssueReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -279,7 +279,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -297,7 +297,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -315,7 +315,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a paginated list of issues according to query parameters
         api_response = api_instance.issues_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_list: %s\n" % e)
 ```
 
@@ -369,13 +369,13 @@ The action returns all comments of a specific issue
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import issues_api
-from cvat_sdk.model.paginated_comment_read_list import PaginatedCommentReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import issues_api
+from cvat_sdk.api_client.model.paginated_comment_read_list import PaginatedCommentReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -391,7 +391,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -409,7 +409,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
@@ -427,7 +427,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # The action returns all comments of a specific issue
         api_response = api_instance.issues_list_comments(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_list_comments: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -436,7 +436,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # The action returns all comments of a specific issue
         api_response = api_instance.issues_list_comments(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_list_comments: %s\n" % e)
 ```
 
@@ -491,14 +491,14 @@ Methods does a partial update of chosen fields in an issue
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import issues_api
-from cvat_sdk.model.issue_write import IssueWrite
-from cvat_sdk.model.patched_issue_write_request import PatchedIssueWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import issues_api
+from cvat_sdk.api_client.model.patched_issue_write_request import PatchedIssueWriteRequest
+from cvat_sdk.api_client.model.issue_write import IssueWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -514,7 +514,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -532,7 +532,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
@@ -555,7 +555,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in an issue
         api_response = api_instance.issues_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -564,7 +564,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in an issue
         api_response = api_instance.issues_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_issue_write_request=patched_issue_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_partial_update: %s\n" % e)
 ```
 
@@ -615,13 +615,13 @@ Method returns details of an issue
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import issues_api
-from cvat_sdk.model.issue_read import IssueRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import issues_api
+from cvat_sdk.api_client.model.issue_read import IssueRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -637,7 +637,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -655,7 +655,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
@@ -668,7 +668,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of an issue
         api_response = api_instance.issues_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -677,7 +677,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of an issue
         api_response = api_instance.issues_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_retrieve: %s\n" % e)
 ```
 

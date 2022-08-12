@@ -10,9 +10,9 @@ from typing import Any, Dict, List, Optional, Union
 
 import tqdm
 
-from cvat_sdk.api_client import Endpoint
-from cvat_sdk.impl.progress import ProgressReporter
-from cvat_sdk.utils import assert_status
+from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.utils import assert_status
 
 
 def get_paginated_collection(

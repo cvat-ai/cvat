@@ -1,4 +1,4 @@
-# cvat_sdk.OrganizationsApi
+# cvat_sdk.api_client.OrganizationsApi
 
 All URIs are relative to *http://localhost*
 
@@ -25,14 +25,14 @@ Method creates an organization
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import organizations_api
-from cvat_sdk.model.organization_write import OrganizationWrite
-from cvat_sdk.model.organization_write_request import OrganizationWriteRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import organizations_api
+from cvat_sdk.api_client.model.organization_write import OrganizationWrite
+from cvat_sdk.api_client.model.organization_write_request import OrganizationWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -48,7 +48,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -66,7 +66,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = organizations_api.OrganizationsApi(api_client)
     organization_write_request = OrganizationWriteRequest(
@@ -86,7 +86,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates an organization
         api_response = api_instance.organizations_create(organization_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_create: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -95,7 +95,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method creates an organization
         api_response = api_instance.organizations_create(organization_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_create: %s\n" % e)
 ```
 
@@ -145,12 +145,12 @@ Method deletes an organization
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import organizations_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import organizations_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -166,7 +166,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -184,7 +184,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = organizations_api.OrganizationsApi(api_client)
     id = 1 # int | A unique integer value identifying this organization.
@@ -196,7 +196,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes an organization
         api_instance.organizations_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -204,7 +204,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes an organization
         api_instance.organizations_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_destroy: %s\n" % e)
 ```
 
@@ -254,13 +254,13 @@ Method returns a paginated list of organizatins according to query parameters
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import organizations_api
-from cvat_sdk.model.organization_read import OrganizationRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import organizations_api
+from cvat_sdk.api_client.model.organization_read import OrganizationRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -276,7 +276,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -294,7 +294,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = organizations_api.OrganizationsApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -310,7 +310,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a paginated list of organizatins according to query parameters
         api_response = api_instance.organizations_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_list: %s\n" % e)
 ```
 
@@ -362,14 +362,14 @@ Methods does a partial update of chosen fields in an organization
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import organizations_api
-from cvat_sdk.model.patched_organization_write_request import PatchedOrganizationWriteRequest
-from cvat_sdk.model.organization_write import OrganizationWrite
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import organizations_api
+from cvat_sdk.api_client.model.organization_write import OrganizationWrite
+from cvat_sdk.api_client.model.patched_organization_write_request import PatchedOrganizationWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -385,7 +385,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -403,7 +403,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = organizations_api.OrganizationsApi(api_client)
     id = 1 # int | A unique integer value identifying this organization.
@@ -424,7 +424,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in an organization
         api_response = api_instance.organizations_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -433,7 +433,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in an organization
         api_response = api_instance.organizations_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_organization_write_request=patched_organization_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_partial_update: %s\n" % e)
 ```
 
@@ -484,13 +484,13 @@ Method returns details of an organization
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import organizations_api
-from cvat_sdk.model.organization_read import OrganizationRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import organizations_api
+from cvat_sdk.api_client.model.organization_read import OrganizationRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -506,7 +506,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -524,7 +524,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = organizations_api.OrganizationsApi(api_client)
     id = 1 # int | A unique integer value identifying this organization.
@@ -537,7 +537,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of an organization
         api_response = api_instance.organizations_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -546,7 +546,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of an organization
         api_response = api_instance.organizations_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling OrganizationsApi->organizations_retrieve: %s\n" % e)
 ```
 

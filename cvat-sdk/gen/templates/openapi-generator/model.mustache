@@ -27,8 +27,8 @@ from {{packageName}}.exceptions import ApiAttributeError
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     # Enable introspection. Can't work normally due to cyclic imports
-    from cvat_sdk.apis import *
-    from cvat_sdk.models import *
+    from {{packageName}}.apis import *
+    from {{packageName}}.models import *
 
 {{#models}}
 {{#model}}

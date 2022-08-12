@@ -1,4 +1,4 @@
-# cvat_sdk.SchemaApi
+# cvat_sdk.api_client.SchemaApi
 
 All URIs are relative to *http://localhost*
 
@@ -23,12 +23,12 @@ OpenApi3 schema for this API. Format can be selected via content negotiation.  -
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import schema_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import schema_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -44,7 +44,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -62,7 +62,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = schema_api.SchemaApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -76,7 +76,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         api_response = api_instance.schema_retrieve(x_organization=x_organization, lang=lang, org=org, org_id=org_id, scheme=scheme)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling SchemaApi->schema_retrieve: %s\n" % e)
 ```
 

@@ -1,4 +1,4 @@
-# cvat_sdk.MembershipsApi
+# cvat_sdk.api_client.MembershipsApi
 
 All URIs are relative to *http://localhost*
 
@@ -24,12 +24,12 @@ Method deletes a membership
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import memberships_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import memberships_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -45,7 +45,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -63,7 +63,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
     id = 1 # int | A unique integer value identifying this membership.
@@ -75,7 +75,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a membership
         api_instance.memberships_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -83,7 +83,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a membership
         api_instance.memberships_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_destroy: %s\n" % e)
 ```
 
@@ -133,13 +133,13 @@ Method returns a paginated list of memberships according to query parameters
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import memberships_api
-from cvat_sdk.model.paginated_membership_read_list import PaginatedMembershipReadList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import memberships_api
+from cvat_sdk.api_client.model.paginated_membership_read_list import PaginatedMembershipReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -155,7 +155,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -173,7 +173,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -191,7 +191,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns a paginated list of memberships according to query parameters
         api_response = api_instance.memberships_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_list: %s\n" % e)
 ```
 
@@ -245,14 +245,14 @@ Methods does a partial update of chosen fields in a membership
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import memberships_api
-from cvat_sdk.model.patched_membership_write_request import PatchedMembershipWriteRequest
-from cvat_sdk.model.membership_write import MembershipWrite
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import memberships_api
+from cvat_sdk.api_client.model.membership_write import MembershipWrite
+from cvat_sdk.api_client.model.patched_membership_write_request import PatchedMembershipWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -268,7 +268,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -286,7 +286,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
     id = 1 # int | A unique integer value identifying this membership.
@@ -302,7 +302,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a membership
         api_response = api_instance.memberships_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -311,7 +311,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Methods does a partial update of chosen fields in a membership
         api_response = api_instance.memberships_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_membership_write_request=patched_membership_write_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_partial_update: %s\n" % e)
 ```
 
@@ -362,13 +362,13 @@ Method returns details of a membership
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import memberships_api
-from cvat_sdk.model.membership_read import MembershipRead
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import memberships_api
+from cvat_sdk.api_client.model.membership_read import MembershipRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -384,7 +384,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -402,7 +402,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
     id = 1 # int | A unique integer value identifying this membership.
@@ -415,7 +415,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a membership
         api_response = api_instance.memberships_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -424,7 +424,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns details of a membership
         api_response = api_instance.memberships_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_retrieve: %s\n" % e)
 ```
 

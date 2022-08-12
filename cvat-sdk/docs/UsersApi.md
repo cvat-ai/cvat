@@ -1,4 +1,4 @@
-# cvat_sdk.UsersApi
+# cvat_sdk.api_client.UsersApi
 
 All URIs are relative to *http://localhost*
 
@@ -25,12 +25,12 @@ Method deletes a specific user from the server
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import users_api
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import users_api
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -46,7 +46,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -64,7 +64,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     id = 1 # int | A unique integer value identifying this user.
@@ -76,7 +76,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific user from the server
         api_instance.users_destroy(id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_destroy: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -84,7 +84,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
     try:
         # Method deletes a specific user from the server
         api_instance.users_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_destroy: %s\n" % e)
 ```
 
@@ -134,13 +134,13 @@ Method provides a paginated list of users registered on the server
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import users_api
-from cvat_sdk.model.paginated_meta_user_list import PaginatedMetaUserList
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import users_api
+from cvat_sdk.api_client.model.paginated_meta_user_list import PaginatedMetaUserList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -156,7 +156,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -174,7 +174,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -192,7 +192,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides a paginated list of users registered on the server
         api_response = api_instance.users_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_list: %s\n" % e)
 ```
 
@@ -246,14 +246,14 @@ Method updates chosen fields of a user
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import users_api
-from cvat_sdk.model.meta_user import MetaUser
-from cvat_sdk.model.patched_user_request import PatchedUserRequest
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import users_api
+from cvat_sdk.api_client.model.meta_user import MetaUser
+from cvat_sdk.api_client.model.patched_user_request import PatchedUserRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -269,7 +269,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -287,7 +287,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     id = 1 # int | A unique integer value identifying this user.
@@ -312,7 +312,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method updates chosen fields of a user
         api_response = api_instance.users_partial_update(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -321,7 +321,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method updates chosen fields of a user
         api_response = api_instance.users_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_user_request=patched_user_request)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_partial_update: %s\n" % e)
 ```
 
@@ -372,13 +372,13 @@ Method provides information of a specific user
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import users_api
-from cvat_sdk.model.meta_user import MetaUser
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import users_api
+from cvat_sdk.api_client.model.meta_user import MetaUser
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -394,7 +394,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -412,7 +412,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     id = 1 # int | A unique integer value identifying this user.
@@ -425,7 +425,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides information of a specific user
         api_response = api_instance.users_retrieve(id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_retrieve: %s\n" % e)
 
     # example passing only required values which don't have defaults set
@@ -434,7 +434,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method provides information of a specific user
         api_response = api_instance.users_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_retrieve: %s\n" % e)
 ```
 
@@ -486,13 +486,13 @@ Method returns an instance of a user who is currently authorized
 
 ```python
 import time
-import cvat_sdk
-from cvat_sdk.api import users_api
-from cvat_sdk.model.meta_user import MetaUser
+import cvat_sdk.api_client
+from cvat_sdk.api_client.api import users_api
+from cvat_sdk.api_client.model.meta_user import MetaUser
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     host = "http://localhost"
 )
 
@@ -508,7 +508,7 @@ configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
 
 # Configure HTTP basic authorization: basicAuth
-configuration = cvat_sdk.Configuration(
+configuration = cvat_sdk.api_client.Configuration(
     username = 'YOUR_USERNAME',
     password = 'YOUR_PASSWORD'
 )
@@ -526,7 +526,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 # configuration.api_key_prefix['tokenAuth'] = 'Bearer'
 
 # Enter a context with an instance of the API client
-with cvat_sdk.ApiClient(configuration) as api_client:
+with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     x_organization = "X-Organization_example" # str |  (optional)
@@ -539,7 +539,7 @@ with cvat_sdk.ApiClient(configuration) as api_client:
         # Method returns an instance of a user who is currently authorized
         api_response = api_instance.users_retrieve_self(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
-    except cvat_sdk.ApiException as e:
+    except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling UsersApi->users_retrieve_self: %s\n" % e)
 ```
 
