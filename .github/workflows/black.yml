@@ -17,6 +17,7 @@ jobs:
           # If different modules use different Black configs,
           # we need to run Black for each python component group separately.
           # Otherwise, they all will use the same config.
+          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python/sdk" "tests/python/cli")
 
           isValueIn () {
             # Checks if a value is in an array
@@ -24,7 +25,9 @@ jobs:
             # args: value, array
             local e match="$1"
             shift
-            for e; do [[ "$e" == "$match" ]] && return 0; done
+            for e; do
+              [[ "$e" == "$match" ]] && return 0;
+            done
             return 1
           }
 
@@ -33,23 +36,19 @@ jobs:
             # Checks if the first arg starts with the second one
             local value="$1"
             local beginning="$2"
-            echo "checking: " $value $beginning
             return $([[ $value == ${beginning}* ]])
           }
 
-          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python")
           PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
           UPDATED_DIRS=""
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
               DIRECTORY="$(dirname $FILE)"
-              echo $DIRECTORY
               if [[ "$EXTENSION" == "py" ]]; then
-                  for EDIR in "${ENABLED_DIRS[@]}"; do
-                      if startswith "${DIRECTORY}/" "${EDIR}/" &&
-                        ! isValueIn "${DIRECTORY}" "${UPDATED_DIRS[@]}";
+                  for EDIR in ${ENABLED_DIRS[@]}; do
+                      if startswith "${DIRECTORY}/" "${EDIR}/" && ! isValueIn "${EDIR}" ${UPDATED_DIRS[@]};
                       then
-                          UPDATED_DIRS+=" ${DIRECTORY}"
+                          UPDATED_DIRS+=" ${EDIR}"
                       fi
                   done
               fi
