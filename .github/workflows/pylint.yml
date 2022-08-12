@@ -17,8 +17,7 @@ jobs:
           PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
-              DIRECTORY="${FILE%%/*}"
-              if [[ "$EXTENSION" == 'py' && "$DIRECTORY" != 'cvat-sdk' ]]; then
+              if [[ "$EXTENSION" == 'py' ]]; then
                   CHANGED_FILES+=" $FILE"
               fi
           done

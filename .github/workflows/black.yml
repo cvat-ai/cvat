@@ -14,11 +14,22 @@ jobs:
           PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
+          isValueIn () {
+            # Checks if a value in an array
+            # https://stackoverflow.com/a/8574392
+            # args: value, array
+            local e match="$1"
+            shift
+            for e; do [[ "$e" == "$match" ]] && return 0; done
+            return 1
+          }
+
+          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python")
           PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
               DIRECTORY="${FILE%%/*}"
-              if [[ "$EXTENSION" == "py" && "$DIRECTORY" == "cvat-cli" ]]; then
+              if [[ "$EXTENSION" == "py" && isValueIn "${DIRECTORY}" "${ENABLED_DIRS[@]}" ]]; then
                   CHANGED_FILES+=" $FILE"
               fi
           done
@@ -33,7 +44,7 @@ jobs:
 
             echo "Black version: "$(black --version)
             echo "The files will be checked: "$(echo $CHANGED_FILES)
-            black --check --config ./cvat-cli/pyproject.toml $CHANGED_FILES > ./black_report/black_checks.txt || EXIT_CODE=$(echo $?) || true
+            black --check $CHANGED_FILES > ./black_report/black_checks.txt || EXIT_CODE=$(echo $?) || true
             deactivate
             exit $EXIT_CODE
           else
