@@ -17,7 +17,8 @@ class TestGetCloudStorage:
         response_data = response_data.get('results', response_data)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response_data, ignore_order=True) == {}
+        assert DeepDiff(data, response_data, ignore_order=True,
+            exclude_paths="root['updated_date']") == {}
 
     def _test_cannot_see(self, user, storage_id, **kwargs):
         response = get_method(user, f'cloudstorages/{storage_id}', **kwargs)
@@ -132,6 +133,14 @@ class TestPatchCloudStorage:
             'manifest_2.jsonl',
         ],
     }
+    _PRIVATE_BUCKET_SPEC = {
+        'display_name': 'New display name',
+        'description': 'New description',
+        'manifests': [
+            'sub/manifest_1.jsonl',
+            'sub/manifest_2.jsonl',
+        ],
+    }
     _EXCLUDE_PATHS = [
         f"root['{extra_field}']" for extra_field in {
             # unchanged fields
@@ -145,7 +154,7 @@ class TestPatchCloudStorage:
         response_data = response_data.get('results', response_data)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(self._SPEC, response_data, ignore_order=True,
+        assert DeepDiff(spec, response_data, ignore_order=True,
             exclude_paths=self._EXCLUDE_PATHS) == {}
 
         assert response.status_code == HTTPStatus.OK
@@ -186,6 +195,6 @@ class TestPatchCloudStorage:
             next((u for u in find_users(role=role, org=org_id) if u['id'] != cloud_storage['owner']['id']))['username']
 
         if is_allow:
-            self._test_can_update(username, storage_id, self._SPEC, org_id=org_id)
+            self._test_can_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
         else:
-            self._test_cannot_update(username, storage_id, self._SPEC, org_id=org_id)
+            self._test_cannot_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)

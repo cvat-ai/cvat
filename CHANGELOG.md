@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Python SDK package (`cvat-sdk`)
 - Previews for jobs
 - Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
+- OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
+- Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
@@ -43,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Request Status Code 500 "StopIteration" when exporting dataset
 - Generated OpenAPI schema for several endpoints
 - Annotation window might have top offset if try to move a locked object
+- Image search in cloud storage (<https://github.com/cvat-ai/cvat/pull/8>)
+- Reset password functionality (<https://github.com/cvat-ai/cvat/pull/52>)
 
 ### Security
 - TDB

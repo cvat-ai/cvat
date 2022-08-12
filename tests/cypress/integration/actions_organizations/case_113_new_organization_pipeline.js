@@ -102,10 +102,6 @@ context('New organization pipeline.', () => {
         cy.logout();
 
         for (const user of Object.values(users)) {
-            // When we continuously register users, elements on login/register page become detached from DOM
-            // because of our re-renders after additional requests, waiting is workaround for this issue
-            // https://github.com/cypress-io/cypress/issues/7306
-            cy.wait(1000);
             cy.goToRegisterPage();
             cy.userRegistration(
                 user.firstName,
