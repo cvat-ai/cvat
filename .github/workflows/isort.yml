@@ -65,7 +65,7 @@ jobs:
             echo "isort version: "$(isort --version)
             echo "The dirs will be checked: $UPDATED_DIRS"
             for DIR in $UPDATED_DIRS; do
-              isort --check $DIR >> ./isort_report/isort_checks.txt || EXIT_CODE="$?" || true
+              isort --check $DIR >> ./isort_report/isort_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
             done
             deactivate
             exit $EXIT_CODE

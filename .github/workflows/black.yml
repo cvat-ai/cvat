@@ -65,7 +65,7 @@ jobs:
             echo "Black version: "$(black --version)
             echo "The dirs will be checked: $UPDATED_DIRS"
             for DIR in $UPDATED_DIRS; do
-              black --check $DIR >> ./black_report/black_checks.txt || EXIT_CODE+="$?" || true
+              black --check $DIR >> ./black_report/black_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
             done
             deactivate
             exit $EXIT_CODE
