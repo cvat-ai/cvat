@@ -166,12 +166,13 @@ class InstanceLabelData:
 class TaskData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, outside, attributes, source, elements, rotation, group, z_order')
-    LabeledShape.__new__.__defaults__ = (0, 0, 0)
+        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside')
+    LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id')
-    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, None)
+        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements')
+    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, None, [])
     Track = namedtuple('Track', 'label, group, source, shapes, elements')
+    Track.__new__.__defaults__ = ([], )
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
@@ -326,6 +327,7 @@ class TaskData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
+            elements=[self._export_tracked_shape(element) for element in shape.get("elements", [])]
         )
 
     def _export_labeled_shape(self, shape):
@@ -639,6 +641,7 @@ class ProjectData(InstanceLabelData):
         z_order: int = attrib(default=0)
         label: str = attrib(default=None)
         track_id: int = attrib(default=0)
+        elements: List['ProjectData.TrackedShape'] = attrib(default=[])
 
     @attrs
     class Track:
@@ -823,6 +826,7 @@ class ProjectData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
+            elements=[self._export_tracked_shape(element, task_id) for element in shape.get("elements", [])],
         )
 
     def _export_labeled_shape(self, shape: dict, task_id: int):
@@ -1546,8 +1550,6 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                             points=ann.points,
                             label=label_cat.items[ann.label].name,
                             occluded=occluded,
-                            outside=False,
-                            elements=[],
                             z_order=ann.z_order,
                             group=group_map.get(ann.group, 0),
                             source=source,
@@ -1574,7 +1576,6 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                 group=group_map.get(ann.group, 0),
                                 source=source,
                                 shapes=[],
-                                elements=[],
                             )
 
                         tracks[track_id].shapes.append(track)

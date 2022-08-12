@@ -36,7 +36,6 @@ def _import_task(dataset, task_data):
                     z_order=ann.z_order,
                     group=0,
                     frame=frame_number,
-                    elements=[],
                     attributes=[],
                     source='manual',
                 ))
@@ -50,7 +49,6 @@ def _import_task(dataset, task_data):
                 keyframe=True,
                 z_order=ann.z_order,
                 frame=frame_number,
-                elements=[],
                 attributes=[],
                 source='manual',
             )

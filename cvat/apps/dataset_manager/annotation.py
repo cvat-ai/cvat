@@ -96,8 +96,8 @@ class AnnotationIR:
         segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
         if len(segment_shapes) < len(track['shapes']):
-            if len(track["elements"]):
-                for element in track["elements"]:
+            if len(track.get('elements', [])):
+                for element in track.get('elements', []):
                     element = cls._slice_track(element, start, stop)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop)
@@ -361,7 +361,7 @@ class ShapeManager(ObjectManager):
         pass
 
 class TrackManager(ObjectManager):
-    def to_shapes(self, end_frame):
+    def to_shapes(self, end_frame, end_skeleton_frame=None):
         shapes = []
         for idx, track in enumerate(self.objects):
             track_shapes = []
@@ -373,9 +373,14 @@ class TrackManager(ObjectManager):
                 shape["elements"] = []
                 track_shapes.append(shape)
 
-            if len(track["elements"]):
+            while end_skeleton_frame and track_shapes[-1]["frame"] < end_skeleton_frame:
+                shape = deepcopy(track_shapes[-1])
+                shape["frame"] += 1
+                track_shapes.append(shape)
+
+            if len(track.get("elements", [])):
                 element_tracks = TrackManager(track["elements"])
-                element_shapes = element_tracks.to_shapes(end_frame)
+                element_shapes = element_tracks.to_shapes(end_frame, end_skeleton_frame=track_shapes[-1]["frame"])
 
                 for i in range(len(element_shapes) // len(track_shapes)):
                     for track_shape, element in zip(track_shapes, element_shapes[len(track_shapes) * i : len(track_shapes) * (i + 1)]):
