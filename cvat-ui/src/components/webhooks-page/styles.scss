@@ -24,6 +24,16 @@
     }
 }
 
+.cvat-webhook-status-available {
+    color: green;
+    fill: green;
+}
+
+.cvat-webhook-status-failed {
+    color: red;
+    fill: red;
+}
+
 .cvat-webhook-status-unavailable {
     color: gray;
     fill: gray;

@@ -22,6 +22,8 @@ interface RawWebhookData {
     owner?: any;
     created_date?: string;
     updated_date?: string;
+    last_delivery?: undefined;
+    last_status?: number;
 }
 
 export default class Webhook {
@@ -61,6 +63,8 @@ export default class Webhook {
             owner: undefined,
             created_date: undefined,
             updated_date: undefined,
+            last_delivery: undefined,
+            last_status: 0,
         };
 
         for (const property in data) {
@@ -146,6 +150,12 @@ export default class Webhook {
                 updatedDate: {
                     get: () => data.updated_date,
                 },
+                lastDelivery: {
+                    get: () => data.last_delivery,
+                },
+                lastStatus: {
+                    get: () => data.last_status,
+                },
             }),
         );
     }
@@ -181,18 +191,6 @@ export default class Webhook {
 
         if (typeof this.isActive === 'boolean') {
             result.is_active = this.isActive;
-        }
-
-        if (this.owner instanceof User) {
-            result.owner = this.owner.serialize();
-        }
-
-        if (this.createdDate) {
-            result.created_date = this.createdDate;
-        }
-
-        if (this.updatedDate) {
-            result.updated_date = this.updatedDate;
         }
 
         return result;

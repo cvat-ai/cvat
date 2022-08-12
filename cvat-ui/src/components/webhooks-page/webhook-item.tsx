@@ -33,7 +33,14 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     const created = moment(createdDate).format('MMMM Do YYYY');
     const username = owner ? owner.username : null;
 
-    const statusClassName = 'cvat-webhook-status-unavailable';
+    const lastStatus = `${webhookInstance.lastStatus}`;
+    let statusClassName = 'cvat-webhook-status-unavailable';
+    if (lastStatus.startsWith('2')) {
+        statusClassName = 'cvat-webhook-status-available';
+    } else if (lastStatus.startsWith('5')) {
+        statusClassName = 'cvat-webhook-status-failed';
+    }
+
     return (
         <Row className='cvat-webhooks-list-item' style={isRemoved ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
             <Col>
