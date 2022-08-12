@@ -253,7 +253,7 @@ function ImportDatasetModal(): JSX.Element | null {
         confirm({
             title: 'Current annotation will be lost',
             content: `You are going to upload new annotations to ${instanceType}. Continue?`,
-            className: `cvat-modal-content-load-${instanceType}-annotation`,
+            className: `cvat-modal-content-load-${instanceType.split(' ')[0]}-annotation`,
             onOk: () => {
                 onUpload();
             },
@@ -325,6 +325,7 @@ function ImportDatasetModal(): JSX.Element | null {
                         <Select
                             placeholder={`Select ${resource} format`}
                             className='cvat-modal-import-select'
+                            virtual={false}
                             onChange={(_format: string) => {
                                 const [_loader] = importers.filter(
                                     (importer: any): boolean => importer.name === _format

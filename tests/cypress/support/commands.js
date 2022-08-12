@@ -901,6 +901,11 @@ Cypress.Commands.add('deleteFrame', (action = 'delete') => {
     cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
 });
 
+Cypress.Commands.add('verifyNotification', () => {
+    cy.get('.ant-notification-notice-info').should('be.visible');
+    cy.closeNotification('.ant-notification-notice-info');
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();

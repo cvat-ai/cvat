@@ -34,9 +34,10 @@ export const importActions = {
     importDatasetSuccess: (instance: any, resource: 'dataset' | 'annotation') => (
         createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS, { instance, resource })
     ),
-    importDatasetFailed: (instance: any, error: any) => (
+    importDatasetFailed: (instance: any, resource: 'dataset' | 'annotation', error: any) => (
         createAction(ImportActionTypes.IMPORT_DATASET_FAILED, {
             instance,
+            resource,
             error,
         })
     ),
@@ -47,6 +48,8 @@ export const importActions = {
 
 export const importDatasetAsync = (instance: any, format: string, useDefaultSettings: boolean, sourceStorage: Storage, file: File | null, fileName: string | null): ThunkAction => (
     async (dispatch, getState) => {
+        const resource = instance instanceof core.classes.Project ? 'dataset' : 'annotation';
+
         try {
             const state: CombinedState = getState();
 
@@ -112,11 +115,10 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
                 });
             }
         } catch (error) {
-            dispatch(importActions.importDatasetFailed(instance, error));
+            dispatch(importActions.importDatasetFailed(instance, resource, error));
             return;
         }
 
-        const resource = (instance instanceof core.classes.Project) ? 'dataset' : 'annotation';
         dispatch(importActions.importDatasetSuccess(instance, resource));
         if (instance instanceof core.classes.Project) {
             dispatch(getProjectsAsync({ id: instance.id }, getState().projects.tasksGettingQuery));

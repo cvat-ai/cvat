@@ -76,8 +76,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 datasetArchiveName = file;
                 cy.verifyDownload(datasetArchiveName);
             });
-            cy.get('.ant-notification-notice-info').should('be.visible');
-            cy.closeNotification('.ant-notification-notice-info');
+            cy.verifyNotification();
         });
 
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
@@ -108,8 +107,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 archive: datasetArchiveName,
             };
             cy.importProject(importDataset);
-            cy.get('.ant-notification-notice-info').should('be.visible');
-            cy.closeNotification('.ant-notification-notice-info');
+            cy.verifyNotification();
             cy.openProject(projectName);
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
         });

@@ -433,20 +433,29 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
             const { instance, resource } = action.payload;
+            const message = resource === 'annotation' ?
+                'Annotations have been loaded to the ' +
+                `<a href="/tasks/${instance.taskId || instance.id}" target="_blank">task ${instance.taskId || instance.id}</a>` :
+                'Dataset has been imported to the ' +
+                `<a href="/projects/${instance.id}" target="_blank">project ${instance.id}</a>`;
             return {
                 ...state,
                 messages: {
                     ...state.messages,
                     importing: {
                         ...state.messages.importing,
-                        [resource]:
-                            `The ${resource} for resource ${instance.id} has been uploaded`,
+                        [resource]: message,
                     },
                 },
             };
         }
         case ImportActionTypes.IMPORT_DATASET_FAILED: {
-            const instanceID = action.payload.instanceId;
+            const { instance, resource } = action.payload;
+            const message = resource === 'annotation' ? 'Could not upload annotation for the ' +
+                `<a href="/tasks/${instance.taskId || instance.id}" target="_blank">` :
+                'Could not import dataset to the ' +
+                `<a href="/projects/${instance.id}" target="_blank">` +
+                `project ${instance.id}</a>`
             return {
                 ...state,
                 errors: {
@@ -454,11 +463,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.errors.importing,
                         dataset: {
-                            message:
-                                'Could not import dataset to the ' +
-                                `<a href="/projects/${instanceID}" target="_blank">` +
-                                `project ${instanceID}</a>`,
+                            message: message,
                             reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-' +
+                                `${resource === 'annotation' ? "load-annotation" : "import-dataset"}-failed`
                         },
                     },
                 },
@@ -507,40 +515,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not fetch tasks',
                             reason: action.payload.error.toString(),
                         },
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.LOAD_ANNOTATIONS_FAILED: {
-            const taskID = action.payload.task.id;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        loading: {
-                            message:
-                                'Could not upload annotation for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
-                            reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-load-annotation-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS: {
-            const taskID = action.payload.task.id;
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    tasks: {
-                        ...state.messages.tasks,
-                        loadingDone:
-                            'Annotations have been loaded to the ' +
-                            `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                     },
                 },
             };

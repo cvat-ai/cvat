@@ -93,8 +93,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
                 taskBackupArchiveFullName = file;
                 cy.verifyDownload(taskBackupArchiveFullName);
             });
-            cy.get('.ant-notification-notice-info').should('be.visible');
-            cy.closeNotification('.ant-notification-notice-info');
+            cy.verifyNotification();
             cy.deleteTask(taskName);
         });
 

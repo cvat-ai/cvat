@@ -183,8 +183,7 @@ Cypress.Commands.add('waitForDownload', () => {
     cy.getDownloadFileName().then((filename) => {
         cy.verifyDownload(filename);
     });
-    cy.get('.ant-notification-notice-info').should('be.visible');
-    cy.closeNotification('.ant-notification-notice-info');
+    cy.verifyNotification();
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
