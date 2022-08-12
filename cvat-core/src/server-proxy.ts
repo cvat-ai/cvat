@@ -1938,6 +1938,18 @@
                 ];
             }
 
+            async function createWebhook() {
+
+            }
+
+            async function updateWebhook() {
+
+            }
+
+            async function deleteWebhook() {
+
+            }
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -2102,6 +2114,9 @@
                     webhooks: {
                         value: Object.freeze({
                             get: getWebhooks,
+                            create: createWebhook,
+                            update: updateWebhook,
+                            delete: deleteWebhook,
                         }),
                         writable: false,
                     },

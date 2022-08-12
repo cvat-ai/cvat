@@ -27,7 +27,7 @@ export interface SetupWebhookData {
     targetUrl: string;
     contentType: WebhookContentType;
     secret: string;
-    enableSsl: boolean;
+    enableSSL: boolean;
     active: boolean;
     eventsMethod: EventsMethod;
 }
@@ -52,7 +52,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 targetUrl: webhook.targetUrl,
                 contentType: webhook.contentType,
                 secret: webhook.secret,
-                enableSsl: webhook.enableSsl,
+                enableSSL: webhook.enableSSL,
                 active: webhook.active,
                 events: webhook.events,
                 eventsMethod,
@@ -84,7 +84,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     initialValues={{
                         contentType: WebhookContentType.APPLICATION_JSON,
                         eventsMethod: EventsMethod.SEND_EVERYTHING,
-                        enableSsl: true,
+                        enableSSL: true,
                         active: true,
                     }}
                 >
@@ -141,7 +141,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     </Form.Item>
                     <Form.Item
                         help='Verify SSL certificates when delivering payloads.'
-                        name='enableSsl'
+                        name='enableSSL'
                         valuePropName='checked'
                     >
                         <Checkbox>

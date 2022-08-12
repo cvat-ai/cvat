@@ -4,12 +4,20 @@
 
 import User from './user';
 
+const serverProxy = require('./server-proxy');
+
+interface WebhookEvent {
+    id?: number;
+    name: string;
+    description: string;
+}
+
 interface RawWebhookData {
     id?: number;
     target_url: string;
-    events: string[];
+    events: WebhookEvent[];
     content_type: 'application/json';
-    secret: string;
+    secret?: string;
     enable_ssl: boolean;
     description?: string;
     is_active?: boolean;
@@ -20,11 +28,11 @@ interface RawWebhookData {
 
 export default class Webhook {
     public readonly id?: number;
-    public readonly targetUrl: string;
-    public readonly events: string[];
+    public readonly targetURL: string;
+    public readonly events: WebhookEvent[];
     public readonly contentType: 'application/json';
     public readonly description?: string;
-    public readonly secret: string;
+    public readonly secret?: string;
     public readonly isActive?: boolean;
     public readonly enableSSL: boolean;
     public readonly owner?: User;
@@ -33,14 +41,14 @@ export default class Webhook {
 
     constructor(initialData: RawWebhookData) {
         const data: RawWebhookData = {
-            id: null,
-            target_url: null,
-            events: null,
-            content_type: null,
-            description: null,
-            secret: null,
-            is_active: null,
-            enable_ssl: null,
+            id: undefined,
+            target_url: '',
+            events: [],
+            content_type: 'application/json',
+            description: undefined,
+            secret: '',
+            is_active: undefined,
+            enable_ssl: undefined,
             owner: undefined,
             created_date: undefined,
             updated_date: undefined,
@@ -62,7 +70,7 @@ export default class Webhook {
                 id: {
                     get: () => data.id,
                 },
-                targetUrl: {
+                targetURL: {
                     get: () => data.target_url,
                 },
                 events: {
@@ -94,6 +102,59 @@ export default class Webhook {
                 },
             }),
         );
+    }
+
+    public toJSON(): RawWebhookData {
+        const result: RawWebhookData = {
+            target_url: this.targetURL,
+            events: this.events.map((event: WebhookEvent) => ({ ...event })),
+            content_type: this.contentType,
+            enable_ssl: this.enableSSL,
+        };
+
+        if (Number.isInteger(this.id)) {
+            result.id = this.id;
+        }
+
+        if (this.description) {
+            result.description = this.description;
+        }
+
+        if (this.secret) {
+            result.secret = this.secret;
+        }
+
+        if (typeof this.isActive === 'boolean') {
+            result.is_active = this.isActive;
+        }
+
+        if (this.owner instanceof User) {
+            result.owner = this.owner.serialize();
+        }
+
+        if (this.createdDate) {
+            result.created_date = this.createdDate;
+        }
+
+        if (this.updatedDate) {
+            result.updated_date = this.updatedDate;
+        }
+
+        return result;
+    }
+
+    public async save(): Promise<Webhook> {
+        if (Number.isInteger(this.id)) {
+            // TODO: call patch request
+            return this;
+        }
+
+        // TODO: call save request
+        return this;
+    }
+
+    public async delete(): Promise<void> {
+
     }
 }
 
