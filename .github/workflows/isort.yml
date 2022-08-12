@@ -15,7 +15,7 @@ jobs:
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
           isValueIn () {
-            # Checks if a value in an array
+            # Checks if a value is in an array
             # https://stackoverflow.com/a/8574392
             # args: value, array
             local e match="$1"
@@ -29,7 +29,7 @@ jobs:
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
               DIRECTORY="${FILE%%/*}"
-              if [[ "$EXTENSION" == "py" && isValueIn "${DIRECTORY}" "${ENABLED_DIRS[@]}" ]]; then
+              if [[ "$EXTENSION" == "py" ]] && isValueIn "${DIRECTORY}" "${ENABLED_DIRS[@]}"; then
                   CHANGED_FILES+=" $FILE"
               fi
           done
