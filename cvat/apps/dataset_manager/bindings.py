@@ -170,7 +170,7 @@ class TaskData(InstanceLabelData):
     LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False)
     TrackedShape = namedtuple(
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements')
-    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, None, [])
+    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, [])
     Track = namedtuple('Track', 'label, group, source, shapes, elements')
     Track.__new__.__defaults__ = ([], )
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')

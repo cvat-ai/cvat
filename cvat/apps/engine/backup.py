@@ -33,7 +33,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import (
-    ShapeType, StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
+    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
 from cvat.apps.engine.task import _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
