@@ -41,6 +41,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django_sendfile import sendfile
 
+from cvat.apps.webhooks.signals import signal_create, signal_update
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
@@ -771,10 +772,21 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
     def perform_update(self, serializer):
         instance = serializer.instance
         updated_instance = serializer.save()
+
+        old_values = {
+            attr: serializer.to_representation(instance).get(attr, None)
+            for attr in self.request.data.keys()
+        }
+
         if instance.project:
             instance.project.save()
         if updated_instance.project:
             updated_instance.project.save()
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        signal_update.send(self, serializer=serializer, old_values=old_values)
 
     def perform_create(self, serializer):
         instance = serializer.save(owner=self.request.user,
@@ -783,6 +795,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
             db_project = instance.project
             db_project.save()
             assert instance.organization == db_project.organization
+        signal_create.send(self, serializer=serializer)
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_dirname()

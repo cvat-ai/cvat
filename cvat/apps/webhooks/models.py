@@ -61,7 +61,7 @@ class Webhook(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = ("target_url", "secret", "enable_ssl", "type", "content_type")
+        unique_together = ("target_url", "secret", "enable_ssl", "type", "content_type", "events")
         constraints = [
             models.CheckConstraint(
                 name="webhooks_project_or_organization",
@@ -85,8 +85,7 @@ class WebhookDelivery(models.Model):
     )
     event = models.CharField(max_length=64)
 
-    # TO-DO: define status_code field more accurate (as CharField with choices, or with specific validation)
-    status_code = models.IntegerField()
+    status_code = models.CharField(max_length=128)
     redelivery = models.BooleanField(default=False)
 
     delivered_at = models.DateTimeField(auto_now_add=True)
