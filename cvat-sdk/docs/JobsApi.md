@@ -612,7 +612,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **jobs_partial_update**
-> JobWrite jobs_partial_update(id)
+> JobRead jobs_partial_update(id)
 
 Methods does a partial update of chosen fields in a job
 
@@ -627,8 +627,8 @@ Methods does a partial update of chosen fields in a job
 import time
 import cvat_sdk.api_client
 from cvat_sdk.api_client.api import jobs_api
+from cvat_sdk.api_client.model.job_read import JobRead
 from cvat_sdk.api_client.model.patched_job_write_request import PatchedJobWriteRequest
-from cvat_sdk.api_client.model.job_write import JobWrite
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -710,7 +710,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**JobWrite**](JobWrite.md)
+[**JobRead**](JobRead.md)
 
 ### Authorization
 

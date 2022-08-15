@@ -664,7 +664,7 @@ class DataChunkGetter:
     create=extend_schema(
         summary='Method creates a new task in a database without any attached images and videos',
         responses={
-            '201': TaskWriteSerializer,
+            '201': TaskWriteSerializer, # TODO: change to read serializer
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific task',
@@ -677,7 +677,7 @@ class DataChunkGetter:
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a task',
         responses={
-            '200': TaskWriteSerializer,
+            '200': TaskWriteSerializer, # TODO: change to read serializer
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
@@ -1210,7 +1210,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a job',
         responses={
-            '200': JobWriteSerializer,
+            '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,

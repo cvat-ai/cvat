@@ -277,7 +277,6 @@ Class | Method | HTTP request | Description
  - [JobRead](docs/JobRead.md)
  - [JobStage](docs/JobStage.md)
  - [JobStatus](docs/JobStatus.md)
- - [JobWrite](docs/JobWrite.md)
  - [Label](docs/Label.md)
  - [LabeledData](docs/LabeledData.md)
  - [LabeledDataRequest](docs/LabeledDataRequest.md)

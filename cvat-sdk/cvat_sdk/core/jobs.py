@@ -6,15 +6,16 @@ from __future__ import annotations
 
 from typing import Optional
 
-from cvat_sdk import apis, models
-from cvat_sdk.impl.downloading import Downloader
-from cvat_sdk.impl.model_proxy import ModelCrudMixin, ModelProxy
-from cvat_sdk.impl.progress import ProgressReporter
-from cvat_sdk.impl.uploading import Uploader
-from cvat_sdk.models import IJobRead
+from cvat_sdk.api_client import apis, models
+from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.model_proxy import ModelCrudMixin, ModelProxy
+from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.uploading import Uploader
 
 
-class JobProxy(ModelProxy[models.IJobRead, models.JobRead, apis.JobsApi], IJobRead, ModelCrudMixin):
+class JobProxy(
+    ModelProxy[models.IJobRead, models.JobRead, apis.JobsApi], models.IJobRead, ModelCrudMixin
+):
     _api_member_name = "jobs_api"
     _model_partial_update_arg = "patched_job_write_request"
 

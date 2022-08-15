@@ -172,7 +172,9 @@ class JobReadSerializer(serializers.ModelSerializer):
 
 class JobWriteSerializer(serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
+
     def to_representation(self, instance):
+        # FIXME: deal with resquest/response separation
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
 
