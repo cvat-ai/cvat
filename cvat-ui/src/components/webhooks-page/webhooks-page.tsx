@@ -3,25 +3,46 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
+import { Row, Col } from 'antd/lib/grid';
+import Pagination from 'antd/lib/pagination';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, Indexable } from 'reducers/interfaces';
+import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
-import { Row, Col, Pagination } from 'antd';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 
-function WebhooksPage(): JSX.Element | null {
-    const [pageNumber, setPageNumber] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(10);
-    const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
+const PAGE_SIZE = 10;
 
+function WebhooksPage(): JSX.Element | null {
     const dispatch = useDispatch();
+    const history = useHistory();
+    const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
+    const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
+    const query = useSelector((state: CombinedState) => state.webhooks.query);
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...query };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
+        if (key === 'page') {
+            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
+        }
+    }
+
     useEffect(() => {
-        dispatch(getWebhooksAsync());
+        dispatch(getWebhooksAsync(updatedQuery));
     }, []);
+
+    useEffect(() => {
+        history.replace({
+            search: updateHistoryFromQuery(query),
+        });
+    }, [query]);
 
     if (fetching) {
         return <Spin className='cvat-spinner' />;
@@ -36,12 +57,12 @@ function WebhooksPage(): JSX.Element | null {
                     <Pagination
                         className='cvat-tasks-pagination'
                         onChange={(page: number) => {
-                            // fetchWebhooks(organization, page, pageSize, setWebhooks, setWebhooksFetching);
+                            dispatch(getWebhooksAsync({ page }));
                         }}
                         showSizeChanger={false}
-                        total={5}
-                        pageSize={10}
-                        current={1}
+                        total={totalCount}
+                        current={query.page}
+                        pageSize={PAGE_SIZE}
                         showQuickJumper
                     />
                 </Col>

@@ -87,8 +87,9 @@ function SetupWebhookContent(props: Props): JSX.Element {
     useEffect(() => {
         if (webhook) {
             const maxEvents = webhookEvents.length;
-            const eventsMethod = webhook.events.length === maxEvents ? EventsMethod.SEND_EVERYTHING :
-                EventsMethod.SELECT_INDIVIDUAL;
+            // const eventsMethod = webhook.events.length === maxEvents ? EventsMethod.SEND_EVERYTHING :
+            //     EventsMethod.SELECT_INDIVIDUAL;
+            const eventsMethod = EventsMethod.SELECT_INDIVIDUAL;
 
             const data: Record<string, string | boolean> = {
                 description: webhook.description,
@@ -171,7 +172,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     layout='vertical'
                     initialValues={{
                         contentType: WebhookContentType.APPLICATION_JSON,
-                        eventsMethod: EventsMethod.SEND_EVERYTHING,
+                        eventsMethod: EventsMethod.SELECT_INDIVIDUAL,
                         enableSSL: true,
                         isActive: true,
                     }}
@@ -179,7 +180,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     <Form.Item
                         hasFeedback
                         name='targetURL'
-                        label={<span>Target URL</span>}
+                        label='Target URL'
                         rules={[
                             {
                                 required: true,
@@ -192,14 +193,14 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     <Form.Item
                         hasFeedback
                         name='description'
-                        label={<span>Description</span>}
+                        label='Description'
                     >
                         <Input />
                     </Form.Item>
                     <Form.Item
                         hasFeedback
                         name='contentType'
-                        label={<span>Content type</span>}
+                        label='Content type'
                         rules={[{ required: true }]}
                     >
                         <Select
@@ -211,11 +212,10 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         </Select>
                     </Form.Item>
                     <Form.Item
-                        hasFeedback
                         name='secret'
-                        label={<span>Secret</span>}
+                        label='Secret'
                     >
-                        <Input />
+                        <Input disabled />
                     </Form.Item>
                     <Form.Item
                         help='Verify SSL certificates when delivering payloads'
@@ -242,7 +242,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                             message: 'The field is required',
                         }]}
                     >
-                        <Radio.Group onChange={onEventsMethodChange}>
+                        <Radio.Group onChange={onEventsMethodChange} disabled>
                             <Radio value={EventsMethod.SEND_EVERYTHING} key={EventsMethod.SEND_EVERYTHING}>
                                 <Text>Send </Text>
                                 <Text strong>everything</Text>
@@ -261,7 +261,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                                             name={`event_${event}`}
                                             valuePropName='checked'
                                         >
-                                            <Checkbox>
+                                            <Checkbox disabled={!['job', 'task'].includes(event)}>
                                                 <Text className='cvat-text-color'>{event}</Text>
                                             </Checkbox>
                                         </Form.Item>

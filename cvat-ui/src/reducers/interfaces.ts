@@ -461,6 +461,9 @@ export interface NotificationsState {
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
         };
+        webhooks: {
+            fetching: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -768,9 +771,15 @@ export interface OrganizationState {
     updatingMember: boolean;
 }
 
+export interface WebhooksQuery {
+    page: number;
+}
+
 export interface WebhooksState {
     current: any[],
+    totalCount: number;
     fetching: boolean;
+    query: WebhooksQuery;
 }
 
 export interface CombinedState {

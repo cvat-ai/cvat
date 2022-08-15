@@ -860,8 +860,8 @@ function build() {
             * @throws {module:API.cvat.exceptions.PluginError}
             * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async get() {
-                const result = await PluginRegistry.apiWrapper(cvat.webhooks.get);
+            async get(filter: any) {
+                const result = await PluginRegistry.apiWrapper(cvat.webhooks.get, filter);
                 return result;
             },
         },

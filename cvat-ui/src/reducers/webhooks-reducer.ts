@@ -8,6 +8,10 @@ import { WebhooksState } from './interfaces';
 
 const defaultState: WebhooksState = {
     current: [],
+    totalCount: 0,
+    query: {
+        page: 1,
+    },
     fetching: false,
 };
 
@@ -20,12 +24,17 @@ export default function (
             return {
                 ...state,
                 fetching: true,
+                query: {
+                    ...state.query,
+                    ...action.payload.query,
+                },
             };
         }
         case WebhooksActionsTypes.GET_WEBHOOKS_SUCCESS:
             return {
                 ...state,
                 fetching: false,
+                totalCount: action.payload.count,
                 current: action.payload.webhooks,
             };
         case WebhooksActionsTypes.GET_WEBHOOKS_FAILED:

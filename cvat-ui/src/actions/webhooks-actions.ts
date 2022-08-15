@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import getCore from 'cvat-core-wrapper';
+import { WebhooksQuery } from 'reducers/interfaces';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 const cvat = getCore();
@@ -14,20 +15,20 @@ export enum WebhooksActionsTypes {
 }
 
 const webhooksActions = {
-    getWebhooks: () => createAction(WebhooksActionsTypes.GET_WEBHOOKS),
-    getWebhooksSuccess: (webhooks: any[]) => createAction(
-        WebhooksActionsTypes.GET_WEBHOOKS_SUCCESS, { webhooks },
+    getWebhooks: (query: WebhooksQuery) => createAction(WebhooksActionsTypes.GET_WEBHOOKS, { query }),
+    getWebhooksSuccess: (webhooks: any[], count: number) => createAction(
+        WebhooksActionsTypes.GET_WEBHOOKS_SUCCESS, { webhooks, count },
     ),
     getWebhooksFailed: (error: any) => createAction(WebhooksActionsTypes.GET_WEBHOOKS_FAILED, { error }),
 };
 
-export function getWebhooksAsync(): ThunkAction {
+export function getWebhooksAsync(query: WebhooksQuery): ThunkAction {
     return async function (dispatch) {
-        dispatch(webhooksActions.getWebhooks());
+        dispatch(webhooksActions.getWebhooks(query));
 
         let result = null;
         try {
-            result = await cvat.webhooks.get();
+            result = await cvat.webhooks.get(query);
         } catch (error) {
             dispatch(webhooksActions.getWebhooksFailed(error));
             return;
@@ -35,7 +36,7 @@ export function getWebhooksAsync(): ThunkAction {
 
         const array = Array.from(result);
 
-        dispatch(webhooksActions.getWebhooksSuccess(array));
+        dispatch(webhooksActions.getWebhooksSuccess(array, result.count));
     };
 }
 
