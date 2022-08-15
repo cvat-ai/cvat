@@ -24,6 +24,7 @@ function WebhooksPage(): JSX.Element | null {
     const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
     const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
     const query = useSelector((state: CombinedState) => state.webhooks.query);
+    const organization = useSelector((state: CombinedState) => state.organizations.current);
 
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery = { ...query };
@@ -33,6 +34,13 @@ function WebhooksPage(): JSX.Element | null {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
+
+    useEffect(() => {
+        if (!organization) {
+            // currently available only in an organization
+            history.push('/');
+        }
+    }, [organization]);
 
     useEffect(() => {
         dispatch(getWebhooksAsync(updatedQuery));

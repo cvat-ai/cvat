@@ -19,6 +19,7 @@ import getCore from 'cvat-core-wrapper';
 import { notification } from 'antd';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
+import { useHistory } from 'react-router';
 
 export enum WebhookContentType {
     APPLICATION_JSON = 'application/json',
@@ -72,6 +73,7 @@ function throwError(message: string, error: any): void {
 
 function SetupWebhookContent(props: Props): JSX.Element {
     const { webhook } = props;
+    const history = useHistory();
     const [form] = Form.useForm();
     const [rerender, setRerender] = useState(false);
     const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
@@ -83,6 +85,13 @@ function SetupWebhookContent(props: Props): JSX.Element {
             setWebhookEvents(events);
         });
     }, []);
+
+    useEffect(() => {
+        if (!organization) {
+            // currently available only in an organization
+            history.push('/');
+        }
+    }, [organization]);
 
     useEffect(() => {
         if (webhook) {
