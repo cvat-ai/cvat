@@ -445,6 +445,9 @@ class Job(models.Model):
         project = self.segment.task.project
         return project.id if project else None
 
+    def get_organization_id(self):
+        return self.segment.task.organization
+
     def get_bug_tracker(self):
         task = self.segment.task
         project = task.project

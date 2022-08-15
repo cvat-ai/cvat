@@ -1,29 +1,34 @@
 import django_rq
-from requests import post
-from django.dispatch import receiver, Signal
-from .event_type import EventTypeChoice
-from .models import Webhook, WebhookDelivery
+from django.dispatch import Signal, receiver
+from requests import ConnectionError, post
+
 from cvat.apps.engine.serializers import BasicUserSerializer
 
+from .event_type import EventTypeChoice
+from .models import Webhook, WebhookDelivery
+
 signal_update = Signal()
+signal_create = Signal()
 signal_redelivery = Signal()
 signal_ping = Signal()
 
 
 def send_webhook(webhook, data, redelivery):
-    import time
+    response = None
+    try:
+        response = post(webhook.target_url, json=data)
+        status_code = str(response.status_code)
+    except ConnectionError:
+        status_code = "Failed to connect to target url"
 
-    start_time = time.time()
-    response = post(webhook.target_url, json=data)
-    print("total time", time.time() - start_time)
     WebhookDelivery.objects.create(
         webhook_id=webhook.id,
         event=data["event"],
-        status_code=response.status_code,
+        status_code=status_code,
         changed_fields=",".join(list(data.get("before_update", {}).keys())),
         redelivery=redelivery,
         request=data,
-        response=response.text,
+        response="" if response is None else response.text,
     )
 
 
@@ -42,8 +47,11 @@ def payload(data, request):
 @receiver(signal_update)
 def update(sender, serializer=None, old_values=None, **kwargs):
     event_name = f"{sender.basename}_updated"
-    oid = serializer.instance.segment.task.organization
     pid = serializer.data["project_id"]
+    if "organization" in serializer.data:
+        oid = serializer.data["organization"]
+    else:
+        oid = serializer.instance.get_organization_id()
 
     if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
@@ -58,13 +66,36 @@ def update(sender, serializer=None, old_values=None, **kwargs):
     }
 
     if oid is not None:
-        webhooks = Webhook.objects.filter(events__contains=event_name, organization=oid)
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, organization=oid)
         for webhook in webhooks:
             data.update({"webhook_id": webhook.id})
             add_to_queue(webhook, payload(data, sender.request))
 
     if pid is not None:
-        webhooks = Webhook.objects.filter(events__contains=event_name, project=pid)
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, project=pid)
+        for webhook in webhooks:
+            data.update({"webhook_id": webhook.id})
+            add_to_queue(webhook, payload(data, sender.request))
+
+@receiver(signal_create)
+def task_created(sender, serializer=None, **kwargs):
+    event_name = f"{sender.basename}_created"
+    pid = serializer.data["project_id"]
+    oid = serializer.data["organization"]
+
+    data = {
+        "event": event_name,
+        sender.basename: serializer.data,
+    }
+
+    if oid is not None:
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, organization=oid)
+        for webhook in webhooks:
+            data.update({"webhook_id": webhook.id})
+            add_to_queue(webhook, payload(data, sender.request))
+
+    if pid is not None:
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, project=pid)
         for webhook in webhooks:
             data.update({"webhook_id": webhook.id})
             add_to_queue(webhook, payload(data, sender.request))

@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
-from cvat.apps.webhooks.signals import signal_update
+from cvat.apps.webhooks.signals import signal_update, signal_create
 
 class TusFile:
     _tus_cache_timeout = 3600
@@ -326,3 +326,8 @@ class UpdateModelMixin(mixins.UpdateModelMixin):
 
         super().perform_update(serializer)
         signal_update.send(self, serializer=serializer, old_values=old_values)
+
+class CreateModelMixin(mixins.CreateModelMixin):
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        signal_create.send(self, serializer=serializer)
