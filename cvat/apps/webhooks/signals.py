@@ -1,6 +1,6 @@
 import django_rq
 from django.dispatch import Signal, receiver
-from requests import ConnectionError, post
+import requests
 
 from cvat.apps.engine.serializers import BasicUserSerializer
 
@@ -16,9 +16,9 @@ signal_ping = Signal()
 def send_webhook(webhook, data, redelivery):
     response = None
     try:
-        response = post(webhook.target_url, json=data)
+        response = requests.post(webhook.target_url, json=data)
         status_code = str(response.status_code)
-    except ConnectionError:
+    except requests.ConnectionError:
         status_code = "Failed to connect to target url"
 
     WebhookDelivery.objects.create(
