@@ -45,8 +45,8 @@ import OrganizationPage from 'components/organization-page/organization-page';
 import CreateOrganizationComponent from 'components/create-organization-page/create-organization-page';
 
 import WebhooksPage from 'components/webhooks-page/webhooks-page';
-import CreateWebhookPage from './setup-webhook-pages/create-webhook-page';
-import EditWebhookPage from './setup-webhook-pages/edit-webhook-page';
+import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
+import EditWebhookPage from 'components/setup-webhook-pages/edit-webhook-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import getCore from 'cvat-core-wrapper';
@@ -393,7 +393,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/organization/webhooks' component={WebhooksPage} />
                                         <Route exact path='/webhooks/create' component={CreateWebhookPage} />
-                                        <Route exact path='/webhooks/:id' component={EditWebhookPage} />
+                                        <Route exact path='/webhooks/update/:id' component={EditWebhookPage} />
                                         {isModelPluginActive && (
                                             <Route exact path='/models' component={ModelsPageContainer} />
                                         )}

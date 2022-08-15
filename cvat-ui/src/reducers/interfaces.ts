@@ -773,6 +773,7 @@ export interface OrganizationState {
 
 export interface WebhooksQuery {
     page: number;
+    id?: number;
 }
 
 export interface WebhooksState {

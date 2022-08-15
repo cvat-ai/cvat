@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import getCore from 'cvat-core-wrapper';
-import { WebhooksQuery } from 'reducers/interfaces';
+import { Dispatch, ActionCreator } from 'redux';
+import { Indexable, WebhooksQuery } from 'reducers/interfaces';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 const cvat = getCore();
@@ -22,13 +23,21 @@ const webhooksActions = {
     getWebhooksFailed: (error: any) => createAction(WebhooksActionsTypes.GET_WEBHOOKS_FAILED, { error }),
 };
 
-export function getWebhooksAsync(query: WebhooksQuery): ThunkAction {
-    return async function (dispatch) {
+export const getWebhooksAsync = (query: WebhooksQuery): ThunkAction => (
+    async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(webhooksActions.getWebhooks(query));
+
+        // We remove all keys with null values from the query
+        const filteredQuery = { ...query };
+        for (const key of Object.keys(query)) {
+            if ((filteredQuery as Indexable)[key] === null) {
+                delete (filteredQuery as Indexable)[key];
+            }
+        }
 
         let result = null;
         try {
-            result = await cvat.webhooks.get(query);
+            result = await cvat.webhooks.get(filteredQuery);
         } catch (error) {
             dispatch(webhooksActions.getWebhooksFailed(error));
             return;
@@ -37,7 +46,7 @@ export function getWebhooksAsync(query: WebhooksQuery): ThunkAction {
         const array = Array.from(result);
 
         dispatch(webhooksActions.getWebhooksSuccess(array, result.count));
-    };
-}
+    }
+);
 
 export type WebhooksActions = ActionUnion<typeof webhooksActions>;

@@ -17,7 +17,7 @@ interface ParamType {
     id: string;
 }
 
-export default function CreateWebhookPage(): JSX.Element {
+function UpdateWebhookPage(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const history = useHistory();
     const dispatch = useDispatch();
@@ -49,3 +49,5 @@ export default function CreateWebhookPage(): JSX.Element {
         </div>
     );
 }
+
+export default React.memo(UpdateWebhookPage);

@@ -163,7 +163,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 });
             }
         });
-    }, [webhookEvents, organization]);
+    }, [webhook, webhookEvents, organization]);
 
     const onEventsMethodChange = useCallback((event: RadioChangeEvent): void => {
         form.setFieldsValue({ eventsMethod: event.target.value });

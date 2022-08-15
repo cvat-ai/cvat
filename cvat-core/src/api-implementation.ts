@@ -291,7 +291,10 @@ const config = require('./config');
         cvat.webhooks.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
+                id: isInteger,
             });
+
+            checkExclusiveFields(filter, ['id'], ['page']);
             const webhooksData = await serverProxy.webhooks.get(filter);
             const webhooks = webhooksData.results.map((webhookData) => new Webhook(webhookData));
             webhooks.count = webhooksData.count;

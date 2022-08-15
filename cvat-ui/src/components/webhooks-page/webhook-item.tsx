@@ -94,10 +94,10 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                             <Menu>
                                 <Menu.Item key='edit'>
                                     <a
-                                        href={`/webhooks/${id}`}
+                                        href={`/webhooks/update/${id}`}
                                         onClick={(e: React.MouseEvent) => {
                                             e.preventDefault();
-                                            history.push(`/webhooks/${id}`);
+                                            history.push(`/webhooks/update/${id}`);
                                             return false;
                                         }}
                                     >

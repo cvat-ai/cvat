@@ -10,7 +10,7 @@ import { Button } from 'antd';
 import { useHistory } from 'react-router';
 import SetupWebhookContent from './setup-webhook-content';
 
-export default function CreateWebhookPage(): JSX.Element {
+function CreateWebhookPage(): JSX.Element {
     const history = useHistory();
     return (
         <div className='cvat-create-webhook-page'>
@@ -31,3 +31,5 @@ export default function CreateWebhookPage(): JSX.Element {
         </div>
     );
 }
+
+export default React.memo(CreateWebhookPage);
