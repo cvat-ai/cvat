@@ -4,7 +4,8 @@
 
 from rest_framework import serializers
 from drf_spectacular.extensions import OpenApiSerializerExtension
-from drf_spectacular.plumbing import force_instance
+from drf_spectacular.plumbing import force_instance, build_basic_type
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.serializers import PolymorphicProxySerializerExtension
 
 
@@ -49,7 +50,21 @@ class DataSerializerExtension(OpenApiSerializerExtension):
 
         return auto_schema._map_serializer(_Override(), direction, bypass_extensions=False)
 
-class CustomProxySerializerExtension(PolymorphicProxySerializerExtension):
+class OpenApiTypeProxySerializerExtension(PolymorphicProxySerializerExtension):
+    """
+    Provides support for OpenApiTypes in the PolymorphicProxySerializer list
+    """
+    priority = 0 # restore normal priority
+
+    def _process_serializer(self, auto_schema, serializer, direction):
+        if isinstance(serializer, OpenApiTypes):
+            schema = build_basic_type(serializer)
+            return (None, schema)
+        else:
+            return super()._process_serializer(auto_schema=auto_schema,
+                serializer=serializer, direction=direction)
+
+class CustomProxySerializerExtension(OpenApiTypeProxySerializerExtension):
     """
     Allows to patch PolymorphicProxySerializer-based schema.
 

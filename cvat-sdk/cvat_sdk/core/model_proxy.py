@@ -9,11 +9,11 @@ import json
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Generic, List, Literal, Type, TypeVar, Union, overload
 
-from cvat_sdk.helpers import get_paginated_collection
-from cvat_sdk.model_utils import IModelData, ModelNormal
+from cvat_sdk.api_client.model_utils import IModelData, ModelNormal
+from cvat_sdk.core.helpers import get_paginated_collection
 
 if TYPE_CHECKING:
-    from cvat_sdk.impl.client import Client
+    from cvat_sdk.core.client import Client
 
 IModel = TypeVar("IModel", bound=IModelData)
 ModelType = TypeVar("ModelType", bound=ModelNormal)

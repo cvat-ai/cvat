@@ -163,7 +163,7 @@ Class | Method | HTTP request | Description
 *JobsApi* | [**jobs_partial_update_annotations**](docs/JobsApi.md#jobs_partial_update_annotations) | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
 *JobsApi* | [**jobs_partial_update_annotations_file**](docs/JobsApi.md#jobs_partial_update_annotations_file) | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 *JobsApi* | [**jobs_retrieve**](docs/JobsApi.md#jobs_retrieve) | **GET** /api/jobs/{id} | Method returns details of a job
-*JobsApi* | [**jobs_retrieve_annotations**](docs/JobsApi.md#jobs_retrieve_annotations) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
+*JobsApi* | [**jobs_retrieve_annotations**](docs/JobsApi.md#jobs_retrieve_annotations) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job as a JSON document. If format is specified, a zip archive is returned.
 *JobsApi* | [**jobs_retrieve_data**](docs/JobsApi.md#jobs_retrieve_data) | **GET** /api/jobs/{id}/data | Method returns data for a specific job
 *JobsApi* | [**jobs_retrieve_data_meta**](docs/JobsApi.md#jobs_retrieve_data_meta) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 *JobsApi* | [**jobs_retrieve_dataset**](docs/JobsApi.md#jobs_retrieve_dataset) | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
@@ -242,6 +242,7 @@ Class | Method | HTTP request | Description
  - [Attribute](docs/Attribute.md)
  - [AttributeRequest](docs/AttributeRequest.md)
  - [AttributeVal](docs/AttributeVal.md)
+ - [AttributeValRequest](docs/AttributeValRequest.md)
  - [BasicUser](docs/BasicUser.md)
  - [BasicUserRequest](docs/BasicUserRequest.md)
  - [ChunkType](docs/ChunkType.md)
@@ -270,17 +271,22 @@ Class | Method | HTTP request | Description
  - [IssueRead](docs/IssueRead.md)
  - [IssueWrite](docs/IssueWrite.md)
  - [IssueWriteRequest](docs/IssueWriteRequest.md)
+ - [JobAnnotationRead](docs/JobAnnotationRead.md)
+ - [JobAnnotationUpdateRequest](docs/JobAnnotationUpdateRequest.md)
  - [JobCommit](docs/JobCommit.md)
  - [JobRead](docs/JobRead.md)
  - [JobStage](docs/JobStage.md)
  - [JobStatus](docs/JobStatus.md)
  - [JobWrite](docs/JobWrite.md)
- - [JobWriteRequest](docs/JobWriteRequest.md)
  - [Label](docs/Label.md)
  - [LabeledData](docs/LabeledData.md)
+ - [LabeledDataRequest](docs/LabeledDataRequest.md)
  - [LabeledImage](docs/LabeledImage.md)
+ - [LabeledImageRequest](docs/LabeledImageRequest.md)
  - [LabeledShape](docs/LabeledShape.md)
+ - [LabeledShapeRequest](docs/LabeledShapeRequest.md)
  - [LabeledTrack](docs/LabeledTrack.md)
+ - [LabeledTrackRequest](docs/LabeledTrackRequest.md)
  - [LocationEnum](docs/LocationEnum.md)
  - [LogEvent](docs/LogEvent.md)
  - [LogEventRequest](docs/LogEventRequest.md)
@@ -313,6 +319,7 @@ Class | Method | HTTP request | Description
  - [PatchedIssueWriteRequest](docs/PatchedIssueWriteRequest.md)
  - [PatchedJobWriteRequest](docs/PatchedJobWriteRequest.md)
  - [PatchedLabelRequest](docs/PatchedLabelRequest.md)
+ - [PatchedLabeledDataRequest](docs/PatchedLabeledDataRequest.md)
  - [PatchedMembershipWriteRequest](docs/PatchedMembershipWriteRequest.md)
  - [PatchedOrganizationWriteRequest](docs/PatchedOrganizationWriteRequest.md)
  - [PatchedProjectWriteRequest](docs/PatchedProjectWriteRequest.md)
@@ -353,6 +360,7 @@ Class | Method | HTTP request | Description
  - [TaskWriteRequest](docs/TaskWriteRequest.md)
  - [Token](docs/Token.md)
  - [TrackedShape](docs/TrackedShape.md)
+ - [TrackedShapeRequest](docs/TrackedShapeRequest.md)
  - [User](docs/User.md)
  - [UserAgreement](docs/UserAgreement.md)
  - [UserAgreementRequest](docs/UserAgreementRequest.md)

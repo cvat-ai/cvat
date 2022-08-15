@@ -1274,7 +1274,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
+    @extend_schema(methods=['GET'],
+        summary="Method returns annotations for a specific job as a JSON document. "
+            "If format is specified, a zip archive is returned.",
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
                 description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
@@ -1294,7 +1296,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
         ],
         responses={
-            '200': LabeledDataSerializer,
+            '200': OpenApiResponse(PolymorphicProxySerializer(
+                component_name='JobAnnotationRead',
+                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
+                resource_type_field_name=None
+            )),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1314,13 +1320,23 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
+        request=AnnotationFileSerializer,
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PUT'], summary='Method performs an update of all annotations in a specific job',
-        request=AnnotationFileSerializer, responses={
+        parameters=[
+            OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+        ],
+        request=PolymorphicProxySerializer(
+            component_name='JobAnnotationUpdate',
+            serializers=[LabeledDataSerializer, AnnotationFileSerializer],
+            resource_type_field_name=None
+        ),
+        responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1330,6 +1346,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('action', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR,
                 required=True, enum=['create', 'update', 'delete'])
         ],
+        request=LabeledDataSerializer,
         responses={
             #TODO
             '200': OpenApiResponse(description=''),

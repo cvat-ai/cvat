@@ -13,7 +13,7 @@ Method | HTTP request | Description
 [**jobs_partial_update_annotations**](JobsApi.md#jobs_partial_update_annotations) | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
 [**jobs_partial_update_annotations_file**](JobsApi.md#jobs_partial_update_annotations_file) | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 [**jobs_retrieve**](JobsApi.md#jobs_retrieve) | **GET** /api/jobs/{id} | Method returns details of a job
-[**jobs_retrieve_annotations**](JobsApi.md#jobs_retrieve_annotations) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
+[**jobs_retrieve_annotations**](JobsApi.md#jobs_retrieve_annotations) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job as a JSON document. If format is specified, a zip archive is returned.
 [**jobs_retrieve_data**](JobsApi.md#jobs_retrieve_data) | **GET** /api/jobs/{id}/data | Method returns data for a specific job
 [**jobs_retrieve_data_meta**](JobsApi.md#jobs_retrieve_data_meta) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 [**jobs_retrieve_dataset**](JobsApi.md#jobs_retrieve_dataset) | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
@@ -21,7 +21,7 @@ Method | HTTP request | Description
 
 
 # **jobs_create_annotations**
-> jobs_create_annotations(id)
+> jobs_create_annotations(id, annotation_file_request)
 
 Method allows to upload job annotations
 
@@ -36,7 +36,7 @@ Method allows to upload job annotations
 import time
 import cvat_sdk.api_client
 from cvat_sdk.api_client.api import jobs_api
-from cvat_sdk.api_client.model.job_write_request import JobWriteRequest
+from cvat_sdk.api_client.model.annotation_file_request import AnnotationFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -78,6 +78,9 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    annotation_file_request = AnnotationFileRequest(
+        annotation_file=open('/path/to/file', 'rb'),
+    ) # AnnotationFileRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
     cloud_storage_id = 3.14 # float | Storage id (optional)
     filename = "filename_example" # str | Annotation file name (optional)
@@ -86,16 +89,11 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
     use_default_location = True # bool | Use the location that was configured in the task to import annotation (optional) if omitted the server will use the default value of True
-    job_write_request = JobWriteRequest(
-        assignee=1,
-        stage=JobStage("annotation"),
-        state=OperationStatus("new"),
-    ) # JobWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method allows to upload job annotations
-        api_instance.jobs_create_annotations(id)
+        api_instance.jobs_create_annotations(id, annotation_file_request)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_create_annotations: %s\n" % e)
 
@@ -103,7 +101,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to upload job annotations
-        api_instance.jobs_create_annotations(id, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location, job_write_request=job_write_request)
+        api_instance.jobs_create_annotations(id, annotation_file_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_create_annotations: %s\n" % e)
 ```
@@ -114,6 +112,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **annotation_file_request** | [**AnnotationFileRequest**](AnnotationFileRequest.md)|  |
  **x_organization** | **str**|  | [optional]
  **cloud_storage_id** | **float**| Storage id | [optional]
  **filename** | **str**| Annotation file name | [optional]
@@ -122,7 +121,6 @@ Name | Type | Description  | Notes
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
  **use_default_location** | **bool**| Use the location that was configured in the task to import annotation | [optional] if omitted the server will use the default value of True
- **job_write_request** | [**JobWriteRequest**](JobWriteRequest.md)|  | [optional]
 
 ### Return type
 
@@ -748,7 +746,7 @@ Method performs a partial update of annotations in a specific job
 import time
 import cvat_sdk.api_client
 from cvat_sdk.api_client.api import jobs_api
-from cvat_sdk.api_client.model.patched_job_write_request import PatchedJobWriteRequest
+from cvat_sdk.api_client.model.patched_labeled_data_request import PatchedLabeledDataRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -794,11 +792,81 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_job_write_request = PatchedJobWriteRequest(
-        assignee=1,
-        stage=JobStage("annotation"),
-        state=OperationStatus("new"),
-    ) # PatchedJobWriteRequest |  (optional)
+    patched_labeled_data_request = PatchedLabeledDataRequest(
+        version=1,
+        tags=[
+            LabeledImageRequest(
+                id=1,
+                frame=0,
+                label_id=0,
+                group=0,
+                source="manual",
+                attributes=[
+                    AttributeValRequest(
+                        spec_id=1,
+                        value="value_example",
+                    ),
+                ],
+            ),
+        ],
+        shapes=[
+            LabeledShapeRequest(
+                type=ShapeType("rectangle"),
+                occluded=True,
+                z_order=0,
+                rotation=0.0,
+                points=[
+                    3.14,
+                ],
+                id=1,
+                frame=0,
+                label_id=0,
+                group=0,
+                source="manual",
+                attributes=[
+                    AttributeValRequest(
+                        spec_id=1,
+                        value="value_example",
+                    ),
+                ],
+            ),
+        ],
+        tracks=[
+            LabeledTrackRequest(
+                id=1,
+                frame=0,
+                label_id=0,
+                group=0,
+                source="manual",
+                shapes=[
+                    TrackedShapeRequest(
+                        type=ShapeType("rectangle"),
+                        occluded=True,
+                        z_order=0,
+                        rotation=0.0,
+                        points=[
+                            3.14,
+                        ],
+                        id=1,
+                        frame=0,
+                        outside=True,
+                        attributes=[
+                            AttributeValRequest(
+                                spec_id=1,
+                                value="value_example",
+                            ),
+                        ],
+                    ),
+                ],
+                attributes=[
+                    AttributeValRequest(
+                        spec_id=1,
+                        value="value_example",
+                    ),
+                ],
+            ),
+        ],
+    ) # PatchedLabeledDataRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -811,7 +879,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method performs a partial update of annotations in a specific job
-        api_instance.jobs_partial_update_annotations(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
+        api_instance.jobs_partial_update_annotations(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_labeled_data_request=patched_labeled_data_request)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update_annotations: %s\n" % e)
 ```
@@ -826,7 +894,7 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_job_write_request** | [**PatchedJobWriteRequest**](PatchedJobWriteRequest.md)|  | [optional]
+ **patched_labeled_data_request** | [**PatchedLabeledDataRequest**](PatchedLabeledDataRequest.md)|  | [optional]
 
 ### Return type
 
@@ -1070,9 +1138,9 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **jobs_retrieve_annotations**
-> LabeledData jobs_retrieve_annotations(id)
+> JobAnnotationRead jobs_retrieve_annotations(id)
 
-Method returns annotations for a specific job
+Method returns annotations for a specific job as a JSON document. If format is specified, a zip archive is returned.
 
 ### Example
 
@@ -1085,7 +1153,7 @@ Method returns annotations for a specific job
 import time
 import cvat_sdk.api_client
 from cvat_sdk.api_client.api import jobs_api
-from cvat_sdk.api_client.model.labeled_data import LabeledData
+from cvat_sdk.api_client.model.job_annotation_read import JobAnnotationRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1139,7 +1207,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
 
     # example passing only required values which don't have defaults set
     try:
-        # Method returns annotations for a specific job
+        # Method returns annotations for a specific job as a JSON document. If format is specified, a zip archive is returned.
         api_response = api_instance.jobs_retrieve_annotations(id)
         pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
@@ -1148,7 +1216,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        # Method returns annotations for a specific job
+        # Method returns annotations for a specific job as a JSON document. If format is specified, a zip archive is returned.
         api_response = api_instance.jobs_retrieve_annotations(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
         pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
@@ -1173,7 +1241,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**LabeledData**](LabeledData.md)
+[**JobAnnotationRead**](JobAnnotationRead.md)
 
 ### Authorization
 
@@ -1548,7 +1616,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **jobs_update_annotations**
-> jobs_update_annotations(id, annotation_file_request)
+> jobs_update_annotations(id)
 
 Method performs an update of all annotations in a specific job
 
@@ -1563,7 +1631,7 @@ Method performs an update of all annotations in a specific job
 import time
 import cvat_sdk.api_client
 from cvat_sdk.api_client.api import jobs_api
-from cvat_sdk.api_client.model.annotation_file_request import AnnotationFileRequest
+from cvat_sdk.api_client.model.job_annotation_update_request import JobAnnotationUpdateRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1605,17 +1673,16 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
-    annotation_file_request = AnnotationFileRequest(
-        annotation_file=open('/path/to/file', 'rb'),
-    ) # AnnotationFileRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
+    format = "format_example" # str | Input format name You can get the list of supported formats at: /server/annotation/formats (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    job_annotation_update_request = JobAnnotationUpdateRequest(None) # JobAnnotationUpdateRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method performs an update of all annotations in a specific job
-        api_instance.jobs_update_annotations(id, annotation_file_request)
+        api_instance.jobs_update_annotations(id)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_update_annotations: %s\n" % e)
 
@@ -1623,7 +1690,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method performs an update of all annotations in a specific job
-        api_instance.jobs_update_annotations(id, annotation_file_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_instance.jobs_update_annotations(id, x_organization=x_organization, format=format, org=org, org_id=org_id, job_annotation_update_request=job_annotation_update_request)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_update_annotations: %s\n" % e)
 ```
@@ -1634,10 +1701,11 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
- **annotation_file_request** | [**AnnotationFileRequest**](AnnotationFileRequest.md)|  |
  **x_organization** | **str**|  | [optional]
+ **format** | **str**| Input format name You can get the list of supported formats at: /server/annotation/formats | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **job_annotation_update_request** | [**JobAnnotationUpdateRequest**](JobAnnotationUpdateRequest.md)|  | [optional]
 
 ### Return type
 

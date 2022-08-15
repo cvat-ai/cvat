@@ -6,7 +6,7 @@ import json
 from http import HTTPStatus
 
 import pytest
-from cvat_sdk import ApiClient, Configuration, models
+from cvat_sdk.api_client import ApiClient, Configuration, models
 from shared.utils.config import BASE_URL, USER_PASS, make_api_client
 
 
