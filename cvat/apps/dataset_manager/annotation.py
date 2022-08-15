@@ -198,8 +198,7 @@ class ObjectManager:
     def _unite_objects(obj0, obj1):
         raise NotImplementedError()
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         raise NotImplementedError()
 
     def merge(self, objects, start_frame, overlap):
@@ -285,8 +284,7 @@ class TagManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         pass
 
 def pairwise(iterable):
@@ -356,8 +354,7 @@ class ShapeManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         pass
 
 class TrackManager(ObjectManager):
@@ -438,14 +435,16 @@ class TrackManager(ObjectManager):
         else:
             return 0
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)
             shape["frame"] = end_frame
             shape["outside"] = True
             obj["shapes"].append(shape)
+
+            for element in obj.get("elements", []):
+                self._modify_unmached_object(element, end_frame)
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):

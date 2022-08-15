@@ -889,7 +889,6 @@ class ShapeSerializer(serializers.Serializer):
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledshapeattributeval_set")
-    has_parent = serializers.BooleanField(source='has_parent_shape', required=False)
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -905,7 +904,6 @@ class SubLabeledTrackSerializer(AnnotationSerializer):
         source="trackedshape_set")
     attributes = AttributeValSerializer(many=True,
         source="labeledtrackattributeval_set")
-    has_parent = serializers.BooleanField(source='has_parent_track', required=False)
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)

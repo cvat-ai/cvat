@@ -645,9 +645,6 @@ class LabeledShape(Annotation, Shape):
     def __str__(self):
         return self.name
 
-    def has_parent_shape(self):
-        return bool(self.parent)
-
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
 
@@ -656,9 +653,6 @@ class LabeledTrack(Annotation):
 
     def __str__(self):
         return self.name
-
-    def has_parent_track(self):
-        return bool(self.parent)
 
 class LabeledTrackAttributeVal(AttributeVal):
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
