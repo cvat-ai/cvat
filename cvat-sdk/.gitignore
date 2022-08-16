@@ -64,3 +64,14 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Workflow
+schema/
+.openapi-generator/
+
+# Generated code
+cvat_sdk/api_client/
+requirements/
+docs/
+setup.py
+README.md

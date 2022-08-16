@@ -41,6 +41,7 @@ import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
 import SVGBackgroundIcon from './assets/background-icon.svg';
 import SVGForegroundIcon from './assets/foreground-icon.svg';
 import SVGCubeIcon from './assets/cube-icon.svg';
+import SVGSkeletonIcon from './assets/skeleton-icon.svg';
 import SVGResetPerspectiveIcon from './assets/reset-perspective.svg';
 import SVGColorizeIcon from './assets/colorize-icon.svg';
 import SVGAITools from './assets/ai-tools-icon.svg';
@@ -89,6 +90,7 @@ export const ObjectOutsideIcon = React.memo((): JSX.Element => <SVGObjectOutside
 export const BackgroundIcon = React.memo((): JSX.Element => <SVGBackgroundIcon />);
 export const ForegroundIcon = React.memo((): JSX.Element => <SVGForegroundIcon />);
 export const CubeIcon = React.memo((): JSX.Element => <SVGCubeIcon />);
+export const SkeletonIcon = React.memo((): JSX.Element => <SVGSkeletonIcon />);
 export const ResetPerspectiveIcon = React.memo((): JSX.Element => <SVGResetPerspectiveIcon />);
 export const AIToolsIcon = React.memo((): JSX.Element => <SVGAITools />);
 export const ColorizeIcon = React.memo((): JSX.Element => <SVGColorizeIcon />);

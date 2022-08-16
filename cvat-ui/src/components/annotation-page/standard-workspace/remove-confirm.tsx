@@ -5,7 +5,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 import Modal from 'antd/lib/modal';
 import { removeObjectAsync, removeObject as removeObjectAction } from 'actions/annotation-actions';

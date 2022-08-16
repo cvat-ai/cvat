@@ -287,7 +287,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     (_state: any): boolean => _state.clientID === Number(intersects[0].object.name),
                 );
                 if (item.length !== 0) {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
                     this.model.data.groupData.grouped = this.model.data.groupData.grouped.filter(
                         (_state: any): boolean => _state.clientID !== Number(intersects[0].object.name),

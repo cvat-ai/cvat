@@ -4,7 +4,7 @@
 
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { CloudStoragesState, CloudStorage } from './interfaces';
+import { CloudStoragesState, CloudStorage } from '.';
 
 const defaultState: CloudStoragesState = {
     initialized: false,

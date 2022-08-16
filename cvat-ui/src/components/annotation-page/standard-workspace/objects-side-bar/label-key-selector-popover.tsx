@@ -9,7 +9,7 @@ import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface LabelKeySelectorPopoverProps {

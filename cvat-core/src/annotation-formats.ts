@@ -2,188 +2,209 @@
 //
 // SPDX-License-Identifier: MIT
 
-(() => {
-    /**
-     * Class representing an annotation loader
-     * @memberof module:API.cvat.classes
-     * @hideconstructor
-     */
-    class Loader {
-        constructor(initialData) {
-            const data = {
-                name: initialData.name,
-                format: initialData.ext,
-                version: initialData.version,
-                enabled: initialData.enabled,
-                dimension: initialData.dimension,
-            };
+interface RawLoaderData {
+    name: string;
+    ext: string;
+    version: string;
+    enabled: boolean;
+    dimension: '2d' | '3d';
+}
 
-            Object.defineProperties(this, {
-                name: {
-                    /**
-                     * @name name
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.name,
-                },
-                format: {
-                    /**
-                     * @name format
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.format,
-                },
-                version: {
-                    /**
-                     * @name version
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.version,
-                },
-                enabled: {
-                    /**
-                     * @name enabled
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.enabled,
-                },
-                dimension: {
-                    /**
-                     * @name dimension
-                     * @type {string}
-                     * @memberof module:API.cvat.enums.DimensionType
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.dimension,
-                },
-            });
-        }
+/**
+ * Class representing an annotation loader
+ * @memberof module:API.cvat.classes
+ * @hideconstructor
+*/
+export class Loader {
+    public name: string;
+    public format: string;
+    public version: string;
+    public enabled: boolean;
+    public dimension: '2d' | '3d';
+
+    constructor(initialData: RawLoaderData) {
+        const data = {
+            name: initialData.name,
+            format: initialData.ext,
+            version: initialData.version,
+            enabled: initialData.enabled,
+            dimension: initialData.dimension,
+        };
+
+        Object.defineProperties(this, {
+            name: {
+                /**
+                 * @name name
+                 * @type {string}
+                 * @memberof module:API.cvat.classes.Loader
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.name,
+            },
+            format: {
+                /**
+                 * @name format
+                 * @type {string}
+                 * @memberof module:API.cvat.classes.Loader
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.format,
+            },
+            version: {
+                /**
+                 * @name version
+                 * @type {string}
+                 * @memberof module:API.cvat.classes.Loader
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.version,
+            },
+            enabled: {
+                /**
+                 * @name enabled
+                 * @type {boolean}
+                 * @memberof module:API.cvat.classes.Loader
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.enabled,
+            },
+            dimension: {
+                /**
+                 * @name dimension
+                 * @type {module:API.cvat.enums.DimensionType}
+                 * @memberof module:API.cvat.classes.Loader
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.dimension,
+            },
+        });
     }
+}
 
-    /**
-     * Class representing an annotation dumper
-     * @memberof module:API.cvat.classes
-     * @hideconstructor
-     */
-    class Dumper {
-        constructor(initialData) {
-            const data = {
-                name: initialData.name,
-                format: initialData.ext,
-                version: initialData.version,
-                enabled: initialData.enabled,
-                dimension: initialData.dimension,
-            };
+type RawDumperData = RawLoaderData;
 
-            Object.defineProperties(this, {
-                name: {
-                    /**
-                     * @name name
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Dumper
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.name,
-                },
-                format: {
-                    /**
-                     * @name format
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Dumper
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.format,
-                },
-                version: {
-                    /**
-                     * @name version
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Dumper
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.version,
-                },
-                enabled: {
-                    /**
-                     * @name enabled
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.Loader
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.enabled,
-                },
-                dimension: {
-                    /**
-                     * @name dimension
-                     * @type {string}
-                     * @memberof module:API.cvat.enums.DimensionType
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => data.dimension,
-                },
-            });
-        }
+/**
+ * Class representing an annotation dumper
+ * @memberof module:API.cvat.classes
+ * @hideconstructor
+ */
+export class Dumper {
+    public name: string;
+    public format: string;
+    public version: string;
+    public enabled: boolean;
+    public dimension: '2d' | '3d';
+
+    constructor(initialData: RawDumperData) {
+        const data = {
+            name: initialData.name,
+            format: initialData.ext,
+            version: initialData.version,
+            enabled: initialData.enabled,
+            dimension: initialData.dimension,
+        };
+
+        Object.defineProperties(this, {
+            name: {
+                /**
+                 * @name name
+                 * @type {string}
+                 * @memberof module:API.cvat.classes.Dumper
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.name,
+            },
+            format: {
+                /**
+                 * @name format
+                 * @type {string}
+                 * @memberof module:API.cvat.classes.Dumper
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.format,
+            },
+            version: {
+                /**
+                 * @name version
+                 * @type {string}
+                 * @memberof module:API.cvat.classes.Dumper
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.version,
+            },
+            enabled: {
+                /**
+                 * @name enabled
+                 * @type {boolean}
+                 * @memberof module:API.cvat.classes.Dumper
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.enabled,
+            },
+            dimension: {
+                /**
+                 * @name dimension
+                 * @type {module:API.cvat.enums.DimensionType}
+                 * @memberof module:API.cvat.classes.Dumper
+                 * @readonly
+                 * @instance
+                 */
+                get: () => data.dimension,
+            },
+        });
     }
+}
 
-    /**
-     * Class representing an annotation format
-     * @memberof module:API.cvat.classes
-     * @hideconstructor
-     */
-    class AnnotationFormats {
-        constructor(initialData) {
-            const data = {
-                exporters: initialData.exporters.map((el) => new Dumper(el)),
-                importers: initialData.importers.map((el) => new Loader(el)),
-            };
+interface AnnotationFormatRawData {
+    importers: RawLoaderData[];
+    exporters: RawDumperData[];
+}
 
-            // Now all fields are readonly
-            Object.defineProperties(this, {
-                loaders: {
-                    /**
-                     * @name loaders
-                     * @type {module:API.cvat.classes.Loader[]}
-                     * @memberof module:API.cvat.classes.AnnotationFormats
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => [...data.importers],
-                },
-                dumpers: {
-                    /**
-                     * @name dumpers
-                     * @type {module:API.cvat.classes.Dumper[]}
-                     * @memberof module:API.cvat.classes.AnnotationFormats
-                     * @readonly
-                     * @instance
-                     */
-                    get: () => [...data.exporters],
-                },
-            });
-        }
+/**
+ * Class representing an annotation format
+ * @memberof module:API.cvat.classes
+ * @hideconstructor
+ */
+export class AnnotationFormats {
+    public loaders: Loader[];
+    public dumpers: Dumper[];
+
+    constructor(initialData: AnnotationFormatRawData) {
+        const data = {
+            exporters: initialData.exporters.map((el) => new Dumper(el)),
+            importers: initialData.importers.map((el) => new Loader(el)),
+        };
+
+        Object.defineProperties(this, {
+            loaders: {
+                /**
+                 * @name loaders
+                 * @type {module:API.cvat.classes.Loader[]}
+                 * @memberof module:API.cvat.classes.AnnotationFormats
+                 * @readonly
+                 * @instance
+                 */
+                get: () => [...data.importers],
+            },
+            dumpers: {
+                /**
+                 * @name dumpers
+                 * @type {module:API.cvat.classes.Dumper[]}
+                 * @memberof module:API.cvat.classes.AnnotationFormats
+                 * @readonly
+                 * @instance
+                 */
+                get: () => [...data.exporters],
+            },
+        });
     }
-
-    module.exports = {
-        AnnotationFormats,
-        Loader,
-        Dumper,
-    };
-})();
+}

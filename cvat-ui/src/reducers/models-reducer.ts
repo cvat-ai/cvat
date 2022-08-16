@@ -5,7 +5,7 @@
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { ModelsState, Model } from './interfaces';
+import { ModelsState, Model } from '.';
 
 const defaultState: ModelsState = {
     initialized: false,

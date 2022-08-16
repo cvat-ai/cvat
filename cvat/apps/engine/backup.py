@@ -75,13 +75,24 @@ class _BackupBase():
 
         return meta
 
-    def _prepare_label_meta(self, labels):
+    def _prepare_label_meta(self, label):
         allowed_fields = {
             'name',
             'color',
             'attributes',
+            'type',
+            'svg',
+            'sublabels',
         }
-        return self._prepare_meta(allowed_fields, labels)
+        self._prepare_meta(allowed_fields, label)
+        for sublabel in label['sublabels']:
+            sublabel_id = sublabel['id']
+            sublabel_name = sublabel['name']
+            label['svg'] = label['svg'].replace(f'data-label-id="{sublabel_id}"', f'data-label-name="{sublabel_name}"')
+
+            self._prepare_meta(allowed_fields, sublabel)
+            sublabel['attributes'] = [self._prepare_attribute_meta(a) for a in sublabel['attributes']]
+        return label
 
     def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
@@ -151,6 +162,7 @@ class _TaskBackupBase(_BackupBase):
             'source',
             'attributes',
             'shapes',
+            'elements',
         }
 
         def _update_attribute(attribute, label):
@@ -169,28 +181,38 @@ class _TaskBackupBase(_BackupBase):
 
             return source
 
+        def _prepare_shapes(shapes):
+            for shape in shapes:
+                label = _update_label(shape)
+                for attr in shape['attributes']:
+                    _update_attribute(attr, label)
+
+                _prepare_shapes(shape.get('elements', []))
+
+                self._prepare_meta(allowed_fields, shape)
+
+        def _prepare_tracks(tracks):
+            for track in tracks:
+                label = _update_label(track)
+                for shape in track['shapes']:
+                    for attr in shape['attributes']:
+                        _update_attribute(attr, label)
+                    self._prepare_meta(allowed_fields, shape)
+
+                _prepare_tracks(track.get('elements', []))
+
+                for attr in track['attributes']:
+                    _update_attribute(attr, label)
+                self._prepare_meta(allowed_fields, track)
+
         for tag in annotations['tags']:
             label = _update_label(tag)
             for attr in tag['attributes']:
                 _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, tag)
 
-        for shape in annotations['shapes']:
-            label = _update_label(shape)
-            for attr in shape['attributes']:
-                _update_attribute(attr, label)
-            self._prepare_meta(allowed_fields, shape)
-
-        for track in annotations['tracks']:
-            label = _update_label(track)
-            for shape in track['shapes']:
-                for attr in shape['attributes']:
-                    _update_attribute(attr, label)
-                self._prepare_meta(allowed_fields, shape)
-
-            for attr in track['attributes']:
-                _update_attribute(attr, label)
-            self._prepare_meta(allowed_fields, track)
+        _prepare_shapes(annotations['shapes'])
+        _prepare_tracks(annotations['tracks'])
 
         return annotations
 
@@ -290,7 +312,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 task_serializer.fields.pop(field)
 
             task = self._prepare_task_meta(task_serializer.data)
-            task['labels'] = [self._prepare_label_meta(l) for l in task['labels']]
+            task['labels'] = [self._prepare_label_meta(l) for l in task['labels'] if not l['has_parent']]
             for label in task['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
 
@@ -385,8 +407,7 @@ class _ImporterBase():
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
 
-    @staticmethod
-    def _create_labels(labels, db_task=None, db_project=None):
+    def _create_labels(self, labels, db_task=None, db_project=None, parent_label=None):
         label_mapping = {}
         if db_task:
             label_relation = {
@@ -401,11 +422,21 @@ class _ImporterBase():
         for label in labels:
             label_name = label['name']
             attributes = label.pop('attributes', [])
-            db_label = models.Label.objects.create(**label_relation, **label)
+            svg = label.pop('svg', '')
+            sublabels  = label.pop('sublabels', [])
+
+            db_label = models.Label.objects.create(**label_relation, parent=parent_label, **label)
             label_mapping[label_name] = {
                 'value': db_label.id,
                 'attributes': {},
             }
+
+            label_mapping.update(self._create_labels(sublabels, db_task, db_project, db_label))
+
+            if db_label.type == str(models.LabelType.SKELETON):
+                for db_sublabel in list(db_label.sublabels.all()):
+                    svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                models.Skeleton.objects.create(root=db_label, svg=svg)
 
             for attribute in attributes:
                 attribute_name = attribute['name']
@@ -582,7 +613,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
                 project_serializer.fields.pop(field)
 
             project = self._prepare_project_meta(project_serializer.data)
-            project['labels'] = [self._prepare_label_meta(l) for l in project['labels']]
+            project['labels'] = [self._prepare_label_meta(l) for l in project['labels'] if not l['has_parent']]
             for label in project['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
 
