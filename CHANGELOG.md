@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
 - Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
 - Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
+- [COCO Keypoints](https://cocodataset.org/#keypoints-2020) format support (<https://github.com/cvat-ai/cvat/pull/109>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
