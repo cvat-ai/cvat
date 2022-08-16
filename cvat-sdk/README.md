@@ -207,7 +207,7 @@ Class | Method | HTTP request | Description
 *ServerApi* | [**server_retrieve_plugins**](docs/ServerApi.md#server_retrieve_plugins) | **GET** /api/server/plugins | Method provides allowed plugins
 *TasksApi* | [**jobs_partial_update_data_meta**](docs/TasksApi.md#jobs_partial_update_data_meta) | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 *TasksApi* | [**tasks_create**](docs/TasksApi.md#tasks_create) | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
-*TasksApi* | [**tasks_create_annotations**](docs/TasksApi.md#tasks_create_annotations) | **POST** /api/tasks/{id}/annotations/ | Method allows to upload task annotations from storage
+*TasksApi* | [**tasks_create_annotations**](docs/TasksApi.md#tasks_create_annotations) | **POST** /api/tasks/{id}/annotations/ | Method allows to upload task annotations from a local file or a cloud storage
 *TasksApi* | [**tasks_create_backup**](docs/TasksApi.md#tasks_create_backup) | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
 *TasksApi* | [**tasks_create_data**](docs/TasksApi.md#tasks_create_data) | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
 *TasksApi* | [**tasks_destroy**](docs/TasksApi.md#tasks_destroy) | **DELETE** /api/tasks/{id} | Method deletes a specific task, all attached jobs, annotations, and data
@@ -271,8 +271,8 @@ Class | Method | HTTP request | Description
  - [IssueRead](docs/IssueRead.md)
  - [IssueWrite](docs/IssueWrite.md)
  - [IssueWriteRequest](docs/IssueWriteRequest.md)
- - [JobAnnotationRead](docs/JobAnnotationRead.md)
- - [JobAnnotationUpdateRequest](docs/JobAnnotationUpdateRequest.md)
+ - [JobAnnotationsRead](docs/JobAnnotationsRead.md)
+ - [JobAnnotationsUpdateRequest](docs/JobAnnotationsUpdateRequest.md)
  - [JobCommit](docs/JobCommit.md)
  - [JobRead](docs/JobRead.md)
  - [JobStage](docs/JobStage.md)
@@ -352,6 +352,8 @@ Class | Method | HTTP request | Description
  - [StorageMethod](docs/StorageMethod.md)
  - [StorageRequest](docs/StorageRequest.md)
  - [StorageType](docs/StorageType.md)
+ - [TaskAnnotationsUpdateRequest](docs/TaskAnnotationsUpdateRequest.md)
+ - [TaskAnnotationsWriteRequest](docs/TaskAnnotationsWriteRequest.md)
  - [TaskFileRequest](docs/TaskFileRequest.md)
  - [TaskRead](docs/TaskRead.md)
  - [TaskReadTargetStorage](docs/TaskReadTargetStorage.md)

@@ -1218,7 +1218,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_retrieve_annotations**
-> projects_retrieve_annotations(format, id)
+> file_type projects_retrieve_annotations(format, id)
 
 Method allows to download project annotations
 
@@ -1287,7 +1287,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method allows to download project annotations
-        api_instance.projects_retrieve_annotations(format, id)
+        api_response = api_instance.projects_retrieve_annotations(format, id)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_annotations: %s\n" % e)
 
@@ -1295,7 +1296,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to download project annotations
-        api_instance.projects_retrieve_annotations(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        api_response = api_instance.projects_retrieve_annotations(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_annotations: %s\n" % e)
 ```
@@ -1318,7 +1320,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**file_type**
 
 ### Authorization
 
@@ -1327,7 +1329,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/vnd.cvat+json
 
 
 ### HTTP response details
@@ -1464,7 +1466,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_retrieve_dataset**
-> projects_retrieve_dataset(id)
+> file_type projects_retrieve_dataset(id)
 
 Export project as a dataset in a specific format
 
@@ -1533,7 +1535,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Export project as a dataset in a specific format
-        api_instance.projects_retrieve_dataset(id)
+        api_response = api_instance.projects_retrieve_dataset(id)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_dataset: %s\n" % e)
 
@@ -1541,7 +1544,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Export project as a dataset in a specific format
-        api_instance.projects_retrieve_dataset(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        api_response = api_instance.projects_retrieve_dataset(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve_dataset: %s\n" % e)
 ```
@@ -1564,7 +1568,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**file_type**
 
 ### Authorization
 
@@ -1573,7 +1577,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/vnd.cvat+json
 
 
 ### HTTP response details

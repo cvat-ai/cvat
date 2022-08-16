@@ -5,11 +5,13 @@
 
 from http import HTTPStatus
 import json
+from typing import List
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 import pytest
 from copy import deepcopy
 from shared.utils.config import make_api_client
+from .utils import export_dataset
 
 def get_job_staff(job, tasks, projects):
     job_staff = []
@@ -329,3 +331,24 @@ class TestPatchJob:
                     exclude_paths="root['updated_date']", ignore_order=True) == {}
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
+
+@pytest.mark.usefixtures('dontchangedb')
+class TestJobDataset:
+    def _export_dataset(self, username, jid, **kwargs):
+        with make_api_client(username) as api_client:
+            return export_dataset(api_client.jobs_api.retrieve_dataset_endpoint, id=jid, **kwargs)
+
+    def _export_annotations(self, username, jid, **kwargs):
+        with make_api_client(username) as api_client:
+            return export_dataset(api_client.jobs_api.retrieve_annotations_endpoint,
+                id=jid, **kwargs)
+
+    def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List):
+        job = jobs_with_shapes[0]
+        response = self._export_dataset(admin_user, job['id'], format='CVAT for images 1.1')
+        assert response.data
+
+    def test_can_export_annotations(self, admin_user: str, jobs_with_shapes: List):
+        job = jobs_with_shapes[0]
+        response = self._export_annotations(admin_user, job['id'], format='CVAT for images 1.1')
+        assert response.data

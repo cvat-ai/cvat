@@ -337,7 +337,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -483,7 +483,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '401': OpenApiResponse(description='Format is not specified'),
@@ -970,7 +970,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -980,12 +980,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
         ],
+        request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
+            serializers=[LabeledDataSerializer, AnnotationFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['POST'], summary='Method allows to upload task annotations from storage',
+    @extend_schema(methods=['POST'],
+        summary="Method allows to upload task annotations from a local file or a cloud storage",
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1000,6 +1005,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
+        request=PolymorphicProxySerializer('TaskAnnotationsWrite',
+            serializers=[AnnotationFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
@@ -1009,13 +1018,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('action', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['create', 'update', 'delete']),
-        ])
+        ],
+        request=LabeledDataSerializer)
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific task',
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer(required=False))
+        serializer_class=None)
     def annotations(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
@@ -1177,7 +1187,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1297,7 +1307,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         responses={
             '200': OpenApiResponse(PolymorphicProxySerializer(
-                component_name='JobAnnotationRead',
+                component_name='JobAnnotationsRead',
                 serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
                 resource_type_field_name=None
             )),
@@ -1332,7 +1342,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
         ],
         request=PolymorphicProxySerializer(
-            component_name='JobAnnotationUpdate',
+            component_name='JobAnnotationsUpdate',
             serializers=[LabeledDataSerializer, AnnotationFileSerializer],
             resource_type_field_name=None
         ),
@@ -1348,8 +1358,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         request=LabeledDataSerializer,
         responses={
-            #TODO
-            '200': OpenApiResponse(description=''),
+            '200': OpenApiResponse(description='Annotations successfully uploaded'),
         })
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific job',
         responses={
@@ -1448,7 +1457,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1492,7 +1501,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
             ],
         responses={
-            '200': OpenApiResponse(description='Data of a specific type'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
         })
     @action(detail=True, methods=['GET'])
     def data(self, request, pk):

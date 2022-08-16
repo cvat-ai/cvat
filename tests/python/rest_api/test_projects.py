@@ -13,9 +13,8 @@ import pytest
 from copy import deepcopy
 from deepdiff import DeepDiff
 
-from cvat_sdk.models import DatasetFileRequest, ProjectWriteRequest
-
 from shared.utils.config import get_method, patch_method, make_api_client
+from .utils import export_dataset
 
 
 @pytest.mark.usefixtures('dontchangedb')
@@ -229,12 +228,12 @@ class TestGetProjectBackup:
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.projects_api.create(ProjectWriteRequest(**spec), **kwargs)
+            (_, response) = api_client.projects_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
     def _test_create_project_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.projects_api.create(ProjectWriteRequest(**spec), **kwargs,
+            (_, response) = api_client.projects_api.create(spec, **kwargs,
                 _parse_response=False, _check_status=False)
         assert response.status == HTTPStatus.FORBIDDEN
 
@@ -316,43 +315,30 @@ class TestPostProjects:
         self._test_create_project_201(user['username'], spec, org_id=user['org'])
 
 @pytest.mark.usefixtures("changedb")
-@pytest.mark.usefixtures("restore_cvat_data")
 class TestImportExportDatasetProject:
-    def _test_export_project(self, username, project_id, format_name):
+    def _test_export_project(self, username, pid, format_name):
         with make_api_client(username) as api_client:
-            while True:
-                (_, response) = api_client.projects_api.retrieve_dataset(id=project_id,
-                    format=format_name)
-                if response.status == HTTPStatus.CREATED:
-                    break
-
-            (_, response) = api_client.projects_api.retrieve_dataset(id=project_id,
-                    format=format_name, action='download')
-            assert response.status == HTTPStatus.OK
-
-        return response
+            return export_dataset(api_client.projects_api.retrieve_dataset_endpoint,
+                id=pid, format=format_name)
 
     def _test_import_project(self, username, project_id, format_name, data):
         with make_api_client(username) as api_client:
             (_, response) = api_client.projects_api.create_dataset(id=project_id,
-                format=format_name, dataset_file_request=DatasetFileRequest(**data),
+                format=format_name, dataset_file_request=deepcopy(data),
                 _content_type="multipart/form-data")
             assert response.status == HTTPStatus.ACCEPTED
 
             while True:
-                # TODO: Request schema doesn't describe this capability.
-                # It's better be refactored to a separate endpoint to get request status
-                response = get_method(username, f'projects/{project_id}/dataset',
+                # TODO: It's better be refactored to a separate endpoint to get request status
+                (_, response) = api_client.projects_api.retrieve_dataset(project_id,
                     action='import_status')
-                response.raise_for_status()
-                if response.status_code == HTTPStatus.CREATED:
+                if response.status == HTTPStatus.CREATED:
                     break
 
-    def test_can_import_dataset_in_org(self):
-        username = 'admin1'
+    def test_can_import_dataset_in_org(self, admin_user):
         project_id = 4
 
-        response = self._test_export_project(username, project_id, 'CVAT for images 1.1')
+        response = self._test_export_project(admin_user, project_id, 'CVAT for images 1.1')
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = 'dataset.zip'
@@ -361,7 +347,7 @@ class TestImportExportDatasetProject:
             'dataset_file': tmp_file,
         }
 
-        self._test_import_project(username, project_id, 'CVAT 1.1', import_data)
+        self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
 
 @pytest.mark.usefixtures('changedb')
 class TestPatchProjectLabel:

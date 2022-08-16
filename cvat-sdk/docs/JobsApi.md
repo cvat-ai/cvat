@@ -914,7 +914,7 @@ void (empty response body)
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | No response body |  -  |
+**200** | Annotations successfully uploaded |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -1138,7 +1138,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **jobs_retrieve_annotations**
-> JobAnnotationRead jobs_retrieve_annotations(id)
+> JobAnnotationsRead jobs_retrieve_annotations(id)
 
 Method returns annotations for a specific job as a JSON document. If format is specified, a zip archive is returned.
 
@@ -1153,7 +1153,7 @@ Method returns annotations for a specific job as a JSON document. If format is s
 import time
 import cvat_sdk.api_client
 from cvat_sdk.api_client.api import jobs_api
-from cvat_sdk.api_client.model.job_annotation_read import JobAnnotationRead
+from cvat_sdk.api_client.model.job_annotations_read import JobAnnotationsRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1241,7 +1241,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**JobAnnotationRead**](JobAnnotationRead.md)
+[**JobAnnotationsRead**](JobAnnotationsRead.md)
 
 ### Authorization
 
@@ -1265,7 +1265,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **jobs_retrieve_data**
-> jobs_retrieve_data(id, number, quality, type)
+> file_type jobs_retrieve_data(id, number, quality, type)
 
 Method returns data for a specific job
 
@@ -1331,7 +1331,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method returns data for a specific job
-        api_instance.jobs_retrieve_data(id, number, quality, type)
+        api_response = api_instance.jobs_retrieve_data(id, number, quality, type)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_data: %s\n" % e)
 
@@ -1339,7 +1340,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns data for a specific job
-        api_instance.jobs_retrieve_data(id, number, quality, type, x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.jobs_retrieve_data(id, number, quality, type, x_organization=x_organization, org=org, org_id=org_id)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_data: %s\n" % e)
 ```
@@ -1359,7 +1361,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**file_type**
 
 ### Authorization
 
@@ -1368,7 +1370,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/vnd.cvat+json
 
 
 ### HTTP response details
@@ -1492,7 +1494,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **jobs_retrieve_dataset**
-> jobs_retrieve_dataset(format, id)
+> file_type jobs_retrieve_dataset(format, id)
 
 Export job as a dataset in a specific format
 
@@ -1561,7 +1563,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Export job as a dataset in a specific format
-        api_instance.jobs_retrieve_dataset(format, id)
+        api_response = api_instance.jobs_retrieve_dataset(format, id)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_dataset: %s\n" % e)
 
@@ -1569,7 +1572,8 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Export job as a dataset in a specific format
-        api_instance.jobs_retrieve_dataset(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        api_response = api_instance.jobs_retrieve_dataset(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
+        pprint(api_response)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve_dataset: %s\n" % e)
 ```
@@ -1592,7 +1596,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**file_type**
 
 ### Authorization
 
@@ -1601,7 +1605,7 @@ void (empty response body)
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/vnd.cvat+json
 
 
 ### HTTP response details
@@ -1631,7 +1635,7 @@ Method performs an update of all annotations in a specific job
 import time
 import cvat_sdk.api_client
 from cvat_sdk.api_client.api import jobs_api
-from cvat_sdk.api_client.model.job_annotation_update_request import JobAnnotationUpdateRequest
+from cvat_sdk.api_client.model.job_annotations_update_request import JobAnnotationsUpdateRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1677,7 +1681,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     format = "format_example" # str | Input format name You can get the list of supported formats at: /server/annotation/formats (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    job_annotation_update_request = JobAnnotationUpdateRequest(None) # JobAnnotationUpdateRequest |  (optional)
+    job_annotations_update_request = JobAnnotationsUpdateRequest(None) # JobAnnotationsUpdateRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -1690,7 +1694,7 @@ with cvat_sdk.api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method performs an update of all annotations in a specific job
-        api_instance.jobs_update_annotations(id, x_organization=x_organization, format=format, org=org, org_id=org_id, job_annotation_update_request=job_annotation_update_request)
+        api_instance.jobs_update_annotations(id, x_organization=x_organization, format=format, org=org, org_id=org_id, job_annotations_update_request=job_annotations_update_request)
     except cvat_sdk.api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_update_annotations: %s\n" % e)
 ```
@@ -1705,7 +1709,7 @@ Name | Type | Description  | Notes
  **format** | **str**| Input format name You can get the list of supported formats at: /server/annotation/formats | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **job_annotation_update_request** | [**JobAnnotationUpdateRequest**](JobAnnotationUpdateRequest.md)|  | [optional]
+ **job_annotations_update_request** | [**JobAnnotationsUpdateRequest**](JobAnnotationsUpdateRequest.md)|  | [optional]
 
 ### Return type
 

@@ -64,13 +64,27 @@ class OpenApiTypeProxySerializerExtension(PolymorphicProxySerializerExtension):
             return super()._process_serializer(auto_schema=auto_schema,
                 serializer=serializer, direction=direction)
 
+    def map_serializer(self, auto_schema, direction):
+        """ custom handling for @extend_schema's injection of PolymorphicProxySerializer """
+        result = super().map_serializer(auto_schema=auto_schema, direction=direction)
+
+        if isinstance(self.target.serializers, dict):
+            required = OpenApiTypes.NONE not in self.target.serializers.values()
+        else:
+            required = OpenApiTypes.NONE not in self.target.serializers
+
+        if not required:
+            result['nullable'] = True
+
+        return result
+
 class CustomProxySerializerExtension(OpenApiTypeProxySerializerExtension):
     """
     Allows to patch PolymorphicProxySerializer-based schema.
 
     Override "target_component" in children classes.
     """
-    priority = 0 # restore normal priority
+    priority = 1 # higher than in the parent class
 
     target_component: str = ''
 
