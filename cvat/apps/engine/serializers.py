@@ -48,6 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
             'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
+        extra_kwargs = {
+            'last_login': { 'allow_null': True }
+        }
 
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
@@ -465,7 +468,10 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'subset', 'organization', 'target_storage', 'source_storage',
         )
         read_only_fields = fields
-        extra_kwargs = { 'organization': { 'allow_null': True } }
+        extra_kwargs = {
+            'organization': { 'allow_null': True },
+            'overlap': { 'allow_null': True },
+        }
 
     def to_representation(self, instance):
         response = super().to_representation(instance)

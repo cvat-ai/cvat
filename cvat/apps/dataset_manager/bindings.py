@@ -289,7 +289,6 @@ class TaskData(InstanceLabelData):
 
                 if db_label.type == str(LabelType.SKELETON):
                     label["svg"] = db_label.skeleton.svg
-
                     for db_sublabel in list(db_label.sublabels.all()):
                         label["svg"] = label["svg"].replace(f'data-label-id="{db_sublabel.id}"', f'data-label-name="{db_sublabel.name}"')
 
@@ -1548,7 +1547,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     if ann.type == datum_annotation.AnnotationType.cuboid_3d:
                         try:
                             ann.points = [*ann.position,*ann.rotation,*ann.scale,0,0,0,0,0,0,0]
-                        except Exception as e:
+                        except Exception:
                             ann.points = ann.points
                         ann.z_order = 0
 
