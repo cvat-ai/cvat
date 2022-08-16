@@ -93,10 +93,10 @@ class Downloader:
 
         client.logger.info("Waiting for the server to prepare the file...")
 
-        url = client._api_map.make_endpoint_url(
+        url = client.api_map.make_endpoint_url(
             endpoint.path, kwsub=url_params, query_params=query_params
         )
-        client._wait_for_completion(
+        client.wait_for_completion(
             url,
             method="GET",
             positive_statuses=[202],
@@ -106,7 +106,7 @@ class Downloader:
 
         query_params = dict(query_params or {})
         query_params["action"] = "download"
-        url = client._api_map.make_endpoint_url(
+        url = client.api_map.make_endpoint_url(
             endpoint.path, kwsub=url_params, query_params=query_params
         )
         downloader = Downloader(client)

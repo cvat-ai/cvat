@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import os.path as osp
 from contextlib import ExitStack, closing
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
 import urllib3
@@ -124,28 +124,25 @@ class Uploader:
         )
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
 
-    def upload_annotation_file_and_wait(
+    def _wait_for_completion(
         self,
-        endpoint: Endpoint,
-        filename: str,
-        format_name: str,
+        url: str,
         *,
-        url_params: Optional[Dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
+        success_status: int,
         status_check_period: Optional[int] = None,
-    ):
-        url = self._client._api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
-        params = {"format": format_name, "filename": osp.basename(filename)}
-        self.upload_file(
-            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
-        )
-
-        self._client._wait_for_completion(
+        query_params: Optional[Dict[str, Any]] = None,
+        post_params: Optional[Dict[str, Any]] = None,
+        method: str = "POST",
+        positive_statuses: Optional[Sequence[int]] = None,
+    ) -> urllib3.HTTPResponse:
+        return self._client.wait_for_completion(
             url,
-            success_status=201,
-            positive_statuses=[202],
+            success_status=success_status,
             status_check_period=status_check_period,
-            query_params=params,
+            query_params=query_params,
+            post_params=post_params,
+            method=method,
+            positive_statuses=positive_statuses,
         )
 
     def _split_files_by_requests(
@@ -328,3 +325,57 @@ class Uploader:
         )
         expect_status(202, response)
         return response
+
+
+class AnnotationUploader(Uploader):
+    def upload_file_and_wait(
+        self,
+        endpoint: Endpoint,
+        filename: str,
+        format_name: str,
+        *,
+        url_params: Optional[Dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
+        params = {"format": format_name, "filename": osp.basename(filename)}
+        self.upload_file(
+            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+        )
+
+        self._wait_for_completion(
+            url,
+            success_status=201,
+            positive_statuses=[202],
+            status_check_period=status_check_period,
+            query_params=params,
+            method="POST",
+        )
+
+
+class DatasetUploader(Uploader):
+    def upload_file_and_wait(
+        self,
+        endpoint: Endpoint,
+        filename: str,
+        format_name: str,
+        *,
+        url_params: Optional[Dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
+        params = {"format": format_name, "filename": osp.basename(filename)}
+        self.upload_file(
+            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+        )
+
+        self._wait_for_completion(
+            url,
+            success_status=201,
+            positive_statuses=[202],
+            status_check_period=status_check_period,
+            query_params=params,
+            method="GET",
+        )

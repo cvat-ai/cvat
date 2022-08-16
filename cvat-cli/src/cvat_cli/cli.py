@@ -1,4 +1,3 @@
-# Copyright (C) 2020-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -26,7 +25,7 @@ class CLI:
 
     def tasks_list(self, *, use_json_output: bool = False, **kwargs):
         """List all tasks in either basic or JSON format."""
-        results = self.client.list_tasks(return_json=use_json_output, **kwargs)
+        results = self.client.tasks.list(return_json=use_json_output, **kwargs)
         if use_json_output:
             print(json.dumps(json.loads(results), indent=2))
         else:
@@ -50,7 +49,7 @@ class CLI:
         """
         Create a new task with the given name and labels JSON and add the files to it.
         """
-        task = self.client.create_task(
+        task = self.client.tasks.create_from_data(
             spec=models.TaskWriteRequest(name=name, labels=labels, **kwargs),
             resource_type=resource_type,
             resources=resources,
@@ -66,7 +65,7 @@ class CLI:
 
     def tasks_delete(self, task_ids: Sequence[int]) -> None:
         """Delete a list of tasks, ignoring those which don't exist."""
-        self.client.delete_tasks(task_ids=task_ids)
+        self.client.tasks.delete_by_ids(task_ids=task_ids)
 
     def tasks_frames(
         self,
@@ -80,7 +79,7 @@ class CLI:
         Download the requested frame numbers for a task and save images as
         task_<ID>_frame_<FRAME>.jpg.
         """
-        self.client.retrieve_task(task_id=task_id).download_frames(
+        self.client.tasks.retrieve(obj_id=task_id).download_frames(
             frame_ids=frame_ids,
             outdir=outdir,
             quality=quality,
@@ -99,7 +98,7 @@ class CLI:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
-        self.client.retrieve_task(task_id=task_id).export_dataset(
+        self.client.tasks.retrieve(obj_id=task_id).export_dataset(
             format_name=fileformat,
             filename=filename,
             pbar=self._make_pbar(),
@@ -112,7 +111,7 @@ class CLI:
     ) -> None:
         """Upload annotations for a task in the specified format
         (e.g. 'YOLO ZIP 1.0')."""
-        self.client.retrieve_task(task_id=task_id).import_annotations(
+        self.client.tasks.retrieve(obj_id=task_id).import_annotations(
             format_name=fileformat,
             filename=filename,
             status_check_period=status_check_period,
@@ -121,13 +120,13 @@ class CLI:
 
     def tasks_export(self, task_id: str, filename: str, *, status_check_period: int = 2) -> None:
         """Download a task backup"""
-        self.client.retrieve_task(task_id=task_id).download_backup(
+        self.client.tasks.retrieve(obj_id=task_id).download_backup(
             filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
         )
 
     def tasks_import(self, filename: str, *, status_check_period: int = 2) -> None:
         """Import a task from a backup file"""
-        self.client.create_task_from_backup(
+        self.client.tasks.create_from_backup(
             filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
         )
 

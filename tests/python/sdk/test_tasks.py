@@ -10,7 +10,7 @@ from typing import Tuple
 
 import pytest
 from cvat_sdk import Client, exceptions
-from cvat_sdk.core.tasks import TaskProxy
+from cvat_sdk.core.tasks import Task
 from cvat_sdk.core.types import ResourceType
 from PIL import Image
 
@@ -40,10 +40,6 @@ class TestTaskUsecases:
 
         yield
 
-        self.tmp_path = None
-        self.client = None
-        self.stdout = None
-
     @pytest.fixture
     def fxt_image_file(self):
         img_path = self.tmp_path / "img.png"
@@ -62,7 +58,7 @@ class TestTaskUsecases:
         yield ann_filename
 
     @pytest.fixture
-    def fxt_backup_file(self, fxt_new_task: TaskProxy, fxt_coco_file: str):
+    def fxt_backup_file(self, fxt_new_task: Task, fxt_coco_file: str):
         backup_path = self.tmp_path / "backup.zip"
 
         fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
@@ -72,7 +68,7 @@ class TestTaskUsecases:
 
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file):
-        task = self.client.create_task(
+        task = self.client.tasks.create_from_data(
             spec={
                 "name": "test_task",
                 "labels": [{"name": "car"}, {"name": "person"}],
@@ -117,7 +113,7 @@ class TestTaskUsecases:
                 fd.write(f.getvalue())
                 task_files[i] = str(fname)
 
-        task = self.client.create_task(
+        task = self.client.tasks.create_from_data(
             spec=task_spec,
             data_params=data_params,
             resource_type=ResourceType.LOCAL,
@@ -143,7 +139,7 @@ class TestTaskUsecases:
         }
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self.client.create_task(
+            self.client.tasks.create_from_data(
                 spec=task_spec,
                 resource_type=ResourceType.LOCAL,
                 resources=[],
@@ -156,25 +152,25 @@ class TestTaskUsecases:
     def test_can_retrieve_task(self, fxt_new_task):
         task_id = fxt_new_task.id
 
-        task = TaskProxy.retrieve(self.client, task_id)
+        task = self.client.tasks.retrieve(task_id)
 
         assert task.id == task_id
 
     def test_can_list_tasks(self, fxt_new_task):
         task_id = fxt_new_task.id
 
-        tasks = TaskProxy.list(self.client)
+        tasks = self.client.tasks.list()
 
         assert any(t.id == task_id for t in tasks)
         assert self.stdout.getvalue() == ""
 
     def test_can_delete_tasks_by_ids(self, fxt_new_task):
         task_id = fxt_new_task.id
-        old_tasks = TaskProxy.list(self.client)
+        old_tasks = self.client.tasks.list()
 
-        self.client.delete_tasks([task_id])
+        self.client.tasks.delete_by_ids([task_id])
 
-        new_tasks = TaskProxy.list(self.client)
+        new_tasks = self.client.tasks.list()
         assert any(t.id == task_id for t in old_tasks)
         assert all(t.id != task_id for t in new_tasks)
         assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
@@ -182,24 +178,24 @@ class TestTaskUsecases:
 
     def test_can_delete_task(self, fxt_new_task):
         task_id = fxt_new_task.id
-        task = TaskProxy.retrieve(self.client, task_id)
-        old_tasks = TaskProxy.list(self.client)
+        task = self.client.tasks.retrieve(task_id)
+        old_tasks = self.client.tasks.list()
 
         task.remove()
 
-        new_tasks = TaskProxy.list(self.client)
+        new_tasks = self.client.tasks.list()
         assert any(t.id == task_id for t in old_tasks)
         assert all(t.id != task_id for t in new_tasks)
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("include_images", (True, False))
-    def test_can_download_dataset(self, fxt_new_task: TaskProxy, include_images: bool):
+    def test_can_download_dataset(self, fxt_new_task: Task, include_images: bool):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
         path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
-        task = TaskProxy.retrieve(self.client, task_id)
+        task = self.client.tasks.retrieve(task_id)
         task.export_dataset(
             format_name="CVAT for images 1.1",
             filename=path,
@@ -217,7 +213,7 @@ class TestTaskUsecases:
 
         task_id = fxt_new_task.id
         path = str(self.tmp_path / f"task_{task_id}-backup.zip")
-        task = TaskProxy.retrieve(self.client, task_id)
+        task = self.client.tasks.retrieve(task_id)
         task.download_backup(filename=path, pbar=pbar)
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
@@ -225,14 +221,14 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
-    def test_can_download_frame(self, fxt_new_task: TaskProxy, quality: str):
-        frame_encoded = fxt_new_task.retrieve_frame(0, quality=quality)
+    def test_can_download_frame(self, fxt_new_task: Task, quality: str):
+        frame_encoded = fxt_new_task.get_frame(0, quality=quality)
 
         assert Image.open(frame_encoded).size != 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
-    def test_can_download_frames(self, fxt_new_task: TaskProxy, quality: str):
+    def test_can_download_frames(self, fxt_new_task: Task, quality: str):
         fxt_new_task.download_frames(
             [0],
             quality=quality,
@@ -243,7 +239,7 @@ class TestTaskUsecases:
         assert osp.isfile(self.tmp_path / "frame-0.jpg")
         assert self.stdout.getvalue() == ""
 
-    def test_can_upload_annotations(self, fxt_new_task: TaskProxy, fxt_coco_file: Path):
+    def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -255,11 +251,11 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    def test_can_create_from_backup(self, fxt_new_task: TaskProxy, fxt_backup_file: Path):
+    def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        task = self.client.create_task_from_backup(str(fxt_backup_file), pbar=pbar)
+        task = self.client.tasks.create_from_backup(str(fxt_backup_file), pbar=pbar)
 
         assert task.id
         assert task.id != fxt_new_task.id

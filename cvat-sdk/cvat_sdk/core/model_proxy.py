@@ -1,4 +1,3 @@
-# Copyright (C) 2020-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -20,9 +19,8 @@ ModelType = TypeVar("ModelType", bound=ModelNormal)
 ApiType = TypeVar("ApiType")
 
 
-class ModelProxy(ABC, Generic[IModel, ModelType, ApiType]):
+class ModelProxy(ABC, Generic[ModelType, ApiType]):
     _client: Client
-    _model: ModelType
 
     @property
     def _api_member_name(self) -> str:
@@ -32,9 +30,8 @@ class ModelProxy(ABC, Generic[IModel, ModelType, ApiType]):
     def _model_id_field(self) -> str:
         return "id"
 
-    def __init__(self, client: Client, model: ModelType) -> None:
+    def __init__(self, client: Client) -> None:
         self.__dict__["_client"] = client
-        self.__dict__["_model"] = model
 
     @classmethod
     def get_api(cls, client: Client) -> ApiType:
@@ -43,6 +40,14 @@ class ModelProxy(ABC, Generic[IModel, ModelType, ApiType]):
     @property
     def api(self) -> ApiType:
         return self.get_api(self._client)
+
+
+class Entity(ModelProxy[ModelType, ApiType]):
+    _model: ModelType
+
+    def __init__(self, client: Client, model: ModelType) -> None:
+        super().__init__(client)
+        self.__dict__["_model"] = model
 
     def __getattr__(self, __name: str) -> Any:
         return self._model[__name]
@@ -66,73 +71,61 @@ class ModelProxy(ABC, Generic[IModel, ModelType, ApiType]):
         return str(self._model)
 
 
+class Repo(ModelProxy[ModelType, ApiType]):
+    _entity_type: Type[Entity]
+
+
 ### CRUD mixins
 
-_MixinHostT = TypeVar("_MixinHostT", bound=ModelProxy)
+_EntityT = TypeVar("_EntityT", bound=Entity)
+
+#### Repo mixins
 
 
-class ModelCreateMixin:
-    @classmethod
-    def create(cls: Type[_MixinHostT], client: Client, spec: IModel, **kwargs) -> _MixinHostT:
+class ModelCreateMixin(Generic[_EntityT]):
+    def create(self: Repo, spec: IModel, **kwargs) -> _EntityT:
         """
         Creates a new object on the server and returns corresponding local object
         """
 
-        (model, _) = cls.get_api(client).create(spec, **kwargs)
-        return cls(client, model)
+        (model, _) = self.api.create(spec, **kwargs)
+        return self._entity_type(self._client, model)
 
 
-class ModelRetrieveMixin:
-    @classmethod
-    def retrieve(cls: Type[_MixinHostT], client: Client, obj_id: int, **kwargs) -> _MixinHostT:
+class ModelRetrieveMixin(Generic[_EntityT]):
+    def retrieve(self: Repo, obj_id: int, **kwargs) -> _EntityT:
         """
         Retrieves an object from server by ID
         """
 
-        (model, _) = cls.get_api(client).retrieve(obj_id, **kwargs)
-        return cls(client, model)
-
-    def fetch(self: _MixinHostT, **kwargs) -> None:
-        """
-        Updates current object from server
-        """
-
-        # TODO: implement revision checking
-        self._model = self.retrieve(
-            self._client, getattr(self, self._model_id_field), **kwargs
-        )._model
+        (model, _) = self.api.retrieve(obj_id, **kwargs)
+        return self._entity_type(self._client, model)
 
 
-class ModelListMixin:
+class ModelListMixin(Generic[_EntityT]):
     @overload
-    @classmethod
-    def list(
-        cls: Type[_MixinHostT], client: Client, *, return_json: Literal[False] = False, **kwargs
-    ) -> List[_MixinHostT]:
+    def list(self: Repo, *, return_json: Literal[False] = False, **kwargs) -> List[_EntityT]:
         ...
 
     @overload
-    @classmethod
-    def list(
-        cls: Type[_MixinHostT], client: Client, *, return_json: Literal[True] = False, **kwargs
-    ) -> List[Any]:
+    def list(self: Repo, *, return_json: Literal[True] = False, **kwargs) -> List[Any]:
         ...
 
-    @classmethod
-    def list(
-        cls: Type[_MixinHostT], client: Client, *, return_json: bool = False, **kwargs
-    ) -> List[Union[_MixinHostT, Any]]:
+    def list(self: Repo, *, return_json: bool = False, **kwargs) -> List[Union[_EntityT, Any]]:
         """
         Retrieves all objects from the server and returns them in basic or JSON format.
         """
 
         results = get_paginated_collection(
-            endpoint=cls.get_api(client).list_endpoint, return_json=return_json, **kwargs
+            endpoint=self.api.list_endpoint, return_json=return_json, **kwargs
         )
 
         if return_json:
             return json.dumps(results)
-        return [cls(client, model) for model in results]
+        return [self._entity_type(self._client, model) for model in results]
+
+
+#### Entity mixins
 
 
 class ModelUpdateMixin(ABC):
@@ -140,14 +133,22 @@ class ModelUpdateMixin(ABC):
     def _model_partial_update_arg(self) -> str:
         ...
 
-    def commit(self: _MixinHostT, **kwargs) -> None:
+    def fetch(self: Entity, **kwargs) -> None:
+        """
+        Updates current object from server
+        """
+
+        # TODO: implement revision checking
+        (self._model, _) = self.api.retrieve(getattr(self, self._model_id_field), **kwargs)
+
+    def commit(self: Entity, **kwargs) -> None:
         """
         Commits local model changes to the server
         """
 
         # TODO: implement revision checking
 
-        self.api.partial_update(
+        (self._model, _) = self.api.partial_update(
             getattr(self, self._model_id_field),
             **{self._model_partial_update_arg: self._model.to_dict()},
             **kwargs,
@@ -155,20 +156,9 @@ class ModelUpdateMixin(ABC):
 
 
 class ModelDeleteMixin:
-    def remove(self: _MixinHostT, **kwargs) -> None:
+    def remove(self: Entity, **kwargs) -> None:
         """
         Removes current object on the server
         """
 
         self.api.destroy(getattr(self, self._model_id_field), **kwargs)
-
-
-### Composite usability mixins
-
-
-class ModelCrudMixin(
-    ModelListMixin, ModelCreateMixin, ModelRetrieveMixin, ModelUpdateMixin, ModelDeleteMixin
-):
-    """
-    Provides CRUD operations for a ModelProxy
-    """

@@ -27,7 +27,7 @@ def create_git_repo(
     common_headers = client.api.get_common_headers()
 
     response = client.api.rest_client.POST(
-        client._api_map.git_create(task_id),
+        client.api_map.git_create(task_id),
         post_params={"path": repo_url, "lfs": use_lfs, "tid": task_id},
         headers=common_headers,
     )
@@ -36,7 +36,7 @@ def create_git_repo(
     client.logger.info(f"Create RQ ID: {rq_id}")
 
     client.logger.debug("Awaiting a dataset repository to be created for the task %s...", task_id)
-    check_url = client._api_map.git_check(rq_id)
+    check_url = client.api_map.git_check(rq_id)
     status = None
     while status != "finished":
         sleep(status_check_period)

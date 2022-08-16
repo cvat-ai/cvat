@@ -1,4 +1,3 @@
-# Copyright (C) 2020-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -6,36 +5,40 @@
 from __future__ import annotations
 
 import io
+import json
 import mimetypes
 import os
 import os.path as osp
-from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from time import sleep
+from typing import Any, Dict, List, Optional, Sequence
 
 from PIL import Image
 
-from cvat_sdk.api_client import apis, models
+from cvat_sdk.api_client import apis, exceptions, models
+from cvat_sdk.core import git
 from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.model_proxy import ModelCrudMixin, ModelProxy
+from cvat_sdk.core.model_proxy import (
+    Entity,
+    ModelCreateMixin,
+    ModelDeleteMixin,
+    ModelListMixin,
+    ModelProxy,
+    ModelRetrieveMixin,
+    ModelUpdateMixin,
+    Repo,
+)
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.types import ResourceType
-from cvat_sdk.core.uploading import Uploader
+from cvat_sdk.core.uploading import AnnotationUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
 
-if TYPE_CHECKING:
-    from cvat_sdk.core.client import Client
 
-
-class TaskProxy(
-    ModelProxy[models.ITaskRead, models.TaskRead, apis.TasksApi], models.ITaskRead, ModelCrudMixin
-):
+class _TaskProxy(ModelProxy[models.TaskRead, apis.TasksApi]):
     _api_member_name = "tasks_api"
-    _model_partial_update_arg = "patched_task_write_request"
 
-    @classmethod
-    def create(cls, client: Client, spec: models.ITaskWriteRequest, **kwargs) -> TaskProxy:
-        # Specifies 'spec' arg type
-        return super().create(client, spec, **kwargs)
+
+class Task(Entity, models.ITaskRead, _TaskProxy, ModelUpdateMixin, ModelDeleteMixin):
+    _model_partial_update_arg = "patched_task_write_request"
 
     def upload_data(
         self,
@@ -84,7 +87,7 @@ class TaskProxy(
                 _content_type="multipart/form-data",
             )
         elif resource_type == ResourceType.LOCAL:
-            url = self._client._api_map.make_endpoint_url(
+            url = self._client.api_map.make_endpoint_url(
                 self.api.create_data_endpoint.path, kwsub={"id": self.id}
             )
 
@@ -102,7 +105,7 @@ class TaskProxy(
         Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
 
-        Uploader(self._client).upload_annotation_file_and_wait(
+        AnnotationUploader(self._client).upload_file_and_wait(
             self.api.create_annotations_endpoint,
             filename,
             format_name,
@@ -113,14 +116,14 @@ class TaskProxy(
 
         self._client.logger.info(f"Annotation file '{filename}' for task #{self.id} uploaded")
 
-    def retrieve_frame(
+    def get_frame(
         self,
         frame_id: int,
         *,
         quality: Optional[str] = None,
     ) -> io.RawIOBase:
         (_, response) = self.api.retrieve_data(self.id, frame_id, quality, type="frame")
-        return BytesIO(response.data)
+        return io.BytesIO(response.data)
 
     def download_frames(
         self,
@@ -137,7 +140,7 @@ class TaskProxy(
         os.makedirs(outdir, exist_ok=True)
 
         for frame_id in frame_ids:
-            frame_bytes = self.retrieve_frame(frame_id, quality=quality)
+            frame_bytes = self.get_frame(frame_id, quality=quality)
 
             im = Image.open(frame_bytes)
             mime_type = im.get_format_mimetype() or "image/jpg"
@@ -200,3 +203,145 @@ class TaskProxy(
         )
 
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
+
+
+class TasksRepo(
+    _TaskProxy,
+    Repo,
+    ModelCreateMixin[Task],
+    ModelRetrieveMixin[Task],
+    ModelListMixin[Task],
+    ModelDeleteMixin,
+):
+    _entity_type = Task
+
+    def create(self, spec: models.ITaskWriteRequest, **kwargs) -> Task:
+        if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
+            raise exceptions.ApiValueError(
+                "Can't set labels to a task inside a project. "
+                "Tasks inside a project use project's labels.",
+                ["labels"],
+            )
+
+        task = super().create(spec, **kwargs)
+        self._client.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
+        return task
+
+    def create_from_data(
+        self,
+        spec: models.ITaskWriteRequest,
+        resource_type: ResourceType,
+        resources: Sequence[str],
+        *,
+        data_params: Optional[Dict[str, Any]] = None,
+        annotation_path: str = "",
+        annotation_format: str = "CVAT XML 1.1",
+        status_check_period: int = None,
+        dataset_repository_url: str = "",
+        use_lfs: bool = False,
+        pbar: Optional[ProgressReporter] = None,
+    ) -> Task:
+        """
+        Create a new task with the given name and labels JSON and
+        add the files to it.
+
+        Returns: id of the created task
+        """
+        if status_check_period is None:
+            status_check_period = self._client.config.status_check_period
+
+        task = self.create(spec=spec)
+        task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
+
+        self._client.logger.info("Awaiting for task %s creation...", task.id)
+        status: models.RqStatus = None
+        while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
+            sleep(status_check_period)
+            (status, response) = self.api.retrieve_status(task.id)
+
+            self._client.logger.info(
+                "Task %s creation status=%s, message=%s",
+                task.id,
+                status.state.value,
+                status.message,
+            )
+
+            if status.state.value == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
+                raise exceptions.ApiException(
+                    status=status.state.value, reason=status.message, http_resp=response
+                )
+
+            status = status.state.value
+
+        if annotation_path:
+            task.import_annotations(annotation_format, annotation_path, pbar=pbar)
+
+        if dataset_repository_url:
+            git.create_git_repo(
+                self,
+                task_id=task.id,
+                repo_url=dataset_repository_url,
+                status_check_period=status_check_period,
+                use_lfs=use_lfs,
+            )
+
+        task.fetch()
+
+        return task
+
+    def delete_by_ids(self, task_ids: Sequence[int]) -> None:
+        """
+        Delete a list of tasks, ignoring those which don't exist.
+        """
+
+        for task_id in task_ids:
+            (_, response) = self.api.destroy(task_id, _check_status=False)
+
+            if 200 <= response.status <= 299:
+                self._client.logger.info(f"Task ID {task_id} deleted")
+            elif response.status == 404:
+                self._client.logger.info(f"Task ID {task_id} not found")
+            else:
+                self._client.logger.warning(
+                    f"Failed to delete task ID {task_id}: "
+                    f"{response.msg} (status {response.status})"
+                )
+
+    def create_from_backup(
+        self,
+        filename: str,
+        *,
+        status_check_period: int = None,
+        pbar: Optional[ProgressReporter] = None,
+    ) -> Task:
+        """
+        Import a task from a backup file
+        """
+        if status_check_period is None:
+            status_check_period = self._client.config.status_check_period
+
+        params = {"filename": osp.basename(filename)}
+        url = self._client.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
+        uploader = Uploader(self._client)
+        response = uploader.upload_file(
+            url,
+            filename,
+            meta=params,
+            query_params=params,
+            pbar=pbar,
+            logger=self._client.logger.debug,
+        )
+
+        rq_id = json.loads(response.data)["rq_id"]
+        response = self._client.wait_for_completion(
+            url,
+            success_status=201,
+            positive_statuses=[202],
+            post_params={"rq_id": rq_id},
+            status_check_period=status_check_period,
+        )
+
+        task_id = json.loads(response.data)["id"]
+        self._client.logger.info(f"Task has been imported sucessfully. Task ID: {task_id}")
+
+        return self.retrieve(task_id)
