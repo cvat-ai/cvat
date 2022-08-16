@@ -372,14 +372,13 @@ class TaskData(InstanceLabelData):
             tracked_shape["source"] = track["source"]
             tracked_shape["label_id"] = track["label_id"]
 
-        idx += 1
         return TaskData.Track(
             label=self._get_label_name(track["label_id"]),
             group=track["group"],
             source=track["source"],
             shapes=[self._export_tracked_shape(shape)
                 for shape in tracked_shapes if shape["frame"] not in self._deleted_frames],
-            elements=[self._export_track(element, idx) for element in track.get("elements", [])]
+            elements=[self._export_track(element, i) for i, element in enumerate(track.get("elements", []))]
         )
 
     @staticmethod
@@ -455,8 +454,7 @@ class TaskData(InstanceLabelData):
 
     @property
     def tracks(self):
-        idx = 0
-        for track in self._annotation_ir.tracks:
+        for idx, track in enumerate(self._annotation_ir.tracks):
             yield self._export_track(track, idx)
 
     @property
@@ -868,8 +866,6 @@ class ProjectData(InstanceLabelData):
             tracked_shape["source"] = track["source"]
             tracked_shape["label_id"] = track["label_id"]
 
-        idx += 1
-
         return ProjectData.Track(
             label=self._get_label_name(track["label_id"]),
             group=track["group"],
@@ -877,7 +873,8 @@ class ProjectData(InstanceLabelData):
             shapes=[self._export_tracked_shape(shape, task_id) for shape in tracked_shapes
                 if (task_id, shape["frame"]) not in self._deleted_frames],
             task_id=task_id,
-            elements=[self._export_track(element, task_id, task_size, idx) for element in track.get("elements", [])]
+            elements=[self._export_track(element, task_id, task_size, i)
+                for i, element in enumerate(track.get("elements", []))]
         )
 
     def group_by_frame(self, include_empty=False):

@@ -96,9 +96,8 @@ class AnnotationIR:
         segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
         if len(segment_shapes) < len(track['shapes']):
-            if len(track.get('elements', [])):
-                for element in track.get('elements', []):
-                    element = cls._slice_track(element, start, stop)
+            for element in track.get('elements', []):
+                element = cls._slice_track(element, start, stop)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
@@ -380,8 +379,8 @@ class TrackManager(ObjectManager):
                 element_shapes = element_tracks.to_shapes(end_frame, end_skeleton_frame=track_shapes[-1]["frame"])
 
                 for i in range(len(element_shapes) // len(track_shapes)):
-                    for track_shape, element in zip(track_shapes, element_shapes[len(track_shapes) * i : len(track_shapes) * (i + 1)]):
-                        track_shape["elements"].append(element)
+                    for track_shape, element_shape in zip(track_shapes, element_shapes[len(track_shapes) * i : len(track_shapes) * (i + 1)]):
+                        track_shape["elements"].append(element_shape)
 
             shapes.extend(track_shapes)
         return shapes
@@ -712,14 +711,6 @@ class TrackManager(ObjectManager):
 
             return shapes
 
-        def skeleton_interpolation(shape0, shape1):
-            shapes = []
-            for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                shape = copy_shape(shape0, frame)
-                shapes.append(shape)
-
-            return shapes
-
         def interpolate(shape0, shape1):
             is_same_type = shape0["type"] == shape1["type"]
             is_rectangle = shape0["type"] == ShapeType.RECTANGLE
@@ -734,14 +725,12 @@ class TrackManager(ObjectManager):
                 raise NotImplementedError()
 
             shapes = []
-            if is_rectangle or is_cuboid or is_ellipse:
+            if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
                 shapes = simple_interpolation(shape0, shape1)
             elif is_points:
                 shapes = points_interpolation(shape0, shape1)
             elif is_polygon or is_polyline:
                 shapes = polyshape_interpolation(shape0, shape1)
-            elif is_skeleton:
-                shapes = skeleton_interpolation(shape0, shape1)
             else:
                 raise NotImplementedError()
 
@@ -750,7 +739,6 @@ class TrackManager(ObjectManager):
         shapes = []
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
-
         for shape in track["shapes"]:
             if prev_shape:
                 assert shape["frame"] > curr_frame

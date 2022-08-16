@@ -188,9 +188,7 @@ class JobAnnotation:
                 track["id"] = db_track.id
                 for shape in track["shapes"]:
                     shape["id"] = db_shapes[shape_idx].id
-
                     shape_idx += 1
-
                 create_tracks(track["elements"], db_track)
 
         create_tracks(tracks)
@@ -396,7 +394,7 @@ class JobAnnotation:
     def _init_shapes_from_db(self):
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
             "label",
-            "labeledshapeattributeval_set",
+            "labeledshapeattributeval_set"
         ).values(
             'id',
             'label_id',
@@ -412,8 +410,8 @@ class JobAnnotation:
             'parent',
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
-            'labeledshapeattributeval__id'
-            ).order_by('id')
+            'labeledshapeattributeval__id',
+            ).order_by('frame')
 
         db_shapes = _merge_table_rows(
             rows=db_shapes,
@@ -433,7 +431,6 @@ class JobAnnotation:
                 self.db_attributes[db_shape.label_id]["all"].values())
 
             db_shape.elements = []
-
             if db_shape.parent is None:
                 shapes[db_shape.id] = db_shape
             else:
@@ -446,7 +443,7 @@ class JobAnnotation:
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(
             "label",
             "labeledtrackattributeval_set",
-            "trackedshape_set__trackedshapeattributeval_set",
+            "trackedshape_set__trackedshapeattributeval_set"
         ).values(
             "id",
             "frame",
@@ -502,7 +499,7 @@ class JobAnnotation:
                     'trackedshapeattributeval__value',
                     'trackedshapeattributeval__spec_id',
                     'trackedshapeattributeval__id',
-                ],
+                ]
             }, 'id')
 
             # A result table can consist many equal rows for track/shape attributes
@@ -522,7 +519,6 @@ class JobAnnotation:
                 default_attribute_values = db_shape["trackedshapeattributeval_set"]
 
             db_track.elements = []
-
             if db_track.parent is None:
                 tracks[db_track.id] = db_track
             else:

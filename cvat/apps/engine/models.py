@@ -642,17 +642,11 @@ class LabeledImageAttributeVal(AttributeVal):
 class LabeledShape(Annotation, Shape):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
-    def __str__(self):
-        return self.name
-
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
 
 class LabeledTrack(Annotation):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
-
-    def __str__(self):
-        return self.name
 
 class LabeledTrackAttributeVal(AttributeVal):
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)

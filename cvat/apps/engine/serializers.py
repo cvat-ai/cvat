@@ -512,6 +512,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
+
         # configure source/target storages for import/export
         storages = _configure_related_storages({
             'source_storage': validated_data.pop('source_storage', None),
@@ -717,6 +718,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
+
         # configure source/target storages for import/export
         storages = _configure_related_storages({
             'source_storage': validated_data.pop('source_storage', None),
