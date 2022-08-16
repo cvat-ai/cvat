@@ -1563,10 +1563,10 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     source = ann.attributes.pop('source').lower() \
                         if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
 
-                    type = shapes[ann.type]
+                    shape_type = shapes[ann.type]
                     elements = []
                     if point_cat and type == ShapeType.POINTS:
-                        type = ShapeType.SKELETON
+                        shape_type = ShapeType.SKELETON
                         for i in range(len(ann.points) // 2):
                             elements.append(instance_data.LabeledShape(
                                 type=ShapeType.POINTS,
@@ -1582,7 +1582,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
                     if track_id is None or dm_dataset.format != 'cvat' :
                         instance_data.add_shape(instance_data.LabeledShape(
-                            type=type,
+                            type=shape_type,
                             frame=frame_number,
                             points=ann.points,
                             label=label_cat.items[ann.label].name,
