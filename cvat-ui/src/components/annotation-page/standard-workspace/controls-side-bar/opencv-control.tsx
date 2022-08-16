@@ -17,12 +17,12 @@ import message from 'antd/lib/message';
 
 import { OpenCVIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
     CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState,
-} from 'reducers/interfaces';
+} from 'reducers';
 import {
     interactWithCanvas,
     fetchAnnotationsAsync,

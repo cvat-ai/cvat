@@ -5,7 +5,7 @@
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActions, UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { UserAgreementsState } from './interfaces';
+import { UserAgreementsState } from '.';
 
 const defaultState: UserAgreementsState = {
     list: [],

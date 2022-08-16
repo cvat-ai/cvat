@@ -11,7 +11,7 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -28,7 +28,7 @@ import {
     ShapeType,
     Task,
     Workspace,
-} from 'reducers/interfaces';
+} from 'reducers';
 import { updateJobAsync } from './tasks-actions';
 import { switchToolsBlockerState } from './settings-actions';
 
@@ -109,7 +109,7 @@ async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
         'polyline count': total.polyline.shape + total.polyline.track,
         'points count': total.points.shape + total.points.track,
         'cuboids count': total.cuboid.shape + total.cuboid.track,
-        'tag count': total.tags,
+        'tag count': total.tag,
     };
 }
 
@@ -464,22 +464,26 @@ export function showFilters(visible: boolean): AnyAction {
 export function propagateObjectAsync(sessionInstance: any, objectState: any, from: number, to: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const copy = {
-                attributes: objectState.attributes,
-                points: objectState.points,
-                occluded: objectState.occluded,
-                objectType: objectState.objectType !== ObjectType.TRACK ? objectState.objectType : ObjectType.SHAPE,
-                shapeType: objectState.shapeType,
-                label: objectState.label,
-                zOrder: objectState.zOrder,
+            const getCopyFromState = (_objectState: any): any => ({
+                attributes: _objectState.attributes,
+                points: _objectState.shapeType === 'skeleton' ? null : _objectState.points,
+                occluded: _objectState.occluded,
+                objectType: _objectState.objectType !== ObjectType.TRACK ? _objectState.objectType : ObjectType.SHAPE,
+                shapeType: _objectState.shapeType,
+                label: _objectState.label,
+                zOrder: _objectState.zOrder,
                 frame: from,
-                source: objectState.source,
-            };
+                elements: _objectState.shapeType === 'skeleton' ? _objectState.elements
+                    .map((element: any): any => getCopyFromState(element)) : [],
+                source: _objectState.source,
+            });
 
+            const copy = getCopyFromState(objectState);
             await sessionInstance.logger.log(LogType.propagateObject, { count: to - from + 1 });
             const states = [];
             for (let frame = from; frame <= to; frame++) {
                 copy.frame = frame;
+                copy.elements.forEach((element: any) => { element.frame = frame; });
                 const newState = new cvat.classes.ObjectState(copy);
                 states.push(newState);
             }
@@ -585,11 +589,16 @@ export function copyShape(objectState: any): AnyAction {
     };
 }
 
-export function activateObject(activatedStateID: number | null, activatedAttributeID: number | null): AnyAction {
+export function activateObject(
+    activatedStateID: number | null,
+    activatedElementID: number | null,
+    activatedAttributeID: number | null,
+): AnyAction {
     return {
         type: AnnotationActionTypes.ACTIVATE_OBJECT,
         payload: {
             activatedStateID,
+            activatedElementID,
             activatedAttributeID,
         },
     };
@@ -1263,11 +1272,18 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
-                dispatch(activateObject(null, null));
+                dispatch(activateObject(null, null, null));
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
+
+            const withSkeletonElements = states.some((state: any) => state.parentID !== null);
+            if (withSkeletonElements) {
+                dispatch(fetchAnnotationsAsync());
+                return;
+            }
+
             const history = await jobInstance.actions.get();
             const [minZ, maxZ] = computeZRange(states);
 
@@ -1418,12 +1434,12 @@ export function changeGroupColorAsync(group: number, color: string): ThunkAction
         const groupStates = state.annotation.annotations.states.filter(
             (_state: any): boolean => _state.group.id === group,
         );
-        if (groupStates.length) {
-            groupStates[0].group.color = color;
-            dispatch(updateAnnotationsAsync(groupStates));
-        } else {
-            dispatch(updateAnnotationsAsync([]));
+
+        for (const objectState of groupStates) {
+            objectState.group.color = color;
         }
+
+        dispatch(updateAnnotationsAsync(groupStates));
     };
 }
 
@@ -1511,7 +1527,7 @@ export function pasteShapeAsync(): ThunkAction {
             drawing: { activeInitialState: initialState },
         } = getStore().getState().annotation;
 
-        if (initialState) {
+        if (initialState && canvasInstance) {
             let activeControl = ActiveControl.CURSOR;
             if (initialState.shapeType === ShapeType.RECTANGLE) {
                 activeControl = ActiveControl.DRAW_RECTANGLE;
@@ -1523,6 +1539,10 @@ export function pasteShapeAsync(): ThunkAction {
                 activeControl = ActiveControl.DRAW_POLYLINE;
             } else if (initialState.shapeType === ShapeType.CUBOID) {
                 activeControl = ActiveControl.DRAW_CUBOID;
+            } else if (initialState.shapeType === ShapeType.ELLIPSE) {
+                activeControl = ActiveControl.DRAW_ELLIPSE;
+            } else if (initialState.shapeType === ShapeType.SKELETON) {
+                activeControl = ActiveControl.DRAW_SKELETON;
             }
 
             dispatch({
@@ -1531,9 +1551,8 @@ export function pasteShapeAsync(): ThunkAction {
                     activeControl,
                 },
             });
-            if (canvasInstance instanceof Canvas) {
-                canvasInstance.cancel();
-            }
+            canvasInstance.cancel();
+
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
                     objectType: ObjectType.TAG,
@@ -1546,6 +1565,8 @@ export function pasteShapeAsync(): ThunkAction {
                 canvasInstance.draw({
                     enabled: true,
                     initialState,
+                    ...(initialState.shapeType === ShapeType.SKELETON ?
+                        { skeletonSVG: initialState.label.structure.svg } : {}),
                 });
             }
         }
@@ -1614,6 +1635,8 @@ export function repeatDrawShapeAsync(): ThunkAction {
             activeControl = ActiveControl.DRAW_CUBOID;
         } else if (activeShapeType === ShapeType.ELLIPSE) {
             activeControl = ActiveControl.DRAW_ELLIPSE;
+        } else if (activeShapeType === ShapeType.SKELETON) {
+            activeControl = ActiveControl.DRAW_SKELETON;
         }
 
         dispatch({
@@ -1625,6 +1648,11 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         if (canvasInstance instanceof Canvas) {
             canvasInstance.cancel();
+        }
+
+        const [activeLabel] = labels.filter((label: any) => label.id === activeLabelID);
+        if (!activeLabel) {
+            throw new Error(`Label with ID ${activeLabelID}, was not found`);
         }
 
         if (activeObjectType === ObjectType.TAG) {
@@ -1645,6 +1673,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
+                skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure.svg : undefined,
             });
         }
     };
@@ -1671,6 +1700,8 @@ export function redrawShapeAsync(): ThunkAction {
                     activeControl = ActiveControl.DRAW_POLYLINE;
                 } else if (state.shapeType === ShapeType.CUBOID) {
                     activeControl = ActiveControl.DRAW_CUBOID;
+                } else if (state.shapeType === ShapeType.SKELETON) {
+                    activeControl = ActiveControl.DRAW_SKELETON;
                 }
 
                 dispatch({

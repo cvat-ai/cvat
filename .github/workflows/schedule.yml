@@ -224,6 +224,9 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
+          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
+            --entrypoint /bin/bash -u root cvat/server \
+            -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
           cd cvat-sdk/
           gen/generate.sh

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { getCVATStore } from 'cvat-store';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 export default function isAbleToChangeFrame(): boolean {
     const store = getCVATStore();

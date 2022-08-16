@@ -12,18 +12,52 @@ import Modal from 'antd/lib/modal';
 import { Store } from 'antd/lib/form/interface';
 import Paragraph from 'antd/lib/typography/Paragraph';
 
+import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import {
-    Label, Attribute, validateParsedLabel, idGenerator,
-} from './common';
+import { validateParsedLabel, idGenerator, LabelOptColor } from './common';
+
+function replaceTraillingCommas(value: string): string {
+    return value.replace(/,{1}[\s]*}/g, '}');
+}
+
+function transformSkeletonSVG(value: string): string {
+    // converts all data-label-id="<id>" to corresponding data-label-name="<name>" for skeletons SVG code
+    // the function guarantees successful result only if all labels configuration is passed
+    // or if the whole configuration for one label is passed (with sublabels, etc)
+
+    let data = value;
+    const idNameMapping: Record<string, string> = {};
+    try {
+        const parsed = JSON.parse(data.trim().startsWith('[') ? data : `[${data}]`);
+        for (const label of parsed) {
+            for (const sublabel of (label.sublabels || [])) {
+                idNameMapping[sublabel.id] = sublabel.name;
+            }
+        }
+    } catch (error: any) {
+        // unsuccessful parsing, return value as is
+        return value;
+    }
+
+    const matches = data.matchAll(/data-label-id=&quot;([\d]+)&quot;/g);
+    for (const match of matches) {
+        if (idNameMapping[match[1]]) {
+            data = data.replace(
+                match[0], `data-label-name=&quot;${idNameMapping[match[1]]}&quot;`,
+            );
+        }
+    }
+
+    return data;
+}
 
 function validateLabels(_: RuleObject, value: string): Promise<void> {
     try {
-        const parsed = JSON.parse(value);
+        const parsed = JSON.parse(replaceTraillingCommas(value));
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
-        const labelNames = parsed.map((label: Label) => label.name);
+        const labelNames = parsed.map((label: RawLabel) => label.name);
         if (new Set(labelNames).size !== labelNames.length) {
             return Promise.reject(new Error('Label names must be unique for the task'));
         }
@@ -43,17 +77,18 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
 }
 
 interface Props {
-    labels: Label[];
-    onSubmit: (labels: Label[]) => void;
+    labels: LabelOptColor[];
+    onSubmit: (labels: LabelOptColor[]) => void;
 }
 
-function convertLabels(labels: Label[]): Label[] {
+function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
     return labels.map(
-        (label: any): Label => ({
+        (label: LabelOptColor): LabelOptColor => ({
             ...label,
-            id: label.id < 0 ? undefined : label.id,
+            id: (label.id as number) < 0 ? undefined : label.id,
+            svg: label.svg ? label.svg.replaceAll('"', '&quot;') : undefined,
             attributes: label.attributes.map(
-                (attribute: any): Attribute => ({
+                (attribute: any): RawAttribute => ({
                     ...attribute,
                     id: attribute.id < 0 ? undefined : attribute.id,
                 }),
@@ -81,11 +116,16 @@ export default class RawViewer extends React.PureComponent<Props> {
 
     private handleSubmit = (values: Store): void => {
         const { onSubmit, labels } = this.props;
-        const parsed = JSON.parse(values.labels);
+        const parsed = JSON.parse(
+            replaceTraillingCommas(values.labels),
+        ) as RawLabel[];
 
         const labelIDs: number[] = [];
         const attrIDs: number[] = [];
         for (const label of parsed) {
+            if (label.svg) {
+                label.svg = label.svg.replaceAll('&quot;', '"');
+            }
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
                 labelIDs.push(label.id);
@@ -98,10 +138,18 @@ export default class RawViewer extends React.PureComponent<Props> {
             }
         }
 
-        const deletedLabels = labels.filter((_label: Label) => _label.id >= 0 && !labelIDs.includes(_label.id));
+        const deletedLabels = labels
+            .filter((_label: LabelOptColor) => {
+                const labelID = _label.id as number;
+                return labelID >= 0 && !labelIDs.includes(labelID);
+            });
+
         const deletedAttributes = labels
-            .reduce((acc: Attribute[], _label) => [...acc, ..._label.attributes], [])
-            .filter((_attr: Attribute) => _attr.id >= 0 && !attrIDs.includes(_attr.id));
+            .reduce((acc: RawAttribute[], _label) => [...acc, ..._label.attributes], [])
+            .filter((_attr: RawAttribute) => {
+                const attrID = _attr.id as number;
+                return attrID >= 0 && !attrIDs.includes(attrID);
+            });
 
         if (deletedLabels.length || deletedAttributes.length) {
             Modal.confirm({
@@ -114,7 +162,9 @@ export default class RawViewer extends React.PureComponent<Props> {
                                 Following labels are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-labels'>
                                     {deletedLabels
-                                        .map((_label: Label) => <Tag color={_label.color}>{_label.name}</Tag>)}
+                                        .map((_label: LabelOptColor): JSX.Element => (
+                                            <Tag key={_label.id as number} color={_label.color}>{_label.name}</Tag>
+                                        ))}
                                 </div>
 
                             </Paragraph>
@@ -123,7 +173,9 @@ export default class RawViewer extends React.PureComponent<Props> {
                             <Paragraph>
                                 Following attributes are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
-                                    {deletedAttributes.map((_attr: Attribute) => <Tag>{_attr.name}</Tag>)}
+                                    {deletedAttributes.map((_attr: RawAttribute) => (
+                                        <Tag key={_attr.id as number}>{_attr.name}</Tag>
+                                    ))}
                                 </div>
                             </Paragraph>
                         ) : null}
@@ -153,7 +205,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                 <Form.Item name='labels' initialValue={textLabels} rules={[{ validator: validateLabels }]}>
                     <Input.TextArea
                         onPaste={(e: React.ClipboardEvent) => {
-                            const data = e.clipboardData.getData('text');
+                            const data = transformSkeletonSVG(e.clipboardData.getData('text'));
                             const element = window.document.getElementsByClassName('cvat-raw-labels-viewer')[0] as HTMLTextAreaElement;
                             if (element && this.formRef.current) {
                                 const { selectionStart, selectionEnd } = element;

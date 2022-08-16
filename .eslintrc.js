@@ -24,10 +24,10 @@ module.exports = {
         'plugin:import/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
     rules: {
-        'header/header': [2, 'line', [{
-            pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
-            template: ' Copyright (C) 2022 Intel Corporation'
-        }, '', ' SPDX-License-Identifier: MIT']],
+        // 'header/header': [2, 'line', [{
+        //     pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
+        //     template: ' Copyright (C) 2022 Intel Corporation'
+        // }, '', ' SPDX-License-Identifier: MIT']],
         'no-plusplus': 0,
         'no-continue': 0,
         'no-console': 0,
@@ -52,6 +52,7 @@ module.exports = {
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
         'import/prefer-default-export': 0, // works incorrect with interfaces
 
+        '@typescript-eslint/ban-ts-comment': 0,
         '@typescript-eslint/no-explicit-any': 0,
         '@typescript-eslint/indent': ['error', 4],
         '@typescript-eslint/lines-between-class-members': 0,

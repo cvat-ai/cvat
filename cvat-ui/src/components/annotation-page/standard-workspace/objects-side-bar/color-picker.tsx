@@ -10,7 +10,7 @@ import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
 import { SketchPicker } from 'react-color';
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 const core = getCore();

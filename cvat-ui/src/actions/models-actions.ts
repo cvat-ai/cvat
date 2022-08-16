@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { Model, ActiveInference, RQStatus } from 'reducers/interfaces';
-import getCore from 'cvat-core-wrapper';
+import { Model, ActiveInference, RQStatus } from 'reducers';
+import { getCore } from 'cvat-core-wrapper';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',

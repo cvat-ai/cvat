@@ -103,6 +103,7 @@
                 'rotation',
                 'type',
                 'shapes',
+                'elements',
                 'attributes',
                 'value',
                 'spec_id',

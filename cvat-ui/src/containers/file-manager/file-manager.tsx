@@ -9,7 +9,7 @@ import { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 
 import { loadShareDataAsync } from 'actions/share-actions';
-import { ShareItem, CombinedState } from 'reducers/interfaces';
+import { ShareItem, CombinedState } from 'reducers';
 
 interface OwnProps {
     ref: any;

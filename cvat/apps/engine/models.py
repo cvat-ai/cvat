@@ -57,6 +57,29 @@ class StatusChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class LabelType(str, Enum):
+    BBOX = 'bbox'
+    ELLIPSE = 'ellipse'
+    POLYGON = 'polygon'
+    POLYLINE = 'polyline'
+    POINTS = 'points'
+    CUBOID = 'cuboid'
+    CUBOID_3D = 'cuboid_3d'
+    SKELETON = 'skeleton'
+    TAG = 'tag'
+    ANY = 'any'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
+
+    def __str__(self):
+        return self.value
+
 class StageChoice(str, Enum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
@@ -474,13 +497,26 @@ class Label(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
+    type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=LabelType.ANY)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sublabels')
 
     def __str__(self):
         return self.name
 
+    def has_parent_label(self):
+        return bool(self.parent)
+
     class Meta:
         default_permissions = ()
-        unique_together = ('task', 'name')
+        unique_together = ('task', 'name', 'parent')
+
+class Skeleton(models.Model):
+    root = models.OneToOneField(Label, on_delete=models.CASCADE)
+    svg = models.TextField(null=True, default=None)
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ('root',)
 
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'
@@ -529,6 +565,7 @@ class ShapeType(str, Enum):
     POINTS = 'points'       # (x0, y0, ..., xn, yn)
     ELLIPSE = 'ellipse'     # (cx, cy, rx, ty)
     CUBOID = 'cuboid'       # (x0, y0, ..., x7, y7)
+    SKELETON = 'skeleton'
 
     @classmethod
     def choices(cls):
@@ -587,8 +624,9 @@ class JobCommit(Commit):
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
     occluded = models.BooleanField(default=False)
+    outside = models.BooleanField(default=False)
     z_order = models.IntegerField(default=0)
-    points = FloatArrayField()
+    points = FloatArrayField(default=[])
     rotation = FloatField(default=0)
 
     class Meta:
@@ -602,13 +640,13 @@ class LabeledImageAttributeVal(AttributeVal):
     image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE)
 
 class LabeledShape(Annotation, Shape):
-    pass
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
 
 class LabeledTrack(Annotation):
-    pass
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
@@ -617,7 +655,6 @@ class TrackedShape(Shape):
     id = models.BigAutoField(primary_key=True)
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
-    outside = models.BooleanField(default=False)
 
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)

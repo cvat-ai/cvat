@@ -8,7 +8,7 @@ import { useSelector } from 'react-redux';
 import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import TopBarComponent from './top-bar';
 import MembersList from './members-list';
 

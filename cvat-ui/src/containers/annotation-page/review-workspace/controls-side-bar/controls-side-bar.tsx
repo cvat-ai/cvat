@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { selectIssuePosition as selectIssuePositionAction, rotateCurrentFrame } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/review-workspace/controls-side-bar/controls-side-bar';
-import { ActiveControl, CombinedState, Rotation } from 'reducers/interfaces';
+import { ActiveControl, CombinedState, Rotation } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
 
 interface StateToProps {

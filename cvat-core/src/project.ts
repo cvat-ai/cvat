@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
-    const PluginRegistry = require('./plugins');
+    const PluginRegistry = require('./plugins').default;
     const { ArgumentError } = require('./exceptions');
     const { Label } = require('./labels');
     const User = require('./user');
@@ -48,10 +48,8 @@
             data.labels = [];
 
             if (Array.isArray(initialData.labels)) {
-                for (const label of initialData.labels) {
-                    const classInstance = new Label(label);
-                    data.labels.push(classInstance);
-                }
+                data.labels = initialData.labels
+                    .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
             }
 
             if (typeof initialData.training_project === 'object') {

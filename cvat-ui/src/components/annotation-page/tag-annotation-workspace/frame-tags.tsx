@@ -11,7 +11,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
-import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers';
 
 interface StateToProps {
     states: any[];

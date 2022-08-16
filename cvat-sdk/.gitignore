@@ -72,4 +72,6 @@ schema/
 # Generated code
 cvat_sdk/api_client/
 requirements/
+docs/
 setup.py
+README.md
