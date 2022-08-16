@@ -129,7 +129,7 @@
             const tags = this.tags[frame] || [];
 
             const objects = [].concat(tracks, shapes, tags);
-            const visible = []
+            const visible = [];
 
             for (const object of objects) {
                 if (object.removed) {
@@ -137,7 +137,7 @@
                 }
 
                 const stateData = object.get(frame);
-                if (!allTracks && stateData.outside && !stateData.keyframe) {
+                if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
                     continue;
                 }
 
@@ -549,8 +549,17 @@
                 tracks.forEach((track) => {
                     if (track.frame <= endframe) {
                         if (delTrackKeyframesOnly) {
-                            for (const keyframe in track.shapes) {
-                                if (keyframe >= startframe && keyframe <= endframe) { delete track.shapes[keyframe]; }
+                            for (const keyframe of Object.keys(track.shapes)) {
+                                if (+keyframe >= startframe && +keyframe <= endframe) {
+                                    delete track.shapes[keyframe];
+                                    (track.elements || []).forEach((element) => {
+                                        if (keyframe in element.shapes) {
+                                            delete element.shapes[keyframe];
+                                            element.updated = Date.now();
+                                        }
+                                    });
+                                    track.updated = Date.now();
+                                }
                             }
                         } else if (track.frame >= startframe) {
                             const index = tracks.indexOf(track);
@@ -563,7 +572,7 @@
                 this.shapes = {};
                 this.tags = {};
                 this.tracks = [];
-                this.objects = {}; // by id
+                this.objects = {};
                 this.count = 0;
 
                 this.flush = true;
@@ -589,11 +598,61 @@
                 total: 0,
             };
 
+            const sep = '{{cvat.skeleton.lbl.sep}}';
+            const fillBody = (spec, prefix = ''): void => {
+                const pref = prefix ? `${prefix}${sep}` : '';
+                for (const label of spec) {
+                    const { name } = label;
+                    labels[`${pref}${name}`] = JSON.parse(JSON.stringify(body));
+
+                    if (label?.structure?.sublabels) {
+                        fillBody(label.structure.sublabels, `${pref}${name}`);
+                    }
+                }
+            };
+
             const total = JSON.parse(JSON.stringify(body));
-            for (const label of Object.values(this.labels)) {
-                const { name } = label;
-                labels[name] = JSON.parse(JSON.stringify(body));
-            }
+            fillBody(Object.values(this.labels).filter((label) => !label.hasParent));
+
+            const scanTrack = (track, prefix = ''): void => {
+                const pref = prefix ? `${prefix}${sep}` : '';
+                const label = `${pref}${track.label.name}`;
+                labels[label][track.shapeType].track++;
+                const keyframes = Object.keys(track.shapes)
+                    .sort((a, b) => +a - +b)
+                    .map((el) => +el);
+
+                let prevKeyframe = keyframes[0];
+                let visible = false;
+                for (const keyframe of keyframes) {
+                    if (visible) {
+                        const interpolated = keyframe - prevKeyframe - 1;
+                        labels[label].interpolated += interpolated;
+                        labels[label].total += interpolated;
+                    }
+                    visible = !track.shapes[keyframe].outside;
+                    prevKeyframe = keyframe;
+
+                    if (visible) {
+                        labels[label].manually++;
+                        labels[label].total++;
+                    }
+                }
+
+                let lastKey = keyframes[keyframes.length - 1];
+                if (track.shapeType === ShapeType.SKELETON) {
+                    track.elements.forEach((element) => {
+                        scanTrack(element, label);
+                        lastKey = Math.max(lastKey, ...Object.keys(element.shapes).map((key) => +key));
+                    });
+                }
+
+                if (lastKey !== this.stopFrame && !track.get(lastKey).outside) {
+                    const interpolated = this.stopFrame - lastKey;
+                    labels[label].interpolated += interpolated;
+                    labels[label].total += interpolated;
+                }
+            };
 
             for (const object of Object.values(this.objects)) {
                 if (object.removed) {
@@ -611,47 +670,25 @@
                     throw new ScriptingError(`Unexpected object type: "${objectType}"`);
                 }
 
-                const label = object.label.name;
+                const { name: label } = object.label;
                 if (objectType === 'tag') {
                     labels[label].tag++;
                     labels[label].manually++;
                     labels[label].total++;
+                } else if (objectType === 'track') {
+                    scanTrack(object);
                 } else {
                     const { shapeType } = object;
-                    labels[label][shapeType][objectType]++;
-
-                    if (objectType === 'track') {
-                        const keyframes = Object.keys(object.shapes)
-                            .sort((a, b) => +a - +b)
-                            .map((el) => +el);
-
-                        let prevKeyframe = keyframes[0];
-                        let visible = false;
-
-                        for (const keyframe of keyframes) {
-                            if (visible) {
-                                const interpolated = keyframe - prevKeyframe - 1;
-                                labels[label].interpolated += interpolated;
-                                labels[label].total += interpolated;
-                            }
-                            visible = !object.shapes[keyframe].outside;
-                            prevKeyframe = keyframe;
-
-                            if (visible) {
-                                labels[label].manually++;
-                                labels[label].total++;
-                            }
-                        }
-
-                        const lastKey = keyframes[keyframes.length - 1];
-                        if (lastKey !== this.stopFrame && !object.shapes[lastKey].outside) {
-                            const interpolated = this.stopFrame - lastKey;
-                            labels[label].interpolated += interpolated;
-                            labels[label].total += interpolated;
-                        }
-                    } else {
-                        labels[label].manually++;
-                        labels[label].total++;
+                    labels[label][shapeType].shape++;
+                    labels[label].manually++;
+                    labels[label].total++;
+                    if (shapeType === ShapeType.SKELETON) {
+                        object.elements.forEach((element) => {
+                            const combinedName = [label, element.label.name].join(sep);
+                            labels[combinedName][element.shapeType].shape++;
+                            labels[combinedName].manually++;
+                            labels[combinedName].total++;
+                        });
                     }
                 }
             }
@@ -777,16 +814,35 @@
                                     rotation: state.rotation || 0,
                                     type: state.shapeType,
                                     z_order: state.zOrder,
-                                    elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
-                                        type: element.shapeType,
-                                        label_id: element.label.id,
-                                        occluded: element.occluded || false,
-                                        outside: element.outside || false,
-                                        points: [...element.points],
-                                        attributes: [],
-                                    })) : undefined,
                                 },
                             ],
+                            elements: state.shapeType === 'skeleton' ? state.elements.map((element) => {
+                                const elementAttrValues = Object.keys(state.attributes)
+                                    .reduce(convertAttributes.bind(state), []);
+                                const elementAttributes = element.label.attributes.reduce((accumulator, attribute) => {
+                                    accumulator[attribute.id] = attribute;
+                                    return accumulator;
+                                }, {});
+
+                                return ({
+                                    attributes: elementAttrValues
+                                        .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                    frame: state.frame,
+                                    group: 0,
+                                    label_id: element.label.id,
+                                    shapes: [{
+                                        frame: state.frame,
+                                        type: element.shapeType,
+                                        points: [...element.points],
+                                        zOrder: state.zOrder,
+                                        outside: element.outside || false,
+                                        occluded: element.occluded || false,
+                                        rotation: element.rotation || 0,
+                                        attributes: elementAttrValues
+                                            .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                    }],
+                                });
+                            }) : undefined,
                         });
                     } else {
                         throw new ArgumentError(

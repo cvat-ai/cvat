@@ -16,9 +16,44 @@ import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { validateParsedLabel, idGenerator, LabelOptColor } from './common';
 
+function replaceTraillingCommas(value: string): string {
+    return value.replace(/,{1}[\s]*}/g, '}');
+}
+
+function transformSkeletonSVG(value: string): string {
+    // converts all data-label-id="<id>" to corresponding data-label-name="<name>" for skeletons SVG code
+    // the function guarantees successful result only if all labels configuration is passed
+    // or if the whole configuration for one label is passed (with sublabels, etc)
+
+    let data = value;
+    const idNameMapping: Record<string, string> = {};
+    try {
+        const parsed = JSON.parse(data.trim().startsWith('[') ? data : `[${data}]`);
+        for (const label of parsed) {
+            for (const sublabel of (label.sublabels || [])) {
+                idNameMapping[sublabel.id] = sublabel.name;
+            }
+        }
+    } catch (error: any) {
+        // unsuccessful parsing, return value as is
+        return value;
+    }
+
+    const matches = data.matchAll(/data-label-id=&quot;([\d]+)&quot;/g);
+    for (const match of matches) {
+        if (idNameMapping[match[1]]) {
+            data = data.replace(
+                match[0], `data-label-name=&quot;${idNameMapping[match[1]]}&quot;`,
+            );
+        }
+    }
+
+    return data;
+}
+
 function validateLabels(_: RuleObject, value: string): Promise<void> {
     try {
-        const parsed = JSON.parse(value);
+        const parsed = JSON.parse(replaceTraillingCommas(value));
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
@@ -51,6 +86,7 @@ function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
         (label: LabelOptColor): LabelOptColor => ({
             ...label,
             id: (label.id as number) < 0 ? undefined : label.id,
+            svg: label.svg ? label.svg.replaceAll('"', '&quot;') : undefined,
             attributes: label.attributes.map(
                 (attribute: any): RawAttribute => ({
                     ...attribute,
@@ -80,11 +116,16 @@ export default class RawViewer extends React.PureComponent<Props> {
 
     private handleSubmit = (values: Store): void => {
         const { onSubmit, labels } = this.props;
-        const parsed = JSON.parse(values.labels) as RawLabel[];
+        const parsed = JSON.parse(
+            replaceTraillingCommas(values.labels),
+        ) as RawLabel[];
 
         const labelIDs: number[] = [];
         const attrIDs: number[] = [];
         for (const label of parsed) {
+            if (label.svg) {
+                label.svg = label.svg.replaceAll('&quot;', '"');
+            }
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
                 labelIDs.push(label.id);
@@ -164,7 +205,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                 <Form.Item name='labels' initialValue={textLabels} rules={[{ validator: validateLabels }]}>
                     <Input.TextArea
                         onPaste={(e: React.ClipboardEvent) => {
-                            const data = e.clipboardData.getData('text');
+                            const data = transformSkeletonSVG(e.clipboardData.getData('text'));
                             const element = window.document.getElementsByClassName('cvat-raw-labels-viewer')[0] as HTMLTextAreaElement;
                             if (element && this.formRef.current) {
                                 const { selectionStart, selectionEnd } = element;

@@ -934,15 +934,6 @@ interface RawTrackData {
     attributes: { spec_id: number; value: string }[];
     shapes: {
         attributes: RawTrackData['attributes'];
-        elements: {
-            id?: number;
-            attributes: RawTrackData['attributes'];
-            label_id: 5;
-            occluded: boolean;
-            outside: boolean;
-            points: number[];
-            type: ShapeType;
-        }[];
         id?: number;
         points?: number[];
         frame: number;
@@ -952,6 +943,7 @@ interface RawTrackData {
         type: ShapeType;
         z_order: number;
     }[];
+    elements?: RawTrackData[];
 }
 
 interface TrackedShape {
@@ -996,6 +988,7 @@ export class Track extends Drawn {
             frame: this.frame,
             group: this.group,
             source: this.source,
+            elements: [],
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 if (!labelAttributes[attrId].mutable) {
                     attributeAccumulator.push({
@@ -1011,7 +1004,6 @@ export class Track extends Drawn {
                     type: this.shapeType,
                     occluded: this.shapes[frame].occluded,
                     z_order: this.shapes[frame].zOrder,
-                    points: [...this.shapes[frame].points],
                     rotation: this.shapes[frame].rotation,
                     outside: this.shapes[frame].outside,
                     attributes: Object.keys(this.shapes[frame].attributes).reduce(
@@ -1030,6 +1022,10 @@ export class Track extends Drawn {
                     id: this.shapes[frame].serverID,
                     frame: +frame,
                 });
+
+                if (this.shapes[frame].points) {
+                    shapesAccumulator[shapesAccumulator.length - 1].points = [...this.shapes[frame].points];
+                }
 
                 return shapesAccumulator;
             }, []),
@@ -2054,6 +2050,7 @@ export class SkeletonShape extends Shape {
             type: this.shapeType,
             clientID: this.clientID,
             occluded: elements.every((el) => el.occluded),
+            outside: elements.every((el) => el.outside),
             z_order: this.zOrder,
             points: this.points,
             rotation: 0,
@@ -2677,86 +2674,19 @@ export class SkeletonTrack extends Track {
         this.shapeType = ShapeType.SKELETON;
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
-        this.shapes = {};
-        const { sublabels } = this.label.structure;
-
-        const tracks: Record<number, RawTrackData> = {};
-        data.shapes.forEach((shape) => {
-            this.shapes[shape.frame] = ({
-                serverID: shape.id,
-                occluded: shape.occluded,
-                outside: shape.outside,
-                zOrder: shape.z_order,
-                rotation: 0,
-                attributes: shape.attributes.reduce((attributeAccumulator, attr) => {
-                    attributeAccumulator[attr.spec_id] = attr.value;
-                    return attributeAccumulator;
-                }, {}),
-            });
-
-            shape.elements.forEach((element) => {
-                const label = sublabels.find((sublabel: Label): boolean => sublabel.id === element.label_id);
-                let idx = 0;
-                while (tracks[idx] && tracks[idx].label_id !== element.label_id) {
-                    idx += 1;
-                }
-
-                if (!tracks[idx]) {
-                    tracks[idx] = {
-                        frame: shape.frame,
-                        label_id: element.label_id,
-                        group: data.group,
-                        source: data.source,
-                        shapes: [{
-                            id: element.id,
-                            type: element.type,
-                            occluded: false,
-                            z_order: shape.z_order,
-                            rotation: 0,
-                            points: element.points,
-                            frame: shape.frame,
-                            outside: element.outside,
-                            attributes: element.attributes.filter((attr): boolean => {
-                                const mutable = label.attributes
-                                    .find((attribute: Attribute): boolean => attribute.id === attr.spec_id)?.mutable;
-                                return mutable;
-                            }),
-                            elements: [],
-                        }],
-                        attributes: element.attributes.filter((attr): boolean => {
-                            const mutable = label.attributes
-                                .find((attribute: Attribute): boolean => attribute.id === attr.spec_id)?.mutable;
-                            return !mutable;
-                        }),
-                    };
-                } else {
-                    tracks[idx].shapes.push({
-                        id: element.id,
-                        type: element.type,
-                        occluded: false,
-                        z_order: shape.z_order,
-                        rotation: 0,
-                        points: element.points,
-                        frame: shape.frame,
-                        outside: element.outside,
-                        attributes: element.attributes.filter((attr): boolean => {
-                            const mutable = label.attributes
-                                .find((attribute: Attribute): boolean => attribute.id === attr.spec_id)?.mutable;
-                            return mutable;
-                        }),
-                        elements: [],
-                    });
-                }
-            });
-        });
-
-        /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
-        this.elements = Object.values(tracks).map((track) => trackFactory(
-            track, injection.nextClientID(), {
+        this.elements = data.elements.map((element: RawTrackData['elements'][0]) => (
+            /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
+            trackFactory({
+                ...element,
+                group: this.group,
+                source: this.source,
+            }, injection.nextClientID(), {
                 ...injection,
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            },
+            })
+
+            // todo z_order: this.zOrder,
         )).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id) as any as Track[];
     }
 
@@ -2826,31 +2756,8 @@ export class SkeletonTrack extends Track {
 
     // Method is used to export data to the server
     toJSON(): RawTrackData {
-        const labelAttributes = attrsAsAnObject(this.label.attributes);
-
-        const result: RawTrackData = {
-            clientID: this.clientID,
-            frame: this.frame,
-            label_id: this.label.id,
-            group: this.group,
-            source: this.source,
-            attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                if (!labelAttributes[attrId].mutable) {
-                    attributeAccumulator.push({
-                        spec_id: +attrId,
-                        value: this.attributes[attrId],
-                    });
-                }
-
-                return attributeAccumulator;
-            }, []),
-            shapes: this.prepareShapesForServer(),
-        };
-
-        if (this.serverID !== null) {
-            result.id = this.serverID;
-        }
-
+        const result: RawTrackData = Track.prototype.toJSON.call(this);
+        result.elements = this.elements.map((el) => el.toJSON());
         return result;
     }
 
@@ -3071,73 +2978,6 @@ export class SkeletonTrack extends Track {
             'No one left position or right position was found. ' +
                 `Interpolation impossible. Client ID: ${this.clientID}`,
         );
-    }
-
-    prepareShapesForServer(): RawTrackData['shapes'] {
-        const labelAttributes = attrsAsAnObject(this.label.attributes);
-
-        let allKeyframes = new Set([this, ...this.elements].map((element) => Object.keys(element.shapes)).flat());
-        allKeyframes = Array.from(allKeyframes).map((keyframe) => +keyframe);
-
-        const result = {};
-        for (const keyframe of allKeyframes) {
-            const skeletonShape = this.get(+keyframe);
-            const shapeElements = [];
-            for (let idx = 0; idx < this.elements.length; idx += 1) {
-                const elementData = skeletonShape.elements[idx];
-                if (elementData.keyframe) {
-                    shapeElements.push({
-                        id: this.elements[idx].shapes[keyframe]?.serverID,
-                        type: elementData.shapeType,
-                        label_id: elementData.label.id,
-                        occluded: elementData.occluded,
-                        outside: elementData.outside,
-                        points: elementData.points,
-                        rotation: 0,
-                        attributes: Object.keys(elementData.attributes).reduce(
-                            (attributeAccumulator, attrID) => {
-                                attributeAccumulator.push({
-                                    spec_id: +attrID,
-                                    value: elementData.attributes[attrID],
-                                });
-                                return attributeAccumulator;
-                            },
-                            [],
-                        ),
-                    });
-                }
-            }
-
-            result[keyframe] = {
-                id: this.shapes[keyframe]?.serverID,
-                type: this.shapeType,
-                occluded: shapeElements.length === this.label.structure.sublabels.length &&
-                    shapeElements.every((el) => el.occluded),
-                outside: shapeElements.length === this.label.structure.sublabels.length &&
-                    shapeElements.every((el) => el.outside),
-                group: skeletonShape.group.id,
-                source: skeletonShape.source,
-                z_order: skeletonShape.zOrder,
-                rotation: 0,
-                frame: keyframe,
-                attributes: Object.keys(skeletonShape.attributes).reduce(
-                    (attributeAccumulator, attrID) => {
-                        if (labelAttributes[attrID].mutable) {
-                            attributeAccumulator.push({
-                                spec_id: +attrID,
-                                value: skeletonShape.attributes[attrID],
-                            });
-                        }
-
-                        return attributeAccumulator;
-                    },
-                    [],
-                ),
-                elements: shapeElements,
-            };
-        }
-
-        return Object.values(result);
     }
 }
 

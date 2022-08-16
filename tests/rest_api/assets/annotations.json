@@ -10,6 +10,7 @@
           "id": 1,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             223.39453125,
             226.0751953125,
@@ -29,6 +30,7 @@
           "id": 2,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             63.0791015625,
             139.75390625,
@@ -56,6 +58,7 @@
           "id": 3,
           "label_id": 4,
           "occluded": false,
+          "outside": false,
           "points": [
             83.0244140625,
             216.75390625,
@@ -83,6 +86,7 @@
           "id": 4,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             24.443359375,
             107.2275390625,
@@ -110,6 +114,7 @@
           "id": 5,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             148.94921875,
             285.6865234375,
@@ -140,6 +145,7 @@
           "id": 29,
           "label_id": 9,
           "occluded": false,
+          "outside": false,
           "points": [
             364.0361328125,
             528.87890625,
@@ -180,6 +186,7 @@
           "id": 27,
           "label_id": 11,
           "occluded": false,
+          "outside": false,
           "points": [
             448.3779296875,
             356.4892578125,
@@ -210,6 +217,7 @@
           "id": 30,
           "label_id": 13,
           "occluded": false,
+          "outside": false,
           "points": [
             440.0439453125,
             84.0791015625,
@@ -242,6 +250,7 @@
           "id": 31,
           "label_id": 6,
           "occluded": false,
+          "outside": false,
           "points": [
             65.6189987163034,
             100.96585365853753,
@@ -286,6 +295,7 @@
           "id": 33,
           "label_id": 7,
           "occluded": false,
+          "outside": false,
           "points": [
             100.14453125,
             246.03515625,
@@ -318,6 +328,7 @@
           "id": 34,
           "label_id": 16,
           "occluded": false,
+          "outside": false,
           "points": [
             106.36066411239153,
             85.1515964240134,
@@ -337,6 +348,7 @@
           "id": 35,
           "label_id": 16,
           "occluded": false,
+          "outside": false,
           "points": [
             414.29522752496996,
             124.8035516093205,
@@ -365,6 +377,7 @@
           "id": 1,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             223.39453125,
             226.0751953125,
@@ -384,6 +397,7 @@
           "id": 2,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             63.0791015625,
             139.75390625,
@@ -411,6 +425,7 @@
           "id": 3,
           "label_id": 4,
           "occluded": false,
+          "outside": false,
           "points": [
             83.0244140625,
             216.75390625,
@@ -438,6 +453,7 @@
           "id": 4,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             24.443359375,
             107.2275390625,
@@ -465,6 +481,7 @@
           "id": 5,
           "label_id": 3,
           "occluded": false,
+          "outside": false,
           "points": [
             148.94921875,
             285.6865234375,
@@ -495,6 +512,7 @@
           "id": 29,
           "label_id": 9,
           "occluded": false,
+          "outside": false,
           "points": [
             364.0361328125,
             528.87890625,
@@ -535,6 +553,7 @@
           "id": 27,
           "label_id": 11,
           "occluded": false,
+          "outside": false,
           "points": [
             448.3779296875,
             356.4892578125,
@@ -565,6 +584,7 @@
           "id": 30,
           "label_id": 13,
           "occluded": false,
+          "outside": false,
           "points": [
             440.0439453125,
             84.0791015625,
@@ -597,6 +617,7 @@
           "id": 31,
           "label_id": 6,
           "occluded": false,
+          "outside": false,
           "points": [
             65.6189987163034,
             100.96585365853753,
@@ -623,6 +644,7 @@
           "id": 33,
           "label_id": 7,
           "occluded": false,
+          "outside": false,
           "points": [
             100.14453125,
             246.03515625,
@@ -661,6 +683,7 @@
           "id": 34,
           "label_id": 16,
           "occluded": false,
+          "outside": false,
           "points": [
             106.36066411239153,
             85.1515964240134,
@@ -680,6 +703,7 @@
           "id": 35,
           "label_id": 16,
           "occluded": false,
+          "outside": false,
           "points": [
             414.29522752496996,
             124.8035516093205,

@@ -562,6 +562,7 @@ export interface AnnotationState {
             left: number;
             type: ContextMenuType;
             pointID: number | null;
+            parentID: number | null;
             clientID: number | null;
         };
         instance: Canvas | Canvas3d | null;

@@ -512,6 +512,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
+
         # configure source/target storages for import/export
         storages = _configure_related_storages({
             'source_storage': validated_data.pop('source_storage', None),
@@ -717,6 +718,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
+
         # configure source/target storages for import/export
         storages = _configure_related_storages({
             'source_storage': validated_data.pop('source_storage', None),
@@ -878,6 +880,7 @@ class LabeledImageSerializer(AnnotationSerializer):
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField()
+    outside = serializers.BooleanField(default=False, required=False)
     z_order = serializers.IntegerField(default=0)
     rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
     points = serializers.ListField(
@@ -885,53 +888,27 @@ class ShapeSerializer(serializers.Serializer):
         allow_empty=True, required=False
     )
 
-class LabeledSkeletonSerializer(serializers.Serializer):
-    id = serializers.IntegerField(default=None, allow_null=True)
-    type = serializers.ChoiceField(choices=models.ShapeType.choices())
-    frame = serializers.IntegerField(min_value=0)
-    occluded = serializers.BooleanField()
-    outside = serializers.BooleanField()
-    points = serializers.ListField(
-        child=serializers.FloatField(),
-        allow_empty=False,
-    )
-    label_id = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True,
-        source="labeledskeletonattributeval_set")
-
-class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
+class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledshapeattributeval_set")
-    elements = LabeledSkeletonSerializer(many=True, source='labeledskeleton_set',
-        required=False)
 
-class TrackedSkeletonSerializer(serializers.Serializer):
-    id = serializers.IntegerField(default=None, allow_null=True)
-    type = serializers.ChoiceField(choices=models.ShapeType.choices())
-    occluded = serializers.BooleanField()
-    outside = serializers.BooleanField()
-    points = serializers.ListField(
-        child=serializers.FloatField(),
-        allow_empty=False,
-    )
-    label_id = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True,
-        source="trackedskeletonattributeval_set")
+class LabeledShapeSerializer(SubLabeledShapeSerializer):
+    elements = SubLabeledShapeSerializer(many=True, required=False)
 
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    outside = serializers.BooleanField()
     attributes = AttributeValSerializer(many=True,
         source="trackedshapeattributeval_set")
-    elements = TrackedSkeletonSerializer(many=True, source='trackedskeleton_set',
-        required=False)
 
-class LabeledTrackSerializer(AnnotationSerializer):
-    shapes = TrackedShapeSerializer(many=True, allow_empty=False,
+class SubLabeledTrackSerializer(AnnotationSerializer):
+    shapes = TrackedShapeSerializer(many=True, allow_empty=True,
         source="trackedshape_set")
     attributes = AttributeValSerializer(many=True,
         source="labeledtrackattributeval_set")
+
+class LabeledTrackSerializer(SubLabeledTrackSerializer):
+    elements = SubLabeledTrackSerializer(many=True, required=False)
 
 class LabeledDataSerializer(serializers.Serializer):
     version = serializers.IntegerField()

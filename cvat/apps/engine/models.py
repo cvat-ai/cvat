@@ -624,6 +624,7 @@ class JobCommit(Commit):
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
     occluded = models.BooleanField(default=False)
+    outside = models.BooleanField(default=False)
     z_order = models.IntegerField(default=0)
     points = FloatArrayField(default=[])
     rotation = FloatField(default=0)
@@ -639,26 +640,13 @@ class LabeledImageAttributeVal(AttributeVal):
     image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE)
 
 class LabeledShape(Annotation, Shape):
-    pass
-
-class LabeledSkeleton(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    frame = models.PositiveIntegerField()
-    type = models.CharField(max_length=16, choices=ShapeType.choices())
-    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
-    occluded = models.BooleanField(default=False)
-    outside = models.BooleanField(default=False)
-    points = FloatArrayField()
-    label = models.ForeignKey(Label, on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
 
-class LabeledSkeletonAttributeVal(AttributeVal):
-    skeleton = models.ForeignKey(LabeledSkeleton, on_delete=models.CASCADE)
-
 class LabeledTrack(Annotation):
-    pass
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
@@ -667,22 +655,9 @@ class TrackedShape(Shape):
     id = models.BigAutoField(primary_key=True)
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
-    outside = models.BooleanField(default=False)
 
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
-
-class TrackedSkeleton(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    type = models.CharField(max_length=16, choices=ShapeType.choices())
-    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
-    occluded = models.BooleanField(default=False)
-    outside = models.BooleanField(default=False)
-    points = FloatArrayField()
-    label = models.ForeignKey(Label, on_delete=models.CASCADE)
-
-class TrackedSkeletonAttributeVal(AttributeVal):
-    skeleton = models.ForeignKey(TrackedSkeleton, on_delete=models.CASCADE)
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

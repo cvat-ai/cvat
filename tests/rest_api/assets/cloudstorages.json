@@ -32,7 +32,7 @@
       "display_name": "Bucket 2",
       "id": 2,
       "manifests": [
-        "manifest.jsonl"
+        "sub/manifest.jsonl"
       ],
       "organization": 2,
       "owner": {
@@ -45,7 +45,7 @@
       "provider_type": "AWS_S3_BUCKET",
       "resource": "private",
       "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
-      "updated_date": "2022-03-17T07:23:59.309000Z"
+      "updated_date": "2022-07-13T12:46:45.587000Z"
     },
     {
       "created_date": "2022-03-17T07:22:49.519000Z",

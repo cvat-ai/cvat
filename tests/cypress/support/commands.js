@@ -35,9 +35,9 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
-    cy.intercept('/auth/login').as('login');
-    cy.visit('/auth/login'); // clear query parameter "next"
-    cy.wait('@login').then(() => cy.contains('Login').should('exist'));
+    cy.visit('/auth/login');
+    cy.url().should('not.include', '?next=');
+    cy.contains('Login').should('exist');
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {

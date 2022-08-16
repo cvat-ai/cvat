@@ -167,16 +167,13 @@ class InstanceLabelData:
 class TaskData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, elements, rotation, group, z_order')
-    LabeledSkeleton = namedtuple(
-        'LabeledSkeleton', 'type, frame, label, points, occluded, outside, attributes, shape_id')
-    LabeledShape.__new__.__defaults__ = (0, 0, 0)
+        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside')
+    LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, elements, rotation, source, group, z_order, label, track_id')
-    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
-    Track = namedtuple('Track', 'label, group, source, shapes')
-    TrackedSkeleton = namedtuple(
-        'TrackedSkeleton', 'type, points, occluded, outside, attributes, label, keyframe, shape_id')
+        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements')
+    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, [])
+    Track = namedtuple('Track', 'label, group, source, shapes, elements')
+    Track.__new__.__defaults__ = ([], )
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
@@ -319,21 +316,6 @@ class TaskData(InstanceLabelData):
             self._meta["source"] = str(
                 osp.basename(self._db_task.data.video.path))
 
-    def _export_tracked_skeletons(self, shapes, shape_id):
-        skeletons = []
-        for shape in shapes:
-            skeletons.append(TaskData.TrackedSkeleton(
-                type=shape["type"],
-                label=self._get_label_name(shape["label_id"]),
-                points=shape["points"],
-                occluded=shape["occluded"],
-                outside=shape.get("outside", False),
-                keyframe=shape.get("keyframe", False),
-                shape_id=shape_id,
-                attributes=self._export_attributes(shape["attributes"]),
-            ))
-        return skeletons
-
     def _export_tracked_shape(self, shape):
         return TaskData.TrackedShape(
             type=shape["type"],
@@ -349,23 +331,8 @@ class TaskData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_tracked_skeletons(shape.get("elements", []), shape["id"])
+            elements=[self._export_tracked_shape(element) for element in shape.get("elements", [])]
         )
-
-    def _export_labeled_skeletons(self, shapes, shape_id):
-        skeletons = []
-        for shape in shapes:
-            skeletons.append(TaskData.LabeledSkeleton(
-                type=shape["type"],
-                frame=self.abs_frame_id(shape["frame"]),
-                label=self._get_label_name(shape["label_id"]),
-                points=shape["points"],
-                occluded=shape["occluded"],
-                outside=shape["outside"],
-                shape_id=shape_id,
-                attributes=self._export_attributes(shape["attributes"]),
-            ))
-        return skeletons
 
     def _export_labeled_shape(self, shape):
         return TaskData.LabeledShape(
@@ -375,11 +342,12 @@ class TaskData(InstanceLabelData):
             points=shape["points"],
             rotation=shape["rotation"],
             occluded=shape["occluded"],
+            outside=shape.get("outside", False),
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_labeled_skeletons(shape.get("elements", []), shape["id"])
+            elements=[self._export_labeled_shape(element) for element in shape.get("elements", [])]
         )
 
     def _export_shape(self, shape):
@@ -395,6 +363,26 @@ class TaskData(InstanceLabelData):
             group=tag.get("group", 0),
             source=tag["source"],
             attributes=self._export_attributes(tag["attributes"]),
+        )
+
+    def _export_track(self, track, idx):
+        track['shapes'] = list(filter(lambda x: x['frame'] not in self._deleted_frames, track['shapes']))
+        tracked_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, self._db_task.data.size)
+        for tracked_shape in tracked_shapes:
+            tracked_shape["attributes"] += track["attributes"]
+            tracked_shape["track_id"] = idx
+            tracked_shape["group"] = track["group"]
+            tracked_shape["source"] = track["source"]
+            tracked_shape["label_id"] = track["label_id"]
+
+        return TaskData.Track(
+            label=self._get_label_name(track["label_id"]),
+            group=track["group"],
+            source=track["source"],
+            shapes=[self._export_tracked_shape(shape)
+                for shape in tracked_shapes if shape["frame"] not in self._deleted_frames],
+            elements=[self._export_track(element, i) for i, element in enumerate(track.get("elements", []))]
         )
 
     @staticmethod
@@ -471,23 +459,7 @@ class TaskData(InstanceLabelData):
     @property
     def tracks(self):
         for idx, track in enumerate(self._annotation_ir.tracks):
-            track['shapes'] = list(filter(lambda x: x['frame'] not in self._deleted_frames, track['shapes']))
-            tracked_shapes = TrackManager.get_interpolated_shapes(
-                track, 0, self._db_task.data.size)
-            for tracked_shape in tracked_shapes:
-                tracked_shape["attributes"] += track["attributes"]
-                tracked_shape["track_id"] = idx
-                tracked_shape["group"] = track["group"]
-                tracked_shape["source"] = track["source"]
-                tracked_shape["label_id"] = track["label_id"]
-
-            yield TaskData.Track(
-                label=self._get_label_name(track["label_id"]),
-                group=track["group"],
-                source=track["source"],
-                shapes=[self._export_tracked_shape(shape)
-                    for shape in tracked_shapes if shape["frame"] not in self._deleted_frames],
-            )
+            yield self._export_track(track, idx)
 
     @property
     def tags(self):
@@ -532,6 +504,8 @@ class TaskData(InstanceLabelData):
             )
         ]
         _shape['points'] = list(map(float, _shape['points']))
+        _shape['elements'] = [self._import_shape(element) for element in _shape.get('elements', [])]
+
         return _shape
 
     def _import_track(self, track):
@@ -542,6 +516,7 @@ class TaskData(InstanceLabelData):
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
+        _track['elements'] = [self._import_track(element) for element in _track.get('elements', [])]
         for shape in _track['shapes']:
             shape['frame'] = self.rel_frame_id(int(shape['frame']))
             _track['attributes'] = [self._import_attribute(label_id, attrib)
@@ -644,24 +619,14 @@ class ProjectData(InstanceLabelData):
         points: List[float] = attrib()
         occluded: bool = attrib()
         attributes: List[InstanceLabelData.Attribute] = attrib()
-        elements: List['ProjectData.LabeledSkeleton'] = attrib()
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         rotation: int = attrib(default=0)
         z_order: int = attrib(default=0)
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
-
-    @attrs
-    class LabeledSkeleton:
-        label: str = attrib()
-        type: str = attrib()
-        points: List[float] = attrib()
-        occluded: bool = attrib()
-        outside: bool = attrib()
-        frame: int = attrib()
-        attributes: List[InstanceLabelData.Attribute] = attrib()
-        shape_id: int = attrib(default=0)
+        outside: bool = attrib(default=False)
+        elements: List['ProjectData.LabeledShape'] = attrib(default=[])
 
     @attrs
     class TrackedShape:
@@ -672,24 +637,13 @@ class ProjectData(InstanceLabelData):
         outside: bool = attrib()
         keyframe: bool = attrib()
         attributes: List[InstanceLabelData.Attribute] = attrib()
-        elements: List['ProjectData.TrackedSkeleton'] = attrib()
         rotation: int = attrib(default=0)
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         z_order: int = attrib(default=0)
         label: str = attrib(default=None)
         track_id: int = attrib(default=0)
-
-    @attrs
-    class TrackedSkeleton:
-        label: str = attrib()
-        type: str = attrib()
-        points: List[float] = attrib()
-        occluded: bool = attrib()
-        outside: bool = attrib()
-        keyframe: bool = attrib()
-        attributes: List[InstanceLabelData.Attribute] = attrib()
-        shape_id: int = attrib(default=0)
+        elements: List['ProjectData.TrackedShape'] = attrib(default=[])
 
     @attrs
     class Track:
@@ -699,6 +653,7 @@ class ProjectData(InstanceLabelData):
         group: int = attrib(default=0)
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
+        elements: List['ProjectData.Track'] = attrib(default=[])
 
     @attrs
     class Tag:
@@ -858,21 +813,6 @@ class ProjectData(InstanceLabelData):
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
 
-    def _export_tracked_skeleton(self, shapes: dict, shape_id: int):
-        skeletons = []
-        for shape in shapes:
-            skeletons.append(ProjectData.TrackedSkeleton(
-                type=shape["type"],
-                label=self._get_label_name(shape["label_id"]),
-                points=shape["points"],
-                occluded=shape["occluded"],
-                outside=shape.get("outside", False),
-                keyframe=shape.get("keyframe", False),
-                shape_id=shape_id,
-                attributes=self._export_attributes(shape["attributes"]),
-            ))
-        return skeletons
-
     def _export_tracked_shape(self, shape: dict, task_id: int):
         return ProjectData.TrackedShape(
             type=shape["type"],
@@ -888,23 +828,8 @@ class ProjectData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_tracked_skeleton(shape.get("elements", []), shape["id"]),
+            elements=[self._export_tracked_shape(element, task_id) for element in shape.get("elements", [])],
         )
-
-    def _export_labeled_skeleton(self, shapes: dict, task_id: int, shape_id: int):
-        elements = []
-        for shape in shapes:
-            elements.append(ProjectData.LabeledSkeleton(
-                type=shape["type"],
-                label=self._get_label_name(shape["label_id"]),
-                frame=self.abs_frame_id(task_id, shape["frame"]),
-                points=shape["points"],
-                occluded=shape["occluded"],
-                outside=shape["outside"],
-                attributes=self._export_attributes(shape["attributes"]),
-                shape_id=shape_id,
-            ))
-        return elements
 
     def _export_labeled_shape(self, shape: dict, task_id: int):
         return ProjectData.LabeledShape(
@@ -914,11 +839,12 @@ class ProjectData(InstanceLabelData):
             points=shape["points"],
             rotation=shape["rotation"],
             occluded=shape["occluded"],
+            outside=shape.get("outside", False),
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
-            elements=self._export_labeled_skeleton(shape.get("elements", []), task_id, shape["id"]),
+            elements=[self._export_labeled_shape(element, task_id) for element in shape.get("elements", [])],
             task_id=task_id,
         )
 
@@ -930,6 +856,29 @@ class ProjectData(InstanceLabelData):
             source=tag["source"],
             attributes=self._export_attributes(tag["attributes"]),
             task_id=task_id
+        )
+
+    def _export_track(self, track: dict, task_id: int, task_size: int, idx: int):
+        track['shapes'] = list(filter(lambda x: (task_id, x['frame']) not in self._deleted_frames, track['shapes']))
+        tracked_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, task_size
+        )
+        for tracked_shape in tracked_shapes:
+            tracked_shape["attributes"] += track["attributes"]
+            tracked_shape["track_id"] = idx
+            tracked_shape["group"] = track["group"]
+            tracked_shape["source"] = track["source"]
+            tracked_shape["label_id"] = track["label_id"]
+
+        return ProjectData.Track(
+            label=self._get_label_name(track["label_id"]),
+            group=track["group"],
+            source=track["source"],
+            shapes=[self._export_tracked_shape(shape, task_id) for shape in tracked_shapes
+                if (task_id, shape["frame"]) not in self._deleted_frames],
+            task_id=task_id,
+            elements=[self._export_track(element, task_id, task_size, i)
+                for i, element in enumerate(track.get("elements", []))]
         )
 
     def group_by_frame(self, include_empty=False):
@@ -990,25 +939,7 @@ class ProjectData(InstanceLabelData):
         idx = 0
         for task in self._db_tasks.values():
             for track in self._annotation_irs[task.id].tracks:
-                track['shapes'] = list(filter(lambda x: (task.id, x['frame']) not in self._deleted_frames, track['shapes']))
-                tracked_shapes = TrackManager.get_interpolated_shapes(
-                    track, 0, task.data.size
-                )
-                for tracked_shape in tracked_shapes:
-                    tracked_shape["attributes"] += track["attributes"]
-                    tracked_shape["track_id"] = idx
-                    tracked_shape["group"] = track["group"]
-                    tracked_shape["source"] = track["source"]
-                    tracked_shape["label_id"] = track["label_id"]
-                yield ProjectData.Track(
-                    label=self._get_label_name(track["label_id"]),
-                    group=track["group"],
-                    source=track["source"],
-                    shapes=[self._export_tracked_shape(shape, task.id) for shape in tracked_shapes
-                        if (task.id, shape["frame"]) not in self._deleted_frames],
-                    task_id=task.id
-                )
-                idx+=1
+                yield self._export_track(track, task.id, task.data.size, idx)
 
     @property
     def tags(self):
@@ -1656,11 +1587,11 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                             points=ann.points,
                             label=label_cat.items[ann.label].name,
                             occluded=occluded,
-                            elements=elements,
                             z_order=ann.z_order,
                             group=group_map.get(ann.group, 0),
                             source=source,
                             attributes=attributes,
+                            elements=elements,
                         ))
                         continue
 
@@ -1672,7 +1603,6 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                             outside=outside,
                             keyframe=keyframe,
                             points=ann.points,
-                            elements=[],
                             z_order=ann.z_order,
                             source=source,
                             attributes=attributes,

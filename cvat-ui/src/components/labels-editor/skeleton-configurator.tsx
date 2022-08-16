@@ -4,15 +4,19 @@ import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import Alert from 'antd/lib/alert';
+import Radio from 'antd/lib/radio';
 import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
-import Icon, { PictureOutlined } from '@ant-design/icons';
+import Icon, {
+    DeleteOutlined, DownloadOutlined, DragOutlined, LineOutlined, PictureOutlined, UploadOutlined,
+} from '@ant-design/icons';
 
+import { PointIcon } from 'icons';
+import GlobalHotKeys from 'utils/mousetrap-react';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import ShortcutsContext from 'components/shortcuts.context';
 import { ShapeType } from 'cvat-core-wrapper';
 import consts from 'consts';
-import {
-    EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
-} from 'icons';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -32,7 +36,7 @@ interface Props {
 }
 
 interface State {
-    activeTool: 'point' | 'join' | 'delete';
+    activeTool: 'point' | 'join' | 'delete' | 'drag';
     contextMenuVisible: boolean;
     contextMenuElement: number | null;
     image: RcFile | null;
@@ -40,6 +44,7 @@ interface State {
 }
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
+    static contextType = ShortcutsContext;
     static defaultProps = {
         disabled: false,
     };
@@ -98,7 +103,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         window.document.addEventListener('mouseup', this.onDocumentMouseUp);
         if (svg) {
             svg.setAttribute('viewBox', '0 0 100 100');
-            svg.addEventListener('click', this.onSVGClick);
+            svg.addEventListener('mousedown', this.onSVGClick);
             svg.addEventListener('mousemove', this.onSVGMouseMove);
         }
 
@@ -154,7 +159,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const svg = svgRef.current;
 
         if (svg) {
-            svg.removeEventListener('click', this.onSVGClick);
+            svg.removeEventListener('mousedown', this.onSVGClick);
             svg.removeEventListener('mousemove', this.onSVGMouseMove);
         }
 
@@ -210,12 +215,52 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     )) {
                         element.remove();
                     }
+                } else if (element.tagName === 'line') {
+                    if (!this.setupEdge(svgRef.current, element as SVGLineElement)) {
+                        element.remove();
+                    }
                 }
             }
             this.setupTextLabels();
         }
 
         return false;
+    };
+
+    private setupEdge = (svg: SVGSVGElement, edge: SVGLineElement): boolean => {
+        const dataType = edge.getAttribute('data-type');
+        const dataNodeFrom = edge.getAttribute('data-node-from');
+        const dataNodeTo = edge.getAttribute('data-node-to');
+        const nodeFrom = svg.querySelector(`[data-node-id="${dataNodeFrom}"]`);
+        const nodeTo = svg.querySelector(`[data-node-id="${dataNodeTo}"]`);
+
+        if (dataType !== 'edge' || !nodeFrom || !nodeTo) {
+            return false;
+        }
+
+        const onClick = (): void => {
+            if (edge) {
+                edge.remove();
+            }
+        };
+
+        edge.addEventListener('mouseenter', () => {
+            const { activeTool: currentActiveTool } = this.state;
+            if (edge && currentActiveTool === 'delete') {
+                edge.setAttribute('stroke', 'red');
+                edge.addEventListener('click', onClick);
+            }
+        });
+
+        edge.addEventListener('mouseleave', () => {
+            const { activeTool: currentActiveTool } = this.state;
+            if (edge && currentActiveTool === 'delete') {
+                edge.setAttribute('stroke', 'black');
+                edge.removeEventListener('click', onClick);
+            }
+        });
+
+        return true;
     };
 
     private setupCircle = (
@@ -248,13 +293,13 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             circle.setAttribute('stroke-width', '0.1');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
-                text.setAttribute('fill', 'white');
+                text.setAttribute('fill', 'darkorange');
             }
         });
 
         circle.addEventListener('mousedown', (e: MouseEvent) => {
             const { activeTool: currentActiveTool } = this.state;
-            if (e.button === 0 && currentActiveTool === 'point') {
+            if (e.button === 0 && currentActiveTool === 'drag') {
                 this.draggableElement = circle;
             }
         });
@@ -317,7 +362,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         stroke: 'black',
                         'data-type': 'edge',
                         'data-node-from': nodeID,
-                        'stroke-width': '0.1',
+                        'stroke-width': '0.5',
                     });
 
                     svg.prepend(line);
@@ -342,6 +387,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         y2: circle.getAttribute('cy'),
                         'data-node-to': nodeID,
                     });
+                    this.setupEdge(this.svgRef.current as SVGSVGElement, line);
                 }
             }
         });
@@ -369,7 +415,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             return;
         }
 
-        if (activeTool === 'point' && svg) {
+        if (activeTool === 'point' && svg && event.target === svg && event.button === 0) {
             let [x, y] = [0, 0];
             try {
                 [x, y] = toSVGCoord(svg, [event.clientX, event.clientY], true);
@@ -431,7 +477,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             x: +cx + TEXT_MARGIN,
                             y: +cy - TEXT_MARGIN,
                             stroke: 'black',
-                            fill: 'white',
+                            fill: 'darkorange',
                             'stroke-width': 0.1,
                             'data-for-element-id': elementID,
                         });
@@ -584,9 +630,26 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const {
             activeTool, contextMenuVisible, contextMenuElement, error,
         } = this.state;
+        const keyMap = this.context;
 
         return (
             <Row className='cvat-skeleton-configurator' style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
+                <GlobalHotKeys
+                    keyMap={{
+                        CANCEL_SKELETON_EDGE: keyMap.CANCEL_SKELETON_EDGE,
+                    }}
+                    handlers={{
+                        CANCEL_SKELETON_EDGE: () => {
+                            const { activeTool: currentActiveTool } = this.state;
+                            if (currentActiveTool === 'join') {
+                                const shape = this.findNotFinishedEdge();
+                                if (shape) {
+                                    shape.remove();
+                                }
+                            }
+                        },
+                    }}
+                />
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
                     <SkeletonElementContextMenu
                         elementID={contextMenuElement}
@@ -609,15 +672,14 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                 this.setupTextLabels();
                             }
                         }}
+                        onCancel={() => {
+                            this.setState({ contextMenuVisible: false });
+                        }}
                     />
                 ) : null}
-                <Col span={16} className='cvat-skeleton-canvas-wrapper'>
-                    <canvas ref={canvasRef} className='cvat-skeleton-configurator-canvas' />
-                    <svg width={100} height={100} ref={svgRef} className='cvat-skeleton-configurator-svg' />
-                </Col>
-                <Col span={7} offset={1}>
+                <div>
                     <div className='cvat-skeleton-configurator-image-dragger'>
-                        <Upload.Dragger
+                        <Upload
                             showUploadList={false}
                             beforeUpload={(file: RcFile) => {
                                 if (!file.type.startsWith('image/')) {
@@ -632,99 +694,78 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             }}
                         >
                             <p className='ant-upload-drag-icon'>
-                                <PictureOutlined />
+                                <CVATTooltip title='Upload a background image'>
+                                    <Button icon={<PictureOutlined />} />
+                                </CVATTooltip>
                             </p>
-                            <p className='ant-upload-text'>Click or drag an image to this area</p>
-                        </Upload.Dragger>
+                        </Upload>
                     </div>
-                    <Row justify='space-between' className='cvat-skeleton-configurator-shape-buttons'>
-                        <Col span={5}>
-                            <Button
-                                type={activeTool === 'point' ? 'dashed' : 'default'}
-                                className='cvat-skeleton-configurator-point-button'
-                                size='large'
-                                shape='round'
-                                icon={<Icon component={PointIcon} />}
-                                onClick={() => this.setState({ activeTool: 'point' })}
-                            />
+                    <Row justify='center' className='cvat-skeleton-configurator-shape-buttons'>
+                        <Col span={24}>
+                            <Radio.Group
+                                value={activeTool}
+                                onChange={(e) => {
+                                    this.setState({ activeTool: e.target.value });
+                                }}
+                            >
+                                <CVATTooltip title='Click the canvas to add a point'>
+                                    <Radio.Button defaultChecked value='point'>
+                                        <Icon component={PointIcon} />
+                                    </Radio.Button>
+                                </CVATTooltip>
+
+                                <CVATTooltip title='Click and drag points'>
+                                    <Radio.Button defaultChecked value='drag'>
+                                        <DragOutlined />
+                                    </Radio.Button>
+                                </CVATTooltip>
+
+                                <CVATTooltip title='Click two points to setup an edge'>
+                                    <Radio.Button value='join'>
+                                        <LineOutlined />
+                                    </Radio.Button>
+                                </CVATTooltip>
+
+                                <CVATTooltip title='Click an element to remove it'>
+                                    <Radio.Button value='delete'>
+                                        <DeleteOutlined />
+                                    </Radio.Button>
+                                </CVATTooltip>
+                            </Radio.Group>
                         </Col>
-                        <Col span={5}>
-                            <Button
-                                className='cvat-skeleton-configurator-rect-button'
-                                size='large'
-                                shape='round'
-                                disabled
-                                title='Not implemented'
-                                icon={<Icon component={RectangleIcon} />}
-                            />
-                        </Col>
-                        <Col span={5}>
-                            <Button
-                                className='cvat-skeleton-configurator-ellipse-button'
-                                size='large'
-                                shape='round'
-                                disabled
-                                title='Not implemented'
-                                icon={<Icon component={EllipseIcon} />}
-                            />
-                        </Col>
-                        <Col span={5}>
-                            <Button
-                                className='cvat-skeleton-configurator-polygon-button'
-                                size='large'
-                                shape='round'
-                                disabled
-                                title='Not implemented'
-                                icon={<Icon component={PolygonIcon} />}
-                            />
-                        </Col>
-                    </Row>
-                    <Row justify='space-between' className='cvat-skeleton-configurator-action-buttons'>
-                        <Button
-                            type={activeTool === 'join' ? 'dashed' : 'default'}
-                            onClick={() => this.setState({ activeTool: 'join' })}
-                        >
-                            Join
-                        </Button>
-                        <Button
-                            type={activeTool === 'delete' ? 'dashed' : 'default'}
-                            onClick={() => this.setState({ activeTool: 'delete' })}
-                            danger
-                        >
-                            Delete
-                        </Button>
                     </Row>
                     <Row justify='space-between' className='cvat-skeleton-configurator-svg-buttons'>
-                        <Button
-                            type='default'
-                            onClick={() => {
-                                if (svgRef.current) {
-                                    this.setupTextLabels(false);
+                        <CVATTooltip title='Download skeleton as SVG'>
+                            <Button
+                                type='default'
+                                icon={<DownloadOutlined />}
+                                onClick={() => {
+                                    if (svgRef.current) {
+                                        this.setupTextLabels(false);
 
-                                    const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
-                                    desc.setAttribute('data-description-type', 'labels-specification');
-                                    (desc as SVGDescElement).textContent = JSON.stringify(this.labels);
-                                    svgRef.current.appendChild(desc);
+                                        const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+                                        desc.setAttribute('data-description-type', 'labels-specification');
+                                        (desc as SVGDescElement).textContent = JSON.stringify(this.labels);
+                                        svgRef.current.appendChild(desc);
 
-                                    const text = svgRef.current.innerHTML;
-                                    desc.remove();
+                                        const text = svgRef.current.innerHTML;
+                                        desc.remove();
 
-                                    this.setupTextLabels();
-                                    const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
-                                    const url = URL.createObjectURL(blob);
-                                    const anchor = window.document.getElementById('downloadAnchor');
-                                    if (anchor) {
-                                        (anchor as HTMLAnchorElement).href = url;
-                                        (anchor as HTMLAnchorElement).click();
-                                        setTimeout(() => {
-                                            URL.revokeObjectURL(url);
-                                        });
+                                        this.setupTextLabels();
+                                        const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
+                                        const url = URL.createObjectURL(blob);
+                                        const anchor = window.document.getElementById('downloadAnchor');
+                                        if (anchor) {
+                                            (anchor as HTMLAnchorElement).href = url;
+                                            (anchor as HTMLAnchorElement).click();
+                                            setTimeout(() => {
+                                                URL.revokeObjectURL(url);
+                                            });
+                                        }
                                     }
-                                }
-                            }}
-                        >
-                            Save
-                        </Button>
+                                }}
+                            />
+                        </CVATTooltip>
                         <Upload
                             showUploadList={false}
                             beforeUpload={(file: RcFile) => {
@@ -763,10 +804,16 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                 return false;
                             }}
                         >
-                            <Button type='default'>Upload</Button>
+                            <CVATTooltip title='Upload a skeleton from SVG'>
+                                <Button icon={<UploadOutlined />} type='default' />
+                            </CVATTooltip>
                         </Upload>
                     </Row>
-                </Col>
+                </div>
+                <div className='cvat-skeleton-canvas-wrapper'>
+                    <canvas ref={canvasRef} className='cvat-skeleton-configurator-canvas' />
+                    <svg width={100} height={100} ref={svgRef} className='cvat-skeleton-configurator-svg' />
+                </div>
                 { error !== null && <Alert type='error' message={error} /> }
             </Row>
         );

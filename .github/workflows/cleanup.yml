@@ -2,7 +2,7 @@
 name: Delete image artifacts
 on:
   workflow_run:
-    workflows: [CI]
+    workflows: [CI, Comment]
     types:
       - completed
 

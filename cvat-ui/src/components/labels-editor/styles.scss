@@ -114,9 +114,21 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-bottom: $grid-unit-size;
     padding-top: $grid-unit-size;
     padding-bottom: $grid-unit-size;
+    justify-content: center;
+
+    > div:first-child {
+        width: $grid-unit-size * 6;
+        position: absolute;
+        left: 0;
+    }
 
     > .ant-alert {
         width: 100%;
+    }
+
+    button {
+        width: 40px;
+        height: 40px;
     }
 }
 
@@ -141,46 +153,43 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-skeleton-configurator-svg-buttons {
-    width: 100%;
-    position: absolute;
-    bottom: 0;
-    margin-bottom: $grid-unit-size;
+    > button {
+        margin-bottom: $grid-unit-size;
+    }
 }
 
 .cvat-skeleton-configurator-shape-buttons {
-    button.cvat-skeleton-configurator-point-button,
-    button.cvat-skeleton-configurator-rect-button,
-    button.cvat-skeleton-configurator-ellipse-button,
-    button.cvat-skeleton-configurator-polygon-button {
-        width: 100%;
-        padding: 0;
+    .ant-radio-group {
+        text-align: center;
+        width: $grid-unit-size * 5;
+        margin-top: $grid-unit-size * 3;
+        margin-bottom: $grid-unit-size * 3;
 
-        > span {
-            transform: scale(0.6);
-            transition: all 0.5s;
-        }
+        label {
+            padding: 0;
+            width: $grid-unit-size * 5;
+            height: $grid-unit-size * 5;
+            line-height: $grid-unit-size * 5;
+            margin-bottom: $grid-unit-size;
 
-        &:hover {
-            &:not(:disabled) {
-                > span {
-                    transform: scale(0.7);
-                }
+            .anticon-line {
+                transform: rotate(45deg);
+            }
+
+            svg {
+                width: $grid-unit-size * 2;
+                height: $grid-unit-size * 2;
             }
         }
     }
 }
 
-.cvat-skeleton-configurator-action-buttons,
-.cvat-skeleton-configurator-svg-buttons {
-    > button,
-    > span {
-        width: 45%;
-
-        button,
-        .ant-upload {
-            width: 100%;
-        }
-    }
+.cvat-skeleton-canvas-wrapper {
+    max-width: $grid-unit-size * 75;
+    max-height: $grid-unit-size * 75;
+    width: 100%;
+    margin-left: $grid-unit-size * 6;
+    position: relative;
 }
 
 .cvat-skeleton-configurator-text-label {

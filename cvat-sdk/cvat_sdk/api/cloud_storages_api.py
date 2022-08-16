@@ -385,9 +385,7 @@ class CloudStoragesApi(object):
         )
         self.cloudstorages_retrieve_content_endpoint = _Endpoint(
             settings={
-                "response_schema": (
-                    {str: (bool, date, datetime, dict, float, int, list, str, none_type)},
-                ),
+                "response_schema": ([str],),
                 "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
                 "endpoint_path": "/api/cloudstorages/{id}/content",
                 "operation_id": "cloudstorages_retrieve_content",
@@ -1050,9 +1048,7 @@ class CloudStoragesApi(object):
         _request_auths: typing.Optional[typing.List] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[
-        typing.Optional[typing.Dict[str, typing.Union[typing.Any, none_type]]], urllib3.HTTPResponse
-    ]:
+    ) -> typing.Tuple[typing.Optional[typing.List[str]], urllib3.HTTPResponse]:
         """Method returns a manifest content  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1102,7 +1098,7 @@ class CloudStoragesApi(object):
             _async_call (bool): execute request asynchronously
 
         Returns:
-            ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}, HTTPResponse)
+            ([str], HTTPResponse)
                 If the method is called asynchronously, returns the request
                 thread.
         """

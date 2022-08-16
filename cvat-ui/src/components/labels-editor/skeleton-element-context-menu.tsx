@@ -13,11 +13,12 @@ interface ContextMenuProps {
     container: SVGSVGElement;
     onConfigureLabel(elementID: number, data: LabelOptColor | null): void;
     onDelete(element: SVGElement): void;
+    onCancel(): void;
 }
 
 function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
     const {
-        container, elementID, labels, onConfigureLabel, onDelete,
+        container, elementID, labels, onConfigureLabel, onDelete, onCancel,
     } = props;
     const [modalVisible, setModalVisible] = useState<boolean>(false);
 
@@ -54,6 +55,10 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
                     onSubmit={(data) => {
                         setModalVisible(false);
                         onConfigureLabel(elementID, data);
+                    }}
+                    onCancel={() => {
+                        setModalVisible(false);
+                        onCancel();
                     }}
                 />
             </Modal>
