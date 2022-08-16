@@ -6,7 +6,7 @@ import React from 'react';
 import Icon from '@ant-design/icons';
 
 import { CursorIcon } from 'icons';
-import { ActiveControl } from 'reducers/interfaces';
+import { ActiveControl } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';

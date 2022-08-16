@@ -863,28 +863,41 @@ Cypress.Commands.add('renameTask', (oldName, newName) => {
     cy.contains('.cvat-task-details-task-name', newName).should('exist');
 });
 
-Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift = false) => {
+Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = false) => {
     cy.get(shape)
         .trigger('mousemove')
         .trigger('mouseover')
         .should('have.class', 'cvat_canvas_shape_activated');
-    cy.get('.cvat-canvas-container')
-        .trigger('mousemove', x, y)
-        .trigger('mouseenter', x, y);
-    cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
-    cy.get('.cvat-canvas-container').trigger('mousedown', x, y, { button: 0 });
-    if (pressShift) {
-        cy.get('body').type('{shift}', { release: false });
-    }
-    cy.get('.cvat-canvas-container').trigger('mousemove', x + 20, y);
-    cy.get(shape).should('have.attr', 'transform');
-    cy.document().then((doc) => {
-        const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-        const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
-        cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
-        expect(`${expectedRotateDeg}°`).to.be.equal(`${shapeTranformMatrix}°`);
+    cy.get('.svg_select_points_rot').then($el => {
+        let {x, y, width, height} = $el[0].getBoundingClientRect();
+        x += width / 2;
+        y += height / 2;
+
+        cy.window().then((win) => {
+            const [container] = win.document.getElementsByClassName('cvat-canvas-container');
+            const {x: offsetX, y: offsetY} = container.getBoundingClientRect();
+            // x -= offsetX;
+            // y -= offsetY;
+            cy.get('#root')
+                .trigger('mousemove', x, y)
+                .trigger('mouseenter', x, y);
+            cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
+            cy.get('#root').trigger('mousedown', x, y, { button: 0 });
+            if (pressShift) {
+                cy.get('body').type('{shift}', { release: false });
+            }
+            cy.get('#root').trigger('mousemove', x + 20, y);
+            cy.get(shape).should('have.attr', 'transform');
+            cy.document().then((doc) => {
+                const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
+                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+                cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
+                expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
+            });
+            cy.get('#root').trigger('mouseup');
+        })
     });
-    cy.get('.cvat-canvas-container').trigger('mouseup');
+
 });
 
 Cypress.Commands.add('deleteFrame', (action = 'delete') => {

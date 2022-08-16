@@ -5,7 +5,7 @@
 import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 import { computeZRange } from './annotation-actions';
 

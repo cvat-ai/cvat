@@ -23,7 +23,7 @@ import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
 import { getOrganizationsAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from './actions/notification-actions';
-import { CombinedState, NotificationsState } from './reducers/interfaces';
+import { CombinedState, NotificationsState } from './reducers';
 
 createCVATStore(createRootReducer);
 const cvatStore = getCVATStore();

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.2.0] - Unreleased
 ### Added
+- Added ability to delete frames from a job based on (<https://github.com/openvinotoolkit/cvat/pull/4194>)
 - Support of attributes returned by serverless functions based on (<https://github.com/openvinotoolkit/cvat/pull/4506>)
 - Project/task backups uploading via chunk uploads
 - Fixed UX bug when jobs pagination is reset after changing a job
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
 - OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
 - Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
+- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
@@ -57,7 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced filtration and sorting for a list of tasks/projects/cloudstorages (<https://github.com/openvinotoolkit/cvat/pull/4403>)
 - Project dataset importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4485>)
 - Support paginated list for job commits (<https://github.com/openvinotoolkit/cvat/pull/4482>)
-- Added ability to delete frames from a job (<https://github.com/openvinotoolkit/cvat/pull/4194>)
 
 ### Changed
 - Added missing geos dependency into Dockerfile (<https://github.com/openvinotoolkit/cvat/pull/4451>)

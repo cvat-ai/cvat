@@ -17,15 +17,21 @@
       "labels": [
         {
           "attributes": [],
-          "color": "#6080c0",
-          "id": 16,
-          "name": "cat"
+          "color": "#406040",
+          "has_parent": false,
+          "id": 17,
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
-          "color": "#406040",
-          "id": 17,
-          "name": "dog"
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 16,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "annotation",
@@ -75,8 +81,11 @@
         {
           "attributes": [],
           "color": "#2080c0",
+          "has_parent": false,
           "id": 15,
-          "name": "Car"
+          "name": "Car",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "",
@@ -120,15 +129,21 @@
       "labels": [
         {
           "attributes": [],
-          "color": "#6080c0",
-          "id": 7,
-          "name": "cat"
+          "color": "#406040",
+          "has_parent": false,
+          "id": 8,
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
-          "color": "#406040",
-          "id": 8,
-          "name": "dog"
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 7,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "annotation",
@@ -201,6 +216,15 @@
       "image_quality": 70,
       "labels": [
         {
+          "attributes": [],
+          "color": "#c06060",
+          "has_parent": false,
+          "id": 6,
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
           "attributes": [
             {
               "default_value": "mazda",
@@ -216,14 +240,11 @@
             }
           ],
           "color": "#2080c0",
+          "has_parent": false,
           "id": 5,
-          "name": "car"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "id": 6,
-          "name": "person"
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "annotation",
@@ -332,14 +353,20 @@
         {
           "attributes": [],
           "color": "#6080c0",
+          "has_parent": false,
           "id": 13,
-          "name": "cat"
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
           "color": "#406040",
+          "has_parent": false,
           "id": 14,
-          "name": "dog"
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "annotation",
@@ -406,14 +433,20 @@
         {
           "attributes": [],
           "color": "#6080c0",
+          "has_parent": false,
           "id": 11,
-          "name": "cat"
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
           "color": "#406040",
+          "has_parent": false,
           "id": 12,
-          "name": "dog"
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "annotation",
@@ -468,8 +501,11 @@
         {
           "attributes": [],
           "color": "#2080c0",
+          "has_parent": false,
           "id": 10,
-          "name": "car"
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "annotation",
@@ -530,8 +566,11 @@
         {
           "attributes": [],
           "color": "#2080c0",
+          "has_parent": false,
           "id": 9,
-          "name": "car"
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "interpolation",
@@ -598,14 +637,20 @@
         {
           "attributes": [],
           "color": "#2080c0",
+          "has_parent": false,
           "id": 3,
-          "name": "car"
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
         },
         {
           "attributes": [],
           "color": "#c06060",
+          "has_parent": false,
           "id": 4,
-          "name": "person"
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
         }
       ],
       "mode": "annotation",

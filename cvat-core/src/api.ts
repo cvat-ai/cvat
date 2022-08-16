@@ -8,10 +8,10 @@
  */
 
 function build() {
-    const PluginRegistry = require('./plugins');
+    const PluginRegistry = require('./plugins').default;
     const loggerStorage = require('./logger-storage');
     const Log = require('./log');
-    const ObjectState = require('./object-state');
+    const ObjectState = require('./object-state').default;
     const Statistics = require('./statistics');
     const Comment = require('./comment');
     const Issue = require('./issue');
@@ -880,11 +880,6 @@ function build() {
     cvat.organizations = Object.freeze(cvat.organizations);
 
     const implementAPI = require('./api-implementation');
-
-    Math.clamp = function clamp(value, min, max) {
-        return Math.min(Math.max(value, min), max);
-    };
-
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
 }

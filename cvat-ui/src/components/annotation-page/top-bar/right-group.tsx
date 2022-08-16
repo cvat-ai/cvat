@@ -19,7 +19,7 @@ import {
 } from 'icons';
 import {
     CombinedState, DimensionType, Workspace, PredictorState,
-} from 'reducers/interfaces';
+} from 'reducers';
 
 interface Props {
     workspace: Workspace;

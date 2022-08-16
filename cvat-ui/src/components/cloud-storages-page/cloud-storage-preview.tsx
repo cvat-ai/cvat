@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { PictureOutlined } from '@ant-design/icons';
 import Spin from 'antd/lib/spin';
 import { getCloudStoragePreviewAsync } from 'actions/cloud-storage-actions';
-import { CombinedState, CloudStorage } from 'reducers/interfaces';
+import { CombinedState, CloudStorage } from 'reducers';
 
 interface Props {
     cloudStorage: CloudStorage;

@@ -492,6 +492,7 @@ export enum ActiveControl {
     DRAW_POINTS = 'draw_points',
     DRAW_ELLIPSE = 'draw_ellipse',
     DRAW_CUBOID = 'draw_cuboid',
+    DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
     GROUP = 'group',
     SPLIT = 'split',
@@ -509,6 +510,7 @@ export enum ShapeType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    SKELETON = 'skeleton',
 }
 
 export enum ObjectType {
@@ -560,6 +562,7 @@ export interface AnnotationState {
             left: number;
             type: ContextMenuType;
             pointID: number | null;
+            parentID: number | null;
             clientID: number | null;
         };
         instance: Canvas | Canvas3d | null;
@@ -606,6 +609,7 @@ export interface AnnotationState {
     };
     annotations: {
         activatedStateID: number | null;
+        activatedElementID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
@@ -707,6 +711,7 @@ export interface WorkspaceSettingsState {
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
+    controlPointsSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;

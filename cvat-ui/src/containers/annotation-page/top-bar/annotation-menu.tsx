@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState, JobStage } from 'reducers/interfaces';
+import { CombinedState, JobStage } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
 import { updateJobAsync } from 'actions/tasks-actions';
 import {
@@ -18,7 +18,7 @@ import {
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 

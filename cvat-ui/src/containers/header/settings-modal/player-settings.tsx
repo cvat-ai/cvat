@@ -14,7 +14,7 @@ import {
     switchSmoothImage,
     switchShowingDeletedFrames,
 } from 'actions/settings-actions';
-import { CombinedState, FrameSpeed } from 'reducers/interfaces';
+import { CombinedState, FrameSpeed } from 'reducers';
 
 interface StateToProps {
     frameStep: number;

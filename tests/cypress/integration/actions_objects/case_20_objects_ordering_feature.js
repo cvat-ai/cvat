@@ -67,7 +67,7 @@ context('Objects ordering feature', () => {
             cy.sidebarItemSortBy('Updated time');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
             cy.get('.cvat-canvas-context-menu').within(() => {
-                cy.contains('.cvat-objects-sidebar-state-item-collapse', 'Details').click();
+                cy.contains('.cvat-objects-sidebar-state-item-collapse', 'DETAILS').click();
                 cy.contains('.cvat-object-item-attribute-wrapper', attrName).within(() => {
                     cy.get('.cvat-object-item-text-attribute').clear();
                 });

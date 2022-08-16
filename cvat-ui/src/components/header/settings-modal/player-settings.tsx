@@ -16,7 +16,7 @@ import { CompactPicker } from 'react-color';
 
 import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
-import { FrameSpeed } from 'reducers/interfaces';
+import { FrameSpeed } from 'reducers';
 import consts from 'consts';
 
 interface Props {
