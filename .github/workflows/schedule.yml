@@ -222,12 +222,21 @@ jobs:
           chmod +x ./opa
           ./opa test cvat/apps/iam/rules
 
-      - name: REST API tests
+      - name: REST API and SDK tests
         run: |
+          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
+            --entrypoint /bin/bash -u root cvat/server \
+            -c 'python manage.py spectacular --file /transfer/schema.yml'
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          cd cvat-sdk/
+          gen/generate.sh
+          cd ..
+
           pip3 install --user cvat-sdk/
-          pip3 install --user -r tests/rest_api/requirements.txt
-          pytest tests/rest_api/
-          pytest tests/rest_api/ --stop-services
+          pip3 install --user cvat-cli/
+          pip3 install --user -r tests/python/requirements.txt
+          pytest tests/python/
+          pytest tests/python/ --stop-services
 
       - name: Unit tests
         env:
@@ -239,7 +248,7 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'coverage run -a manage.py test cvat/apps cvat-cli && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+          -c 'coverage run -a manage.py test cvat/apps && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'

@@ -14,7 +14,7 @@ python manage.py spectacular --file schema.yml && mkdir -p cvat-sdk/schema/ && m
 
 2. Generate package code (call from the package root directory):
 ```bash
-# pip install -r requirements/development.txt
+# pip install -r gen/requirements.txt
 
 ./gen/generate.sh
 ```
@@ -38,5 +38,11 @@ Relevant links:
 
 ## How to test
 
-API client tests are integrated into REST API tests (`/tests/rest_api/`).
+API client tests are integrated into REST API tests (`/tests/python/rest_api`)
+and SDK tests are placed next to them (`/tests/python/sdk`).
+To execute, run:
+```bash
+pytest tests/python/rest_api tests/python/sdk
+```
+
 To allow editing of the package, install it with `pip install -e cvat-sdk/`.
