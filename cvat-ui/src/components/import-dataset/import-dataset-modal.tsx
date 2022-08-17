@@ -239,7 +239,7 @@ function ImportDatasetModal(): JSX.Element | null {
             dispatch(importDatasetAsync(
                 instance, uploadParams.selectedFormat as string,
                 uploadParams.useDefaultSettings, uploadParams.sourceStorage,
-                uploadParams.file, uploadParams.fileName));
+                uploadParams.file || (uploadParams.fileName as string)));
             const _resource = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
                 message: `${_resource} import started`,

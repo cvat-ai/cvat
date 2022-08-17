@@ -436,10 +436,10 @@
      * @property {string} CLOUD_STORAGE 'cloud_storage'
      * @readonly
      */
-    const StorageLocation = Object.freeze({
-        LOCAL: 'local',
-        CLOUD_STORAGE: 'cloud_storage',
-    });
+    enum StorageLocation {
+        LOCAL = 'local',
+        CLOUD_STORAGE = 'cloud_storage',
+    }
 
     module.exports = {
         ShareFileType,

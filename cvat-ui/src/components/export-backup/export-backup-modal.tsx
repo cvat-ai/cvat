@@ -99,11 +99,11 @@ function ExportBackupModal(): JSX.Element | null {
             dispatch(
                 exportBackupAsync(
                     instance,
-                    values.customName ? `${values.customName}.zip` : '',
-                    (useDefaultStorage) ? null : {
-                        location: values.targetStorage?.location,
-                        cloudStorageId: values.targetStorage?.cloud_storage_id,
+                    {
+                        location: useDefaultStorage ? defaultStorageLocation : values.targetStorage?.location,
+                        cloudStorageId: useDefaultStorage ? defaultStorageCloudId : values.targetStorage?.cloud_storage_id,
                     } as Storage,
+                    values.customName ? `${values.customName}.zip` : undefined
                 ),
             );
             closeModal();

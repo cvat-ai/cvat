@@ -778,7 +778,7 @@ export enum StorageLocation {
 
 export interface Storage {
     location: StorageLocation;
-    cloudStorageId: number | null | undefined;
+    cloud_storage_id?: number;
 }
 
 export enum ReviewStatus {

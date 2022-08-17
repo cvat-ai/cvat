@@ -53,14 +53,15 @@ export const exportActions = {
 export const exportDatasetAsync = (
     instance: any,
     format: string,
-    name: string,
     saveImages: boolean,
-    targetStorage: Storage | null,
+    useDefaultSettings: boolean,
+    targetStorage: Storage,
+    name?: string
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
     try {
-        const result = await instance.annotations.exportDataset(format, saveImages, name, targetStorage);
+        const result = await instance.annotations.exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
         if (result) {
             const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
             downloadAnchor.href = result;
@@ -72,12 +73,12 @@ export const exportDatasetAsync = (
     }
 };
 
-export const exportBackupAsync = (instance: any, fileName: string, targetStorage: Storage | null): ThunkAction => async (dispatch) => {
+export const exportBackupAsync = (instance: any, targetStorage: Storage, fileName?: string): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance.id));
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
-        const result = await instance.export(fileName, targetStorage);
+        const result = await instance.export(targetStorage, fileName);
         if (result) {
             const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
             downloadAnchor.href = result;

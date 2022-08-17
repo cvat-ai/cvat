@@ -30,12 +30,12 @@ export const importBackupActions = {
     ),
 };
 
-export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | null, fileName: string | null): ThunkAction => (
+export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | string): ThunkAction => (
     async (dispatch) => {
         dispatch(importBackupActions.importBackup());
         try {
             const inctanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
-            const instance = await inctanceClass.import(storage, file, fileName);
+            const instance = await inctanceClass.import(storage, file);
             dispatch(importBackupActions.importBackupSuccess(instance.id, instanceType));
         } catch (error) {
             dispatch(importBackupActions.importBackupFailed(instanceType, error));

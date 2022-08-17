@@ -11,7 +11,6 @@
     const { checkObjectType } = require('./common');
     const { Project } = require('./project');
     const { Task, Job } = require('./session');
-    const { Loader } = require('./annotation-formats');
     const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
     const { getDeletedFrames } = require('./frames');
 
@@ -224,9 +223,15 @@
         );
     }
 
-    async function uploadAnnotations(session, format, useDefaultLocation, sourceStorage, file, fileName) {
+    async function uploadAnnotations(
+        session,
+        format: string,
+        useDefaultLocation: boolean,
+        sourceStorage: Storage,
+        file: File | string
+    ) {
         const sessionType = session instanceof Task ? 'task' : 'job';
-        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, format, useDefaultLocation, sourceStorage, file, fileName);
+        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, format, useDefaultLocation, sourceStorage, file);
     }
 
     function importAnnotations(session, data) {
@@ -256,30 +261,32 @@
         );
     }
 
-    async function exportDataset(instance, format, name, saveImages = false, targetStorage = null) {
-        if (!(format instanceof String || typeof format === 'string')) {
-            throw new ArgumentError('Format must be a string');
-        }
+    async function exportDataset(
+        instance,
+        format: string,
+        saveImages: boolean,
+        useDefaultSettings: boolean,
+        targetStorage: Storage,
+        name?: string,
+    ) {
         if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
             throw new ArgumentError('A dataset can only be created from a job, task or project');
-        }
-        if (typeof saveImages !== 'boolean') {
-            throw new ArgumentError('Save images parameter must be a boolean');
         }
 
         let result = null;
         if (instance instanceof Task) {
-            result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages, targetStorage);
+            result = await serverProxy.tasks.exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
         } else if (instance instanceof Job) {
-            result = await serverProxy.jobs.exportDataset(instance.id, format, name, saveImages, targetStorage);
+            result = await serverProxy.jobs.exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
         } else {
-            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages, targetStorage);
+            result = await serverProxy.projects.exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
         }
 
         return result;
     }
 
-    function importDataset(instance, format, useDefaultSettings, sourceStorage, file = null, fileName = null, updateStatusCallback = () => {}) {
+    function importDataset(instance, format: string, useDefaultSettings: boolean, sourceStorage: Storage,
+            file: File | string, updateStatusCallback = () => {}) {
         if (!(typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
@@ -289,10 +296,13 @@
         if (!(typeof updateStatusCallback === 'function')) {
             throw new ArgumentError('Callback should be a function');
         }
-        if (!((fileName || file.name).endsWith('.zip'))) {
+        if (typeof file === 'string' && !file.endsWith('.zip')) {
             throw new ArgumentError('File should be file instance with ZIP extension');
         }
-        return serverProxy.projects.importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, fileName, updateStatusCallback);
+        if (file instanceof File && !(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
+            throw new ArgumentError('File should be file instance with ZIP extension');
+        }
+        return serverProxy.projects.importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
     }
 
     function getHistory(session) {

@@ -26,14 +26,13 @@
     const { Label } = require('./labels');
     const User = require('./user');
     const Issue = require('./issue');
-    const { Storage } = require('./storage');
     const { FieldUpdateTrigger, checkObjectType } = require('./common');
 
     function buildDuplicatedAPI(prototype) {
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
-                    async upload(format, useDefaultLocation, sourceStorage, file, fileName) {
+                    async upload(format: string, useDefaultLocation: boolean, sourceStorage: Storage, file: File | string) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             prototype.annotations.upload,
@@ -41,7 +40,6 @@
                             useDefaultLocation,
                             sourceStorage,
                             file,
-                            fileName,
                         );
                         return result;
                     },
@@ -156,14 +154,21 @@
                         return result;
                     },
 
-                    async exportDataset(format, saveImages, customName = '', targetStorage = null) {
+                    async exportDataset(
+                        format: string,
+                        saveImages: boolean,
+                        useDefaultSettings: boolean,
+                        targetStorage: Storage,
+                        customName?: string
+                    ) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             prototype.annotations.exportDataset,
                             format,
                             saveImages,
-                            customName,
-                            targetStorage
+                            useDefaultSettings,
+                            targetStorage,
+                            customName
                         );
                         return result;
                     },
@@ -1897,12 +1902,12 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async export(fileName: string, targetStorage: Storage | null) {
+        async export(targetStorage: Storage, fileName?: string) {
             const result = await PluginRegistry.apiWrapper.call(
                 this,
                 Task.prototype.export,
-                fileName,
-                targetStorage
+                targetStorage,
+                fileName
             );
             return result;
         }
@@ -1917,8 +1922,8 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        static async import(storage, file, fileName) {
-            const result = await PluginRegistry.apiWrapper.call(this, Task.import, storage, file, fileName);
+        static async import(storage: Storage, file: File | string) {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.import, storage, file);
             return result;
         }
     }
@@ -2214,8 +2219,13 @@
         return result;
     };
 
-    Job.prototype.annotations.upload.implementation = async function (format, useDefaultLocation, sourceStorage, file, fileName) {
-        const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file, fileName);
+    Job.prototype.annotations.upload.implementation = async function (
+        format: string,
+        useDefaultLocation: boolean,
+        sourceStorage: Storage,
+        file: File | string
+    ) {
+        const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file);
         return result;
     };
 
@@ -2229,8 +2239,14 @@
         return result;
     };
 
-    Job.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName, targetStorage) {
-        const result = await exportDataset(this, format, customName, saveImages, targetStorage);
+    Job.prototype.annotations.exportDataset.implementation = async function (
+        format: string,
+        saveImages: boolean,
+        useDefaultSettings: boolean,
+        targetStorage: Storage,
+        customName?: string
+    ) {
+        const result = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         return result;
     };
 
@@ -2402,14 +2418,14 @@
         return result;
     };
 
-    Task.prototype.export.implementation = async function (fileName: string, targetStorage: Storage | null) {
-        const result = await serverProxy.tasks.export(this.id, fileName, targetStorage);
+    Task.prototype.export.implementation = async function (targetStorage: Storage, fileName?: string) {
+        const result = await serverProxy.tasks.export(this.id, targetStorage, fileName);
         return result;
     };
 
-    Task.import.implementation = async function (storage, file, fileName) {
+    Task.import.implementation = async function (storage: Storage, file: File | string) {
         // eslint-disable-next-line no-unsanitized/method
-        const result = await serverProxy.tasks.import(storage, file, fileName);
+        const result = await serverProxy.tasks.import(storage, file);
         return result;
     };
 
@@ -2636,8 +2652,13 @@
         return result;
     };
 
-    Task.prototype.annotations.upload.implementation = async function (format, useDefaultLocation, sourceStorage, file, fileName) {
-        const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file, fileName);
+    Task.prototype.annotations.upload.implementation = async function (
+        format: string,
+        useDefaultLocation: boolean,
+        sourceStorage: Storage,
+        file: File | string
+    ) {
+        const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file);
         return result;
     };
 
@@ -2651,8 +2672,14 @@
         return result;
     };
 
-    Task.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName, targetStorage) {
-        const result = await exportDataset(this, format, customName, saveImages, targetStorage);
+    Task.prototype.annotations.exportDataset.implementation = async function (
+        format: string,
+        saveImages: boolean,
+        useDefaultSettings: boolean,
+        targetStorage: Storage,
+        customName?: string
+    ) {
+        const result = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         return result;
     };
 

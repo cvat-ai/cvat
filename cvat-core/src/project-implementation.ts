@@ -8,7 +8,6 @@
     const { getPreview } = require('./frames');
 
     const { Project } = require('./project');
-    const { Storage } = require('./storage');
     const { exportDataset, importDataset } = require('./annotations');
 
     function implementProject(projectClass) {
@@ -71,32 +70,32 @@
         };
 
         projectClass.prototype.annotations.exportDataset.implementation = async function (
-            format,
-            saveImages,
-            customName,
-            targetStorage
+            format: string,
+            saveImages: boolean,
+            useDefaultSettings: boolean,
+            targetStorage: Storage,
+            customName?: string
         ) {
-            const result = exportDataset(this, format, customName, saveImages, targetStorage);
+            const result = exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
             return result;
         };
         projectClass.prototype.annotations.importDataset.implementation = async function (
-            format,
-            useDefaultSettings,
-            sourceStorage,
-            file,
-            fileName,
+            format: string,
+            useDefaultSettings: boolean,
+            sourceStorage: Storage,
+            file: File | string,
             updateStatusCallback
         ) {
-            return importDataset(this, format, useDefaultSettings, sourceStorage, file, fileName, updateStatusCallback);
+            return importDataset(this, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
         };
 
-        projectClass.prototype.export.implementation = async function (fileName: string, targetStorage: Storage | null) {
-            const result = await serverProxy.projects.export(this.id, fileName, targetStorage);
+        projectClass.prototype.export.implementation = async function (targetStorage: Storage, fileName?: string) {
+            const result = await serverProxy.projects.export(this.id, targetStorage, fileName);
             return result;
         };
 
-        projectClass.import.implementation = async function (storage, file, fileName) {
-            const result = await serverProxy.projects.import(storage, file, fileName);
+        projectClass.import.implementation = async function (storage: Storage, file: File | string) {
+            const result = await serverProxy.projects.import(storage, file);
             return result;
         };
 

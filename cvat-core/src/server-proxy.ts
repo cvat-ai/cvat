@@ -3,6 +3,18 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { Storage, StorageLocation } from "enums";
+
+type Params = {
+    org: number | string,
+    use_default_location: boolean,
+    location?: StorageLocation,
+    cloud_storage_id?: number,
+    format?: string,
+    filename?: string,
+    action?: string,
+}
+
 (() => {
     const FormData = require('form-data');
     const { ServerError } = require('./exceptions');
@@ -16,16 +28,16 @@
         return { org: config.organizationID || '' };
     }
 
-    function configureStorage(useDefaultLocation: boolean | null, storage: any) {
-        const params: any = { use_default_location: useDefaultLocation, };
-        if (!useDefaultLocation) {
-            params.location = storage.location;
-            if (storage.cloudStorageId) {
-                params.cloud_storage_id = storage.cloudStorageId;
-            }
-        }
-
-        return params;
+    function configureStorage(storage: Storage = { location: StorageLocation.LOCAL }, useDefaultLocation: boolean = false) {
+        return {
+            use_default_location: useDefaultLocation,
+            ...(!useDefaultLocation ? {
+                location: storage.location,
+                ...(storage.cloudStorageId ? {
+                    cloud_storage_id: storage.cloudStorageId,
+                } : {})
+            } : {})
+        };
     }
 
     function removeToken() {
@@ -594,38 +606,38 @@
             }
 
             function exportDataset(instanceType) {
-                return async function (id, format, name, saveImages, targetStorage = null) {
+                return async function (
+                    id: number,
+                    format: string,
+                    saveImages: boolean,
+                    useDefaultSettings: boolean,
+                    targetStorage: Storage,
+                    name?: string
+                ) {
                     const { backendAPI } = config;
                     const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
-                    const params: any = {
+                    const params: Params = {
                         ...enableOrganization(),
-                        ...configureStorage(!targetStorage?.location, targetStorage),
+                        ...configureStorage(targetStorage, useDefaultSettings),
+                        ...(name ? { filename: name.replace(/\//g, '_') } : {}),
                         format,
                     };
 
-                    if (name) {
-                        params.filename = name.replace(/\//g, '_');
-                    }
-
-
-                    return new Promise((resolve, reject) => {
+                    return new Promise<string | void>((resolve, reject) => {
                         async function request() {
                             Axios.get(baseURL, {
                                 proxy: config.proxy,
                                 params,
                             })
                                 .then((response) => {
-                                    if (response.status === 202) {
+                                    const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
+                                    const { status } = response;
+                                    if (status === 201) params.action = 'download';
+                                    if (status === 202 || (isCloudStorage && status === 201)) {
                                         setTimeout(request, 3000);
-                                    } else if (response.status === 201) {
-                                        params.action = 'download';
-                                        if (response.data['location'] === 'cloud_storage') {
-                                            setTimeout(request, 3000);
-                                        }
-                                        else {
-                                            resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
-                                        }
-                                    } else {
+                                    } else if (status === 201) {
+                                        resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
+                                    } else if (isCloudStorage && status === 200) {
                                         resolve();
                                     }
                                 })
@@ -639,20 +651,26 @@
                 };
             }
 
-            async function importDataset(id, format, useDefaultLocation, sourceStorage, file, fileName, onUpdate) {
+            async function importDataset(
+                id: number,
+                format: string,
+                useDefaultLocation: boolean,
+                sourceStorage: Storage,
+                file: File | string,
+                onUpdate
+            ) {
                 const { backendAPI, origin } = config;
-                const params: any = {
+                const params: Params = {
                     ...enableOrganization(),
-                    ...configureStorage(useDefaultLocation, sourceStorage),
+                    ...configureStorage(sourceStorage, useDefaultLocation),
                     format,
-                    filename: (file) ? file.name : fileName,
+                    filename: typeof file === 'string' ? file : file.name,
                 };
-
 
                 const url = `${backendAPI}/projects/${id}/dataset`;
 
                 async function wait() {
-                    return new Promise((resolve, reject) => {
+                    return new Promise<void>((resolve, reject) => {
                         async function requestStatus() {
                             try {
                                 const response = await Axios.get(url, {
@@ -676,8 +694,9 @@
                         setTimeout(requestStatus, 2000);
                     });
                 }
+                const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
 
-                if (sourceStorage.location === 'cloud_storage') {
+                if (isCloudStorage) {
                     try {
                         await Axios.post(url,
                             new FormData(), {
@@ -692,7 +711,7 @@
                         chunkSize: config.uploadChunkSize * 1024 * 1024,
                         endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
                         totalSentSize: 0,
-                        totalSize: file.size,
+                        totalSize: (file as File).size,
                         onUpdate: (percentage) => {
                             onUpdate('The dataset is being uploaded to the server', percentage);
                         },
@@ -717,38 +736,36 @@
                     }
                 }
                 try {
-                    return await wait();
+                    return wait();
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
             }
 
-            async function exportTask(id, fileName, targetStorage) {
+            async function exportTask(id: number, targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
                 const { backendAPI } = config;
-                const params: any = {
+                const params: Params = {
                     ...enableOrganization(),
-                    ...configureStorage(!targetStorage, targetStorage),
-                    filename: fileName,
+                    ...configureStorage(targetStorage, useDefaultSettings),
+                    ...(fileName ? { filename: fileName } : {})
                 };
                 const url = `${backendAPI}/tasks/${id}/backup`;
 
-                return new Promise((resolve, reject) => {
+                return new Promise<void | string>((resolve, reject) => {
                     async function request() {
                         try {
                             const response = await Axios.get(url, {
                                 proxy: config.proxy,
                                 params,
                             });
-                            if (response.status === 202) {
+                            const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
+                            const { status } = response;
+                            if (status === 201) params.action = 'download';
+                            if (status === 202 || (isCloudStorage && status === 201)) {
                                 setTimeout(request, 3000);
-                            } else if (response.status === 201) {
-                                params.action = 'download';
-                                if (response.data['location'] === 'cloud_storage') {
-                                    setTimeout(request, 3000);
-                                } else {
-                                    resolve(`${url}?${new URLSearchParams(params).toString()}`);
-                                }
-                            } else {
+                            } else if (status === 201) {
+                                resolve(`${url}?${new URLSearchParams(params).toString()}`);
+                            } else if (isCloudStorage && status === 200) {
                                 resolve();
                             }
                         } catch (errorData) {
@@ -760,12 +777,12 @@
                 });
             }
 
-            async function importTask(storage, file, fileName) {
+            async function importTask(storage: Storage, file: File | string) {
                 const { backendAPI } = config;
                 // keep current default params to 'freeze" them during this request
-                const params: any = {
+                const params: Params = {
                     ...enableOrganization(),
-                    location: storage.location,
+                    ...configureStorage(storage),
                 };
 
                 const url = `${backendAPI}/tasks/backup`;
@@ -795,13 +812,10 @@
                         setTimeout(checkStatus);
                     });
                 }
+                const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
 
-                if (storage.cloudStorageId) {
-                    params.cloud_storage_id = storage.cloudStorageId;
-                }
-
-                if (storage.location === 'cloud_storage') {
-                    params.filename = fileName;
+                if (isCloudStorage) {
+                    params.filename = file as string;
                     response = await Axios.post(url,
                         new FormData(), {
                             params,
@@ -812,7 +826,7 @@
                         chunkSize: config.uploadChunkSize * 1024 * 1024,
                         endpoint: `${origin}${backendAPI}/tasks/backup/`,
                         totalSentSize: 0,
-                        totalSize: file.size,
+                        totalSize: (file as File).size,
                     };
                     await Axios.post(url,
                         new FormData(), {
@@ -828,37 +842,35 @@
                             headers: { 'Upload-Finish': true },
                         });
                 }
-                return await wait(taskData, response);
+                return wait(taskData, response);
             }
 
-            async function exportProject(id, fileName: string, targetStorage: any) {
+            async function exportProject(id: number, targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
                 const { backendAPI } = config;
                 // keep current default params to 'freeze" them during this request
-                const params: any = {
+                const params: Params = {
                     ...enableOrganization(),
-                    ...configureStorage(!targetStorage, targetStorage),
-                    filename: fileName,
+                    ...configureStorage(targetStorage, useDefaultSettings),
+                    ...(fileName ? { filename: fileName } : {})
                 };
 
                 const url = `${backendAPI}/projects/${id}/backup`;
 
-                return new Promise((resolve, reject) => {
+                return new Promise<void | string>((resolve, reject) => {
                     async function request() {
                         try {
                             const response = await Axios.get(url, {
                                 proxy: config.proxy,
                                 params,
                             });
-                            if (response.status === 202) {
+                            const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
+                            const { status } = response;
+                            if (status === 201) params.action = 'download';
+                            if (status === 202 || (isCloudStorage && status === 201)) {
                                 setTimeout(request, 3000);
-                            } else if (response.status === 201) {
-                                params.action = 'download';
-                                if (response.data['location'] === 'cloud_storage') {
-                                    setTimeout(request, 3000);
-                                } else {
-                                    resolve(`${url}?${new URLSearchParams(params).toString()}`);
-                                }
-                            } else {
+                            } else if (status === 201) {
+                                resolve(`${url}?${new URLSearchParams(params).toString()}`);
+                            } else if (isCloudStorage && status === 200) {
                                 resolve();
                             }
                         } catch (errorData) {
@@ -870,15 +882,12 @@
                 });
             }
 
-            async function importProject(storage, file, fileName) {
+            async function importProject(storage: Storage, file: File | string) {
                 const { backendAPI } = config;
                 // keep current default params to 'freeze" them during this request
-                const params: any = {
+                const params: Params = {
                     ...enableOrganization(),
-                    location: storage.location,
-                }
-                if (storage.cloudStorageId) {
-                    params.cloud_storage_id = storage.cloudStorageId;
+                    ...configureStorage(storage),
                 }
 
                 const url = `${backendAPI}/projects/backup`;
@@ -909,9 +918,10 @@
                         setTimeout(request);
                     });
                 };
+                const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
 
-                if (storage.location === 'cloud_storage') {
-                    params.filename = fileName;
+                if (isCloudStorage) {
+                    params.filename = file;
                     response = await Axios.post(url,
                         new FormData(), {
                             params,
@@ -922,7 +932,7 @@
                         chunkSize: config.uploadChunkSize * 1024 * 1024,
                         endpoint: `${origin}${backendAPI}/projects/backup/`,
                         totalSentSize: 0,
-                        totalSize: file.size,
+                        totalSize: (file as File).size,
                     };
                     await Axios.post(url,
                         new FormData(), {
@@ -939,7 +949,7 @@
                         }
                     );
                 }
-                return await wait(projectData, response);
+                return wait(projectData, response);
             }
 
             async function createTask(taskSpec, taskDataSpec, onUpdate) {
@@ -1415,19 +1425,26 @@
             }
 
             // Session is 'task' or 'job'
-            async function uploadAnnotations(session, id, format, useDefaultLocation, sourceStorage, file, fileName) {
+            async function uploadAnnotations(
+                session,
+                id: number,
+                format: string,
+                useDefaultLocation: boolean,
+                sourceStorage: Storage,
+                file: File | string
+            ) {
                 const { backendAPI, origin } = config;
-                const params: any = {
+                const params: Params = {
                     ...enableOrganization(),
-                    ...configureStorage(useDefaultLocation, sourceStorage),
+                    ...configureStorage(sourceStorage, useDefaultLocation),
                     format,
-                    filename: (file) ? file.name : fileName,
+                    filename: typeof file === 'string' ? file : file.name,
                 };
 
                 const url = `${backendAPI}/${session}s/${id}/annotations`;
 
                 async function wait() {
-                    return new Promise((resolve, reject) => {
+                    return new Promise<void>((resolve, reject) => {
                         async function requestStatus() {
                             try {
                                 const response = await Axios.put(
@@ -1450,8 +1467,9 @@
                         setTimeout(requestStatus);
                     });
                 }
+                const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
 
-                if (sourceStorage.location === 'cloud_storage') {
+                if (isCloudStorage) {
                     try {
                         await Axios.post(url,
                             new FormData(), {
@@ -1489,7 +1507,7 @@
                 }
 
                 try {
-                    return await wait();
+                    return wait();
                 } catch (errorData) {
                     throw generateError(errorData);
                 }

@@ -46,7 +46,13 @@ export const importActions = {
     ),
 };
 
-export const importDatasetAsync = (instance: any, format: string, useDefaultSettings: boolean, sourceStorage: Storage, file: File | null, fileName: string | null): ThunkAction => (
+export const importDatasetAsync = (
+    instance: any,
+    format: string,
+    useDefaultSettings: boolean,
+    sourceStorage: Storage,
+    file: File | string
+): ThunkAction => (
     async (dispatch, getState) => {
         const resource = instance instanceof core.classes.Project ? 'dataset' : 'annotation';
 
@@ -58,7 +64,7 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                await instance.annotations.importDataset(format, useDefaultSettings, sourceStorage, file, fileName, (message: string, progress: number) => (
+                await instance.annotations.importDataset(format, useDefaultSettings, sourceStorage, file, (message: string, progress: number) => (
                     dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
                 ));
             } else if (instance instanceof core.classes.Task) {
@@ -66,9 +72,7 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, fileName, (message: string, progress: number) => (
-                    dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
-                ));
+                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file);
             } else { // job
                 if (state.import.tasks?.activities[instance.taskId]) {
                     throw Error('Annotations is being uploaded for the task');
@@ -81,7 +85,7 @@ export const importDatasetAsync = (instance: any, format: string, useDefaultSett
                 dispatch(importActions.importDataset(instance, format));
 
                 const frame = state.annotation.player.frame.number;
-                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, fileName);
+                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file);
 
                 await instance.logger.log(LogType.uploadAnnotations, {
                     ...(await jobInfoGenerator(instance)),

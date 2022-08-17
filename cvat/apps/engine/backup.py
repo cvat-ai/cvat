@@ -777,7 +777,7 @@ def export(db_instance, request):
                         raise NotImplementedError()
                 else:
                     if os.path.exists(file_path):
-                        return Response({'location': location_conf.get('location')}, status=status.HTTP_201_CREATED)
+                        return Response(status=status.HTTP_201_CREATED)
             elif rq_job.is_failed:
                 exc_info = str(rq_job.exc_info)
                 rq_job.delete()

@@ -3,34 +3,20 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
-import Select from 'antd/lib/select';
 import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
-
-import { StorageLocation } from 'reducers/interfaces';
-
-import {
-    UploadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleOutlined,
-} from '@ant-design/icons';
-
+import { InboxOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers/interfaces';
 import { importBackupActions, importBackupAsync } from 'actions/import-backup-actions';
-
-import Space from 'antd/lib/space';
-import Switch from 'antd/lib/switch';
-import Tooltip from 'antd/lib/tooltip';
-
-import getCore from 'cvat-core-wrapper';
 import SourceStorageField from 'components/storage/source-storage-field';
-import { Storage } from 'reducers/interfaces';
+import { Storage, StorageLocation } from 'reducers/interfaces';
 import Input from 'antd/lib/input/Input';
-
 
 type FormValues = {
     fileName?: string | undefined;
@@ -50,9 +36,7 @@ function ImportBackupModal(): JSX.Element {
     const [file, setFile] = useState<File | null>(null);
     const instanceType = useSelector((state: CombinedState) => state.importBackup?.instanceType);
     const modalVisible = useSelector((state: CombinedState) => state.importBackup.modalVisible);
-
     const dispatch = useDispatch();
-
     const [selectedSourceStorage, setSelectedSourceStorage] = useState<Storage | null>(null);
 
     const uploadLocalFile = (): JSX.Element => {
@@ -120,13 +104,12 @@ function ImportBackupModal(): JSX.Element {
                 });
                 return;
             }
-            const fileName = (values.location === StorageLocation.CLOUD_STORAGE) ? values.fileName : null;
             const sourceStorage = {
-                location: values.location,
-                cloudStorageId: values.cloudStorageId,
+                location: values.sourceStorage.location,
+                cloudStorageId: values.sourceStorage.cloud_storage_id,
             } as Storage;
 
-            dispatch(importBackupAsync(instanceType, sourceStorage, file, fileName as string));
+            dispatch(importBackupAsync(instanceType, sourceStorage, file || (values.fileName) as string));
 
             Notification.info({
                 message: `The ${instanceType} creating from the backup has been started`,

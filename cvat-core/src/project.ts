@@ -9,7 +9,6 @@
     const { Label } = require('./labels');
     const User = require('./user');
     const { FieldUpdateTrigger } = require('./common');
-    const { Storage } = require('./storage');
 
     /**
      * Class representing a project
@@ -251,34 +250,22 @@
                      * @name sourceStorage
                      * @type {module:API.cvat.classes.Storage}
                      * @memberof module:API.cvat.classes.Project
+                     * @readonly
                      * @instance
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     sourceStorage: {
                         get: () => data.source_storage,
-                        set: (sourceStorage) => {
-                            if (typeof sourceStorage !== Storage) {
-                                throw new ArgumentError('Type of value must be Storage');
-                            }
-                            data.source_storage = sourceStorage;
-                        },
                     },
                     /**
                      * Target storage for export resources.
                      * @name targetStorage
                      * @type {module:API.cvat.classes.Storage}
                      * @memberof module:API.cvat.classes.Project
+                     * @readonly
                      * @instance
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     targetStorage: {
                         get: () => data.target_storage,
-                        set: (targetStorage) => {
-                            if (typeof targetStorage !== Storage) {
-                                throw new ArgumentError('Type of value must be Storage');
-                            }
-                            data.target_storage = targetStorage;
-                        },
                     },
                     _internalData: {
                         get: () => data,
@@ -356,12 +343,12 @@
          * @throws {module:API.cvat.exceptions.PluginError}
          * @returns {string} URL to get result archive
          */
-        async export(fileName: string, targetStorage: Storage | null) {
+        async export(targetStorage: Storage, fileName?: string) {
             const result = await PluginRegistry.apiWrapper.call(
                 this,
                 Project.prototype.export,
-                fileName,
-                targetStorage
+                targetStorage,
+                fileName
             );
             return result;
         }
@@ -377,8 +364,8 @@
          * @throws {module:API.cvat.exceptions.PluginError}
          * @returns {number} ID of the imported project
          */
-        static async import(storage, file, fileName) {
-            const result = await PluginRegistry.apiWrapper.call(this, Project.import, storage, file, fileName);
+        static async import(storage: Storage, file: File | string) {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.import, storage, file);
             return result;
         }
     }
@@ -388,18 +375,31 @@
         Object.freeze({
             annotations: Object.freeze({
                 value: {
-                    async exportDataset(format, saveImages, customName = '', targetStorage = null) {
+                    async exportDataset(
+                        format: string,
+                        saveImages: boolean,
+                        useDefaultSettings: boolean,
+                        targetStorage: Storage,
+                        customName?: string
+                    ) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             Project.prototype.annotations.exportDataset,
                             format,
                             saveImages,
-                            customName,
-                            targetStorage
+                            useDefaultSettings,
+                            targetStorage,
+                            customName
                         );
                         return result;
                     },
-                    async importDataset(format, useDefaultSettings, sourceStorage, file = null, fileName = null, updateStatusCallback = null) {
+                    async importDataset(
+                        format: string,
+                        useDefaultSettings: boolean,
+                        sourceStorage: Storage,
+                        file: File | string,
+                        updateStatusCallback = null
+                    ) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             Project.prototype.annotations.importDataset,
@@ -407,7 +407,6 @@
                             useDefaultSettings,
                             sourceStorage,
                             file,
-                            fileName,
                             updateStatusCallback
                         );
                         return result;

@@ -46,7 +46,9 @@ function ExportDatasetModal(): JSX.Element | null {
     const [activities, setActivities] = useState<string[]>([]);
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
     const [form] = Form.useForm();
-    const [targetStorage, setTargetStorage] = useState<Storage | null>(null);
+    const [targetStorage, setTargetStorage] = useState<Storage>({
+        location: StorageLocation.LOCAL,
+    });
     const [defaultStorageLocation, setDefaultStorageLocation] = useState<string | null>(null);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
@@ -64,19 +66,14 @@ function ExportDatasetModal(): JSX.Element | null {
             if (instance instanceof core.classes.Project) {
                 setInstanceType(`project #${instance.id}`);
                 setActivities(projectExportActivities[instance.id]?.dataset || []);
-            // TODO need refactoring
-            } else if (instance instanceof core.classes.Task) {
-                const taskID = instance.id;
-                setInstanceType(`task #${taskID}`);
-                setActivities(taskExportActivities[taskID]?.dataset || []);
-                if (instance.mode === 'interpolation' && instance.dimension === '2d') {
-                    form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
-                } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
-                    form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
+            } else if (instance instanceof core.classes.Task || instance instanceof core.classes.Job) {
+                if (instance instanceof core.classes.Task) {
+                    setInstanceType(`task #${instance.id}`);
+                    setActivities(taskExportActivities[instance.id]?.dataset || []);
+                } else {
+                    setInstanceType(`job #${instance.id}`);
+                    setActivities(jobExportActivities[instance.id]?.dataset || []);
                 }
-            } else if (instance instanceof core.classes.Job) {
-                setInstanceType(`job #${instance.id}`);
-                setActivities(jobExportActivities[instance.id]?.dataset || []);
                 if (instance.mode === 'interpolation' && instance.dimension === '2d') {
                     form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
                 } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
@@ -133,9 +130,13 @@ function ExportDatasetModal(): JSX.Element | null {
                 exportDatasetAsync(
                     instance,
                     values.selectedFormat as string,
-                    values.customName ? `${values.customName}.zip` : '',
                     values.saveImages,
-                    targetStorage,
+                    useDefaultTargetStorage,
+                    useDefaultTargetStorage ? {
+                        location: defaultStorageLocation,
+                        cloud_storage_id: defaultStorageCloudId,
+                    }: targetStorage,
+                    values.customName ? `${values.customName}.zip` : null,
                 ),
             );
             closeModal();

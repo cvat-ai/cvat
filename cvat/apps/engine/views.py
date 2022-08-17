@@ -2215,7 +2215,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                         raise NotImplementedError()
                 else:
                     if osp.exists(file_path):
-                        return Response({'location': location_conf.get('location')}, status=status.HTTP_201_CREATED)
+                        return Response(status=status.HTTP_201_CREATED)
             elif rq_job.is_failed:
                 exc_info = str(rq_job.exc_info)
                 rq_job.delete()
