@@ -5,9 +5,12 @@
 import React from 'react';
 import Layout from 'antd/lib/layout';
 
-import { ActiveControl, Rotation } from 'reducers/interfaces';
+import {
+    ActiveControl, ObjectType, Rotation, ShapeType,
+} from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Label } from 'components/labels-editor/common';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
@@ -23,6 +26,7 @@ import DrawPolylineControl, { Props as DrawPolylineControlProps } from './draw-p
 import DrawPointsControl, { Props as DrawPointsControlProps } from './draw-points-control';
 import DrawEllipseControl, { Props as DrawEllipseControlProps } from './draw-ellipse-control';
 import DrawCuboidControl, { Props as DrawCuboidControlProps } from './draw-cuboid-control';
+import DrawSkeletonControl, { Props as DrawSkeletonControlProps } from './draw-skeleton-control';
 import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
 import MergeControl, { Props as MergeControlProps } from './merge-control';
 import GroupControl, { Props as GroupControlProps } from './group-control';
@@ -61,6 +65,7 @@ const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineContro
 const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
 const ObservedDrawEllipseControl = ControlVisibilityObserver<DrawEllipseControlProps>(DrawEllipseControl);
 const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
+const ObservedDrawSkeletonControl = ControlVisibilityObserver<DrawSkeletonControlProps>(DrawSkeletonControl);
 const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
 const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
@@ -85,6 +90,24 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
+    const withUnspecifiedType = labels.some((label: any) => label.type === 'any' && !label.hasParent);
+    let rectangleControlVisible = withUnspecifiedType;
+    let polygonControlVisible = withUnspecifiedType;
+    let polylineControlVisible = withUnspecifiedType;
+    let pointsControlVisible = withUnspecifiedType;
+    let ellipseControlVisible = withUnspecifiedType;
+    let cuboidControlVisible = withUnspecifiedType;
+    let tagControlVisible = withUnspecifiedType;
+    const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
+    labels.forEach((label: Label) => {
+        rectangleControlVisible = rectangleControlVisible || label.type === ShapeType.RECTANGLE;
+        polygonControlVisible = polygonControlVisible || label.type === ShapeType.POLYGON;
+        polylineControlVisible = polylineControlVisible || label.type === ShapeType.POLYLINE;
+        pointsControlVisible = pointsControlVisible || label.type === ShapeType.POINTS;
+        ellipseControlVisible = ellipseControlVisible || label.type === ShapeType.ELLIPSE;
+        cuboidControlVisible = cuboidControlVisible || label.type === ShapeType.CUBOID;
+        tagControlVisible = tagControlVisible || label.type === ObjectType.TAG;
+    });
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
@@ -131,6 +154,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     ActiveControl.DRAW_POLYLINE,
                     ActiveControl.DRAW_RECTANGLE,
                     ActiveControl.DRAW_CUBOID,
+                    ActiveControl.DRAW_ELLIPSE,
+                    ActiveControl.DRAW_SKELETON,
                     ActiveControl.AI_TOOLS,
                     ActiveControl.OPENCV_TOOLS,
                 ].includes(activeControl);
@@ -227,38 +252,77 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
             <ObservedToolsControl />
             <ObservedOpenCVControl />
-            <ObservedDrawRectangleControl
-                canvasInstance={canvasInstance}
-                isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
-                disabled={controlsDisabled}
-            />
-            <ObservedDrawPolygonControl
-                canvasInstance={canvasInstance}
-                isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
-                disabled={controlsDisabled}
-            />
-            <ObservedDrawPolylineControl
-                canvasInstance={canvasInstance}
-                isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
-                disabled={controlsDisabled}
-            />
-            <ObservedDrawPointsControl
-                canvasInstance={canvasInstance}
-                isDrawing={activeControl === ActiveControl.DRAW_POINTS}
-                disabled={controlsDisabled}
-            />
-            <ObservedDrawEllipseControl
-                canvasInstance={canvasInstance}
-                isDrawing={activeControl === ActiveControl.DRAW_ELLIPSE}
-                disabled={controlsDisabled}
-            />
-            <ObservedDrawCuboidControl
-                canvasInstance={canvasInstance}
-                isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
-                disabled={controlsDisabled}
-            />
-            <ObservedSetupTagControl canvasInstance={canvasInstance} isDrawing={false} disabled={controlsDisabled} />
-
+            {
+                rectangleControlVisible && (
+                    <ObservedDrawRectangleControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                polygonControlVisible && (
+                    <ObservedDrawPolygonControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                polylineControlVisible && (
+                    <ObservedDrawPolylineControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                pointsControlVisible && (
+                    <ObservedDrawPointsControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_POINTS}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                ellipseControlVisible && (
+                    <ObservedDrawEllipseControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_ELLIPSE}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                cuboidControlVisible && (
+                    <ObservedDrawCuboidControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                skeletonControlVisible && (
+                    <ObservedDrawSkeletonControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_SKELETON}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                tagControlVisible && (
+                    <ObservedSetupTagControl
+                        canvasInstance={canvasInstance}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
             <hr />
 
             <ObservedMergeControl

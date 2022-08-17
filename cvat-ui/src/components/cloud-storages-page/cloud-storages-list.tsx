@@ -6,7 +6,7 @@ import React from 'react';
 import Pagination from 'antd/lib/pagination';
 import { Row, Col } from 'antd/lib/grid';
 
-import { CloudStorage } from 'reducers/interfaces';
+import { CloudStorage } from 'reducers';
 import CloudStorageItemComponent from './cloud-storage-item';
 
 interface Props {

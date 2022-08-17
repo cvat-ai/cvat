@@ -14,7 +14,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 
-import { CombinedState, Project } from 'reducers/interfaces';
+import { CombinedState, Project } from 'reducers';
 import { useCardHeightHOC } from 'utils/hooks';
 import ProjectActionsMenuComponent from './actions-menu';
 

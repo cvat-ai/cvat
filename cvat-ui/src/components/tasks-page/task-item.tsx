@@ -14,7 +14,7 @@ import Progress from 'antd/lib/progress';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
-import { ActiveInference } from 'reducers/interfaces';
+import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {

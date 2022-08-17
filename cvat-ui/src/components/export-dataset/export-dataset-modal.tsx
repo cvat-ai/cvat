@@ -13,12 +13,12 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
-import { CombinedState, Storage, StorageLocation } from 'reducers/interfaces';
-import { exportActions, exportDatasetAsync } from 'actions/export-actions';
-import getCore from 'cvat-core-wrapper';
 import Switch from 'antd/lib/switch';
-import { Space } from 'antd';
+import Space from 'antd/lib/space';
 import TargetStorageField from 'components/storage/target-storage-field';
+import { CombinedState, Storage, StorageLocation } from 'reducers';
+import { exportActions, exportDatasetAsync } from 'actions/export-actions';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 

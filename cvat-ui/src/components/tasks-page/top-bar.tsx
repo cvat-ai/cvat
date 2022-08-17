@@ -12,7 +12,7 @@ import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
-import { TasksQuery } from 'reducers/interfaces';
+import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,

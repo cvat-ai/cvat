@@ -6,7 +6,7 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { ActiveControl, Rotation } from 'reducers/interfaces';
+import { ActiveControl, Rotation } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 
 import RotateControl from 'components/annotation-page/standard-workspace/controls-side-bar/rotate-control';

@@ -11,7 +11,7 @@ import {
     propagateObjectAsync,
 } from 'actions/annotation-actions';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
 
 interface StateToProps {

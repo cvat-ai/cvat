@@ -13,13 +13,14 @@ import Form, { FormInstance } from 'antd/lib/form';
 import Badge from 'antd/lib/badge';
 import { Store } from 'antd/lib/form/interface';
 
+import { RawAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import consts from 'consts';
 import {
-    equalArrayHead, idGenerator, Label, Attribute,
+    equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
 } from './common';
 
 export enum AttributeType {
@@ -31,9 +32,11 @@ export enum AttributeType {
 }
 
 interface Props {
-    label: Label | null;
+    label: LabelOptColor | null;
     labelNames?: string[];
-    onSubmit: (label: Label) => void;
+    onSubmit: (label: LabelOptColor) => void;
+    onSkeletonSubmit?: () => SkeletonConfiguration | null;
+    resetSkeleton?: () => void;
     onCancel: () => void;
 }
 
@@ -54,17 +57,28 @@ export default class LabelForm extends React.Component<Props> {
     };
 
     private handleSubmit = (values: Store): void => {
-        const { label, onSubmit, onCancel } = this.props;
+        const {
+            label, onSubmit, onSkeletonSubmit, onCancel, resetSkeleton,
+        } = this.props;
 
         if (!values.name) {
             onCancel();
             return;
         }
 
+        let skeletonConfiguration: SkeletonConfiguration | null = null;
+        if (onSkeletonSubmit) {
+            skeletonConfiguration = onSkeletonSubmit();
+            if (!skeletonConfiguration) {
+                return;
+            }
+        }
+
         onSubmit({
             name: values.name,
             id: label ? label.id : idGenerator(),
             color: values.color,
+            type: label && label.id as number > 0 ? label?.type : values.type || label?.type || 'any',
             attributes: (values.attributes || []).map((attribute: Store) => {
                 let attrValues: string | string[] = attribute.values;
                 if (!Array.isArray(attrValues)) {
@@ -82,12 +96,16 @@ export default class LabelForm extends React.Component<Props> {
                     input_type: attribute.type.toLowerCase(),
                 };
             }),
+            ...(skeletonConfiguration || {}),
         });
 
         if (this.formRef.current) {
             // resetFields does not remove existed attributes
             this.formRef.current.setFieldsValue({ attributes: undefined });
             this.formRef.current.resetFields();
+            if (resetSkeleton) {
+                resetSkeleton();
+            }
 
             if (!label) {
                 this.focus();
@@ -112,9 +130,9 @@ export default class LabelForm extends React.Component<Props> {
     };
 
     /* eslint-disable class-methods-use-this */
-    private renderAttributeNameInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderAttributeNameInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
         const { key } = fieldInstance;
-        const locked = attr ? attr.id >= 0 : false;
+        const locked = attr ? attr.id as number >= 0 : false;
         const value = attr ? attr.name : '';
 
         return (
@@ -139,9 +157,9 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderAttributeTypeInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderAttributeTypeInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
         const { key } = fieldInstance;
-        const locked = attr ? attr.id >= 0 : false;
+        const locked = attr ? attr.id as number >= 0 : false;
         const type = attr ? attr.input_type.toUpperCase() : AttributeType.SELECT;
 
         return (
@@ -169,9 +187,9 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderAttributeValuesInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderAttributeValuesInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
         const { key } = fieldInstance;
-        const locked = attr ? attr.id >= 0 : false;
+        const locked = attr ? attr.id as number >= 0 : false;
         const existingValues = attr ? attr.values : [];
 
         const validator = (_: any, values: string[]): Promise<void> => {
@@ -240,9 +258,9 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderNumberRangeInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderNumberRangeInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
         const { key } = fieldInstance;
-        const locked = attr ? attr.id >= 0 : false;
+        const locked = attr ? attr.id as number >= 0 : false;
         const value = attr ? attr.values : '';
 
         const validator = (_: any, strNumbers: string): Promise<void> => {
@@ -294,7 +312,7 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderDefaultValueInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderDefaultValueInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const value = attr ? attr.values[0] : '';
 
@@ -305,9 +323,9 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderMutableAttributeInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderMutableAttributeInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
         const { key } = fieldInstance;
-        const locked = attr ? attr.id >= 0 : false;
+        const locked = attr ? attr.id as number >= 0 : false;
         const value = attr ? attr.mutable : false;
 
         return (
@@ -326,9 +344,9 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderDeleteAttributeButton(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderDeleteAttributeButton(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
         const { key } = fieldInstance;
-        const locked = attr ? attr.id >= 0 : false;
+        const locked = attr ? attr.id as number >= 0 : false;
 
         return (
             <CVATTooltip title='Delete the attribute'>
@@ -514,7 +532,7 @@ export default class LabelForm extends React.Component<Props> {
         const { label } = this.props;
         if (this.formRef.current && label && label.attributes.length) {
             const convertedAttributes = label.attributes.map(
-                (attribute: Attribute): Store => ({
+                (attribute: RawAttribute): Store => ({
                     ...attribute,
                     values:
                         attribute.input_type.toUpperCase() === 'NUMBER' ? attribute.values.join(';') : attribute.values,

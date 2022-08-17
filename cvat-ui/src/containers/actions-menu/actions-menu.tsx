@@ -8,7 +8,8 @@ import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
+
 import { modelsActions } from 'actions/models-actions';
 import {
     deleteTaskAsync,
@@ -16,7 +17,6 @@ import {
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
-import { importBackupActions } from 'actions/import-backup-actions';
 
 interface OwnProps {
     taskInstance: any;
@@ -30,7 +30,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null) => void;
-    showImportModal: (taskInstance: any, isDataset: boolean) => void;
+    showImportModal: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
     deleteTask: (taskInstance: any) => void;
     openMoveTaskToProjectWindow: (taskInstance: any) => void;
@@ -60,12 +60,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null): void => {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
-        showImportModal: (taskInstance: any, isDataset: boolean): void => {
-            if (isDataset) {
-                dispatch(importActions.openImportModal(taskInstance, 'annotation'));
-            } else {
-                dispatch(importBackupActions.openImportModal('task'));
-            }
+        showImportModal: (taskInstance: any): void => {
+            dispatch(importActions.openImportModal(taskInstance, 'annotation'));
         },
         deleteTask: (taskInstance: any): void => {
             dispatch(deleteTaskAsync(taskInstance));
@@ -92,13 +88,14 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         openMoveTaskToProjectWindow,
     } = props;
 
-    function onClickMenu(params: MenuInfo): void | JSX.Element {
+    const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
             showExportModal(taskInstance, 'dataset');
         } else if (action === Actions.DELETE_TASK) {
             deleteTask(taskInstance);
         } else if (action === Actions.OPEN_BUG_TRACKER) {
+            /* eslint-disable-next-line security/detect-non-literal-fs-filename */
             window.open(`${taskInstance.bugTracker}`, '_blank');
         } else if (action === Actions.RUN_AUTO_ANNOTATION) {
             openRunModelWindow(taskInstance);
@@ -107,11 +104,9 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
             openMoveTaskToProjectWindow(taskInstance.id);
         } else if (action === Actions.LOAD_TASK_ANNO) {
-            showImportModal(taskInstance, true);
-        } else if (action === Actions.IMPORT_TASK) {
-            showImportModal(taskInstance, false);
+            showImportModal(taskInstance);
         }
-    }
+    };
 
     return (
         <ActionsMenuComponent

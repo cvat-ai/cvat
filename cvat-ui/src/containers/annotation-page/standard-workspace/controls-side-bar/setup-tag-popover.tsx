@@ -5,12 +5,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers';
 import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import getCore from 'cvat-core-wrapper';
+import { getCore, Label } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 interface DispatchToProps {
@@ -68,19 +68,23 @@ function mapStateToProps(state: CombinedState): StateToProps {
 type Props = StateToProps & DispatchToProps;
 
 interface State {
-    selectedLabelID: number;
+    selectedLabelID: number | null;
     frameTags: any[]
     canAddSelectedTag: boolean;
 }
 
 class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
+    private satisfiedLabels: Label[];
     constructor(props: Props) {
         super(props);
 
         const { states } = props;
         const frameTags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
+        this.satisfiedLabels = props.labels.filter((label: Label) => (
+            ['any', ObjectType.TAG].includes(label.type)
+        ));
 
-        const defaultLabelID = props.labels[0].id;
+        const defaultLabelID = this.satisfiedLabels.length ? this.satisfiedLabels[0].id as number : null;
         this.state = {
             selectedLabelID: defaultLabelID,
             canAddSelectedTag: frameTags.every((objectState: any): boolean => objectState.label.id !== defaultLabelID),
@@ -92,12 +96,16 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const { frameTags: prevFrameTags } = prevState;
         const { frame: prevFrame } = prevProps;
         const { states, frame } = this.props;
-        const frameTags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
-        if (prevFrame === frame && prevFrameTags.length === frameTags.length) return;
-
         const { selectedLabelID } = this.state;
-        const canAddSelectedTag =
-                        frameTags.every((objectState: any): boolean => objectState.label.id !== selectedLabelID);
+
+        const frameTags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
+        if (prevFrame === frame && prevFrameTags.length === frameTags.length) {
+            // do not update state if not necessary
+            return;
+        }
+
+        const canAddSelectedTag = frameTags
+            .every((objectState: any): boolean => objectState.label.id !== selectedLabelID);
 
         this.setState({
             frameTags,
@@ -123,7 +131,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         } = this.props;
 
         const { selectedLabelID, canAddSelectedTag } = this.state;
-        if (canAddSelectedTag) {
+        if (selectedLabelID !== null && canAddSelectedTag) {
             canvasInstance.cancel();
 
             onRememberObject(selectedLabelID);
@@ -140,11 +148,11 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const { selectedLabelID } = this.state;
-        const { normalizedKeyMap, labels } = this.props;
+        const { normalizedKeyMap } = this.props;
 
         return (
             <SetupTagPopoverComponent
-                labels={labels}
+                labels={this.satisfiedLabels}
                 selectedLabelID={selectedLabelID}
                 repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}

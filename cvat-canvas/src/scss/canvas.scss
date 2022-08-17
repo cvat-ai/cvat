@@ -10,6 +10,12 @@
     stroke-opacity: 1;
 }
 
+g.cvat_canvas_shape {
+    > circle {
+        fill-opacity: 1;
+    }
+}
+
 polyline.cvat_canvas_shape {
     fill-opacity: 0;
 }
@@ -120,7 +126,6 @@ polyline.cvat_canvas_shape_splitting {
     @extend .cvat_shape_drawing_opacity;
 
     fill: white;
-    stroke: black;
 }
 
 .cvat_canvas_zoom_selection {
@@ -132,6 +137,12 @@ polyline.cvat_canvas_shape_splitting {
 
 .cvat_canvas_shape_occluded {
     stroke-dasharray: 5;
+}
+
+g.cvat_canvas_shape_occluded {
+    > rect {
+        stroke-dasharray: 5;
+    }
 }
 
 .svg_select_points_rot {
@@ -224,6 +235,12 @@ polyline.cvat_canvas_shape_splitting {
         fill: lightgray;
         stroke: black;
     }
+}
+
+.cvat_canvas_skeleton_wrapping_rect {
+    // wrapping rect must not apply transform attribute from selectize.js
+    // otherwise it rotated twice, because we apply the same rotation value to parent element (skeleton itself)
+    transform: none !important;
 }
 
 .cvat_canvas_pixelized {

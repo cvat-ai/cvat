@@ -11,7 +11,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Input from 'antd/lib/input';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import { usePrevious } from 'utils/hooks';
-import { ProjectsQuery } from 'reducers/interfaces';
+import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
 import {

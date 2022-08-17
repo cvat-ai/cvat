@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import { LoadingOutlined } from '@ant-design/icons';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-import { DimensionType } from '../../reducers/interfaces';
+import { DimensionType } from '../../reducers';
 
 interface Props {
     taskID: number;

@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
-import { ImportDatasetState } from './interfaces';
-import getCore from 'cvat-core-wrapper';
+import { ImportDatasetState } from '.';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 

@@ -8,8 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Menu from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
-
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
