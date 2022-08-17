@@ -6,9 +6,23 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Generic, List, Literal, Type, TypeVar, Union, overload
+from copy import deepcopy
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
-from cvat_sdk.api_client.model_utils import IModelData, ModelNormal
+from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.helpers import get_paginated_collection
 
 if TYPE_CHECKING:
@@ -43,6 +57,10 @@ class ModelProxy(ABC, Generic[ModelType, ApiType]):
 
 
 class Entity(ModelProxy[ModelType, ApiType]):
+    """
+    Represents a single object. Implements related operations and provides access to data members.
+    """
+
     _model: ModelType
 
     def __init__(self, client: Client, model: ModelType) -> None:
@@ -50,29 +68,52 @@ class Entity(ModelProxy[ModelType, ApiType]):
         self.__dict__["_model"] = model
 
     def __getattr__(self, __name: str) -> Any:
+        # NOTE: be aware of potential problems with throwing AttributeError from @property
+        # in derived classes!
+        # https://medium.com/@ceshine/python-debugging-pitfall-mixed-use-of-property-and-getattr-f89e0ede13f1
         return self._model[__name]
 
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        if __name in self.__dict__:
-            self.__dict__[__name] = __value
-        else:
-            self._model[__name] = __value
-
-    def sync(self):
-        """Pulls server state and commits local model changes"""
-        raise NotImplementedError
-
-    def update(self, **kwargs):
-        """Updates multiple fields at once"""
-        for k, v in kwargs.items():
-            setattr(self._model, k, v)
+    # def __setattr__(self, __name: str, __value: Any) -> None:
+    #     if __name in self.__dict__:
+    #         self.__dict__[__name] = __value
+    #     else:
+    #         self._model[__name] = __value
 
     def __str__(self) -> str:
         return str(self._model)
 
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}: id={getattr(self, self._model_id_field)}>"
+
 
 class Repo(ModelProxy[ModelType, ApiType]):
-    _entity_type: Type[Entity]
+    """
+    Represents a collection of corresponding Entity objects.
+    Implements group and management operations for entities.
+    """
+
+    _entity_type: Type[Entity[ModelType, ApiType]]
+
+
+### Utilities
+
+
+def build_model_bases(
+    mt: Type[ModelType], at: Type[ApiType], *, api_member_name: Optional[str] = None
+) -> Tuple[Type[Entity[ModelType, ApiType]], Type[Repo[ModelType, ApiType]],]:
+    """
+    Helps to remove code duplication in declarations of derived classes
+    """
+
+    class _EntityBase(Entity[ModelType, ApiType]):
+        if api_member_name:
+            _api_member_name = api_member_name
+
+    class _RepoBase(Repo[ModelType, ApiType]):
+        if api_member_name:
+            _api_member_name = api_member_name
+
+    return _EntityBase, _RepoBase
 
 
 ### CRUD mixins
@@ -82,43 +123,41 @@ _EntityT = TypeVar("_EntityT", bound=Entity)
 #### Repo mixins
 
 
-class ModelCreateMixin(Generic[_EntityT]):
-    def create(self: Repo, spec: IModel, **kwargs) -> _EntityT:
+class ModelCreateMixin(Generic[_EntityT, IModel]):
+    def create(self: Repo, spec: Union[Dict[str, Any], IModel]) -> _EntityT:
         """
         Creates a new object on the server and returns corresponding local object
         """
 
-        (model, _) = self.api.create(spec, **kwargs)
+        (model, _) = self.api.create(spec)
         return self._entity_type(self._client, model)
 
 
 class ModelRetrieveMixin(Generic[_EntityT]):
-    def retrieve(self: Repo, obj_id: int, **kwargs) -> _EntityT:
+    def retrieve(self: Repo, obj_id: int) -> _EntityT:
         """
         Retrieves an object from server by ID
         """
 
-        (model, _) = self.api.retrieve(obj_id, **kwargs)
+        (model, _) = self.api.retrieve(obj_id)
         return self._entity_type(self._client, model)
 
 
 class ModelListMixin(Generic[_EntityT]):
     @overload
-    def list(self: Repo, *, return_json: Literal[False] = False, **kwargs) -> List[_EntityT]:
+    def list(self: Repo, *, return_json: Literal[False] = False) -> List[_EntityT]:
         ...
 
     @overload
-    def list(self: Repo, *, return_json: Literal[True] = False, **kwargs) -> List[Any]:
+    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Any]:
         ...
 
-    def list(self: Repo, *, return_json: bool = False, **kwargs) -> List[Union[_EntityT, Any]]:
+    def list(self: Repo, *, return_json: bool = False) -> List[Union[_EntityT, Any]]:
         """
         Retrieves all objects from the server and returns them in basic or JSON format.
         """
 
-        results = get_paginated_collection(
-            endpoint=self.api.list_endpoint, return_json=return_json, **kwargs
-        )
+        results = get_paginated_collection(endpoint=self.api.list_endpoint, return_json=return_json)
 
         if return_json:
             return json.dumps(results)
@@ -128,37 +167,50 @@ class ModelListMixin(Generic[_EntityT]):
 #### Entity mixins
 
 
-class ModelUpdateMixin(ABC):
+class ModelUpdateMixin(ABC, Generic[IModel]):
     @property
-    def _model_partial_update_arg(self) -> str:
+    def _model_partial_update_arg(self: Entity) -> str:
         ...
 
-    def fetch(self: Entity, **kwargs) -> None:
+    def _export_update_fields(
+        self: Entity, overrides: Optional[Union[Dict[str, Any], IModel]] = None
+    ) -> Dict[str, Any]:
+        # TODO: support field conversion and assignment updating
+        # fields = to_json(self._model)
+
+        if isinstance(overrides, ModelNormal):
+            overrides = to_json(overrides)
+        fields = deepcopy(overrides)
+
+        return fields
+
+    def fetch(self: Entity) -> None:
         """
-        Updates current object from server
+        Updates current object from the server
         """
 
         # TODO: implement revision checking
-        (self._model, _) = self.api.retrieve(getattr(self, self._model_id_field), **kwargs)
+        (self._model, _) = self.api.retrieve(getattr(self, self._model_id_field))
 
-    def commit(self: Entity, **kwargs) -> None:
+    def update(self: Entity, values: Union[Dict[str, Any], IModel]) -> None:
         """
         Commits local model changes to the server
         """
 
         # TODO: implement revision checking
-
-        (self._model, _) = self.api.partial_update(
+        self.api.partial_update(
             getattr(self, self._model_id_field),
-            **{self._model_partial_update_arg: self._model.to_dict()},
-            **kwargs,
+            **{self._model_partial_update_arg: self._export_update_fields(values)},
         )
+
+        # TODO: use the response model, once input and output models are same
+        self.fetch()
 
 
 class ModelDeleteMixin:
-    def remove(self: Entity, **kwargs) -> None:
+    def remove(self: Entity) -> None:
         """
         Removes current object on the server
         """
 
-        self.api.destroy(getattr(self, self._model_id_field), **kwargs)
+        self.api.destroy(getattr(self, self._model_id_field))

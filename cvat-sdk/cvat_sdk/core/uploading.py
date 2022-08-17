@@ -31,55 +31,6 @@ class Uploader:
     def __init__(self, client: Client):
         self._client = client
 
-    def upload_files(
-        self,
-        url: str,
-        resources: List[str],
-        *,
-        pbar: Optional[ProgressReporter] = None,
-        **kwargs,
-    ):
-        bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
-
-        if pbar is not None:
-            pbar.start(total_size, desc="Uploading data")
-
-        self._tus_start_upload(url)
-
-        for group, group_size in bulk_file_groups:
-            with ExitStack() as es:
-                files = {}
-                for i, filename in enumerate(group):
-                    files[f"client_files[{i}]"] = (
-                        filename,
-                        es.enter_context(closing(open(filename, "rb"))).read(),
-                    )
-                response = self._client.api.rest_client.POST(
-                    url,
-                    post_params=dict(**kwargs, **files),
-                    headers={
-                        "Content-Type": "multipart/form-data",
-                        "Upload-Multiple": "",
-                        **self._client.api.get_common_headers(),
-                    },
-                )
-            expect_status(200, response)
-
-            if pbar is not None:
-                pbar.advance(group_size)
-
-        for filename in separate_files:
-            # TODO: check if basename produces invalid paths here, can lead to overwriting
-            self._upload_file_data_with_tus(
-                url,
-                filename,
-                meta={"filename": osp.basename(filename)},
-                pbar=pbar,
-                logger=self._client.logger.debug,
-            )
-
-        self._tus_finish_upload(url, fields=kwargs)
-
     def upload_file(
         self,
         url: str,
@@ -379,3 +330,54 @@ class DatasetUploader(Uploader):
             query_params=params,
             method="GET",
         )
+
+
+class DataUploader(Uploader):
+    def upload_files(
+        self,
+        url: str,
+        resources: List[str],
+        *,
+        pbar: Optional[ProgressReporter] = None,
+        **kwargs,
+    ):
+        bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
+
+        if pbar is not None:
+            pbar.start(total_size, desc="Uploading data")
+
+        self._tus_start_upload(url)
+
+        for group, group_size in bulk_file_groups:
+            with ExitStack() as es:
+                files = {}
+                for i, filename in enumerate(group):
+                    files[f"client_files[{i}]"] = (
+                        filename,
+                        es.enter_context(closing(open(filename, "rb"))).read(),
+                    )
+                response = self._client.api.rest_client.POST(
+                    url,
+                    post_params=dict(**kwargs, **files),
+                    headers={
+                        "Content-Type": "multipart/form-data",
+                        "Upload-Multiple": "",
+                        **self._client.api.get_common_headers(),
+                    },
+                )
+            expect_status(200, response)
+
+            if pbar is not None:
+                pbar.advance(group_size)
+
+        for filename in separate_files:
+            # TODO: check if basename produces invalid paths here, can lead to overwriting
+            self._upload_file_data_with_tus(
+                url,
+                filename,
+                meta={"filename": osp.basename(filename)},
+                pbar=pbar,
+                logger=self._client.logger.debug,
+            )
+
+        self._tus_finish_upload(url, fields=kwargs)

@@ -14,10 +14,14 @@ import attrs
 import urllib3
 
 from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.core.comments import CommentsRepo
 from cvat_sdk.core.helpers import expect_status
+from cvat_sdk.core.issues import IssuesRepo
+from cvat_sdk.core.jobs import JobsRepo
 from cvat_sdk.core.model_proxy import Repo
 from cvat_sdk.core.projects import ProjectsRepo
 from cvat_sdk.core.tasks import TasksRepo
+from cvat_sdk.core.users import UsersRepo
 
 
 @attrs.define
@@ -113,6 +117,10 @@ class Client:
         _repo_map = {
             "tasks": TasksRepo,
             "projects": ProjectsRepo,
+            "jobs": JobsRepo,
+            "users": UsersRepo,
+            "issues": IssuesRepo,
+            "comments": CommentsRepo,
         }
 
         repo = self._repos.get(key, None)
@@ -128,6 +136,22 @@ class Client:
     @property
     def projects(self) -> ProjectsRepo:
         return self._get_repo("projects")
+
+    @property
+    def jobs(self) -> JobsRepo:
+        return self._get_repo("jobs")
+
+    @property
+    def users(self) -> UsersRepo:
+        return self._get_repo("users")
+
+    @property
+    def issues(self) -> IssuesRepo:
+        return self._get_repo("issues")
+
+    @property
+    def comments(self) -> CommentsRepo:
+        return self._get_repo("comments")
 
 
 class CVAT_API_V2:

@@ -15,9 +15,9 @@ from cvat_sdk.core.types import ResourceType
 from PIL import Image
 
 from shared.utils.config import USER_PASS
-from shared.utils.helpers import generate_image_file, generate_image_files
+from shared.utils.helpers import generate_image_files
 
-from .util import generate_coco_json, make_pbar
+from .util import make_pbar
 
 
 class TestTaskUsecases:
@@ -41,23 +41,6 @@ class TestTaskUsecases:
         yield
 
     @pytest.fixture
-    def fxt_image_file(self):
-        img_path = self.tmp_path / "img.png"
-        with img_path.open("wb") as f:
-            f.write(generate_image_file(filename=str(img_path)).getvalue())
-
-        return img_path
-
-    @pytest.fixture
-    def fxt_coco_file(self, fxt_image_file):
-        img_filename = fxt_image_file
-        img_size = Image.open(img_filename).size
-        ann_filename = self.tmp_path / "coco.json"
-        generate_coco_json(ann_filename, img_info=(img_filename, *img_size))
-
-        yield ann_filename
-
-    @pytest.fixture
     def fxt_backup_file(self, fxt_new_task: Task, fxt_coco_file: str):
         backup_path = self.tmp_path / "backup.zip"
 
@@ -67,14 +50,15 @@ class TestTaskUsecases:
         yield backup_path
 
     @pytest.fixture
-    def fxt_new_task(self, fxt_image_file):
+    def fxt_new_task(self, fxt_image_file: Path):
         task = self.client.tasks.create_from_data(
             spec={
                 "name": "test_task",
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[fxt_image_file],
+            resources=[str(fxt_image_file)],
+            data_params={"image_quality": 80},
         )
 
         return task
@@ -149,14 +133,14 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
-    def test_can_retrieve_task(self, fxt_new_task):
+    def test_can_retrieve_task(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
 
         task = self.client.tasks.retrieve(task_id)
 
         assert task.id == task_id
 
-    def test_can_list_tasks(self, fxt_new_task):
+    def test_can_list_tasks(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
 
         tasks = self.client.tasks.list()
@@ -164,11 +148,11 @@ class TestTaskUsecases:
         assert any(t.id == task_id for t in tasks)
         assert self.stdout.getvalue() == ""
 
-    def test_can_delete_tasks_by_ids(self, fxt_new_task):
+    def test_can_delete_tasks_by_ids(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
         old_tasks = self.client.tasks.list()
 
-        self.client.tasks.delete_by_ids([task_id])
+        self.client.tasks.remove_by_ids([task_id])
 
         new_tasks = self.client.tasks.list()
         assert any(t.id == task_id for t in old_tasks)
@@ -176,7 +160,7 @@ class TestTaskUsecases:
         assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
         assert self.stdout.getvalue() == ""
 
-    def test_can_delete_task(self, fxt_new_task):
+    def test_can_delete_task(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
         task = self.client.tasks.retrieve(task_id)
         old_tasks = self.client.tasks.list()
@@ -207,7 +191,7 @@ class TestTaskUsecases:
         assert osp.isfile(path)
         assert self.stdout.getvalue() == ""
 
-    def test_can_download_backup(self, fxt_new_task):
+    def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -218,6 +202,12 @@ class TestTaskUsecases:
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert osp.isfile(path)
+        assert self.stdout.getvalue() == ""
+
+    def test_can_download_preview(self, fxt_new_task: Task):
+        frame_encoded = fxt_new_task.get_preview()
+
+        assert Image.open(frame_encoded).size != 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
@@ -263,3 +253,25 @@ class TestTaskUsecases:
         assert "imported sucessfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+    def test_can_get_jobs(self, fxt_new_task: Task):
+        jobs = fxt_new_task.jobs
+
+        assert len(jobs) != 0
+
+    def test_can_get_meta(self, fxt_new_task: Task):
+        meta = fxt_new_task.get_meta()
+
+        assert meta.image_quality == 80
+        assert meta.size == 1
+        assert len(meta.frames) == meta.size
+        assert meta.frames[0].name == "img.png"
+        assert meta.frames[0].width == 5
+        assert meta.frames[0].height == 10
+        assert not meta.deleted_frames
+
+    def test_can_remove_frames(self, fxt_new_task: Task):
+        fxt_new_task.remove_frames_by_ids([0])
+
+        meta = fxt_new_task.get_meta()
+        assert meta.deleted_frames == [0]

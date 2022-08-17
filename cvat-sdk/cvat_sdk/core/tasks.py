@@ -17,27 +17,31 @@ from PIL import Image
 from cvat_sdk.api_client import apis, exceptions, models
 from cvat_sdk.core import git
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.jobs import Job
 from cvat_sdk.core.model_proxy import (
-    Entity,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
-    ModelProxy,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    Repo,
+    build_model_bases,
 )
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.types import ResourceType
-from cvat_sdk.core.uploading import AnnotationUploader, Uploader
+from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
 
+_TaskEntityBase, _TaskRepoBase = build_model_bases(
+    models.TaskRead, apis.TasksApi, api_member_name="tasks_api"
+)
 
-class _TaskProxy(ModelProxy[models.TaskRead, apis.TasksApi]):
-    _api_member_name = "tasks_api"
 
-
-class Task(Entity, models.ITaskRead, _TaskProxy, ModelUpdateMixin, ModelDeleteMixin):
+class Task(
+    _TaskEntityBase,
+    models.ITaskRead,
+    ModelUpdateMixin[models.IPatchedTaskWriteRequest],
+    ModelDeleteMixin,
+):
     _model_partial_update_arg = "patched_task_write_request"
 
     def upload_data(
@@ -91,7 +95,7 @@ class Task(Entity, models.ITaskRead, _TaskProxy, ModelUpdateMixin, ModelDeleteMi
                 self.api.create_data_endpoint.path, kwsub={"id": self.id}
             )
 
-            Uploader(self._client).upload_files(url, resources, pbar=pbar, **data)
+            DataUploader(self._client).upload_files(url, resources, pbar=pbar, **data)
 
     def import_annotations(
         self,
@@ -122,7 +126,16 @@ class Task(Entity, models.ITaskRead, _TaskProxy, ModelUpdateMixin, ModelDeleteMi
         *,
         quality: Optional[str] = None,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(self.id, frame_id, quality, type="frame")
+        params = {}
+        if quality:
+            params["quality"] = quality
+        (_, response) = self.api.retrieve_data(self.id, number=frame_id, **params, type="frame")
+        return io.BytesIO(response.data)
+
+    def get_preview(
+        self,
+    ) -> io.RawIOBase:
+        (_, response) = self.api.retrieve_data(self.id, type="preview")
         return io.BytesIO(response.data)
 
     def download_frames(
@@ -131,7 +144,7 @@ class Task(Entity, models.ITaskRead, _TaskProxy, ModelUpdateMixin, ModelDeleteMi
         *,
         outdir: str = "",
         quality: str = "original",
-        filename_pattern: str = "task_{task_id}_frame_{frame_id:06d}{frame_ext}",
+        filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
         """
         Download the requested frame numbers for a task and save images as outdir/filename_pattern
@@ -152,7 +165,7 @@ class Task(Entity, models.ITaskRead, _TaskProxy, ModelUpdateMixin, ModelDeleteMi
             if im_ext in (".jpe", ".jpeg", None):
                 im_ext = ".jpg"
 
-            outfile = filename_pattern.format(task_id=self.id, frame_id=frame_id, frame_ext=im_ext)
+            outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
             im.save(osp.join(outdir, outfile))
 
     def export_dataset(
@@ -204,28 +217,32 @@ class Task(Entity, models.ITaskRead, _TaskProxy, ModelUpdateMixin, ModelDeleteMi
 
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
 
+    @property
+    def jobs(self) -> List[Job]:
+        return [Job(self._client, m) for m in self.api.list_jobs(id=self.id)[0]]
+
+    def get_meta(self) -> models.IDataMetaRead:
+        (meta, _) = self.api.retrieve_data_meta(self.id)
+        return meta
+
+    def get_frames_info(self) -> List[models.IFrameMeta]:
+        return self.get_meta().frames
+
+    def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
+        self.api.partial_update_data_meta(
+            self.id,
+            patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(deleted_frames=ids),
+        )
+
 
 class TasksRepo(
-    _TaskProxy,
-    Repo,
-    ModelCreateMixin[Task],
+    _TaskRepoBase,
+    ModelCreateMixin[Task, models.ITaskWriteRequest],
     ModelRetrieveMixin[Task],
     ModelListMixin[Task],
     ModelDeleteMixin,
 ):
     _entity_type = Task
-
-    def create(self, spec: models.ITaskWriteRequest, **kwargs) -> Task:
-        if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
-            raise exceptions.ApiValueError(
-                "Can't set labels to a task inside a project. "
-                "Tasks inside a project use project's labels.",
-                ["labels"],
-            )
-
-        task = super().create(spec, **kwargs)
-        self._client.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
-        return task
 
     def create_from_data(
         self,
@@ -250,7 +267,16 @@ class TasksRepo(
         if status_check_period is None:
             status_check_period = self._client.config.status_check_period
 
+        if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
+            raise exceptions.ApiValueError(
+                "Can't set labels to a task inside a project. "
+                "Tasks inside a project use project's labels.",
+                ["labels"],
+            )
+
         task = self.create(spec=spec)
+        self._client.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
+
         task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
 
         self._client.logger.info("Awaiting for task %s creation...", task.id)
@@ -289,7 +315,7 @@ class TasksRepo(
 
         return task
 
-    def delete_by_ids(self, task_ids: Sequence[int]) -> None:
+    def remove_by_ids(self, task_ids: Sequence[int]) -> None:
         """
         Delete a list of tasks, ignoring those which don't exist.
         """

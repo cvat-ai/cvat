@@ -11,24 +11,24 @@ from typing import Optional
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.model_proxy import (
-    Entity,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
-    ModelProxy,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    Repo,
+    build_model_bases,
 )
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.uploading import DatasetUploader, Uploader
 
+_ProjectEntityBase, _ProjectRepoBase = build_model_bases(
+    models.ProjectRead, apis.ProjectsApi, api_member_name="projects_api"
+)
 
-class _ProjectProxy(ModelProxy[models.ProjectRead, apis.ProjectsApi]):
-    _api_member_name = "projects_api"
 
-
-class Project(_ProjectProxy, Entity, models.IProjectRead, ModelUpdateMixin):
+class Project(
+    _ProjectEntityBase, models.IProjectRead, ModelUpdateMixin[models.IPatchedProjectWriteRequest]
+):
     _model_partial_update_arg = "patched_project_write_request"
 
     def import_dataset(
@@ -105,19 +105,13 @@ class Project(_ProjectProxy, Entity, models.IProjectRead, ModelUpdateMixin):
 
 
 class ProjectsRepo(
-    _ProjectProxy,
-    Repo,
-    ModelCreateMixin[Project],
+    _ProjectRepoBase,
+    ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
     ModelDeleteMixin,
 ):
     _entity_type = Project
-
-    def create(self, spec: models.IProjectWriteRequest, **kwargs) -> Project:
-        project = super().create(spec, **kwargs)
-        self._client.logger.info("Created project ID: %s NAME: %s", project.id, project.name)
-        return project
 
     def create_from_dataset(
         self,
@@ -135,6 +129,7 @@ class ProjectsRepo(
         Returns: id of the created project
         """
         project = self.create(spec=spec)
+        self._client.logger.info("Created project ID: %s NAME: %s", project.id, project.name)
 
         if dataset_path:
             project.import_dataset(

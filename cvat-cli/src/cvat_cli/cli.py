@@ -65,7 +65,7 @@ class CLI:
 
     def tasks_delete(self, task_ids: Sequence[int]) -> None:
         """Delete a list of tasks, ignoring those which don't exist."""
-        self.client.tasks.delete_by_ids(task_ids=task_ids)
+        self.client.tasks.remove_by_ids(task_ids=task_ids)
 
     def tasks_frames(
         self,
@@ -83,7 +83,7 @@ class CLI:
             frame_ids=frame_ids,
             outdir=outdir,
             quality=quality,
-            filename_pattern="task_{task_id}_frame_{frame_id:06d}{frame_ext}",
+            filename_pattern=f"task_{task_id}" + "_frame_{frame_id:06d}{frame_ext}",
         )
 
     def tasks_dump(

@@ -798,7 +798,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': JobReadSerializer(many=True),
         })
-    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer)
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        # Remove regular list() parameters from swagger schema
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        pagination_class=None, filter_fields=None, search_fields=None,
+        ordering_fields=None, lookup_fields=None)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
@@ -898,13 +902,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
         parameters=[
-            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=True,
+            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'preview', 'context_image'],
                 description='Specifies the type of the requested data'),
-            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=True,
+            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.INT,
+            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
         ],
         responses={
@@ -1131,6 +1135,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
+        request=DataMetaWriteSerializer,
         responses={
             '200': DataMetaReadSerializer,
         })
@@ -1492,12 +1497,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
-                location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.STR,
                 enum=['chunk', 'frame', 'preview', 'context_image']),
-            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=True,
+            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.NUMBER,
+            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
             ],
         responses={
@@ -1521,6 +1526,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
+        request=DataMetaWriteSerializer,
         responses={
             '200': DataMetaReadSerializer,
         }, tags=['tasks'], versions=['2.0'])

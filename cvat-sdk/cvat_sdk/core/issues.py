@@ -6,30 +6,32 @@ from __future__ import annotations
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.model_proxy import (
-    Entity,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
-    ModelProxy,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    Repo,
+    build_model_bases,
+)
+
+_IssueEntityBase, _IssueRepoBase = build_model_bases(
+    models.IssueRead, apis.IssuesApi, api_member_name="issues_api"
 )
 
 
-class _IssueProxy(ModelProxy[models.IssueRead, apis.IssuesApi]):
-    _api_member_name = "issues_api"
-
-
-class Issue(models.IIssueRead, _IssueProxy, Entity, ModelUpdateMixin, ModelDeleteMixin):
+class Issue(
+    models.IIssueRead,
+    _IssueEntityBase,
+    ModelUpdateMixin[models.IPatchedIssueWriteRequest],
+    ModelDeleteMixin,
+):
     _model_partial_update_arg = "patched_issue_write_request"
 
 
 class IssuesRepo(
-    _IssueProxy,
-    Repo,
+    _IssueRepoBase,
     ModelListMixin[Issue],
-    ModelCreateMixin[Issue],
+    ModelCreateMixin[Issue, models.IIssueWriteRequest],
     ModelRetrieveMixin[Issue],
 ):
     _entity_type = Issue

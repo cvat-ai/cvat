@@ -6,30 +6,32 @@ from __future__ import annotations
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.model_proxy import (
-    Entity,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
-    ModelProxy,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    Repo,
+    build_model_bases,
+)
+
+_CommentEntityBase, _CommentRepoBase = build_model_bases(
+    models.CommentRead, apis.CommentsApi, api_member_name="comments_api"
 )
 
 
-class _CommentProxy(ModelProxy[models.CommentRead, apis.CommentsApi]):
-    _api_member_name = "comments_api"
-
-
-class Comment(models.ICommentRead, _CommentProxy, Entity, ModelUpdateMixin, ModelDeleteMixin):
+class Comment(
+    models.ICommentRead,
+    _CommentEntityBase,
+    ModelUpdateMixin[models.IPatchedCommentWriteRequest],
+    ModelDeleteMixin,
+):
     _model_partial_update_arg = "patched_comment_write_request"
 
 
 class CommentsRepo(
-    _CommentProxy,
-    Repo,
+    _CommentRepoBase,
     ModelListMixin[Comment],
-    ModelCreateMixin[Comment],
+    ModelCreateMixin[Comment, models.ICommentWriteRequest],
     ModelRetrieveMixin[Comment],
 ):
     _entity_type = Comment

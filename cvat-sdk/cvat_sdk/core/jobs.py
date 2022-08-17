@@ -13,24 +13,23 @@ from typing import List, Optional, Sequence
 from PIL import Image
 
 from cvat_sdk.api_client import apis, models
+from cvat_sdk.api_client.model_utils import ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.model_proxy import (
-    Entity,
     ModelListMixin,
-    ModelProxy,
     ModelRetrieveMixin,
     ModelUpdateMixin,
-    Repo,
+    build_model_bases,
 )
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.uploading import AnnotationUploader
 
+_JobEntityBase, _JobRepoBase = build_model_bases(
+    models.JobRead, apis.JobsApi, api_member_name="jobs_api"
+)
 
-class _JobProxy(ModelProxy[models.JobRead, apis.JobsApi]):
-    _api_member_name = "jobs_api"
 
-
-class Job(models.IJobRead, _JobProxy, Entity, ModelUpdateMixin):
+class Job(models.IJobRead, _JobEntityBase, ModelUpdateMixin[models.IPatchedJobWriteRequest]):
     _model_partial_update_arg = "patched_job_write_request"
 
     def import_annotations(
@@ -84,13 +83,34 @@ class Job(models.IJobRead, _JobProxy, Entity, ModelUpdateMixin):
 
         self._client.logger.info(f"Dataset for job {self.id} has been downloaded to {filename}")
 
+    def get_annotations(self) -> models.ILabeledData:
+        (annotations, _) = self.api.retrieve_annotations(self.id)
+        return annotations
+
+    def push_annotations(self, data: models.ILabeledDataRequest):
+        self.api.update_annotations(self.id, job_annotations_update_request=data)
+
+    def update_annotations(self, data: models.ILabeledDataRequest):
+        self.api.partial_update_annotations(self.id, patched_labeled_data_request=data)
+
+    def remove_annotations(self):
+        self.api.destroy_annotations(self.id)
+
     def get_frame(
         self,
         frame_id: int,
         *,
         quality: Optional[str] = None,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(self.id, frame_id, quality, type="frame")
+        (_, response) = self.api.retrieve_data(
+            self.id, number=frame_id, quality=quality, type="frame"
+        )
+        return io.BytesIO(response.data)
+
+    def get_preview(
+        self,
+    ) -> io.RawIOBase:
+        (_, response) = self.api.retrieve_data(self.id, type="preview")
         return io.BytesIO(response.data)
 
     def download_frames(
@@ -99,7 +119,7 @@ class Job(models.IJobRead, _JobProxy, Entity, ModelUpdateMixin):
         *,
         outdir: str = "",
         quality: str = "original",
-        filename_pattern: str = "task_{task_id}_frame_{frame_id:06d}{frame_ext}",
+        filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
         """
         Download the requested frame numbers for a job and save images as outdir/filename_pattern
@@ -120,13 +140,25 @@ class Job(models.IJobRead, _JobProxy, Entity, ModelUpdateMixin):
             if im_ext in (".jpe", ".jpeg", None):
                 im_ext = ".jpg"
 
-            outfile = filename_pattern.format(task_id=self.id, frame_id=frame_id, frame_ext=im_ext)
+            outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
             im.save(osp.join(outdir, outfile))
+
+    def get_meta(self) -> models.IDataMetaRead:
+        (meta, _) = self.api.retrieve_data_meta(self.id)
+        return meta
+
+    def get_frames_info(self) -> List[models.IFrameMeta]:
+        return self.get_meta().frames
+
+    def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
+        self._client.api.tasks_api.jobs_partial_update_data_meta(
+            self.id,
+            patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(deleted_frames=ids),
+        )
 
 
 class JobsRepo(
-    _JobProxy,
-    Repo,
+    _JobRepoBase,
     ModelListMixin[Job],
     ModelRetrieveMixin[Job],
 ):
