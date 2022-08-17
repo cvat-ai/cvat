@@ -19,7 +19,7 @@ def _export(dst_file, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
-        dataset.export(temp_dir, 'coco', save_images=save_images,
+        dataset.export(temp_dir, 'coco_instances', save_images=save_images,
             merge_images=True)
 
         make_zip_archive(temp_dir, dst_file)
@@ -37,6 +37,16 @@ def _import(src_file, instance_data, load_data_callback=None):
         dataset = Dataset.import_from(src_file.name,
             'coco_instances', env=dm_env)
         import_dm_annotations(dataset, instance_data)
+
+@exporter(name='COCO Keypoints', ext='ZIP', version='1.0')
+def _export(dst_file, instance_data, save_images=False):
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+        instance_data, include_images=save_images), env=dm_env)
+    with TemporaryDirectory() as temp_dir:
+        dataset.export(temp_dir, 'coco_person_keypoints', save_images=save_images,
+            merge_images=True)
+
+        make_zip_archive(temp_dir, dst_file)
 
 @importer(name='COCO Keypoints', ext='JSON, ZIP', version='1.0')
 def _import(src_file, instance_data, load_data_callback=None):

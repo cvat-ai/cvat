@@ -5382,6 +5382,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "COCO 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
+            elif annotation_format == "COCO Keypoints 1.0":
+                annotations["shapes"] = points_wo_attrs
+
             elif annotation_format == "Segmentation mask 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
@@ -5737,7 +5740,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))
-        elif format_name == "COCO 1.0":
+        elif format_name in ["COCO 1.0", "COCO Keypoints 1.0"]:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 zipfile.ZipFile(content).extractall(tmp_dir)
                 jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)

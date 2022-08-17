@@ -283,6 +283,35 @@
     ],
     "tracks": []
   },
+  "COCO Keypoints 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "points",
+        "occluded": false,
+        "z_order": 0,
+        "points": [28.05, 18.0, 36.65, 17.7, 36.85, 23.7, 26.95, 23.2, 30.35, 28.9],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "points",
+        "occluded": false,
+        "z_order": 0,
+        "points": [27.03, 26.07, 63.94, 37.87, 18.34, 34.97],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "ICDAR Localization 1.0": {
     "version": 0,
     "tags": [],
