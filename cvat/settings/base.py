@@ -284,7 +284,8 @@ NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
     'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)
+    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120),
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
 }
 
 RQ_SHOW_ADMIN_LINK = True

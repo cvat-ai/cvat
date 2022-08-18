@@ -87,7 +87,7 @@ def docker_cp(source, target):
 
 
 def exec_cvat(command):
-    _run(f"docker exec {PREFIX}_cvat_1 {command}")
+    _run(f"docker exec {PREFIX}_cvat_server_1 {command}")
 
 
 def exec_cvat_db(command):
@@ -104,12 +104,12 @@ def running_containers():
 
 
 def dump_db():
-    if 'test_cvat_1' not in running_containers():
+    if 'test_cvat_server_1' not in running_containers():
         pytest.exit("CVAT is not running")
     with open(osp.join(CVAT_DB_DIR, "data.json"), "w") as f:
         try:
             run( # nosec
-                "docker exec test_cvat_1 \
+                "docker exec test_cvat_server_1 \
                     python manage.py dumpdata \
                     --indent 2 --natural-foreign \
                     --exclude=auth.permission --exclude=contenttypes".split(),
@@ -150,13 +150,13 @@ def wait_for_server():
 def restore_data_volumes():
     docker_cp(
         osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"),
-        f"{PREFIX}_cvat_1:/tmp/cvat_data.tar.bz2",
+        f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
     exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
 def start_services(rebuild=False):
-    if any([cn in ["cvat", "cvat_db"] for cn in running_containers()]):
+    if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
             "It's looks like you already have running cvat containers. Stop them and try again. "
             f"List of running containers: {', '.join(running_containers())}"
@@ -172,7 +172,7 @@ def start_services(rebuild=False):
     docker_cp(
         osp.join(CVAT_DB_DIR, "restore.sql"), f"{PREFIX}_cvat_db_1:/tmp/restore.sql"
     )
-    docker_cp(osp.join(CVAT_DB_DIR, "data.json"), f"{PREFIX}_cvat_1:/tmp/data.json")
+    docker_cp(osp.join(CVAT_DB_DIR, "data.json"), f"{PREFIX}_cvat_server_1:/tmp/data.json")
 
 
 @pytest.fixture(autouse=True, scope="session")
