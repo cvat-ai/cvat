@@ -10,7 +10,8 @@ from typing import Optional
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.model_proxy import (
+from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.proxies.model_proxy import (
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -18,7 +19,6 @@ from cvat_sdk.core.model_proxy import (
     ModelUpdateMixin,
     build_model_bases,
 )
-from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.uploading import DatasetUploader, Uploader
 
 _ProjectEntityBase, _ProjectRepoBase = build_model_bases(

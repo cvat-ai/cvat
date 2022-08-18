@@ -10,7 +10,7 @@ from typing import Tuple
 
 import pytest
 from cvat_sdk import Client
-from cvat_sdk.core.tasks import Task
+from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.types import ResourceType
 from PIL import Image
 

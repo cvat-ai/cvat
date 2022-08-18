@@ -17,8 +17,9 @@ from PIL import Image
 from cvat_sdk.api_client import apis, exceptions, models
 from cvat_sdk.core import git
 from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.jobs import Job
-from cvat_sdk.core.model_proxy import (
+from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.proxies.jobs import Job
+from cvat_sdk.core.proxies.model_proxy import (
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -26,7 +27,6 @@ from cvat_sdk.core.model_proxy import (
     ModelUpdateMixin,
     build_model_bases,
 )
-from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.types import ResourceType
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict

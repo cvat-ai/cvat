@@ -1485,7 +1485,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': IssueReadSerializer(many=True)
         })
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer)
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        # Remove regular list() parameters from swagger schema
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        pagination_class=None, filter_fields=None, search_fields=None,
+        ordering_fields=None, lookup_fields=None)
     def issues(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.issues
@@ -1592,11 +1596,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-    @extend_schema(summary='The action returns the list of tracked '
-        'changes for the job', responses={
+    @extend_schema(summary='The action returns the list of tracked changes for the job',
+        responses={
             '200': JobCommitSerializer(many=True),
         })
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer)
+    @action(detail=True, methods=['GET'], serializer_class=None)
     def commits(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.commits.order_by('-id')

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.model_proxy import (
+from cvat_sdk.core.proxies.model_proxy import (
     ModelDeleteMixin,
     ModelListMixin,
     ModelRetrieveMixin,

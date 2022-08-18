@@ -13,15 +13,16 @@ from typing import List, Optional, Sequence
 from PIL import Image
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.api_client.model_utils import ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.model_proxy import (
+from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.proxies.issues import Issue
+from cvat_sdk.core.proxies.model_proxy import (
     ModelListMixin,
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
 )
-from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.uploading import AnnotationUploader
 
 _JobEntityBase, _JobRepoBase = build_model_bases(
@@ -155,6 +156,12 @@ class Job(models.IJobRead, _JobEntityBase, ModelUpdateMixin[models.IPatchedJobWr
             self.id,
             patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(deleted_frames=ids),
         )
+
+    def get_issues(self) -> List[Issue]:
+        return [Issue(self._client, m) for m in self.api.list_issues(id=self.id)[0]]
+
+    def get_commits(self) -> List[models.IJobCommit]:
+        return get_paginated_collection(self.api.list_commits_endpoint, id=self.id)
 
 
 class JobsRepo(
