@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,7 @@ import ObjectsListContainer from 'containers/annotation-page/standard-workspace/
 import PropagateConfirmContainer from 'containers/annotation-page/standard-workspace/propagate-confirm';
 import CanvasContextMenuContainer from 'containers/annotation-page/canvas/canvas-context-menu';
 import CanvasPointContextMenuComponent from 'components/annotation-page/canvas/canvas-point-context-menu';
+import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 
 export default function StandardWorkspace3DComponent(): JSX.Element {
     return (
@@ -23,6 +24,7 @@ export default function StandardWorkspace3DComponent(): JSX.Element {
             <PropagateConfirmContainer />
             <CanvasContextMenuContainer />
             <CanvasPointContextMenuComponent />
+            <RemoveConfirmComponent />
         </Layout>
     );
 }

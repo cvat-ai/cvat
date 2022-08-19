@@ -1,14 +1,19 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
 import Popover, { PopoverProps } from 'antd/lib/popover';
 
+interface OwnProps {
+    overlayClassName?: string;
+    onVisibleChange?: (visible: boolean) => void;
+}
+
 export default function withVisibilityHandling(WrappedComponent: typeof Popover, popoverType: string) {
-    return (props: PopoverProps): JSX.Element => {
+    return (props: OwnProps & PopoverProps): JSX.Element => {
         const [visible, setVisible] = useState<boolean>(false);
-        const { overlayClassName, ...rest } = props;
+        const { overlayClassName, onVisibleChange, ...rest } = props;
         const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
         const popoverClassName = `cvat-${popoverType}-popover`;
         overlayClassNames.push(popoverClassName);
@@ -34,6 +39,7 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                         }
                     }
                     setVisible(_visible);
+                    if (onVisibleChange) onVisibleChange(_visible);
                 }}
             />
         );

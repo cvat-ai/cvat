@@ -1,10 +1,10 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 const BASE_STROKE_WIDTH = 1.25;
 const BASE_GRID_WIDTH = 2;
-const BASE_POINT_SIZE = 5;
+const BASE_POINT_SIZE = 4;
 const TEXT_MARGIN = 10;
 const AREA_THRESHOLD = 9;
 const SIZE_THRESHOLD = 3;
@@ -19,8 +19,13 @@ const ARROW_PATH = 'M13.162 6.284L.682.524a.483.483 0 0 0-.574.134.477.477 0 ' +
 const BASE_PATTERN_SIZE = 5;
 const SNAP_TO_ANGLE_RESIZE_DEFAULT = 0.1;
 const SNAP_TO_ANGLE_RESIZE_SHIFT = 15;
-const DEFAULT_SHAPE_TEXT_SIZE = 12;
 const MINIMUM_TEXT_FONT_SIZE = 8;
+const SKELETON_RECT_MARGIN = 20;
+
+const DEFAULT_SHAPE_TEXT_SIZE = 12;
+const DEFAULT_SHAPE_TEXT_CONTENT = 'id,label,attributes,source,descriptions';
+const DEFAULT_SHAPE_TEXT_POSITION: 'auto' | 'center' = 'auto';
+const DEFAULT_UNDEFINED_ATTR_VALUE = '__undefined__';
 
 export default {
     BASE_STROKE_WIDTH,
@@ -40,5 +45,9 @@ export default {
     SNAP_TO_ANGLE_RESIZE_DEFAULT,
     SNAP_TO_ANGLE_RESIZE_SHIFT,
     DEFAULT_SHAPE_TEXT_SIZE,
+    DEFAULT_SHAPE_TEXT_CONTENT,
+    DEFAULT_SHAPE_TEXT_POSITION,
+    DEFAULT_UNDEFINED_ATTR_VALUE,
     MINIMUM_TEXT_FONT_SIZE,
+    SKELETON_RECT_MARGIN,
 };

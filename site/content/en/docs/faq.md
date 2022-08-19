@@ -7,6 +7,23 @@ description: 'Answers to frequently asked questions'
 
 <!--lint disable heading-style-->
 
+## How to migrate data from CVAT.org to CVAT.ai
+
+Please follow the [export tasks and projects guide](/docs/manual/advanced/backup/#backup) to
+download an archive with data which corresponds to your task or project. The backup for a
+project will have all tasks which are inside the project. Thus you don't need to export
+them separately.
+
+Please follow the [import tasks and projects guide](/docs/manual/advanced/backup/#create-from-backup)
+to upload your backup with a task or project to a CVAT instance.
+
+See a quick demo below. It is really a simple process. If your data is huge, it may take some time.
+Please be patient.
+
+![Export and import backup demo](
+  https://user-images.githubusercontent.com/40690625/180879954-44afcd95-1e94-451a-9a60-2f3bd6482cbf.gif)
+
+
 ## How to update CVAT
 
 Before updating, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
@@ -101,7 +118,7 @@ volumes:
 
 ## How to make unassigned tasks not visible to all users
 
-Set [reduce_task_visibility](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py#L424)
+Set [reduce_task_visibility](https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py#L455)
 variable to `True`.
 
 ## Where are uploaded images/videos stored
@@ -135,7 +152,7 @@ Follow this [guide](/docs/administration/basics/installation/#windows-10).
 
 ## I do not have the Analytics tab on the header section. How can I add analytics
 
-You should build CVAT images with ['Analytics' component](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics).
+You should build CVAT images with ['Analytics' component](https://github.com/cvat-ai/cvat/tree/develop/components/analytics).
 
 ## How to upload annotations to an entire task from UI when there are multiple jobs in the task
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -19,7 +19,6 @@ from .registry import exporter, importer
 
 @exporter(name='Kitti Raw Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, task_data, save_images=False):
-
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         task_data, include_images=save_images, format_type="kitti_raw", dimension=DimensionType.DIM_3D), env=dm_env)
 
@@ -33,14 +32,10 @@ def _export_images(dst_file, task_data, save_images=False):
 def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         if zipfile.is_zipfile(src_file):
-                zipfile.ZipFile(src_file).extractall(tmp_dir)
-
-                dataset = Dataset.import_from(
-                    tmp_dir, 'kitti_raw', env=dm_env)
+            zipfile.ZipFile(src_file).extractall(tmp_dir)
+            dataset = Dataset.import_from(tmp_dir, 'kitti_raw', env=dm_env)
         else:
-
-            dataset = Dataset.import_from(
-                src_file.name, 'kitti_raw', env=dm_env)
+            dataset = Dataset.import_from(src_file.name, 'kitti_raw', env=dm_env)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ import { CompactPicker } from 'react-color';
 
 import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
-import { FrameSpeed } from 'reducers/interfaces';
+import { FrameSpeed } from 'reducers';
 import consts from 'consts';
 
 interface Props {
@@ -25,6 +25,7 @@ interface Props {
     resetZoom: boolean;
     rotateAll: boolean;
     smoothImage: boolean;
+    showDeletedFrames: boolean;
     canvasBackgroundColor: string;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
@@ -32,6 +33,7 @@ interface Props {
     onSwitchRotateAll(rotateAll: boolean): void;
     onChangeCanvasBackgroundColor(color: string): void;
     onSwitchSmoothImage(enabled: boolean): void;
+    onSwitchShowingDeletedFrames(enabled: boolean): void;
 }
 
 export default function PlayerSettingsComponent(props: Props): JSX.Element {
@@ -41,6 +43,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         resetZoom,
         rotateAll,
         smoothImage,
+        showDeletedFrames,
         canvasBackgroundColor,
         onChangeFrameStep,
         onChangeFrameSpeed,
@@ -48,6 +51,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         onSwitchRotateAll,
         onSwitchSmoothImage,
         onChangeCanvasBackgroundColor,
+        onSwitchShowingDeletedFrames,
     } = props;
 
     const minFrameStep = 2;
@@ -197,6 +201,22 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         <Col span={24}>
                             <Text type='secondary'> Smooth image when zoom-in it </Text>
                         </Col>
+                    </Row>
+                </Col>
+                <Col span={7} offset={5} className='cvat-workspace-settings-show-deleted'>
+                    <Row>
+                        <Checkbox
+                            className='cvat-text-color'
+                            checked={showDeletedFrames}
+                            onChange={(event: CheckboxChangeEvent): void => {
+                                onSwitchShowingDeletedFrames(event.target.checked);
+                            }}
+                        >
+                            Show deleted frames
+                        </Checkbox>
+                    </Row>
+                    <Row>
+                        <Text type='secondary'>You will be able to navigate and restore deleted frames</Text>
                     </Row>
                 </Col>
             </Row>

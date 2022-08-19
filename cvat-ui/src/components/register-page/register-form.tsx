@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ import Checkbox from 'antd/lib/checkbox';
 
 import patterns from 'utils/validation-patterns';
 
-import { UserAgreement } from 'reducers/interfaces';
+import { UserAgreement } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
 
 export interface UserConfirmation {
