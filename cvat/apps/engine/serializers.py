@@ -881,16 +881,16 @@ class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0, allow_null=True)
-    source = serializers.CharField(default = 'manual')
+    group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
+    source = serializers.CharField(default='manual')
 
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
-        source="labeledimageattributeval_set")
+        source="labeledimageattributeval_set", default=[])
 
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
-    occluded = serializers.BooleanField()
+    occluded = serializers.BooleanField(default=False)
     outside = serializers.BooleanField(default=False, required=False)
     z_order = serializers.IntegerField(default=0)
     rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
@@ -901,7 +901,7 @@ class ShapeSerializer(serializers.Serializer):
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
-        source="labeledshapeattributeval_set")
+        source="labeledshapeattributeval_set", default=[])
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -910,22 +910,22 @@ class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     attributes = AttributeValSerializer(many=True,
-        source="trackedshapeattributeval_set")
+        source="trackedshapeattributeval_set", default=[])
 
 class SubLabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True,
         source="trackedshape_set")
     attributes = AttributeValSerializer(many=True,
-        source="labeledtrackattributeval_set")
+        source="labeledtrackattributeval_set", default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
 
 class LabeledDataSerializer(serializers.Serializer):
-    version = serializers.IntegerField()
-    tags   = LabeledImageSerializer(many=True)
-    shapes = LabeledShapeSerializer(many=True)
-    tracks = LabeledTrackSerializer(many=True)
+    version = serializers.IntegerField(default=0) # TODO: remove
+    tags   = LabeledImageSerializer(many=True, default=[])
+    shapes = LabeledShapeSerializer(many=True, default=[])
+    tracks = LabeledTrackSerializer(many=True, default=[])
 
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
