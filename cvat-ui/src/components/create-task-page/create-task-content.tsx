@@ -18,7 +18,12 @@ import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { Files } from 'components/file-manager/file-manager';
 
-import { getFileContentType, getContentTypeRemoteFile } from 'utils/files';
+import {
+    getFileContentType,
+    getContentTypeRemoteFile,
+    getNameRemoteFile,
+    getNameShareFile,
+} from 'utils/files';
 
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
@@ -221,17 +226,38 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private handleUploadRemoteFiles = (urls: string[]): void => {
+    private handleUploadRemoteFiles = async (urls: string[]): Promise<void> => {
         const { isMultiTask } = this.props;
 
         const { files } = this.state;
+        const { length } = urls;
 
         let uploadFileErrorMessage = '';
 
-        if (!isMultiTask && urls.length > 1) {
-            uploadFileErrorMessage = urls.every((it) => getContentTypeRemoteFile(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk image or single video';
-        } else if (isMultiTask && urls.length > 1) {
-            uploadFileErrorMessage = urls.every((it) => getContentTypeRemoteFile(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
+        try {
+            if (!isMultiTask && length > 1) {
+                let index = 0;
+                while (index < length) {
+                    const isImageFile = await getContentTypeRemoteFile(urls[index]) === 'image';
+                    if (!isImageFile) {
+                        uploadFileErrorMessage = 'We can\'t process it. Support for a bulk image or single video';
+                        break;
+                    }
+                    index++;
+                }
+            } else if (isMultiTask && length > 1) {
+                let index = 0;
+                while (index < length) {
+                    const isVideoFile = await getContentTypeRemoteFile(urls[index]) === 'video';
+                    if (!isVideoFile) {
+                        uploadFileErrorMessage = 'We can\'t process it. Support for a bulk videos';
+                        break;
+                    }
+                    index++;
+                }
+            }
+        } catch (err) {
+            uploadFileErrorMessage = `We can't process it. ${err}`;
         }
 
         this.setState({
@@ -249,29 +275,33 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUploadShareFiles = (paths: string[]): void => {
-        const { isMultiTask } = this.props;
-        const { files } = this.state;
+        console.log(paths);
+        // const { isMultiTask } = this.props;
+        // const { files } = this.state;
 
-        let uploadFileErrorMessage = '';
+        // let uploadFileErrorMessage = '';
 
-        if (!isMultiTask && paths.length > 1) {
-            uploadFileErrorMessage = paths.every((it) => getContentTypeRemoteFile(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk image or single video';
-        } else if (isMultiTask && paths.length > 1) {
-            uploadFileErrorMessage = paths.every((it) => getContentTypeRemoteFile(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
-        }
+        // if (!isMultiTask && paths.length > 1) {
+        //     uploadFileErrorMessage = paths.every((it) =>
+        // getContentTypeRemoteFile(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk
+        // mage or single video';
+        // } else if (isMultiTask && paths.length > 1) {
+        //     uploadFileErrorMessage = paths.every((it) => getContentTypeRemoteFile(it) === 'video') ?
+        // '' : 'We can\'t process it. Support for a bulk videos';
+        // }
 
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        // this.setState({
+        //     uploadFileErrorMessage,
+        // });
 
-        if (!uploadFileErrorMessage) {
-            this.setState({
-                files: {
-                    ...files,
-                    share: paths,
-                },
-            });
-        }
+        // if (!uploadFileErrorMessage) {
+        //     this.setState({
+        //         files: {
+        //             ...files,
+        //             share: paths,
+        //         },
+        //     });
+        // }
     };
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
@@ -391,6 +421,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             await onCreate(task, this.changeStatusInProgressTask);
             await this.setStatusOneOfMultiTasks(index, 'completed');
         } catch (err) {
+            console.warn(err);
             await this.setStatusOneOfMultiTasks(index, 'failed');
         }
     };
@@ -401,6 +432,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { length } = multiTasks;
         let count = 0;
         while (count < length) {
+            // TODO change to 2 queues
+            // const promises = [count, count + 1]
+            //     .map((it) => new Promise((resolve) => this.createOneOfMultiTasks(it).then(resolve)));
+            // await Promise.allSettled(promises);
+            // count += 2;
+            // for development
             const promises = [count].map((it) => new Promise((resolve) => {
                 this.createOneOfMultiTasks(it).then(resolve);
             }));
@@ -421,11 +458,18 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             cloudStorageId,
         } = this.state;
 
-        const type = 'local';
-        const files = allFiles.local;
+        const files: { file: (File | string), type: TabName }[] = Object
+            .entries(allFiles)
+            .reduce((acc: { file: (File | string), type: TabName }[], prevValue) => {
+                const [tabName, setFiles] = prevValue;
+                return [
+                    ...acc,
+                    ...setFiles.map((it: (File | string)) => ({ file: it, type: tabName })),
+                ];
+            }, []);
 
         this.setState({
-            multiTasks: files.map((it, index) => ({
+            multiTasks: files.map(({ file, type }, index) => ({
                 projectId,
                 basic: {
                     name: this.getTaskName(index, type),
@@ -434,8 +478,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 advanced,
                 labels,
                 files: {
-                    ...allFiles,
-                    [type]: [it],
+                    ...defaultState.files,
+                    [type]: [file],
                 },
                 activeFileManagerTab,
                 cloudStorageId,
@@ -544,8 +588,19 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { basic } = this.state;
         const { files } = this.state;
         const file = files[fileManagerTabName][indexFile];
-        // TODO get file name for storage and share
-        const fileName = file ? (file as File).name || (file as string) : defaultFileName;
+        let fileName = defaultFileName;
+        switch (fileManagerTabName) {
+            case 'remote':
+                fileName = getNameRemoteFile(file as string) || defaultFileName;
+                break;
+            case 'share':
+                fileName = getNameShareFile(file as string) || defaultFileName; // TODO
+                break;
+            default:
+                fileName = (file as File)?.name || (file as string) || defaultFileName;
+                break;
+        }
+        console.log(fileName);
         return isMultiTask ?
             basic.name
                 .replaceAll('{{file_name}}', fileName)
