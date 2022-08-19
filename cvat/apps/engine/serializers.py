@@ -1020,7 +1020,7 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return db_issue
 
     def update(self, instance, validated_data):
-        message = validated_data.pop('message')
+        message = validated_data.pop('message', None)
         if message:
             raise NotImplementedError('Check https://github.com/cvat-ai/cvat/issues/122')
         return super().update(instance, validated_data)
