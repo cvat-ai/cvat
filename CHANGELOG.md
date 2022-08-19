@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Image search in cloud storage (<https://github.com/cvat-ai/cvat/pull/8>)
 - Reset password functionality (<https://github.com/cvat-ai/cvat/pull/52>)
 - Creating task with cloud storage data (<https://github.com/cvat-ai/cvat/pull/116>)
+- Show empty tasks (<https://github.com/cvat-ai/cvat/pull/100>)
 
 ### Security
 - TDB
