@@ -324,7 +324,7 @@ class TestImportExportDatasetProject:
     def _test_import_project(self, username, project_id, format_name, data):
         with make_api_client(username) as api_client:
             (_, response) = api_client.projects_api.create_dataset(id=project_id,
-                format=format_name, dataset_file_request=deepcopy(data),
+                format=format_name, dataset_write_request=deepcopy(data),
                 _content_type="multipart/form-data")
             assert response.status == HTTPStatus.ACCEPTED
 

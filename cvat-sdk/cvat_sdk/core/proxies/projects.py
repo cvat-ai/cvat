@@ -103,6 +103,10 @@ class Project(
 
         self._client.logger.info(f"Backup for project {self.id} has been downloaded to {filename}")
 
+    def get_annotations(self) -> models.ILabeledData:
+        (annotations, _) = self.api.retrieve_annotations(self.id)
+        return annotations
+
 
 class ProjectsRepo(
     _ProjectRepoBase,

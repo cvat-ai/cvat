@@ -10,8 +10,7 @@ from typing import Tuple
 import pytest
 from cvat_sdk import Client
 from cvat_sdk.api_client import exceptions, models
-from cvat_sdk.core.proxies.tasks import Task
-from cvat_sdk.core.types import ResourceType
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 from shared.utils.config import USER_PASS
 

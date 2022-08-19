@@ -9,6 +9,7 @@ import json
 import mimetypes
 import os
 import os.path as osp
+from enum import Enum
 from time import sleep
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -18,6 +19,7 @@ from cvat_sdk.api_client import apis, exceptions, models
 from cvat_sdk.core import git
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.model_proxy import (
     ModelCreateMixin,
@@ -27,9 +29,21 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelUpdateMixin,
     build_model_bases,
 )
-from cvat_sdk.core.types import ResourceType
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
+
+
+class ResourceType(Enum):
+    LOCAL = 0
+    SHARE = 1
+    REMOTE = 2
+
+    def __str__(self):
+        return self.name.lower()
+
+    def __repr__(self):
+        return str(self)
+
 
 _TaskEntityBase, _TaskRepoBase = build_model_bases(
     models.TaskRead, apis.TasksApi, api_member_name="tasks_api"
@@ -41,8 +55,10 @@ class Task(
     models.ITaskRead,
     ModelUpdateMixin[models.IPatchedTaskWriteRequest],
     ModelDeleteMixin,
+    AnnotationCrudMixin,
 ):
     _model_partial_update_arg = "patched_task_write_request"
+    _put_annotations_data_param = "task_annotations_update_request"
 
     def upload_data(
         self,

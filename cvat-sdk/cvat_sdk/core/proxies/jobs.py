@@ -16,6 +16,7 @@ from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.issues import Issue
 from cvat_sdk.core.proxies.model_proxy import (
     ModelListMixin,
@@ -30,8 +31,14 @@ _JobEntityBase, _JobRepoBase = build_model_bases(
 )
 
 
-class Job(models.IJobRead, _JobEntityBase, ModelUpdateMixin[models.IPatchedJobWriteRequest]):
+class Job(
+    models.IJobRead,
+    _JobEntityBase,
+    ModelUpdateMixin[models.IPatchedJobWriteRequest],
+    AnnotationCrudMixin,
+):
     _model_partial_update_arg = "patched_job_write_request"
+    _put_annotations_data_param = "job_annotations_update_request"
 
     def import_annotations(
         self,
@@ -83,19 +90,6 @@ class Job(models.IJobRead, _JobEntityBase, ModelUpdateMixin[models.IPatchedJobWr
         )
 
         self._client.logger.info(f"Dataset for job {self.id} has been downloaded to {filename}")
-
-    def get_annotations(self) -> models.ILabeledData:
-        (annotations, _) = self.api.retrieve_annotations(self.id)
-        return annotations
-
-    def push_annotations(self, data: models.ILabeledDataRequest):
-        self.api.update_annotations(self.id, job_annotations_update_request=data)
-
-    def update_annotations(self, data: models.ILabeledDataRequest):
-        self.api.partial_update_annotations(self.id, patched_labeled_data_request=data)
-
-    def remove_annotations(self):
-        self.api.destroy_annotations(self.id)
 
     def get_frame(
         self,

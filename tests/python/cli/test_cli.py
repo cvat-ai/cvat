@@ -10,8 +10,7 @@ from pathlib import Path
 import pytest
 from cvat_sdk import make_client
 from cvat_sdk.api_client import exceptions
-from cvat_sdk.core.proxies.tasks import Task
-from cvat_sdk.core.types import ResourceType
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
 from sdk.util import generate_coco_json

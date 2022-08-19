@@ -13,7 +13,7 @@ def export_dataset(
     endpoint: Endpoint, *, max_retries: int = 20, interval: float = 0.1, **kwargs
 ) -> HTTPResponse:
     for _ in range(max_retries):
-        (_, response) = endpoint.call_with_http_info(**kwargs)
+        (_, response) = endpoint.call_with_http_info(**kwargs, _parse_response=False)
         if response.status == HTTPStatus.CREATED:
             break
         assert response.status == HTTPStatus.ACCEPTED

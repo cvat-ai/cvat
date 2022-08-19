@@ -21,7 +21,7 @@ _UserEntityBase, _UserRepoBase = build_model_bases(
 class User(
     models.IUser, _UserEntityBase, ModelUpdateMixin[models.IPatchedUserRequest], ModelDeleteMixin
 ):
-    _model_partial_update_arg = "patched_user_write_request"
+    _model_partial_update_arg = "patched_user_request"
 
 
 class UsersRepo(
@@ -30,3 +30,6 @@ class UsersRepo(
     ModelRetrieveMixin[User],
 ):
     _entity_type = User
+
+    def retrieve_current_user(self) -> User:
+        return User(self._client, self.api.retrieve_self()[0])

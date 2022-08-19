@@ -11,8 +11,7 @@ from typing import Tuple
 import pytest
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
-from cvat_sdk.core.proxies.tasks import Task
-from cvat_sdk.core.types import ResourceType
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
 from shared.utils.config import USER_PASS
@@ -53,6 +52,23 @@ class TestJobUsecases:
         )
 
         return task
+
+    @pytest.fixture
+    def fxt_task_with_shapes(self, fxt_new_task: Task):
+        fxt_new_task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=0,
+                        label_id=fxt_new_task.labels[0].id,
+                        type="rectangle",
+                        points=[1, 1, 2, 2],
+                    ),
+                ],
+            )
+        )
+
+        return fxt_new_task
 
     def test_can_retrieve_job(self, fxt_new_task: Task):
         job_id = fxt_new_task.get_jobs()[0].id
@@ -170,4 +186,95 @@ class TestJobUsecases:
         job_issue_ids = set(j.id for j in fxt_new_task.get_jobs()[0].get_issues())
 
         assert {issue.id} == job_issue_ids
+        assert self.stdout.getvalue() == ""
+
+    def test_can_get_annotations(self, fxt_task_with_shapes: Task):
+        anns = fxt_task_with_shapes.get_jobs()[0].get_annotations()
+
+        assert len(anns.shapes) == 1
+        assert anns.shapes[0].type.value == "rectangle"
+        assert self.stdout.getvalue() == ""
+
+    def test_can_set_annotations(self, fxt_new_task: Task):
+        fxt_new_task.get_jobs()[0].set_annotations(
+            models.LabeledDataRequest(
+                tags=[models.LabeledImageRequest(frame=0, label_id=fxt_new_task.labels[0].id)],
+            )
+        )
+
+        anns = fxt_new_task.get_jobs()[0].get_annotations()
+
+        assert len(anns.tags) == 1
+        assert self.stdout.getvalue() == ""
+
+    def test_can_clear_annotations(self, fxt_task_with_shapes: Task):
+        fxt_task_with_shapes.get_jobs()[0].remove_annotations()
+
+        anns = fxt_task_with_shapes.get_jobs()[0].get_annotations()
+        assert len(anns.tags) == 0
+        assert len(anns.tracks) == 0
+        assert len(anns.shapes) == 0
+        assert self.stdout.getvalue() == ""
+
+    def test_can_remove_annotations(self, fxt_new_task: Task):
+        fxt_new_task.get_jobs()[0].set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=0,
+                        label_id=fxt_new_task.labels[0].id,
+                        type="rectangle",
+                        points=[1, 1, 2, 2],
+                    ),
+                    models.LabeledShapeRequest(
+                        frame=0,
+                        label_id=fxt_new_task.labels[0].id,
+                        type="rectangle",
+                        points=[2, 2, 3, 3],
+                    ),
+                ],
+            )
+        )
+        anns = fxt_new_task.get_jobs()[0].get_annotations()
+
+        fxt_new_task.get_jobs()[0].remove_annotations(ids=[anns.shapes[0].id])
+
+        anns = fxt_new_task.get_jobs()[0].get_annotations()
+        assert len(anns.tags) == 0
+        assert len(anns.tracks) == 0
+        assert len(anns.shapes) == 1
+        assert self.stdout.getvalue() == ""
+
+    def test_can_update_annotations(self, fxt_task_with_shapes: Task):
+        fxt_task_with_shapes.get_jobs()[0].update_annotations(
+            models.PatchedLabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=0,
+                        label_id=fxt_task_with_shapes.labels[0].id,
+                        type="rectangle",
+                        points=[0, 1, 2, 3],
+                    ),
+                ],
+                tracks=[
+                    models.LabeledTrackRequest(
+                        frame=0,
+                        label_id=fxt_task_with_shapes.labels[0].id,
+                        shapes=[
+                            models.TrackedShapeRequest(
+                                frame=0, type="polygon", points=[3, 2, 2, 3, 3, 4]
+                            ),
+                        ],
+                    )
+                ],
+                tags=[
+                    models.LabeledImageRequest(frame=0, label_id=fxt_task_with_shapes.labels[0].id)
+                ],
+            )
+        )
+
+        anns = fxt_task_with_shapes.get_jobs()[0].get_annotations()
+        assert len(anns.shapes) == 2
+        assert len(anns.tracks) == 1
+        assert len(anns.tags) == 1
         assert self.stdout.getvalue() == ""

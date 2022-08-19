@@ -42,10 +42,6 @@ class ModelProxy(ABC, Generic[ModelType, ApiType]):
     def _api_member_name(self) -> str:
         ...
 
-    @property
-    def _model_id_field(self) -> str:
-        return "id"
-
     def __init__(self, client: Client) -> None:
         self.__dict__["_client"] = client
 
@@ -69,17 +65,15 @@ class Entity(ModelProxy[ModelType, ApiType]):
         super().__init__(client)
         self.__dict__["_model"] = model
 
+    @property
+    def _model_id_field(self) -> str:
+        return "id"
+
     def __getattr__(self, __name: str) -> Any:
         # NOTE: be aware of potential problems with throwing AttributeError from @property
         # in derived classes!
         # https://medium.com/@ceshine/python-debugging-pitfall-mixed-use-of-property-and-getattr-f89e0ede13f1
         return self._model[__name]
-
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     if __name in self.__dict__:
-    #         self.__dict__[__name] = __value
-    #     else:
-    #         self._model[__name] = __value
 
     def __str__(self) -> str:
         return str(self._model)
@@ -102,7 +96,7 @@ class Repo(ModelProxy[ModelType, ApiType]):
 
 def build_model_bases(
     mt: Type[ModelType], at: Type[ApiType], *, api_member_name: Optional[str] = None
-) -> Tuple[Type[Entity[ModelType, ApiType]], Type[Repo[ModelType, ApiType]],]:
+) -> Tuple[Type[Entity[ModelType, ApiType]], Type[Repo[ModelType, ApiType]]]:
     """
     Helps to remove code duplication in declarations of derived classes
     """
@@ -141,7 +135,7 @@ class ModelRetrieveMixin(Generic[_EntityT]):
         Retrieves an object from server by ID
         """
 
-        (model, _) = self.api.retrieve(obj_id)
+        (model, _) = self.api.retrieve(id=obj_id)
         return self._entity_type(self._client, model)
 
 
@@ -192,7 +186,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
         """
 
         # TODO: implement revision checking
-        (self._model, _) = self.api.retrieve(getattr(self, self._model_id_field))
+        (self._model, _) = self.api.retrieve(id=getattr(self, self._model_id_field))
         return self
 
     def update(self: Entity, values: Union[Dict[str, Any], IModel]) -> Self:
@@ -202,7 +196,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
 
         # TODO: implement revision checking
         self.api.partial_update(
-            getattr(self, self._model_id_field),
+            id=getattr(self, self._model_id_field),
             **{self._model_partial_update_arg: self._export_update_fields(values)},
         )
 
@@ -216,4 +210,4 @@ class ModelDeleteMixin:
         Removes current object on the server
         """
 
-        self.api.destroy(getattr(self, self._model_id_field))
+        self.api.destroy(id=getattr(self, self._model_id_field))
