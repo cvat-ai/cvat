@@ -255,7 +255,7 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_get_jobs(self, fxt_new_task: Task):
-        jobs = fxt_new_task.jobs
+        jobs = fxt_new_task.get_jobs()
 
         assert len(jobs) != 0
 

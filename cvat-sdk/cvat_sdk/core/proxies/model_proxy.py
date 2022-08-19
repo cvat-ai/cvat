@@ -22,6 +22,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import Self
+
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.helpers import get_paginated_collection
 
@@ -184,15 +186,16 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
 
         return fields
 
-    def fetch(self: Entity) -> None:
+    def fetch(self: Entity) -> Self:
         """
         Updates current object from the server
         """
 
         # TODO: implement revision checking
         (self._model, _) = self.api.retrieve(getattr(self, self._model_id_field))
+        return self
 
-    def update(self: Entity, values: Union[Dict[str, Any], IModel]) -> None:
+    def update(self: Entity, values: Union[Dict[str, Any], IModel]) -> Self:
         """
         Commits local model changes to the server
         """
@@ -204,7 +207,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
         )
 
         # TODO: use the response model, once input and output models are same
-        self.fetch()
+        return self.fetch()
 
 
 class ModelDeleteMixin:

@@ -14,6 +14,29 @@ from cvat_sdk.core.proxies.model_proxy import (
     build_model_bases,
 )
 
+_CommentEntityBase, _CommentRepoBase = build_model_bases(
+    models.CommentRead, apis.CommentsApi, api_member_name="comments_api"
+)
+
+
+class Comment(
+    models.ICommentRead,
+    _CommentEntityBase,
+    ModelUpdateMixin[models.IPatchedCommentWriteRequest],
+    ModelDeleteMixin,
+):
+    _model_partial_update_arg = "patched_comment_write_request"
+
+
+class CommentsRepo(
+    _CommentRepoBase,
+    ModelListMixin[Comment],
+    ModelCreateMixin[Comment, models.ICommentWriteRequest],
+    ModelRetrieveMixin[Comment],
+):
+    _entity_type = Comment
+
+
 _IssueEntityBase, _IssueRepoBase = build_model_bases(
     models.IssueRead, apis.IssuesApi, api_member_name="issues_api"
 )

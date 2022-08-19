@@ -309,8 +309,8 @@ class RqStatusSerializer(serializers.Serializer):
     progress = serializers.FloatField(max_value=100, default=0)
 
 class WriteOnceMixin:
-
-    """Adds support for write once fields to serializers.
+    """
+    Adds support for write once fields to serializers.
 
     To use it, specify a list of fields as `write_once_fields` on the
     serializer's Meta:
@@ -331,12 +331,15 @@ class WriteOnceMixin:
 
         # We're only interested in PATCH/PUT.
         if 'update' in getattr(self.context.get('view'), 'action', ''):
-            return self._set_write_once_fields(extra_kwargs)
+            extra_kwargs = self._set_write_once_fields(extra_kwargs)
 
         return extra_kwargs
 
     def _set_write_once_fields(self, extra_kwargs):
-        """Set all fields in `Meta.write_once_fields` to read_only."""
+        """
+        Set all fields in `Meta.write_once_fields` to read_only.
+        """
+
         write_once_fields = getattr(self.Meta, 'write_once_fields', None)
         if not write_once_fields:
             return extra_kwargs
@@ -354,7 +357,7 @@ class WriteOnceMixin:
 
         return extra_kwargs
 
-class DataSerializer(serializers.ModelSerializer):
+class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     use_zip_chunks = serializers.BooleanField(default=False)
     client_files = ClientFileSerializer(many=True, default=[])
@@ -993,6 +996,10 @@ class IssueReadSerializer(serializers.ModelSerializer):
         fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
             'created_date', 'updated_date', 'comments', 'resolved')
         read_only_fields = fields
+        extra_kwargs = {
+            'created_date': { 'allow_null': True },
+            'updated_date': { 'allow_null': True },
+        }
 
 
 class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -1011,6 +1018,12 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         models.Comment.objects.create(issue=db_issue,
             message=message, owner=db_issue.owner)
         return db_issue
+
+    def update(self, instance, validated_data):
+        message = validated_data.pop('message')
+        if message:
+            raise NotImplementedError('Check https://github.com/cvat-ai/cvat/issues/122')
+        return super().update(instance, validated_data)
 
     class Meta:
         model = models.Issue

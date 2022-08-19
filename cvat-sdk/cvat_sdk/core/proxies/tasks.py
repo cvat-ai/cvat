@@ -217,8 +217,7 @@ class Task(
 
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
 
-    @property
-    def jobs(self) -> List[Job]:
+    def get_jobs(self) -> List[Job]:
         return [Job(self._client, m) for m in self.api.list_jobs(id=self.id)[0]]
 
     def get_meta(self) -> models.IDataMetaRead:

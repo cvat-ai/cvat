@@ -15,8 +15,7 @@ import urllib3
 
 from cvat_sdk.api_client import ApiClient, Configuration, models
 from cvat_sdk.core.helpers import expect_status
-from cvat_sdk.core.proxies.comments import CommentsRepo
-from cvat_sdk.core.proxies.issues import IssuesRepo
+from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
 from cvat_sdk.core.proxies.projects import ProjectsRepo

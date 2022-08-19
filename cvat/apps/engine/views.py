@@ -237,9 +237,9 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     create=extend_schema(
         summary='Method creates a new project',
-        request=ProjectWriteSerializer,
+        # request=ProjectWriteSerializer,
         responses={
-            '201': ProjectWriteSerializer,
+            '201': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific project',
@@ -253,9 +253,9 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a project',
-        request=ProjectWriteSerializer,
+        # request=ProjectWriteSerializer,
         responses={
-            '200': ProjectWriteSerializer,
+            '200': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
@@ -358,7 +358,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Dataset file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=DatasetFileSerializer(required=False),
+        request=PolymorphicProxySerializer('DatasetWrite',
+            serializers=[DatasetFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '202': OpenApiResponse(description='Exporting has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
@@ -483,7 +486,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
+            '200': OpenApiResponse(PolymorphicProxySerializer(
+                component_name='AnnotationsRead',
+                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
+                resource_type_field_name=None
+            ), description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '401': OpenApiResponse(description='Format is not specified'),
@@ -537,12 +544,16 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=ProjectFileSerializer(required=False),
+        request=PolymorphicProxySerializer('BackupWrite',
+            serializers=[ProjectFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
-    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$', serializer_class=ProjectFileSerializer(required=False))
+    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
+        serializer_class=ProjectFileSerializer(required=False))
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
@@ -556,7 +567,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
+    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
+        serializer_class=None)
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -663,12 +675,15 @@ class DataChunkGetter:
         }),
     create=extend_schema(
         summary='Method creates a new task in a database without any attached images and videos',
+        request=TaskWriteSerializer,
         responses={
-            '201': TaskWriteSerializer, # TODO: change to read serializer
+            '201': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific task',
-        responses=TaskReadSerializer),
+        responses={
+            '200': TaskReadSerializer
+        }),
     destroy=extend_schema(
         summary='Method deletes a specific task, all attached jobs, annotations, and data',
         responses={
@@ -676,8 +691,9 @@ class DataChunkGetter:
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a task',
+        request=TaskWriteSerializer(partial=True),
         responses={
-            '200': TaskWriteSerializer, # TODO: change to read serializer
+            '200': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
@@ -802,7 +818,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         pagination_class=None, filter_fields=None, search_fields=None,
-        ordering_fields=None, lookup_fields=None)
+        ordering_fields=None)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
@@ -974,7 +990,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
+            '200': OpenApiResponse(PolymorphicProxySerializer(
+                component_name='AnnotationsRead',
+                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
+                resource_type_field_name=None
+            ), description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1023,7 +1043,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('action', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['create', 'update', 'delete']),
         ],
-        request=LabeledDataSerializer)
+        request=LabeledDataSerializer,
+        responses={
+            '200': LabeledDataSerializer,
+        })
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific task',
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
@@ -1224,6 +1247,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a job',
+        request=JobWriteSerializer,
         responses={
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
@@ -1312,10 +1336,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         responses={
             '200': OpenApiResponse(PolymorphicProxySerializer(
-                component_name='JobAnnotationsRead',
+                component_name='AnnotationsRead',
                 serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
                 resource_type_field_name=None
-            )),
+            ), description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1489,7 +1513,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         pagination_class=None, filter_fields=None, search_fields=None,
-        ordering_fields=None, lookup_fields=None)
+        ordering_fields=None)
     def issues(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.issues
@@ -1627,13 +1651,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an issue',
+        request=IssueWriteSerializer,
         responses={
-            '200': IssueWriteSerializer,
+            '200': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates an issue',
+        request=IssueWriteSerializer,
         responses={
-            '201': IssueWriteSerializer,
+            '201': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes an issue',
@@ -1679,8 +1705,14 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': CommentReadSerializer(many=True),
         })
-    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer)
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        # Remove regular list() parameters from swagger schema
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        pagination_class=None, filter_fields=None, search_fields=None,
+        ordering_fields=None)
     def comments(self, request, pk):
+        # TODO: remove this endpoint? It is totally covered by issue body.
+
         db_issue = self.get_object()
         queryset = db_issue.comments
         serializer = CommentReadSerializer(queryset,
@@ -1702,13 +1734,15 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a comment',
+        request=CommentWriteSerializer,
         responses={
-            '200': CommentWriteSerializer,
+            '200': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates a comment',
+        request=CommentWriteSerializer,
         responses={
-            '201': CommentWriteSerializer,
+            '201': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes a comment',
@@ -1846,13 +1880,15 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a cloud storage instance',
+        request=CloudStorageWriteSerializer,
         responses={
-            '200': CloudStorageWriteSerializer,
+            '200': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates a cloud storage with a specified characteristics',
+        request=CloudStorageWriteSerializer,
         responses={
-            '201': CloudStorageWriteSerializer,
+            '201': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         })
 )
 class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
