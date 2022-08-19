@@ -810,15 +810,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project = instance.project
             db_project.save()
 
-    @extend_schema(summary='Method returns a list of jobs for a specific task',
-        responses={
-            '200': JobReadSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=None,
+    @extend_schema(summary='Method returns a list of jobs for a specific task')
+    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer(many=True),
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None,
-        ordering_fields=None)
+        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
@@ -1504,16 +1500,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             callback=dm.views.export_job_as_dataset
         )
 
-    @extend_schema(
-        summary='Method returns list of issues for the job',
-        responses={
-            '200': IssueReadSerializer(many=True)
-        })
-    @action(detail=True, methods=['GET'], serializer_class=None,
+    @extend_schema(summary='Method returns list of issues for the job')
+    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer(many=True),
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None,
-        ordering_fields=None)
+        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
     def issues(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.issues
@@ -1701,15 +1692,11 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-    @extend_schema(summary='The action returns all comments of a specific issue',
-        responses={
-            '200': CommentReadSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=None,
+    @extend_schema(summary='The action returns all comments of a specific issue')
+    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer(many=True),
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None,
-        ordering_fields=None)
+        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
     def comments(self, request, pk):
         # TODO: remove this endpoint? It is totally covered by issue body.
 
