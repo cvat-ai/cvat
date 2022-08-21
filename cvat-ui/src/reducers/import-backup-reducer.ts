@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ImportBackupActions, ImportBackupActionTypes } from 'actions/import-backup-actions';
-import { ImportBackupState } from './interfaces';
+import { ImportBackupState } from '.';
 
 const defaultState: ImportBackupState = {
     isTaskImported: false,

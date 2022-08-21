@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import React from 'react';
-import { Storage } from 'reducers/interfaces';
+import { Storage } from 'reducers';
 import StorageWithSwitchField from './storage-with-switch-field';
 
 export interface Props {

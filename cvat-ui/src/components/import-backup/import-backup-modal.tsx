@@ -12,10 +12,9 @@ import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 import { InboxOutlined } from '@ant-design/icons';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, Storage, StorageLocation } from 'reducers';
 import { importBackupActions, importBackupAsync } from 'actions/import-backup-actions';
 import SourceStorageField from 'components/storage/source-storage-field';
-import { Storage, StorageLocation } from 'reducers/interfaces';
 import Input from 'antd/lib/input/Input';
 
 type FormValues = {

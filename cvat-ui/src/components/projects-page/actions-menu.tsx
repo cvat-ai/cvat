@@ -21,8 +21,8 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     const { projectInstance } = props;
 
     const dispatch = useDispatch();
-    const activeBackups = useSelector((state: CombinedState) => state.export.projects);
-    const exportIsActive = projectInstance.id in activeBackups;
+    const activeExports = useSelector((state: CombinedState) => state.export.projects);
+    const exportBackupIsActive = projectInstance.id in activeExports && activeExports[projectInstance.id].backup;
 
     const onDeleteProject = useCallback((): void => {
         Modal.confirm({
@@ -49,9 +49,9 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 Import dataset
             </Menu.Item>
             <Menu.Item
-                disabled={exportIsActive}
+                disabled={exportBackupIsActive}
                 onClick={() => dispatch(exportActions.openExportModal(projectInstance, 'backup'))}
-                icon={exportIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
+                icon={exportBackupIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
             >
                 Backup Project
             </Menu.Item>

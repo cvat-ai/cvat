@@ -12,9 +12,9 @@ import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 
-import { CombinedState, Storage } from 'reducers/interfaces';
+import { CombinedState, Storage } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 import TargetStorageField from 'components/storage/target-storage-field';
 
@@ -103,6 +103,7 @@ function ExportBackupModal(): JSX.Element | null {
                         location: useDefaultStorage ? defaultStorageLocation : values.targetStorage?.location,
                         cloudStorageId: useDefaultStorage ? defaultStorageCloudId : values.targetStorage?.cloud_storage_id,
                     } as Storage,
+                    useDefaultStorage,
                     values.customName ? `${values.customName}.zip` : undefined
                 ),
             );

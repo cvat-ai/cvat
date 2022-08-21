@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
 import Progress from 'antd/lib/progress';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 import { CombinedState } from 'reducers';
 

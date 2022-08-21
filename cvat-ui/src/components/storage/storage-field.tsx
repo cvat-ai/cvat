@@ -6,10 +6,8 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Select from 'antd/lib/select';
 import Form from 'antd/lib/form';
-import { CloudStorage } from 'reducers/interfaces';
-import { StorageLocation } from 'reducers/interfaces';
+import { CloudStorage, Storage, StorageLocation } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
-import { Storage } from 'reducers/interfaces';
 
 const { Option } = Select;
 

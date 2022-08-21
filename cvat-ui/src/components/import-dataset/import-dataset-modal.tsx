@@ -13,19 +13,17 @@ import Select from 'antd/lib/select';
 import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
-import { StorageLocation } from 'reducers/interfaces';
 import {
     UploadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, Storage, StorageLocation } from 'reducers';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 import ImportDatasetStatusModal from './import-dataset-status-modal';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
-import { Storage } from 'reducers/interfaces';
 import Input from 'antd/lib/input/Input';
 
 const { confirm } = Modal;
@@ -397,7 +395,7 @@ function ImportDatasetModal(): JSX.Element | null {
                                 ...uploadParams,
                                 sourceStorage: {
                                     location: (value.location) ? value.location : defaultStorageLocation,
-                                    cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
+                                    cloudStorageId: (value.location) ? value.cloud_storage_id : defaultStorageCloudId,
                                 } as Storage,
                             } as UploadParams);
                         }}

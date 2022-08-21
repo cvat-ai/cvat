@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 const PluginRegistry = require('./plugins').default;
-const serverProxy = require('./server-proxy');
+const serverProxy = require('./server-proxy').default;
 const logFactory = require('./log');
 const { ArgumentError } = require('./exceptions');
 const { LogType } = require('./enums');

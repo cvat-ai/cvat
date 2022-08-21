@@ -23,7 +23,7 @@ import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
 
-import { StorageLocation } from 'reducers/interfaces';
+import { StorageLocation } from 'reducers';
 
 export interface CreateTaskData {
     projectId: number | null;

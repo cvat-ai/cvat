@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import StorageField from './storage-field';
-import { Storage } from 'reducers/interfaces';
+import { Storage } from 'reducers';
 import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleFilled, QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';

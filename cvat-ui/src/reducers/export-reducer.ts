@@ -60,7 +60,8 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                 }
             }
             activities[instanceId].dataset =
-                instanceId in activities && !activities[instanceId].dataset.includes(format) ?
+                instanceId in activities && activities[instanceId].dataset
+                && !activities[instanceId].dataset.includes(format) ?
                     [...activities[instanceId].dataset, format] :
                     activities[instanceId]?.dataset || [format];
 

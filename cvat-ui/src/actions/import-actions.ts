@@ -6,8 +6,8 @@
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import { getProjectsAsync } from './projects-actions';
-import { Storage } from 'reducers/interfaces';
-import getCore from 'cvat-core-wrapper';
+import { Storage } from 'reducers';
+import { getCore } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 
 import { jobInfoGenerator, receiveAnnotationsParameters, AnnotationActionTypes } from 'actions/annotation-actions';
