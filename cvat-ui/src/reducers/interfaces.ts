@@ -548,7 +548,7 @@ export interface AnnotationState {
             left: number;
             type: ContextMenuType;
             pointID: number | null;
-            clientID: number | null;
+            clientIDs: number[];
         };
         instance: Canvas | Canvas3d | null;
         ready: boolean;
@@ -593,7 +593,7 @@ export interface AnnotationState {
         activeInitialState?: any;
     };
     annotations: {
-        activatedStateID: number | null;
+        activatedStateIDs: number[];
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;

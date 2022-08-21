@@ -30,7 +30,7 @@ interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
-    activate(clientID: number | null, attributeID?: number): void;
+    setActiveElements(clientIDs: number[], attributeID?: number): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
@@ -101,8 +101,8 @@ class CanvasImpl implements Canvas {
         this.model.zoomCanvas(enable);
     }
 
-    public activate(clientID: number | null, attributeID: number | null = null): void {
-        this.model.activate(clientID, attributeID);
+    public setActiveElements(clientIDs: number[], attributeID: number | null = null): void {
+        this.model.setActiveElements(clientIDs, attributeID);
     }
 
     public rotate(rotationAngle: number): void {

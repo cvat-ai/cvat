@@ -30,6 +30,7 @@ interface OwnProps {
     readonly: boolean;
     clientID: number;
     objectStates: any[];
+    activateOnClick: boolean;
     initialCollapsed: boolean;
 }
 
@@ -41,6 +42,7 @@ interface StateToProps {
     jobInstance: any;
     frameNumber: number;
     activated: boolean;
+    activateOnClick: boolean; // Whether the item becomes activated when the user clicks on it
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
@@ -54,7 +56,7 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
-    activateObject: (activatedStateID: number | null) => void;
+    activateObject: (activatedStateID: number, multiSelect: boolean) => void;
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
@@ -66,7 +68,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             annotations: {
                 collapsed: statesCollapsed,
-                activatedStateID,
+                activatedStateIDs,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { attributes: jobAttributes, instance: jobInstance, labels },
@@ -81,7 +83,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const { objectStates: states, initialCollapsed, clientID } = own;
+    const {
+        objectStates: states, initialCollapsed, clientID, activateOnClick,
+    } = own;
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
 
@@ -98,7 +102,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         colorBy,
         jobInstance,
         frameNumber,
-        activated: activatedStateID === clientID,
+        activated: activatedStateIDs.includes(clientID),
+        activateOnClick,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
@@ -117,8 +122,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         collapseOrExpand(objectStates: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(objectStates, collapsed));
         },
-        activateObject(activatedStateID: number | null): void {
-            dispatch(activateObjectAction(activatedStateID, null));
+        activateObject(activatedStateID: number, multiSelect: boolean): void {
+            dispatch(activateObjectAction(activatedStateID, null, multiSelect));
         },
         removeObject(sessionInstance: any, objectState: any): void {
             dispatch(removeObjectAsync(sessionInstance, objectState, true));
@@ -220,13 +225,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     };
 
-    private activate = (): void => {
+    private activate = (multiSelect: boolean): void => {
         const {
-            objectState, ready, activeControl, activateObject, canvasInstance,
+            objectState, ready, activeControl, activateObject, canvasInstance, activateOnClick,
         } = this.props;
 
-        if (ready && activeControl === ActiveControl.CURSOR) {
-            activateObject(objectState.clientID);
+        if (activateOnClick && ready && activeControl === ActiveControl.CURSOR) {
+            activateObject(objectState.clientID, multiSelect);
             if (canvasInstance instanceof Canvas3d) {
                 canvasInstance.activate(objectState.clientID);
             }

@@ -70,6 +70,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                     (id: number): JSX.Element => (
                         <ObjectItemContainer
                             readonly={readonly}
+                            activateOnClick
                             objectStates={objectStates}
                             key={id}
                             clientID={id}

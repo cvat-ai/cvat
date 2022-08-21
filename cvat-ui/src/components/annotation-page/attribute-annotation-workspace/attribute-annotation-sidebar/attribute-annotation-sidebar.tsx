@@ -56,7 +56,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             annotations: {
-                activatedStateID,
+                activatedStateIDs,
                 activatedAttributeID,
                 states,
                 zLayer: { cur },
@@ -70,7 +70,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         jobInstance,
         labels,
-        activatedStateID,
+        activatedStateIDs,
         activatedAttributeID,
         states,
         keyMap,

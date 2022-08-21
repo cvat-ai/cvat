@@ -12,17 +12,21 @@ import ObjectItemContainer from 'containers/annotation-page/standard-workspace/o
 import { Workspace } from 'reducers/interfaces';
 import { rotatePoint } from 'utils/math';
 import consts from 'consts';
+import LabelSelector from 'components/label-selector/label-selector';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     readonly: boolean;
     workspace: Workspace;
-    contextMenuClientID: number | null;
+    contextMenuClientIDs: number[];
     objectStates: any[];
+    labels: any[];
     visible: boolean;
     left: number;
     top: number;
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
+    updateState(states: any[]): void;
     latestComments: string[];
 }
 
@@ -78,8 +82,9 @@ function ReviewContextMenu({
 
 export default function CanvasContextMenu(props: Props): JSX.Element | null {
     const {
-        contextMenuClientID,
+        contextMenuClientIDs,
         objectStates,
+        labels,
         visible,
         left,
         top,
@@ -88,22 +93,31 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         latestComments,
         onStartIssue,
         openIssue,
+        updateState,
     } = props;
 
-    if (!visible || contextMenuClientID === null) {
+    if (!visible || !contextMenuClientIDs?.length) {
         return null;
     }
 
+    const changeLabel = (newLabel: any): void => {
+        for (const o of objectStates) {
+            o.label = newLabel;
+        }
+        updateState(objectStates);
+    };
+
     if (workspace === Workspace.REVIEW_WORKSPACE) {
+        // Doesn't support multi-select yet - only show the first active object
         return ReactDOM.createPortal(
             <ReviewContextMenu
-                key={contextMenuClientID}
+                key={contextMenuClientIDs[0]}
                 top={top}
                 left={left}
                 latestComments={latestComments}
                 onClick={(param: MenuInfo) => {
                     const [state] = objectStates.filter(
-                        (_state: any): boolean => _state.clientID === contextMenuClientID,
+                        (_state: any): boolean => _state.clientID === contextMenuClientIDs[0],
                     );
                     if (param.key === ReviewContextMenuKeys.OPEN_ISSUE) {
                         if (state) {
@@ -155,13 +169,33 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
 
     return ReactDOM.createPortal(
         <div className='cvat-canvas-context-menu' style={{ top, left }}>
-            <ObjectItemContainer
-                readonly={readonly}
-                key={contextMenuClientID}
-                clientID={contextMenuClientID}
-                objectStates={objectStates}
-                initialCollapsed
-            />
+
+            {contextMenuClientIDs.length > 1 && (
+                <CVATTooltip title='Change all labels'>
+                    <span>Change all labels: </span>
+                    <LabelSelector
+                        disabled={readonly}
+                        size='small'
+                        labels={labels}
+                        value={null}
+                        onChange={changeLabel}
+                        className='cvat-objects-sidebar-state-item-label-selector'
+                    />
+                </CVATTooltip>
+            )}
+
+            {contextMenuClientIDs.map(
+                (id: number): JSX.Element => (
+                    <ObjectItemContainer
+                        readonly={readonly}
+                        activateOnClick={false}
+                        key={id}
+                        clientID={id}
+                        objectStates={objectStates}
+                        initialCollapsed
+                    />
+                ),
+            )}
         </div>,
         window.document.body,
     );

@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 // Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
@@ -26,7 +28,7 @@ interface Props {
     attributes: any[];
     collapsed: boolean;
     jobInstance: any;
-    activate(): void;
+    activate(multiSelect: boolean): void;
     copy(): void;
     propagate(): void;
     createURL(): void;
@@ -107,7 +109,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div className='cvat-objects-sidebar-state-item-color' style={{ background: `${color}` }} />
             <div
-                onMouseEnter={activate}
+                onClick={(e) => activate(e.shiftKey)}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
                 style={{ backgroundColor: `${color}88` }}

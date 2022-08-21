@@ -27,6 +27,7 @@ import {
     switchZLayer,
     fetchAnnotationsAsync,
     getDataFailed,
+    deactivateObject,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -55,7 +56,7 @@ interface StateToProps {
     sidebarCollapsed: boolean;
     canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
-    activatedStateID: number | null;
+    activatedStateIDs: number[];
     activatedAttributeID: number | null;
     annotations: any[];
     frameData: any;
@@ -112,7 +113,8 @@ interface DispatchToProps {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject: (activatedStateID: number | null) => void;
+    onActivateObject: (activatedStateID: number, multiSelect: boolean) => void;
+    onDeactivateObject(deactivatedStateID: number | null): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -140,7 +142,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             annotations: {
                 states: annotations,
-                activatedStateID,
+                activatedStateIDs,
                 activatedAttributeID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
@@ -185,7 +187,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,
         frame,
-        activatedStateID,
+        activatedStateIDs,
         activatedAttributeID,
         annotations,
         opacity: opacity / 100,
@@ -271,12 +273,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
-        onActivateObject(activatedStateID: number | null): void {
-            if (activatedStateID === null) {
+        onActivateObject(activatedStateID: number, multiSelect: boolean): void {
+            dispatch(activateObject(activatedStateID, null, multiSelect));
+        },
+        onDeactivateObject(deactivatedStateID: number | null): void {
+            if (deactivatedStateID === null) {
                 dispatch(updateCanvasContextMenu(false, 0, 0));
             }
-
-            dispatch(activateObject(activatedStateID, null));
+            dispatch(deactivateObject(deactivatedStateID));
         },
         onUpdateContextMenu(
             visible: boolean,

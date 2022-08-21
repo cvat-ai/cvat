@@ -153,6 +153,7 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    DEACTIVATE_OBJECT = 'DEACTIVATE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
     PROPAGATE_OBJECT = 'PROPAGATE_OBJECT',
@@ -565,12 +566,36 @@ export function copyShape(objectState: any): AnyAction {
     };
 }
 
-export function activateObject(activatedStateID: number | null, activatedAttributeID: number | null): AnyAction {
+/**
+ * Activates an object
+ * @param activatedStateID id of the object to activate
+ * @param activatedAttributeID optional id of the attribute on the object to activate
+ * @param multiSelect if true, adds the object to the activated list, otherwise it becomes the single activated object.
+ */
+export function activateObject(
+    activatedStateID: number,
+    activatedAttributeID: number | null,
+    multiSelect: boolean,
+): AnyAction {
     return {
         type: AnnotationActionTypes.ACTIVATE_OBJECT,
         payload: {
             activatedStateID,
             activatedAttributeID,
+            multiSelect,
+        },
+    };
+}
+
+/**
+ * Deactivates one or all object(s).
+ * @param deactivatedStateID id of the object to deactivate, or null to deactivate all objects
+ */
+export function deactivateObject(deactivatedStateID: number | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.DEACTIVATE_OBJECT,
+        payload: {
+            deactivatedStateID,
         },
     };
 }
@@ -1222,7 +1247,7 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
-                dispatch(activateObject(null, null));
+                dispatch(deactivateObject(null));
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
@@ -1571,11 +1596,11 @@ export function repeatDrawShapeAsync(): ThunkAction {
 export function redrawShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
-            annotations: { activatedStateID, states },
+            annotations: { activatedStateIDs, states },
             canvas: { instance: canvasInstance },
         } = getStore().getState().annotation;
 
-        if (activatedStateID !== null) {
+        for (const activatedStateID of activatedStateIDs) {
             const [state] = states.filter((_state: any): boolean => _state.clientID === activatedStateID);
             if (state && state.objectType !== ObjectType.TAG) {
                 let activeControl = ActiveControl.CURSOR;
@@ -1600,7 +1625,7 @@ export function redrawShapeAsync(): ThunkAction {
                 if (canvasInstance instanceof Canvas) {
                     canvasInstance.cancel();
                 }
-                canvasInstance.draw({
+                canvasInstance?.draw({
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,

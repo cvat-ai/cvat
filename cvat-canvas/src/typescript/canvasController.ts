@@ -7,7 +7,7 @@ import {
     Geometry,
     Position,
     FocusData,
-    ActiveElement,
+    ActiveElements,
     DrawData,
     MergeData,
     SplitData,
@@ -22,7 +22,7 @@ export interface CanvasController {
     readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
     readonly zLayer: number | null;
     readonly focusData: FocusData;
-    readonly activeElement: ActiveElement;
+    readonly activeElements: ActiveElements;
     readonly drawData: DrawData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
@@ -135,8 +135,8 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.focusData;
     }
 
-    public get activeElement(): ActiveElement {
-        return this.model.activeElement;
+    public get activeElements(): ActiveElements {
+        return this.model.activeElements;
     }
 
     public get drawData(): DrawData {

@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import { CombinedState, ContextMenuType, Workspace } from 'reducers/interfaces';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
-import { updateCanvasContextMenu } from 'actions/annotation-actions';
+import { updateAnnotationsAsync, updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 
@@ -17,12 +17,13 @@ interface OwnProps {
 }
 
 interface StateToProps {
-    contextMenuClientID: number | null;
+    contextMenuClientIDs: number[];
     objectStates: any[];
     visible: boolean;
     top: number;
     left: number;
     type: ContextMenuType;
+    labels: any[];
     collapsed: boolean | undefined;
     workspace: Workspace;
     latestComments: string[];
@@ -30,6 +31,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     onStartIssue(position: number[]): void;
+    updateState(objectStates: any[]): void;
     openIssue(position: number[], message: string): void;
 }
 
@@ -39,24 +41,25 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: { collapsed, states: objectStates },
             canvas: {
                 contextMenu: {
-                    visible, top, left, type, clientID,
+                    visible, top, left, type, clientIDs,
                 },
                 ready,
             },
+            job: { labels },
             workspace,
         },
         review: { latestComments },
     } = state;
 
     return {
-        contextMenuClientID: clientID,
-        collapsed: clientID !== null ? collapsed[clientID] : undefined,
+        contextMenuClientIDs: clientIDs,
+        collapsed: clientIDs.length === 1 ? collapsed[clientIDs[0]] : undefined,
         objectStates,
+        labels,
         visible:
-            clientID !== null &&
+            clientIDs.length > 0 &&
             visible &&
-            ready &&
-            objectStates.map((_state: any): number => _state.clientID).includes(clientID),
+            ready, // ROBTODO: //&& objectStates.map((_state: any): number => _state.clientID).includes(clientID),
         left,
         top,
         type,
@@ -70,6 +73,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
             dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+        updateState(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
         },
         openIssue(position: number[], message: string): void {
             dispatch(reviewActions.startIssue(position));
@@ -207,8 +213,9 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         const { left, top } = this.state;
         const {
             visible,
-            contextMenuClientID,
+            contextMenuClientIDs,
             objectStates,
+            labels,
             type,
             readonly,
             workspace,
@@ -221,12 +228,13 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             <>
                 {type === ContextMenuType.CANVAS_SHAPE && (
                     <CanvasContextMenuComponent
-                        contextMenuClientID={contextMenuClientID}
+                        contextMenuClientIDs={contextMenuClientIDs}
                         readonly={readonly}
                         left={left}
                         top={top}
                         visible={visible}
                         objectStates={objectStates}
+                        labels={labels}
                         workspace={workspace}
                         latestComments={latestComments}
                         onStartIssue={onStartIssue}
