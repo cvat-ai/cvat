@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
 - Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
 - Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
+- Added helm chart support for serverless functions and analytics (<https://github.com/cvat-ai/cvat/pull/110>)
 - [COCO Keypoints](https://cocodataset.org/#keypoints-2020) format support (<https://github.com/cvat-ai/cvat/pull/109>)
 
 ### Changed
@@ -50,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotation window might have top offset if try to move a locked object
 - Image search in cloud storage (<https://github.com/cvat-ai/cvat/pull/8>)
 - Reset password functionality (<https://github.com/cvat-ai/cvat/pull/52>)
+- Creating task with cloud storage data (<https://github.com/cvat-ai/cvat/pull/116>)
+- Show empty tasks (<https://github.com/cvat-ai/cvat/pull/100>)
 
 ### Security
 - TDB
