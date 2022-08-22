@@ -1441,7 +1441,13 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             vis = []
             for element in shape_obj.elements:
                 points.extend(element.points)
-                vis.append(1 if element.outside else 2)
+                element_vis = 2
+                if element.outside:
+                    element_vis = 0
+                elif element.occluded:
+                    element_vis = 1
+                vis.append(element_vis)
+
             anno = datum_annotation.Points(points, vis,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)
@@ -1565,7 +1571,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
                     shape_type = shapes[ann.type]
                     elements = []
-                    if point_cat and type == ShapeType.POINTS:
+                    if point_cat and shape_type == ShapeType.POINTS:
                         shape_type = ShapeType.SKELETON
                         for i in range(len(ann.points) // 2):
                             elements.append(instance_data.LabeledShape(
@@ -1573,10 +1579,10 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                 frame=frame_number,
                                 points=ann.points[2 * i : 2 * i + 2],
                                 label=point_cat.items[ann.label].labels[i],
-                                occluded=occluded,
+                                occluded=ann.visibility[i].value == 1,
                                 source=source,
                                 attributes=[],
-                                outside=ann.visibility[i].value in [0, 1],
+                                outside=ann.visibility[i].value == 0,
                             ))
 
 
