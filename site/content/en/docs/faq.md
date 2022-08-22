@@ -29,21 +29,7 @@ Please be patient.
 Before updating, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
 and backup all CVAT volumes.
 
-To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
-
-```bash
-docker-compose build
-```
-
-and run containers:
-
-```bash
-docker-compose up -d
-```
-
-Sometimes the update process takes a lot of time due to changes in the database schema and data.
-You can check the current status with `docker logs cvat`.
-Please do not terminate the migration and wait till the process is complete.
+Floow the [update guide](/docs/administration/advanced/update_guide/).
 
 ## Kibana app works, but no logs are displayed
 
