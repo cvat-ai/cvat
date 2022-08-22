@@ -1,61 +1,57 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-backend
+  name: {{ .Release.Name }}-backend-worker-default
   namespace: {{ .Release.Namespace }}
   labels:
     app: cvat-app
     tier: backend
+    component: worker-default
     {{- include "cvat.labels" . | nindent 4 }}
-    {{- with .Values.cvat.backend.labels }}
+    {{- with .Values.cvat.backend.worker.default.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.cvat.backend.annotations }}
+  {{- with .Values.cvat.backend.worker.default.annotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cvat.backend.replicas }}
+  replicas: {{ .Values.cvat.backend.worker.default.replicas }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
       {{- include "cvat.labels" . | nindent 6 }}
-      {{- with .Values.cvat.backend.labels }}
+      {{- with .Values.cvat.backend.worker.default.labels }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
-      app: cvat-app
+      app: cvat-app-worker-default
       tier: backend
+      component: worker-default
   template:
     metadata:
       labels:
-        app: cvat-app
+        app: cvat-app-worker-default
         tier: backend
+        component: worker-default
         {{- include "cvat.labels" . | nindent 8 }}
-        {{- with .Values.cvat.backend.labels }}
+        {{- with .Values.cvat.backend.worker.default.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.cvat.backend.annotations }}
+      {{- with .Values.cvat.backend.worker.default.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       containers:
-        - name: cvat-backend-app-container
+        - name: cvat-app-backend-worker-default-container
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
-          {{- with .Values.cvat.backend.resources }}
+          {{- with .Values.cvat.backend.worker.default.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
+          args: ["-c", "supervisord/worker.default.conf"]
           env:
-          - name: DJANGO_MODWSGI_EXTRA_ARGS
-            value: {{ .Values.cvat.backend.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
-          - name: ALLOWED_HOSTS
-            value: {{ .Values.cvat.backend.envs.ALLOWED_HOSTS | squote}}
-          - name: UI_HOST
-            value: "{{ .Release.Name }}-frontend-service"
-          - name: UI_PORT
-            value: "{{ .Values.cvat.frontend.service.ports }}"
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
             value: "{{ .Release.Name }}-redis-master"
@@ -94,9 +90,15 @@ spec:
           - name: CVAT_POSTGRES_PASSWORD
             value: "{{ .Values.postgresql.external.password }}"
           - name: CVAT_POSTGRES_PORT
-            value: "{{ .Values.postgresql.external.port }}"            
+            value: "{{ .Values.postgresql.external.port }}"
           {{- end }}
-          {{- with .Values.cvat.backend.additionalEnv }}
+          {{- if .Values.nuclio }}
+          - name: CVAT_SERVERLESS
+            value: "1"
+          - name: CVAT_NUCLIO_HOST
+            value: "{{ .Release.Name }}-nuclio-dashboard"
+          {{- end }}
+          {{- with .Values.cvat.backend.worker.default.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
           ports:
@@ -114,7 +116,10 @@ spec:
           - mountPath: /home/django/models
             name: cvat-backend-data
             subPath: models
-          {{- with .Values.cvat.backend.additionalVolumeMounts }}
+          - mountPath: /home/django/tmp_storage
+            name: cvat-backend-data
+            subPath: tmp_storage
+          {{- with .Values.cvat.backend.worker.default.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
       initContainers:
@@ -122,7 +127,7 @@ spec:
         - name: user-data-permission-fix
           image: busybox
           command: ["/bin/chmod", "-R", "777", "/home/django"]
-          {{- with .Values.cvat.backend.resources }}
+          {{- with .Values.cvat.backend.worker.default.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -141,15 +146,15 @@ spec:
             name: cvat-backend-data
             subPath: models
           {{- end }}
-          {{- with .Values.cvat.backend.additionalVolumeMounts }}
+          {{- with .Values.cvat.backend.worker.default.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         {{- end }}
-      {{- with .Values.cvat.backend.affinity }}
+      {{- with .Values.cvat.backend.worker.default.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.tolerations }}
+      {{- with .Values.cvat.backend.worker.default.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -159,7 +164,7 @@ spec:
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
         {{- end }}
-        {{- with .Values.cvat.backend.additionalVolumes }}
+        {{- with .Values.cvat.backend.worker.default.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.imagePullSecrets }}

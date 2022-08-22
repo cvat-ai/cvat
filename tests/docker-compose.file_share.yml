@@ -1,8 +1,6 @@
 version: '3.3'
 
 services:
-  cvat:
-    environment:
-      CVAT_SHARE_URL: 'Mounted from asset for case 107 host directory'
+  cvat_worker_default:
     volumes:
       - ./tests/cypress/integration/actions_tasks3/assets/case_107:/home/django/share:rw
