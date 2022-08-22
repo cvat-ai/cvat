@@ -516,7 +516,7 @@ class LambdaJob:
                         "occluded": False,
                         "points": anno["points"],
                         "z_order": 0,
-                        "group": None,
+                        "group": anno["group_id"] if "group_id" in anno else None,
                         "attributes": attrs,
                         "source": "auto"
                     })
