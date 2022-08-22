@@ -34,23 +34,25 @@ Docker volumes are used to store all CVAT data:
   Check the [installation guide](/docs/administration/basics/installation/) for details.
 
 - Update settings:
-  If `docker-compose.override.yml` configuration file is present in your installation, check it and adjust the settings if necessary.
-  From time to time the installation process changes a little and you may need to export some environment variables, for example.
+  If `docker-compose.override.yml` configuration file is present in your installation,
+  check it and adjust the settings if necessary.
+  From time to time the installation process changes a little and
+  you may need to export some environment variables, for example.
   Follow the [installation guide](/docs/administration/basics/installation/).
 
 - Update local CVAT images. Two option here:
   1. Pull prebuilt images from DockerHub: use `CVAT_VERSION` environment variable
      to specify the version of CVAT you want to install (e.g `v2.1.0`, `dev`):
-    ```shell
-    CVAT_VERSION=dev docker-compose pull
-    ```
+     ```shell
+     CVAT_VERSION=dev docker-compose pull
+     ```
 
   2. Alternative: if you want to build the images locally with local changes
-    run the following command. It will take some time to build CVAT images.
+     run the following command. It will take some time to build CVAT images.
 
-    ```shell
-    docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-    ```
+     ```shell
+     docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+     ```
 
 - Start CVAT with:
   ```shell
