@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -375,12 +375,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderUzeZipChunks(): JSX.Element {
         return (
             <Form.Item
-                help='Force to use zip chunks as compressed data. Actual for videos only.'
+                help='Force to use zip chunks as compressed data. Cut out content for videos only.'
                 name='useZipChunks'
                 valuePropName='checked'
             >
                 <Checkbox>
-                    <Text className='cvat-text-color'>Use zip chunks</Text>
+                    <Text className='cvat-text-color'>Use zip/video chunks</Text>
                 </Checkbox>
             </Form.Item>
         );

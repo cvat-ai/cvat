@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import Modal from 'antd/lib/modal';
 import Title from 'antd/lib/typography/Title';
 
 import { changePasswordAsync } from 'actions/auth-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import ChangePasswordForm, { ChangePasswordData } from './change-password-form';
 
 interface StateToProps {

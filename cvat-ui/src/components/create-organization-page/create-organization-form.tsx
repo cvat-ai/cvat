@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import notification from 'antd/lib/notification';
 
 import { createOrganizationAsync } from 'actions/organization-actions';
 import validationPatterns from 'utils/validation-patterns';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 function CreateOrganizationForm(): JSX.Element {
     const [form] = useForm<Store>();

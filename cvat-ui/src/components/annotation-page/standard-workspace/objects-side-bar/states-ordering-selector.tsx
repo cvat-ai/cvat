@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 
-import { StatesOrdering } from 'reducers/interfaces';
+import { StatesOrdering } from 'reducers';
 
 interface StatesOrderingSelectorComponentProps {
     statesOrdering: StatesOrdering;

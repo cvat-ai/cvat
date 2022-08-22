@@ -139,7 +139,6 @@ context('Base actions on the project', () => {
             cy.closeNotification('.cvat-notification-notice-delete-project-failed');
             cy.openProject(projectName);
             cy.goToTaskList();
-            cy.contains('strong', taskName.secondTask).should('not.exist');
             cy.openTask(taskName.firstTask);
             cy.goToTaskList();
             cy.logout(userName);

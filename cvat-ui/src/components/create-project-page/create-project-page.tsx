@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { connect } from 'react-redux';
 import CreateProjectContent from './create-project-content';
-import { CombinedState } from '../../reducers/interfaces';
+import { CombinedState } from '../../reducers';
 import CreateProjectContext, { ICreateProjectContext } from './create-project.context';
 
 function CreateProjectPageComponent(props: StateToProps): JSX.Element {
@@ -33,7 +33,7 @@ function CreateProjectPageComponent(props: StateToProps): JSX.Element {
     };
     return (
         <CreateProjectContext.Provider value={defaultContext}>
-            <Row justify='center' align='top' className='cvat-create-task-form-wrapper'>
+            <Row justify='center' align='top' className='cvat-create-work-form-wrapper'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
                     <Text className='cvat-title'>Create a new project</Text>
                     <CreateProjectContent />

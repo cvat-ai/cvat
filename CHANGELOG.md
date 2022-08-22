@@ -7,10 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.2.0] - Unreleased
 ### Added
+- Added ability to delete frames from a job based on (<https://github.com/openvinotoolkit/cvat/pull/4194>)
+- Support of attributes returned by serverless functions based on (<https://github.com/openvinotoolkit/cvat/pull/4506>)
+- Project/task backups uploading via chunk uploads
+- Fixed UX bug when jobs pagination is reset after changing a job
+- Progressbars in CLI for file uploading and downloading
+- `utils/cli` changed to `cvat-cli` package
+- Support custom file name for backup
+- Possibility to display tags on frame
+- Support source and target storages (server part)
+- Tests for import/export annotation, dataset, backup from/to cloud storage
+- Added Python SDK package (`cvat-sdk`)
+- Previews for jobs
+- Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
+- OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
+- Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
+- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
+- Added helm chart support for serverless functions and analytics (<https://github.com/cvat-ai/cvat/pull/110>)
 - Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
 
 ### Changed
-- TDB
+- Bumped nuclio version to 1.8.14
+- Simplified running REST API tests. Extended CI-nightly workflow
+- REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`)
+- cvat-ui: Improve UI/UX on label, create task and create project forms (<https://github.com/cvat-ai/cvat/pull/7>)
+- Removed link to OpenVINO documentation (<https://github.com/cvat-ai/cvat/pull/35>)
+- Clarified meaning of chunking for videos
 
 ### Deprecated
 - TDB
@@ -19,7 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- Revert Open3D to 0.11.2 to prevent depencency conflicts (<https://github.com/openvinotoolkit/cvat/pull/4639>)
+- Task creation progressbar bug
+- Removed Python dependency ``open3d`` which brought different issues to the building process
+- Analytics not accessible when https is enabled
+- Dataset import in an organization
+- Updated minimist npm package to v1.2.6
+- Request Status Code 500 "StopIteration" when exporting dataset
+- Generated OpenAPI schema for several endpoints
+- Annotation window might have top offset if try to move a locked object
+- Image search in cloud storage (<https://github.com/cvat-ai/cvat/pull/8>)
+- Reset password functionality (<https://github.com/cvat-ai/cvat/pull/52>)
+- Creating task with cloud storage data (<https://github.com/cvat-ai/cvat/pull/116>)
 
 ### Security
 - TDB
@@ -44,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unable to upload annotations (<https://github.com/openvinotoolkit/cvat/pull/4513>)
 - Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
 - Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
+- Fixed build of retinanet function image (<https://github.com/cvat-ai/cvat/pull/54>)
 
 ## \[2.0.0] - 2022-03-04
 ### Added

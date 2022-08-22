@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,7 @@ import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
-import { CloudStorage } from 'reducers/interfaces';
+import { CloudStorage } from 'reducers';
 import CloudStorageTab from './cloud-storages-tab';
 
 export interface Files {

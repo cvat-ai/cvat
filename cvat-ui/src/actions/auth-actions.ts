@@ -1,10 +1,10 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { UserConfirmation } from 'components/register-page/register-form';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
 
 const cvat = getCore();

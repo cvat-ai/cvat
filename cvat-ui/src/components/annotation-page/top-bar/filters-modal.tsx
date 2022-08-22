@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import { omit } from 'lodash';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;
@@ -111,6 +111,7 @@ function FiltersModalComponent(): JSX.Element {
                         { value: 'polygon', title: 'Polygon' },
                         { value: 'cuboid', title: 'Cuboid' },
                         { value: 'ellipse', title: 'Ellipse' },
+                        { value: 'skeleton', title: 'Skeleton' },
                     ],
                 },
             },
