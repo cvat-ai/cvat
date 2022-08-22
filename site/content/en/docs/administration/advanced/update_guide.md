@@ -15,6 +15,22 @@ Docker volumes are used to store all CVAT data:
   [backup guide](/docs/administration/advanced/backup_guide/) and backup all CVAT volumes.
 
 - Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
+  Note that you need to download the entire source code, not just the `docker-compose` configuration file.
+  - With git:
+    Run the following commands inside CVAT folder
+    ```shell
+    git checkout develop
+    git pull
+    ```
+    Optionally checkout to specific version:
+    ```shell
+    git checkout v2.1.0
+    ```
+  - With wget:
+    ```shell
+    wget https://github.com/opencv/cvat/archive/refs/heads/develop.zip
+    unzip develop.zip -d cvat && mv cvat/cvat-develop/* cvat && rm -r cvat/cvat-develop
+    ```
   Check the [installation guide](/docs/administration/basics/installation/) for details.
 
 - Update settings:
