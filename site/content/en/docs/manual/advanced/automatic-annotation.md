@@ -6,7 +6,7 @@ description: 'Guide to using the automatic annotation of tasks.'
 ---
 
 Automatic Annotation is used for creating preliminary annotations.
-To use Automatic Annotation you need a DL model. You can use primary models or models uploaded by a user.
+To use Automatic Annotation you need a DL model that can be deployed by a CVAT administrator.
 You can find the list of available models in the `Models` section.
 
 1. To launch automatic annotation, you should open the dashboard and find a task which you want to annotate.
@@ -22,6 +22,9 @@ You can find the list of available models in the `Models` section.
    For example, let’s consider a task where you have to annotate labels “car” and “person”.
    You should connect the “person” label from the model to the “person” label in the task.
    As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label.
+   If the chosen model supports automatic attributes detection
+   (like facial expressions, for example: ``serverless/openvino/omz/intel/face-detection-0205``),
+   you can also map attributes between the DL model and your task.
    The task requires to annotate cars only and choosing the “vehicle” label implies annotation of all vehicles,
    in this case using auto annotation will help you complete the task faster.
    Click `Submit` to begin the automatic annotation process.

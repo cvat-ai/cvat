@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { AuthState } from './interfaces';
+import { AuthState } from '.';
 
 const defaultState: AuthState = {
     initialized: false,

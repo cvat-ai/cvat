@@ -100,7 +100,7 @@ spec:
     - name: MASK_RCNN_DIR
       value: /opt/nuclio/Mask_RCNN
   build:
-    image: cvat/tf.matterport.mask_rcnn
+    image: cvat.tf.matterport.mask_rcnn
     baseImage: tensorflow/tensorflow:1.15.5-gpu-py3
     directives:
       postCopy:

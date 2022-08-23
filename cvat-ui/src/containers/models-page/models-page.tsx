@@ -1,11 +1,11 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
 
 import ModelsPageComponent from 'components/models-page/models-page';
-import { Model, CombinedState } from 'reducers/interfaces';
+import { Model, CombinedState } from 'reducers';
 
 interface StateToProps {
     interactors: Model[];

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -29,7 +29,7 @@ import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import consts from 'consts';
 
 import { CVATLogo } from 'icons';
@@ -37,7 +37,7 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import SettingsModal from './settings-modal/settings-modal';
 
 const core = getCore();
@@ -169,7 +169,7 @@ function HeaderContainer(props: Props): JSX.Element {
     const history = useHistory();
     const location = useLocation();
 
-    function showAboutModal(): void {
+    const showAboutModal = useCallback((): void => {
         Modal.info({
             title: `${tool.name}`,
             content: (
@@ -222,7 +222,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 },
             },
         });
-    }
+    }, [tool]);
 
     const resetOrganization = (): void => {
         localStorage.removeItem('currentOrganization');

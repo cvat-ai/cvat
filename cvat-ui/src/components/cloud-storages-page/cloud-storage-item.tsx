@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import moment from 'moment';
 
-import { CloudStorage, CombinedState } from 'reducers/interfaces';
+import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Status from './cloud-storage-status';

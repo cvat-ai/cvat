@@ -33,15 +33,16 @@ services:
     image: traefik:v2.4
     container_name: traefik_https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}
     command:
-      - '--providers.docker.exposedByDefault=false'
-      - '--providers.docker.network=cvat'
-      - '--entryPoints.web.address=:80'
-      - '--entryPoints.web.http.redirections.entryPoint.to=websecure'
-      - '--entryPoints.web.http.redirections.entryPoint.scheme=https'
-      - '--entryPoints.websecure.address=:443'
-      - '--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:?Please set the ACME_EMAIL env variable}'
-      - '--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true'
-      - '--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json'
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=cvat"
+      - '--providers.file.directory=/etc/traefik/rules'
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
+      - "--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true"
+      - "--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json"
       - '--providers.docker.constraints=Label(`cvat.instance`,`https_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-80}_${CVAT_EXT_HTTPS_PORT:-443}`)'
       # Uncomment to get Traefik dashboard
       # - "--entryPoints.dashboard.address=:8090"

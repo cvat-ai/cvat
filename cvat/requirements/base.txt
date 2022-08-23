@@ -1,6 +1,6 @@
-attrs==21.2.0
+attrs==21.4.0
 click==7.1.2
-Django==3.2.12
+Django==3.2.15
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-compressor==2.4
@@ -18,7 +18,7 @@ requests==2.26.0
 rq==1.5.1
 rq-scheduler==0.10.0
 sqlparse==0.4.2
-django-sendfile2==0.6.1
+django-sendfile2==0.7.0
 dj-pagination==2.5.0
 python-logstash-async==2.2.0
 rules==2.2
@@ -28,23 +28,22 @@ django-filter==2.4.0
 Markdown==3.2.2
 djangorestframework==3.12.4
 Pygments==2.7.4
-drf-spectacular==0.21.2
+drf-spectacular==0.22.1
 Shapely==1.7.1
 pdf2image==1.14.0
-django-rest-auth[with_social]==0.9.5
+dj-rest-auth[with_social]==2.2.4
 opencv-python-headless==4.5.5.62
 h5py==3.6.0
 django-cors-headers==3.5.0
 furl==2.1.0
 av==8.0.2 --no-binary=av
-tensorflow==2.8.0 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
+tensorflow==2.8.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
 diskcache==5.0.2
-open3d==0.11.2
 boto3==1.17.61
-azure-storage-blob==12.8.1
+azure-storage-blob==12.13.0
 google-cloud-storage==1.42.0
 # --no-binary=datumaro: workaround for pip to install
 # opencv-headless instead of regular opencv, to actually run setup script

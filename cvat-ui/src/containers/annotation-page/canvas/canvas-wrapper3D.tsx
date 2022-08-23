@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,7 +27,7 @@ import {
     GridColor,
     ObjectType,
     Workspace,
-} from 'reducers/interfaces';
+} from 'reducers';
 
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';

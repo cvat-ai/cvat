@@ -2544,6 +2544,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2590,6 +2591,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 74,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2602,8 +2604,24 @@ const frameMetaDummyData = {
         size: 5002,
         image_quality: 50,
         start_frame: 0,
+        stop_frame: 4999,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    4: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 4995,
         stop_frame: 5001,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1888,
@@ -2618,6 +2636,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
+        deleted_frames: [7,8],
         frames: [
             {
                 width: 1920,
@@ -2662,8 +2681,9 @@ const frameMetaDummyData = {
         size: 5002,
         image_quality: 50,
         start_frame: 0,
-        stop_frame: 5001,
+        stop_frame: 499,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1888,
@@ -2673,11 +2693,162 @@ const frameMetaDummyData = {
     },
     102: {
         chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 495,
+        stop_frame: 994,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    103: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 990,
+        stop_frame: 1489,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    104: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 1485,
+        stop_frame: 1984,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    105: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 1980,
+        stop_frame: 2479,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    106: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 2475,
+        stop_frame: 2974,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    107: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 2970,
+        stop_frame: 3469,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    108: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 3465,
+        stop_frame: 3964,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    109: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 3960,
+        stop_frame: 4459,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    110: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 4455,
+        stop_frame: 4954,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    111: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 4950,
+        stop_frame: 5001,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    112: {
+        chunk_size: 36,
         size: 1,
         image_quality: 50,
         start_frame: 0,
         stop_frame: 0,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,

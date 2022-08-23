@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ from django.utils import timezone
 import cvat.apps.dataset_manager.task as task
 import cvat.apps.dataset_manager.project as project
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Project, Task
+from cvat.apps.engine.models import Project, Task, Job
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import current_function_name
@@ -30,29 +30,36 @@ def log_exception(logger=None, exc_info=True):
 
 
 def get_export_cache_dir(db_instance):
-    base_dir = osp.abspath(db_instance.get_project_dirname() if isinstance(db_instance, Project) else db_instance.get_task_dirname())
+    base_dir = osp.abspath(db_instance.get_dirname())
+
     if osp.isdir(base_dir):
         return osp.join(base_dir, 'export_cache')
     else:
-        raise Exception('{} dir {} does not exist'.format("Project" if isinstance(db_instance, Project) else "Task", base_dir))
+        raise FileNotFoundError('{} dir {} does not exist'.format(db_instance.__class__.__name__, base_dir))
 
 DEFAULT_CACHE_TTL = timedelta(hours=10)
 TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL / 3
+JOB_CACHE_TTL = DEFAULT_CACHE_TTL
 
 
-def export(dst_format, task_id=None, project_id=None, server_url=None, save_images=False):
+def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
     try:
         if task_id is not None:
-            db_instance = Task.objects.get(pk=task_id)
             logger = slogger.task[task_id]
             cache_ttl = TASK_CACHE_TTL
             export_fn = task.export_task
-        else:
-            db_instance = Project.objects.get(pk=project_id)
+            db_instance = Task.objects.get(pk=task_id)
+        elif project_id is not None:
             logger = slogger.project[project_id]
             cache_ttl = PROJECT_CACHE_TTL
             export_fn = project.export_project
+            db_instance = Project.objects.get(pk=project_id)
+        else:
+            logger = slogger.job[job_id]
+            cache_ttl = JOB_CACHE_TTL
+            export_fn = task.export_job
+            db_instance = Job.objects.get(pk=job_id)
 
         cache_dir = get_export_cache_dir(db_instance)
 
@@ -86,8 +93,9 @@ def export(dst_format, task_id=None, project_id=None, server_url=None, save_imag
                 "The {} '{}' is exported as '{}' at '{}' "
                 "and available for downloading for the next {}. "
                 "Export cache cleaning job is enqueued, id '{}'".format(
-                    "project" if isinstance(db_instance, Project) else 'task',
-                    db_instance.name, dst_format, output_path, cache_ttl,
+                    db_instance.__class__.__name__.lower(),
+                    db_instance.name if isinstance(db_instance, (Project, Task)) else db_instance.id,
+                    dst_format, output_path, cache_ttl,
                     cleaning_job.id
                 ))
 
@@ -95,6 +103,12 @@ def export(dst_format, task_id=None, project_id=None, server_url=None, save_imag
     except Exception:
         log_exception(logger)
         raise
+
+def export_job_annotations(job_id, dst_format=None, server_url=None):
+    return export(dst_format,job_id=job_id, server_url=server_url, save_images=False)
+
+def export_job_as_dataset(job_id, dst_format=None, server_url=None):
+    return export(dst_format, job_id=job_id, server_url=server_url, save_images=True)
 
 def export_task_as_dataset(task_id, dst_format=None, server_url=None):
     return export(dst_format, task_id=task_id, server_url=server_url, save_images=True)

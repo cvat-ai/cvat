@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ const cvatData = {
     target: 'web',
     mode: 'production',
     entry: {
-        'cvat-data': './src/js/cvat-data.js',
+        'cvat-data': './src/js/cvat-data.ts',
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -21,15 +21,22 @@ const cvatData = {
         library: 'cvatData',
         libraryTarget: 'window',
     },
+    resolve: {
+        extensions: ['.ts', '.js'],
+    },
     module: {
         rules: [
             {
-                test: /.js?$/,
+                test: /.ts?$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: ['@babel/preset-env'],
+                        plugins: [
+                            '@babel/plugin-proposal-class-properties',
+                            '@babel/plugin-proposal-optional-chaining',
+                        ],
+                        presets: ['@babel/preset-env', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -41,7 +48,8 @@ const cvatData = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '[name].[contenthash].js',
+                        filename: '[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
@@ -51,13 +59,14 @@ const cvatData = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/3rdparty/',
-                        name: '3rdparty/[name].[contenthash].js',
+                        filename: '3rdparty/[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
         ],
     },
-    plugins: [new CopyPlugin(['./src/js/3rdparty/avc.wasm'])],
+    plugins: [new CopyPlugin({ patterns: ['./src/js/3rdparty/avc.wasm'] })],
 };
 
 module.exports = cvatData;
