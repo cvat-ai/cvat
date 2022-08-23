@@ -25,20 +25,15 @@ from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden a
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
+from cvat.apps.engine.utils import DjangoEnum, StrEnum
 
-class Status(str, Enum):
+class Status(DjangoEnum, StrEnum):
     AVAILABLE = 'AVAILABLE'
     NOT_FOUND = 'NOT_FOUND'
     FORBIDDEN = 'FORBIDDEN'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
 
-    def __str__(self):
-        return self.value
-
-class Permissions(str, Enum):
+class Permissions(DjangoEnum, StrEnum):
     READ = 'read'
     WRITE = 'write'
 

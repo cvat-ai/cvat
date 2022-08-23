@@ -1,8 +1,10 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import ast
+from enum import Enum
 import cv2 as cv
 from collections import namedtuple
 import hashlib
@@ -108,3 +110,21 @@ def parse_specific_attributes(specific_attributes):
     return {
         key: value for (key, value) in parsed_specific_attributes
     } if parsed_specific_attributes else dict()
+
+class StrEnum(str, Enum):
+    def __str__(self):
+        return self.value
+
+class DjangoEnum:
+    """
+    A Django-comaptible enum that implements several mandatory operations.
+
+    Must be inherited this way:
+      class <EnumName>(DjangoEnum, [mixin_type, ...] [data_type,] enum_type):
+        ...
+    """
+    # https://stackoverflow.com/a/58051918
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)

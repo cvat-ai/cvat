@@ -30,7 +30,7 @@ from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
     extend_schema_view, extend_schema
 )
-from drf_spectacular.plumbing import build_array_type, build_basic_type
+from drf_spectacular.plumbing import build_array_type, build_basic_type, build_choice_field
 
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -44,7 +44,7 @@ from django_sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, validate_bucket_status, Status as CloudStorageStatus)
+    Permissions, db_storage_to_storage_instance, validate_bucket_status, Status as CloudStorageStatus)
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -1893,10 +1893,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
-        if self.request.method in ('POST', 'PATCH'):
-            return CloudStorageWriteSerializer
-        else:
+        if self.request.method in SAFE_METHODS:
             return CloudStorageReadSerializer
+        else:
+            return CloudStorageWriteSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1941,11 +1941,14 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method returns a manifest content',
         parameters=[
-            OpenApiParameter('manifest_path', description='Path to the manifest file in a cloud storage',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('manifest_path',
+                description='Path to the manifest file in a cloud storage',
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR),
         ],
         responses={
-            '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
+            '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)),
+                description='A manifest content'),
         })
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
@@ -1996,7 +1999,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method returns a preview image from a cloud storage',
         responses={
-            '200': OpenApiResponse(description='Cloud Storage preview'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Cloud Storage preview'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
@@ -2064,7 +2067,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method returns a cloud storage status',
         responses={
-            '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)'),
+            '200': OpenApiResponse(
+                response=build_choice_field(serializers.ChoiceField(CloudStorageStatus.choices())),
+                description='Cloud Storage status'),
         })
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request, pk):
@@ -2083,13 +2088,12 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method returns allowed actions for the cloud storage',
         responses={
-            '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage actions (GET | PUT | DELETE)'),
+            '200': OpenApiResponse(
+                response=build_choice_field(serializers.ChoiceField(Permissions.choices())),
+                description='Cloud Storage actions'),
         })
     @action(detail=True, methods=['GET'], url_path='actions')
     def actions(self, request, pk):
-        '''
-        Method return allowed actions for cloud storage. It's required for reading/writing
-        '''
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)

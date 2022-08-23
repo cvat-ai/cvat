@@ -1137,6 +1137,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
         extra_kwargs = { 'organization': { 'allow_null': True } }
 
+    def to_representation(self, instance):
+        serializer = CloudStorageReadSerializer(instance, context=self.context)
+        return serializer.data
+
     # pylint: disable=no-self-use
     def validate_specific_attributes(self, value):
         if value:
