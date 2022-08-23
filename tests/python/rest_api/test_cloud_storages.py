@@ -7,11 +7,10 @@ import pytest
 from http import HTTPStatus
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, patch_method, post_method
+from shared.utils.config import get_method, make_api_client, patch_method, post_method
 
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetCloudStorage:
-
     def _test_can_see(self, user, storage_id, data, **kwargs):
         response = get_method(user, f'cloudstorages/{storage_id}', **kwargs)
         response_data = response.json()
@@ -32,7 +31,7 @@ class TestGetCloudStorage:
         ('business',     False, False),
         ('user',         True,  True),
     ])
-    def test_sandbox_user_get_coud_storage(self, storage_id, group, is_owner, is_allow, users, cloud_storages):
+    def test_sandbox_user_get_cloud_storage(self, storage_id, group, is_owner, is_allow, users, cloud_storages):
         org = ''
         cloud_storage = cloud_storages[storage_id]
         username = cloud_storage['owner']['username'] if is_owner else \
@@ -43,7 +42,6 @@ class TestGetCloudStorage:
         else:
             self._test_cannot_see(username, storage_id, org=org)
 
-
     @pytest.mark.parametrize('org_id', [2])
     @pytest.mark.parametrize('storage_id', [2])
     @pytest.mark.parametrize('role, is_owner, is_allow', [
@@ -51,7 +49,7 @@ class TestGetCloudStorage:
         ('supervisor',   False,  True),
         ('worker',       False,  False),
     ])
-    def test_org_user_get_coud_storage(self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages):
+    def test_org_user_get_cloud_storage(self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages):
         cloud_storage = cloud_storages[storage_id]
         username = cloud_storage['owner']['username'] if is_owner else \
             next((u for u in find_users(role=role, org=org_id) if u['id'] != cloud_storage['owner']['id']))['username']
@@ -61,9 +59,27 @@ class TestGetCloudStorage:
         else:
             self._test_cannot_see(username, storage_id, org_id=org_id)
 
+    @pytest.mark.parametrize('provider, expected_actions', [
+        ('AWS_S3_BUCKET', {'read', 'write'}),
+        pytest.param('AZURE_CONTAINER', set(),
+            marks=pytest.mark.xfail(raises=StopIteration, reason='no such test cases')),
+        pytest.param('GOOGLE_DRIVE', set(),
+            marks=pytest.mark.xfail(raises=StopIteration, reason='no such test cases')),
+        pytest.param('GOOGLE_CLOUD_STORAGE', set(),
+            marks=pytest.mark.xfail(raises=StopIteration, reason='no such test cases')),
+    ])
+    def test_can_get_storage_actions(self, admin_user, provider, expected_actions, cloud_storages):
+        cloud_storage = next(s for s in cloud_storages if s['provider_type'] == provider)
+        storage_id = cloud_storage['id']
+        org_id = cloud_storage['organization']
+
+        with make_api_client(admin_user) as client:
+            (actions, _) = client.cloudstorages_api.retrieve_actions(storage_id, org_id=org_id)
+            assert set(actions) == expected_actions
+
 
 @pytest.mark.usefixtures('changedb')
-class TestPostCloudStorage():
+class TestPostCloudStorage:
     _SPEC = {
         'provider_type': 'AWS_S3_BUCKET',
         'resource': 'test',
@@ -116,7 +132,7 @@ class TestPostCloudStorage():
         ('owner', True), ('maintainer', True),
         ('worker', False), ('supervisor', False),
     ])
-    def test_org_user_create_coud_storage(self, org_id, role, is_allow, find_users):
+    def test_org_user_create_cloud_storage(self, org_id, role, is_allow, find_users):
         username = find_users(role=role, org=org_id)[0]['username']
 
         if is_allow:
