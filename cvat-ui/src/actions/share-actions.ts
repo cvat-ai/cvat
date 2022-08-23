@@ -28,16 +28,16 @@ const shareActions = {
 
 export type ShareActions = ActionUnion<typeof shareActions>;
 
-export function loadShareDataAsync(directory: string, success: () => void, failure: () => void): ThunkAction {
-    return async (dispatch): Promise<void> => {
+export function loadShareDataAsync(directory: string): ThunkAction {
+    return async (dispatch): Promise<ShareFileInfo[]> => {
         try {
             dispatch(shareActions.loadShareData());
             const values = await core.server.share(directory);
-            success();
             dispatch(shareActions.loadShareDataSuccess(values as ShareFileInfo[], directory));
+            return (values as ShareFileInfo[]);
         } catch (error) {
-            failure();
             dispatch(shareActions.loadShareDataFailed(error));
+            throw error;
         }
     };
 }

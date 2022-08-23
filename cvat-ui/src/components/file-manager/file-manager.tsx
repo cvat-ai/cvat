@@ -37,13 +37,13 @@ interface State {
 }
 
 interface Props {
-    treeData: (TreeNodeNormal & { contentType: string })[];
+    treeData: (TreeNodeNormal & { mime_type: string })[];
     isMultiTask: boolean;
-    onLoadData: (key: string, success: () => void, failure: () => void) => void;
+    onLoadData: (key: string) => Promise<any>;
     onChangeActiveKey(key: string): void;
     onUploadLocalFiles(files: File[]): void;
     onUploadRemoteFiles(urls: string[]): void;
-    onUploadShareFiles(paths: string[]): void;
+    onUploadShareFiles(keys: string[]): Promise<void>;
 }
 
 export class FileManager extends React.PureComponent<Props, State> {
@@ -52,6 +52,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
         this.cloudStorageTabFormRef = React.createRef<FormInstance>();
+        const { onLoadData } = this.props;
 
         this.state = {
             files: {
@@ -66,7 +67,7 @@ export class FileManager extends React.PureComponent<Props, State> {
             active: 'local',
         };
 
-        this.loadData('/');
+        onLoadData('/');
     }
 
     private onSelectCloudStorageFiles = (cloudStorageFiles: string[]): void => {
@@ -93,14 +94,6 @@ export class FileManager extends React.PureComponent<Props, State> {
             cloudStorage: active === 'cloudStorage' ? files.cloudStorage : [],
         };
     }
-
-    private loadData = (key: string): Promise<void> => new Promise<void>((resolve, reject): void => {
-        const { onLoadData } = this.props;
-
-        const success = (): void => resolve();
-        const failure = (): void => reject();
-        onLoadData(key, success, failure);
-    });
 
     public reset(): void {
         const { active } = this.state;
@@ -146,25 +139,19 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderShareSelector(): JSX.Element {
-        function renderTreeNodes(data: TreeNodeNormal[]): JSX.Element[] {
+        function getTreeNodes(data: TreeNodeNormal[]): TreeNodeNormal[] {
             // sort alphabetically
-            data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number => (
-                a.key.toLocaleString().localeCompare(b.key.toLocaleString())));
-            return data.map((item: TreeNodeNormal) => {
-                if (item.children) {
-                    return (
-                        <Tree.TreeNode title={item.title} key={item.key} data={item} isLeaf={item.isLeaf}>
-                            {renderTreeNodes(item.children)}
-                        </Tree.TreeNode>
-                    );
-                }
-
-                return <Tree.TreeNode {...item} key={item.key} data={item} />;
-            });
+            return data
+                .sort((a: TreeNodeNormal, b: TreeNodeNormal): number => (
+                    a.key.toLocaleString().localeCompare(b.key.toLocaleString())))
+                .map((it) => ({
+                    ...it,
+                    children: it.children ? getTreeNodes(it.children) : undefined,
+                }));
         }
 
         const { SHARE_MOUNT_GUIDE_URL } = consts;
-        const { treeData, onUploadShareFiles } = this.props;
+        const { treeData, onUploadShareFiles, onLoadData } = this.props;
         const { expandedKeys, files } = this.state;
 
         return (
@@ -178,7 +165,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                         checkStrictly={false}
                         expandedKeys={expandedKeys}
                         checkedKeys={files.share}
-                        loadData={(event: EventDataNode): Promise<void> => this.loadData(event.key.toLocaleString())}
+                        loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                         onExpand={(newExpandedKeys: ReactText[]): void => {
                             this.setState({
                                 expandedKeys: newExpandedKeys.map((text: ReactText): string => text.toLocaleString()),
@@ -200,11 +187,10 @@ export class FileManager extends React.PureComponent<Props, State> {
                                     share: keys,
                                 },
                             });
-                            onUploadShareFiles(keys);
+                            onUploadShareFiles(keys).then().catch();
                         }}
-                    >
-                        {renderTreeNodes(treeData)}
-                    </Tree>
+                        treeData={getTreeNodes(treeData)}
+                    />
                 ) : (
                     <div className='cvat-empty-share-tree'>
                         <Empty />

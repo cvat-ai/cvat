@@ -241,13 +241,13 @@ export interface ShareFileInfo {
     // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
-    contentType: string;
+    mime_type: string;
 }
 
 export interface ShareItem {
     name: string;
     type: 'DIR' | 'REG';
-    contentType: string;
+    mime_type: string;
     children: ShareItem[];
 }
 

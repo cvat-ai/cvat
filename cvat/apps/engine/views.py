@@ -13,6 +13,7 @@ import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
+import magic
 
 import cv2
 from django.db.models.query import Prefetch
@@ -41,7 +42,8 @@ from rest_framework.exceptions import PermissionDenied
 from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
+import cvat.apps.dataset_manager.views
+from cvat.apps.engine import mime_types  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance, validate_bucket_status, Status as CloudStorageStatus)
 from cvat.apps.dataset_manager.bindings import CvatImportError
@@ -182,13 +184,16 @@ class ServerViewSet(viewsets.ViewSet):
             content = os.scandir(directory)
             for entry in content:
                 entry_type = None
+                entry_mime_type = None
                 if entry.is_file():
                     entry_type = "REG"
+                    entry_mime_type = magic.from_file(os.path.join(settings.SHARE_ROOT, entry), mime=True)
                 elif entry.is_dir():
                     entry_type = "DIR"
+                    entry_mime_type = "DIR"
 
                 if entry_type:
-                    data.append({"name": entry.name, "type": entry_type})
+                    data.append({"name": entry.name, "type": entry_type, "mime_type": entry_mime_type})
 
             serializer = FileInfoSerializer(many=True, data=data)
             if serializer.is_valid(raise_exception=True):

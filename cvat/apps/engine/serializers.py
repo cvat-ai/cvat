@@ -839,6 +839,7 @@ class LabeledDataSerializer(serializers.Serializer):
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
+    mime_type = serializers.CharField(max_length=16)
 
 class LogEventSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False)

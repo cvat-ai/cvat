@@ -23,6 +23,7 @@ import {
     getContentTypeRemoteFile,
     getNameRemoteFile,
     getNameShareFile,
+    getFileContentTypeByMimeType,
 } from 'utils/files';
 
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
@@ -274,34 +275,36 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private handleUploadShareFiles = (paths: string[]): void => {
-        console.log(paths);
-        // const { isMultiTask } = this.props;
-        // const { files } = this.state;
+    private handleUploadShareFiles = (shareFiles: {
+        key: string;
+        type: string;
+        mime_type: string;
+    }[]): void => {
+        const { isMultiTask } = this.props;
+        const { files } = this.state;
 
-        // let uploadFileErrorMessage = '';
+        let uploadFileErrorMessage = '';
 
-        // if (!isMultiTask && paths.length > 1) {
-        //     uploadFileErrorMessage = paths.every((it) =>
-        // getContentTypeRemoteFile(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk
-        // mage or single video';
-        // } else if (isMultiTask && paths.length > 1) {
-        //     uploadFileErrorMessage = paths.every((it) => getContentTypeRemoteFile(it) === 'video') ?
-        // '' : 'We can\'t process it. Support for a bulk videos';
-        // }
+        if (!isMultiTask && shareFiles.length > 1) {
+            uploadFileErrorMessage = shareFiles.every((it) => getFileContentTypeByMimeType(it.mime_type) === 'image') ?
+                '' : 'We can\'t process it. Support for a bulk image or single video';
+        } else if (isMultiTask && shareFiles.length > 1) {
+            uploadFileErrorMessage = shareFiles.every((it) => getFileContentTypeByMimeType(it.mime_type) === 'video') ?
+                '' : 'We can\'t process it. Support for a bulk videos';
+        }
 
-        // this.setState({
-        //     uploadFileErrorMessage,
-        // });
+        this.setState({
+            uploadFileErrorMessage,
+        });
 
-        // if (!uploadFileErrorMessage) {
-        //     this.setState({
-        //         files: {
-        //             ...files,
-        //             share: paths,
-        //         },
-        //     });
-        // }
+        if (!uploadFileErrorMessage) {
+            this.setState({
+                files: {
+                    ...files,
+                    share: shareFiles.map((it) => it.key),
+                },
+            });
+        }
     };
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
@@ -600,7 +603,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 fileName = (file as File)?.name || (file as string) || defaultFileName;
                 break;
         }
-        console.log(fileName);
         return isMultiTask ?
             basic.name
                 .replaceAll('{{file_name}}', fileName)
