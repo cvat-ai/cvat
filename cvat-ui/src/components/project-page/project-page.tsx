@@ -16,7 +16,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
 
-import { CombinedState, Task, Indexable } from 'reducers/interfaces';
+import { CombinedState, Task, Indexable } from 'reducers';
 import { getProjectsAsync, getProjectTasksAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';

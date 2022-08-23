@@ -3,20 +3,24 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
 
-import { CombinedState, ContextMenuType, ShapeType, Workspace } from 'reducers/interfaces';
+import { connect } from 'react-redux';
+import { CombinedState, ContextMenuType, ShapeType, Workspace } from 'reducers';
+
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
 import { updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { ObjectState } from 'cvat-core-wrapper';
 
 interface OwnProps {
     readonly: boolean;
 }
 
 interface StateToProps {
+    contextMenuParentID: number | null;
     contextMenuClientID: number | null;
     canvasInstance: Canvas | null;
     objectStates: any[];
@@ -46,7 +50,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             canvas: {
                 instance,
                 contextMenu: {
-                    visible, top, left, type, clientID,
+                    visible, top, left, type, clientID, parentID,
                 },
                 ready,
             },
@@ -55,8 +59,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
         review: { latestComments },
     } = state;
 
+    let objectState = objectStates.find((_state: ObjectState) => {
+        if (Number.isInteger(parentID)) return _state.clientID === parentID;
+        return _state.clientID === clientID;
+    });
+    if (Number.isInteger(parentID) && objectState) {
+        objectState = objectState.elements.find((_state: ObjectState) => _state.clientID === clientID);
+    }
+
     return {
         contextMenuClientID: clientID,
+        contextMenuParentID: parentID,
         collapsed: clientID !== null ? collapsed[clientID] : undefined,
         activatedStateID,
         objectStates,
@@ -65,7 +78,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             clientID !== null &&
             visible &&
             ready &&
-            objectStates.map((_state: any): number => _state.clientID).includes(clientID),
+            !!objectState,
         left,
         top,
         type,
@@ -104,6 +117,10 @@ interface State {
 }
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
+    static propTypes = {
+        readonly: PropTypes.bool,
+    };
+
     static defaultProps = {
         readonly: false,
     };
@@ -267,6 +284,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         const {
             visible,
             contextMenuClientID,
+            contextMenuParentID,
             objectStates,
             type,
             readonly,
@@ -280,6 +298,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             type === ContextMenuType.CANVAS_SHAPE ? (
                 <CanvasContextMenuComponent
                     contextMenuClientID={contextMenuClientID}
+                    contextMenuParentID={contextMenuParentID}
                     readonly={readonly}
                     left={left}
                     top={top}

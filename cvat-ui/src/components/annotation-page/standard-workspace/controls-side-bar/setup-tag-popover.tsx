@@ -13,10 +13,10 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     labels: any[];
-    selectedLabelID: number;
+    selectedLabelID: number | null;
     repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
-    onSetup(labelID: number): void;
+    onSetup(): void;
 }
 
 function SetupTagPopover(props: Props): JSX.Element {
@@ -44,13 +44,13 @@ function SetupTagPopover(props: Props): JSX.Element {
                         labels={labels}
                         value={selectedLabelID}
                         onChange={onChangeLabel}
-                        onEnterPress={() => onSetup(selectedLabelID)}
+                        onEnterPress={() => onSetup()}
                     />
                     <CVATTooltip title={`Press ${repeatShapeShortcut} to add a tag again`}>
                         <Button
                             type='primary'
                             className='cvat-add-tag-button'
-                            onClick={() => onSetup(selectedLabelID)}
+                            onClick={() => onSetup()}
                             icon={<PlusOutlined />}
                         />
                     </CVATTooltip>

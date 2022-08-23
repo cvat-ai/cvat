@@ -5,7 +5,7 @@
 const config = require('./config');
 
 (() => {
-    const PluginRegistry = require('./plugins');
+    const PluginRegistry = require('./plugins').default;
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
     const {

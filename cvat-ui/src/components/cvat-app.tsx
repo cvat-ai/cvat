@@ -42,11 +42,12 @@ import UpdateCloudStoragePageComponent from 'components/update-cloud-storage-pag
 
 import OrganizationPage from 'components/organization-page/organization-page';
 import CreateOrganizationComponent from 'components/create-organization-page/create-organization-page';
+import { ShortcutsContextProvider } from 'components/shortcuts.context';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { NotificationsState } from 'reducers/interfaces';
+import { NotificationsState } from 'reducers';
 import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, {
     platformInfo,
@@ -355,52 +356,54 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             if (user && user.isVerified) {
                 return (
                     <GlobalErrorBoundary>
-                        <Layout>
-                            <Header />
-                            <Layout.Content style={{ height: '100%' }}>
-                                <ShortcutsDialog />
-                                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
-                                    <Switch>
-                                        <Route exact path='/projects' component={ProjectsPageComponent} />
-                                        <Route exact path='/projects/create' component={CreateProjectPageComponent} />
-                                        <Route exact path='/projects/:id' component={ProjectPageComponent} />
-                                        <Route exact path='/tasks' component={TasksPageContainer} />
-                                        <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                        <Route exact path='/tasks/:id' component={TaskPageContainer} />
-                                        <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                        <Route exact path='/jobs' component={JobsPageComponent} />
-                                        <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
-                                        <Route
-                                            exact
-                                            path='/cloudstorages/create'
-                                            component={CreateCloudStoragePageComponent}
-                                        />
-                                        <Route
-                                            exact
-                                            path='/cloudstorages/update/:id'
-                                            component={UpdateCloudStoragePageComponent}
-                                        />
-                                        <Route
-                                            exact
-                                            path='/organizations/create'
-                                            component={CreateOrganizationComponent}
-                                        />
-                                        <Route exact path='/organization' component={OrganizationPage} />
-                                        {isModelPluginActive && (
-                                            <Route exact path='/models' component={ModelsPageContainer} />
-                                        )}
-                                        <Redirect
-                                            push
-                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
-                                        />
-                                    </Switch>
-                                </GlobalHotKeys>
-                                {/* eslint-disable-next-line */}
-                                <ExportDatasetModal />
-                                {/* eslint-disable-next-line */}
-                                <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
-                            </Layout.Content>
-                        </Layout>
+                        <ShortcutsContextProvider>
+                            <Layout>
+                                <Header />
+                                <Layout.Content style={{ height: '100%' }}>
+                                    <ShortcutsDialog />
+                                    <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
+                                        <Switch>
+                                            <Route exact path='/projects' component={ProjectsPageComponent} />
+                                            <Route exact path='/projects/create' component={CreateProjectPageComponent} />
+                                            <Route exact path='/projects/:id' component={ProjectPageComponent} />
+                                            <Route exact path='/tasks' component={TasksPageContainer} />
+                                            <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
+                                            <Route exact path='/tasks/:id' component={TaskPageContainer} />
+                                            <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                            <Route exact path='/jobs' component={JobsPageComponent} />
+                                            <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
+                                            <Route
+                                                exact
+                                                path='/cloudstorages/create'
+                                                component={CreateCloudStoragePageComponent}
+                                            />
+                                            <Route
+                                                exact
+                                                path='/cloudstorages/update/:id'
+                                                component={UpdateCloudStoragePageComponent}
+                                            />
+                                            <Route
+                                                exact
+                                                path='/organizations/create'
+                                                component={CreateOrganizationComponent}
+                                            />
+                                            <Route exact path='/organization' component={OrganizationPage} />
+                                            {isModelPluginActive && (
+                                                <Route exact path='/models' component={ModelsPageContainer} />
+                                            )}
+                                            <Redirect
+                                                push
+                                                to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                            />
+                                        </Switch>
+                                    </GlobalHotKeys>
+                                    {/* eslint-disable-next-line */}
+                                    <ExportDatasetModal />
+                                    {/* eslint-disable-next-line */}
+                                    <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
+                                </Layout.Content>
+                            </Layout>
+                        </ShortcutsContextProvider>
                     </GlobalErrorBoundary>
                 );
             }

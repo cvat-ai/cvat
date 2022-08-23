@@ -4,7 +4,7 @@
 
 import { Store } from 'antd/lib/form/interface';
 import { User } from 'components/task-page/user-selector';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 const core = getCore();

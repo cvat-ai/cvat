@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import { Indexable } from 'reducers/interfaces';
+import { Indexable } from 'reducers';
 import SortingComponent from './sorting';
 import ResourceFilterHOC from './filtering';
 

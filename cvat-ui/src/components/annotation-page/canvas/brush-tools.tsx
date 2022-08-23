@@ -14,13 +14,13 @@ import Icon, {
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, ObjectType, ShapeType } from 'reducers/interfaces';
+import { CombinedState, ObjectType, ShapeType } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
 import { rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
 import useDraggable from './draggable-hoc';

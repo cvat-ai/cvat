@@ -35,12 +35,12 @@ yarn run cypress:run:chrome
 yarn run cypress:run:chrome:canvas3d
 ```
 
-# REST API tests
+# REST API, SDK and CLI tests
 
 **Initial steps**
 1. Install all necessary requirements before running REST API tests:
    ```
-   pip install -r ./tests/rest_api/requirements.txt
+   pip install -r ./tests/python/requirements.txt
    ```
 
 **Running tests**
@@ -48,7 +48,7 @@ yarn run cypress:run:chrome:canvas3d
 Run all REST API tests:
 
 ```
-pytest ./tests/rest_api
+pytest ./tests/python
 ```
 
 This command will automatically start all necessary docker containers.
@@ -57,13 +57,13 @@ If you want to start/stop these containers without running tests
 use special options for it:
 
 ```
-pytest ./tests/rest_api --start-services
-pytest ./tests/rest_api --stop-services
+pytest ./tests/python --start-services
+pytest ./tests/python --stop-services
 ```
 
 If you need to rebuild your CVAT images add `--rebuild` option:
 ```
-pytest ./tests/rest_api --rebuild
+pytest ./tests/python --rebuild
 ```
 
 # Unit tests

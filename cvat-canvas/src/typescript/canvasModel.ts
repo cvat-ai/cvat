@@ -64,8 +64,12 @@ export interface Configuration {
     forceDisableEditing?: boolean;
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
-    creationOpacity?: number;
     CSSImageFilter?: string;
+    colorBy?: string;
+    selectedShapeOpacity?: number;
+    shapeOpacity?: number;
+    controlPointsSize?: number;
+    outlinedBorders?: string | false;
 }
 
 export interface BrushTool {
@@ -83,6 +87,7 @@ export interface DrawData {
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
+    skeletonSVG?: string;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
@@ -286,12 +291,23 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: 0,
             },
             configuration: {
-                displayAllText: false,
+                smoothImage: true,
                 autoborders: false,
-                undefinedAttrValue: '',
-                textContent: 'id,label,attributes,source,descriptions',
-                textPosition: 'auto',
+                displayAllText: false,
+                showProjections: false,
+                forceDisableEditing: false,
+                intelligentPolygonCrop: false,
+                forceFrameUpdate: false,
+                CSSImageFilter: '',
+                colorBy: 'Label',
+                selectedShapeOpacity: 0.5,
+                shapeOpacity: 0.2,
+                outlinedBorders: false,
                 textFontSize: consts.DEFAULT_SHAPE_TEXT_SIZE,
+                controlPointsSize: consts.BASE_POINT_SIZE,
+                textPosition: consts.DEFAULT_SHAPE_TEXT_POSITION,
+                textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
+                undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
             },
             imageBitmap: false,
             image: null,
@@ -565,6 +581,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (drawData.enabled) {
+            if (drawData.shapeType === 'skeleton' && !drawData.skeletonSVG) {
+                throw new Error('Skeleton template must be specified when drawing a skeleton');
+            }
+
             if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
             } else if (typeof drawData.numberOfPoints !== 'undefined') {
@@ -719,6 +739,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.textFontSize = configuration.textFontSize;
         }
 
+        if (typeof configuration.controlPointsSize === 'number') {
+            this.data.configuration.controlPointsSize = configuration.controlPointsSize;
+        }
+
         if (['auto', 'center'].includes(configuration.textPosition)) {
             this.data.configuration.textPosition = configuration.textPosition;
         }
@@ -751,8 +775,17 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.forceFrameUpdate === 'boolean') {
             this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
-        if (typeof configuration.creationOpacity === 'number') {
-            this.data.configuration.creationOpacity = configuration.creationOpacity;
+        if (typeof configuration.selectedShapeOpacity === 'number') {
+            this.data.configuration.selectedShapeOpacity = configuration.selectedShapeOpacity;
+        }
+        if (typeof configuration.shapeOpacity === 'number') {
+            this.data.configuration.shapeOpacity = configuration.shapeOpacity;
+        }
+        if (['string', 'boolean'].includes(typeof configuration.outlinedBorders)) {
+            this.data.configuration.outlinedBorders = configuration.outlinedBorders;
+        }
+        if (['Instance', 'Group', 'Label'].includes(configuration.colorBy)) {
+            this.data.configuration.colorBy = configuration.colorBy;
         }
 
         if (typeof configuration.CSSImageFilter === 'string') {

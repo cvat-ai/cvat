@@ -4,7 +4,7 @@
 
 import { connect } from 'react-redux';
 
-import { TasksQuery, CombinedState, ActiveInference } from 'reducers/interfaces';
+import { TasksQuery, CombinedState, ActiveInference } from 'reducers';
 
 import TaskItemComponent from 'components/tasks-page/task-item';
 

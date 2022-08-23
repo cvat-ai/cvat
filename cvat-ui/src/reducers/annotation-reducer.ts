@@ -18,7 +18,7 @@ import {
     ObjectType,
     ShapeType,
     Workspace,
-} from './interfaces';
+} from '.';
 
 function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
     return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
@@ -38,6 +38,7 @@ const defaultState: AnnotationState = {
             type: ContextMenuType.CANVAS_SHAPE,
             pointID: null,
             clientID: null,
+            parentID: null,
         },
         brushTools: {
             visible: false,
@@ -83,6 +84,7 @@ const defaultState: AnnotationState = {
     },
     annotations: {
         activatedStateID: null,
+        activatedElementID: null,
         activatedAttributeID: null,
         saving: {
             forceExit: false,
@@ -167,7 +169,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             const isReview = job.stage === JobStage.REVIEW;
             let workspaceSelected = Workspace.STANDARD;
-            let activeShapeType = ShapeType.RECTANGLE;
+
+            const defaultLabel = job.labels.length ? job.labels[0] : null;
+            let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
+                defaultLabel.type : ShapeType.RECTANGLE;
 
             if (job.dimension === DimensionType.DIM_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
@@ -423,6 +428,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const totalStatesCount = state.annotations.states.length;
             for (const objectState of states) {
                 updatedCollapsedStates[objectState.clientID] = collapsed;
+                for (const element of objectState.elements) {
+                    updatedCollapsedStates[element.clientID] = collapsed;
+                }
             }
 
             return {
@@ -486,6 +494,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
                 [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
                 [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+                [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
                 [ShapeType.MASK]: ActiveControl.DRAW_MASK,
             };
 
@@ -709,7 +718,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECT: {
-            const { activatedStateID, activatedAttributeID } = action.payload;
+            const { activatedStateID, activatedElementID, activatedAttributeID } = action.payload;
 
             const {
                 canvas: { activeControl, instance },
@@ -724,6 +733,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID,
+                    activatedElementID,
                     activatedAttributeID,
                 },
             };
@@ -973,6 +983,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 visible, left, top, type, pointID,
             } = action.payload;
 
+            const { activatedElementID, activatedStateID } = state.annotations;
+
             return {
                 ...state,
                 canvas: {
@@ -984,7 +996,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         top,
                         type,
                         pointID,
-                        clientID: state.annotations.activatedStateID,
+                        clientID: Number.isInteger(activatedElementID) ? activatedElementID : activatedStateID,
+                        parentID: Number.isInteger(activatedElementID) ? activatedStateID : null,
                     },
                 },
             };
@@ -1139,6 +1152,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 workspace,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: null,
+                    activatedAttributeID: null,
+                },
             };
         }
         case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {

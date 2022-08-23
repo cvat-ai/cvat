@@ -1,0 +1,6 @@
+# can't have a dependency on base.txt, because it depends on the generated file
+
+black>=22.1.0
+inflection >= 0.5.1
+isort>=5.10.1
+ruamel.yaml>=0.17.21

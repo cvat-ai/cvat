@@ -5,7 +5,7 @@
 import { BoundariesActionTypes, BoundariesActions } from 'actions/boundaries-actions';
 import { ShareActionTypes, ShareActions } from 'actions/share-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { ShareState, ShareFileInfo, ShareItem } from './interfaces';
+import { ShareState, ShareFileInfo, ShareItem } from '.';
 
 const defaultState: ShareState = {
     root: {

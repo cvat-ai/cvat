@@ -4,7 +4,7 @@
 
 import { connect } from 'react-redux';
 import LoginPageComponent from 'components/login-page/login-page';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { loginAsync } from 'actions/auth-actions';
 
 interface StateToProps {
