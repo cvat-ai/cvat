@@ -21,7 +21,7 @@ import {
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
     splitAnnotationsAsync,
-    activateObject,
+    activateObjects,
     updateCanvasContextMenu,
     addZLayer,
     switchZLayer,
@@ -113,7 +113,7 @@ interface DispatchToProps {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject: (activatedStateID: number, multiSelect: boolean) => void;
+    onActivateObjects: (activatedStateIDs: number[], multiSelect: boolean) => void;
     onDeactivateObject(deactivatedStateID: number | null): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
@@ -273,8 +273,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
-        onActivateObject(activatedStateID: number, multiSelect: boolean): void {
-            dispatch(activateObject(activatedStateID, null, multiSelect));
+        onActivateObjects(activatedStateIDs: number[], multiSelect: boolean): void {
+            dispatch(activateObjects(activatedStateIDs, null, multiSelect));
         },
         onDeactivateObject(deactivatedStateID: number | null): void {
             if (deactivatedStateID === null) {

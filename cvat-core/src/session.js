@@ -101,6 +101,19 @@
                         return result;
                     },
 
+                    async selectBox(objectStates, x, y, width, height) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.annotations.selectBox,
+                            objectStates,
+                            x,
+                            y,
+                            width,
+                            height,
+                        );
+                        return result;
+                    },
+
                     async merge(objectStates) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
@@ -968,6 +981,7 @@
                 searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
                 upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
+                selectBox: Object.getPrototypeOf(this).annotations.selectBox.bind(this),
                 import: Object.getPrototypeOf(this).annotations.import.bind(this),
                 export: Object.getPrototypeOf(this).annotations.export.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
@@ -1821,6 +1835,7 @@
         clearActions,
         getActions,
         closeSession,
+        selectObjectsInBox,
     } = require('./annotations');
 
     buildDuplicatedAPI(Job.prototype);
@@ -1985,6 +2000,11 @@
 
     Job.prototype.annotations.select.implementation = function (frame, x, y) {
         const result = selectObject(this, frame, x, y);
+        return result;
+    };
+
+    Job.prototype.annotations.selectBox.implementation = function (frame, x, y, width, height) {
+        const result = selectObjectsInBox(this, frame, x, y, width, height);
         return result;
     };
 

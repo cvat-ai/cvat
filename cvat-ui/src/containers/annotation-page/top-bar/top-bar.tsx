@@ -10,7 +10,7 @@ import Input from 'antd/lib/input';
 import copy from 'copy-to-clipboard';
 
 import {
-    activateObject,
+    activateObjects,
     changeFrameAsync,
     changeWorkspace as changeWorkspaceAction,
     collectStatisticsAsync,
@@ -170,7 +170,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(searchEmptyFrameAsync(sessionInstance, frameFrom, frameTo));
         },
         changeWorkspace(workspace: Workspace): void {
-            dispatch(activateObject(null, null));
+            dispatch(activateObjects(null, null));
             dispatch(changeWorkspaceAction(workspace));
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {

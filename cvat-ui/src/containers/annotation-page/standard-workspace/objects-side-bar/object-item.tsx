@@ -15,7 +15,7 @@ import {
     changeGroupColorAsync,
     pasteShapeAsync,
     copyShape as copyShapeAction,
-    activateObject as activateObjectAction,
+    activateObjects as activateObjectAction,
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
 import {

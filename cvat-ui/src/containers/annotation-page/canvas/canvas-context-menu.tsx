@@ -222,6 +222,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             latestComments,
             onStartIssue,
             openIssue,
+            updateState,
         } = this.props;
 
         return (
@@ -239,6 +240,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                         latestComments={latestComments}
                         onStartIssue={onStartIssue}
                         openIssue={openIssue}
+                        updateState={updateState}
                     />
                 )}
             </>

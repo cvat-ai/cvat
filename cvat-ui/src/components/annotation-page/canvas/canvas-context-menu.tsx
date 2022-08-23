@@ -7,6 +7,7 @@ import ReactDOM from 'react-dom';
 import Menu from 'antd/lib/menu';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
+import Text from 'antd/lib/typography/Text';
 
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { Workspace } from 'reducers/interfaces';
@@ -14,6 +15,7 @@ import { rotatePoint } from 'utils/math';
 import consts from 'consts';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { Row, Col } from 'antd';
 
 interface Props {
     readonly: boolean;
@@ -100,7 +102,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         return null;
     }
 
-    const changeLabel = (newLabel: any): void => {
+    const changeLabels = (newLabel: any): void => {
         for (const o of objectStates) {
             o.label = newLabel;
         }
@@ -171,17 +173,28 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         <div className='cvat-canvas-context-menu' style={{ top, left }}>
 
             {contextMenuClientIDs.length > 1 && (
-                <CVATTooltip title='Change all labels'>
-                    <span>Change all labels: </span>
-                    <LabelSelector
-                        disabled={readonly}
-                        size='small'
-                        labels={labels}
-                        value={null}
-                        onChange={changeLabel}
-                        className='cvat-objects-sidebar-state-item-label-selector'
-                    />
-                </CVATTooltip>
+                <div className='change-all-labels-container'>
+                    <>
+                        <Row align='middle'>
+                            <Col span={10}>
+                                <Text type='secondary'>Change all labels:</Text>
+                            </Col>
+                            <Col span={12}>
+                                <CVATTooltip title='Change all labels'>
+                                    <LabelSelector
+                                        disabled={readonly}
+                                        size='small'
+                                        labels={labels}
+                                        value={null}
+                                        onChange={changeLabels}
+                                        className='cvat-canvas-context-menu-change-all-labels-selector'
+                                    />
+                                </CVATTooltip>
+                            </Col>
+                            <Col span={2} />
+                        </Row>
+                    </>
+                </div>
             )}
 
             {contextMenuClientIDs.map(

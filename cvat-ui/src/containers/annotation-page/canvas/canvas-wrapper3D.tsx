@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 
 import CanvasWrapperComponent from 'components/annotation-page/canvas/canvas-wrapper3D';
 import {
-    activateObject,
+    activateObjects,
     confirmCanvasReady,
     createAnnotationsAsync,
     dragCanvas,
@@ -212,7 +212,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(updateCanvasContextMenu(false, 0, 0));
             }
 
-            dispatch(activateObject(activatedStateID, null));
+            dispatch(activateObjects(activatedStateID, null));
         },
         onEditShape(enabled: boolean): void {
             dispatch(editShape(enabled));

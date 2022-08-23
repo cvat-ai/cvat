@@ -83,7 +83,7 @@ interface Props {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject(activatedStateID: number | null, multiselect: boolean): void;
+    onActivateObjects(activatedStateIDs: number[], multiselect: boolean): void;
     onDeactivateObject(deactivatedStateID: number | null): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
@@ -343,9 +343,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.setup', this.onCanvasSetup);
         canvasInstance.html().removeEventListener('canvas.canceled', this.onCanvasCancel);
         canvasInstance.html().removeEventListener('canvas.find', this.onCanvasFindObject);
+        canvasInstance.html().removeEventListener('canvas.boxselect', this.onCanvasBoxSelect);
         // canvasInstance.html().removeEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
         // canvasInstance.html().removeEventListener('canvas.moved', this.onCanvasCursorMoved);
-
         canvasInstance.html().removeEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().removeEventListener('canvas.fit', this.onCanvasImageFitted);
         canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged);
@@ -497,16 +497,17 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasShapeClicked = (e: any): void => {
         const { clientID } = e.detail.state;
+        const { workspace, activatedStateIDs } = this.props;
         const sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
         if (sidebarItem) {
             sidebarItem.scrollIntoView();
         }
 
-        // if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
-        //     return;
-        // }
+        if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
+            return;
+        }
 
-        // ROB TODO:
+        // ROBTODO:
         // const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
         // if (e.detail.state.shapeType === 'polyline' || e.detail.state.shapeType === 'points') {
         //     if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
@@ -514,8 +515,39 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         //     }
         // }
 
-        this.props.onActivateObject(clientID, e.detail.event.shiftKey);
-        // }
+        // Shift-select behavior
+        if (e.detail.event.shiftKey) {
+            // Holding shift will toggle selectedness
+            if (activatedStateIDs.includes(clientID)) {
+                this.props.onDeactivateObject(clientID);
+            } else {
+                this.props.onActivateObjects([clientID], true);
+            }
+        } else {
+            // Single-select the object clicked on
+            this.props.onActivateObjects([clientID], false);
+        }
+    };
+
+    private onCanvasBoxSelect = async (e: any): Promise<void> => {
+        const { workspace, jobInstance, onActivateObjects } = this.props;
+
+        if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
+            return;
+        }
+
+        const result = await jobInstance.annotations.selectBox(e.detail.states, e.detail.x, e.detail.y, e.detail.width, e.detail.height);
+        const clientIDs = result.selectedStates.map((s: any) => s.clientID);
+
+        // Scroll to the first selected object
+        if (clientIDs.length > 0) {
+            const sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-${clientIDs[0]}`);
+            if (sidebarItem) {
+                sidebarItem.scrollIntoView();
+            }
+        }
+
+        onActivateObjects(clientIDs, false);
     };
 
     // private onCanvasShapeDeactivated = (e: any): void => {
@@ -637,9 +669,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             activatedStateIDs,
             activatedAttributeID,
             selectedOpacity,
-            aamZoomMargin,
-            workspace,
-            annotations,
+            // aamZoomMargin,
+            // workspace,
+            // annotations,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -785,6 +817,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.setup', this.onCanvasSetup);
         canvasInstance.html().addEventListener('canvas.canceled', this.onCanvasCancel);
         canvasInstance.html().addEventListener('canvas.find', this.onCanvasFindObject);
+        canvasInstance.html().addEventListener('canvas.boxselect', this.onCanvasBoxSelect);
         // canvasInstance.html().addEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
         // canvasInstance.html().addEventListener('canvas.moved', this.onCanvasCursorMoved);
 

@@ -14,6 +14,9 @@ export interface RegionSelector {
     transform(geometry: Geometry): void;
 }
 
+/**
+ * Handles selecting regions for the review feature that seems to be half-implemented
+ */
 export class RegionSelectorImpl implements RegionSelector {
     private onRegionSelected: (points?: number[]) => void;
     private geometry: Geometry;

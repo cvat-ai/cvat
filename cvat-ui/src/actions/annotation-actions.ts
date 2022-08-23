@@ -152,7 +152,7 @@ export enum AnnotationActionTypes {
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
-    ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    ACTIVATE_OBJECTS = 'ACTIVATE_OBJECTS',
     DEACTIVATE_OBJECT = 'DEACTIVATE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
@@ -567,20 +567,20 @@ export function copyShape(objectState: any): AnyAction {
 }
 
 /**
- * Activates an object
- * @param activatedStateID id of the object to activate
+ * Activates one or more objects
+ * @param activatedStateIDs id(s) of the object(s) to activate
  * @param activatedAttributeID optional id of the attribute on the object to activate
- * @param multiSelect if true, adds the object to the activated list, otherwise it becomes the single activated object.
+ * @param multiSelect if true, adds the objects to the activated list, otherwise it becomes the single activated object.
  */
-export function activateObject(
-    activatedStateID: number,
+export function activateObjects(
+    activatedStateIDs: number[],
     activatedAttributeID: number | null,
     multiSelect: boolean,
 ): AnyAction {
     return {
-        type: AnnotationActionTypes.ACTIVATE_OBJECT,
+        type: AnnotationActionTypes.ACTIVATE_OBJECTS,
         payload: {
-            activatedStateID,
+            activatedStateIDs,
             activatedAttributeID,
             multiSelect,
         },

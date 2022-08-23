@@ -13,7 +13,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { LogType } from 'cvat-logger';
 import {
-    activateObject as activateObjectAction,
+    activateObjects as activateObjectAction,
     changeFrameAsync,
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';

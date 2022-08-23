@@ -52,6 +52,7 @@ import {
     InteractionResult,
     InteractionData,
 } from './canvasModel';
+import { SelectionBoxHandler, SelectionBoxHandlerImpl } from './selectionBoxHandler';
 
 export interface CanvasView {
     html(): HTMLDivElement;
@@ -85,6 +86,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private groupHandler: GroupHandler;
     private regionSelector: RegionSelector;
     private zoomHandler: ZoomHandler;
+    private selectionBoxHandler: SelectionBoxHandler;
     private autoborderHandler: AutoborderHandler;
     private interactionHandler: InteractionHandler;
     private activeElements: ActiveElements;
@@ -447,6 +449,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    /**
+     * Zooms to the given region
+     * @param x
+     * @param y
+     * @param width
+     * @param height
+     */
     private onFocusRegion(x: number, y: number, width: number, height: number): void {
         // First of all, compute and apply scale
         let scale = null;
@@ -493,6 +502,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.moveCanvas();
     }
 
+    private onSelectObjectsInRegion(x: number, y: number, width: number, height: number): void {
+        const { offset } = this.controller.geometry;
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.boxselect', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    x: x - offset,
+                    y: y - offset,
+                    width,
+                    height,
+                    states: this.controller.objects,
+                },
+            }),
+        );
+    }
+
     private moveCanvas(): void {
         for (const obj of [this.background, this.grid, this.bitmap]) {
             obj.style.top = `${this.geometry.top}px`;
@@ -511,6 +537,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.autoborderHandler.transform(this.geometry);
         this.interactionHandler.transform(this.geometry);
         this.regionSelector.transform(this.geometry);
+        this.selectionBoxHandler.transform(this.geometry);
     }
 
     private transformCanvas(): void {
@@ -1107,6 +1134,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.geometry,
         );
         this.zoomHandler = new ZoomHandlerImpl(this.onFocusRegion.bind(this), this.adoptedContent, this.geometry);
+        this.selectionBoxHandler = new SelectionBoxHandlerImpl(this.onSelectObjectsInRegion.bind(this), this.adoptedContent, this.geometry);
         this.interactionHandler = new InteractionHandlerImpl(
             this.onInteraction.bind(this),
             this.adoptedContent,
@@ -1121,9 +1149,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousedown', (event): void => {
+            // User clicked on an empty canvas area
             if ([0, 1].includes(event.button)) {
-                if (
-                    [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
+                if (this.mode === Mode.IDLE) {
+                    this.selectionBoxHandler.startBoxSelection();
+                } else if (
+                    [Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
                         .includes(this.mode) || event.button === 1 || event.altKey
                 ) {
                     this.controller.enableDrag(event.clientX, event.clientY);
@@ -1474,6 +1505,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         cancelable: true,
                     }),
                 );
+            } else if (this.mode === Mode.IDLE) {
+                this.selectionBoxHandler.cancelBoxSelection();
             }
             this.mode = Mode.IDLE;
             this.canvas.style.cursor = '';
@@ -1784,7 +1817,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            this.svgShapes[state.clientID].on('click.canvas', (event: PointerEvent): void => {
+            this.svgShapes[state.clientID].on('mousedown', (event: PointerEvent): void => {
                 this.canvas.dispatchEvent(
                     new CustomEvent('canvas.clicked', {
                         bubbles: false,
@@ -1795,6 +1828,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         },
                     }),
                 );
+                event.preventDefault();
+                event.stopPropagation();
             });
 
             if (displayAllText) {

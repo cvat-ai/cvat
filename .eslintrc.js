@@ -35,7 +35,6 @@ module.exports = {
         'no-param-reassign': ['error', { 'props': false }],
         'no-restricted-syntax': [0, { selector: 'ForOfStatement' }],
         'no-await-in-loop': 0,
-        '@typescript-eslint/no-unused-vars': 1,
         'indent': ['error', 4, { 'SwitchCase': 1 }],
         'max-len': ['error', { code: 170, ignoreStrings: true }],
         'func-names': 0,

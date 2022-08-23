@@ -359,7 +359,7 @@
                 } else {
                     throw new ArgumentError(
                         `Trying to merge unknown object type: ${object.constructor.name}. ` +
-                            'Only shapes and tracks are expected.',
+                        'Only shapes and tracks are expected.',
                     );
                 }
             }
@@ -879,6 +879,33 @@
                 state: minimumState,
                 distance: minimumDistance,
             };
+        }
+
+        selectBox(objectStates, x, y, width, height) {
+            checkObjectType('shapes for select', objectStates, null, Array);
+            checkObjectType('x coordinate', x, 'number', null);
+            checkObjectType('y coordinate', y, 'number', null);
+
+            const selectedStates = [];
+
+            for (const state of objectStates) {
+                checkObjectType('object state', state, null, ObjectState);
+                if (state.outside || state.hidden || state.objectType === ObjectType.TAG) {
+                    continue;
+                }
+
+                const object = this.objects[state.clientID];
+                if (typeof object === 'undefined') {
+                    throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+                }
+
+                // box intersection: (a.x < b.right && a.right > b.x && a.y < b.bottom && a.bottom > b.y)
+                if (x < state.points[2] && x + width > state.points[0] && y < state.points[3] && y + height > state.points[1]) {
+                    selectedStates.push(state);
+                }
+            }
+
+            return { selectedStates };
         }
 
         searchEmpty(frameFrom, frameTo) {

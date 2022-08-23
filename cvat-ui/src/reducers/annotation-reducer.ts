@@ -698,8 +698,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.ACTIVATE_OBJECT: {
-            const { activatedStateID, activatedAttributeID, multiSelect } = action.payload;
+        case AnnotationActionTypes.ACTIVATE_OBJECTS: {
+            const { activatedStateIDs, activatedAttributeID, multiSelect } = action.payload;
 
             const { canvas: { activeControl, instance } } = state;
 
@@ -707,25 +707,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 return state;
             }
 
-            let activatedStateIDs: number[];
+            let finalActivatedStateIDs: number[];
             if (multiSelect) {
-                // Multi-select behavior toggles the object with the provided id
-                const idx = state.annotations.activatedStateIDs.indexOf(activatedStateID);
-                if (idx === -1) {
-                    activatedStateIDs = [...state.annotations.activatedStateIDs, activatedStateID];
-                } else {
-                    activatedStateIDs = state.annotations.activatedStateIDs.filter((id) => id !== activatedStateID);
+                const allIds = new Set<number>(state.annotations.activatedStateIDs);
+                for (const id of activatedStateIDs) {
+                    allIds.add(id);
                 }
+                finalActivatedStateIDs = Array.from(allIds);
             } else {
                 // Otherwise we are single-selecting
-                activatedStateIDs = [activatedStateID];
+                finalActivatedStateIDs = activatedStateIDs;
             }
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateIDs,
+                    activatedStateIDs: finalActivatedStateIDs,
                     activatedAttributeID,
                 },
             };
