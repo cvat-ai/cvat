@@ -1081,8 +1081,8 @@ class CVATDataExtractorMixin:
                     label_categories.attributes.add(attr['name'])
 
                 if label['type'] == str(LabelType.SKELETON):
-                    labels_from = re.findall(r'data-node-from="(\d+)"', label['svg'])
-                    labels_to = re.findall(r'data-node-to="(\d+)"', label['svg'])
+                    labels_from = list(map(int, re.findall(r'data-node-from="(\d+)"', label['svg'])))
+                    labels_to = list(map(int, re.findall(r'data-node-to="(\d+)"', label['svg'])))
                     sublabels = re.findall(r'data-label-name="(\w+)"', label['svg'])
                     joints = zip(labels_from, labels_to)
 
@@ -1592,10 +1592,10 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                 frame=frame_number,
                                 points=ann.points[2 * i : 2 * i + 2],
                                 label=point_cat.items[ann.label].labels[i],
-                                occluded=ann.visibility[i].value == 1,
+                                occluded=ann.visibility[i].value == datum_annotation.Points.Visibility.hidden,
                                 source=source,
                                 attributes=[],
-                                outside=ann.visibility[i].value == 0,
+                                outside=ann.visibility[i].value == datum_annotation.Points.Visibility.absent,
                             ))
 
 
