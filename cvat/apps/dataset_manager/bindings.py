@@ -65,9 +65,9 @@ class InstanceLabelData:
                 **attr_mapping['immutable'],
             }
 
-    def _get_label_id(self, label_name):
+    def _get_label_id(self, label_name, parent_id=None):
         for db_label in self._label_mapping.values():
-            if label_name == db_label.name:
+            if label_name == db_label.name and parent_id == db_label.parent_id:
                 return db_label.id
         raise ValueError("Label {!r} is not registered for this task".format(label_name))
 
@@ -491,9 +491,9 @@ class TaskData(InstanceLabelData):
         ]
         return _tag
 
-    def _import_shape(self, shape):
+    def _import_shape(self, shape, parent_label_id=None):
         _shape = shape._asdict()
-        label_id = self._get_label_id(_shape.pop('label'))
+        label_id = self._get_label_id(_shape.pop('label'), parent_label_id)
         _shape['frame'] = self.rel_frame_id(int(_shape['frame']))
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
@@ -503,19 +503,19 @@ class TaskData(InstanceLabelData):
             )
         ]
         _shape['points'] = list(map(float, _shape['points']))
-        _shape['elements'] = [self._import_shape(element) for element in _shape.get('elements', [])]
+        _shape['elements'] = [self._import_shape(element, label_id) for element in _shape.get('elements', [])]
 
         return _shape
 
-    def _import_track(self, track):
+    def _import_track(self, track, parent_label_id=None):
         _track = track._asdict()
-        label_id = self._get_label_id(_track.pop('label'))
+        label_id = self._get_label_id(_track.pop('label'), parent_label_id)
         _track['frame'] = self.rel_frame_id(
             min(int(shape.frame) for shape in _track['shapes']))
         _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
-        _track['elements'] = [self._import_track(element) for element in _track.get('elements', [])]
+        _track['elements'] = [self._import_track(element, label_id) for element in _track.get('elements', [])]
         for shape in _track['shapes']:
             shape['frame'] = self.rel_frame_id(int(shape['frame']))
             _track['attributes'] = [self._import_attribute(label_id, attrib)
