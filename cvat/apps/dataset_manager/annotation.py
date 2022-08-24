@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -70,8 +70,8 @@ class AnnotationIR:
         prev_shape = None
         for shape in track['shapes']:
             if prev_shape and not prev_shape['outside'] and \
-                has_overlap(prev_shape['frame'], shape['frame']):
-                    return True
+                    has_overlap(prev_shape['frame'], shape['frame']):
+                return True
             prev_shape = shape
 
         if not prev_shape['outside'] and prev_shape['frame'] <= stop:
@@ -93,9 +93,11 @@ class AnnotationIR:
             return shapes[drop_count:]
 
         track = deepcopy(track_)
-        segment_shapes = filter_track_shapes(track['shapes'])
+        segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
         if len(segment_shapes) < len(track['shapes']):
+            for element in track.get('elements', []):
+                element = cls._slice_track(element, start, stop)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
@@ -195,8 +197,7 @@ class ObjectManager:
     def _unite_objects(obj0, obj1):
         raise NotImplementedError()
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         raise NotImplementedError()
 
     def merge(self, objects, start_frame, overlap):
@@ -282,8 +283,7 @@ class TagManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         pass
 
 def pairwise(iterable):
@@ -353,20 +353,36 @@ class ShapeManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         pass
 
 class TrackManager(ObjectManager):
-    def to_shapes(self, end_frame):
+    def to_shapes(self, end_frame, end_skeleton_frame=None):
         shapes = []
         for idx, track in enumerate(self.objects):
+            track_shapes = []
             for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
                 shape["track_id"] = idx
                 shape["attributes"] += track["attributes"]
-                shapes.append(shape)
+                shape["elements"] = []
+                track_shapes.append(shape)
+
+            while end_skeleton_frame and track_shapes[-1]["frame"] < end_skeleton_frame:
+                shape = deepcopy(track_shapes[-1])
+                shape["frame"] += 1
+                track_shapes.append(shape)
+
+            if len(track.get("elements", [])):
+                element_tracks = TrackManager(track["elements"])
+                element_shapes = element_tracks.to_shapes(end_frame, end_skeleton_frame=track_shapes[-1]["frame"])
+
+                for i in range(len(element_shapes) // len(track_shapes)):
+                    for track_shape, element_shape in zip(track_shapes, element_shapes[len(track_shapes) * i : len(track_shapes) * (i + 1)]):
+                        track_shape["elements"].append(element_shape)
+
+            shapes.extend(track_shapes)
         return shapes
 
     @staticmethod
@@ -418,14 +434,16 @@ class TrackManager(ObjectManager):
         else:
             return 0
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
+    def _modify_unmached_object(self, obj, end_frame):
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)
             shape["frame"] = end_frame
             shape["outside"] = True
             obj["shapes"].append(shape)
+
+            for element in obj.get("elements", []):
+                self._modify_unmached_object(element, end_frame)
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
@@ -701,12 +719,13 @@ class TrackManager(ObjectManager):
             is_polygon = shape0["type"] == ShapeType.POLYGON
             is_polyline = shape0["type"] == ShapeType.POLYLINE
             is_points = shape0["type"] == ShapeType.POINTS
+            is_skeleton = shape0["type"] == ShapeType.SKELETON
 
             if not is_same_type:
                 raise NotImplementedError()
 
             shapes = []
-            if is_rectangle or is_cuboid or is_ellipse:
+            if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
                 shapes = simple_interpolation(shape0, shape1)
             elif is_points:
                 shapes = points_interpolation(shape0, shape1)

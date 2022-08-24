@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import FooterDrawer from 'components/login-page/intel-footer-drawer';
 import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
 

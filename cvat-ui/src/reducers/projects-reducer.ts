@@ -8,7 +8,7 @@ import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
-import { Project, ProjectsState } from './interfaces';
+import { Project, ProjectsState } from '.';
 
 const defaultState: ProjectsState = {
     initialized: false,

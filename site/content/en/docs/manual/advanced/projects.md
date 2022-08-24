@@ -52,6 +52,9 @@ You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a link to the issue.
 Learn more about [creating a label list](/docs/manual/basics/creating_an_annotation_task/#labels).
 
+To save and open project click on `Submit & Open` button. Also you
+can click on `Submit & Continue` button for creating several projects in sequence
+
 ![](/images/image191.jpg)
 
 Once created, the project will appear on the projects page. To open a project, just click on it.

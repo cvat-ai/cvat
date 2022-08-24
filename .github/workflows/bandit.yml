@@ -1,7 +1,7 @@
-name: Linter
+name: Bandit
 on: pull_request
 jobs:
-  Bandit:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,7 +17,8 @@ jobs:
           PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
-              if [[ $EXTENSION == 'py' ]]; then
+              DIRECTORY="${FILE%%/*}"
+              if [[ "$EXTENSION" == 'py' && "$DIRECTORY" != 'cvat-sdk' ]]; then
                   CHANGED_FILES+=" $FILE"
               fi
           done

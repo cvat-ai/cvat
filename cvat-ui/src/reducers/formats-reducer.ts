@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { FormatsActionTypes, FormatsActions } from 'actions/formats-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 
-import { FormatsState } from './interfaces';
+import { FormatsState } from '.';
 
 const defaultState: FormatsState = {
     annotationFormats: null,

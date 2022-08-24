@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import {
 import { ResizableBox } from 'react-resizable';
 import {
     ColorBy, ContextMenuType, ObjectType, Workspace,
-} from 'reducers/interfaces';
+} from 'reducers';
 import {
     CameraAction, Canvas3d, ViewType, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';
@@ -20,7 +20,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import ContextImage from 'components/annotation-page/standard-workspace/context-image/context-image';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { LogType } from 'cvat-logger';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 

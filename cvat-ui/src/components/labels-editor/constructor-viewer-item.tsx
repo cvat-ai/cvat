@@ -8,13 +8,13 @@ import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import consts from 'consts';
-import { Label } from './common';
+import { LabelOptColor } from './common';
 
 interface ConstructorViewerItemProps {
-    label: Label;
-    color: string;
-    onUpdate: (label: Label) => void;
-    onDelete: (label: Label) => void;
+    label: LabelOptColor;
+    color?: string;
+    onUpdate: (label: LabelOptColor) => void;
+    onDelete: (label: LabelOptColor) => void;
 }
 
 export default function ConstructorViewerItem(props: ConstructorViewerItemProps): JSX.Element {

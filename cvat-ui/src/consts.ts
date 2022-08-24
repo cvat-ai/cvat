@@ -4,18 +4,18 @@
 
 const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const NO_BREAK_SPACE = '\u00a0';
-const CHANGELOG_URL = 'https://github.com/openvinotoolkit/cvat/blob/develop/CHANGELOG.md';
-const LICENSE_URL = 'https://github.com/openvinotoolkit/cvat/blob/develop/LICENSE';
+const CHANGELOG_URL = 'https://github.com/cvat-ai/cvat/blob/develop/CHANGELOG.md';
+const LICENSE_URL = 'https://github.com/cvat-ai/cvat/blob/develop/LICENSE';
 const GITTER_URL = 'https://gitter.im/opencv-cvat';
 const GITTER_PUBLIC_URL = 'https://gitter.im/opencv-cvat/public';
 const FORUM_URL = 'https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit';
-const GITHUB_URL = 'https://github.com/openvinotoolkit/cvat';
-const GITHUB_IMAGE_URL = 'https://github.com/openvinotoolkit/cvat/raw/develop/site/content/en/images/cvat.jpg';
-const GUIDE_URL = 'https://openvinotoolkit.github.io/cvat/docs';
+const GITHUB_URL = 'https://github.com/cvat-ai/cvat';
+const GITHUB_IMAGE_URL = 'https://github.com/cvat-ai/cvat/raw/develop/site/content/en/images/cvat.jpg';
+const GUIDE_URL = 'https://cvat-ai.github.io/cvat/docs';
 const SHARE_MOUNT_GUIDE_URL =
-    'https://openvinotoolkit.github.io/cvat/docs/administration/basics/installation/#share-path';
+    'https://cvat-ai.github.io/cvat/docs/administration/basics/installation/#share-path';
 const NUCLIO_GUIDE =
-    'https://openvinotoolkit.github.io/cvat//docs/administration/advanced/installation_automatic_annotation/';
+    'https://cvat-ai.github.io/cvat//docs/administration/advanced/installation_automatic_annotation/';
 const CANVAS_BACKGROUND_COLORS = ['#ffffff', '#f1f1f1', '#e5e5e5', '#d8d8d8', '#CCCCCC', '#B3B3B3', '#999999'];
 const NEW_LABEL_COLOR = '#b3b3b3';
 const LATEST_COMMENTS_SHOWN_QUICK_ISSUE = 3;
@@ -25,7 +25,6 @@ const DEFAULT_PROJECT_SUBSETS = ['Train', 'Test', 'Validation'];
 const INTEL_TERMS_OF_USE_URL = 'https://www.intel.com/content/www/us/en/legal/terms-of-use.html';
 const INTEL_COOKIES_URL = 'https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html';
 const INTEL_PRIVACY_URL = 'https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html';
-const OPENVINO_URL = 'https://docs.openvino.ai/latest/index.html';
 const DEFAULT_AWS_S3_REGIONS: string[][] = [
     ['us-east-1', 'US East (N. Virginia)'],
     ['us-east-2', 'US East (Ohio)'],
@@ -107,7 +106,6 @@ export default {
     INTEL_TERMS_OF_USE_URL,
     INTEL_COOKIES_URL,
     INTEL_PRIVACY_URL,
-    OPENVINO_URL,
     DEFAULT_AWS_S3_REGIONS,
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
 };

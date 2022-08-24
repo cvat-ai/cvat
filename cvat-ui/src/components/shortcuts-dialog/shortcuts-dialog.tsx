@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { getApplicationKeyMap } from 'utils/mousetrap-react';
 import { shortcutsActions } from 'actions/shortcuts-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 interface StateToProps {
     visible: boolean;

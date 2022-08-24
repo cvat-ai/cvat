@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,7 +22,7 @@ import {
     changeGridSize,
 } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
-import { GridColor, CombinedState, PlayerSettingsState } from 'reducers/interfaces';
+import { GridColor, CombinedState, PlayerSettingsState } from 'reducers';
 
 const minGridSize = 5;
 const maxGridSize = 1000;

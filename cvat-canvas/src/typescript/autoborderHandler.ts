@@ -1,11 +1,11 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
 
 import consts from './consts';
-import { Geometry } from './canvasModel';
+import { Configuration, Geometry } from './canvasModel';
 
 interface TransformedShape {
     points: string;
@@ -14,6 +14,7 @@ interface TransformedShape {
 
 export interface AutoborderHandler {
     autoborder(enabled: boolean, currentShape?: SVG.Shape, currentID?: number): void;
+    configurate(configuration: Configuration): void;
     transform(geometry: Geometry): void;
     updateObjects(): void;
 }
@@ -24,19 +25,14 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private frameContent: SVGSVGElement;
     private enabled: boolean;
     private scale: number;
+    private controlPointsSize: number;
     private groups: SVGGElement[];
     private auxiliaryGroupID: number | null;
     private auxiliaryClicks: number[];
-    private listeners: Record<
-    number,
-    Record<
-    number,
-    {
+    private listeners: Record<number, Record<number, {
         click: (event: MouseEvent) => void;
         dblclick: (event: MouseEvent) => void;
-    }
-    >
-    >;
+    }>>;
 
     public constructor(frameContent: SVGSVGElement) {
         this.frameContent = frameContent;
@@ -45,6 +41,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         this.enabled = false;
         this.scale = 1;
         this.groups = [];
+        this.controlPointsSize = consts.BASE_POINT_SIZE;
         this.auxiliaryGroupID = null;
         this.auxiliaryClicks = [];
         this.listeners = {};
@@ -126,7 +123,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                         circle.setAttribute('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.scale}`);
                         circle.setAttribute('cx', x);
                         circle.setAttribute('cy', y);
-                        circle.setAttribute('r', `${consts.BASE_POINT_SIZE / this.scale}`);
+                        circle.setAttribute('r', `${this.controlPointsSize / this.scale}`);
 
                         const click = (event: MouseEvent): void => {
                             event.stopPropagation();
@@ -303,9 +300,13 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         this.scale = geometry.scale;
         this.groups.forEach((group: SVGGElement): void => {
             Array.from(group.children).forEach((circle: SVGCircleElement): void => {
-                circle.setAttribute('r', `${consts.BASE_POINT_SIZE / this.scale}`);
+                circle.setAttribute('r', `${this.controlPointsSize / this.scale}`);
                 circle.setAttribute('stroke-width', `${consts.BASE_STROKE_WIDTH / this.scale}`);
             });
         });
+    }
+
+    public configurate(configuration: Configuration): void {
+        this.controlPointsSize = configuration.controlPointsSize || consts.BASE_POINT_SIZE;
     }
 }

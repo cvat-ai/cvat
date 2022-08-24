@@ -14,9 +14,9 @@ import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
-import { ActiveInference } from 'reducers/interfaces';
+import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import Descriptions from 'antd/lib/descriptions';
 import Space from 'antd/lib/space';
@@ -241,6 +241,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             <UserSelector
                 value={assignee}
                 onSelect={(value: User | null): void => {
+                    if (taskInstance?.assignee?.id === value?.id) return;
                     taskInstance.assignee = value;
                     onTaskUpdate(taskInstance);
                 }}
