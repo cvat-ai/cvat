@@ -781,22 +781,6 @@ class ProjectData(InstanceLabelData):
                     ) for db_task in self._db_tasks.values()
                 ]),
 
-                ("labels", [
-                    ("label", OrderedDict([
-                        ("name", db_label.name),
-                        ("color", db_label.color),
-                        ("type", db_label.type),
-                        ("attributes", [
-                            ("attribute", OrderedDict([
-                                ("name", db_attr.name),
-                                ("mutable", str(db_attr.mutable)),
-                                ("input_type", db_attr.input_type),
-                                ("default_value", db_attr.default_value),
-                                ("values", db_attr.values)]))
-                            for db_attr in db_label.attributespec_set.all()])
-                    ])) for db_label in self._label_mapping.values()
-                ]),
-
                 ("subsets", '\n'.join([s if s else datum_extractor.DEFAULT_SUBSET_NAME for s in self._subsets])),
 
                 ("owner", OrderedDict([
@@ -811,6 +795,35 @@ class ProjectData(InstanceLabelData):
             ])),
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
+
+        if self._label_mapping is not None:
+            labels = []
+            for db_label in self._label_mapping.values():
+                label = OrderedDict([
+                    ("name", db_label.name),
+                    ("color", db_label.color),
+                    ("type", db_label.type),
+                    ("attributes", [
+                        ("attribute", OrderedDict([
+                            ("name", db_attr.name),
+                            ("mutable", str(db_attr.mutable)),
+                            ("input_type", db_attr.input_type),
+                            ("default_value", db_attr.default_value),
+                            ("values", db_attr.values)]))
+                        for db_attr in db_label.attributespec_set.all()])
+                ])
+
+                if db_label.parent:
+                    label["parent"] = db_label.parent.name
+
+                if db_label.type == str(LabelType.SKELETON):
+                    label["svg"] = db_label.skeleton.svg
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        label["svg"] = label["svg"].replace(f'data-label-id="{db_sublabel.id}"', f'data-label-name="{db_sublabel.name}"')
+
+                labels.append(('label', label))
+
+            self._meta['project']['labels'] = labels
 
     def _export_tracked_shape(self, shape: dict, task_id: int):
         return ProjectData.TrackedShape(

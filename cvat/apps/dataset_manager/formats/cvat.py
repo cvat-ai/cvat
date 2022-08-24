@@ -933,6 +933,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 label=element.label,
                 group=element.group,
                 source=element.source,
+                task_id=shape.task_id,
                 shapes=[annotations.TrackedShape(
                     type=element.type,
                     points=element.points,
