@@ -333,7 +333,7 @@ export default class Project {
 
     /**
      * Method makes a backup of a project
-     * @method export
+     * @method backup
      * @memberof module:API.cvat.classes.Project
      * @readonly
      * @instance
@@ -342,10 +342,10 @@ export default class Project {
      * @throws {module:API.cvat.exceptions.PluginError}
      * @returns {string} URL to get result archive
      */
-    async export(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
-            Project.prototype.export,
+            Project.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName
@@ -355,7 +355,7 @@ export default class Project {
 
     /**
      * Method restores a project from a backup
-     * @method import
+     * @method restore
      * @memberof module:API.cvat.classes.Project
      * @readonly
      * @instance
@@ -364,8 +364,8 @@ export default class Project {
      * @throws {module:API.cvat.exceptions.PluginError}
      * @returns {number} ID of the imported project
      */
-    static async import(storage: Storage, file: File | string) {
-        const result = await PluginRegistry.apiWrapper.call(this, Project.import, storage, file);
+    static async restore(storage: Storage, file: File | string) {
+        const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
         return result;
     }
 }

@@ -90,17 +90,17 @@ export default function implementProject(projectClass) {
         return importDataset(this, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
     };
 
-    projectClass.prototype.export.implementation = async function (
+    projectClass.prototype.backup.implementation = async function (
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string
     ) {
-        const result = await serverProxy.projects.export(this.id, targetStorage, useDefaultSettings, fileName);
+        const result = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
         return result;
     };
 
-    projectClass.import.implementation = async function (storage: Storage, file: File | string) {
-        const result = await serverProxy.projects.import(storage, file);
+    projectClass.restore.implementation = async function (storage: Storage, file: File | string) {
+        const result = await serverProxy.projects.restore(storage, file);
         return result;
     };
 

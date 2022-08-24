@@ -742,7 +742,7 @@ class ServerProxy {
             }
         }
 
-        async function exportTask(id: number, targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+        async function backupTask(id: number, targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
             const { backendAPI } = config;
             const params: Params = {
                 ...enableOrganization(),
@@ -777,7 +777,7 @@ class ServerProxy {
             });
         }
 
-        async function importTask(storage: Storage, file: File | string) {
+        async function restoreTask(storage: Storage, file: File | string) {
             const { backendAPI } = config;
             // keep current default params to 'freeze" them during this request
             const params: Params = {
@@ -845,7 +845,7 @@ class ServerProxy {
             return wait(taskData, response);
         }
 
-        async function exportProject(
+        async function backupProject(
             id: number,
             targetStorage: Storage,
             useDefaultSettings: boolean,
@@ -887,7 +887,7 @@ class ServerProxy {
             });
         }
 
-        async function importProject(storage: Storage, file: File | string) {
+        async function restoreProject(storage: Storage, file: File | string) {
             const { backendAPI } = config;
             // keep current default params to 'freeze" them during this request
             const params: Params = {
@@ -2061,8 +2061,8 @@ class ServerProxy {
                         create: createProject,
                         delete: deleteProject,
                         exportDataset: exportDataset('projects'),
-                        export: exportProject,
-                        import: importProject,
+                        export: backupProject,
+                        import: restoreProject,
                         importDataset,
                     }),
                     writable: false,
@@ -2075,8 +2075,8 @@ class ServerProxy {
                         create: createTask,
                         delete: deleteTask,
                         exportDataset: exportDataset('tasks'),
-                        export: exportTask,
-                        import: importTask,
+                        export: backupTask,
+                        import: restoreTask,
                     }),
                     writable: false,
                 },

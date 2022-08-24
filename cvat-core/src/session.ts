@@ -1901,10 +1901,10 @@ export class Task extends Session {
      * @throws {module:API.cvat.exceptions.ServerError}
      * @throws {module:API.cvat.exceptions.PluginError}
      */
-    async export(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
-            Task.prototype.export,
+            Task.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName
@@ -1913,8 +1913,8 @@ export class Task extends Session {
     }
 
     /**
-     * Method imports a task from a backup
-     * @method import
+     * Method restores a task from a backup
+     * @method restore
      * @memberof module:API.cvat.classes.Task
      * @readonly
      * @instance
@@ -1922,8 +1922,8 @@ export class Task extends Session {
      * @throws {module:API.cvat.exceptions.ServerError}
      * @throws {module:API.cvat.exceptions.PluginError}
      */
-    static async import(storage: Storage, file: File | string) {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.import, storage, file);
+    static async restore(storage: Storage, file: File | string) {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
         return result;
     }
 }
@@ -2413,18 +2413,18 @@ Task.prototype.delete.implementation = async function () {
     return result;
 };
 
-Task.prototype.export.implementation = async function (
+Task.prototype.backup.implementation = async function (
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string
 ) {
-    const result = await serverProxy.tasks.export(this.id, targetStorage, useDefaultSettings, fileName);
+    const result = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
     return result;
 };
 
-Task.import.implementation = async function (storage: Storage, file: File | string) {
+Task.restore.implementation = async function (storage: Storage, file: File | string) {
     // eslint-disable-next-line no-unsanitized/method
-    const result = await serverProxy.tasks.import(storage, file);
+    const result = await serverProxy.tasks.restore(storage, file);
     return result;
 };
 
