@@ -1081,10 +1081,10 @@ class CVATDataExtractorMixin:
                     label_categories.attributes.add(attr['name'])
 
                 if label['type'] == str(LabelType.SKELETON):
-                    labels_from = [int(l[16:-1]) for l in re.findall(f'data-node-from="\\w*"', label['svg'])]
-                    labels_to = [int(l[14:-1]) for l in re.findall(f'data-node-to="\\w*"', label['svg'])]
-                    sublabels = [l[17:-1] for l in re.findall(f'data-label-name="\\w*"', label['svg'])]
-                    joints = [[from_, to_] for from_, to_ in zip(labels_from, labels_to)]
+                    labels_from = re.findall(r'data-node-from="(\d+)"', label['svg'])
+                    labels_to = re.findall(r'data-node-to="(\d+)"', label['svg'])
+                    sublabels = re.findall(r'data-label-name="(\w+)"', label['svg'])
+                    joints = zip(labels_from, labels_to)
 
                     point_categories.add(label_id, sublabels, joints)
 
@@ -1454,11 +1454,11 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             vis = []
             for element in shape_obj.elements:
                 points.extend(element.points)
-                element_vis = 2
+                element_vis = datum_annotation.Points.Visibility.visible
                 if element.outside:
-                    element_vis = 0
+                    element_vis = datum_annotation.Points.Visibility.absent
                 elif element.occluded:
-                    element_vis = 1
+                    element_vis = datum_annotation.Points.Visibility.hidden
                 vis.append(element_vis)
 
             anno = datum_annotation.Points(points, vis,
