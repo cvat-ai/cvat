@@ -8,6 +8,7 @@ from http import HTTPStatus
 from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, make_api_client, patch_method, post_method
+from shared.utils import s3
 
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetCloudStorage:
@@ -76,6 +77,23 @@ class TestGetCloudStorage:
         with make_api_client(admin_user) as client:
             (actions, _) = client.cloudstorages_api.retrieve_actions(storage_id, org_id=org_id)
             assert set(actions) == expected_actions
+
+    def test_can_get_storage_files(self, admin_user, cloud_storages):
+        storage_id = 3
+        cloud_storage = next(s for s in cloud_storages if s['id'] == storage_id)
+        org_id = cloud_storage['organization']
+
+        try:
+            s3_client = s3.make_client()
+            s3_client.create_asset(cloud_storage['resource'], 'testfile1.txt', b'test1')
+            s3_client.create_asset(cloud_storage['resource'], 'testfile2.txt', b'test2')
+
+            with make_api_client(admin_user) as client:
+                (files, _) = client.cloudstorages_api.retrieve_content(storage_id, org_id=org_id)
+                assert set(files) == {'testfile1.txt', 'testfile2.txt'}
+        finally:
+            s3_client.remove_asset(cloud_storage['resource'], 'testfile1.txt')
+            s3_client.remove_asset(cloud_storage['resource'], 'testfile2.txt')
 
 
 @pytest.mark.usefixtures('changedb')
