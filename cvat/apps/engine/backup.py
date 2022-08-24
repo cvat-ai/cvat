@@ -32,7 +32,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
@@ -40,7 +40,7 @@ from cvat.apps.engine.task import _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, validate_bucket_status
+    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage
 )
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
@@ -788,11 +788,6 @@ def export(db_instance, request):
                         return sendfile(request, file_path, attachment=True,
                             attachment_filename=filename)
                     elif location == Location.CLOUD_STORAGE:
-
-                        @validate_bucket_status
-                        def _export_to_cloud_storage(storage, file_path, file_name):
-                            storage.upload_file(file_path, file_name)
-
                         try:
                             storage_id = location_conf['storage_id']
                         except KeyError:
@@ -802,7 +797,7 @@ def export(db_instance, request):
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                         storage = db_storage_to_storage_instance(db_storage)
 
-                        _export_to_cloud_storage(storage, file_path, filename)
+                        export_to_cloud_storage(storage, file_path, filename)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()
@@ -826,6 +821,14 @@ def export(db_instance, request):
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
+
+def _download_file_from_bucket(db_storage, filename, key):
+    storage = db_storage_to_storage_instance(db_storage)
+
+    data = import_from_cloud_storage(storage, key)
+    with open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
+
 def _import(importer, request, rq_id, Serializer, file_field_name, location_conf, filename=None):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
@@ -845,14 +848,8 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                     for chunk in payload_file.chunks():
                         f.write(chunk)
         else:
-            @validate_bucket_status
-            def _import_from_cloud_storage(storage, file_name):
-                return storage.download_fileobj(file_name)
-
             file_name = request.query_params.get('filename')
-            assert file_name
-
-            # download file from cloud storage
+            assert file_name, "The filename wasn't specified"
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
@@ -860,13 +857,12 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                     'Cloud storage location was selected for destination'
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
-            storage = db_storage_to_storage_instance(db_storage)
-
-            data = _import_from_cloud_storage(storage, file_name)
-
+            key = filename
             fd, filename = mkstemp(prefix='cvat_')
-            with open(filename, 'wb+') as f:
-                f.write(data.getbuffer())
+            dependent_job = configure_dependent_job(
+                queue, rq_id, _download_file_from_bucket,
+                db_storage, filename, key)
+
         rq_job = queue.enqueue_call(
             func=importer,
             args=(filename, request.user.id, org_id),
@@ -875,6 +871,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                 'tmp_file': filename,
                 'tmp_file_descriptor': fd,
             },
+            depends_on=dependent_job
         )
     else:
         if rq_job.is_finished:
@@ -883,12 +880,9 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
-            exc_info = str(rq_job.exc_info)
-            rq_job.delete()
-
+        elif rq_job.is_failed or \
+                rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+            exc_info = process_failed_job(rq_job)
             # RQ adds a prefix with exception class name
             import_error_prefix = '{}.{}'.format(
                 CvatImportError.__module__, CvatImportError.__name__)
