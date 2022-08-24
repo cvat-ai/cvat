@@ -113,7 +113,6 @@ class ProjectsRepo(
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
-    ModelDeleteMixin,
 ):
     _entity_type = Project
 

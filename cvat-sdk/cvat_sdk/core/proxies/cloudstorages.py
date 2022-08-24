@@ -28,7 +28,6 @@ class CloudStorage(
     models.ICloudStorageRead,
     ModelUpdateMixin[models.IPatchedCloudStorageWriteRequest],
     ModelDeleteMixin,
-    AnnotationCrudMixin,
 ):
     _model_partial_update_arg = "patched_cloudstorage_write_request"
     _put_annotations_data_param = "cloudstorage_annotations_update_request"
@@ -54,6 +53,5 @@ class CloudStoragesRepo(
     ModelCreateMixin[CloudStorage, models.ICloudStorageWriteRequest],
     ModelRetrieveMixin[CloudStorage],
     ModelListMixin[CloudStorage],
-    ModelDeleteMixin,
 ):
     _entity_type = CloudStorage

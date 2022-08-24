@@ -255,7 +255,6 @@ class TasksRepo(
     ModelCreateMixin[Task, models.ITaskWriteRequest],
     ModelRetrieveMixin[Task],
     ModelListMixin[Task],
-    ModelDeleteMixin,
 ):
     _entity_type = Task
 
