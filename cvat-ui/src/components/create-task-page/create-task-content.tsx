@@ -25,6 +25,10 @@ import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from 
 
 import { StorageLocation } from 'reducers';
 
+import { getCore } from 'cvat-core-wrapper';
+
+const core = getCore();
+
 export interface CreateTaskData {
     projectId: number | null;
     basic: BaseConfiguration;
@@ -220,6 +224,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleSubmit = (): Promise<any> => new Promise((resolve, reject) => {
+        const { projectId } = this.state;
+
         if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
@@ -250,6 +256,24 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             .then(() => {
                 if (this.advancedConfigurationComponent.current) {
                     return this.advancedConfigurationComponent.current.submit();
+                }
+                if (projectId) {
+                    return core.projects.get({ id: projectId })
+                        .then((response: any) => {
+                            const [project] = response;
+                            this.handleSubmitAdvancedConfiguration({
+                                ...this.state.advanced,
+                                sourceStorage: {
+                                    location: project?.sourceStorage?.location,
+                                    cloud_storage_id: project?.sourceStorage?.cloud_storage_id,
+                                },
+                                targetStorage: {
+                                    location: project?.targetStorage?.location,
+                                    cloud_storage_id: project?.targetStorage?.cloud_storage_id
+                                },
+                            });
+                            return Promise.resolve();
+                        })
                 }
                 return Promise.resolve();
             })

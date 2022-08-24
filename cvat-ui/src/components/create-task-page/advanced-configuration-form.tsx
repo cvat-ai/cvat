@@ -16,7 +16,7 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
-import { StorageLocation } from 'reducers';
+import { StorageLocation, Storage } from 'reducers';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
@@ -51,8 +51,8 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean | null;
     useProjectTargetStorage: boolean | null;
-    sourceStorage: any;
-    targetStorage: any;
+    sourceStorage: Storage;
+    targetStorage: Storage;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -176,48 +176,15 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     public submit(): Promise<void> {
         const { onSubmit, projectId } = this.props;
+
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then(
-                (values: Store): Promise<void> => {
+            if (projectId) {
+                return Promise.all([
+                    core.projects.get({ id: projectId }),
+                    this.formRef.current.validateFields(),
+                ]).then(([getProjectResponse, values]) => {
+                    const [project] = getProjectResponse;
                     const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
-                    let sourceStorage;
-                    let targetStorage;
-
-                    const useProjectSourceStorage = values.useProjectSourceStorage;
-                    const useProjectTargetStorage = values.useProjectTargetStorage;
-
-                    if (!!projectId) {
-                        let projectSourceStorage;
-                        let projectTargetStorage;
-
-                        if (useProjectSourceStorage || useProjectTargetStorage) {
-                            core.projects.get({ id: projectId }).then((response: any) => {
-                                if (response.length) {
-                                    const [project] = response;
-                                    projectSourceStorage = project.sourceStorage;
-                                    projectTargetStorage = project.targetStorage;
-                                }
-                            });
-                        }
-
-                        if (useProjectSourceStorage) {
-                            sourceStorage = projectSourceStorage;
-                        }
-                        if (useProjectTargetStorage) {
-                            targetStorage = projectTargetStorage;
-                        }
-                    }
-                    if (!projectId || !useProjectSourceStorage) {
-                        sourceStorage = {
-                            ...values.sourceStorage,
-                        }
-                    }
-                    if (!projectId || !useProjectTargetStorage) {
-                        targetStorage = {
-                            ...values.targetStorage,
-                        }
-                    }
-
                     const entries = Object.entries(values).filter(
                         (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                     );
@@ -225,12 +192,45 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
-                        sourceStorage,
-                        targetStorage,
+                        sourceStorage: values.useProjectSourceStorage ? {
+                            // project.sourceStorage contains more properties than location and cloud_storage_id
+                            location: project?.sourceStorage?.location,
+                            cloud_storage_id: project?.sourceStorage?.cloud_storage_id,
+                        } : {
+                            ...values.sourceStorage,
+                        },
+                        targetStorage: values.useProjectTargetStorage ? {
+                            location: project?.targetStorage?.location,
+                            cloud_storage_id: project?.targetStorage?.cloud_storage_id,
+                        } : {
+                            ...values.targetStorage,
+                        },
                     });
                     return Promise.resolve();
-                },
-            );
+                })
+            } else {
+                return this.formRef.current.validateFields()
+                    .then(
+                        (values: Store): Promise<void> => {
+                            const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
+                            const entries = Object.entries(values).filter(
+                                (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
+                            );
+
+                            onSubmit({
+                                ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
+                                frameFilter,
+                                sourceStorage: {
+                                    ...values.sourceStorage,
+                                },
+                                targetStorage: {
+                                    ...values.targetStorage,
+                                },
+                            });
+                            return Promise.resolve();
+                        },
+                    );
+            }
         }
 
         return Promise.reject(new Error('Form ref is empty'));
