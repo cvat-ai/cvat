@@ -12,7 +12,7 @@ import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons
 import Upload from 'antd/lib/upload';
 
 import { usePrevious } from 'utils/hooks';
-import { ProjectsQuery } from 'reducers/interfaces';
+import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
 import {

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -91,15 +91,17 @@ context('Appearance features', () => {
                         });
                 });
             cy.get('.cvat_canvas_shape').each((object) => {
-                cy.get(object)
-                    .should('have.prop', 'tagName')
-                    .then(($tagName) => {
-                        if ($tagName !== 'polyline') {
-                            expect(Number(object.css('fill-opacity'))).to.be.gt(Number(fillOpacity)); // expected 1 to be above 0.03
+                cy.get(object).then((obj) => {
+                    const clientID = obj.attr('clientID');
+                    cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).then((sidebarObj) => {
+                        const text = sidebarObj.text();
+                        if (text.includes('POLYLINE') || text.includes('POINTS')) {
+                            expect(Number(object.attr('fill-opacity'))).to.be.lt(Number(fillOpacity)); // expected 0 to be below 0.03
                         } else {
-                            expect(Number(object.css('fill-opacity'))).to.be.lt(Number(fillOpacity)); // expected 0 to be below 0.03
+                            expect(Number(object.attr('fill-opacity'))).to.be.gt(Number(fillOpacity)); // expected 1 to be above 0.03
                         }
-                    });
+                    })
+                });
             });
         });
 
@@ -154,15 +156,17 @@ context('Appearance features', () => {
         it('Set "Color by" to group. The shapes are white.', () => {
             cy.changeAppearance('Group');
             cy.get('.cvat_canvas_shape').each((object) => {
-                cy.get(object)
-                    .should('have.prop', 'tagName')
-                    .then(($tagName) => {
-                        if ($tagName !== 'polyline') {
-                            expect(Number(object.css('fill-opacity'))).to.be.gt(Number(fillOpacity)); // expected 1 to be above 0.03
+                cy.get(object).then((obj) => {
+                    const clientID = obj.attr('clientID');
+                    cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).then((sidebarObj) => {
+                        const text = sidebarObj.text();
+                        if (!(text.includes('POLYLINE') || text.includes('POINTS'))) {
                             expect(object.css('fill')).to.be.equal('rgb(224, 224, 224)'); // expected rgb(224, 224, 224) to equal rgb(224, 224, 224)
                         }
-                    });
+                    })
+                });
             });
+
             // Disable "Outlined borders" and check css "stroke" for polyline.
             cy.get('.cvat-appearance-outlinded-borders-checkbox').click();
             cy.get('#cvat_canvas_shape_3').should('have.css', 'stroke', 'rgb(224, 224, 224)'); // have CSS property stroke with the value rgb(224, 224, 224)

@@ -8,7 +8,7 @@ import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState, Indexable } from 'reducers/interfaces';
+import { CombinedState, Indexable } from 'reducers';
 import { getProjectsAsync, restoreProjectAsync } from 'actions/projects-actions';
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -152,7 +152,7 @@ context('Annotations statistics.', () => {
 
         it(`Check issue ${issueId}`, () => {
             // Issue 2663: "Cuboids are missed in annotations statistics"
-            const objectTypes = ['Rectangle', 'Polygon', 'Polyline', 'Points', 'Cuboids', 'Tags'];
+            const objectTypes = ['Rectangle', 'Polygon', 'Polyline', 'Points', 'Ellipse', 'Cuboid', 'Skeleton', 'Tag'];
             cy.get('.cvat-job-info-statistics')
                 .find('table')
                 .first()
@@ -186,10 +186,10 @@ context('Annotations statistics.', () => {
                             for (let i = 1; i < 7; i++) {
                                 expect(elTextContent[i]).to.be.equal('1 / 1'); // Rectangle, Polygon, Polyline, Points, Cuboids, Ellipses
                             }
-                            expect(elTextContent[7]).to.be.equal('1'); // Tags
-                            expect(elTextContent[8]).to.be.equal('13'); // Manually
-                            expect(elTextContent[9]).to.be.equal('39'); // Interpolated
-                            expect(elTextContent[10]).to.be.equal('52'); // Total
+                            expect(elTextContent[8]).to.be.equal('1'); // Tags
+                            expect(elTextContent[9]).to.be.equal('13'); // Manually
+                            expect(elTextContent[10]).to.be.equal('39'); // Interpolated
+                            expect(elTextContent[11]).to.be.equal('52'); // Total
                         });
                 });
             cy.contains('[type="button"]', 'OK').click();

@@ -5,7 +5,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Col, Row } from 'antd/lib/grid';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import JobCard from './job-card';
 
 function JobsContentComponent(): JSX.Element {

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ import Progress from 'antd/lib/progress';
 import Modal from 'antd/lib/modal';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { ActiveInference } from 'reducers/interfaces';
+import { ActiveInference } from 'reducers';
 
 interface Props {
     activeInference: ActiveInference | null;

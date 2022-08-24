@@ -1,12 +1,16 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
+import Text from 'antd/lib/typography/Text';
+import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
-import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
-import ItemDetails, { attrValuesAreEqual } from './object-item-details';
+import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
+import { ObjectType, ShapeType, ColorBy } from 'reducers';
+import { ObjectState } from 'cvat-core-wrapper';
+import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
 interface Props {
@@ -19,14 +23,13 @@ interface Props {
     serverID: number | undefined;
     labelID: number;
     locked: boolean;
-    attrValues: Record<number, string>;
+    elements: any[];
     color: string;
     colorBy: ColorBy;
     labels: any[];
     attributes: any[];
-    collapsed: boolean;
     jobInstance: any;
-    activate(): void;
+    activate(activeElementID?: number): void;
     copy(): void;
     propagate(): void;
     createURL(): void;
@@ -35,30 +38,8 @@ interface Props {
     toForeground(): void;
     remove(): void;
     changeLabel(label: any): void;
-    changeAttribute(attrID: number, value: string): void;
     changeColor(color: string): void;
-    collapse(): void;
     resetCuboidPerspective(): void;
-}
-
-function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
-    return (
-        nextProps.activated === prevProps.activated &&
-        nextProps.readonly === prevProps.readonly &&
-        nextProps.locked === prevProps.locked &&
-        nextProps.labelID === prevProps.labelID &&
-        nextProps.color === prevProps.color &&
-        nextProps.clientID === prevProps.clientID &&
-        nextProps.serverID === prevProps.serverID &&
-        nextProps.objectType === prevProps.objectType &&
-        nextProps.shapeType === prevProps.shapeType &&
-        nextProps.collapsed === prevProps.collapsed &&
-        nextProps.labels === prevProps.labels &&
-        nextProps.attributes === prevProps.attributes &&
-        nextProps.normalizedKeyMap === prevProps.normalizedKeyMap &&
-        nextProps.colorBy === prevProps.colorBy &&
-        attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues)
-    );
 }
 
 function ObjectItemComponent(props: Props): JSX.Element {
@@ -70,13 +51,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
         clientID,
         serverID,
         locked,
-        attrValues,
         labelID,
         color,
         colorBy,
+        elements,
         attributes,
         labels,
-        collapsed,
         normalizedKeyMap,
         activate,
         copy,
@@ -87,9 +67,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         toForeground,
         remove,
         changeLabel,
-        changeAttribute,
         changeColor,
-        collapse,
         resetCuboidPerspective,
         jobInstance,
     } = props;
@@ -103,11 +81,15 @@ function ObjectItemComponent(props: Props): JSX.Element {
         'cvat-objects-sidebar-state-item' :
         'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
+    const activateState = useCallback(() => {
+        activate();
+    }, []);
+
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div className='cvat-objects-sidebar-state-item-color' style={{ background: `${color}` }} />
             <div
-                onMouseEnter={activate}
+                onMouseEnter={activateState}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
                 style={{ backgroundColor: `${color}88` }}
@@ -145,18 +127,40 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (
-                    <ItemDetails
+                    <ItemDetailsContainer
                         readonly={readonly}
-                        collapsed={collapsed}
-                        attributes={attributes}
-                        values={attrValues}
-                        collapse={collapse}
-                        changeAttribute={changeAttribute}
+                        clientID={clientID}
+                        parentID={null}
                     />
+                )}
+                {!!elements.length && (
+                    <>
+                        <Collapse className='cvat-objects-sidebar-state-item-elements-collapse'>
+                            <Collapse.Panel
+                                header={(
+                                    <>
+                                        <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>
+                                        <br />
+                                    </>
+                                )}
+                                key='elements'
+                            >
+                                {elements.map((element: ObjectState) => (
+                                    <ObjectItemElementComponent
+                                        key={element.clientID as number}
+                                        readonly={readonly}
+                                        parentID={clientID}
+                                        clientID={element.clientID as number}
+                                        onMouseLeave={activateState}
+                                    />
+                                ))}
+                            </Collapse.Panel>
+                        </Collapse>
+                    </>
                 )}
             </div>
         </div>
     );
 }
 
-export default React.memo(ObjectItemComponent, objectItemsAreEqual);
+export default React.memo(ObjectItemComponent);

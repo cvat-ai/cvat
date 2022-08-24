@@ -1,13 +1,13 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { CanvasVersion } from 'cvat-canvas-wrapper';
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AboutActions, AboutActionTypes } from 'actions/about-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { AboutState } from './interfaces';
+import { AboutState } from '.';
 import pjson from '../../package.json';
 
 const defaultState: AboutState = {

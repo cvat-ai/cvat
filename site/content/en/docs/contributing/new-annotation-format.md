@@ -2,17 +2,17 @@
 title: 'How to add a new annotation format support'
 linkTitle: 'New annotation format support'
 weight: 10
-description: 'Instructions on adding support for new annotation formats. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats).'
+description: 'Instructions on adding support for new annotation formats. This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats).'
 ---
 
 1. Add a python script to `dataset_manager/formats`
-2. Add an import statement to [registry.py](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py).
+2. Add an import statement to [registry.py](https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py).
 3. Implement some importers and exporters as the format requires.
 
 Each format is supported by an importer and exporter.
 
 It can be a function or a class decorated with
-`importer` or `exporter` from [registry.py](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py).
+`importer` or `exporter` from [registry.py](https://github.com/cvat-ai/cvat/tree/develop/cvat/apps/dataset_manager/formats/registry.py).
 Examples:
 
 ```python
@@ -54,7 +54,7 @@ Exporter arguments:
 - _options_ - format-specific options. `save_images` is the option to
   distinguish if dataset or just annotations are requested.
 
-[`TaskData`](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/apps/dataset_manager/bindings.py) provides
+[`TaskData`](https://github.com/cvat-ai/cvat/blob/develop/cvat/apps/dataset_manager/bindings.py) provides
 many task properties and interfaces to add and read task annotations.
 
 Public members:

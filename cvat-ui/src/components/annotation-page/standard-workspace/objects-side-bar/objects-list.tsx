@@ -1,10 +1,10 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 
-import { StatesOrdering } from 'reducers/interfaces';
+import { StatesOrdering } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import ObjectListHeader from './objects-list-header';
 
@@ -73,7 +73,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                             objectStates={objectStates}
                             key={id}
                             clientID={id}
-                            initialCollapsed={statesCollapsedAll}
                         />
                     ),
                 )}

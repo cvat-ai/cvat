@@ -22,10 +22,10 @@ spec:
         {{- include "cvat.labels" . | nindent 8 }}
         app: cvat-app
         tier: frontend
-        {{- with .Values.cvat.backend.labels }}
+        {{- with .Values.cvat.frontend.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.cvat.backend.annotations }}
+        {{- with .Values.cvat.frontend.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
         {{- end }}

@@ -1,7 +1,7 @@
 ---
 title: 'Analytics Monitoring'
 linkTitle: 'Analytics Monitoring'
-weight: 27
+weight: 28
 description: 'Using Analytics to monitor usage statistics.'
 ---
 

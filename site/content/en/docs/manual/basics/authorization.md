@@ -18,7 +18,7 @@ weight: 1
   groups to the user. Please use the command below to create an admin account:
 
   ```bash
-    docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+    docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
 - If you want to create a non-admin account, you can do that using the link below

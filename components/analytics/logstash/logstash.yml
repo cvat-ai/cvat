@@ -1,3 +1,4 @@
 queue.type: persisted
 queue.max_bytes: 1gb
 queue.checkpoint.writes: 20
+http.host: 0.0.0.0

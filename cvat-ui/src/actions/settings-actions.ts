@@ -1,11 +1,11 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
 import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
-} from 'reducers/interfaces';
+} from 'reducers';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -24,6 +24,7 @@ export enum SettingsActionTypes {
     SWITCH_RESET_ZOOM = 'SWITCH_RESET_ZOOM',
     SWITCH_SMOOTH_IMAGE = 'SWITCH_SMOOTH_IMAGE',
     SWITCH_TEXT_FONT_SIZE = 'SWITCH_TEXT_FONT_SIZE',
+    SWITCH_CONTROL_POINTS_SIZE = 'SWITCH_CONTROL_POINTS_SIZE',
     SWITCH_TEXT_POSITION = 'SWITCH_TEXT_POSITION',
     SWITCH_TEXT_CONTENT = 'SWITCH_TEXT_CONTENT',
     CHANGE_BRIGHTNESS_LEVEL = 'CHANGE_BRIGHTNESS_LEVEL',
@@ -41,6 +42,8 @@ export enum SettingsActionTypes {
     SWITCH_SETTINGS_DIALOG = 'SWITCH_SETTINGS_DIALOG',
     SET_SETTINGS = 'SET_SETTINGS',
     SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
+    SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
+    SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -188,6 +191,15 @@ export function switchTextFontSize(fontSize: number): AnyAction {
     };
 }
 
+export function switchControlPointsSize(pointsSize: number): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_CONTROL_POINTS_SIZE,
+        payload: {
+            controlPointsSize: pointsSize,
+        },
+    };
+}
+
 export function switchTextPosition(position: 'auto' | 'center'): AnyAction {
     return {
         type: SettingsActionTypes.SWITCH_TEXT_POSITION,
@@ -197,11 +209,11 @@ export function switchTextPosition(position: 'auto' | 'center'): AnyAction {
     };
 }
 
-export function switchTextContent(textContent: string): AnyAction {
+export function switchTextContent(textContent: string[]): AnyAction {
     return {
         type: SettingsActionTypes.SWITCH_TEXT_CONTENT,
         payload: {
-            textContent,
+            textContent: textContent.join(','),
         },
     };
 }
@@ -337,6 +349,24 @@ export function setSettings(settings: Partial<SettingsState>): AnyAction {
         type: SettingsActionTypes.SET_SETTINGS,
         payload: {
             settings,
+        },
+    };
+}
+
+export function switchShowingDeletedFrames(showDeletedFrames: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_DELETED_FRAMES,
+        payload: {
+            showDeletedFrames,
+        },
+    };
+}
+
+export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_TAGS_ON_FRAME,
+        payload: {
+            showTagsOnFrame,
         },
     };
 }
