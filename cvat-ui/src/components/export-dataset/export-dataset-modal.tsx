@@ -140,11 +140,12 @@ function ExportDatasetModal(): JSX.Element | null {
                 ),
             );
             closeModal();
+            const _resource = instanceType.includes('project') ? 'Dataset' : 'Annotations';
             Notification.info({
-                message: 'Dataset export started',
+                message: `${_resource} export started`,
                 description:
-                    `Dataset export was started for ${instanceType}. ` +
-                    'Download will start automatically as soon as the dataset is ready.',
+                    `${_resource} export was started for ${instanceType}. ` +
+                    `Download will start automatically as soon as the ${_resource} is ready.`,
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
