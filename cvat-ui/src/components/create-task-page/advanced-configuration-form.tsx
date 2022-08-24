@@ -581,9 +581,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row>
                     <Col span={24}>{this.renderBugTracker()}</Col>
                 </Row>
-                <Row>
-                    <Col span={12}> {this.renderSourceStorage()} </Col>
-                    <Col span={12}> {this.renderTargetStorage()} </Col>
+                <Row justify='space-between'>
+                    <Col span={11}> {this.renderSourceStorage()} </Col>
+                    <Col span={11} offset={1}> {this.renderTargetStorage()} </Col>
                 </Row>
             </Form>
         );

@@ -145,13 +145,13 @@ function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstanc
                 <Input />
             </Form.Item>
             <Row justify='space-between'>
-                <Col span={12}>
+                <Col span={11}>
                     <SourceStorageField
                         projectId={null}
                         storageDescription='Specify source storage for import resources like annotation, backups'
                     />
                 </Col>
-                <Col span={12}>
+                <Col span={11} offset={1}>
                     <TargetStorageField
                         projectId={null}
                         storageDescription='Specify target storage for export resources like annotation, backups'
