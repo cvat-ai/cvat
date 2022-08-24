@@ -363,9 +363,9 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(username, project_id, 'CVAT 1.1', import_data)
 
-    def test_can_import_export_dataset_in_datumaro_format(self):
+    def test_can_import_export_dataset_with_datumaro_format(self):
         # https://github.com/opencv/cvat/issues/4410
-        user = 'admin1'
+        username = 'admin1'
         format_name = 'Datumaro 1.0'
         project_id = 4
 
