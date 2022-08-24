@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 set -e
+set -x
 
 GENERATOR_VERSION="v6.0.1"
 
