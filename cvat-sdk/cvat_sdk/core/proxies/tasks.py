@@ -142,16 +142,17 @@ class Task(
         *,
         quality: Optional[str] = None,
     ) -> io.RawIOBase:
-        params = {}
+        params = {'number': frame_id}
         if quality:
             params["quality"] = quality
-        (_, response) = self.api.retrieve_data(self.id, number=frame_id, **params, type="frame")
+        (_, response) = self.api.retrieve_data(self.id, type="frame", **params,
+            _parse_response=False)
         return io.BytesIO(response.data)
 
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(self.id, type="preview")
+        (_, response) = self.api.retrieve_data(self.id, type="preview", _parse_response=False)
         return io.BytesIO(response.data)
 
     def download_frames(

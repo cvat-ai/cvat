@@ -10,7 +10,8 @@ from deepdiff import DeepDiff
 
 from PIL import Image
 
-from shared.utils.config import get_method, make_api_client, patch_method, post_method
+from shared.utils.config import (MINIO_ENDPOINT_URL, MINIO_KEY, MINIO_SECRET_KEY,
+    get_method, make_api_client, patch_method, post_method)
 
 
 @pytest.mark.usefixtures('dontchangedb')
@@ -141,7 +142,7 @@ class TestPostCloudStorage:
         'resource': 'test',
         'display_name': 'Bucket',
         'credentials_type': 'KEY_SECRET_KEY_PAIR',
-        'key': 'minio_access_key', 'secret_key': 'minio_secret_key',
+        'key': MINIO_KEY, 'secret_key': MINIO_SECRET_KEY,
         'specific_attributes': 'endpoint_url=http://minio:9000',
         'description': 'Some description',
         'manifests': [

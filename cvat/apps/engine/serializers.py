@@ -18,7 +18,8 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
 
-from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, extend_schema_serializer, extend_schema_field
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -1031,6 +1032,7 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'created_date', 'updated_date', 'message', 'resolved')
         read_only_fields = ('id', 'owner', 'created_date', 'updated_date')
         write_once_fields = ('frame', 'position', 'job', 'message', 'owner')
+
 
 class ManifestSerializer(serializers.ModelSerializer):
     class Meta:
