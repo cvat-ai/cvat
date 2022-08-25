@@ -784,6 +784,105 @@ const tasksDummyData = {
             frame_filter: '',
         },
         {
+            url: 'http://localhost:7000/api/tasks/4',
+            id: 4,
+            name: 'test',
+            project_id: null,
+            mode: 'annotation',
+            owner: {
+                url: 'http://localhost:7000/api/users/1',
+                id: 1,
+                username: 'admin',
+                first_name: '',
+                last_name: '',
+            },
+            assignee: null,
+            bug_tracker: '',
+            created_date: '2022-08-25T12:10:45.471663Z',
+            updated_date: '2022-08-25T12:10:45.993989Z',
+            overlap: 0,
+            segment_size: 4,
+            status: 'annotation',
+            labels: [{
+                id: 54,
+                name: 'star skeleton',
+                color: '#9cb75a',
+                attributes: [],
+                type: 'skeleton',
+                sublabels: [{
+                    id: 55,
+                    name: '1',
+                    color: '#d12345',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 56,
+                    name: '2',
+                    color: '#350dea',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 57,
+                    name: '3',
+                    color: '#479ffe',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 58,
+                    name: '4',
+                    color: '#4a649f',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 59,
+                    name: '5',
+                    color: '#478144',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }],
+                has_parent: false,
+                svg:
+                    `<line x1="65.11705780029297" y1="18.267141342163086" x2="27.49163818359375" y2="39.504600524902344" stroke="black" data-type="edge" data-node-from="3" stroke-width="0.5" data-node-to="5"></line>
+                    <line x1="21.806020736694336" y1="18.099916458129883" x2="65.11705780029297" y2="18.267141342163086" stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="3"></line>
+                    <line x1="61.10367965698242" y1="40.00627136230469" x2="21.806020736694336" y2="18.099916458129883" stroke="black" data-type="edge" data-node-from="4" stroke-width="0.5" data-node-to="1"></line>
+                    <line x1="44.38127136230469" y1="7.397575378417969" x2="61.10367965698242" y2="40.00627136230469" stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="4"></line>
+                    <line x1="27.49163818359375" y1="39.504600524902344" x2="44.38127136230469" y2="7.397575378417969" stroke="black" data-type="edge" data-node-from="5" stroke-width="0.5" data-node-to="2"></line>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="21.806020736694336" cy="18.099916458129883" stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-id="55"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="44.38127136230469" cy="7.397575378417969" stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-id="56"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="65.11705780029297" cy="18.267141342163086" stroke-width="0.1" data-type="element node" data-element-id="3" data-node-id="3" data-label-id="57"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="61.10367965698242" cy="40.00627136230469" stroke-width="0.1" data-type="element node" data-element-id="4" data-node-id="4" data-label-id="58"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="27.49163818359375" cy="39.504600524902344" stroke-width="0.1" data-type="element node" data-element-id="5" data-node-id="5" data-label-id="59"></circle>`
+            }],
+            segments: [{
+                start_frame: 0,
+                stop_frame: 3,
+                jobs: [{
+                    url: 'http://localhost:7000/api/jobs/41',
+                    id: 10,
+                    assignee: null,
+                    status: 'annotation',
+                    stage: 'annotation',
+                    state: 'new',
+                }]
+            }],
+            data_chunk_size: 17,
+            data_compressed_chunk_type: 'imageset',
+            data_original_chunk_type: 'imageset',
+            size: 4,
+            image_quality: 70,
+            data: 12,
+            dimension: '2d',
+            subset: '',
+            organization: null,
+            target_storage: null,
+            source_storage: null
+        },
+        {
             url: 'http://localhost:7000/api/tasks/3',
             id: 3,
             name: 'Test Task',
