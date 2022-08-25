@@ -46,7 +46,7 @@ export default function RemoveConfirmComponent(): JSX.Element | null {
                             ${descriptionMessage}`
                         }
                     </Text>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <div className='cvat-remove-object-confirm-wrapper'>
                         {/* eslint-disable-next-line */}
                         <img src={consts.OUTSIDE_PIC_URL} />
                     </div>
