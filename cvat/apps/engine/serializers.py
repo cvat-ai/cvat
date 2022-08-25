@@ -596,7 +596,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
-                        new_label = project.label_set.filter(name=old_label.name).first()
+                        if old_label.parent:
+                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                        else:
+                            new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
                     old_label.attributespec_set.all().delete()
