@@ -84,6 +84,7 @@ RUN apt-get update && \
         libldap-2.4-2 \
         libsasl2-2 \
         libpython3-dev \
+        libmagic-dev \
         tzdata \
         python3-distutils \
         p7zip-full \
