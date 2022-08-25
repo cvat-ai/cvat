@@ -205,7 +205,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             })
-            .fill({ opacity: this.configuration.creationOpacity, color: 'white' });
+            .fill({ opacity: this.configuration.selectedOpacity, color: 'white' });
     }
 
     private initInteraction(): void {
@@ -300,7 +300,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                     stroke: erroredShape ? 'red' : 'black',
                 })
-                .fill({ opacity: this.configuration.creationOpacity, color: 'white' })
+                .fill({ opacity: this.configuration.selectedOpacity, color: 'white' })
                 .addClass('cvat_canvas_interact_intermediate_shape');
             this.selectize(true, this.drawnIntermediateShape, erroredShape);
         } else {
@@ -523,18 +523,18 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.configuration = configuration;
         if (this.drawnIntermediateShape) {
             this.drawnIntermediateShape.fill({
-                opacity: configuration.creationOpacity,
+                opacity: configuration.selectedOpacity,
             });
         }
 
         // when interactRectangle
         if (this.currentInteractionShape && this.currentInteractionShape.type === 'rect') {
-            this.currentInteractionShape.fill({ opacity: configuration.creationOpacity });
+            this.currentInteractionShape.fill({ opacity: configuration.selectedOpacity });
         }
 
         // when interactPoints with startwithbbox
         if (this.interactionShapes[0] && this.interactionShapes[0].type === 'rect') {
-            this.interactionShapes[0].fill({ opacity: configuration.creationOpacity });
+            this.interactionShapes[0].fill({ opacity: configuration.selectedOpacity });
         }
     }
 

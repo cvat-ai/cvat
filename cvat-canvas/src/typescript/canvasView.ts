@@ -96,6 +96,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         drawHidden: Record<number, boolean>;
     };
 
+    /**
+     * ROBTODO:
+     */
+    private selectViaMouseEvent: PointerEvent;
+    private isHackishlyInvokingShapeDrag = false;
+
     private set mode(value: Mode) {
         this.controller.mode = value;
     }
@@ -808,6 +814,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
      * @param shape the shape representing the element in the view
      */
     private selectize(state: any, value: boolean, shape: SVG.Element): void {
+        // console.log(`selectize ${state.clientID}: ${value}`);
+
+        // click handler for points
         const mousedownHandler = (e: MouseEvent): void => {
             if (e.button !== 0) return;
             e.preventDefault();
@@ -888,6 +897,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (value) {
             const getGeometry = (): Geometry => this.geometry;
             const getActiveElement = (): ActiveElements => this.activeElements;
+
             (shape as any).selectize(value, {
                 deepSelect: true,
                 pointSize: (2 * consts.BASE_POINT_SIZE) / this.geometry.scale,
@@ -1781,6 +1791,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 delete this.svgTexts[state.clientID];
             }
 
+            this.selectize(state, false, this.svgShapes[state.clientID]);
             this.svgShapes[state.clientID].fire('remove');
             this.svgShapes[state.clientID].off('click');
             this.svgShapes[state.clientID].off('remove');
@@ -1817,7 +1828,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
+            // Left-click behavior on a shape
             this.svgShapes[state.clientID].on('mousedown', (event: PointerEvent): void => {
+                if (this.isHackishlyInvokingShapeDrag || event.button !== 0) {
+                    return;
+                }
+
+                this.selectViaMouseEvent = event;
+
                 this.canvas.dispatchEvent(
                     new CustomEvent('canvas.clicked', {
                         bubbles: false,
@@ -1828,6 +1846,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         },
                     }),
                 );
+
                 event.preventDefault();
                 event.stopPropagation();
             });
@@ -1914,6 +1933,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         (shape as any).off('resizing');
         (shape as any).off('resizedone');
         (shape as any).resize('stop');
+
+        this.setShapeFill(clientID, this.configuration.opacity);
 
         // TODO: Hide text only if it is hidden by settings
         const text = this.svgTexts[clientID];
@@ -2008,9 +2029,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (!state.pinned) {
             shape.addClass('cvat_canvas_shape_draggable');
+
             (shape as any)
                 .draggable()
                 .on('dragstart', (): void => {
+                    console.log('dragstart');
                     this.mode = Mode.DRAG;
                     hideText();
                     (shape as any).on('remove.drag', (): void => {
@@ -2054,7 +2077,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.onEditDone(state, points);
                     }
                 });
+
+            // If the user activated the element by clicking on it, we need to trigger the start of drag
+            // from the same mouse event
+            if (this.selectViaMouseEvent) {
+                this.isHackishlyInvokingShapeDrag = true;
+                shape.fire(new PointerEvent('mousedown', this.selectViaMouseEvent));
+                this.isHackishlyInvokingShapeDrag = false;
+            }
         }
+
+        this.selectViaMouseEvent = null;
 
         if (state.shapeType !== 'points') {
             this.selectize(state, true, shape);
@@ -2172,6 +2205,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 // shape is becoming active
                 this.activateShape(activeId);
             }
+
+            // Make sure opacity is filled for all active elements
+            this.setShapeFill(activeId, this.configuration.selectedOpacity);
         }
 
         // any shapes left should be deactivated
@@ -2189,6 +2225,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         this.activeElements = { ...activeElements };
+    }
+
+    private setShapeFill(clientID: number, opacity: number): void {
+        console.log(`set opacity: ${clientID}: ${opacity}`);
+
+        // Make sure opacity is filled for all active elements
+        const el = window.document.getElementById(`cvat_canvas_shape_${clientID}`);
+        if (el) {
+            ((el as any) as SVGElement).setAttribute('fill-opacity', `${opacity}`);
+        }
     }
 
     // Update text position after corresponding box has been moved, resized, etc.

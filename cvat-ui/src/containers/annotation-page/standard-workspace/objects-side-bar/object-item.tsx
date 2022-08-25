@@ -15,8 +15,8 @@ import {
     changeGroupColorAsync,
     pasteShapeAsync,
     copyShape as copyShapeAction,
-    activateObjects as activateObjectAction,
     propagateObject as propagateObjectAction,
+    activateObjects as activateObjectsAction,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
@@ -56,7 +56,7 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
     collapseOrExpand(objectStates: any[], collapsed: boolean): void;
-    activateObject: (activatedStateID: number, multiSelect: boolean) => void;
+    activateObjects: (activatedStateIDs: number[], multiSelect: boolean) => void;
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
@@ -122,8 +122,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         collapseOrExpand(objectStates: any[], collapsed: boolean): void {
             dispatch(collapseObjectItems(objectStates, collapsed));
         },
-        activateObject(activatedStateID: number, multiSelect: boolean): void {
-            dispatch(activateObjectAction(activatedStateID, null, multiSelect));
+        activateObjects(activatedStateIDs: number[], multiSelect: boolean): void {
+            dispatch(activateObjectsAction(activatedStateIDs, null, multiSelect));
         },
         removeObject(sessionInstance: any, objectState: any): void {
             dispatch(removeObjectAsync(sessionInstance, objectState, true));
@@ -227,11 +227,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private activate = (multiSelect: boolean): void => {
         const {
-            objectState, ready, activeControl, activateObject, canvasInstance, activateOnClick,
+            objectState, ready, activeControl, activateObjects, canvasInstance, activateOnClick,
         } = this.props;
 
         if (activateOnClick && ready && activeControl === ActiveControl.CURSOR) {
-            activateObject(objectState.clientID, multiSelect);
+            activateObjects([objectState.clientID], multiSelect);
             if (canvasInstance instanceof Canvas3d) {
                 canvasInstance.activate(objectState.clientID);
             }

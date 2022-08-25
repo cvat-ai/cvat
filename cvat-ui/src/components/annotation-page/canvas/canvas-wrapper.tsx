@@ -108,6 +108,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showObjectsTextAlways,
             workspace,
             showProjections,
+            opacity,
             selectedOpacity,
             smoothImage,
             textFontSize,
@@ -129,7 +130,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
             intelligentPolygonCrop,
             showProjections,
-            creationOpacity: selectedOpacity,
+            opacity,
+            selectedOpacity,
             textFontSize,
             textPosition,
             textContent,
@@ -151,7 +153,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameAngle,
             annotations,
             sidebarCollapsed,
-            activatedStateIDs,
             curZLayer,
             resetZoom,
             smoothImage,
@@ -193,7 +194,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 autoborders: automaticBordering,
                 showProjections,
                 intelligentPolygonCrop,
-                creationOpacity: selectedOpacity,
+                opacity,
+                selectedOpacity,
                 smoothImage,
                 textFontSize,
                 textPosition,
@@ -215,16 +217,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     },
                     { once: true },
                 );
-            }
-        }
-
-        // Active shapes are filled here...seems weird
-        // if (prevProps.activatedStateIDs.length && prevProps.activatedStateID !== activatedStateID) {
-        for (const id of activatedStateIDs) {
-            // ROBTODO: why would we need to do this??... canvasInstance.activate(null);
-            const el = window.document.getElementById(`cvat_canvas_shape_${id}`);
-            if (el) {
-                (el as any).instance.fill({ opacity });
             }
         }
 
@@ -668,14 +660,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateIDs,
             activatedAttributeID,
-            selectedOpacity,
+            // selectedOpacity,
             // aamZoomMargin,
             // workspace,
             // annotations,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
-        // ROBTODO: what does it mean to focus an object?
+        // ROBTODO: auto zoom in attribute mode
 
         canvasInstance.setActiveElements(activatedStateIDs, activatedAttributeID);
 
@@ -685,30 +677,31 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         //     canvasInstance.focus(activatedObjects[0].clientID, aamZoomMargin);
         // }
 
-        for (const activatedStateID of activatedStateIDs) {
-            //     const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-            //     if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
-            //         if (activatedState.objectType !== ObjectType.TAG) {
-            //             canvasInstance.focus(activatedStateID, aamZoomMargin);
-            //         } else {
-            //             canvasInstance.fit();
-            //         }
-            //     }
-            //     if (activatedState && activatedState.objectType !== ObjectType.TAG) {
-            //         canvasInstance.activate(activatedStateID, activatedAttributeID);
-            //     }
+        // for (const activatedStateID of activatedStateIDs) {
+        //     //     const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
+        //     //     if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+        //     //         if (activatedState.objectType !== ObjectType.TAG) {
+        //     //             canvasInstance.focus(activatedStateID, aamZoomMargin);
+        //     //         } else {
+        //     //             canvasInstance.fit();
+        //     //         }
+        //     //     }
+        //     //     if (activatedState && activatedState.objectType !== ObjectType.TAG) {
+        //     //         canvasInstance.activate(activatedStateID, activatedAttributeID);
+        //     //     }
 
-            // ROBTODO: why is opacity not set in the view????
-            const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
-            if (el) {
-                ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
-            }
-        }
+        //     // ROBTODO: why is opacity not set in the view????
+        //     const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
+        //     if (el) {
+        //         ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
+        //     }
+        // }
     }
 
+    // TODO: this should happen in the view!!!
     private updateShapesView(): void {
         const {
-            annotations, opacity, colorBy, outlined, outlineColor,
+            activatedStateIDs, annotations, opacity, selectedOpacity, colorBy, outlined, outlineColor,
         } = this.props;
 
         for (const state of annotations) {
@@ -730,7 +723,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     handler.nested.fill({ color: shapeColor });
                 }
 
-                (shapeView as any).instance.fill({ color: shapeColor, opacity });
+                const actualOpacity = activatedStateIDs.includes(state.clientID) ? selectedOpacity : opacity;
+                (shapeView as any).instance.fill({ color: shapeColor, opacity: actualOpacity });
                 (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
         }

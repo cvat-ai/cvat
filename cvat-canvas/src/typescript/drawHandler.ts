@@ -417,7 +417,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             });
     }
 
@@ -426,7 +426,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             });
 
         const initialPoint: {
@@ -612,7 +612,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             });
 
         this.drawPolyshape();
@@ -681,7 +681,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             });
     }
 
@@ -745,7 +745,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -782,7 +782,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             }).rotate(rotation);
         this.pasteShape();
 
@@ -820,7 +820,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -844,7 +844,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'face-stroke': 'black',
-                'fill-opacity': this.configuration.creationOpacity,
+                'fill-opacity': this.configuration.selectedOpacity,
             });
         this.pasteShape();
         this.pastePolyshape();
@@ -1034,7 +1034,7 @@ export class DrawHandlerImpl implements DrawHandler {
         const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
-            this.drawInstance.fill({ opacity: configuration.creationOpacity });
+            this.drawInstance.fill({ opacity: configuration.selectedOpacity });
         }
 
         if (typeof configuration.autoborders === 'boolean') {

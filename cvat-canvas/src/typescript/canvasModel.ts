@@ -73,7 +73,8 @@ export interface Configuration {
     forceDisableEditing?: boolean;
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
-    creationOpacity?: number;
+    opacity?: number;
+    selectedOpacity?: number;
 }
 
 export interface DrawData {
@@ -468,11 +469,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
      * @returns
      */
     public setActiveElements(clientIDs: number[], attributeID: number | null): void {
-        // ROBTODO: short circuit
-        // if (this.data.activeElement.clientIDs.includes(clientID) &&
-        //     this.data.activeElement.attributeID === attributeID) {
-        //     return;
-        // }
+        if (this.areEqual(this.data.activeElement.clientIDs, clientIDs)) {
+            return;
+        }
 
         if (this.data.mode !== Mode.IDLE && clientIDs.length > 0) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -491,6 +490,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
 
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
+    }
+
+    private areEqual(a1: any[], a2: any[]): boolean {
+        if (a1.length !== a2.length) {
+            return false;
+        }
+
+        for (let i = 0; i < a1.length; i++) {
+            if (a1[i] !== a2[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public rotate(rotationAngle: number): void {
@@ -709,8 +721,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.forceFrameUpdate === 'boolean') {
             this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
-        if (typeof configuration.creationOpacity === 'number') {
-            this.data.configuration.creationOpacity = configuration.creationOpacity;
+        if (typeof configuration.opacity === 'number') {
+            this.data.configuration.opacity = configuration.opacity;
+        }
+        if (typeof configuration.selectedOpacity === 'number') {
+            this.data.configuration.selectedOpacity = configuration.selectedOpacity;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

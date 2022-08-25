@@ -30,7 +30,7 @@ import ObjectBasicsEditor from './object-basics-edtior';
 import ObjectSwitcher from './object-switcher';
 
 interface StateToProps {
-    activatedStateID: number | null;
+    activatedStateIDs: number[];
     activatedAttributeID: number | null;
     states: any[];
     labels: any[];
@@ -43,7 +43,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    activateObject(clientID: number | null, attrID: number | null): void;
+    activateObjects(clientIDs: number[], attrID: number | null): void;
     updateAnnotations(statesToUpdate: any[]): void;
     changeFrame(frame: number): void;
 }
@@ -83,8 +83,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
-        activateObject(clientID: number, attrID: number): void {
-            dispatch(activateObjectAction(clientID, attrID));
+        activateObjects(clientIDs: number[], attrID: number): void {
+            dispatch(activateObjectAction(clientIDs, attrID, false));
         },
         updateAnnotations(states): void {
             dispatch(updateAnnotationsAsync(states));
@@ -99,12 +99,12 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     const {
         labels,
         states,
-        activatedStateID,
+        activatedStateIDs,
         activatedAttributeID,
         jobInstance,
         updateAnnotations,
         changeFrame,
-        activateObject,
+        activateObjects,
         keyMap,
         normalizedKeyMap,
         canvasInstance,
@@ -142,9 +142,9 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     };
 
     const indexes = filteredStates.map((state) => state.clientID);
-    const activatedIndex = indexes.indexOf(activatedStateID);
+    const activatedIndex = indexes.indexOf(activatedStateIDs[0]);
     const activeObjectState =
-        activatedStateID === null || activatedIndex === -1 ? null : filteredStates[activatedIndex];
+        activatedStateIDs.length === 0 || activatedIndex === -1 ? null : filteredStates[activatedIndex];
 
     const activeAttribute = activeObjectState ? labelAttrMap[activeObjectState.label.id] : null;
 
@@ -152,11 +152,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         if (activeObjectState) {
             const attribute = labelAttrMap[activeObjectState.label.id];
             if (attribute && attribute.id !== activatedAttributeID) {
-                activateObject(activatedStateID, attribute ? attribute.id : null);
+                activateObjects([activatedStateIDs[0]], attribute ? attribute.id : null);
             }
         } else if (filteredStates.length) {
             const attribute = labelAttrMap[filteredStates[0].label.id];
-            activateObject(filteredStates[0].clientID, attribute ? attribute.id : null);
+            activateObjects([filteredStates[0].clientID], attribute ? attribute.id : null);
         }
     }
 
@@ -171,7 +171,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             }
             if (nextIndex !== index) {
                 const attribute = labelAttrMap[filteredStates[nextIndex].label.id];
-                activateObject(filteredStates[nextIndex].clientID, attribute ? attribute.id : null);
+                activateObjects([filteredStates[nextIndex].clientID], attribute ? attribute.id : null);
             }
         }
     };
