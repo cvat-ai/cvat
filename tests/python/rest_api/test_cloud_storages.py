@@ -3,12 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any, Dict, List
 import pytest
 from http import HTTPStatus
 from deepdiff import DeepDiff
 
+from PIL import Image
+
 from shared.utils.config import get_method, make_api_client, patch_method, post_method
-from shared.utils import s3
+
 
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetCloudStorage:
@@ -69,7 +72,9 @@ class TestGetCloudStorage:
         pytest.param('GOOGLE_CLOUD_STORAGE', set(),
             marks=pytest.mark.xfail(raises=StopIteration, reason='no such test cases')),
     ])
-    def test_can_get_storage_actions(self, admin_user, provider, expected_actions, cloud_storages):
+    def test_can_get_cloud_storage_actions(self,
+        admin_user, provider, expected_actions, cloud_storages
+    ):
         cloud_storage = next(s for s in cloud_storages if s['provider_type'] == provider)
         storage_id = cloud_storage['id']
         org_id = cloud_storage['organization']
@@ -78,23 +83,56 @@ class TestGetCloudStorage:
             (actions, _) = client.cloudstorages_api.retrieve_actions(storage_id, org_id=org_id)
             assert set(actions) == expected_actions
 
-    def test_can_get_storage_files(self, admin_user, cloud_storages):
+    @pytest.mark.parametrize('storage_id, manifest_path', (
+        (1, ''),
+        (2, 'sub/manifest.jsonl'),
+        (3, 'manifest.jsonl'),
+    ))
+    def test_can_get_cloud_storage_manifest_contents(self,
+        admin_user: str, cloud_storages: List[Dict[str, Any]], storage_id: int, manifest_path: str
+    ):
+        cloud_storage = next(s for s in cloud_storages if s['id'] == storage_id)
+        org_id = cloud_storage['organization']
+
+        expected_files = {'image_case_65_1.png', 'image_case_65_2.png'}
+        if manifest_path.startswith('sub/'):
+            expected_files = {'sub/' + p for p in expected_files}
+
+        with make_api_client(admin_user) as client:
+            kwargs = {}
+            if org_id is not None:
+                kwargs['org_id'] = org_id
+            if manifest_path:
+                kwargs['manifest_path'] = manifest_path
+            (files, _) = client.cloudstorages_api.retrieve_content(storage_id, **kwargs)
+
+            assert set(expected_files) == set(files)
+
+    def test_can_get_cloud_storage_status(self, admin_user: str, cloud_storages):
         storage_id = 3
         cloud_storage = next(s for s in cloud_storages if s['id'] == storage_id)
         org_id = cloud_storage['organization']
 
-        try:
-            s3_client = s3.make_client()
-            s3_client.create_asset(cloud_storage['resource'], 'testfile1.txt', b'test1')
-            s3_client.create_asset(cloud_storage['resource'], 'testfile2.txt', b'test2')
+        with make_api_client(admin_user) as client:
+            kwargs = {}
+            if org_id is not None:
+                kwargs['org_id'] = org_id
 
-            with make_api_client(admin_user) as client:
-                (files, _) = client.cloudstorages_api.retrieve_content(storage_id, org_id=org_id)
-                assert set(files) == {'testfile1.txt', 'testfile2.txt'}
-        finally:
-            s3_client.remove_asset(cloud_storage['resource'], 'testfile1.txt')
-            s3_client.remove_asset(cloud_storage['resource'], 'testfile2.txt')
+            (status, _) = client.cloudstorages_api.retrieve_status(storage_id, **kwargs)
+            assert status == 'AVAILABLE'
 
+    def test_can_get_cloud_storage_preview(self, admin_user: str, cloud_storages):
+        storage_id = 3
+        cloud_storage = next(s for s in cloud_storages if s['id'] == storage_id)
+        org_id = cloud_storage['organization']
+
+        with make_api_client(admin_user) as client:
+            kwargs = {}
+            if org_id is not None:
+                kwargs['org_id'] = org_id
+
+            (preview, _) = client.cloudstorages_api.retrieve_preview(storage_id, **kwargs)
+            assert Image.open(preview).size == (256, 256)
 
 @pytest.mark.usefixtures('changedb')
 class TestPostCloudStorage:
