@@ -13,8 +13,8 @@ import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
-import magic
 
+import magic
 import cv2
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
@@ -42,8 +42,7 @@ from rest_framework.exceptions import PermissionDenied
 from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views
-from cvat.apps.engine import mime_types  # pylint: disable=unused-import
+import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance, validate_bucket_status, Status as CloudStorageStatus)
 from cvat.apps.dataset_manager.bindings import CvatImportError
