@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os.path as osp
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -15,7 +14,6 @@ from cvat_sdk.core.proxies.cloudstorages import CloudStorage
 from PIL import Image
 
 from shared.utils.config import MINIO_KEY, MINIO_SECRET_KEY, USER_PASS
-from shared.utils.helpers import generate_image_files
 
 
 class TestCloudstorageUsecases:
