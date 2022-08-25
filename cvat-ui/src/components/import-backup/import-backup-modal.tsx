@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
