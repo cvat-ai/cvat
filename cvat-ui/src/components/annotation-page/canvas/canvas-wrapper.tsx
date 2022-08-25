@@ -507,9 +507,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         //     }
         // }
 
-        // Shift-select behavior
-        if (e.detail.event.shiftKey) {
-            // Holding shift will toggle selectedness
+        if (e.detail.event.button === 2) {
+            // Right clicking on an inactive shape will single-select it, otherwise it will do nothing
+            // so we can show the context menu for the current active shape(s)
+            if (activatedStateIDs.length <= 1) {
+                this.props.onActivateObjects([clientID], false);
+            }
+        } else if (e.detail.event.shiftKey) {
+            // Shift-select behavior Holding shift will toggle selectedness
             if (activatedStateIDs.includes(clientID)) {
                 this.props.onDeactivateObject(clientID);
             } else {

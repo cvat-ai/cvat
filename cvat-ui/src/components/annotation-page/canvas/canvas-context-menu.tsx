@@ -182,6 +182,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                             <Col span={12}>
                                 <CVATTooltip title='Change all labels'>
                                     <LabelSelector
+                                        style={{ width: '100%' }}
                                         disabled={readonly}
                                         size='small'
                                         labels={labels}

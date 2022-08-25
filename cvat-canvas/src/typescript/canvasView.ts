@@ -1830,11 +1830,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             // Left-click behavior on a shape
             this.svgShapes[state.clientID].on('mousedown', (event: PointerEvent): void => {
-                if (this.isHackishlyInvokingShapeDrag || event.button !== 0) {
+                if (this.isHackishlyInvokingShapeDrag) {
                     return;
                 }
 
-                this.selectViaMouseEvent = event;
+                if (event.button === 0 && !this.controller.activeElements.clientIDs.includes(state.clientID)) {
+                    // When selecting via left-click they might start dragging immediately from the
+                    // same mousedown event
+                    this.selectViaMouseEvent = event;
+                }
 
                 this.canvas.dispatchEvent(
                     new CustomEvent('canvas.clicked', {
