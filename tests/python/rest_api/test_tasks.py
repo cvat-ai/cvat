@@ -320,12 +320,15 @@ class TestPostTaskData:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
-    @pytest.mark.parametrize('cloud_storage_id, manifest, org', [
-        (1, 'manifest.jsonl',         ''), # public bucket
-        (2, 'sub/manifest.jsonl', 'org2'), # private bucket
+    @pytest.mark.parametrize('cloud_storage_id, manifest, use_bucket_content, org', [
+        (1, 'manifest.jsonl',     False,  ''), # public bucket
+        (2, 'sub/manifest.jsonl', True, 'org2'), # private bucket
     ])
-    def test_create_task_with_cloud_storage_files(self, cloud_storage_id, manifest, org):
-        cloud_storage_content = get_cloud_storage_content(self._USERNAME, cloud_storage_id, manifest)
+    def test_create_task_with_cloud_storage_files(self, cloud_storage_id, manifest, use_bucket_content, org):
+        if use_bucket_content:
+            cloud_storage_content = get_cloud_storage_content(self._USERNAME, cloud_storage_id, manifest)
+        else:
+            cloud_storage_content = ['image_case_65_1.png', 'image_case_65_2.png']
         cloud_storage_content.append(manifest)
 
         task_spec = {

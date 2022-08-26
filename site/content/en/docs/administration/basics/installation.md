@@ -108,7 +108,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   below:
 
   ```bash
-  docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   Choose a username and a password for your admin account. For more information
@@ -181,14 +181,14 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   below:
 
   ```bash
-  winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  winpty docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   If you don't have winpty installed or the above command does not work, you may also try the following:
 
   ```bash
   # enter docker image first
-  docker exec -it cvat /bin/bash
+  docker exec -it cvat_server /bin/bash
   # then run
   python3 ~/manage.py createsuperuser
   ```
@@ -257,7 +257,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   below:
 
   ```bash
-  docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   Choose a username and a password for your admin account. For more information
@@ -369,9 +369,10 @@ docker-compose.override.yml for this purpose:
 version: '3.3'
 
 services:
-  cvat:
-    environment:
-      CVAT_SHARE_URL: 'Mounted from /mnt/share host directory'
+  cvat_server:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_default:
     volumes:
       - cvat_share:/home/django/share:ro
 
@@ -383,9 +384,7 @@ volumes:
       o: bind
 ```
 
-You can change the share device path to your actual share. For user convenience
-we have defined the environment variable \$CVAT_SHARE_URL. This variable
-contains a text (url for example) which is shown in the client-share browser.
+You can change the share device path to your actual share.
 
 You can [mount](/docs/administration/advanced/mounting_cloud_storages/)
 your cloud storage as a FUSE and use it later as a share.

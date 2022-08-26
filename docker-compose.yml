@@ -25,8 +25,8 @@ services:
     networks:
       - cvat
 
-  cvat:
-    container_name: cvat
+  cvat_server:
+    container_name: cvat_server
     image: cvat/server:${CVAT_VERSION:-latest}
     restart: always
     depends_on:
@@ -40,6 +40,8 @@ services:
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/server.conf
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
@@ -55,12 +57,74 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  cvat_utils:
+    container_name: cvat_utils
+    image: cvat/server:${CVAT_VERSION:-latest}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+    command: -c supervisord/utils.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
+  cvat_worker_default:
+    container_name: cvat_worker_default
+    image: cvat/server:${CVAT_VERSION:-latest}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 2
+    command: -c supervisord/worker.default.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
+  cvat_worker_low:
+    container_name: cvat_worker_low
+    image: cvat/server:${CVAT_VERSION:-latest}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/worker.low.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
   cvat_ui:
     container_name: cvat_ui
     image: cvat/ui:${CVAT_VERSION:-latest}
     restart: always
     depends_on:
-      - cvat
+      - cvat_server
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat-ui.loadbalancer.server.port=80

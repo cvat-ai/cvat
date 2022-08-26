@@ -151,7 +151,7 @@ jobs:
           LOGS_DIR: "${{ github.workspace }}/rest_api"
         run: |
             mkdir $LOGS_DIR
-            docker logs test_cvat_1 > $LOGS_DIR/cvat.log
+            docker logs test_cvat_server_1 > $LOGS_DIR/cvat.log
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
@@ -288,7 +288,7 @@ jobs:
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
         run: |
-          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
 
           cd ./tests
           yarn --frozen-lockfile

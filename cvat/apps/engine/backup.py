@@ -839,7 +839,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                fd, filename = mkstemp(prefix='cvat_')
+                fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
                 with open(filename, 'wb+') as f:
                     for chunk in payload_file.chunks():
                         f.write(chunk)
@@ -863,9 +863,10 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
 
             data = _import_from_cloud_storage(storage, file_name)
 
-            fd, filename = mkstemp(prefix='cvat_')
+            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
             with open(filename, 'wb+') as f:
                 f.write(data.getbuffer())
+
         rq_job = queue.enqueue_call(
             func=importer,
             args=(filename, request.user.id, org_id),
