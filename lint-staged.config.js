@@ -14,7 +14,7 @@ module.exports = (stagedFiles) => {
     const eslintExtensions = ['ts', 'tsx', 'js'].map(makePattern);
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
 
-    const tests = containsInPath('/cvat-core/tests/', eslintFiles);
+    const tests = containsInPath('/tests/', eslintFiles);
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
     const cvatCore = containsInPath('/cvat-core/', eslintFiles);
     const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
