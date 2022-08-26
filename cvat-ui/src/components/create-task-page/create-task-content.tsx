@@ -25,7 +25,7 @@ import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from 
 
 import { StorageLocation } from 'reducers';
 
-import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+import { getCore, Storage } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -258,7 +258,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     return this.advancedConfigurationComponent.current.submit();
                 }
                 if (projectId) {
-                    return core.projects.get({ id: projectId })
+                    return core.projects.get({ id: 105 })
                         .then((response: any) => {
                             const [project] = response;
                             this.handleSubmitAdvancedConfiguration({
@@ -268,6 +268,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             });
                             return Promise.resolve();
                         })
+                        .catch((error: Error): void => {
+                            throw new Error(`Couldn't fetch the project ${projectId} ` + error.toString());
+                        });
                 }
                 return Promise.resolve();
             })
