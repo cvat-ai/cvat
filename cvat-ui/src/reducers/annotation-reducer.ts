@@ -20,10 +20,9 @@ import {
     Workspace,
 } from '.';
 
-function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
-    return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
-        prevActivatedStateID :
-        null;
+function updateActivatedStateIDs(newStates: any[], prevActivatedStateIDs: number[]): number[] {
+    // Keep objects activated that still exist
+    return prevActivatedStateIDs.filter((id) => newStates.some((_state: any) => _state.clientID === id));
 }
 
 const defaultState: AnnotationState = {
@@ -37,7 +36,7 @@ const defaultState: AnnotationState = {
             top: 0,
             type: ContextMenuType.CANVAS_SHAPE,
             pointID: null,
-            clientID: null,
+            clientIDs: [],
             parentID: null,
         },
         instance: null,
@@ -78,7 +77,7 @@ const defaultState: AnnotationState = {
         activeObjectType: ObjectType.SHAPE,
     },
     annotations: {
-        activatedStateID: null,
+        activatedStateIDs: [],
         activatedElementID: null,
         activatedAttributeID: null,
         saving: {
@@ -266,7 +265,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { activatedStateID } = state.annotations;
+            const { activatedStateIDs } = state.annotations;
             const {
                 number,
                 data,
@@ -300,7 +299,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    activatedStateIDs: updateActivatedStateIDs(states, activatedStateIDs),
                     states,
                     zLayer: {
                         min: minZ,
@@ -352,14 +351,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
             const { states } = action.payload;
-            const { activatedStateID } = state.annotations;
+            const { activatedStateIDs } = state.annotations;
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     states,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    activatedStateIDs: updateActivatedStateIDs(states, activatedStateIDs),
                     saving: {
                         ...state.annotations.saving,
                         uploading: false,
@@ -454,7 +453,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -470,7 +469,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -504,7 +503,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -524,7 +523,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -540,7 +539,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -556,7 +555,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -572,7 +571,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -588,7 +587,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 canvas: {
                     ...state.canvas,
@@ -713,8 +712,39 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.ACTIVATE_OBJECT: {
-            const { activatedStateID, activatedElementID, activatedAttributeID } = action.payload;
+        case AnnotationActionTypes.ACTIVATE_OBJECTS: {
+            const { activatedStateIDs, activatedElementID, activatedAttributeID, multiSelect } = action.payload;
+
+            const { canvas: { activeControl, instance } } = state;
+
+            if (activeControl !== ActiveControl.CURSOR || (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE) {
+                return state;
+            }
+
+            let finalActivatedStateIDs: number[];
+            if (multiSelect) {
+                const allIds = new Set<number>(state.annotations.activatedStateIDs);
+                for (const id of activatedStateIDs) {
+                    allIds.add(id);
+                }
+                finalActivatedStateIDs = Array.from(allIds);
+            } else {
+                // Otherwise we are single-selecting
+                finalActivatedStateIDs = activatedStateIDs;
+            }
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedElementID,
+                    activatedStateIDs: finalActivatedStateIDs,
+                    activatedAttributeID,
+                },
+            };
+        }
+        case AnnotationActionTypes.DEACTIVATE_OBJECT: {
+            const { deactivatedStateID } = action.payload;
 
             const {
                 canvas: { activeControl, instance },
@@ -728,26 +758,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID,
-                    activatedElementID,
-                    activatedAttributeID,
-                },
-            };
-        }
-        case AnnotationActionTypes.REMOVE_OBJECT: {
-            const { objectState, force } = action.payload;
-            return {
-                ...state,
-                remove: {
-                    ...state.remove,
-                    objectState,
-                    force,
+                    activatedStateIDs: deactivatedStateID === null ? [] :
+                        state.annotations.activatedStateIDs.filter((id) => id !== deactivatedStateID),
                 },
             };
         }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
-            const contextMenuClientID = state.canvas.contextMenu.clientID;
+            const contextMenuClientIDs = state.canvas.contextMenu.clientIDs;
             const contextMenuVisible = state.canvas.contextMenu.visible;
 
             return {
@@ -755,7 +773,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     history,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                     states: state.annotations.states.filter(
                         (_objectState: any) => _objectState.clientID !== objectState.clientID,
                     ),
@@ -767,11 +785,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         clientID: objectState.clientID === contextMenuClientID ? null : contextMenuClientID,
                         visible: objectState.clientID === contextMenuClientID ? false : contextMenuVisible,
                     },
-                },
-                remove: {
-                    objectState: null,
-                    force: false,
-                },
             };
         }
         case AnnotationActionTypes.REMOVE_OBJECT_FAILED: {
@@ -794,7 +807,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
             };
         }
@@ -954,7 +967,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     states,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                     collapsed: {},
                 },
             };
@@ -969,7 +982,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     states,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                     collapsed: {},
                 },
             };
@@ -978,8 +991,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 visible, left, top, type, pointID,
             } = action.payload;
-
-            const { activatedElementID, activatedStateID } = state.annotations;
 
             return {
                 ...state,
@@ -992,15 +1003,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         top,
                         type,
                         pointID,
-                        clientID: Number.isInteger(activatedElementID) ? activatedElementID : activatedStateID,
-                        parentID: Number.isInteger(activatedElementID) ? activatedStateID : null,
+                        clientID: state.annotations.activatedStateID,
                     },
                 },
             };
         }
         case AnnotationActionTypes.REDO_ACTION_SUCCESS:
         case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
-            const { activatedStateID } = state.annotations;
+            const { activatedStateIDs } = state.annotations;
             const {
                 history, states, minZ, maxZ,
             } = action.payload;
@@ -1009,7 +1019,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    activatedStateIDs: updateActivatedStateIDs(states, activatedStateIDs),
                     states,
                     history,
                     zLayer: {
@@ -1021,7 +1031,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
-            const { activatedStateID } = state.annotations;
+            const { activatedStateIDs } = state.annotations;
             const {
                 states, history, minZ, maxZ,
             } = action.payload;
@@ -1030,7 +1040,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    activatedStateIDs: updateActivatedStateIDs(states, activatedStateIDs),
                     states,
                     history,
                     zLayer: {
@@ -1055,15 +1065,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { cur } = action.payload;
             const { max, min } = state.annotations.zLayer;
 
-            let { activatedStateID } = state.annotations;
-            if (activatedStateID !== null) {
+            const { activatedStateIDs } = state.annotations;
+            // Deactivate annotations not on the new activate layer
+            // ROBTODO: make sure this does what its supposed to.
+            for (let i = activatedStateIDs.length - 1; i >= 0; i--) {
+                const activatedStateID = activatedStateIDs[i];
                 const idx = state.annotations.states.map((_state: any) => _state.clientID).indexOf(activatedStateID);
-                if (idx !== -1) {
-                    if (state.annotations.states[idx].zOrder > cur) {
-                        activatedStateID = null;
-                    }
-                } else {
-                    activatedStateID = null;
+                if (idx === -1 || state.annotations.states[idx].zOrder > cur) {
+                    activatedStateIDs.splice(i, 1);
                 }
             }
 
@@ -1071,7 +1080,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID,
+                    activatedStateIDs,
                     zLayer: {
                         ...state.annotations.zLayer,
                         cur: Math.max(Math.min(cur, max), min),
@@ -1099,7 +1108,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
                 },
                 drawing: {
                     ...state.drawing,

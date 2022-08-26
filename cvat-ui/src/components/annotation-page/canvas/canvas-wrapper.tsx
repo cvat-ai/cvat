@@ -30,7 +30,7 @@ interface Props {
     sidebarCollapsed: boolean;
     canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
-    activatedStateID: number | null;
+    activatedStateIDs: number[];
     activatedElementID: number | null;
     activatedAttributeID: number | null;
     annotations: any[];
@@ -87,7 +87,8 @@ interface Props {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject(activatedStateID: number | null, activatedElementID?: number | null): void;
+    onActivateObjects(activatedStateIDs: number[], activeElementID: number | null, multiselect: boolean): void;
+    onDeactivateObject(deactivatedStateID: number | null): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -111,6 +112,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showObjectsTextAlways,
             workspace,
             showProjections,
+            opacity,
             selectedOpacity,
             opacity,
             smoothImage,
@@ -162,7 +164,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameAngle,
             annotations,
             sidebarCollapsed,
-            activatedStateID,
             curZLayer,
             resetZoom,
             smoothImage,
@@ -238,14 +239,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     },
                     { once: true },
                 );
-            }
-        }
-
-        if (prevProps.activatedStateID !== null && prevProps.activatedStateID !== activatedStateID) {
-            canvasInstance.activate(null);
-            const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
-            if (el) {
-                (el as any).instance.fill({ opacity });
             }
         }
 
@@ -353,9 +346,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.setup', this.onCanvasSetup);
         canvasInstance.html().removeEventListener('canvas.canceled', this.onCanvasCancel);
         canvasInstance.html().removeEventListener('canvas.find', this.onCanvasFindObject);
-        canvasInstance.html().removeEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
-        canvasInstance.html().removeEventListener('canvas.moved', this.onCanvasCursorMoved);
-
+        canvasInstance.html().removeEventListener('canvas.boxselect', this.onCanvasBoxSelect);
+        // canvasInstance.html().removeEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
+        // canvasInstance.html().removeEventListener('canvas.moved', this.onCanvasCursorMoved);
         canvasInstance.html().removeEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().removeEventListener('canvas.fit', this.onCanvasImageFitted);
         canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged);
@@ -470,11 +463,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
-        const { workspace, activatedStateID, onActivateObject } = this.props;
+        const { workspace, activatedStateIDs, onDeactivateObject } = this.props;
 
         if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
-            if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
-                onActivateObject(null);
+            if (activatedStateIDs.length && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
+                onDeactivateObject(null);
             }
         }
     };
@@ -489,10 +482,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasContextMenu = (e: MouseEvent): void => {
-        const { activatedStateID, onUpdateContextMenu } = this.props;
+        const { activatedStateIDs, onUpdateContextMenu } = this.props;
 
         if (e.target && !(e.target as HTMLElement).classList.contains('svg_select_points')) {
-            onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY, ContextMenuType.CANVAS_SHAPE);
+            onUpdateContextMenu(activatedStateIDs.length > 0, e.clientX, e.clientY, ContextMenuType.CANVAS_SHAPE);
         }
     };
 
@@ -530,48 +523,95 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (sidebarItem) {
             sidebarItem.scrollIntoView();
         }
-    };
-
-    private onCanvasShapeDeactivated = (e: any): void => {
-        const { onActivateObject, activatedStateID } = this.props;
-        const { state } = e.detail;
-
-        // when we activate element, canvas deactivates the previous
-        // and triggers this event
-        // in this case we do not need to update our state
-        if (state.clientID === activatedStateID) {
-            onActivateObject(null);
-        }
-    };
-
-    private onCanvasCursorMoved = async (event: any): Promise<void> => {
-        const {
-            jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject,
-        } = this.props;
 
         if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
             return;
         }
 
-        const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+        // ROBTODO:
+        // const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+        // if (e.detail.state.shapeType === 'polyline' || e.detail.state.shapeType === 'points') {
+        //     if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+        //         return;
+        //     }
+        // }
 
-        if (result && result.state) {
-            if (['polyline', 'points'].includes(result.state.shapeType)) {
-                if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
-                    return;
-                }
+        if (e.detail.event.button === 2) {
+            // Right clicking on an inactive shape will single-select it, otherwise it will do nothing
+            // so we can show the context menu for the current active shape(s)
+            if (activatedStateIDs.length <= 1) {
+                this.props.onActivateObjects([clientID], false);
             }
-
-            const newActivatedElement = event.detail.activatedElementID || null;
-            if (activatedStateID !== result.state.clientID || activatedElementID !== newActivatedElement) {
-                onActivateObject(result.state.clientID, event.detail.activatedElementID || null);
+        } else if (e.detail.event.shiftKey) {
+            // Shift-select behavior Holding shift will toggle selectedness
+            if (activatedStateIDs.includes(clientID)) {
+                this.props.onDeactivateObject(clientID);
+            } else {
+                this.props.onActivateObjects([clientID], true);
             }
+        } else {
+            // Single-select the object clicked on
+            this.props.onActivateObjects([clientID], false);
         }
     };
 
+    private onCanvasBoxSelect = async (e: any): Promise<void> => {
+        const { workspace, jobInstance, onActivateObjects } = this.props;
+
+        if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(workspace)) {
+            return;
+        }
+
+        const result = await jobInstance.annotations.selectBox(e.detail.states, e.detail.x, e.detail.y, e.detail.width, e.detail.height);
+        const clientIDs = result.selectedStates.map((s: any) => s.clientID);
+
+        // Scroll to the first selected object
+        if (clientIDs.length > 0) {
+            const sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-${clientIDs[0]}`);
+            if (sidebarItem) {
+                sidebarItem.scrollIntoView();
+            }
+        }
+
+        onActivateObjects(clientIDs, false);
+    };
+
+    // private onCanvasShapeDeactivated = (e: any): void => {
+    //     // ROBTODO: shouldnt need to do this anymore
+    //     // const { onActivateObject, activatedStateIDs } = this.props;
+    //     // const { state } = e.detail;
+    //     // when we activate element, canvas deactivates the previous
+    //     // and triggers this event
+    //     // in this case we do not need to update our state
+    //     // if (state.clientID === activatedStateID) {
+    //     //     onActivateObject(null);
+    //     // }
+    // };
+
+    // private onCanvasCursorMoved = async (event: any): Promise<void> => {
+    //     // if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(this.props.workspace)) {
+    //     //     return;
+    //     // }
+
+    //     // const result = await this.props.jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+
+    //     // if (result && result.state) {
+    //     //     if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
+    //     //         if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+    //     //             return;
+    //     //         }
+    //     //     }
+
+    //     //     // Automatically activate objects on mouseover, unless there is a multi-selection made
+    //     //     if (activatedStateIDs.length <= 1 && !activatedStateIDs.includes(result.state.clientID)) {
+    //     //         onActivateObject(result.state.clientID, false);
+    //     //     }
+    //     // }
+    // };
+
     private onCanvasEditStart = (): void => {
-        const { onActivateObject, onEditShape } = this.props;
-        onActivateObject(null);
+        const { onDeactivateObject, onEditShape } = this.props;
+        onDeactivateObject(null);
         onEditShape(true);
     };
 
@@ -635,12 +675,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasPointContextMenu = (e: any): void => {
-        const { activatedStateID, onUpdateContextMenu, annotations } = this.props;
+        const { activatedStateIDs, onUpdateContextMenu, annotations } = this.props;
 
-        const [state] = annotations.filter((el: any) => el.clientID === activatedStateID);
-        if (![ShapeType.CUBOID, ShapeType.RECTANGLE, ShapeType.ELLIPSE, ShapeType.SKELETON].includes(state.shapeType)) {
+        if (annotations.some((a: any) => activatedStateIDs.includes(a.clientId) &&
+            ![ShapeType.CUBOID, ShapeType.RECTANGLE, ShapeType.ELLIPSE, ShapeType.SKELETON].includes(a.shapeType))) {
             onUpdateContextMenu(
-                activatedStateID !== null,
+                activatedStateIDs.length > 0,
                 e.detail.mouseEvent.clientX,
                 e.detail.mouseEvent.clientY,
                 ContextMenuType.CANVAS_SHAPE_POINT,
@@ -651,30 +691,72 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private activateOnCanvas(): void {
         const {
-            activatedStateID,
+            activatedStateIDs,
             activatedAttributeID,
-            selectedOpacity,
-            aamZoomMargin,
-            workspace,
-            annotations,
+            // selectedOpacity,
+            // aamZoomMargin,
+            // workspace,
+            // annotations,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
-        if (activatedStateID !== null) {
-            const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-            if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
-                if (activatedState.objectType !== ObjectType.TAG) {
-                    canvasInstance.focus(activatedStateID, aamZoomMargin);
-                } else {
-                    canvasInstance.fit();
+        // ROBTODO: auto zoom in attribute mode
+
+        canvasInstance.setActiveElements(activatedStateIDs, activatedAttributeID);
+
+        // const activatedObjects = annotations.filter((a) => activatedStateIDs.includes(a.clientID));
+
+        // if (activatedObjects.length === 1 && activatedObjects[0].objectType !== ObjectType.TAG) {
+        //     canvasInstance.focus(activatedObjects[0].clientID, aamZoomMargin);
+        // }
+
+        // for (const activatedStateID of activatedStateIDs) {
+        //     //     const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
+        //     //     if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+        //     //         if (activatedState.objectType !== ObjectType.TAG) {
+        //     //             canvasInstance.focus(activatedStateID, aamZoomMargin);
+        //     //         } else {
+        //     //             canvasInstance.fit();
+        //     //         }
+        //     //     }
+        //     //     if (activatedState && activatedState.objectType !== ObjectType.TAG) {
+        //     //         canvasInstance.activate(activatedStateID, activatedAttributeID);
+        //     //     }
+
+        //     // ROBTODO: why is opacity not set in the view????
+        //     const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
+        //     if (el) {
+        //         ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
+        //     }
+        // }
+    }
+
+    private updateShapesView(): void {
+        const {
+            annotations, opacity, colorBy, outlined, outlineColor,
+        } = this.props;
+
+        for (const state of annotations) {
+            let shapeColor = '';
+
+            if (colorBy === ColorBy.INSTANCE) {
+                shapeColor = state.color;
+            } else if (colorBy === ColorBy.GROUP) {
+                shapeColor = state.group.color;
+            } else if (colorBy === ColorBy.LABEL) {
+                shapeColor = state.label.color;
+            }
+
+            // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
+            const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
+            if (shapeView) {
+                const handler = (shapeView as any).instance.remember('_selectHandler');
+                if (handler && handler.nested) {
+                    handler.nested.fill({ color: shapeColor });
                 }
-            }
-            if (activatedState && activatedState.objectType !== ObjectType.TAG) {
-                canvasInstance.activate(activatedStateID, activatedAttributeID);
-            }
-            const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
-            if (el) {
-                ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
+
+                (shapeView as any).instance.fill({ color: shapeColor, opacity });
+                (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
         }
     }
@@ -737,9 +819,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener(
             'canvas.setup',
             () => {
-                const { activatedStateID, activatedAttributeID } = this.props;
+                const { activatedStateIDs, activatedAttributeID } = this.props;
                 canvasInstance.fit();
-                canvasInstance.activate(activatedStateID, activatedAttributeID);
+                canvasInstance.setActiveElements(activatedStateIDs, activatedAttributeID);
             },
             { once: true },
         );
@@ -757,8 +839,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.setup', this.onCanvasSetup);
         canvasInstance.html().addEventListener('canvas.canceled', this.onCanvasCancel);
         canvasInstance.html().addEventListener('canvas.find', this.onCanvasFindObject);
-        canvasInstance.html().addEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
-        canvasInstance.html().addEventListener('canvas.moved', this.onCanvasCursorMoved);
+        canvasInstance.html().addEventListener('canvas.boxselect', this.onCanvasBoxSelect);
+        // canvasInstance.html().addEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
+        // canvasInstance.html().addEventListener('canvas.moved', this.onCanvasCursorMoved);
 
         canvasInstance.html().addEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().addEventListener('canvas.fit', this.onCanvasImageFitted);

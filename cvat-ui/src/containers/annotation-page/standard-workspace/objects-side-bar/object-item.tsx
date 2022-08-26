@@ -12,8 +12,8 @@ import {
     changeGroupColorAsync,
     pasteShapeAsync,
     copyShape as copyShapeAction,
-    activateObject as activateObjectAction,
     propagateObject as propagateObjectAction,
+    activateObjects as activateObjectsAction,
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import {
@@ -30,6 +30,8 @@ interface OwnProps {
     readonly: boolean;
     clientID: number;
     objectStates: any[];
+    activateOnClick: boolean;
+    initialCollapsed: boolean;
 }
 
 interface StateToProps {
@@ -39,6 +41,7 @@ interface StateToProps {
     jobInstance: any;
     frameNumber: number;
     activated: boolean;
+    activateOnClick: boolean; // Whether the item becomes activated when the user clicks on it
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
@@ -52,8 +55,9 @@ interface StateToProps {
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
-    activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
-    removeObject: (objectState: any) => void;
+    collapseOrExpand(objectStates: any[], collapsed: boolean): void;
+    activateObjects: (activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean) => void;
+    removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeGroupColor(group: number, color: string): void;
@@ -63,7 +67,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             annotations: {
-                activatedStateID,
+                collapsed: statesCollapsed,
+                activatedStateIDs,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { attributes: jobAttributes, instance: jobInstance, labels },
@@ -78,7 +83,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const { objectStates: states, clientID } = own;
+    const {
+        objectStates: states, initialCollapsed, clientID, activateOnClick,
+    } = own;
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
 
@@ -91,7 +98,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         colorBy,
         jobInstance,
         frameNumber,
-        activated: activatedStateID === clientID,
+        activated: activatedStateIDs.includes(clientID),
+        activateOnClick,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
@@ -107,8 +115,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateState(state: any): void {
             dispatch(updateAnnotationsAsync([state]));
         },
-        activateObject(activatedStateID: number | null): void {
-            dispatch(activateObjectAction(activatedStateID, null, null));
+        collapseOrExpand(objectStates: any[], collapsed: boolean): void {
+            dispatch(collapseObjectItems(objectStates, collapsed));
+        },
+        activateObjects(activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean): void {
+            dispatch(activateObjectsAction(activatedStateIDs, activatedElementID, null, multiSelect));
         },
         removeObject(objectState: any): void {
             dispatch(removeObjectAction(objectState, false));
@@ -210,16 +221,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     };
 
-    private activate = (activeElementID?: number): void => {
+    private activate = (activatedElementID: number, multiSelect: boolean): void => {
         const {
-            objectState, ready, activeControl, activateObject, canvasInstance,
+            objectState, ready, activeControl, activateObjects, canvasInstance, activateOnClick,
         } = this.props;
 
-        if (ready && activeControl === ActiveControl.CURSOR) {
-            activateObject(
-                objectState.clientID,
-                (Number.isInteger(activeElementID) ? activeElementID : null) as number | null,
-            );
+        if (activateOnClick && ready && activeControl === ActiveControl.CURSOR) {
+            activateObjects([objectState.clientID], activatedElementID, multiSelect);
             if (canvasInstance instanceof Canvas3d) {
                 canvasInstance.activate(objectState.clientID);
             }

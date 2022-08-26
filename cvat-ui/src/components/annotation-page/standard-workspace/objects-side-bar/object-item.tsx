@@ -1,4 +1,6 @@
-// Copyright (C) 2021-2022 Intel Corporation
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,7 +31,7 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
-    activate(activeElementID?: number): void;
+    activate(activeElementID: number, multiSelect: boolean): void;
     copy(): void;
     propagate(): void;
     createURL(): void;
@@ -89,7 +91,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div className='cvat-objects-sidebar-state-item-color' style={{ background: `${color}` }} />
             <div
-                onMouseEnter={activateState}
+                onClick={(e) => activate(null, e.shiftKey)}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
                 style={{ backgroundColor: `${color}88` }}

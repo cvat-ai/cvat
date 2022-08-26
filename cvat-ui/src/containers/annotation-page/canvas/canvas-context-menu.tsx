@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 import { CombinedState, ContextMenuType, Workspace } from 'reducers';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
-import { updateCanvasContextMenu } from 'actions/annotation-actions';
+import { updateAnnotationsAsync, updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { ObjectState } from 'cvat-core-wrapper';
@@ -20,12 +20,13 @@ interface OwnProps {
 
 interface StateToProps {
     contextMenuParentID: number | null;
-    contextMenuClientID: number | null;
+    contextMenuClientIDs: number[];
     objectStates: any[];
     visible: boolean;
     top: number;
     left: number;
     type: ContextMenuType;
+    labels: any[];
     collapsed: boolean | undefined;
     workspace: Workspace;
     latestComments: string[];
@@ -33,6 +34,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     onStartIssue(position: number[]): void;
+    updateState(objectStates: any[]): void;
     openIssue(position: number[], message: string): void;
 }
 
@@ -42,10 +44,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: { collapsed, states: objectStates },
             canvas: {
                 contextMenu: {
-                    visible, top, left, type, clientID, parentID,
+                    visible, top, left, type, clientIDs, parentID,
                 },
                 ready,
             },
+            job: { labels },
             workspace,
         },
         review: { latestComments },
@@ -53,19 +56,20 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     let objectState = objectStates.find((_state: ObjectState) => {
         if (Number.isInteger(parentID)) return _state.clientID === parentID;
-        return _state.clientID === clientID;
+        return clientIDs.includes(_state.clientID);
     });
     if (Number.isInteger(parentID) && objectState) {
-        objectState = objectState.elements.find((_state: ObjectState) => _state.clientID === clientID);
+        objectState = objectState.elements.find((_state: ObjectState) => clientIDs.includes(_state.clientID));
     }
 
     return {
-        contextMenuClientID: clientID,
+        contextMenuClientIDs: clientIDs,
         contextMenuParentID: parentID,
-        collapsed: clientID !== null ? collapsed[clientID] : undefined,
+        collapsed: clientIDs.length === 1 ? collapsed[clientIDs[0]] : undefined,
         objectStates,
+        labels,
         visible:
-            clientID !== null &&
+            clientIDs.length > 0 &&
             visible &&
             ready &&
             !!objectState,
@@ -82,6 +86,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
             dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+        updateState(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
         },
         openIssue(position: number[], message: string): void {
             dispatch(reviewActions.startIssue(position));
@@ -223,32 +230,36 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         const { left, top } = this.state;
         const {
             visible,
-            contextMenuClientID,
+            contextMenuClientIDs,
             contextMenuParentID,
             objectStates,
+            labels,
             type,
             readonly,
             workspace,
             latestComments,
             onStartIssue,
             openIssue,
+            updateState,
         } = this.props;
 
         return (
             <>
                 {type === ContextMenuType.CANVAS_SHAPE && (
                     <CanvasContextMenuComponent
-                        contextMenuClientID={contextMenuClientID}
+                        contextMenuClientIDs={contextMenuClientIDs}
                         contextMenuParentID={contextMenuParentID}
                         readonly={readonly}
                         left={left}
                         top={top}
                         visible={visible}
                         objectStates={objectStates}
+                        labels={labels}
                         workspace={workspace}
                         latestComments={latestComments}
                         onStartIssue={onStartIssue}
                         openIssue={openIssue}
+                        updateState={updateState}
                     />
                 )}
             </>

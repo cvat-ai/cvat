@@ -24,6 +24,7 @@ module.exports = {
         'plugin:import/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
     rules: {
+        // ROBTODO: throws on every file, even ones with the headers!!
         // 'header/header': [2, 'line', [{
         //     pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
         //     template: ' Copyright (C) 2022 Intel Corporation'
@@ -35,7 +36,7 @@ module.exports = {
         'no-restricted-syntax': [0, { selector: 'ForOfStatement' }],
         'no-await-in-loop': 0,
         'indent': ['error', 4, { 'SwitchCase': 1 }],
-        'max-len': ['error', { code: 120, ignoreStrings: true }],
+        'max-len': ['error', { code: 170, ignoreStrings: true }],
         'func-names': 0,
         'valid-typeof': 0,
         'no-useless-constructor': 0, // sometimes constructor is necessary to generate right documentation in cvat-core
@@ -51,22 +52,6 @@ module.exports = {
         'security/detect-object-injection': 0, // the rule is relevant for user input data on the node.js environment
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
         'import/prefer-default-export': 0, // works incorrect with interfaces
-
-        '@typescript-eslint/ban-ts-comment': 0,
-        '@typescript-eslint/no-explicit-any': 0,
-        '@typescript-eslint/indent': ['error', 4],
-        '@typescript-eslint/lines-between-class-members': 0,
-        '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
-        '@typescript-eslint/explicit-module-boundary-types': 'off',
-        '@typescript-eslint/ban-types': [
-            'error',
-            {
-                types: {
-                    '{}': false, // TODO: try to fix with Record<string, unknown>
-                    object: false, // TODO: try to fix with Record<string, unknown>
-                    Function: false, // TODO: try to fix somehow
-                },
-            },
-        ],
+        "react/destructuring-assignment": 0
     },
 };

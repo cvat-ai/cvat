@@ -1,0 +1,132 @@
+// Copyright (C) 2019-2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import * as SVG from 'svg.js';
+import consts from './consts';
+
+import { translateToSVG } from './shared';
+
+import { Geometry } from './canvasModel';
+
+/**
+ * Implements box drawing behavior.
+ */
+export class BoxSelector {
+    private bindedOnSelectStart: (event: MouseEvent) => void;
+    private bindedOnSelectUpdate: (event: MouseEvent) => void;
+    private bindedOnSelectStop: (event: MouseEvent) => void;
+    private selectionRect: SVG.Rect | null;
+    private startSelectionPoint: {
+        x: number;
+        y: number;
+    };
+
+    /**
+     * Constructs a new BoxSelector
+     * @param onBoxDrawn callback executed when the user finishes drawing a box
+     * @param canvas canvas upon which the user is drawing a box
+     * @param geometry canvas geometry
+     */
+    public constructor(
+        private readonly onBoxDrawn: (x: number, y: number, width: number, height: number) => void,
+        private readonly canvas: SVG.Container,
+        private geometry: Geometry,
+        private readonly boxCssClass: string,
+    ) {
+        this.selectionRect = null;
+        this.startSelectionPoint = {
+            x: 0,
+            y: 0,
+        };
+        this.bindedOnSelectStart = this.onSelectStart.bind(this);
+        this.bindedOnSelectUpdate = this.onSelectUpdate.bind(this);
+        this.bindedOnSelectStop = this.onSelectStop.bind(this);
+    }
+
+    private onSelectStart(event: MouseEvent): void {
+        if (!this.selectionRect && event.which === 1) {
+            const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
+            this.startSelectionPoint = {
+                x: point[0],
+                y: point[1],
+            };
+
+            this.selectionRect = this.canvas.rect().addClass(this.boxCssClass);
+            this.selectionRect.attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                ...this.startSelectionPoint,
+            });
+        }
+    }
+
+    private getSelectionBox(event: MouseEvent): {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    } {
+        const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
+        const stopSelectionPoint = {
+            x: point[0],
+            y: point[1],
+        };
+
+        const xtl = Math.min(this.startSelectionPoint.x, stopSelectionPoint.x);
+        const ytl = Math.min(this.startSelectionPoint.y, stopSelectionPoint.y);
+        const xbr = Math.max(this.startSelectionPoint.x, stopSelectionPoint.x);
+        const ybr = Math.max(this.startSelectionPoint.y, stopSelectionPoint.y);
+
+        return {
+            x: xtl,
+            y: ytl,
+            width: xbr - xtl,
+            height: ybr - ytl,
+        };
+    }
+
+    private onSelectUpdate(event: MouseEvent): void {
+        if (this.selectionRect) {
+            this.selectionRect.attr({
+                ...this.getSelectionBox(event),
+            });
+        }
+    }
+
+    private onSelectStop(event: MouseEvent): void {
+        if (this.selectionRect) {
+            const box = this.getSelectionBox(event);
+            this.selectionRect.remove();
+            this.selectionRect = null;
+            this.startSelectionPoint = {
+                x: 0,
+                y: 0,
+            };
+            const threshold = 5;
+            if (box.width > threshold && box.height > threshold) {
+                this.onBoxDrawn(box.x, box.y, box.width, box.height);
+            }
+        }
+    }
+
+    public startDrawingMode(): void {
+        this.canvas.node.addEventListener('mousedown', this.bindedOnSelectStart);
+        this.canvas.node.addEventListener('mousemove', this.bindedOnSelectUpdate);
+        this.canvas.node.addEventListener('mouseup', this.bindedOnSelectStop);
+    }
+
+    public cancelDrawingMode(): void {
+        this.canvas.node.removeEventListener('mousedown', this.bindedOnSelectStart);
+        this.canvas.node.removeEventListener('mousemove', this.bindedOnSelectUpdate);
+        this.canvas.node.removeEventListener('mouseup ', this.bindedOnSelectStop);
+    }
+
+    public transform(geometry: Geometry): void {
+        this.geometry = geometry;
+        if (this.selectionRect) {
+            this.selectionRect.style({
+                'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
+            });
+        }
+    }
+}

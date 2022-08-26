@@ -24,6 +24,7 @@ import {
     showStatistics as showStatisticsAction,
     switchPlay,
     undoActionAsync,
+    deactivateObject,
     deleteFrameAsync,
     restoreFrameAsync,
     switchNavigationBlocked as switchNavigationBlockedAction,
@@ -187,6 +188,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(searchEmptyFrameAsync(sessionInstance, frameFrom, frameTo));
         },
         changeWorkspace(workspace: Workspace): void {
+            dispatch(deactivateObject(null));
             dispatch(changeWorkspaceAction(workspace));
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {

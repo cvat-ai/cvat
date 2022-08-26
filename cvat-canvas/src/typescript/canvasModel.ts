@@ -37,8 +37,17 @@ export interface FocusData {
     padding: number;
 }
 
-export interface ActiveElement {
-    clientID: number | null;
+/**
+ * What elements are active (i.e. selected) in the canvas
+ */
+export interface ActiveElements {
+    /**
+     * Ids of the 0-n shapes that are selected
+     */
+    clientIDs: number[];
+    /**
+     * optional attribute that is active for the active shapes.
+     */
     attributeID: number | null;
 }
 
@@ -184,7 +193,7 @@ export interface CanvasModel {
     readonly zLayer: number | null;
     readonly gridSize: Size;
     readonly focusData: FocusData;
-    readonly activeElement: ActiveElement;
+    readonly activeElements: ActiveElements;
     readonly drawData: DrawData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
@@ -201,7 +210,7 @@ export interface CanvasModel {
 
     setup(frameData: any, objectStates: any[], zLayer: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
-    activate(clientID: number | null, attributeID: number | null): void;
+    setActiveElements(clientIDs: number[], attributeID: number | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
@@ -228,7 +237,7 @@ export interface CanvasModel {
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
-        activeElement: ActiveElement;
+        activeElement: ActiveElements;
         angle: number;
         canvasSize: Size;
         configuration: Configuration;
@@ -261,7 +270,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         this.data = {
             activeElement: {
-                clientID: null,
+                clientIDs: [],
                 attributeID: null,
             },
             angle: 0,
@@ -478,16 +487,23 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ISSUE_REGIONS_UPDATED);
     }
 
-    public activate(clientID: number | null, attributeID: number | null): void {
-        if (this.data.activeElement.clientID === clientID && this.data.activeElement.attributeID === attributeID) {
+    /**
+     * Activates a new element, adding it to the list of active elements.
+     *
+     * @param clientID
+     * @param attributeID
+     * @returns
+     */
+    public setActiveElements(clientIDs: number[], attributeID: number | null): void {
+        if (this.areEqual(this.data.activeElement.clientIDs, clientIDs)) {
             return;
         }
 
-        if (this.data.mode !== Mode.IDLE && clientID !== null) {
+        if (this.data.mode !== Mode.IDLE && clientIDs.length > 0) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (typeof clientID === 'number') {
+        for (const clientID of clientIDs) {
             const [state] = this.objects.filter((_state: any): boolean => _state.clientID === clientID);
             if (!state || state.objectType === 'tag') {
                 return;
@@ -495,11 +511,24 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.activeElement = {
-            clientID,
+            clientIDs,
             attributeID,
         };
 
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
+    }
+
+    private areEqual(a1: any[], a2: any[]): boolean {
+        if (a1.length !== a2.length) {
+            return false;
+        }
+
+        for (let i = 0; i < a1.length; i++) {
+            if (a1[i] !== a2[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public rotate(rotationAngle: number): void {
@@ -829,7 +858,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return { ...this.data.focusData };
     }
 
-    public get activeElement(): ActiveElement {
+    public get activeElements(): ActiveElements {
         return { ...this.data.activeElement };
     }
 

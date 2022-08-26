@@ -21,12 +21,13 @@ import {
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
     splitAnnotationsAsync,
-    activateObject,
+    activateObjects,
     updateCanvasContextMenu,
     addZLayer,
     switchZLayer,
     fetchAnnotationsAsync,
     getDataFailed,
+    deactivateObject,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -55,7 +56,7 @@ interface StateToProps {
     sidebarCollapsed: boolean;
     canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
-    activatedStateID: number | null;
+    activatedStateIDs: number[];
     activatedElementID: number | null;
     activatedAttributeID: number | null;
     annotations: any[];
@@ -115,7 +116,8 @@ interface DispatchToProps {
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
+    onActivateObjects: (activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean) => void;
+    onDeactivateObject(deactivatedStateID: number | null): void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -143,7 +145,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             annotations: {
                 states: annotations,
-                activatedStateID,
+                activatedStateIDs,
                 activatedElementID,
                 activatedAttributeID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
@@ -191,7 +193,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,
         frame,
-        activatedStateID,
+        activatedStateIDs,
         activatedElementID,
         activatedAttributeID,
         annotations,
@@ -280,12 +282,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
-        onActivateObject(activatedStateID: number | null, activatedElementID: number | null = null): void {
-            if (activatedStateID === null) {
+        onActivateObjects(activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean): void {
+            dispatch(activateObjects(activatedStateIDs, activatedElementID, null, multiSelect));
+        },
+        onDeactivateObject(deactivatedStateID: number | null): void {
+            if (deactivatedStateID === null) {
                 dispatch(updateCanvasContextMenu(false, 0, 0));
             }
-
-            dispatch(activateObject(activatedStateID, activatedElementID, null));
+            dispatch(deactivateObject(deactivatedStateID));
         },
         onUpdateContextMenu(
             visible: boolean,

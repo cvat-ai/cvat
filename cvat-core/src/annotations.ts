@@ -223,6 +223,19 @@
         );
     }
 
+    function selectObjectsInBox(session, objectStates, x, y, width, height) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).collection.selectBox(objectStates, x, y, width, height);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
     async function uploadAnnotations(session, file, loader) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         if (!(loader instanceof Loader)) {
@@ -388,6 +401,7 @@
         clearAnnotations,
         annotationsStatistics,
         selectObject,
+        selectObjectsInBox,
         uploadAnnotations,
         importAnnotations,
         exportAnnotations,

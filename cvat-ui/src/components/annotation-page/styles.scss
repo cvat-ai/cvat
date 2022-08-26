@@ -292,6 +292,12 @@ button.cvat-predictor-button {
     max-height: 50%;
     overflow-y: auto;
 
+    .change-all-labels-container {
+        padding: 3px 3px 3px 7px;
+        background-color: $background-color-2;
+        border: 2px solid $border-color-3;
+    }
+
     &:hover {
         opacity: 1;
     }
