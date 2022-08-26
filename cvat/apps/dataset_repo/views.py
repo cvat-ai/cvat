@@ -109,10 +109,8 @@ def update_git_repo(request, tid):
             status=http.HTTPStatus.OK,
         )
     except Exception as ex:
-        try:
+        with contextlib.suppress(Exception):
             slogger.task[tid].error("error occurred during changing repository request", exc_info=True)
-        except Exception:
-            pass
         return HttpResponseBadRequest(str(ex))
 
 
