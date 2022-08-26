@@ -16,11 +16,11 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
-import { StorageLocation, Storage } from 'reducers';
+import { StorageLocation } from 'reducers';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -51,8 +51,8 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean | null;
     useProjectTargetStorage: boolean | null;
-    sourceStorage: Storage;
-    targetStorage: Storage;
+    sourceStorage: StorageData;
+    targetStorage: StorageData;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -67,11 +67,11 @@ const initialValues: AdvancedConfiguration = {
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
-        cloud_storage_id: null,
+        cloudStorageId: undefined,
     },
     targetStorage: {
         location: StorageLocation.LOCAL,
-        cloud_storage_id: null,
+        cloudStorageId: undefined,
     }
 };
 
@@ -79,12 +79,16 @@ interface Props {
     onSubmit(values: AdvancedConfiguration): void;
     onChangeUseProjectSourceStorage(value: boolean): void;
     onChangeUseProjectTargetStorage(value: boolean): void;
+    onChangeSourceStorageLocation: (value: StorageLocation) => void;
+    onChangeTargetStorageLocation: (value: StorageLocation) => void;
     installedGit: boolean;
     projectId: number | null;
     useProjectSourceStorage?: boolean | null;
     useProjectTargetStorage?: boolean | null;
     activeFileManagerTab: string;
-    dumpers: []
+    dumpers: [];
+    sourceStorageLocation: StorageLocation;
+    targetStorageLocation: StorageLocation;
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -192,19 +196,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
-                        sourceStorage: values.useProjectSourceStorage ? {
-                            // project.sourceStorage contains more properties than location and cloud_storage_id
-                            location: project?.sourceStorage?.location,
-                            cloud_storage_id: project?.sourceStorage?.cloud_storage_id,
-                        } : {
-                            ...values.sourceStorage,
-                        },
-                        targetStorage: values.useProjectTargetStorage ? {
-                            location: project?.targetStorage?.location,
-                            cloud_storage_id: project?.targetStorage?.cloud_storage_id,
-                        } : {
-                            ...values.targetStorage,
-                        },
+                        sourceStorage: values.useProjectSourceStorage ?
+                            new Storage(project.sourceStorage || { location: StorageLocation.LOCAL })
+                        : new Storage(values.sourceStorage),
+                        targetStorage: values.useProjectTargetStorage ?
+                            new Storage(project.targetStorage || { location: StorageLocation.LOCAL })
+                        : new Storage(values.targetStorage),
                     });
                     return Promise.resolve();
                 })
@@ -220,12 +217,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             onSubmit({
                                 ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                                 frameFilter,
-                                sourceStorage: {
-                                    ...values.sourceStorage,
-                                },
-                                targetStorage: {
-                                    ...values.targetStorage,
-                                },
+                                sourceStorage: new Storage(values.sourceStorage),
+                                targetStorage: new Storage(values.targetStorage),
                             });
                             return Promise.resolve();
                         },
@@ -506,15 +499,19 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const {
             projectId,
             useProjectSourceStorage,
+            sourceStorageLocation,
             onChangeUseProjectSourceStorage,
+            onChangeSourceStorageLocation,
         } = this.props;
         return (
             <SourceStorageField
                 projectId={projectId}
+                locationValue={sourceStorageLocation}
                 switchDescription='Use project source storage'
                 storageDescription='Specify source storage for import resources like annotation, backups'
                 useProjectStorage={useProjectSourceStorage}
                 onChangeUseProjectStorage={onChangeUseProjectSourceStorage}
+                onChangeLocationValue={onChangeSourceStorageLocation}
             />
         );
     }
@@ -523,15 +520,19 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const {
             projectId,
             useProjectTargetStorage,
+            targetStorageLocation,
             onChangeUseProjectTargetStorage,
+            onChangeTargetStorageLocation,
         } = this.props;
         return (
             <TargetStorageField
                 projectId={projectId}
+                locationValue={targetStorageLocation}
                 switchDescription='Use project target storage'
                 storageDescription='Specify target storage for export resources like annotation, backups                '
                 useProjectStorage={useProjectTargetStorage}
                 onChangeUseProjectStorage={onChangeUseProjectTargetStorage}
+                onChangeLocationValue={onChangeTargetStorageLocation}
             />
         );
     }

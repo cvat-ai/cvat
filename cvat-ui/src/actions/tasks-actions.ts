@@ -5,9 +5,8 @@
 
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { TasksQuery, CombinedState, Indexable } from 'reducers';
-import { getCVATStore } from 'cvat-store';
-import { getCore } from 'cvat-core-wrapper';
+import { TasksQuery, CombinedState, Indexable, StorageLocation } from 'reducers';
+import { getCore, Storage } from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();
@@ -194,8 +193,8 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            source_storage: data.advanced.sourceStorage,
-            target_storage: data.advanced.targetStorage,
+            source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
         };
 
         if (data.projectId) {

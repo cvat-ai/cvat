@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { StorageLocation } from './enums';
-import { Storage } from './interfaces';
+import { Storage } from './storage';
 
 type Params = {
     org: number | string,
@@ -28,7 +28,7 @@ function enableOrganization() {
     return { org: config.organizationID || '' };
 }
 
-function configureStorage(storage: Storage = { location: StorageLocation.LOCAL }, useDefaultLocation: boolean = false) {
+function configureStorage(storage: Storage, useDefaultLocation: boolean = false) {
     return {
         use_default_location: useDefaultLocation,
         ...(!useDefaultLocation ? {
@@ -2061,8 +2061,8 @@ class ServerProxy {
                         create: createProject,
                         delete: deleteProject,
                         exportDataset: exportDataset('projects'),
-                        export: backupProject,
-                        import: restoreProject,
+                        backup: backupProject,
+                        restore: restoreProject,
                         importDataset,
                     }),
                     writable: false,
@@ -2075,8 +2075,8 @@ class ServerProxy {
                         create: createTask,
                         delete: deleteTask,
                         exportDataset: exportDataset('tasks'),
-                        export: backupTask,
-                        import: restoreTask,
+                        backup: backupTask,
+                        restore: restoreTask,
                     }),
                     writable: false,
                 },

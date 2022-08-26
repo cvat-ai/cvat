@@ -12,7 +12,7 @@ const Project = require('./project').default;
 const { Task, Job } = require('./session');
 const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
 const { getDeletedFrames } = require('./frames');
-import { Storage } from './interfaces';
+import { Storage } from './storage';
 
 const jobCache = new WeakMap();
 const taskCache = new WeakMap();

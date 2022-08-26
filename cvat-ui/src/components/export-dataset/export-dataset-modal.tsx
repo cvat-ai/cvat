@@ -16,9 +16,9 @@ import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
 import Space from 'antd/lib/space';
 import TargetStorageField from 'components/storage/target-storage-field';
-import { CombinedState, Storage, StorageLocation } from 'reducers';
+import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -26,7 +26,7 @@ type FormValues = {
     selectedFormat: string | undefined;
     saveImages: boolean;
     customName: string | undefined;
-    targetStorage: any;
+    targetStorage: StorageData;
     useProjectTargetStorage: boolean;
 };
 
@@ -36,7 +36,7 @@ const initialValues: FormValues = {
     customName: undefined,
     targetStorage: {
         location: StorageLocation.LOCAL,
-        cloud_storage_id: undefined,
+        cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
 }
@@ -46,10 +46,10 @@ function ExportDatasetModal(): JSX.Element | null {
     const [activities, setActivities] = useState<string[]>([]);
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
     const [form] = Form.useForm();
-    const [targetStorage, setTargetStorage] = useState<Storage>({
+    const [targetStorage, setTargetStorage] = useState<StorageData>({
         location: StorageLocation.LOCAL,
     });
-    const [defaultStorageLocation, setDefaultStorageLocation] = useState<string | null>(null);
+    const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
     const dispatch = useDispatch();
@@ -91,20 +91,14 @@ function ExportDatasetModal(): JSX.Element | null {
     useEffect(() => {
         if (instance && resource === 'dataset') {
             if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
-                setDefaultStorageLocation((instance.targetStorage) ?
-                    instance.targetStorage.location : null);
-                setDefaultStorageCloudId((instance.targetStorage) ?
-                    instance.targetStorage.cloud_storage_id
-                : null);
+                setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
+                setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
             } else {
                 core.tasks.get({ id: instance.taskId }).then((response: any) => {
                     if (response.length) {
                         const [taskInstance] = response;
-                        setDefaultStorageLocation((taskInstance.targetStorage) ?
-                            taskInstance.targetStorage.location : null);
-                        setDefaultStorageCloudId((taskInstance.targetStorage) ?
-                            taskInstance.targetStorage.cloud_storage_id
-                        : null);
+                        setDefaultStorageLocation(taskInstance.targetStorage?.location || StorageLocation.LOCAL);
+                        setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId || null);
                     }
                 });
             }
@@ -119,6 +113,7 @@ function ExportDatasetModal(): JSX.Element | null {
 
     const closeModal = (): void => {
         setUseDefaultTargetStorage(true);
+        setTargetStorage({ location: StorageLocation.LOCAL });
         form.resetFields();
         dispatch(exportActions.closeExportModal());
     };
@@ -132,10 +127,10 @@ function ExportDatasetModal(): JSX.Element | null {
                     values.selectedFormat as string,
                     values.saveImages,
                     useDefaultTargetStorage,
-                    useDefaultTargetStorage ? {
+                    useDefaultTargetStorage ? new Storage({
                         location: defaultStorageLocation,
-                        cloud_storage_id: defaultStorageCloudId,
-                    }: targetStorage,
+                        cloudStorageId: defaultStorageCloudId,
+                    }): new Storage(targetStorage),
                     values.customName ? `${values.customName}.zip` : null,
                 ),
             );
@@ -151,12 +146,6 @@ function ExportDatasetModal(): JSX.Element | null {
         },
         [instance, instanceType, targetStorage],
     );
-
-    const onChangeTargetStorage = (value: Storage): void => {
-        setTargetStorage({
-            ...value,
-        } as Storage)
-    }
 
     if (resource !== 'dataset') {
         return null;
@@ -228,8 +217,12 @@ function ExportDatasetModal(): JSX.Element | null {
                     switchHelpMessage={helpMessage}
                     useProjectStorage={useDefaultTargetStorage}
                     storageDescription='Specify target storage for export dataset'
+                    locationValue={targetStorage.location}
                     onChangeUseProjectStorage={(value: boolean) => setUseDefaultTargetStorage(value)}
-                    onChangeStorage={(value: Storage) => onChangeTargetStorage(value)}
+                    onChangeStorage={(value: StorageData) => setTargetStorage(value)}
+                    onChangeLocationValue={(value: StorageLocation) => {
+                        setTargetStorage({ location: value });
+                    }}
                 />
             </Form>
         </Modal>

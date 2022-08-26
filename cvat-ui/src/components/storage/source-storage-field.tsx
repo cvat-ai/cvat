@@ -4,16 +4,20 @@
 
 import './styles.scss';
 import React from 'react';
-import { Storage } from 'reducers';
 import StorageWithSwitchField from './storage-with-switch-field';
+
+import { StorageData } from 'cvat-core-wrapper';
+import { StorageLocation } from 'reducers';
 
 export interface Props {
     projectId: number | null;
+    locationValue: StorageLocation;
     switchDescription?: string;
     switchHelpMessage?: string;
     storageDescription?: string;
     useProjectStorage?: boolean | null;
-    onChangeStorage?: (values: Storage) => void;
+    onChangeLocationValue?: (value: StorageLocation) => void;
+    onChangeStorage?: (values: StorageData) => void;
     onChangeUseProjectStorage?: (value: boolean) => void;
 }
 
@@ -24,8 +28,10 @@ export default function SourceStorageField(props: Props): JSX.Element {
         switchHelpMessage,
         storageDescription,
         useProjectStorage,
+        locationValue,
         onChangeUseProjectStorage,
         onChangeStorage,
+        onChangeLocationValue,
     } = props;
 
 
@@ -35,12 +41,14 @@ export default function SourceStorageField(props: Props): JSX.Element {
             storageName='sourceStorage'
             switchName='useProjectSourceStorage'
             projectId={projectId}
+            locationValue={locationValue}
             useProjectStorage={useProjectStorage}
             switchDescription={switchDescription}
             switchHelpMessage={switchHelpMessage}
             storageDescription={storageDescription}
             onChangeUseProjectStorage={onChangeUseProjectStorage}
             onChangeStorage={onChangeStorage}
+            onChangeLocationValue={onChangeLocationValue}
         />
     );
 }

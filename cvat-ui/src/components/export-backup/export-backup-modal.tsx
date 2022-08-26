@@ -12,9 +12,9 @@ import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 
-import { CombinedState, Storage } from 'reducers';
+import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 
 import TargetStorageField from 'components/storage/target-storage-field';
 
@@ -22,15 +22,15 @@ const core = getCore();
 
 type FormValues = {
     customName: string | undefined;
-    targetStorage: any;
+    targetStorage: StorageData;
     useProjectTargetStorage: boolean;
 };
 
 const initialValues: FormValues = {
     customName: undefined,
     targetStorage: {
-        location: undefined,
-        cloud_storage_id: undefined,
+        location: StorageLocation.LOCAL,
+        cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
 }
@@ -41,7 +41,8 @@ function ExportBackupModal(): JSX.Element | null {
     const [instanceType, setInstanceType] = useState('');
     const [activity, setActivity] = useState(false);
     const [useDefaultStorage, setUseDefaultStorage] = useState(true);
-    const [defaultStorageLocation, setDefaultStorageLocation] = useState<string | null>(null);
+    const [storageLocation, setStorageLocation] = useState(StorageLocation.LOCAL);
+    const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
     const resource = useSelector((state: CombinedState) => state.export.resource);
@@ -74,11 +75,8 @@ function ExportBackupModal(): JSX.Element | null {
 
     useEffect(() => {
         if (instance && resource === 'backup') {
-            setDefaultStorageLocation((instance.targetStorage) ?
-                instance.targetStorage.location : null);
-            setDefaultStorageCloudId((instance.targetStorage) ?
-                instance.targetStorage.cloud_storage_id
-            : null);
+            setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
+            setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
         }
     }, [instance?.id, resource, instance?.targetStorage]);
 
@@ -90,6 +88,7 @@ function ExportBackupModal(): JSX.Element | null {
 
     const closeModal = (): void => {
         setUseDefaultStorage(true);
+        setStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
         dispatch(exportActions.closeExportModal());
     };
@@ -99,10 +98,10 @@ function ExportBackupModal(): JSX.Element | null {
             dispatch(
                 exportBackupAsync(
                     instance,
-                    {
+                    new Storage({
                         location: useDefaultStorage ? defaultStorageLocation : values.targetStorage?.location,
-                        cloudStorageId: useDefaultStorage ? defaultStorageCloudId : values.targetStorage?.cloud_storage_id,
-                    } as Storage,
+                        cloudStorageId: useDefaultStorage ? defaultStorageCloudId : values.targetStorage?.cloudStorageId,
+                    }),
                     useDefaultStorage,
                     values.customName ? `${values.customName}.zip` : undefined
                 ),
@@ -152,7 +151,9 @@ function ExportBackupModal(): JSX.Element | null {
                     switchHelpMessage={helpMessage}
                     useProjectStorage={useDefaultStorage}
                     storageDescription={`Specify target storage for export ${instanceType}`}
+                    locationValue={storageLocation}
                     onChangeUseProjectStorage={(value: boolean) => setUseDefaultStorage(value)}
+                    onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
                 />
             </Form>
         </Modal>

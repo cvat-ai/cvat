@@ -26,11 +26,13 @@ import { StorageLocation } from 'reducers';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
+import { Storage, StorageData } from 'cvat-core-wrapper';
+
 const { Option } = Select;
 
 interface AdvancedConfiguration {
-    sourceStorage: any;
-    targetStorage: any;
+    sourceStorage: StorageData;
+    targetStorage: StorageData;
     bug_tracker?: string | null;
 }
 
@@ -38,13 +40,21 @@ const initialValues: AdvancedConfiguration = {
     bug_tracker: null,
     sourceStorage: {
         location: StorageLocation.LOCAL,
-        cloud_storage_id: null,
+        cloudStorageId: undefined,
     },
     targetStorage: {
         location: StorageLocation.LOCAL,
-        cloud_storage_id: null,
+        cloudStorageId: undefined,
     },
 };
+
+interface AdvancedConfigurationProps {
+    formRef: RefObject<FormInstance>;
+    sourceStorageLocation: StorageLocation;
+    targetStorageLocation: StorageLocation;
+    onChangeSourceStorageLocation?: (value: StorageLocation) => void;
+    onChangeTargetStorageLocation?: (value: StorageLocation) => void;
+}
 
 function NameConfigurationForm(
     { formRef, inputRef }:
@@ -122,8 +132,15 @@ function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstan
     );
 }
 
-function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
-        return (
+function AdvancedConfigurationForm(props: AdvancedConfigurationProps): JSX.Element {
+    const {
+        formRef,
+        sourceStorageLocation,
+        targetStorageLocation,
+        onChangeSourceStorageLocation,
+        onChangeTargetStorageLocation,
+    } = props;
+    return (
         <Form layout='vertical' ref={formRef} initialValues={initialValues}>
             <Form.Item
                 name='bug_tracker'
@@ -149,12 +166,16 @@ function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstanc
                     <SourceStorageField
                         projectId={null}
                         storageDescription='Specify source storage for import resources like annotation, backups'
+                        locationValue={sourceStorageLocation}
+                        onChangeLocationValue={onChangeSourceStorageLocation}
                     />
                 </Col>
                 <Col span={11} offset={1}>
                     <TargetStorageField
                         projectId={null}
                         storageDescription='Specify target storage for export resources like annotation, backups'
+                        locationValue={targetStorageLocation}
+                        onChangeLocationValue={onChangeTargetStorageLocation}
                     />
                 </Col>
             </Row>
@@ -164,6 +185,8 @@ function AdvancedConfigurationForm({ formRef }: { formRef: RefObject<FormInstanc
 
 export default function CreateProjectContent(): JSX.Element {
     const [projectLabels, setProjectLabels] = useState<any[]>([]);
+    const [sourceStorageLocation, setSourceStorageLocation] = useState(StorageLocation.LOCAL);
+    const [targetStorageLocation, setTargetStorageLocation] = useState(StorageLocation.LOCAL);
     const nameFormRef = useRef<FormInstance>(null);
     const nameInputRef = useRef<Input>(null);
     const adaptiveAutoAnnotationFormRef = useRef<FormInstance>(null);
@@ -177,6 +200,8 @@ export default function CreateProjectContent(): JSX.Element {
         if (nameFormRef.current) nameFormRef.current.resetFields();
         if (advancedFormRef.current) advancedFormRef.current.resetFields();
         setProjectLabels([]);
+        setSourceStorageLocation(StorageLocation.LOCAL);
+        setTargetStorageLocation(StorageLocation.LOCAL);
     };
 
     const focusForm = (): void => {
@@ -195,8 +220,8 @@ export default function CreateProjectContent(): JSX.Element {
                     ...projectData,
                     ...advancedValues,
                     name: basicValues.name,
-                    source_storage: advancedValues?.sourceStorage,
-                    target_storage: advancedValues?.targetStorage,
+                    source_storage: new Storage(advancedValues.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
+                    target_storage: new Storage(advancedValues.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
                 };
 
                 if (adaptiveAutoAnnotationValues) {
@@ -258,7 +283,13 @@ export default function CreateProjectContent(): JSX.Element {
             <Col span={24}>
                 <Collapse>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
-                        <AdvancedConfigurationForm formRef={advancedFormRef} />
+                        <AdvancedConfigurationForm
+                            formRef={advancedFormRef}
+                            sourceStorageLocation={sourceStorageLocation}
+                            targetStorageLocation={targetStorageLocation}
+                            onChangeSourceStorageLocation={(value: StorageLocation) => setSourceStorageLocation(value)}
+                            onChangeTargetStorageLocation={(value: StorageLocation) => setTargetStorageLocation(value)}
+                        />
                     </Collapse.Panel>
                 </Collapse>
             </Col>

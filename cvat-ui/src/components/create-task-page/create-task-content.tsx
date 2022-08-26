@@ -25,7 +25,7 @@ import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from 
 
 import { StorageLocation } from 'reducers';
 
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -64,11 +64,11 @@ const defaultState = {
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
         sourceStorage: {
             location: StorageLocation.LOCAL,
-            cloud_storage_id: null,
+            cloudStorageId: undefined,
         },
         targetStorage: {
             location: StorageLocation.LOCAL,
-            cloud_storage_id: null,
+            cloudStorageId: undefined,
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
@@ -263,14 +263,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             const [project] = response;
                             this.handleSubmitAdvancedConfiguration({
                                 ...this.state.advanced,
-                                sourceStorage: {
-                                    location: project?.sourceStorage?.location,
-                                    cloud_storage_id: project?.sourceStorage?.cloud_storage_id,
-                                },
-                                targetStorage: {
-                                    location: project?.targetStorage?.location,
-                                    cloud_storage_id: project?.targetStorage?.cloud_storage_id
-                                },
+                                sourceStorage: new Storage(project.sourceStorage || { location: StorageLocation.LOCAL }),
+                                targetStorage: new Storage(project.targetStorage || { location: StorageLocation.LOCAL }),
                             });
                             return Promise.resolve();
                         })
@@ -394,11 +388,24 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
+    private handleChangeStorageLocation(field: 'sourceStorage' | 'targetStorage', value: StorageLocation): void {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                [field]: {
+                    location: value,
+                }
+            }
+        }));
+    }
+
     private renderAdvancedBlock(): JSX.Element {
         const { installedGit, dumpers } = this.props;
         const { activeFileManagerTab, projectId } = this.state;
 
-        const { useProjectSourceStorage, useProjectTargetStorage } = this.state.advanced;
+        const {useProjectSourceStorage, useProjectTargetStorage } = this.state.advanced;
+        const { location: sourceStorageLocation } = this.state.advanced.sourceStorage;
+        const { location: targetStorageLocation } = this.state.advanced.targetStorage;
         return (
             <Col span={24}>
                 <Collapse>
@@ -412,8 +419,16 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             projectId={projectId}
                             useProjectSourceStorage={useProjectSourceStorage}
                             useProjectTargetStorage={useProjectTargetStorage}
+                            sourceStorageLocation={sourceStorageLocation}
+                            targetStorageLocation={targetStorageLocation}
                             onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
                             onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
+                            onChangeSourceStorageLocation={(value: StorageLocation) => {
+                                this.handleChangeStorageLocation('sourceStorage', value);
+                            }}
+                            onChangeTargetStorageLocation={(value: StorageLocation) => {
+                                this.handleChangeStorageLocation('targetStorage', value);
+                            }}
                         />
                     </Collapse.Panel>
                 </Collapse>

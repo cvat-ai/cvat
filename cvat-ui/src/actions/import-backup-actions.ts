@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
-import { Storage } from 'reducers';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -35,7 +34,7 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
         dispatch(importBackupActions.importBackup());
         try {
             const inctanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
-            const instance = await inctanceClass.import(storage, file);
+            const instance = await inctanceClass.restore(storage, file);
             dispatch(importBackupActions.importBackupSuccess(instance.id, instanceType));
         } catch (error) {
             dispatch(importBackupActions.importBackupFailed(instanceType, error));

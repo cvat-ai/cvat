@@ -6,24 +6,29 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Select from 'antd/lib/select';
 import Form from 'antd/lib/form';
-import { CloudStorage, Storage, StorageLocation } from 'reducers';
+import { CloudStorage, StorageLocation } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
+
+import { StorageData } from 'cvat-core-wrapper';
 
 const { Option } = Select;
 
 export interface Props {
     locationName: string[];
     selectCloudStorageName: string[];
-    onChangeStorage?: (value: Storage) => void;
+    locationValue: StorageLocation;
+    onChangeLocationValue?: (value: StorageLocation) => void;
+    onChangeStorage?: (value: StorageData) => void;
 }
 
 export default function StorageField(props: Props): JSX.Element {
     const {
         locationName,
         selectCloudStorageName,
-        onChangeStorage
+        locationValue,
+        onChangeStorage,
+        onChangeLocationValue,
     } = props;
-    const [locationValue, setLocationValue] = useState(StorageLocation.LOCAL);
     const [cloudStorage, setCloudStorage] = useState<CloudStorage | null>(null);
     const [potentialCloudStorage, setPotentialCloudStorage] = useState('');
 
@@ -43,7 +48,7 @@ export default function StorageField(props: Props): JSX.Element {
 
     useEffect(() => {
         if (locationValue === StorageLocation.LOCAL) {
-            setCloudStorage(null);
+            setPotentialCloudStorage('');
         }
     }, [locationValue]);
 
@@ -51,8 +56,8 @@ export default function StorageField(props: Props): JSX.Element {
         if (onChangeStorage) {
             onChangeStorage({
                 location: locationValue,
-                cloudStorageId: cloudStorage?.id,
-            } as Storage);
+                cloudStorageId: cloudStorage?.id ? parseInt(cloudStorage?.id) : undefined,
+            });
         }
     }, [cloudStorage, locationValue]);
 
@@ -60,8 +65,12 @@ export default function StorageField(props: Props): JSX.Element {
         <>
             <Form.Item name={locationName}>
                 <Select
-                    onChange={(location: StorageLocation) => setLocationValue(location)}
-                    onClear={() => setLocationValue(StorageLocation.LOCAL)}
+                    onChange={(location: StorageLocation) => {
+                        if (onChangeLocationValue) onChangeLocationValue(location)
+                    }}
+                    onClear={() => {
+                        if (onChangeLocationValue) onChangeLocationValue(StorageLocation.LOCAL)
+                    }}
                     allowClear
                 >
                     <Option value={StorageLocation.LOCAL}>Local</Option>

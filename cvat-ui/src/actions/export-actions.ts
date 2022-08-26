@@ -4,9 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { Storage } from 'reducers';
 
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -78,7 +77,7 @@ export const exportBackupAsync = (instance: any, targetStorage: Storage, useDefa
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
-        const result = await instance.export(targetStorage, useDefaultSetting, fileName);
+        const result = await instance.backup(targetStorage, useDefaultSetting, fileName);
         if (result) {
             const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
             downloadAnchor.href = result;

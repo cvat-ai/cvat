@@ -9,21 +9,24 @@ import Text from 'antd/lib/typography/Text';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import StorageField from './storage-field';
-import { Storage } from 'reducers';
 import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleFilled, QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
+import { StorageData } from 'cvat-core-wrapper';
+import { StorageLocation } from 'reducers';
 export interface Props {
     projectId: number | null;
     storageName: string;
     storageLabel: string;
     switchName: string;
+    locationValue: StorageLocation;
     switchDescription?: string;
     switchHelpMessage?: string;
     storageDescription?: string;
     useProjectStorage?: boolean | null;
-    onChangeStorage?: (values: Storage) => void;
+    onChangeLocationValue?: (value: StorageLocation) => void;
+    onChangeStorage?: (values: StorageData) => void;
     onChangeUseProjectStorage?: (value: boolean) => void;
 }
 
@@ -38,8 +41,10 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
         switchHelpMessage,
         storageDescription,
         useProjectStorage,
+        locationValue,
         onChangeUseProjectStorage,
         onChangeStorage,
+        onChangeLocationValue,
     } = props;
 
     return (
@@ -85,8 +90,10 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                 >
                     <StorageField
                         locationName={[storageName, 'location']}
-                        selectCloudStorageName={[storageName, 'cloud_storage_id']}
+                        selectCloudStorageName={[storageName, 'cloudStorageId']}
+                        locationValue={locationValue}
                         onChangeStorage={onChangeStorage}
+                        onChangeLocationValue={onChangeLocationValue}
                     />
                 </Form.Item>
             }

@@ -6,8 +6,7 @@
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import { getProjectsAsync } from './projects-actions';
-import { Storage } from 'reducers';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 
 import { jobInfoGenerator, receiveAnnotationsParameters, AnnotationActionTypes } from 'actions/annotation-actions';
@@ -95,9 +94,9 @@ export const importDatasetAsync = (
                 await instance.actions.clear();
                 const history = await instance.actions.get();
 
-                // // One more update to escape some problems
-                // // in canvas when shape with the same
-                // // clientID has different type (polygon, rectangle) for example
+                // One more update to escape some problems
+                // in canvas when shape with the same
+                // clientID has different type (polygon, rectangle) for example
                 dispatch({
                     type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
                     payload: {

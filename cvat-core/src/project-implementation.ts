@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Storage } from './interfaces';
+import { Storage } from './storage';
 
 const serverProxy = require('./server-proxy').default;
 const { getPreview } = require('./frames');
@@ -46,11 +46,11 @@ export default function implementProject(projectClass) {
         }
 
         if (this.targetStorage) {
-            projectSpec.target_storage = this.targetStorage;
+            projectSpec.target_storage = this.targetStorage.toJSON();
         }
 
         if (this.sourceStorage) {
-            projectSpec.source_storage = this.sourceStorage;
+            projectSpec.source_storage = this.sourceStorage.toJSON();
         }
 
         const project = await serverProxy.projects.create(projectSpec);

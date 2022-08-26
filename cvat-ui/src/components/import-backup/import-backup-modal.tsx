@@ -11,21 +11,23 @@ import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 import { InboxOutlined } from '@ant-design/icons';
-import { CombinedState, Storage, StorageLocation } from 'reducers';
+import { CombinedState, StorageLocation } from 'reducers';
 import { importBackupActions, importBackupAsync } from 'actions/import-backup-actions';
 import SourceStorageField from 'components/storage/source-storage-field';
 import Input from 'antd/lib/input/Input';
 
+import { Storage, StorageData } from 'cvat-core-wrapper';
+
 type FormValues = {
     fileName?: string | undefined;
-    sourceStorage: any;
+    sourceStorage: StorageData;
 };
 
 const initialValues: FormValues = {
     fileName: undefined,
     sourceStorage: {
         location: StorageLocation.LOCAL,
-        cloud_storage_id: undefined,
+        cloudStorageId: undefined,
     }
 }
 
@@ -35,7 +37,9 @@ function ImportBackupModal(): JSX.Element {
     const instanceType = useSelector((state: CombinedState) => state.importBackup?.instanceType);
     const modalVisible = useSelector((state: CombinedState) => state.importBackup.modalVisible);
     const dispatch = useDispatch();
-    const [selectedSourceStorage, setSelectedSourceStorage] = useState<Storage | null>(null);
+    const [selectedSourceStorage, setSelectedSourceStorage] = useState<StorageData>({
+        location: StorageLocation.LOCAL,
+    });
 
     const uploadLocalFile = (): JSX.Element => {
         return (
@@ -90,6 +94,9 @@ function ImportBackupModal(): JSX.Element {
 
     const closeModal = useCallback((): void => {
         form.resetFields();
+        setSelectedSourceStorage({
+            location: StorageLocation.LOCAL,
+        });
         setFile(null);
         dispatch(importBackupActions.closeImportModal());
     }, [form, instanceType]);
@@ -102,10 +109,10 @@ function ImportBackupModal(): JSX.Element {
                 });
                 return;
             }
-            const sourceStorage = {
+            const sourceStorage = new Storage({
                 location: values.sourceStorage.location,
-                cloudStorageId: values.sourceStorage.cloud_storage_id,
-            } as Storage;
+                cloudStorageId: values.sourceStorage?.cloudStorageId,
+            });
 
             dispatch(importBackupAsync(instanceType, sourceStorage, file || (values.fileName) as string));
 
@@ -115,7 +122,6 @@ function ImportBackupModal(): JSX.Element {
             });
             closeModal();
         },
-        // another dependensis like instance type
         [instanceType, file],
     );
 
@@ -139,7 +145,14 @@ function ImportBackupModal(): JSX.Element {
                     <SourceStorageField
                         projectId={null}
                         storageDescription='Specify source storage with backup'
-                        onChangeStorage={(value: Storage) => setSelectedSourceStorage(value)}
+                        locationValue={selectedSourceStorage.location}
+                        onChangeStorage={(value: StorageData) => setSelectedSourceStorage(new Storage(value))}
+                        onChangeLocationValue={(value: StorageLocation) => {
+                            setSelectedSourceStorage({
+                                location: value,
+                            });
+                        }}
+
                     />
                     {selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}

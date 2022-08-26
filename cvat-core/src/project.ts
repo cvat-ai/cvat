@@ -3,7 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Storage } from './interfaces';
+import { StorageLocation } from './enums';
+import { Storage } from './storage';
 
 const PluginRegistry = require('./plugins').default;
 const { ArgumentError } = require('./exceptions');
@@ -253,7 +254,12 @@ export default class Project {
                  * @instance
                  */
                 sourceStorage: {
-                    get: () => data.source_storage,
+                    get: () => {
+                        return new Storage({
+                            location: data.source_storage?.location || StorageLocation.LOCAL,
+                            cloudStorageId: data.source_storage?.cloud_storage_id,
+                        });
+                    },
                 },
                 /**
                  * Target storage for export resources.
@@ -264,7 +270,12 @@ export default class Project {
                  * @instance
                  */
                 targetStorage: {
-                    get: () => data.target_storage,
+                    get: () => {
+                        return new Storage({
+                            location: data.target_storage?.location || StorageLocation.LOCAL,
+                            cloudStorageId: data.target_storage?.cloud_storage_id,
+                        });
+                    }
                 },
                 _internalData: {
                     get: () => data,

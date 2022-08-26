@@ -17,12 +17,12 @@ import {
     UploadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, Storage, StorageLocation } from 'reducers';
+import { CombinedState, StorageLocation } from 'reducers';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 import ImportDatasetStatusModal from './import-dataset-status-modal';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import Input from 'antd/lib/input/Input';
 
@@ -33,7 +33,7 @@ const core = getCore();
 type FormValues = {
     selectedFormat: string | undefined;
     fileName?: string | undefined;
-    sourceStorage: any;
+    sourceStorage: StorageData;
     useDefaultSettings: boolean;
 };
 
@@ -42,7 +42,7 @@ const initialValues: FormValues = {
     fileName: undefined,
     sourceStorage: {
         location: StorageLocation.LOCAL,
-        cloud_storage_id: undefined,
+        cloudStorageId: undefined,
     },
     useDefaultSettings: true,
 }
@@ -63,10 +63,10 @@ function ImportDatasetModal(): JSX.Element | null {
     const [file, setFile] = useState<File | null>(null);
     const [selectedLoader, setSelectedLoader] = useState<any>(null);
     const [useDefaultSettings, setUseDefaultSettings] = useState(true);
-    const [defaultStorageLocation, setDefaultStorageLocation] = useState('');
-    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
+    const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
+    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | undefined>(undefined);
     const [helpMessage, setHelpMessage] = useState('');
-    const [selectedSourceStorage, setSelectedSourceStorage] = useState<Storage | null>(null);
+    const [selectedSourceStorageLocation, setSelectedSourceStorageLocation] = useState(StorageLocation.LOCAL);
     const [uploadParams, setUploadParams] = useState<UploadParams>({
         useDefaultSettings: true,
     } as UploadParams);
@@ -109,26 +109,27 @@ function ImportDatasetModal(): JSX.Element | null {
     useEffect(() => {
         if (instance && modalVisible) {
             if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
-                setDefaultStorageLocation((instance.sourceStorage) ?
-                    instance.sourceStorage.location : null);
-                setDefaultStorageCloudId((instance.sourceStorage) ?
-                    instance.sourceStorage.cloud_storage_id
-                : null);
+                setDefaultStorageLocation(instance.sourceStorage?.location || StorageLocation.LOCAL);
+                setDefaultStorageCloudId(instance.sourceStorage?.cloudStorageId || null);
                 if (instance instanceof core.classes.Project) {
                     setInstanceType(`project #${instance.id}`);
                 } else {
                     setInstanceType(`task #${instance.id}`);
                 }
             } else if (instance instanceof core.classes.Job) {
-                core.tasks.get({ id: instance.taskId }).then((response: any) => {
+                core.tasks.get({ id: instance.taskId })
+                .then((response: any) => {
                     if (response.length) {
                         const [taskInstance] = response;
-                        setDefaultStorageLocation((taskInstance.sourceStorage) ?
-                            taskInstance.sourceStorage.location : null);
-                        setDefaultStorageCloudId((taskInstance.sourceStorage) ?
-                            taskInstance.sourceStorage.cloud_storage_id
-                        : null);
+                        setDefaultStorageLocation(taskInstance.sourceStorage?.location || StorageLocation.LOCAL);
+                        setDefaultStorageCloudId(taskInstance.sourceStorage?.cloudStorageId || null);
                     }
+                })
+                .catch((error: Error) => {
+                    Notification.error({
+                        message: `Could not get task instance ${instance.taskId}`,
+                        description: error.toString(),
+                    });
                 });
                 setInstanceType(`job #${instance.id}`);
             }
@@ -208,6 +209,7 @@ function ImportDatasetModal(): JSX.Element | null {
                 hasFeedback
                 dependencies={['selectedFormat']}
                 rules={[{ validator: validateFileName }]}
+                required
             >
                 <Input
                     placeholder='Dataset file name'
@@ -227,6 +229,7 @@ function ImportDatasetModal(): JSX.Element | null {
 
     const closeModal = useCallback((): void => {
         setUseDefaultSettings(true);
+        setSelectedSourceStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
         setFile(null);
         dispatch(importActions.closeImportModal(instance));
@@ -287,7 +290,7 @@ function ImportDatasetModal(): JSX.Element | null {
             <Modal
                 title={(
                     <>
-                        <Text>Import {resource} to {instanceType}</Text>
+                        <Text strong>Import {resource} to {instanceType}</Text>
                         {
                             instance instanceof core.classes.Project &&
                             <CVATTooltip
@@ -388,20 +391,21 @@ function ImportDatasetModal(): JSX.Element | null {
                     {useDefaultSettings && defaultStorageLocation === StorageLocation.CLOUD_STORAGE && renderCustomName()}
                     {!useDefaultSettings && <StorageField
                         locationName={['sourceStorage', 'location']}
-                        selectCloudStorageName={['sourceStorage', 'cloud_storage_id']}
-                        onChangeStorage={(value: Storage) => {
-                            setSelectedSourceStorage(value);
+                        selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
+                        onChangeStorage={(value: StorageData) => {
                             setUploadParams({
                                 ...uploadParams,
-                                sourceStorage: {
-                                    location: (value.location) ? value.location : defaultStorageLocation,
-                                    cloudStorageId: (value.location) ? value.cloud_storage_id : defaultStorageCloudId,
-                                } as Storage,
+                                sourceStorage: new Storage({
+                                    location: value?.location || defaultStorageLocation,
+                                    cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
+                                }),
                             } as UploadParams);
                         }}
+                        locationValue={selectedSourceStorageLocation}
+                        onChangeLocationValue={(value: StorageLocation) => setSelectedSourceStorageLocation(value)}
                     />}
-                    {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}
-                    {!useDefaultSettings && selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}
+                    {!useDefaultSettings && selectedSourceStorageLocation === StorageLocation.CLOUD_STORAGE && renderCustomName()}
+                    {!useDefaultSettings && selectedSourceStorageLocation === StorageLocation.LOCAL && uploadLocalFile()}
                 </Form>
             </Modal>
             <ImportDatasetStatusModal />

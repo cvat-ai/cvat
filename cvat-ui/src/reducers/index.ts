@@ -781,11 +781,6 @@ export enum StorageLocation {
     CLOUD_STORAGE = 'cloud_storage',
 }
 
-export interface Storage {
-    location: StorageLocation;
-    cloud_storage_id?: number;
-}
-
 export enum ReviewStatus {
     ACCEPTED = 'accepted',
     REJECTED = 'rejected',

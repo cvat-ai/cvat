@@ -3,7 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Storage } from './interfaces';
+import { StorageLocation } from './enums';
+import { Storage } from './storage';
 
 const PluginRegistry = require('./plugins').default;
 const loggerStorage = require('./logger-storage');
@@ -1769,7 +1770,12 @@ export class Task extends Session {
                  * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
                 sourceStorage: {
-                    get: () => data.source_storage,
+                    get: () => {
+                        return new Storage({
+                            location: data.source_storage?.location || StorageLocation.LOCAL,
+                            cloudStorageId: data.source_storage?.cloud_storage_id,
+                        });
+                    },
                 },
                 /**
                  * Target storage for export resources.
@@ -1780,7 +1786,12 @@ export class Task extends Session {
                  * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
                 targetStorage: {
-                    get: () => data.target_storage,
+                    get: () => {
+                        return new Storage({
+                            location: data.target_storage?.location || StorageLocation.LOCAL,
+                            cloudStorageId: data.target_storage?.cloud_storage_id,
+                        });
+                    },
                 },
                 _internalData: {
                     get: () => data,
@@ -1893,7 +1904,7 @@ export class Task extends Session {
 
     /**
      * Method makes a backup of a task
-     * @method export
+     * @method backup
      * @memberof module:API.cvat.classes.Task
      * @readonly
      * @instance
@@ -2368,11 +2379,11 @@ Task.prototype.save.implementation = async function (onUpdate) {
     }
 
     if (this.targetStorage) {
-        taskSpec.target_storage = this.targetStorage;
+        taskSpec.target_storage = this.targetStorage.toJSON();
     }
 
     if (this.sourceStorage) {
-        taskSpec.source_storage = this.sourceStorage;
+        taskSpec.source_storage = this.sourceStorage.toJSON();
     }
 
     const taskDataSpec = {
