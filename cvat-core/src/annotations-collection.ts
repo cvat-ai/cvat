@@ -4,100 +4,22 @@
 
 (() => {
     const {
-        RectangleShape,
-        PolygonShape,
-        PolylineShape,
-        PointsShape,
-        EllipseShape,
-        CuboidShape,
-        RectangleTrack,
-        PolygonTrack,
-        PolylineTrack,
-        PointsTrack,
-        EllipseTrack,
-        CuboidTrack,
+        shapeFactory,
+        trackFactory,
         Track,
         Shape,
         Tag,
-        objectStateFactory,
     } = require('./annotations-objects');
-    const AnnotationsFilter = require('./annotations-filter');
+    const AnnotationsFilter = require('./annotations-filter').default;
     const { checkObjectType } = require('./common');
     const Statistics = require('./statistics');
     const { Label } = require('./labels');
-    const { DataError, ArgumentError, ScriptingError } = require('./exceptions');
+    const { ArgumentError, ScriptingError } = require('./exceptions');
+    const ObjectState = require('./object-state').default;
 
     const {
-        HistoryActions, ObjectShape, ObjectType, colors,
+        HistoryActions, ShapeType, ObjectType, colors, Source,
     } = require('./enums');
-    const ObjectState = require('./object-state');
-
-    function shapeFactory(shapeData, clientID, injection) {
-        const { type } = shapeData;
-        const color = colors[clientID % colors.length];
-
-        let shapeModel = null;
-        switch (type) {
-            case 'rectangle':
-                shapeModel = new RectangleShape(shapeData, clientID, color, injection);
-                break;
-            case 'polygon':
-                shapeModel = new PolygonShape(shapeData, clientID, color, injection);
-                break;
-            case 'polyline':
-                shapeModel = new PolylineShape(shapeData, clientID, color, injection);
-                break;
-            case 'points':
-                shapeModel = new PointsShape(shapeData, clientID, color, injection);
-                break;
-            case 'ellipse':
-                shapeModel = new EllipseShape(shapeData, clientID, color, injection);
-                break;
-            case 'cuboid':
-                shapeModel = new CuboidShape(shapeData, clientID, color, injection);
-                break;
-            default:
-                throw new DataError(`An unexpected type of shape "${type}"`);
-        }
-
-        return shapeModel;
-    }
-
-    function trackFactory(trackData, clientID, injection) {
-        if (trackData.shapes.length) {
-            const { type } = trackData.shapes[0];
-            const color = colors[clientID % colors.length];
-
-            let trackModel = null;
-            switch (type) {
-                case 'rectangle':
-                    trackModel = new RectangleTrack(trackData, clientID, color, injection);
-                    break;
-                case 'polygon':
-                    trackModel = new PolygonTrack(trackData, clientID, color, injection);
-                    break;
-                case 'polyline':
-                    trackModel = new PolylineTrack(trackData, clientID, color, injection);
-                    break;
-                case 'points':
-                    trackModel = new PointsTrack(trackData, clientID, color, injection);
-                    break;
-                case 'ellipse':
-                    trackModel = new EllipseTrack(trackData, clientID, color, injection);
-                    break;
-                case 'cuboid':
-                    trackModel = new CuboidTrack(trackData, clientID, color, injection);
-                    break;
-                default:
-                    throw new DataError(`An unexpected type of track "${type}"`);
-            }
-
-            return trackModel;
-        }
-
-        console.warn('The track without any shapes had been found. It was ignored.');
-        return null;
-    }
 
     class Collection {
         constructor(data) {
@@ -107,6 +29,10 @@
 
             this.labels = data.labels.reduce((labelAccumulator, label) => {
                 labelAccumulator[label.id] = label;
+                (label?.structure?.sublabels || []).forEach((sublabel) => {
+                    labelAccumulator[sublabel.id] = sublabel;
+                });
+
                 return labelAccumulator;
             }, {});
 
@@ -126,6 +52,7 @@
                 groups: this.groups,
                 frameMeta: this.frameMeta,
                 history: this.history,
+                nextClientID: () => ++this.count,
                 groupColors: {},
             };
         }
@@ -202,10 +129,7 @@
             const tags = this.tags[frame] || [];
 
             const objects = [].concat(tracks, shapes, tags);
-            const visible = {
-                models: [],
-                data: [],
-            };
+            const visible = [];
 
             for (const object of objects) {
                 if (object.removed) {
@@ -213,21 +137,19 @@
                 }
 
                 const stateData = object.get(frame);
-                if (!allTracks && stateData.outside && !stateData.keyframe) {
+                if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
                     continue;
                 }
 
-                visible.models.push(object);
-                visible.data.push(stateData);
+                visible.push(stateData);
             }
 
             const objectStates = [];
-            const filtered = this.annotationsFilter.filter(visible.data, filters);
+            const filtered = this.annotationsFilter.filter(visible, filters);
 
-            visible.data.forEach((stateData, idx) => {
+            visible.forEach((stateData, idx) => {
                 if (!filters.length || filtered.includes(stateData.clientID)) {
-                    const model = visible.models[idx];
-                    const objectState = objectStateFactory.call(model, frame, stateData);
+                    const objectState = new ObjectState(stateData);
                     objectStates.push(objectState);
                 }
             });
@@ -255,7 +177,7 @@
                 throw new ArgumentError(`Unknown label for the task: ${label.id}`);
             }
 
-            if (!Object.values(ObjectShape).includes(shapeType)) {
+            if (!Object.values(ShapeType).includes(shapeType)) {
                 throw new ArgumentError(`Got unknown shapeType "${shapeType}"`);
             }
 
@@ -288,10 +210,14 @@
                     keyframes[object.frame] = {
                         type: shapeType,
                         frame: object.frame,
-                        points: [...object.points],
+                        points: object.shapeType === ShapeType.SKELETON ? undefined : [...object.points],
+                        elements: object.shapeType === ShapeType.SKELETON ? object.elements.map((el) => {
+                            const { id, clientID, ...rest } = el.toJSON();
+                            return rest;
+                        }) : undefined,
                         occluded: object.occluded,
                         rotation: object.rotation,
-                        zOrder: object.zOrder,
+                        z_order: object.zOrder,
                         outside: false,
                         attributes: Object.keys(object.attributes).reduce((accumulator, attrID) => {
                             // We save only mutable attributes inside a keyframe
@@ -311,13 +237,24 @@
                         keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
                         keyframes[object.frame + 1].frame++;
+                        keyframes[object.frame + 1].attributes = [];
+                        (keyframes[object.frame + 1].elements || []).forEach((el) => {
+                            el.outside = keyframes[object.frame + 1].outside;
+                            el.frame = keyframes[object.frame + 1].frame;
+                        });
                     }
                 } else if (object instanceof Track) {
                     // If this object is track, iterate through all its
                     // keyframes and push copies to new keyframes
                     const attributes = {}; // id:value
-                    for (const keyframe of Object.keys(object.shapes)) {
-                        const shape = object.shapes[keyframe];
+                    const trackShapes = object.shapes;
+                    const exportedShapes = object.shapeType === ShapeType.SKELETON ?
+                        object.prepareShapesForServer().reduce((acc, val) => {
+                            acc[val.frame] = val;
+                            return acc;
+                        }, {}) : {};
+                    for (const keyframe of Object.keys(trackShapes)) {
+                        const shape = trackShapes[keyframe];
                         // Frame already saved and it is not outside
                         if (keyframe in keyframes && !keyframes[keyframe].outside) {
                             // This shape is outside and non-outside shape already exists
@@ -341,11 +278,16 @@
                         keyframes[keyframe] = {
                             type: shapeType,
                             frame: +keyframe,
-                            points: [...shape.points],
+                            points: object.shapeType === ShapeType.SKELETON ? undefined : [...shape.points],
+                            elements: object.shapeType === ShapeType.SKELETON ?
+                                exportedShapes[keyframe].elements.map((el) => {
+                                    const { id, ...rest } = el;
+                                    return rest;
+                                }) : undefined,
                             rotation: shape.rotation,
                             occluded: shape.occluded,
                             outside: shape.outside,
-                            zOrder: shape.zOrder,
+                            z_order: shape.zOrder,
                             attributes: updatedAttributes ? Object.keys(attributes).reduce((accumulator, attrID) => {
                                 accumulator.push({
                                     spec_id: +attrID,
@@ -451,13 +393,30 @@
             const exported = object.toJSON();
             const position = {
                 type: objectState.shapeType,
-                points: [...objectState.points],
+                points: objectState.shapeType === ShapeType.SKELETON ? undefined : [...objectState.points],
+                elements: objectState.shapeType === ShapeType.SKELETON ? objectState.elements.map((el: ObjectState) => {
+                    const elementAttributes = el.attributes;
+                    return {
+                        attributes: Object.keys(elementAttributes).reduce((acc, attrID) => {
+                            acc.push({
+                                spec_id: +attrID,
+                                value: elementAttributes[attrID],
+                            });
+                            return acc;
+                        }, []),
+                        label_id: el.label.id,
+                        occluded: el.occluded,
+                        outside: el.outside,
+                        points: [...el.points],
+                        type: el.shapeType,
+                    };
+                }) : undefined,
                 rotation: objectState.rotation,
                 occluded: objectState.occluded,
                 outside: objectState.outside,
-                zOrder: objectState.zOrder,
+                z_order: objectState.zOrder,
                 attributes: Object.keys(objectState.attributes).reduce((accumulator, attrID) => {
-                    if (!labelAttributes[attrID].mutable) {
+                    if (labelAttributes[attrID].mutable) {
                         accumulator.push({
                             spec_id: +attrID,
                             value: objectState.attributes[attrID],
@@ -475,14 +434,19 @@
                 label_id: exported.label_id,
                 attributes: exported.attributes,
                 shapes: [],
+                source: Source.MANUAL,
             };
 
             const next = JSON.parse(JSON.stringify(prev));
             next.frame = frame;
-
             next.shapes.push(JSON.parse(JSON.stringify(position)));
+
             exported.shapes.map((shape) => {
                 delete shape.id;
+                (shape.elements || []).forEach((element) => {
+                    delete element.id;
+                });
+
                 if (shape.frame < frame) {
                     prev.shapes.push(JSON.parse(JSON.stringify(shape)));
                 } else if (shape.frame > frame) {
@@ -499,6 +463,9 @@
                 prev.shapes[prev.shapes.length - 2].frame -= 1;
             }
             prev.shapes[prev.shapes.length - 1].outside = true;
+            (prev.shapes[prev.shapes.length - 1].elements || []).forEach((el) => {
+                el.outside = true;
+            });
 
             let clientID = ++this.count;
             const prevTrack = trackFactory(prev, clientID, this.injection);
@@ -546,6 +513,7 @@
             const undoGroups = objectsForGroup.map((object) => object.group);
             for (const object of objectsForGroup) {
                 object.group = groupIdx;
+                object.updated = Date.now();
             }
             const redoGroups = objectsForGroup.map((object) => object.group);
 
@@ -554,11 +522,13 @@
                 () => {
                     objectsForGroup.forEach((object, idx) => {
                         object.group = undoGroups[idx];
+                        object.updated = Date.now();
                     });
                 },
                 () => {
                     objectsForGroup.forEach((object, idx) => {
                         object.group = redoGroups[idx];
+                        object.updated = Date.now();
                     });
                 },
                 objectsForGroup.map((object) => object.clientID),
@@ -579,8 +549,17 @@
                 tracks.forEach((track) => {
                     if (track.frame <= endframe) {
                         if (delTrackKeyframesOnly) {
-                            for (const keyframe in track.shapes) {
-                                if (keyframe >= startframe && keyframe <= endframe) { delete track.shapes[keyframe]; }
+                            for (const keyframe of Object.keys(track.shapes)) {
+                                if (+keyframe >= startframe && +keyframe <= endframe) {
+                                    delete track.shapes[keyframe];
+                                    (track.elements || []).forEach((element) => {
+                                        if (keyframe in element.shapes) {
+                                            delete element.shapes[keyframe];
+                                            element.updated = Date.now();
+                                        }
+                                    });
+                                    track.updated = Date.now();
+                                }
                             }
                         } else if (track.frame >= startframe) {
                             const index = tracks.indexOf(track);
@@ -593,7 +572,7 @@
                 this.shapes = {};
                 this.tags = {};
                 this.tracks = [];
-                this.objects = {}; // by id
+                this.objects = {};
                 this.count = 0;
 
                 this.flush = true;
@@ -606,42 +585,74 @@
 
         statistics() {
             const labels = {};
-            const skeleton = {
-                rectangle: {
-                    shape: 0,
-                    track: 0,
-                },
-                polygon: {
-                    shape: 0,
-                    track: 0,
-                },
-                polyline: {
-                    shape: 0,
-                    track: 0,
-                },
-                points: {
-                    shape: 0,
-                    track: 0,
-                },
-                ellipse: {
-                    shape: 0,
-                    track: 0,
-                },
-                cuboid: {
-                    shape: 0,
-                    track: 0,
-                },
-                tags: 0,
+            const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
+            const body = {
+                ...(shapes.reduce((acc, val) => ({
+                    ...acc,
+                    [val]: { shape: 0, track: 0 },
+                }), {})),
+
+                tag: 0,
                 manually: 0,
                 interpolated: 0,
                 total: 0,
             };
 
-            const total = JSON.parse(JSON.stringify(skeleton));
-            for (const label of Object.values(this.labels)) {
-                const { name } = label;
-                labels[name] = JSON.parse(JSON.stringify(skeleton));
-            }
+            const sep = '{{cvat.skeleton.lbl.sep}}';
+            const fillBody = (spec, prefix = ''): void => {
+                const pref = prefix ? `${prefix}${sep}` : '';
+                for (const label of spec) {
+                    const { name } = label;
+                    labels[`${pref}${name}`] = JSON.parse(JSON.stringify(body));
+
+                    if (label?.structure?.sublabels) {
+                        fillBody(label.structure.sublabels, `${pref}${name}`);
+                    }
+                }
+            };
+
+            const total = JSON.parse(JSON.stringify(body));
+            fillBody(Object.values(this.labels).filter((label) => !label.hasParent));
+
+            const scanTrack = (track, prefix = ''): void => {
+                const pref = prefix ? `${prefix}${sep}` : '';
+                const label = `${pref}${track.label.name}`;
+                labels[label][track.shapeType].track++;
+                const keyframes = Object.keys(track.shapes)
+                    .sort((a, b) => +a - +b)
+                    .map((el) => +el);
+
+                let prevKeyframe = keyframes[0];
+                let visible = false;
+                for (const keyframe of keyframes) {
+                    if (visible) {
+                        const interpolated = keyframe - prevKeyframe - 1;
+                        labels[label].interpolated += interpolated;
+                        labels[label].total += interpolated;
+                    }
+                    visible = !track.shapes[keyframe].outside;
+                    prevKeyframe = keyframe;
+
+                    if (visible) {
+                        labels[label].manually++;
+                        labels[label].total++;
+                    }
+                }
+
+                let lastKey = keyframes[keyframes.length - 1];
+                if (track.shapeType === ShapeType.SKELETON) {
+                    track.elements.forEach((element) => {
+                        scanTrack(element, label);
+                        lastKey = Math.max(lastKey, ...Object.keys(element.shapes).map((key) => +key));
+                    });
+                }
+
+                if (lastKey !== this.stopFrame && !track.get(lastKey).outside) {
+                    const interpolated = this.stopFrame - lastKey;
+                    labels[label].interpolated += interpolated;
+                    labels[label].total += interpolated;
+                }
+            };
 
             for (const object of Object.values(this.objects)) {
                 if (object.removed) {
@@ -659,59 +670,37 @@
                     throw new ScriptingError(`Unexpected object type: "${objectType}"`);
                 }
 
-                const label = object.label.name;
+                const { name: label } = object.label;
                 if (objectType === 'tag') {
-                    labels[label].tags++;
+                    labels[label].tag++;
                     labels[label].manually++;
                     labels[label].total++;
+                } else if (objectType === 'track') {
+                    scanTrack(object);
                 } else {
                     const { shapeType } = object;
-                    labels[label][shapeType][objectType]++;
-
-                    if (objectType === 'track') {
-                        const keyframes = Object.keys(object.shapes)
-                            .sort((a, b) => +a - +b)
-                            .map((el) => +el);
-
-                        let prevKeyframe = keyframes[0];
-                        let visible = false;
-
-                        for (const keyframe of keyframes) {
-                            if (visible) {
-                                const interpolated = keyframe - prevKeyframe - 1;
-                                labels[label].interpolated += interpolated;
-                                labels[label].total += interpolated;
-                            }
-                            visible = !object.shapes[keyframe].outside;
-                            prevKeyframe = keyframe;
-
-                            if (visible) {
-                                labels[label].manually++;
-                                labels[label].total++;
-                            }
-                        }
-
-                        const lastKey = keyframes[keyframes.length - 1];
-                        if (lastKey !== this.stopFrame && !object.shapes[lastKey].outside) {
-                            const interpolated = this.stopFrame - lastKey;
-                            labels[label].interpolated += interpolated;
-                            labels[label].total += interpolated;
-                        }
-                    } else {
-                        labels[label].manually++;
-                        labels[label].total++;
+                    labels[label][shapeType].shape++;
+                    labels[label].manually++;
+                    labels[label].total++;
+                    if (shapeType === ShapeType.SKELETON) {
+                        object.elements.forEach((element) => {
+                            const combinedName = [label, element.label.name].join(sep);
+                            labels[combinedName][element.shapeType].shape++;
+                            labels[combinedName].manually++;
+                            labels[combinedName].total++;
+                        });
                     }
                 }
             }
 
             for (const label of Object.keys(labels)) {
-                for (const key of Object.keys(labels[label])) {
-                    if (typeof labels[label][key] === 'object') {
-                        for (const objectType of Object.keys(labels[label][key])) {
-                            total[key][objectType] += labels[label][key][objectType];
+                for (const shapeType of Object.keys(labels[label])) {
+                    if (typeof labels[label][shapeType] === 'object') {
+                        for (const objectType of Object.keys(labels[label][shapeType])) {
+                            total[shapeType][objectType] += labels[label][shapeType][objectType];
                         }
                     } else {
-                        total[key] += labels[label][key];
+                        total[shapeType] += labels[label][shapeType];
                     }
                 }
             }
@@ -744,7 +733,7 @@
 
             for (const state of objectStates) {
                 checkObjectType('object state', state, null, ObjectState);
-                checkObjectType('state client ID', state.clientID, 'undefined', null);
+                checkObjectType('state client ID', state.clientID, null, null);
                 checkObjectType('state frame', state.frame, 'integer', null);
                 checkObjectType('state rotation', state.rotation || 0, 'number', null);
                 checkObjectType('state attributes', state.attributes, null, Object);
@@ -775,9 +764,9 @@
                         checkObjectType('point coordinate', coord, 'number', null);
                     }
 
-                    if (!Object.values(ObjectShape).includes(state.shapeType)) {
+                    if (!Object.values(ShapeType).includes(state.shapeType)) {
                         throw new ArgumentError(
-                            `Object shape must be one of: ${JSON.stringify(Object.values(ObjectShape))}`,
+                            `Object shape must be one of: ${JSON.stringify(Object.values(ShapeType))}`,
                         );
                     }
 
@@ -794,6 +783,18 @@
                             type: state.shapeType,
                             z_order: state.zOrder,
                             source: state.source,
+                            elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
+                                attributes: [],
+                                frame: element.frame,
+                                group: 0,
+                                label_id: element.label.id,
+                                points: [...element.points],
+                                rotation: 0,
+                                type: element.shapeType,
+                                z_order: 0,
+                                outside: element.outside || false,
+                                occluded: element.occluded || false,
+                            })) : undefined,
                         });
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
@@ -807,7 +808,7 @@
                                 {
                                     attributes: attributes.filter((attr) => labelAttributes[attr.spec_id].mutable),
                                     frame: state.frame,
-                                    occluded: state.occluded || false,
+                                    occluded: false,
                                     outside: false,
                                     points: [...state.points],
                                     rotation: state.rotation || 0,
@@ -815,6 +816,33 @@
                                     z_order: state.zOrder,
                                 },
                             ],
+                            elements: state.shapeType === 'skeleton' ? state.elements.map((element) => {
+                                const elementAttrValues = Object.keys(state.attributes)
+                                    .reduce(convertAttributes.bind(state), []);
+                                const elementAttributes = element.label.attributes.reduce((accumulator, attribute) => {
+                                    accumulator[attribute.id] = attribute;
+                                    return accumulator;
+                                }, {});
+
+                                return ({
+                                    attributes: elementAttrValues
+                                        .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                    frame: state.frame,
+                                    group: 0,
+                                    label_id: element.label.id,
+                                    shapes: [{
+                                        frame: state.frame,
+                                        type: element.shapeType,
+                                        points: [...element.points],
+                                        zOrder: state.zOrder,
+                                        outside: element.outside || false,
+                                        occluded: element.occluded || false,
+                                        rotation: element.rotation || 0,
+                                        attributes: elementAttrValues
+                                            .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                    }],
+                                });
+                            }) : undefined,
                         });
                     } else {
                         throw new ArgumentError(

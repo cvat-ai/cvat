@@ -9,7 +9,7 @@ import { QuestionCircleOutlined, ShrinkOutlined } from '@ant-design/icons';
 import Spin from 'antd/lib/spin';
 import Image from 'antd/lib/image';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { hideShowContextImage, getContextImageAsync } from 'actions/annotation-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 

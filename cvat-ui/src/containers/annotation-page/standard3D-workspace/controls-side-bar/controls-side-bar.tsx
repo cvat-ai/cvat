@@ -14,7 +14,7 @@ import {
     resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard3D-workspace/controls-side-bar/controls-side-bar';
-import { ActiveControl, CombinedState } from 'reducers/interfaces';
+import { ActiveControl, CombinedState } from 'reducers';
 
 interface StateToProps {
     canvasInstance: Canvas | Canvas3d;

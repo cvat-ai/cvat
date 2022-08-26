@@ -5,6 +5,7 @@
 from rest_framework import serializers
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from drf_spectacular.plumbing import force_instance
+from drf_spectacular.serializers import PolymorphicProxySerializerExtension
 
 
 class DataSerializerExtension(OpenApiSerializerExtension):
@@ -47,6 +48,52 @@ class DataSerializerExtension(OpenApiSerializerExtension):
             remote_files = serializers.ListField(child=_make_field('remote_files', 'file'), default=[])
 
         return auto_schema._map_serializer(_Override(), direction, bypass_extensions=False)
+
+class CustomProxySerializerExtension(PolymorphicProxySerializerExtension):
+    """
+    Allows to patch PolymorphicProxySerializer-based schema.
+
+    Override "target_component" in children classes.
+    """
+    priority = 0 # restore normal priority
+
+    target_component: str = ''
+
+    @classmethod
+    def _matches(cls, target) -> bool:
+        if cls == __class__:
+            return False
+
+        if not super()._matches(target):
+            return False
+
+        return target.component_name == cls.target_component
+
+class AnyOfProxySerializerExtension(CustomProxySerializerExtension):
+    """
+    Replaces oneOf with anyOf in the generated schema. Useful when
+    no disciminator field is available, and the options are
+    not mutually-exclusive.
+    """
+
+    def map_serializer(self, auto_schema, direction):
+        schema = super().map_serializer(auto_schema, direction)
+        schema['anyOf'] = schema.pop('oneOf')
+        return schema
+
+class MetaUserSerializerExtension(AnyOfProxySerializerExtension):
+    # Need to replace oneOf to anyOf for MetaUser variants
+    # Otherwise, clients cannot distinguish between classes
+    # using just input data. Also, we can't use discrimintator
+    # field here, because these serializers don't have such.
+    target_component = 'MetaUser'
+
+class PolymorphicProjectSerializerExtension(AnyOfProxySerializerExtension):
+    # Need to replace oneOf to anyOf for PolymorphicProject variants
+    # Otherwise, clients cannot distinguish between classes
+    # using just input data. Also, we can't use discrimintator
+    # field here, because these serializers don't have such.
+    target_component = 'PolymorphicProject'
 
 
 __all__ = [] # No public symbols here

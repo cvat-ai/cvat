@@ -4,9 +4,9 @@
 
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { TasksQuery, CombinedState, Indexable } from 'reducers/interfaces';
+import { TasksQuery, CombinedState, Indexable } from 'reducers';
 import { getCVATStore } from 'cvat-store';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();

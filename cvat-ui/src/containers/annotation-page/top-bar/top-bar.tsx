@@ -10,7 +10,6 @@ import Input from 'antd/lib/input';
 import copy from 'copy-to-clipboard';
 
 import {
-    activateObject,
     changeFrameAsync,
     changeWorkspace as changeWorkspaceAction,
     collectStatisticsAsync,
@@ -40,7 +39,7 @@ import {
     DimensionType,
     ActiveControl,
     ToolsBlockerState,
-} from 'reducers/interfaces';
+} from 'reducers';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
@@ -188,7 +187,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(searchEmptyFrameAsync(sessionInstance, frameFrom, frameTo));
         },
         changeWorkspace(workspace: Workspace): void {
-            dispatch(activateObject(null, null));
             dispatch(changeWorkspaceAction(workspace));
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {

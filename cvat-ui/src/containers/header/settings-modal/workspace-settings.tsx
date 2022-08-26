@@ -15,12 +15,13 @@ import {
     switchIntelligentPolygonCrop,
     changeDefaultApproxPolyAccuracy,
     switchTextFontSize,
+    switchControlPointsSize,
     switchTextPosition,
     switchTextContent,
     switchShowingTagsOnFrame,
 } from 'actions/settings-actions';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 import WorkspaceSettingsComponent from 'components/header/settings-modal/workspace-settings';
 
@@ -34,6 +35,7 @@ interface StateToProps {
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
     textFontSize: number;
+    controlPointsSize: number;
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;
@@ -49,6 +51,7 @@ interface DispatchToProps {
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onChangeTextFontSize(fontSize: number): void;
+    onChangeControlPointsSize(pointsSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
@@ -66,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
         textFontSize,
+        controlPointsSize,
         textPosition,
         textContent,
         showTagsOnFrame,
@@ -81,53 +85,28 @@ function mapStateToProps(state: CombinedState): StateToProps {
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
         textFontSize,
+        controlPointsSize,
         textPosition,
         textContent,
         showTagsOnFrame,
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
-    return {
-        onSwitchAutoSave(enabled: boolean): void {
-            dispatch(switchAutoSave(enabled));
-        },
-        onChangeAutoSaveInterval(interval: number): void {
-            dispatch(changeAutoSaveInterval(interval));
-        },
-        onChangeAAMZoomMargin(margin: number): void {
-            dispatch(changeAAMZoomMargin(margin));
-        },
-        onSwitchShowingInterpolatedTracks(enabled: boolean): void {
-            dispatch(switchShowingInterpolatedTracks(enabled));
-        },
-        onSwitchShowingObjectsTextAlways(enabled: boolean): void {
-            dispatch(switchShowingObjectsTextAlways(enabled));
-        },
-        onSwitchAutomaticBordering(enabled: boolean): void {
-            dispatch(switchAutomaticBordering(enabled));
-        },
-        onSwitchIntelligentPolygonCrop(enabled: boolean): void {
-            dispatch(switchIntelligentPolygonCrop(enabled));
-        },
-        onChangeDefaultApproxPolyAccuracy(threshold: number): void {
-            dispatch(changeDefaultApproxPolyAccuracy(threshold));
-        },
-        onChangeTextFontSize(fontSize: number): void {
-            dispatch(switchTextFontSize(fontSize));
-        },
-        onChangeTextPosition(position: 'auto' | 'center'): void {
-            dispatch(switchTextPosition(position));
-        },
-        onChangeTextContent(textContent: string[]): void {
-            const serialized = textContent.join(',');
-            dispatch(switchTextContent(serialized));
-        },
-        onSwitchShowingTagsOnFrame(enabled: boolean): void {
-            dispatch(switchShowingTagsOnFrame(enabled));
-        },
-    };
-}
+const mapDispatchToProps: DispatchToProps = {
+    onSwitchAutoSave: switchAutoSave,
+    onChangeAutoSaveInterval: changeAutoSaveInterval,
+    onChangeAAMZoomMargin: changeAAMZoomMargin,
+    onSwitchShowingInterpolatedTracks: switchShowingInterpolatedTracks,
+    onSwitchShowingObjectsTextAlways: switchShowingObjectsTextAlways,
+    onSwitchAutomaticBordering: switchAutomaticBordering,
+    onSwitchIntelligentPolygonCrop: switchIntelligentPolygonCrop,
+    onChangeDefaultApproxPolyAccuracy: changeDefaultApproxPolyAccuracy,
+    onChangeTextFontSize: switchTextFontSize,
+    onChangeControlPointsSize: switchControlPointsSize,
+    onChangeTextPosition: switchTextPosition,
+    onChangeTextContent: switchTextContent,
+    onSwitchShowingTagsOnFrame: switchShowingTagsOnFrame,
+};
 
 function WorkspaceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return <WorkspaceSettingsComponent {...props} />;

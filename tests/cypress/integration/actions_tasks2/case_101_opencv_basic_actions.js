@@ -80,7 +80,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
             cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-control-popover').find('.cvat-opencv-initialization-button').click();
+            cy.get('.cvat-opencv-control-popover').within(() => {
+                cy.contains('OpenCV is loading').should('not.exist');
+            });
             // Intelligent cissors button be visible
             cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
         });

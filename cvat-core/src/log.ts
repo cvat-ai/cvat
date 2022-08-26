@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 const { detect } = require('detect-browser');
-const PluginRegistry = require('./plugins');
+const PluginRegistry = require('./plugins').default;
 const { ArgumentError } = require('./exceptions');
 const { LogType } = require('./enums');
 

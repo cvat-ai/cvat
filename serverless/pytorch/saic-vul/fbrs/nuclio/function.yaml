@@ -21,7 +21,7 @@ spec:
       value: /opt/nuclio/fbrs
 
   build:
-    image: cvat/pth.saic-vul.fbrs
+    image: cvat.pth.saic-vul.fbrs
     baseImage: python:3.6.11
 
     directives:

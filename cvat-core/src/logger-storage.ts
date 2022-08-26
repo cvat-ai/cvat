@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-const PluginRegistry = require('./plugins');
+const PluginRegistry = require('./plugins').default;
 const serverProxy = require('./server-proxy');
 const logFactory = require('./log');
 const { ArgumentError } = require('./exceptions');
@@ -10,7 +10,7 @@ const { LogType } = require('./enums');
 
 const WORKING_TIME_THRESHOLD = 100000; // ms, 1.66 min
 
-function sleep(ms) {
+function sleep(ms): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });

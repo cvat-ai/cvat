@@ -17,7 +17,7 @@ import { FormInstance } from 'antd/lib/form';
 import { EventDataNode } from 'rc-tree/lib/interface';
 
 import consts from 'consts';
-import { CloudStorage } from 'reducers/interfaces';
+import { CloudStorage } from 'reducers';
 import CloudStorageTab from './cloud-storages-tab';
 import LocalFiles from './local-files';
 

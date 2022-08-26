@@ -133,9 +133,17 @@ jobs:
 
       - name: Running REST API tests
         run: |
+          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
+            --entrypoint /bin/bash -u root cvat/server \
+            -c 'python manage.py spectacular --file /transfer/schema.yml'
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          cd cvat-sdk/
+          gen/generate.sh
+          cd ..
+
           pip3 install --user cvat-sdk/
-          pip3 install --user -r tests/rest_api/requirements.txt
-          pytest tests/rest_api/ -k 'GET' -s
+          pip3 install --user -r tests/python/requirements.txt
+          pytest tests/python/rest_api -k 'GET' -s
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -143,7 +151,7 @@ jobs:
           LOGS_DIR: "${{ github.workspace }}/rest_api"
         run: |
             mkdir $LOGS_DIR
-            docker logs test_cvat_1 > $LOGS_DIR/cvat.log
+            docker logs test_cvat_server_1 > $LOGS_DIR/cvat.log
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
@@ -192,7 +200,7 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'python manage.py test cvat/apps cvat-cli -k tasks_id -k lambda -k share -v 2'
+          -c 'python manage.py test cvat/apps -k tasks_id -k lambda -k share -v 2'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
@@ -280,8 +288,7 @@ jobs:
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
         run: |
-          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
           yarn --frozen-lockfile
 
@@ -309,3 +316,44 @@ jobs:
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
+
+  publish_dev_images:
+    if: github.ref == 'refs/heads/develop'
+    needs: [rest_api, unit_testing, e2e_testing]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download CVAT server images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
+
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push to Docker Hub
+        env:
+          SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/server
+          UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/ui
+        run: |
+          docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
+          docker push "${SERVER_IMAGE_REPO}:dev"
+
+          docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
+          docker push "${UI_IMAGE_REPO}:dev"
