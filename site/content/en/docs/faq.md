@@ -24,12 +24,12 @@ Please be patient.
   https://user-images.githubusercontent.com/40690625/180879954-44afcd95-1e94-451a-9a60-2f3bd6482cbf.gif)
 
 
-## How to update CVAT
+## How to upgrade CVAT
 
-Before updating, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
+Before upgrading, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
 and backup all CVAT volumes.
 
-Floow the [update guide](/docs/administration/advanced/update_guide/).
+Follow the [upgrade guide](/docs/administration/advanced/upgrade_guide/).
 
 ## Kibana app works, but no logs are displayed
 
