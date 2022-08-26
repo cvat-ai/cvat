@@ -374,12 +374,66 @@ describe('Feature: put annotations', () => {
         })).toThrow(window.cvat.exceptions.ArgumentError);
     });
 
-    test('put a skeleton to a job', async() => {
+    test('put a skeleton shape to a job', async() => {
+        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        const label = job.labels[0];
+        await job.annotations.clear(true);
+        await job.annotations.clear();
+        const skeleton = new window.cvat.classes.ObjectState({
+            frame: 0,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ShapeType.SKELETON,
+            points: [],
+            label,
+            elements: label.structure.sublabels.map((sublabel, idx) => ({
+                frame: 0,
+                objectType: window.cvat.enums.ObjectType.SHAPE,
+                shapeType: window.cvat.enums.ShapeType.POINTS,
+                points: [idx * 10, idx * 10],
+                label: sublabel,
+            }))
+        });
 
+        await job.annotations.put([skeleton]);
+        const annotations = await job.annotations.get(0);
+        expect(annotations.length).toBe(1);
+        expect(annotations[0].objectType).toBe(window.cvat.enums.ObjectType.SHAPE);
+        expect(annotations[0].shapeType).toBe(window.cvat.enums.ShapeType.SKELETON);
+        for (const element of annotations[0].elements) {
+            expect(element.objectType).toBe(window.cvat.enums.ObjectType.SHAPE);
+            expect(element.shapeType).toBe(window.cvat.enums.ShapeType.POINTS);
+        }
     });
 
-    test('put a skeleton to a task', async() => {
+    test('put a skeleton track to a task', async() => {
+        const task = (await window.cvat.tasks.get({ id: 40 }))[0];
+        const label = task.labels[0];
+        await task.annotations.clear(true);
+        await task.annotations.clear();
+        const skeleton = new window.cvat.classes.ObjectState({
+            frame: 0,
+            objectType: window.cvat.enums.ObjectType.TRACK,
+            shapeType: window.cvat.enums.ShapeType.SKELETON,
+            points: [],
+            label,
+            elements: label.structure.sublabels.map((sublabel, idx) => ({
+                frame: 0,
+                objectType: window.cvat.enums.ObjectType.TRACK,
+                shapeType: window.cvat.enums.ShapeType.POINTS,
+                points: [idx * 10, idx * 10],
+                label: sublabel,
+            }))
+        });
 
+        await task.annotations.put([skeleton]);
+        const annotations = await task.annotations.get(2);
+        expect(annotations.length).toBe(1);
+        expect(annotations[0].objectType).toBe(window.cvat.enums.ObjectType.TRACK);
+        expect(annotations[0].shapeType).toBe(window.cvat.enums.ShapeType.SKELETON);
+        for (const element of annotations[0].elements) {
+            expect(element.objectType).toBe(window.cvat.enums.ObjectType.TRACK);
+            expect(element.shapeType).toBe(window.cvat.enums.ShapeType.POINTS);
+        }
     });
 
     test('put a wrong skeleton to a job', async() => {

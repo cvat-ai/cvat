@@ -36,13 +36,13 @@ describe('Feature: get a list of tasks', () => {
 
     test('get a task with skeletons by an id', async () => {
         const result = await window.cvat.tasks.get({
-            id: 4,
+            id: 40,
         });
 
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(1);
         expect(result[0]).toBeInstanceOf(Task);
-        expect(result[0].id).toBe(4);
+        expect(result[0].id).toBe(40);
         expect(result[0].labels).toBeInstanceOf(Array);
 
         for (const label of result[0].labels) {

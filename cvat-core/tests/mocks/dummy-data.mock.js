@@ -784,8 +784,8 @@ const tasksDummyData = {
             frame_filter: '',
         },
         {
-            url: 'http://localhost:7000/api/tasks/4',
-            id: 4,
+            url: 'http://localhost:7000/api/tasks/40',
+            id: 40,
             name: 'test',
             project_id: null,
             mode: 'annotation',
