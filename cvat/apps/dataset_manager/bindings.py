@@ -1643,8 +1643,6 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
                 dataset_files['media'] += \
                     list(map(lambda ri: ri.path, dataset_item.related_images))
 
-        shortes_path = min(dataset_files['media'], key=lambda x: len(Path(x).parts), default=None)
-        if shortes_path is not None:
-            dataset_files['data_root'] = str(Path(shortes_path).parent.absolute()) + osp.sep
+        dataset_files['data_root'] = osp.commonpath(dataset_files['media']) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
