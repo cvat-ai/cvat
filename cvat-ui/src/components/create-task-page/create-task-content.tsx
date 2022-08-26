@@ -208,7 +208,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let uploadFileErrorMessage = '';
 
         if (!isMultiTask && uploadedFiles.length > 1) {
-            uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'image') ? '' : 'We can\'t process it. Support for a bulk image or single video';
+            uploadFileErrorMessage = uploadedFiles.every((it) => (getFileContentType(it) === 'image' || it.name === 'manifest.jsonl')) ? '' : 'We can\'t process it. Support for a bulk image or single video';
         } else if (isMultiTask && uploadedFiles.length > 1) {
             uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
         }
