@@ -36,7 +36,7 @@ interface StateToProps {
     annotationsFilters: any[];
     colors: string[];
     colorBy: ColorBy;
-    activatedStateID: number | null;
+    activatedStateIDs: number[];
     minZLayer: number;
     maxZLayer: number;
     keyMap: KeyMap;
@@ -61,7 +61,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 filters: annotationsFilters,
                 collapsed,
                 collapsedAll,
-                activatedStateID,
+                activatedStateIDs,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
@@ -100,7 +100,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotationsFilters,
         colors,
         colorBy,
-        activatedStateID,
+        activatedStateIDs,
         minZLayer,
         maxZLayer,
         keyMap,
@@ -247,7 +247,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const {
             statesHidden,
             statesLocked,
-            activatedStateID,
+            activatedStateIDs,
             jobInstance,
             maxZLayer,
             minZLayer,
@@ -300,39 +300,31 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             }
         };
 
-        const activatedStated = (): any | null => {
-            if (activatedStateID !== null) {
-                const [state] = objectStates.filter(
-                    (objectState: any): boolean => objectState.clientID === activatedStateID,
-                );
-
-                return state || null;
-            }
-
-            return null;
-        };
+        const getActivatedStates = (): any[] => objectStates.filter((s) => activatedStateIDs.includes(s.clientID));
 
         const handlers = {
-            TILT_UP: () => {}, // Handled by CVAT 3D Independently
-            TILT_DOWN: () => {},
-            ROTATE_LEFT: () => {},
-            ROTATE_RIGHT: () => {},
-            MOVE_UP: () => {},
-            MOVE_DOWN: () => {},
-            MOVE_LEFT: () => {},
-            MOVE_RIGHT: () => {},
-            ZOOM_IN: () => {},
-            ZOOM_OUT: () => {},
+            TILT_UP: () => { }, // Handled by CVAT 3D Independently
+            TILT_DOWN: () => { },
+            ROTATE_LEFT: () => { },
+            ROTATE_RIGHT: () => { },
+            MOVE_UP: () => { },
+            MOVE_DOWN: () => { },
+            MOVE_LEFT: () => { },
+            MOVE_RIGHT: () => { },
+            ZOOM_IN: () => { },
+            ZOOM_OUT: () => { },
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
             },
             SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly) {
-                    state.lock = !state.lock;
-                    updateAnnotations([state]);
+                const states = getActivatedStates();
+                if (!readonly && states.length) {
+                    for (const state of states) {
+                        state.lock = !state.lock;
+                    }
+                    updateAnnotations(states);
                 }
             },
             SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
@@ -343,94 +335,114 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly) {
-                    state.hidden = !state.hidden;
-                    updateAnnotations([state]);
+                const states = getActivatedStates();
+                if (!readonly && states.length) {
+                    for (const state of states) {
+                        state.hidden = !state.hidden;
+                    }
+                    updateAnnotations(states);
                 }
             },
             SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
-                    state.occluded = !state.occluded;
-                    updateAnnotations([state]);
+                const states = getActivatedStates().filter((state) => state.objectType !== ObjectType.TAG);
+                if (!readonly && states.length) {
+                    for (const state of states) {
+                        state.occluded = !state.occluded;
+                    }
+                    updateAnnotations(states);
                 }
             },
             SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly && state.objectType === ObjectType.TRACK) {
-                    state.keyframe = !state.keyframe;
-                    updateAnnotations([state]);
+                const states = getActivatedStates().filter((state) => state.objectType === ObjectType.TRACK);
+                if (!readonly && states.length) {
+                    for (const state of states) {
+                        state.keyframe = !state.keyframe;
+                    }
+                    updateAnnotations(states);
                 }
             },
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly && state.objectType === ObjectType.TRACK) {
-                    state.outside = !state.outside;
-                    updateAnnotations([state]);
+                const states = getActivatedStates().filter((state) => state.objectType === ObjectType.TRACK);
+                if (!readonly && states.length) {
+                    for (const state of states) {
+                        state.outside = !state.outside;
+                    }
+                    updateAnnotations(states);
                 }
             },
             DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly) {
-                    removeObject(jobInstance, state, event ? event.shiftKey : false);
+                const states = getActivatedStates();
+                if (!readonly && states.length) {
+                    // ROBTODO: look into doing as single atomic change
+                    for (const state of states) {
+                        removeObject(jobInstance, state, event ? event.shiftKey : false);
+                    }
                 }
             },
             CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state) {
+                const states = getActivatedStates();
+                if (states.length) {
                     if (colorBy === ColorBy.GROUP) {
-                        const colorID = (colors.indexOf(state.group.color) + 1) % colors.length;
-                        changeGroupColor(state.group.id, colors[colorID]);
+                        // ROBTODO: experiment with changing multiple groups
+                        const colorID = (colors.indexOf(states[0].group.color) + 1) % colors.length;
+                        changeGroupColor(states[0].group.id, colors[colorID]);
                         return;
                     }
 
                     if (colorBy === ColorBy.INSTANCE) {
-                        const colorID = (colors.indexOf(state.color) + 1) % colors.length;
-                        state.color = colors[colorID];
-                        updateAnnotations([state]);
+                        for (const state of states) {
+                            const colorID = (colors.indexOf(state.color) + 1) % colors.length;
+                            state.color = colors[colorID];
+                        }
+                        updateAnnotations(states);
                     }
                 }
             },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
-                    state.zOrder = minZLayer - 1;
-                    updateAnnotations([state]);
+                const states = getActivatedStates().filter((state) => state.objectType !== ObjectType.TAG);
+                if (states.length) {
+                    for (const state of states) {
+                        state.zOrder = minZLayer - 1;
+                    }
+                    updateAnnotations(states);
                 }
             },
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
-                    state.zOrder = maxZLayer + 1;
-                    updateAnnotations([state]);
+                const states = getActivatedStates().filter((state) => state.objectType !== ObjectType.TAG);
+                if (states.length) {
+                    for (const state of states) {
+                        state.zOrder = maxZLayer + 1;
+                    }
+                    updateAnnotations(states);
                 }
             },
             COPY_SHAPE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly) {
-                    copyShape(state);
+                const states = getActivatedStates();
+                // TODO: only implemented for one shape at a time
+                if (states.length && !readonly) {
+                    copyShape(states[0]);
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && !readonly) {
-                    propagateObject(state);
+                const states = getActivatedStates();
+                // TODO: only implemented for one shape at a time
+                if (states.length && !readonly) {
+                    propagateObject(states[0]);
                 }
             },
             NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && state.objectType === ObjectType.TRACK) {
+                const state = getActivatedStates().filter((s) => s.objectType === ObjectType.TRACK)[0];
+                if (state) {
                     const frame = typeof state.keyframes.next === 'number' ? state.keyframes.next : null;
                     if (frame !== null && isAbleToChangeFrame()) {
                         changeFrame(frame);
@@ -439,8 +451,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedStated();
-                if (state && state.objectType === ObjectType.TRACK) {
+                const state = getActivatedStates().filter((s) => s.objectType === ObjectType.TRACK)[0];
+                if (state) {
                     const frame = typeof state.keyframes.prev === 'number' ? state.keyframes.prev : null;
                     if (frame !== null && isAbleToChangeFrame()) {
                         changeFrame(frame);
