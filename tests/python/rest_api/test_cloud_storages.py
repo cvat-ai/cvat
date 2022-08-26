@@ -10,7 +10,7 @@ from deepdiff import DeepDiff
 
 from PIL import Image
 
-from shared.utils.config import (MINIO_ENDPOINT_URL, MINIO_KEY, MINIO_SECRET_KEY,
+from shared.utils.config import (MINIO_KEY, MINIO_SECRET_KEY,
     get_method, make_api_client, patch_method, post_method)
 
 
