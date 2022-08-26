@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -64,6 +65,28 @@ describe('Feature: get annotations', () => {
         expect(annotations).toHaveLength(1);
         expect(annotations[0].shapeType).toBe('ellipse');
     });
+
+    test('get skeletons with a filter', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        const annotations = await job.annotations.get(0, false, JSON.parse('[{"and":[{"==":[{"var":"shape"},"skeleton"]}]}]'));
+        expect(Array.isArray(annotations)).toBeTruthy();
+        expect(annotations).toHaveLength(2);
+        for (const object of annotations) {
+            expect(object.shapeType).toBe('skeleton');
+            expect(object.elements).toBeInstanceOf(Array);
+            const label = object.label;
+            let points = [];
+            object.elements.forEach((element, idx) => {
+                expect(element).toBeInstanceOf(cvat.classes.ObjectState);
+                expect(element.label.id).toBe(label.structure.sublabels[idx].id);
+                expect(element.shapeType).toBe('points');
+                points = [...points, ...element.points];
+            });
+            expect(points).toEqual(object.points);
+        }
+
+        expect(annotations[0].shapeType).toBe('skeleton');
+    })
 });
 
 describe('Feature: get interpolated annotations', () => {
@@ -349,6 +372,18 @@ describe('Feature: put annotations', () => {
             label: task.labels[0],
             zOrder: 0,
         })).toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('put a skeleton to a job', async() => {
+
+    });
+
+    test('put a skeleton to a task', async() => {
+
+    });
+
+    test('put a wrong skeleton to a job', async() => {
+
     });
 });
 
@@ -769,6 +804,21 @@ describe('Feature: get statistics', () => {
         const statistics = await job.annotations.statistics();
         expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
         expect(statistics.total.total).toBe(1012);
+    });
+
+    test('get statistics from a job with skeletons', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        await job.annotations.clear(true);
+        const statistics = await job.annotations.statistics();
+        expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
+        expect(statistics.total.total).toBe(30);
+        const labelName = job.labels[0].name;
+        expect(statistics.label[labelName].skeleton.shape).toBe(1);
+        expect(statistics.label[labelName].skeleton.track).toBe(1);
+        expect(statistics.label[labelName].manually).toBe(2);
+        expect(statistics.label[labelName].interpolated).toBe(3);
+        expect(statistics.label[labelName].total).toBe(5);
+
     });
 });
 

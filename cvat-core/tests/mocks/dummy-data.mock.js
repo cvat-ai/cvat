@@ -2741,18 +2741,7 @@ const taskAnnotationsDummyData = {
                 outside: false,
                 z_order: 0,
                 rotation: 0.0,
-                points: [
-                    621.2718553459108,
-                    771.9905099538341,
-                    970.1964146088677,
-                    535.5863207547154,
-                    1290.6900943396213,
-                    775.6843431842781,
-                    1228.6590576510816,
-                    1255.880345911948,
-                    709.1491327545872,
-                    1244.7989304835269
-                ],
+                points: [],
                 id: 1,
                 frame: 0,
                 attributes: []
@@ -2962,6 +2951,36 @@ const frameMetaDummyData = {
                 height: 1408,
             },
         ],
+    },
+    40: {
+        chunk_size: 17,
+        size: 4,
+        image_quality: 70,
+        start_frame: 0,
+        stop_frame: 3,
+        frame_filter: '',
+        frames: [{
+            width: 2560,
+            height: 1703,
+            name: '1598296101_1033667.jpg',
+            has_related_context: false
+        }, {
+            width: 1600,
+            height: 1200,
+            name: '30fdce7f27b9c7b1d50108d7c16d23ef.jpg',
+            has_related_context: false
+        }, {
+            width: 2880,
+            height: 1800,
+            name: '567362-ily-comedy-drama-1finding-3.jpg',
+            has_related_context: false
+        }, {
+            width: 1920,
+            height: 1080,
+            name: '730443-under-the-sea-wallpapers-1920x1080-windows-10.jpg',
+            has_related_context: false
+        }],
+        deleted_frames: []
     },
     100: {
         chunk_size: 36,
