@@ -435,10 +435,6 @@ describe('Feature: put annotations', () => {
             expect(element.shapeType).toBe(window.cvat.enums.ShapeType.POINTS);
         }
     });
-
-    test('put a wrong skeleton to a job', async() => {
-
-    });
 });
 
 describe('Feature: check unsaved changes', () => {
