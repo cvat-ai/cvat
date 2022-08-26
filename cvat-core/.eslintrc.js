@@ -25,5 +25,6 @@ module.exports = {
         'jest/no-focused-tests': 'error',
         'jest/no-identical-title': 'error',
         'jest/prefer-to-have-length': 'warn',
-    }
+    },
+    ignorePatterns: ['tests/mocks/*.js']
 };

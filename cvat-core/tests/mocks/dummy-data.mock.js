@@ -862,8 +862,8 @@ const tasksDummyData = {
                 start_frame: 0,
                 stop_frame: 3,
                 jobs: [{
-                    url: 'http://localhost:7000/api/jobs/41',
-                    id: 10,
+                    url: 'http://localhost:7000/api/jobs/40',
+                    id: 40,
                     assignee: null,
                     status: 'annotation',
                     stage: 'annotation',
@@ -2631,6 +2631,241 @@ const taskAnnotationsDummyData = {
         ],
         tracks: [],
     },
+    40: {
+        version: 0,
+        tags: [],
+        shapes: [{
+            type: 'skeleton',
+            occluded: false,
+            outside: false,
+            z_order: 0,
+            rotation: 0.0,
+            points: [],
+            id: 23,
+            frame: 0,
+            label_id: 54,
+            group: 0,
+            source: 'manual',
+            attributes: [],
+            elements: [{
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    908.0654296875,
+                    768.8268729552019
+                ],
+                id: 24,
+                frame: 0,
+                label_id: 55,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: "points",
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    1230.1533057030483,
+                    523.7802734375
+                ],
+                id: 25,
+                frame: 0,
+                label_id: 56,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    1525.9969940892624,
+                    772.6557444966547
+                ],
+                id: 26,
+                frame: 0,
+                label_id: 57,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    1468.7369236136856,
+                    1270.4066429432623
+                ],
+                id: 27,
+                frame: 0,
+                label_id: 58,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    989.1838401839595,
+                    1258.9201156622657
+                ],
+                id: 28,
+                frame: 0,
+                label_id:59,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }]
+        }],
+        tracks: [{
+            id: 1,
+            frame: 0,
+            label_id: 54,
+            group: 0,
+            source: 'manual',
+            shapes: [{
+                type: 'skeleton',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    621.2718553459108,
+                    771.9905099538341,
+                    970.1964146088677,
+                    535.5863207547154,
+                    1290.6900943396213,
+                    775.6843431842781,
+                    1228.6590576510816,
+                    1255.880345911948,
+                    709.1491327545872,
+                    1244.7989304835269
+                ],
+                id: 1,
+                frame: 0,
+                attributes: []
+            }],
+            attributes: [],
+            elements: [{
+                id: 2,
+                frame: 0,
+                label_id: 55,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        88.4140625,
+                        332.85145482411826
+                    ],
+                    id: 2,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 3,
+                frame: 0,
+                label_id: 56,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        437.3386217629577,
+                        96.447265625
+                    ],
+                    id: 3,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 4,
+                frame: 0,
+                label_id: 57,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        757.8323014937105,
+                        336.54528805456357
+                    ],
+                    id: 4,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 5,
+                frame: 0,
+                label_id: 58,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        695.8012648051717,
+                        816.7412907822327
+                    ],
+                    id: 5,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 6,
+                frame: 0,
+                label_id: 59,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        176.29133990867558,
+                        805.659875353811
+                    ],
+                    id: 6,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }]
+        }]
+    }
 };
 
 const jobAnnotationsDummyData = JSON.parse(JSON.stringify(taskAnnotationsDummyData));
