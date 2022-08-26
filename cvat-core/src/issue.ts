@@ -5,7 +5,7 @@
 
 const quickhull = require('quickhull');
 
-const PluginRegistry = require('./plugins');
+const PluginRegistry = require('./plugins').default;
 const Comment = require('./comment');
 const User = require('./user').default;
 const { ArgumentError } = require('./exceptions');

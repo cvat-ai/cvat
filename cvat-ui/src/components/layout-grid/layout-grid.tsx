@@ -7,7 +7,7 @@ import ReactDOM from 'react-dom';
 import { useSelector } from 'react-redux';
 
 import GlobalHotKeys from 'utils/mousetrap-react';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import './styles.scss';
 
 const LayoutGrid = (): React.ReactPortal => {

@@ -11,7 +11,7 @@ import Spin from 'antd/lib/spin';
 import Result from 'antd/lib/result';
 import Text from 'antd/lib/typography/Text';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import CreateCloudStorageForm from 'components/create-cloud-storage-page/cloud-storage-form';
 

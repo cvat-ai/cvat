@@ -20,7 +20,7 @@ metadata:
   {{- end }}
 spec:
 {{- if semverCompare ">=1.19-0" $version }}
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.ingress.className }}
 {{- end }}
 {{- if .Values.ingress.tls }}
   tls:
@@ -45,7 +45,7 @@ spec:
             {{- if semverCompare ">=1.19-0" $version }}
             backend:
               service:
-                name: {{ .service.name }}
+                name: {{ $.Release.Name }}-{{ .service.name }}
                 port:
                   number: {{ .service.port }}
             {{- else }}

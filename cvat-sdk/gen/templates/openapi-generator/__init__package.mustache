@@ -1,17 +1,14 @@
 {{>partial_header}}
 
-from .version import VERSION as __version__
+__version__ = "{{packageVersion}}"
 
-# import ApiClient
 from {{packageName}}.api_client import ApiClient
 
-# import Configuration
 from {{packageName}}.configuration import Configuration
 {{#hasHttpSignatureMethods}}
 from {{packageName}}.signing import HttpSigningConfiguration
 {{/hasHttpSignatureMethods}}
 
-# import exceptions
 from {{packageName}}.exceptions import OpenApiException
 from {{packageName}}.exceptions import ApiAttributeError
 from {{packageName}}.exceptions import ApiTypeError

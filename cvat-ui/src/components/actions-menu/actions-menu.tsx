@@ -11,7 +11,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { MenuInfo } from 'rc-menu/lib/interface';
 
 import LoadSubmenu from './load-submenu';
-import { DimensionType } from '../../reducers/interfaces';
+import { DimensionType } from '../../reducers';
 
 interface Props {
     taskID: number;

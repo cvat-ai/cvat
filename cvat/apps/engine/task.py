@@ -1,5 +1,6 @@
 
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,9 +19,11 @@ import requests
 import ipaddress
 import dns.resolver
 import django_rq
+import pytz
 
 from django.conf import settings
 from django.db import transaction
+from datetime import datetime
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
@@ -30,7 +33,7 @@ from cvat.apps.engine.utils import av_scan_paths
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
-from .cloud_provider import get_cloud_storage_instance, Credentials
+from .cloud_provider import db_storage_to_storage_instance
 
 ############################# Low Level server API
 
@@ -207,13 +210,21 @@ def _validate_data(counter, manifest_files=None):
 
     return counter, task_modes[0]
 
-def _validate_manifest(manifests, root_dir):
+def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
     if manifests:
         if len(manifests) != 1:
             raise Exception('Only one manifest file can be attached with data')
+        manifest_file = manifests[0]
         full_manifest_path = os.path.join(root_dir, manifests[0])
+        if is_in_cloud:
+            cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
+            # check that cloud storage manifest file exists and is up to date
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) \
+                    < cloud_storage_instance.get_file_last_modified(manifest_file):
+                cloud_storage_instance.download_file(manifest_file, full_manifest_path)
         if is_manifest(full_manifest_path):
-            return manifests[0]
+            return manifest_file
         raise Exception('Invalid manifest was uploaded')
     return None
 
@@ -293,6 +304,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname()
+    is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
@@ -310,28 +322,18 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     manifest_root = None
     if db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
         manifest_root = upload_dir
-    elif db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+    elif is_data_in_cloud:
         manifest_root = db_data.cloud_storage.get_storage_dirname()
 
-    manifest_file = _validate_manifest(manifest_files, manifest_root)
+    manifest_file = _validate_manifest(
+        manifest_files, manifest_root,
+        is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None
+    )
     if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
         raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
-    if data['server_files'] and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
-        if not manifest_file: raise Exception('A manifest file not found')
-        db_cloud_storage = db_data.cloud_storage
-        credentials = Credentials()
-        credentials.convert_from_db({
-            'type': db_cloud_storage.credentials_type,
-            'value': db_cloud_storage.credentials,
-        })
-
-        details = {
-            'resource': db_cloud_storage.resource,
-            'credentials': credentials,
-            'specific_attributes': db_cloud_storage.get_specific_attributes()
-        }
-        cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
+    if data['server_files'] and is_data_in_cloud:
+        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
         sorted_media = sort(media['image'], data['sorting_method'])
 
         data_size = len(sorted_media)
@@ -516,7 +518,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            if not db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+            if not is_data_in_cloud:
                 w, h = extractor.get_image_size(0)
             else:
                 img_properties = manifest[0]

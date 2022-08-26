@@ -43,15 +43,16 @@ import UpdateCloudStoragePageComponent from 'components/update-cloud-storage-pag
 
 import OrganizationPage from 'components/organization-page/organization-page';
 import CreateOrganizationComponent from 'components/create-organization-page/create-organization-page';
+import { ShortcutsContextProvider } from 'components/shortcuts.context';
 
 import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import EditWebhookPage from 'components/setup-webhook-pages/edit-webhook-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { NotificationsState } from 'reducers/interfaces';
+import { NotificationsState } from 'reducers';
 import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, {
     platformInfo,

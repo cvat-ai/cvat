@@ -291,7 +291,8 @@ NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
     'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)
+    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120),
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
 }
 
 RQ_SHOW_ADMIN_LINK = True
@@ -518,9 +519,9 @@ SPECTACULAR_SETTINGS = {
     # Set VERSION to None if only the request version should be rendered.
     'VERSION': 'alpha (2.0)',
     'CONTACT': {
-        'name': 'Nikita Manovich',
-        'url': 'https://github.com/nmanovic',
-        'email': 'nikita.manovich@intel.com',
+        'name': 'CVAT.ai team',
+        'url': 'https://github.com/cvat-ai/cvat',
+        'email': 'support@cvat.ai',
     },
     'LICENSE': {
         'name': 'MIT License',

@@ -23,8 +23,8 @@ import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 
-import getCore from 'cvat-core-wrapper';
-import { NotificationsState } from './interfaces';
+import { getCore } from 'cvat-core-wrapper';
+import { NotificationsState } from '.';
 
 const core = getCore();
 

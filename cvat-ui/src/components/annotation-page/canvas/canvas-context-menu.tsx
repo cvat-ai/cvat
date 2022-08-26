@@ -8,14 +8,16 @@ import Menu from 'antd/lib/menu';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
+import ObjectItemElementComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-element';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { Workspace } from 'reducers/interfaces';
+import { Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
 import consts from 'consts';
 
 interface Props {
     readonly: boolean;
     workspace: Workspace;
+    contextMenuParentID: number | null;
     contextMenuClientID: number | null;
     objectStates: any[];
     visible: boolean;
@@ -79,6 +81,7 @@ function ReviewContextMenu({
 export default function CanvasContextMenu(props: Props): JSX.Element | null {
     const {
         contextMenuClientID,
+        contextMenuParentID,
         objectStates,
         visible,
         left,
@@ -153,6 +156,20 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         );
     }
 
+    if (Number.isInteger(contextMenuParentID)) {
+        return ReactDOM.createPortal(
+            <div className='cvat-canvas-context-menu' style={{ top, left }}>
+                <ObjectItemElementComponent
+                    readonly={readonly}
+                    key={contextMenuClientID}
+                    clientID={contextMenuClientID}
+                    parentID={contextMenuParentID as number}
+                />
+            </div>,
+            window.document.body,
+        );
+    }
+
     return ReactDOM.createPortal(
         <div className='cvat-canvas-context-menu' style={{ top, left }}>
             <ObjectItemContainer
@@ -160,7 +177,6 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 key={contextMenuClientID}
                 clientID={contextMenuClientID}
                 objectStates={objectStates}
-                initialCollapsed
             />
         </div>,
         window.document.body,

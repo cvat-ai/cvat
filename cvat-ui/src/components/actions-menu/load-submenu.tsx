@@ -8,7 +8,7 @@ import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import { UploadOutlined, LoadingOutlined } from '@ant-design/icons';
-import { DimensionType } from '../../reducers/interfaces';
+import { DimensionType } from '../../reducers';
 
 interface Props {
     menuKey: string;

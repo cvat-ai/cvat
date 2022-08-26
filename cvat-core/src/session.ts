@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
-    const PluginRegistry = require('./plugins');
+    const PluginRegistry = require('./plugins').default;
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {
@@ -831,7 +831,7 @@
                     }
 
                     return new Label(labelData);
-                });
+                }).filter((label) => !label.hasParent);
             } else {
                 throw new Error('Job labels must be an array');
             }
@@ -1227,10 +1227,8 @@
             });
 
             if (Array.isArray(initialData.labels)) {
-                for (const label of initialData.labels) {
-                    const classInstance = new Label(label);
-                    data.labels.push(classInstance);
-                }
+                data.labels = initialData.labels
+                    .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
             }
 
             if (Array.isArray(initialData.segments)) {
