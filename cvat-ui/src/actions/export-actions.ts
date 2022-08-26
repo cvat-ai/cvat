@@ -21,7 +21,7 @@ export enum ExportActionTypes {
 }
 
 export const exportActions = {
-    openExportModal: (instance: any, resource: 'dataset' | 'backup' | null) => (
+    openExportModal: (instance: any, resource: 'dataset' | 'backup') => (
         createAction(ExportActionTypes.OPEN_EXPORT_MODAL, { instance, resource })
     ),
     closeExportModal: () => createAction(ExportActionTypes.CLOSE_EXPORT_MODAL),

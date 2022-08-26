@@ -51,8 +51,8 @@ export interface AdvancedConfiguration {
     useCache: boolean;
     copyData?: boolean;
     sortingMethod: SortingMethod;
-    useProjectSourceStorage: boolean | null;
-    useProjectTargetStorage: boolean | null;
+    useProjectSourceStorage: boolean;
+    useProjectTargetStorage: boolean;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -85,8 +85,8 @@ interface Props {
     onChangeTargetStorageLocation: (value: StorageLocation) => void;
     installedGit: boolean;
     projectId: number | null;
-    useProjectSourceStorage?: boolean | null;
-    useProjectTargetStorage?: boolean | null;
+    useProjectSourceStorage: boolean;
+    useProjectTargetStorage: boolean;
     activeFileManagerTab: string;
     dumpers: [];
     sourceStorageLocation: StorageLocation;

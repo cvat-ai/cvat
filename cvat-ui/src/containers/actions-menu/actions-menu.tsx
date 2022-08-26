@@ -29,7 +29,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null) => void;
+    showExportModal: (taskInstance: any, resource: 'dataset' | 'backup') => void;
     showImportModal: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
     deleteTask: (taskInstance: any) => void;
@@ -57,7 +57,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        showExportModal: (taskInstance: any, resource: 'dataset' | 'backup' | null): void => {
+        showExportModal: (taskInstance: any, resource: 'dataset' | 'backup'): void => {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
         showImportModal: (taskInstance: any): void => {
