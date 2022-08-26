@@ -5,6 +5,7 @@
 
 import sys
 import rq
+import re
 import os.path as osp
 from attr import attrib, attrs
 from collections import namedtuple
@@ -1056,14 +1057,24 @@ class CVATDataExtractorMixin:
             datum_annotation.Categories] = {}
 
         label_categories = datum_annotation.LabelCategories(attributes=['occluded'])
+        point_categories = datum_annotation.PointsCategories()
 
         for _, label in labels:
-            label_categories.add(label['name'])
+            label_id = label_categories.add(label['name'])
             for _, attr in label['attributes']:
                 label_categories.attributes.add(attr['name'])
 
+            if label['type'] == str(LabelType.SKELETON):
+                labels_from = list(map(int, re.findall(r'data-node-from="(\d+)"', label['svg'])))
+                labels_to = list(map(int, re.findall(r'data-node-to="(\d+)"', label['svg'])))
+                sublabels = re.findall(r'data-label-name="(\w+)"', label['svg'])
+                joints = zip(labels_from, labels_to)
+
+                point_categories.add(label_id, sublabels, joints)
+
 
         categories[datum_annotation.AnnotationType.label] = label_categories
+        categories[datum_annotation.AnnotationType.points] = point_categories
 
         return categories
 
@@ -1481,7 +1492,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
         datum_annotation.AnnotationType.polygon: ShapeType.POLYGON,
         datum_annotation.AnnotationType.polyline: ShapeType.POLYLINE,
         datum_annotation.AnnotationType.points: ShapeType.POINTS,
-        datum_annotation.AnnotationType.cuboid_3d: ShapeType.CUBOID
+        datum_annotation.AnnotationType.cuboid_3d: ShapeType.CUBOID,
+        datum_annotation.AnnotationType.skeleton: ShapeType.SKELETON
     }
 
     label_cat = dm_dataset.categories()[datum_annotation.AnnotationType.label]
@@ -1541,39 +1553,94 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
 
                     if track_id is None or dm_dataset.format != 'cvat' :
+                        elements = []
+                        if ann.type == datum_annotation.AnnotationType.skeleton:
+                            for element in ann.elements:
+                                element_attributes = [
+                                    instance_data.Attribute(name=n, value=str(v))
+                                    for n, v in element.attributes.items()
+                                ]
+                                element_occluded = cast(element.attributes.pop('occluded', None), bool) is True
+                                element_outside = cast(element.attributes.pop('outside', None), bool) is True
+                                element_source = element.attributes.pop('source').lower() \
+                                    if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
+                                elements.append(instance_data.LabeledShape(
+                                    type=shapes[element.type],
+                                    frame=frame_number,
+                                    points=element.points,
+                                    label=label_cat.items[element.label].name,
+                                    occluded=element_occluded,
+                                    z_order=ann.z_order,
+                                    group=group_map.get(ann.group, 0),
+                                    source=element_source,
+                                    attributes=element_attributes,
+                                    elements=[],
+                                    outside=element_outside,
+                                ))
                         instance_data.add_shape(instance_data.LabeledShape(
                             type=shapes[ann.type],
                             frame=frame_number,
-                            points=ann.points,
+                            points=ann.points if ann.type is not datum_annotation.AnnotationType.skeleton else [],
                             label=label_cat.items[ann.label].name,
                             occluded=occluded,
                             z_order=ann.z_order,
                             group=group_map.get(ann.group, 0),
                             source=source,
                             attributes=attributes,
+                            elements=elements,
                         ))
                         continue
 
                     if keyframe or outside:
-                        track = instance_data.TrackedShape(
-                            type=shapes[ann.type],
-                            frame=frame_number,
-                            occluded=occluded,
-                            outside=outside,
-                            keyframe=keyframe,
-                            points=ann.points,
-                            z_order=ann.z_order,
-                            source=source,
-                            attributes=attributes,
-                        )
-
                         if track_id not in tracks:
                             tracks[track_id] = instance_data.Track(
                                 label=label_cat.items[ann.label].name,
                                 group=group_map.get(ann.group, 0),
                                 source=source,
                                 shapes=[],
+                                elements=[],
                             )
+
+                        track = instance_data.TrackedShape(
+                            type=shapes[ann.type],
+                            frame=frame_number,
+                            occluded=occluded,
+                            outside=outside,
+                            keyframe=keyframe,
+                            points=ann.points if ann.type is not datum_annotation.AnnotationType.skeleton else [],
+                            z_order=ann.z_order,
+                            source=source,
+                            attributes=attributes,
+                        )
+
+                        if ann.type == datum_annotation.AnnotationType.skeleton:
+                            for element in ann.elements:
+                                if element.label not in tracks[track_id].elements:
+                                    tracks[track_id].elements[element.label] = instance_data.Track(
+                                        label=label_cat.items[element.label].name,
+                                        group=0,
+                                        source=source,
+                                        shapes=[],
+                                    )
+                                element_attributes = [
+                                    instance_data.Attribute(name=n, value=str(v))
+                                    for n, v in element.attributes.items()
+                                ]
+                                element_occluded = cast(element.attributes.pop('occluded', None), bool) is True
+                                element_outside = cast(element.attributes.pop('outside', None), bool) is True
+                                element_source = element.attributes.pop('source').lower() \
+                                    if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
+                                tracks[track_id].elements[element.label].shapes.append(instance_data.TrackedShape(
+                                    type=shapes[ann.type],
+                                    frame=frame_number,
+                                    occluded=element_occluded,
+                                    outside=element_outside,
+                                    keyframe=keyframe,
+                                    points=element.points,
+                                    z_order=element.z_order,
+                                    source=element_source,
+                                    attributes=element_attributes,
+                                ))
 
                         tracks[track_id].shapes.append(track)
 

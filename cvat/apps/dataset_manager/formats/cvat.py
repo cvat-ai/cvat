@@ -13,7 +13,7 @@ from typing import Callable
 
 from datumaro.components.annotation import (AnnotationType, Bbox, Label,
                                             LabelCategories, Points, Polygon,
-                                            PolyLine)
+                                            PolyLine, Skeleton)
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
                                            Importer)
@@ -118,6 +118,8 @@ class CvatExtractor(Extractor):
         items = OrderedDict()
 
         track = None
+        track_element = None
+        track_shapes = None
         shape = None
         shape_element = None
         tag = None
@@ -128,15 +130,22 @@ class CvatExtractor(Extractor):
         for ev, el in context:
             if ev == 'start':
                 if el.tag == 'track':
-                    frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
-                    track = {
-                        'id': el.attrib['id'],
-                        'label': el.attrib.get('label'),
-                        'group': int(el.attrib.get('group_id', 0)),
-                        'height': frame_size[0],
-                        'width': frame_size[1],
-                    }
-                    subset = el.attrib.get('subset')
+                    if track:
+                        track_element = {
+                            'id': el.attrib['id'],
+                            'label': el.attrib.get('label'),
+                        }
+                    else:
+                        frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
+                        track = {
+                            'id': el.attrib['id'],
+                            'label': el.attrib.get('label'),
+                            'group': int(el.attrib.get('group_id', 0)),
+                            'height': frame_size[0],
+                            'width': frame_size[1],
+                        }
+                        subset = el.attrib.get('subset')
+                        track_shapes = {}
                 elif el.tag == 'image':
                     image = {
                         'name': el.attrib.get('name'),
@@ -159,11 +168,14 @@ class CvatExtractor(Extractor):
                             'type': None,
                             'attributes': attributes,
                         }
-                        if track:
+                        shape['elements'] = []
+                        if track_element:
+                            shape.update(track_element)
+                            shape['track_id'] = int(track_element['id'])
+                        elif track:
                             shape.update(track)
                             shape['track_id'] = int(track['id'])
                         if image:
-                            shape['elements'] = []
                             shape.update(image)
                 elif el.tag == 'tag' and image:
                     attributes = {}
@@ -220,35 +232,6 @@ class CvatExtractor(Extractor):
                     shape['elements'].append(shape_element)
                     shape_element = None
 
-                elif el.tag in cls._SUPPORTED_SHAPES and :
-                    if track is not None:
-                        shape['frame'] = el.attrib['frame']
-                        shape['outside'] = (el.attrib.get('outside') == '1')
-                        shape['keyframe'] = (el.attrib.get('keyframe') == '1')
-                    if image is not None:
-                        shape['label'] = el.attrib.get('label')
-                        shape['group'] = int(el.attrib.get('group_id', 0))
-
-                    shape['type'] = el.tag
-                    shape['occluded'] = (el.attrib.get('occluded') == '1')
-                    shape['z_order'] = int(el.attrib.get('z_order', 0))
-
-                    if el.tag == 'box':
-                        shape['points'] = list(map(float, [
-                            el.attrib['xtl'], el.attrib['ytl'],
-                            el.attrib['xbr'], el.attrib['ybr'],
-                        ]))
-                    else:
-                        shape['points'] = []
-                        for pair in el.attrib['points'].split(';'):
-                            shape['points'].extend(map(float, pair.split(',')))
-
-                    frame_desc = items.get((subset, shape['frame']), {'annotations': []})
-                    frame_desc['annotations'].append(
-                        cls._parse_shape_ann(shape, categories))
-                    items[(subset, shape['frame'])] = frame_desc
-                    shape = None
-
                 elif el.tag in cls._SUPPORTED_SHAPES:
                     if track is not None:
                         shape['frame'] = el.attrib['frame']
@@ -271,11 +254,16 @@ class CvatExtractor(Extractor):
                         shape['points'] = []
                         for pair in el.attrib['points'].split(';'):
                             shape['points'].extend(map(float, pair.split(',')))
+                    if track_element:
+                        track_shapes[shape['frame']]['elements'].append(shape)
+                    elif track:
+                        track_shapes[shape['frame']] = shape
+                    else:
+                        frame_desc = items.get((subset, shape['frame']), {'annotations': []})
+                        frame_desc['annotations'].append(
+                            cls._parse_shape_ann(shape, categories))
+                        items[(subset, shape['frame'])] = frame_desc
 
-                    frame_desc = items.get((subset, shape['frame']), {'annotations': []})
-                    frame_desc['annotations'].append(
-                        cls._parse_shape_ann(shape, categories))
-                    items[(subset, shape['frame'])] = frame_desc
                     shape = None
 
                 elif el.tag == 'tag':
@@ -285,7 +273,15 @@ class CvatExtractor(Extractor):
                     items[(subset, tag['frame'])] = frame_desc
                     tag = None
                 elif el.tag == 'track':
-                    track = None
+                    if track_element:
+                        track_element = None
+                    else:
+                        for shape in track_shapes.values():
+                            frame_desc = items.get((subset, shape['frame']), {'annotations': []})
+                            frame_desc['annotations'].append(
+                                cls._parse_shape_ann(shape, categories))
+                            items[(subset, shape['frame'])] = frame_desc
+                        track = None
                 elif el.tag == 'image':
                     frame_desc = items.get((subset, image['frame']), {'annotations': []})
                     frame_desc.update({
@@ -459,6 +455,14 @@ class CvatExtractor(Extractor):
             return Bbox(x, y, w, h, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
+        elif ann_type == 'skeleton':
+            elements = []
+            for element in ann.get('elements', []):
+                elements.append(cls._parse_shape_ann(element, categories))
+
+            return Skeleton(elements, label=label_id, z_order=z_order,
+                id=ann_id, attributes=attributes, group=group)
+
         else:
             raise NotImplementedError("Unknown annotation type '%s'" % ann_type)
 
@@ -483,7 +487,7 @@ class CvatExtractor(Extractor):
             di.subset = subset or DEFAULT_SUBSET_NAME
             di.annotations = item_desc.get('annotations')
             di.attributes = {'frame': int(frame_id)}
-            di.image = image if isinstance(image, Image) else di.image
+            di.media = image if isinstance(image, Image) else di.media
             image_items[(subset, osp.splitext(name)[0])] = di
         return image_items
 
