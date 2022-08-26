@@ -101,7 +101,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     Create a new task
                                 </Button>
                                 <Button
-                                    className='cvat-create-task-button'
+                                    className='cvat-create-multi-tasks-button'
                                     type='primary'
                                     onClick={(): void => history.push('/tasks/create?many=true')}
                                     icon={<span className='anticon'><MutliPlusIcon /></span>}
