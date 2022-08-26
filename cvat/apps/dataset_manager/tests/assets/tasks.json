@@ -184,6 +184,36 @@
       }
     ]
   },
+  "KITTI 1.0": {
+    "name": "kitti task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "is_crowd",
+            "mutable": false,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      },
+      {
+        "name": "background",
+        "color": "#000000",
+        "attributes": []
+      }
+    ]
+  },
   "wrong_checkbox_value": {
     "name": "wrong checkbox value task",
     "overlap": 0,
