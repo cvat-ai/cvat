@@ -27,6 +27,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Added helm chart support for serverless functions and analytics (<https://github.com/cvat-ai/cvat/pull/110>)
 - Added confirmation when remove a track (<https://github.com/opencv/cvat/pull/4846>)
 - [COCO Keypoints](https://cocodataset.org/#keypoints-2020) format support (<https://github.com/opencv/cvat/pull/4821>)
+- Support for Oracle OCI Buckets (<https://github.com/opencv/cvat/pull/4876>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
