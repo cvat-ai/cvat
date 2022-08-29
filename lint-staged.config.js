@@ -12,7 +12,9 @@ function makePattern(extension) {
 
 module.exports = (stagedFiles) => {
     const eslintExtensions = ['ts', 'tsx', 'js'].map(makePattern);
+    const scssExtensions = ['scss'].map(makePattern);
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
+    const scssFiles = micromatch(stagedFiles, scssExtensions);
 
     const tests = containsInPath('/tests/', eslintFiles);
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
@@ -23,6 +25,7 @@ module.exports = (stagedFiles) => {
 
     const mapping = {};
     const commands = [];
+    mapping['npx stylelint --fix '] = scssFiles.join(' ');
     mapping['yarn run precommit:cvat-tests -- '] = tests.join(' ');
     mapping['yarn run precommit:cvat-ui -- '] = cvatUI.join(' ');
     mapping['yarn run precommit:cvat-data -- '] = cvatData.join(' ');
