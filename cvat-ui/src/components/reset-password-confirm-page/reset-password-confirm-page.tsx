@@ -10,8 +10,6 @@ import Layout from 'antd/lib/layout';
 
 import { CombinedState } from 'reducers';
 import { resetPasswordAsync } from 'actions/auth-actions';
-
-import FooterDrawer from 'components/login-page/intel-footer-drawer';
 import ResetPasswordConfirmForm, { ResetPasswordConfirmData } from './reset-password-confirm-form';
 
 interface StateToProps {
@@ -70,7 +68,6 @@ function ResetPasswordPagePageComponent(props: ResetPasswordConfirmPageComponent
                     </Col>
                 </Row>
             </Content>
-            <FooterDrawer />
         </Layout>
     );
 }

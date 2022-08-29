@@ -9,10 +9,6 @@ export function isDev(): boolean {
     return process.env.NODE_ENV === 'development';
 }
 
-export function isPublic(): boolean {
-    return process.env.PUBLIC_INSTANCE === 'true';
-}
-
 export function customWaViewHit(pageName?: string, queryString?: string, hashInfo?: string): void {
     const waHitFunctionName = process.env.WA_PAGE_VIEW_HIT;
     if (waHitFunctionName) {
@@ -26,7 +22,7 @@ export function customWaViewHit(pageName?: string, queryString?: string, hashInf
         );
         try {
             waHitFunction(pageName, queryString, hashInfo);
-        } catch (error) {
+        } catch (error: any) {
             // eslint-disable-next-line
             console.error(`Web analitycs hit function has failed. ${error.toString()}`);
         }

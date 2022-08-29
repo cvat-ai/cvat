@@ -32,7 +32,7 @@ import {
 import consts from 'consts';
 
 function renderContent(): JSX.Element {
-    const { GITHUB_URL, GITHUB_IMAGE_URL, GITTER_PUBLIC_URL } = consts;
+    const { GITHUB_URL, GITHUB_IMAGE_URL, DISCORD_URL } = consts;
 
     return (
         <>
@@ -48,7 +48,7 @@ function renderContent(): JSX.Element {
             <LikeOutlined />
             <Text style={{ marginLeft: '10px' }}>
                 Leave a
-                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}>
+                <a target='_blank' rel='noopener noreferrer' href={DISCORD_URL}>
                     {' '}
                     feedback
                 </a>
@@ -88,9 +88,9 @@ function renderContent(): JSX.Element {
             <hr />
             <Text style={{ marginTop: '50px' }}>
                 Do you need help? Contact us on
-                <a target='_blank' rel='noopener noreferrer' href={GITTER_PUBLIC_URL}>
+                <a target='_blank' rel='noopener noreferrer' href={DISCORD_URL}>
                     {' '}
-                    gitter
+                    Discord
                 </a>
             </Text>
         </>

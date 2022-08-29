@@ -12,7 +12,6 @@ import { Row, Col } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 
 import { UserAgreement } from 'reducers';
-import FooterDrawer from 'components/login-page/intel-footer-drawer';
 import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
 interface RegisterPageComponentProps {
@@ -71,7 +70,6 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
                     </Col>
                 </Row>
             </Content>
-            <FooterDrawer />
         </Layout>
     );
 }

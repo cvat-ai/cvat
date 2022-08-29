@@ -12,7 +12,6 @@ import Layout from 'antd/lib/layout';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
 import { CombinedState } from 'reducers';
-import FooterDrawer from 'components/login-page/intel-footer-drawer';
 import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
 
 interface StateToProps {
@@ -73,7 +72,6 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
                     </Col>
                 </Row>
             </Content>
-            <FooterDrawer />
         </Layout>
     );
 }
