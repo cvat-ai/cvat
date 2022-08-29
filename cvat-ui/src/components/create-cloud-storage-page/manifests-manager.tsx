@@ -80,7 +80,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                 type='link'
                                 target='_blank'
                                 className='cvat-cloud-storage-help-button'
-                                href='https://cvat-ai.github.io/cvat/docs/manual/advanced/dataset_manifest/'
+                                href='https://docs.cvat.ai/manual/advanced/dataset_manifest/'
                             >
                                 <QuestionCircleOutlined />
                             </Button>
