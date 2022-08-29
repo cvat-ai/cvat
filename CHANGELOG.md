@@ -56,6 +56,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Creating task with cloud storage data (<https://github.com/cvat-ai/cvat/pull/116>)
 - Show empty tasks (<https://github.com/cvat-ai/cvat/pull/100>)
 - Fixed project filtration (<https://github.com/opencv/cvat/pull/4878>)
+- Maximum callstack exceed when create task with 100000+ files from cloud storage (<https://github.com/opencv/cvat/pull/4836>)
 
 ### Security
 - TDB
