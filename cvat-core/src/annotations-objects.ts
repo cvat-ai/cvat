@@ -507,7 +507,9 @@ class Annotation {
     }
 
     public set removed(value: boolean) {
-        this._clearServerID();
+        if (value) {
+            this._clearServerID();
+        }
         this._removed = value;
     }
 }

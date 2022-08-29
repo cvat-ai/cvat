@@ -375,21 +375,22 @@
                 object.removed = true;
             }
 
+            const [importedTrack] = imported.tracks;
             this.history.do(
                 HistoryActions.MERGED_OBJECTS,
                 () => {
-                    imported.tracks[0].removed = true;
+                    importedTrack.removed = true;
                     for (const object of objectsForMerge) {
                         object.removed = false;
                     }
                 },
                 () => {
-                    imported.tracks[0].removed = false;
+                    importedTrack.removed = false;
                     for (const object of objectsForMerge) {
                         object.removed = true;
                     }
                 },
-                [...objectsForMerge.map((object) => object.clientID), imported.tracks[0].clientID],
+                [...objectsForMerge.map((object) => object.clientID), importedTrack.clientID],
                 objectStates[0].frame,
             );
         }
