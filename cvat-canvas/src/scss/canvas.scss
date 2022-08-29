@@ -99,6 +99,7 @@ polyline.cvat_canvas_shape_grouping {
     @extend .cvat_shape_action_opacity;
 
     fill: blue;
+
     > circle[data-node-id] {
         fill: blue;
     }
