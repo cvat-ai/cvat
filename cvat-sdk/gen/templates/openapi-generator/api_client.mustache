@@ -345,6 +345,9 @@ class ApiClient(object):
         """
 
         if response_schema == (file_type,):
+            # TODO: response schema can be "oneOf" with a file option,
+            # this implementation does not cover this.
+
             # handle file downloading
             # save response body into a tmp file and return the instance
             content_disposition = response.getheader("Content-Disposition")
