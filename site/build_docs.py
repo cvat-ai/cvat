@@ -75,6 +75,11 @@ def generate_docs(repo, output_dir, tags):
         os.makedirs(destination_dir)
         run_hugo(content_loc, destination_dir)
 
+# TODO try to get custom domain name from github
+def create_cname_file(filename):
+    with open (filename, 'w') as fp:
+        fp.write('docs.cvat.ai')
+
 if __name__ == "__main__":
     repo_root = os.getcwd()
     repo = git.Repo(repo_root)
@@ -82,3 +87,4 @@ if __name__ == "__main__":
 
     tags = prepare_tags(repo)
     generate_docs(repo, output_dir, tags)
+    create_cname_file(os.path.join(output_dir, 'CNAME'))
