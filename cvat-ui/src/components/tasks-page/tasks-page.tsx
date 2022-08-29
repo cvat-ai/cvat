@@ -70,7 +70,7 @@ function TasksPageComponent(props: Props): JSX.Element {
                     <Button
                         type='link'
                         onClick={(): void => {
-                            dispatch(hideEmptyTasks(true));
+                            dispatch(hideEmptyTasks(false));
                             message.destroy();
                         }}
                     >

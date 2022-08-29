@@ -230,7 +230,7 @@ const config = require('./config');
             checkExclusiveFields(filter, ['id'], ['page']);
             const searchParams = {};
             for (const key of Object.keys(filter)) {
-                if (['id', 'page', 'search', 'sort', 'page'].includes(key)) {
+                if (['id', 'page', 'search', 'sort', 'page', 'filter'].includes(key)) {
                     searchParams[key] = filter[key];
                 }
             }
