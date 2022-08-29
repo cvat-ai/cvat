@@ -36,7 +36,7 @@ def generate_versioning_config(filename, versions, url_prefix=''):
         file_object.write('url = "{}"\n\n'.format(url))
 
     with open(filename, 'w') as fp:
-        write_version_item(fp, 'Latest version', 'https://{}/'.format(CVAT_DOCS_URL))
+        write_version_item(fp, 'Develop', 'https://{}/'.format(CVAT_DOCS_URL))
         for v in versions:
             version_url = '{}/{}'.format(url_prefix, v)
             if version.parse(v) <= version.Version(LEGACY_VERSION):
@@ -74,7 +74,7 @@ def generate_docs(repo, output_dir, tags):
         os.makedirs(output_dir)
 
     generate_versioning_config(os.path.join(cwd, 'site', 'versioning.toml'), (t.name for t in tags))
-    set_version_menu_toml(os.path.join(cwd, 'site', 'versioning.toml'), 'Latest version')
+    set_version_menu_toml(os.path.join(cwd, 'site', 'versioning.toml'), 'Develop')
     run_hugo(content_loc, output_dir)
 
     generate_versioning_config(os.path.join(cwd, 'site', 'versioning.toml'), (t.name for t in tags), '/..')

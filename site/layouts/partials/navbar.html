@@ -40,7 +40,7 @@
   <div class="dropdown-menu" id="dropdown_ver" aria-labelledby="navbarDropdownMenuLink">
     {{ range .Site.Params.versions }}
       {{ $ver := .version }}
-        <a class="dropdown-item" href="{{ .url }}{{ if eq $ver "Latest version" }}{{ $page_rel_trim }}{{ else }}{{ $page_rel }}{{ end }}">{{ $ver }}</a>
+        <a class="dropdown-item" href="{{ .url }}{{ if eq $ver "Develop" }}{{ $page_rel_trim }}{{ else }}{{ $page_rel }}{{ end }}">{{ $ver }}</a>
     {{ end }}
   </div>
   <div class="navbar-nav d-none d-lg-block">{{ partial "search-input.html" . }}</div>
