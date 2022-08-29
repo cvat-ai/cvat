@@ -172,6 +172,7 @@
             });
 
             const keyframes = {}; // frame: position
+            const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
             const { label, shapeType } = objectStates[0];
             if (!(label.id in this.labels)) {
                 throw new ArgumentError(`Unknown label for the task: ${label.id}`);
@@ -232,7 +233,7 @@
                     };
 
                     // Push outside shape after each annotation shape
-                    // Any not outside shape rewrites it
+                    // Any not outside shape will rewrite it later
                     if (!(object.frame + 1 in keyframes) && object.frame + 1 <= this.stopFrame) {
                         keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
@@ -244,15 +245,10 @@
                         });
                     }
                 } else if (object instanceof Track) {
-                    // If this object is track, iterate through all its
+                    // If this object is a track, iterate through all its
                     // keyframes and push copies to new keyframes
                     const attributes = {}; // id:value
                     const trackShapes = object.shapes;
-                    const exportedShapes = object.shapeType === ShapeType.SKELETON ?
-                        object.prepareShapesForServer().reduce((acc, val) => {
-                            acc[val.frame] = val;
-                            return acc;
-                        }, {}) : {};
                     for (const keyframe of Object.keys(trackShapes)) {
                         const shape = trackShapes[keyframe];
                         // Frame already saved and it is not outside
@@ -279,11 +275,6 @@
                             type: shapeType,
                             frame: +keyframe,
                             points: object.shapeType === ShapeType.SKELETON ? undefined : [...shape.points],
-                            elements: object.shapeType === ShapeType.SKELETON ?
-                                exportedShapes[keyframe].elements.map((el) => {
-                                    const { id, ...rest } = el;
-                                    return rest;
-                                }) : undefined,
                             rotation: shape.rotation,
                             occluded: shape.occluded,
                             outside: shape.outside,
@@ -303,6 +294,35 @@
                         `Trying to merge unknown object type: ${object.constructor.name}. ` +
                             'Only shapes and tracks are expected.',
                     );
+                }
+
+                if (object.shapeType === ShapeType.SKELETON) {
+                    for (const element of object.elements) {
+                        // for each track/shape element get its first objectState and keep it
+                        elements[element.label.id] = [
+                            ...(elements[element.label.od] || []), element.get(element.frame),
+                        ];
+                    }
+                }
+            }
+
+            const mergedElemenets = [];
+            if (shapeType === ShapeType.SKELETON) {
+                for (const sublabel of label.structure.sublabels) {
+                    if (!(sublabel.id in elements)) {
+                        throw new ArgumentError(
+                            `Merged skeleton is absent some of its elements (sublabel id: ${sublabel.id})`,
+                        );
+                    }
+
+                    try {
+                        mergedElemenets.push(this.merge(elements[sublabel.id]));
+                    } catch (error) {
+                        throw new ArgumentError(
+                            `Could not merge some skeleton parts (sublabel id: ${sublabel.id}).
+                            Original error is ${error.toString()}`,
+                        );
+                    }
                 }
             }
 
@@ -324,6 +344,7 @@
                     Object.keys(keyframes).map((frame) => +frame),
                 ),
                 shapes: Object.values(keyframes),
+                elements: shapeType === ShapeType.SKELETON ? mergedElemenets : undefined,
                 group: 0,
                 source: objectStates[0].source,
                 label_id: label.id,
