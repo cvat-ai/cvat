@@ -444,20 +444,18 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { multiTasks } = this.state;
         this.startLoading();
         const { length } = multiTasks;
-        let count = 0;
-        while (count < length) {
-            // TODO change to 2 queues
-            // const promises = [count, count + 1]
-            //     .map((it) => new Promise((resolve) => this.createOneOfMultiTasks(it).then(resolve)));
-            // await Promise.allSettled(promises);
-            // count += 2;
-            // for development
-            const promises = [count].map((it) => new Promise((resolve) => {
-                this.createOneOfMultiTasks(it).then(resolve);
-            }));
-            await Promise.all(promises);
-            count++;
-        }
+        let index = 0;
+        const queueSize = 2;
+        const promises = Array(queueSize)
+            .fill(undefined)
+            .map(async (): Promise<void> => {
+                while (true) {
+                    index++; // preliminary increase is needed to avoid using the same index when queueSize > 1
+                    if (index > length) break;
+                    await this.createOneOfMultiTasks(index - 1);
+                }
+            });
+        await Promise.allSettled(promises);
         this.stopLoading();
     };
 
@@ -792,7 +790,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             files,
             activeFileManagerTab,
             loading,
-            statusInProgressTask: status,
         } = this.state;
         const currentFiles = files[activeFileManagerTab];
         const countPending = items.filter((item) => item.status === 'pending').length;
@@ -802,7 +799,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             return (
                 <MultiTasksProgress
                     tasks={items}
-                    statusCurrentTask={status}
                     onOk={this.handleOkMultiTasks}
                     onCancel={this.handleCancelMultiTasks}
                     onRetryFailedTasks={this.handleRetryFailedMultiTasks}
