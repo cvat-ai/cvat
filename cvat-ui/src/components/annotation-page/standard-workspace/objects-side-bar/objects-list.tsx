@@ -6,6 +6,8 @@ import React from 'react';
 
 import { StatesOrdering } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
+import { SortedLabelGroup } from 'containers/annotation-page/standard-workspace/objects-side-bar/object-list-sorter';
+import ObjectState from 'cvat-core/src/object-state';
 import ObjectListHeader from './objects-list-header';
 
 interface Props {
@@ -14,7 +16,7 @@ interface Props {
     statesLocked: boolean;
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
-    sortedStatesID: number[];
+    groupedObjects: SortedLabelGroup[];
     objectStates: any[];
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
@@ -34,7 +36,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesLocked,
         statesCollapsedAll,
         statesOrdering,
-        sortedStatesID,
+        groupedObjects,
         objectStates,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
@@ -66,15 +68,22 @@ function ObjectListComponent(props: Props): JSX.Element {
                 showAllStates={showAllStates}
             />
             <div className='cvat-objects-sidebar-states-list'>
-                {sortedStatesID.map(
-                    (id: number): JSX.Element => (
-                        <ObjectItemContainer
-                            readonly={readonly}
-                            activateOnClick
-                            objectStates={objectStates}
-                            key={id}
-                            clientID={id}
-                        />
+                {groupedObjects.map(
+                    (group: SortedLabelGroup): JSX.Element => (
+                        <div>
+                            <div>{group.label.name}</div>
+                            {group.objects.map(
+                                (state: ObjectState): JSX.Element => (
+                                    <ObjectItemContainer
+                                        readonly={readonly}
+                                        activateOnClick
+                                        objectStates={objectStates}
+                                        key={state.clientID}
+                                        clientID={state.clientID ?? 0}
+                                    />
+                                ),
+                            )}
+                        </div>
                     ),
                 )}
             </div>

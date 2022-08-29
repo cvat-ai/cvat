@@ -23,6 +23,7 @@ import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
 } from 'reducers';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { groupAndSort, SortedLabelGroup } from './object-list-sorter';
 
 interface OwnProps {
     readonly: boolean;
@@ -146,25 +147,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): number[] {
-    let sorted = [];
-    if (ordering === StatesOrdering.ID_ASCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => a.clientID - b.clientID);
-    } else if (ordering === StatesOrdering.ID_DESCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.clientID - a.clientID);
-    } else {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.updated - a.updated);
-    }
-
-    return sorted.map((state: any) => state.clientID);
-}
-
 type Props = StateToProps & DispatchToProps & OwnProps;
 
 interface State {
     statesOrdering: StatesOrdering;
     objectStates: ObjectState[];
-    sortedStatesID: number[];
+    groupedObjects: SortedLabelGroup[];
 }
 
 class ObjectsListContainer extends React.PureComponent<Props, State> {
@@ -181,7 +169,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.state = {
             statesOrdering: StatesOrdering.ID_ASCENT,
             objectStates: [],
-            sortedStatesID: [],
+            groupedObjects: [],
         };
     }
 
@@ -193,7 +181,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         return {
             ...state,
             objectStates: props.objectStates,
-            sortedStatesID: sortAndMap(props.objectStates, state.statesOrdering),
+            groupedObjects: groupAndSort(props.objectStates, state.statesOrdering),
         };
     }
 
@@ -201,7 +189,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const { objectStates } = this.props;
         this.setState({
             statesOrdering,
-            sortedStatesID: sortAndMap(objectStates, statesOrdering),
+            groupedObjects: groupAndSort(objectStates, statesOrdering),
         });
     };
 
@@ -280,7 +268,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             propagateObject,
             changeFrame,
         } = this.props;
-        const { objectStates, sortedStatesID, statesOrdering } = this.state;
+        const { objectStates, groupedObjects, statesOrdering } = this.state;
 
         const subKeyMap = {
             SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
@@ -497,7 +485,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesCollapsedAll={statesCollapsedAll}
                     readonly={readonly || false}
                     statesOrdering={statesOrdering}
-                    sortedStatesID={sortedStatesID}
+                    groupedObjects={groupedObjects}
                     objectStates={objectStates}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
