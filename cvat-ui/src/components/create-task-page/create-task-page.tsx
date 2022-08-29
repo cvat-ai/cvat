@@ -14,7 +14,7 @@ import TextArea from 'antd/lib/input/TextArea';
 import CreateTaskContent, { CreateTaskData } from './create-task-content';
 
 interface Props {
-    onCreate: (data: CreateTaskData, onProgress: (status: string) => void) => Promise<any>;
+    onCreate: (data: CreateTaskData, onProgress?: (status: string) => void) => Promise<any>;
     installedGit: boolean;
     dumpers: []
 }

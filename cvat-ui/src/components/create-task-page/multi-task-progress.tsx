@@ -14,7 +14,6 @@ import List from 'antd/lib/list';
 
 interface Props {
     tasks: any[];
-    statusCurrentTask: string;
     onCancel: () => void;
     onOk: () => void;
     onRetryFailedTasks: () => void;
@@ -24,7 +23,6 @@ interface Props {
 export default function MultiTasksProgress(props: Props): JSX.Element {
     const {
         tasks: items,
-        statusCurrentTask,
         onOk,
         onCancel,
         onRetryFailedTasks,
@@ -58,8 +56,13 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
             type={alertType}
             message={(
                 <div>
-                    {percent === 100 ? 'Finished' : statusCurrentTask}
-                    <br />
+                    {percent === 100 ? (
+                        <>
+                            Finished
+                            <br />
+                        </>
+                    ) :
+                        null}
                     pending:
                     {countPending}
                     ,

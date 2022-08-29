@@ -15,13 +15,12 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onCreate: (data: CreateTaskData, onProgress: (status: string) => void) => Promise<any>;
+    onCreate: (data: CreateTaskData, onProgress?: (status: string) => void) => Promise<any>;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onCreate: (data: CreateTaskData, onProgress: (status: string) => void):
-        Promise<any> => dispatch(createTaskAsync(data, onProgress)),
+        onCreate: (data, onProgress) => dispatch(createTaskAsync(data, onProgress)),
     };
 }
 

@@ -298,7 +298,7 @@ export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
     };
 }
 
-export function createTaskAsync(data: any, onProgress: (status: string) => void):
+export function createTaskAsync(data: any, onProgress?: (status: string) => void):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (): Promise<any> => {
         const description: any = {
@@ -357,7 +357,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
             if (gitPlugin) {
                 gitPlugin.callbacks.onStatusChange = (status: string): void => {
-                    onProgress(status);
+                    onProgress?.(status);
                 };
                 gitPlugin.data.task = taskInstance;
                 gitPlugin.data.repos = data.advanced.repository;
@@ -366,7 +366,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }
         }
         const savedTask = await taskInstance.save((status: string): void => {
-            onProgress(status);
+            onProgress?.(status);
         });
         return savedTask;
     };

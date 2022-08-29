@@ -45,7 +45,7 @@ export interface CreateTaskData {
 }
 
 interface Props {
-    onCreate: (data: CreateTaskData, onProgress: (status: string, progress?: number) => void) => Promise<any>;
+    onCreate: (data: CreateTaskData, onProgress?: (status: string, progress?: number) => void) => Promise<any>;
     projectId: number | null;
     installedGit: boolean;
     dumpers:[];
@@ -432,7 +432,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         await this.setStatusOneOfMultiTasks(index, 'progress');
         try {
-            await onCreate(task, this.changeStatusInProgressTask);
+            await onCreate(task);
             await this.setStatusOneOfMultiTasks(index, 'completed');
         } catch (err) {
             console.warn(err);
