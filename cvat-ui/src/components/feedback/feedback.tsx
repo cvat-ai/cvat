@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -58,12 +59,7 @@ function renderContent(): JSX.Element {
                 <FacebookShareButton url={GITHUB_URL} quote='Computer Vision Annotation Tool'>
                     <FacebookIcon size={32} round />
                 </FacebookShareButton>
-                <VKShareButton
-                    url={GITHUB_URL}
-                    title='Computer Vision Annotation Tool'
-                    image={GITHUB_IMAGE_URL}
-                    description='CVAT'
-                >
+                <VKShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool' image={GITHUB_IMAGE_URL}>
                     <VKIcon size={32} round />
                 </VKShareButton>
                 <TwitterShareButton url={GITHUB_URL} title='Computer Vision Annotation Tool' hashtags={['CVAT']}>
