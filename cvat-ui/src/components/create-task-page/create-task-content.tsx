@@ -449,6 +449,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const promises = Array(queueSize)
             .fill(undefined)
             .map(async (): Promise<void> => {
+                // eslint-disable-next-line no-constant-condition
                 while (true) {
                     index++; // preliminary increase is needed to avoid using the same index when queueSize > 1
                     if (index > length) break;
