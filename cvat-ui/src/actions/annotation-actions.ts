@@ -601,7 +601,6 @@ export function activateObjects(
     activatedElementID: number | null,
     activatedAttributeID: number | null,
     multiSelect: boolean,
-,
 ): AnyAction {
     return {
         type: AnnotationActionTypes.ACTIVATE_OBJECTS,

@@ -840,8 +840,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
      * @param shape the shape representing the element in the view
      */
     private selectize(state: any, value: boolean, shape: SVG.Element): void {
-        // console.log(`selectize ${state.clientID}: ${value}`);
-
         // click handler for points
         const mousedownHandler = (e: MouseEvent): void => {
             if (e.button !== 0) return;
@@ -1006,7 +1004,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const id of this.activeElements.clientIDs) {
                 const shape = this.svgShapes[id];
                 if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
-                    if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
+                    if (this.drawnStates[id]?.shapeType === 'skeleton') {
                         const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
                         if (wrappingRect) {
                             (wrappingRect as any).resize({ snapToAngle: this.snapToAngleResize });
@@ -1025,7 +1023,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const id of this.activeElements.clientIDs) {
                 const shape = this.svgShapes[id];
                 if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
-                    if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
+                    if (this.drawnStates[id]?.shapeType === 'skeleton') {
                         const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
                         if (wrappingRect) {
                             (wrappingRect as any).resize({ snapToAngle: this.snapToAngleResize });
@@ -1264,6 +1262,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
         model.subscribe(this);
     }
 
+    private updateShapeViews(states: DrawnState[], parentState?: DrawnState): void {
+        for (const state of states) {
+            const { fill, stroke, 'fill-opacity': fillOpacity } = this.getShapeColorization(state, { configuration: this.configuration, parentState });
+            const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
+            if (shapeView) {
+                const handler = (shapeView as any).instance.remember('_selectHandler');
+                if (handler && handler.nested) {
+                    handler.nested.fill({ color: fill });
+                }
+
+                (shapeView as any).instance
+                    .fill({ color: fill, opacity: fillOpacity })
+                    .stroke({ color: stroke });
+            }
+
+            if (state.elements) {
+                this.updateShapeViews(state.elements, state);
+            }
+        }
+    }
+
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
         this.geometry = this.controller.geometry;
         if (reason === UpdateReasons.CONFIG_UPDATED) {
@@ -1271,32 +1290,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.deactivateAll();
             const { configuration } = model;
 
-            const updateShapeViews = (states: DrawnState[], parentState?: DrawnState): void => {
-                for (const state of states) {
-                    const { fill, stroke, 'fill-opacity': fillOpacity } = this.getShapeColorization(state, { configuration, parentState });
-                    const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
-                    if (shapeView) {
-                        const handler = (shapeView as any).instance.remember('_selectHandler');
-                        if (handler && handler.nested) {
-                            handler.nested.fill({ color: fill });
-                        }
-
-                        (shapeView as any).instance
-                            .fill({ color: fill, opacity: fillOpacity })
-                            .stroke({ color: stroke });
-                    }
-
-                    if (state.elements) {
-                        updateShapeViews(state.elements, state);
-                    }
-                }
-            };
-
             if (configuration.shapeOpacity !== this.configuration.shapeOpacity ||
                 configuration.selectedShapeOpacity !== this.configuration.selectedShapeOpacity ||
                 configuration.outlinedBorders !== this.configuration.outlinedBorders ||
                 configuration.colorBy !== this.configuration.colorBy) {
-                updateShapeViews(Object.values(this.drawnStates));
+                this.updateShapeViews(Object.values(this.drawnStates));
             }
 
             if (configuration.displayAllText && !this.configuration.displayAllText) {
@@ -1453,6 +1451,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.setupObjects(this.controller.objects);
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
+            }
+            if (this.mode === Mode.IDLE) {
+                // In case label changed
+                this.updateShapeViews(Object.values(this.drawnStates));
             }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);
@@ -1773,7 +1775,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { shapeType } = state;
         const parentShapeType = opts.parentState?.shapeType;
         const configuration = opts.configuration || this.configuration;
-        const { colorBy, shapeOpacity, outlinedBorders } = configuration;
+        const { colorBy, outlinedBorders } = configuration;
         let shapeColor = '';
 
         if (colorBy === 'Instance') {
@@ -1785,10 +1787,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
         const outlinedColor = parentShapeType === 'skeleton' ? 'black' : outlinedBorders || shapeColor;
 
+        let opacity = 0;
+        if (!['polyline', 'points', 'skeleton'].includes(shapeType) || parentShapeType === 'skeleton') {
+            opacity = this.controller.activeElements.clientIDs.includes(state.clientID) ? this.configuration.selectedShapeOpacity : this.configuration.shapeOpacity;
+        }
+
+        // TODO: activate opacity
         return {
             fill: shapeColor,
             stroke: outlinedColor,
-            'fill-opacity': !['polyline', 'points', 'skeleton'].includes(shapeType) || parentShapeType === 'skeleton' ? shapeOpacity : 0,
+            'fill-opacity': opacity,
         };
     }
 
@@ -2088,13 +2096,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         (shape as any).off('resizedone');
         (shape as any).resize('stop');
 
-            this.setShapeFill(clientID, this.configuration.opacity);
+        this.setShapeFill(clientID, this.configuration.shapeOpacity);
 
-            // TODO: Hide text only if it is hidden by settings
-            const text = this.svgTexts[clientID];
-            if (text && !displayAllText) {
-                this.deleteText(clientID);
-            }
+        // TODO: Hide text only if it is hidden by settings
+        const text = this.svgTexts[clientID];
+        if (text && !displayAllText) {
+            this.deleteText(clientID);
+        }
 
         this.sortObjects();
     }
@@ -2359,7 +2367,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             // Make sure opacity is filled for all active elements
-            this.setShapeFill(activeId, this.configuration.selectedOpacity);
+            this.setShapeFill(activeId, this.configuration.selectedShapeOpacity);
         }
 
         // any shapes left should be deactivated
@@ -2836,7 +2844,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         (skeleton as any).selectize = (enabled: boolean) => {
-            this.selectize(enabled, wrappingRect);
+            this.selectize(state, enabled, wrappingRect);
             const handler = wrappingRect.remember('_selectHandler');
             if (enabled && handler) {
                 this.adoptedContent.node.append(handler.nested.node);

@@ -112,7 +112,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showObjectsTextAlways,
             workspace,
             showProjections,
-            opacity,
             selectedOpacity,
             opacity,
             smoothImage,
@@ -513,6 +512,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasShapeClicked = (e: any): void => {
         const { clientID, parentID } = e.detail.state;
+        const { workspace, activatedStateIDs } = this.props;
         let sidebarItem = null;
         if (Number.isInteger(parentID)) {
             sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-element-${clientID}`);
@@ -540,18 +540,18 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             // Right clicking on an inactive shape will single-select it, otherwise it will do nothing
             // so we can show the context menu for the current active shape(s)
             if (activatedStateIDs.length <= 1) {
-                this.props.onActivateObjects([clientID], false);
+                this.props.onActivateObjects([clientID], null, false);
             }
         } else if (e.detail.event.shiftKey) {
             // Shift-select behavior Holding shift will toggle selectedness
             if (activatedStateIDs.includes(clientID)) {
                 this.props.onDeactivateObject(clientID);
             } else {
-                this.props.onActivateObjects([clientID], true);
+                this.props.onActivateObjects([clientID], null, true);
             }
         } else {
             // Single-select the object clicked on
-            this.props.onActivateObjects([clientID], false);
+            this.props.onActivateObjects([clientID], null, false);
         }
     };
 
@@ -573,7 +573,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        onActivateObjects(clientIDs, false);
+        onActivateObjects(clientIDs, null, false);
     };
 
     // private onCanvasShapeDeactivated = (e: any): void => {

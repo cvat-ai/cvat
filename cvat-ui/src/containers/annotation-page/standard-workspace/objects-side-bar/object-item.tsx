@@ -31,7 +31,6 @@ interface OwnProps {
     clientID: number;
     objectStates: any[];
     activateOnClick: boolean;
-    initialCollapsed: boolean;
 }
 
 interface StateToProps {
@@ -55,7 +54,6 @@ interface StateToProps {
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
-    collapseOrExpand(objectStates: any[], collapsed: boolean): void;
     activateObjects: (activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean) => void;
     removeObject: (sessionInstance: any, objectState: any) => void;
     copyShape: (objectState: any) => void;
@@ -67,7 +65,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             annotations: {
-                collapsed: statesCollapsed,
                 activatedStateIDs,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
@@ -84,7 +81,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     } = state;
 
     const {
-        objectStates: states, initialCollapsed, clientID, activateOnClick,
+        objectStates: states, clientID, activateOnClick,
     } = own;
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
@@ -114,9 +111,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateState(state: any): void {
             dispatch(updateAnnotationsAsync([state]));
-        },
-        collapseOrExpand(objectStates: any[], collapsed: boolean): void {
-            dispatch(collapseObjectItems(objectStates, collapsed));
         },
         activateObjects(activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean): void {
             dispatch(activateObjectsAction(activatedStateIDs, activatedElementID, null, multiSelect));
@@ -155,11 +149,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private remove = (): void => {
         const {
-            objectState, readonly, removeObject,
+            objectState, jobInstance, readonly, removeObject,
         } = this.props;
 
         if (!readonly) {
-            removeObject(objectState);
+            removeObject(jobInstance, objectState);
         }
     };
 

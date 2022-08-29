@@ -36,12 +36,15 @@ module.exports = {
         'no-restricted-syntax': [0, { selector: 'ForOfStatement' }],
         'no-await-in-loop': 0,
         'indent': ['error', 4, { 'SwitchCase': 1 }],
+        "@typescript-eslint/indent": "off", // This rule is broken!!
         'max-len': ['error', { code: 170, ignoreStrings: true }],
         'func-names': 0,
         'valid-typeof': 0,
         'no-useless-constructor': 0, // sometimes constructor is necessary to generate right documentation in cvat-core
         'quotes': ['error', 'single'],
         'lines-between-class-members': 0,
+        '@typescript-eslint/lines-between-class-members': 0,
+        '@typescript-eslint/no-explicit-any': 'off',
         'class-methods-use-this': 0,
         'no-underscore-dangle': ['error', { allowAfterThis: true }],
         'max-classes-per-file': 0,

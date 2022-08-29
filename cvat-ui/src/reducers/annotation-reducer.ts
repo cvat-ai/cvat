@@ -713,7 +713,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.ACTIVATE_OBJECTS: {
-            const { activatedStateIDs, activatedElementID, activatedAttributeID, multiSelect } = action.payload;
+            const {
+                activatedStateIDs, activatedElementID, activatedAttributeID, multiSelect,
+            } = action.payload;
 
             const { canvas: { activeControl, instance } } = state;
 
@@ -763,10 +765,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REMOVE_OBJECT: {
+            const { objectState, force } = action.payload;
+            return {
+                ...state,
+                remove: {
+                    ...state.remove,
+                    objectState,
+                    force,
+                },
+            };
+        }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
             const contextMenuClientIDs = state.canvas.contextMenu.clientIDs;
-            const contextMenuVisible = state.canvas.contextMenu.visible;
+
+            const newIds = contextMenuClientIDs.filter((id) => id !== objectState.clientID);
 
             return {
                 ...state,
@@ -782,9 +796,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.canvas,
                     contextMenu: {
                         ...state.canvas.contextMenu,
-                        clientID: objectState.clientID === contextMenuClientID ? null : contextMenuClientID,
-                        visible: objectState.clientID === contextMenuClientID ? false : contextMenuVisible,
+                        clientIDs: newIds,
+                        visible: newIds.length > 0,
                     },
+                },
+                remove: {
+                    objectState: null,
+                    force: false,
+                },
             };
         }
         case AnnotationActionTypes.REMOVE_OBJECT_FAILED: {
@@ -1003,7 +1022,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         top,
                         type,
                         pointID,
-                        clientID: state.annotations.activatedStateID,
+                        clientIDs: state.annotations.activatedStateIDs,
                     },
                 },
             };
@@ -1147,7 +1166,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 workspace,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: null,
+                    activatedStateIDs: [],
+                    activatedElementID: null,
                     activatedAttributeID: null,
                 },
             };

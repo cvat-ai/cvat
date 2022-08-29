@@ -316,18 +316,17 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             }
         };
 
-        const activatedStates = (): any[] => {
+        const getActivatedStates = (): any[] => {
             if (activatedElementID !== null) {
                 const state = objectStates
                     .find((objectState: ObjectState): boolean => objectState.clientID === activatedStateIDs[0]);
                 if (state && activatedElementID !== null) {
                     const element = state.elements
                         .find((_element: ObjectState): boolean => _element.clientID === activatedElementID);
-                    return element || null;
+                    return element ? [element] : [];
                 }
-                return state || null;
             }
-            return objectStates.filter((s) => activatedStateIDs.includes(s.clientID)
+            return objectStates.filter((s) => s.clientID !== null && activatedStateIDs.includes(s.clientID));
         };
 
         const handlers = {
@@ -407,7 +406,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (!readonly && states.length) {
                     // ROBTODO: look into doing as single atomic change
                     for (const state of states) {
-                        removeObject(jobInstance, state, event ? event.shiftKey : false);
+                        removeObject(state, event ? event.shiftKey : false);
                     }
                 }
             },
