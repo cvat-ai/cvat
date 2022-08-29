@@ -1592,10 +1592,10 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                 frame=frame_number,
                                 points=ann.points[2 * i : 2 * i + 2],
                                 label=point_cat.items[ann.label].labels[i],
-                                occluded=ann.visibility[i].value == datum_annotation.Points.Visibility.hidden,
+                                occluded=ann.visibility[i] == datum_annotation.Points.Visibility.hidden,
                                 source=source,
                                 attributes=[],
-                                outside=ann.visibility[i].value == datum_annotation.Points.Visibility.absent,
+                                outside=ann.visibility[i] == datum_annotation.Points.Visibility.absent,
                             ))
 
 
