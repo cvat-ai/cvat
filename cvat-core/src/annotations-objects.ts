@@ -201,7 +201,7 @@ class Annotation {
     protected group: number;
     public label: Label;
     protected frame: number;
-    protected removed: boolean;
+    private _removed: boolean;
     protected lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
@@ -223,7 +223,7 @@ class Annotation {
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
-        this.removed = false;
+        this._removed = false;
         this.lock = false;
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
@@ -445,6 +445,10 @@ class Annotation {
         }
     }
 
+    _clearServerID(): void {
+        this.serverID = undefined;
+    }
+
     appendDefaultAttributes(label: Label): void {
         const labelAttributes = label.attributes;
         for (const attribute of labelAttributes) {
@@ -464,11 +468,9 @@ class Annotation {
     delete(frame: number, force: boolean): boolean {
         if (!this.lock || force) {
             this.removed = true;
-
             this.history.do(
                 HistoryActions.REMOVED_OBJECT,
                 () => {
-                    this.serverID = undefined;
                     this.removed = false;
                     this.updated = Date.now();
                 },
@@ -494,6 +496,15 @@ class Annotation {
 
     toJSON(): void {
         throw new ScriptingError('Is not implemented');
+    }
+
+    public get removed(): boolean {
+        return this._removed;
+    }
+
+    public set removed(value: boolean) {
+        this._clearServerID();
+        this._removed = value;
     }
 }
 
@@ -1135,6 +1146,13 @@ export class Track extends Drawn {
         }
 
         return result;
+    }
+
+    _clearServerID(): void {
+        Drawn.prototype._clearServerID.call(this);
+        for (const keyframe in this.shapes) {
+            this.shapes[keyframe].serverID = undefined;
+        }
     }
 
     _saveLabel(label: Label, frame: number): void {
@@ -2115,6 +2133,13 @@ export class SkeletonShape extends Shape {
         };
     }
 
+    _clearServerID() {
+        Shape.prototype._clearServerID.call(this);
+        for (const element of this.elements) {
+            element._clearServerID();
+        }
+    }
+
     _saveRotation(rotation, frame) {
         const undoSkeletonPoints = this.elements.map((element) => element.points);
         const undoSource = this.source;
@@ -2688,6 +2713,13 @@ export class SkeletonTrack extends Track {
 
             // todo z_order: this.zOrder,
         )).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id) as any as Track[];
+    }
+
+    _clearServerID() {
+        Track.prototype._clearServerID.call(this);
+        for (const element of this.elements) {
+            element._clearServerID();
+        }
     }
 
     _saveRotation(rotation: number, frame: number): void {
