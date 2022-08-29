@@ -449,6 +449,10 @@ class Annotation {
         this.serverID = undefined;
     }
 
+    updateServerID(body: any): void {
+        this.serverID = body.id;
+    }
+
     appendDefaultAttributes(label: Label): void {
         const labelAttributes = label.attributes;
         for (const attribute of labelAttributes) {
@@ -1148,9 +1152,17 @@ export class Track extends Drawn {
         return result;
     }
 
+    updateServerID(body: RawTrackData): void {
+        this.serverID = body.id;
+        for (const shape of body.shapes) {
+            this.shapes[shape.frame].serverID = shape.id;
+        }
+    }
+
     _clearServerID(): void {
+        /* eslint-disable-next-line no-underscore-dangle */
         Drawn.prototype._clearServerID.call(this);
-        for (const keyframe in this.shapes) {
+        for (const keyframe of Object.keys(this.shapes)) {
             this.shapes[keyframe].serverID = undefined;
         }
     }
@@ -2133,9 +2145,19 @@ export class SkeletonShape extends Shape {
         };
     }
 
-    _clearServerID() {
+    updateServerID(body: RawShapeData): void {
+        Shape.prototype.updateServerID.call(this, body);
+        for (const element of body.elements) {
+            const thisElement = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
+            thisElement.updateServerID(element);
+        }
+    }
+
+    _clearServerID(): void {
+        /* eslint-disable-next-line no-underscore-dangle */
         Shape.prototype._clearServerID.call(this);
         for (const element of this.elements) {
+            /* eslint-disable-next-line no-underscore-dangle */
             element._clearServerID();
         }
     }
@@ -2715,9 +2737,19 @@ export class SkeletonTrack extends Track {
         )).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id) as any as Track[];
     }
 
-    _clearServerID() {
+    updateServerID(body: RawTrackData): void {
+        Track.prototype.updateServerID.call(this, body);
+        for (const element of body.elements) {
+            const thisElement = this.elements.find((_element: Track) => _element.label.id === element.label_id);
+            thisElement.updateServerID(element);
+        }
+    }
+
+    _clearServerID(): void {
+        /* eslint-disable-next-line no-underscore-dangle */
         Track.prototype._clearServerID.call(this);
         for (const element of this.elements) {
+            /* eslint-disable-next-line no-underscore-dangle */
             element._clearServerID();
         }
     }
