@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 
@@ -83,13 +83,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         'cvat-objects-sidebar-state-item' :
         'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
 
-    const activateState = useCallback(() => {
-        activate();
-    }, []);
-
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
-            <div className='cvat-objects-sidebar-state-item-color' style={{ background: `${color}` }} />
             <div
                 onClick={(e) => activate(null, e.shiftKey)}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
@@ -137,15 +132,18 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 )}
                 {!!elements.length && (
                     <>
-                        <Collapse className='cvat-objects-sidebar-state-item-elements-collapse'>
+                        <Collapse
+                            className='cvat-objects-sidebar-state-item-elements-collapse'
+                            activeKey='objects'
+                        >
                             <Collapse.Panel
+                                key='objects'
                                 header={(
                                     <>
                                         <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>
                                         <br />
                                     </>
                                 )}
-                                key='elements'
                             >
                                 {elements.map((element: ObjectState) => (
                                     <ObjectItemElementComponent
@@ -153,7 +151,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                                         readonly={readonly}
                                         parentID={clientID}
                                         clientID={element.clientID as number}
-                                        onMouseLeave={activateState}
                                     />
                                 ))}
                             </Collapse.Panel>

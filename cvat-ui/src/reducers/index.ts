@@ -572,6 +572,7 @@ export interface AnnotationState {
     job: {
         openTime: null | number;
         labels: any[];
+        labelShortcuts: Record<string, number>;
         requestedId: number | null;
         instance: any | null | undefined;
         attributes: Record<number, any[]>;

@@ -208,6 +208,7 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME = 'RESTORE_FRAME',
     RESTORE_FRAME_SUCCESS = 'RESTORE_FRAME_SUCCESS',
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
+    UPDATE_LABEL_SHORTCUTS = 'UPDATE_LABEL_SHORTCUTS',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1899,5 +1900,15 @@ export function restoreFrameAsync(frame: number): ThunkAction {
                 payload: { error },
             });
         }
+    };
+}
+
+export function updateLabelShortcuts(labelShortcuts: Record<string, number>): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_LABEL_SHORTCUTS,
+        payload:
+        {
+            labelShortcuts,
+        },
     };
 }

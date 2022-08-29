@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
 import { CombinedState } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
-import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import LabelItem from './label-item';
 
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -17,48 +17,13 @@ function LabelsListComponent(): JSX.Element {
     const activatedStateIDs = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateIDs);
     const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
     const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
+    const labelShortcuts = useSelector((state: CombinedState) => state.annotation.job.labelShortcuts);
 
     const labelIDs = labels.map((label: any): number => label.id);
 
-    const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
-        Object.fromEntries(labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID])),
-    );
-
-    const updateLabelShortcutKey = useCallback(
-        (key: string, labelID: number) => {
-            // unassign any keys assigned to the current labels
-            const keyToLabelMappingCopy = { ...keyToLabelMapping };
-            for (const shortKey of Object.keys(keyToLabelMappingCopy)) {
-                if (keyToLabelMappingCopy[shortKey] === labelID) {
-                    delete keyToLabelMappingCopy[shortKey];
-                }
-            }
-
-            if (key === '—') {
-                setKeyToLabelMapping(keyToLabelMappingCopy);
-                return;
-            }
-
-            // check if this key is assigned to another label
-            if (key in keyToLabelMappingCopy) {
-                // try to find a new key for the other label
-                for (let i = 0; i < 10; i++) {
-                    const adjustedI = (i + 1) % 10;
-                    if (!(adjustedI in keyToLabelMappingCopy)) {
-                        keyToLabelMappingCopy[adjustedI] = keyToLabelMappingCopy[key];
-                        break;
-                    }
-                }
-                // delete assigning to the other label
-                delete keyToLabelMappingCopy[key];
-            }
-
-            // assigning to the current label
-            keyToLabelMappingCopy[key] = labelID;
-            setKeyToLabelMapping(keyToLabelMappingCopy);
-        },
-        [keyToLabelMapping],
-    );
+    // const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
+    //     Object.fromEntries(labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID])),
+    // );
 
     const subKeyMap = {
         SWITCH_LABEL: keyMap.SWITCH_LABEL,
@@ -67,7 +32,7 @@ function LabelsListComponent(): JSX.Element {
     const handlers = {
         SWITCH_LABEL: (event: KeyboardEvent | undefined, shortcut: string) => {
             if (event) event.preventDefault();
-            const labelID = keyToLabelMapping[shortcut.split('+')[1].trim()];
+            const labelID = labelShortcuts[shortcut.split('+')[1].trim()];
             const label = labels.filter((_label: any) => _label.id === labelID)[0];
             if (Number.isInteger(labelID) && label) {
                 if (activatedStateIDs.length && Number.isInteger(activatedStateIDs[0])) {
@@ -92,12 +57,7 @@ function LabelsListComponent(): JSX.Element {
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             {labelIDs.map(
                 (labelID: number): JSX.Element => (
-                    <LabelItemContainer
-                        key={labelID}
-                        labelID={labelID}
-                        keyToLabelMapping={keyToLabelMapping}
-                        updateLabelShortcutKey={updateLabelShortcutKey}
-                    />
+                    <LabelItem key={labelID} labelID={labelID} />
                 ),
             )}
         </div>

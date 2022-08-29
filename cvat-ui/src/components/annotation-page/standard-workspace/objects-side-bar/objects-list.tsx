@@ -8,7 +8,9 @@ import { StatesOrdering } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { SortedLabelGroup } from 'containers/annotation-page/standard-workspace/objects-side-bar/object-list-sorter';
 import ObjectState from 'cvat-core/src/object-state';
+import { Collapse } from 'antd';
 import ObjectListHeader from './objects-list-header';
+import LabelItem from './label-item';
 
 interface Props {
     readonly: boolean;
@@ -49,6 +51,19 @@ function ObjectListComponent(props: Props): JSX.Element {
         showAllStates,
     } = props;
 
+    // const createHeader = (group: SortedLabelGroup) => (
+    //     <div style={{ display: 'inline-flex', alignContent: 'center', gap: '10px', height: '30px' }}>
+    //         <div style={{ background: group.label.color, width: '22px', height: '22px' }} className='cvat-label-item-color'>
+    //             {' '}
+    //         </div>
+    //         <CVATTooltip title={group.label.name}>
+    //             <Text strong className='cvat-text'>
+    //                 {group.label.name}
+    //             </Text>
+    //         </CVATTooltip>
+    //     </div>
+    // );
+
     return (
         <>
             <ObjectListHeader
@@ -70,20 +85,58 @@ function ObjectListComponent(props: Props): JSX.Element {
             <div className='cvat-objects-sidebar-states-list'>
                 {groupedObjects.map(
                     (group: SortedLabelGroup): JSX.Element => (
-                        <div>
-                            <div>{group.label.name}</div>
-                            {group.objects.map(
-                                (state: ObjectState): JSX.Element => (
-                                    <ObjectItemContainer
-                                        readonly={readonly}
-                                        activateOnClick
-                                        objectStates={objectStates}
-                                        key={state.clientID}
-                                        clientID={state.clientID ?? 0}
-                                    />
-                                ),
-                            )}
-                        </div>
+                        <Collapse
+                            className='cvat-objects-sidebar-state-item-collapse'
+                            defaultActiveKey='details'
+                        >
+                            <Collapse.Panel header={<LabelItem labelID={group.label.id ?? 0} />} key='details'>
+                                {group.objects.map(
+                                    (state: ObjectState): JSX.Element => (
+                                        <ObjectItemContainer
+                                            readonly={readonly}
+                                            activateOnClick
+                                            objectStates={objectStates}
+                                            key={state.clientID}
+                                            clientID={state.clientID ?? 0}
+                                        />
+                                    ),
+                                )}
+                            </Collapse.Panel>
+                        </Collapse>
+
+                        // <div>
+                        //     <Row
+                        //         align='stretch'
+                        //         className={[
+                        //             'cvat-objects-sidebar-label-item',
+                        //             true ? '' : 'cvat-objects-sidebar-label-item-disabled',
+                        //         ].join(' ')}
+                        //     >
+                        //         <Col span={2}>
+                        //             <div style={{ background: group.label.color }} className='cvat-label-item-color'>
+                        //                 {' '}
+                        //             </div>
+                        //         </Col>
+                        //         <Col span={12}>
+                        //             <CVATTooltip title={group.label.name}>
+                        //                 <Text strong className='cvat-text'>
+                        //                     {group.label.name}
+                        //                 </Text>
+                        //             </CVATTooltip>
+                        //         </Col>
+                        //     </Row>
+                        //     {group.objects.map(
+                        //         (state: ObjectState): JSX.Element => (
+                        //             <ObjectItemContainer
+                        //                 readonly={readonly}
+                        //                 activateOnClick
+                        //                 objectStates={objectStates}
+                        //                 key={state.clientID}
+                        //                 clientID={state.clientID ?? 0}
+                        //             />
+                        //         ),
+                        //     )}
+                        // </div>
                     ),
                 )}
             </div>

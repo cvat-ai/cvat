@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -11,44 +11,78 @@ import {
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { CombinedState, ObjectType } from 'reducers';
+import { updateAnnotationsAsync, updateLabelShortcuts } from 'actions/annotation-actions';
+import { useDispatch, useSelector } from 'react-redux';
 import LabelKeySelectorPopover from './label-key-selector-popover';
 
 interface Props {
-    labelName: string;
-    labelColor: string;
     labelID: number;
-    visible: boolean;
-    statesHidden: boolean;
-    statesLocked: boolean;
-    keyToLabelMapping: Record<string, number>;
-    hideStates(): void;
-    showStates(): void;
-    lockStates(): void;
-    unlockStates(): void;
-    updateLabelShortcutKey(updatedKey: string, labelID: number): void;
 }
 
 function LabelItemComponent(props: Props): JSX.Element {
-    const {
-        labelName,
-        labelColor,
-        labelID,
-        keyToLabelMapping,
-        visible,
-        statesHidden,
-        statesLocked,
-        hideStates,
-        showStates,
-        lockStates,
-        unlockStates,
-        updateLabelShortcutKey,
-    } = props;
+    const dispatch = useDispatch();
+    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
+    const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
+    const labelShortcuts = useSelector((state: CombinedState) => state.annotation.job.labelShortcuts);
+    const label = labels.find((l) => l.id === props.labelID);
+
+    const updateLabelShortcutKey = useCallback(
+        (key: string, labelID: number) => {
+            // unassign any keys assigned to the current labels
+            const keyToLabelMappingCopy = { ...labelShortcuts };
+            for (const shortKey of Object.keys(keyToLabelMappingCopy)) {
+                if (keyToLabelMappingCopy[shortKey] === labelID) {
+                    delete keyToLabelMappingCopy[shortKey];
+                }
+            }
+
+            if (key === '—') {
+                dispatch(updateLabelShortcuts(keyToLabelMappingCopy));
+                return;
+            }
+
+            // check if this key is assigned to another label
+            if (key in keyToLabelMappingCopy) {
+                // try to find a new key for the other label
+                for (let i = 0; i < 10; i++) {
+                    const adjustedI = (i + 1) % 10;
+                    if (!(adjustedI in keyToLabelMappingCopy)) {
+                        keyToLabelMappingCopy[adjustedI] = keyToLabelMappingCopy[key];
+                        break;
+                    }
+                }
+                // delete assigning to the other label
+                delete keyToLabelMappingCopy[key];
+            }
+
+            // assigning to the current label
+            keyToLabelMappingCopy[key] = labelID;
+            dispatch(updateLabelShortcuts(keyToLabelMappingCopy));
+        },
+        [labelShortcuts.labelShortcuts],
+    );
+
+    const ownObjectStates = states.filter(
+        (ownObjectState: any): boolean => ownObjectState.label.id === props.labelID,
+    );
+    const visible = !!ownObjectStates.length;
+    let statesHidden = true;
+    let statesLocked = true;
+
+    ownObjectStates.forEach((objectState: any) => {
+        const { lock, objectType } = objectState;
+        if (!lock && objectType !== ObjectType.TAG) {
+            statesHidden = statesHidden && objectState.hidden;
+            statesLocked = statesLocked && objectState.lock;
+        }
+    });
 
     // create reversed mapping just to receive key easily
     const labelToKeyMapping: Record<string, string> = Object.fromEntries(
-        Object.entries(keyToLabelMapping).map(([key, _labelID]) => [_labelID, key]),
+        Object.entries(labelShortcuts).map(([key, _labelID]) => [_labelID, key]),
     );
-    const labelShortcutKey = labelToKeyMapping[labelID] || '?';
+    const labelShortcutKey = labelToKeyMapping[props.labelID.toString()] || '?';
     const classes = {
         lock: {
             enabled: { className: 'cvat-label-item-button-lock cvat-label-item-button-lock-enabled' },
@@ -58,6 +92,18 @@ function LabelItemComponent(props: Props): JSX.Element {
             enabled: { className: 'cvat-label-item-button-hidden cvat-label-item-button-hidden-enabled' },
             disabled: { className: 'cvat-label-item-button-hidden' },
         },
+    };
+
+    const setHidden = (value: boolean): void => {
+        if (ownObjectStates.length) {
+            dispatch(updateAnnotationsAsync(ownObjectStates.map((state: any) => ((state.hidden = value), state))));
+        }
+    };
+
+    const setLock = (value: boolean): void => {
+        if (ownObjectStates.length) {
+            dispatch(updateAnnotationsAsync(ownObjectStates.map((state: any) => ((state.lock = value), state))));
+        }
     };
 
     return (
@@ -70,21 +116,21 @@ function LabelItemComponent(props: Props): JSX.Element {
             ].join(' ')}
         >
             <Col span={2}>
-                <div style={{ background: labelColor }} className='cvat-label-item-color'>
+                <div style={{ background: label.color }} className='cvat-label-item-color'>
                     {' '}
                 </div>
             </Col>
             <Col span={12}>
-                <CVATTooltip title={labelName}>
+                <CVATTooltip title={label.name}>
                     <Text strong className='cvat-text'>
-                        {labelName}
+                        {label.name}
                     </Text>
                 </CVATTooltip>
             </Col>
             <Col span={3}>
                 <LabelKeySelectorPopover
-                    keyToLabelMapping={keyToLabelMapping}
-                    labelID={labelID}
+                    keyToLabelMapping={labelShortcuts}
+                    labelID={props.labelID}
                     updateLabelShortcutKey={updateLabelShortcutKey}
                 >
                     <Button className='cvat-label-item-setup-shortcut-button' size='small' ghost type='dashed'>
@@ -94,16 +140,16 @@ function LabelItemComponent(props: Props): JSX.Element {
             </Col>
             <Col span={2} offset={1}>
                 {statesLocked ? (
-                    <LockFilled {...classes.lock.enabled} onClick={unlockStates} />
+                    <LockFilled {...classes.lock.enabled} onClick={() => setLock(false)} />
                 ) : (
-                    <UnlockOutlined {...classes.lock.disabled} onClick={lockStates} />
+                    <UnlockOutlined {...classes.lock.disabled} onClick={() => setLock(true)} />
                 )}
             </Col>
             <Col span={3}>
                 {statesHidden ? (
-                    <EyeInvisibleFilled {...classes.hidden.enabled} onClick={showStates} />
+                    <EyeInvisibleFilled {...classes.hidden.enabled} onClick={() => setHidden(false)} />
                 ) : (
-                    <EyeOutlined {...classes.hidden.disabled} onClick={hideStates} />
+                    <EyeOutlined {...classes.hidden.disabled} onClick={() => setHidden(true)} />
                 )}
             </Col>
         </Row>

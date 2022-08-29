@@ -9,6 +9,7 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
+import { Label } from 'cvat-core/src/labels';
 import {
     ActiveControl,
     AnnotationState,
@@ -46,6 +47,7 @@ const defaultState: AnnotationState = {
     job: {
         openTime: null,
         labels: [],
+        labelShortcuts: {},
         requestedId: null,
         instance: null,
         attributes: {},
@@ -185,6 +187,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     fetching: false,
                     instance: job,
                     labels: job.labels,
+                    labelShortcuts: Object.fromEntries(job.labels.slice(0, 10).map((label: Label, idx: number) => [(idx + 1) % 10, label.id])),
                     attributes: job.labels
                         .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
                             acc[label.id] = label.attributes;
@@ -1346,6 +1349,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 state.canvas.instance.destroy();
             }
             return { ...defaultState };
+        }
+        case AnnotationActionTypes.UPDATE_LABEL_SHORTCUTS: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    labelShortcuts: action.payload.labelShortcuts,
+                },
+            };
         }
         default: {
             return state;
