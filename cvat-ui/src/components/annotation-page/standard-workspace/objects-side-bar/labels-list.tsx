@@ -14,7 +14,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
-    const activatedStateID = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateID);
+    const activatedStateIDs = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateIDs);
     const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
     const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
 
@@ -70,11 +70,13 @@ function LabelsListComponent(): JSX.Element {
             const labelID = keyToLabelMapping[shortcut.split('+')[1].trim()];
             const label = labels.filter((_label: any) => _label.id === labelID)[0];
             if (Number.isInteger(labelID) && label) {
-                if (Number.isInteger(activatedStateID)) {
-                    const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
-                    if (activatedState) {
-                        activatedState.label = label;
-                        dispatch(updateAnnotationsAsync([activatedState]));
+                if (activatedStateIDs.length && Number.isInteger(activatedStateIDs[0])) {
+                    const activatedStates = states.filter((state: any) => activatedStateIDs.includes(state.clientID));
+                    if (activatedStates.length) {
+                        for (const activatedState of activatedStates) {
+                            activatedState.label = label;
+                        }
+                        dispatch(updateAnnotationsAsync(activatedStates));
                     }
                 } else {
                     dispatch(rememberObject({ activeLabelID: labelID }));
