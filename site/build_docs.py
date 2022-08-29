@@ -10,7 +10,13 @@ from packaging import version
 import git
 import toml
 
-MINIMUM_VERSION='1.5.0'
+MINIMUM_VERSION = '1.5.0'
+
+# max version that contains `docs` subfolder
+LEGACY_VERSION = '2.1.0'
+
+# TODO try to get custom domain name from github
+CVAT_DOCS_URL = 'docs.cvat.ai'
 
 def prepare_tags(repo):
     tags = {}
@@ -29,17 +35,21 @@ def generate_versioning_config(filename, versions, url_prefix=''):
         file_object.write('version = "{}"\n'.format(version))
         file_object.write('url = "{}"\n\n'.format(url))
 
-    with open(filename, 'w') as f:
-        write_version_item(f, 'Latest version', '{}/'.format(url_prefix))
+    with open(filename, 'w') as fp:
+        write_version_item(fp, 'Latest version', 'https://{}/'.format(CVAT_DOCS_URL))
         for v in versions:
-            write_version_item(f, v, '{}/{}'.format(url_prefix, v))
+            version_url = '{}/{}'.format(url_prefix, v)
+            if version.parse(v) <= version.Version(LEGACY_VERSION):
+                if not url_prefix:
+                    version_url += '/docs'
+            write_version_item(fp, v, version_url)
 
 def git_checkout(tagname, cwd):
     docs_dir = os.path.join(cwd, 'site', 'content')
     shutil.rmtree(docs_dir)
     repo.git.checkout(tagname, '--', 'site/content')
 
-def change_version_menu_toml(filename, version):
+def set_version_menu_toml(filename, version):
     data = toml.load(filename)
     data['params']['version_menu'] = version
 
@@ -64,21 +74,20 @@ def generate_docs(repo, output_dir, tags):
         os.makedirs(output_dir)
 
     generate_versioning_config(os.path.join(cwd, 'site', 'versioning.toml'), (t.name for t in tags))
-    change_version_menu_toml(os.path.join(cwd, 'site', 'versioning.toml'), 'Latest version')
+    set_version_menu_toml(os.path.join(cwd, 'site', 'versioning.toml'), 'Latest version')
     run_hugo(content_loc, output_dir)
 
     generate_versioning_config(os.path.join(cwd, 'site', 'versioning.toml'), (t.name for t in tags), '/..')
     for tag in tags:
         git_checkout(tag.name, cwd)
         destination_dir = os.path.join(output_dir, tag.name)
-        change_version_menu_toml(os.path.join(cwd, 'site', 'versioning.toml'), tag.name)
+        set_version_menu_toml(os.path.join(cwd, 'site', 'versioning.toml'), tag.name)
         os.makedirs(destination_dir)
         run_hugo(content_loc, destination_dir)
 
-# TODO try to get custom domain name from github
 def create_cname_file(filename):
     with open (filename, 'w') as fp:
-        fp.write('docs.cvat.ai')
+        fp.write(CVAT_DOCS_URL)
 
 if __name__ == "__main__":
     repo_root = os.getcwd()
