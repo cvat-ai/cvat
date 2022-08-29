@@ -3,3 +3,4 @@
 attrs >= 21.4.0
 tqdm >= 4.64.0
 tuspy == 0.2.5 # have it pinned, because SDK has lots of patched TUS code
+typing_extensions >= 4.2.0
