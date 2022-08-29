@@ -35,12 +35,9 @@ def generate_versioning_config(filename, versions, url_prefix=''):
             write_version_item(f, v, '{}/{}'.format(url_prefix, v))
 
 def git_checkout(tagname, cwd):
-    docs_dir = os.path.join(cwd, 'site', 'content', 'en', 'docs')
+    docs_dir = os.path.join(cwd, 'site', 'content')
     shutil.rmtree(docs_dir)
-    repo.git.checkout(tagname, '--', 'site/content/en/docs')
-    images_dir = os.path.join(cwd, 'site', 'content', 'en', 'images')
-    shutil.rmtree(images_dir)
-    repo.git.checkout(tagname, '--', 'site/content/en/images')
+    repo.git.checkout(tagname, '--', 'site/content')
 
 def change_version_menu_toml(filename, version):
     data = toml.load(filename)

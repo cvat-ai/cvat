@@ -2,7 +2,7 @@
 {{ $page_rel := .Page.RelPermalink | safeURL }}
 {{ $page_rel_trim := strings.TrimLeft "/" $page_rel | safeURL }}
 <nav class="js-navbar-scroll navbar navbar-expand navbar-dark {{ if $cover}} td-navbar-cover {{ end }}flex-column flex-md-row td-navbar">
-        <a class="navbar-brand" href="{{ .Site.Home.RelPermalink }}about/">
+        <a class="navbar-brand" href="{{ .Site.Home.RelPermalink }}">
     <span class="navbar-logo">{{ if .Site.Params.ui.navbar_logo }}{{ with resources.Get "icons/logo.svg" }}{{ ( . | minify).Content | safeHTML }}{{ end }}{{ end }}</span>
   </a>
   <div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
