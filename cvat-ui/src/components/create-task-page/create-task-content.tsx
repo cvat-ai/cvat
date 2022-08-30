@@ -258,7 +258,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     return this.advancedConfigurationComponent.current.submit();
                 }
                 if (projectId) {
-                    return core.projects.get({ id: 105 })
+                    return core.projects.get({ id: projectId })
                         .then((response: any) => {
                             const [project] = response;
                             this.handleSubmitAdvancedConfiguration({

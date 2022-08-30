@@ -97,10 +97,6 @@ export interface TasksState {
     count: number;
     current: Task[];
     activities: {
-        loads: {
-            // only one loading simultaneously
-            [tid: number]: string; // loader name
-        };
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
@@ -118,20 +114,20 @@ export interface TasksState {
 export interface ExportState {
     tasks: {
         [tid: number]: {
-            'dataset': string[],
-            'backup': boolean,
+            dataset: string[];
+            backup: boolean;
         };
     };
     projects: {
         [pid: number]: {
-            'dataset': string[],
-            'backup': boolean,
+            dataset: string[];
+            backup: boolean;
         };
     };
     jobs: {
         [jid: number]: {
-            'dataset': string[],
-            'backup': boolean,
+            dataset: string[];
+            backup: boolean;
         };
     }
     instance: any;
@@ -139,30 +135,44 @@ export interface ExportState {
     modalVisible: boolean;
 }
 
-export interface ImportResourceState {
-    activities: {
-        [oid: number]: string; // loader name
+export interface ImportState {
+    projects: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: {
+                    format: string;
+                    progress: number;
+                    status: string;
+                };
+            };
+        };
+        backup: {
+            modalVisible: boolean;
+            importing: boolean;
+        }
     };
-    importingId: number | null;
-    progress: number;
-    status: string;
-}
-
-export interface ImportDatasetState {
-    projects: ImportResourceState | null;
-    tasks: ImportResourceState | null;
-    jobs: ImportResourceState | null;
-    importing: boolean;
-    instance: any;
-    resource: any;
-    modalVisible: boolean;
-}
-
-export interface ImportBackupState {
-    isTaskImported: boolean;
-    isProjectImported: boolean;
-    instanceType: 'project' | 'task' | null;
-    modalVisible: boolean;
+    tasks: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: string;
+            };
+        };
+        backup: {
+            modalVisible: boolean;
+            importing: boolean;
+        }
+    };
+    jobs: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: string;
+            };
+        };
+    };
+    instanceType: 'project' | 'task' | 'job' | null;
 }
 
 export interface FormatsState {
@@ -506,14 +516,14 @@ export interface NotificationsState {
             restoringDone: string;
         };
         exporting: {
-            dataset: string,
-            annotation: string,
-            backup: string,
+            dataset: string;
+            annotation: string;
+            backup: string;
         };
         importing: {
-            dataset: string,
-            annotation: string,
-            backup: string,
+            dataset: string;
+            annotation: string;
+            backup: string;
         };
     };
 }
@@ -830,8 +840,7 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
-    import: ImportDatasetState;
-    importBackup: ImportBackupState;
+    import: ImportState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
 }

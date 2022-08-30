@@ -32,7 +32,6 @@ const defaultState: TasksState = {
         projectId: null,
     },
     activities: {
-        loads: {},
         deletes: {},
         creates: {
             taskId: null,

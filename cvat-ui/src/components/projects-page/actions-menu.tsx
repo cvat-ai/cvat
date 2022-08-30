@@ -45,7 +45,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item key='export-dataset' onClick={() => dispatch(exportActions.openExportModal(projectInstance, 'dataset'))}>
                 Export dataset
             </Menu.Item>
-            <Menu.Item key='import-dataset' onClick={() => dispatch(importActions.openImportModal(projectInstance, 'dataset'))}>
+            <Menu.Item key='import-dataset' onClick={() => dispatch(importActions.openImportDatasetModal(projectInstance))}>
                 Import dataset
             </Menu.Item>
             <Menu.Item

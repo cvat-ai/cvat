@@ -120,7 +120,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
                     const selectedCloudStorage =
                     list.filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
                     // eslint-disable-next-line prefer-destructuring
-                    selectedCloudStorage.manifestPath = selectedCloudStorage.manifests[0];
+                    [selectedCloudStorage.manifestPath] = selectedCloudStorage.manifests;
                     onSelectCloudStorage(selectedCloudStorage);
                     setSearchPhrase(selectedCloudStorage?.displayName || '');
                 }}

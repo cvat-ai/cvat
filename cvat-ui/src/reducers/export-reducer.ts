@@ -72,21 +72,9 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
         }
         case ExportActionTypes.EXPORT_DATASET_FAILED:
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { instance, format } = action.payload;
-            let activities;
-            let field;
-            if (instance instanceof core.classes.Project) {
-                activities = deepCopy(state.projects);
-                field = 'projects';
-            } else if (instance instanceof core.classes.Task) {
-                activities = deepCopy(state.tasks);
-                field = 'tasks';
-            } else {
-                activities = deepCopy(state.jobs);
-                field = 'jobs';
-            }
-
-            const instanceId = instance.id;
+            const { instanceId, instanceType, format } = action.payload;
+            const field = `${instanceType}s` as 'projects' | 'tasks' | 'jobs';
+            const activities = deepCopy(state[field]);
 
             activities[instanceId].dataset = activities[instanceId].dataset.filter(
                 (exporterName: string): boolean => exporterName !== format,

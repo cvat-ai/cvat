@@ -24,7 +24,6 @@ interface OwnProps {
 
 interface StateToProps {
     annotationFormats: any;
-    loadActivity: string | null;
     inferenceIsActive: boolean;
 }
 
@@ -43,13 +42,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     const {
         formats: { annotationFormats },
-        tasks: {
-            activities: { loads },
-        },
     } = state;
 
     return {
-        loadActivity: tid in loads ? loads[tid] : null,
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
     };
@@ -61,7 +56,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
         showImportModal: (taskInstance: any): void => {
-            dispatch(importActions.openImportModal(taskInstance, 'annotation'));
+            dispatch(importActions.openImportDatasetModal(taskInstance));
         },
         deleteTask: (taskInstance: any): void => {
             dispatch(deleteTaskAsync(taskInstance));
@@ -79,8 +74,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     const {
         taskInstance,
         annotationFormats: { loaders, dumpers },
-        loadActivity,
         inferenceIsActive,
+        // backupIsActive,
         showExportModal,
         showImportModal,
         deleteTask,
@@ -99,7 +94,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             window.open(`${taskInstance.bugTracker}`, '_blank');
         } else if (action === Actions.RUN_AUTO_ANNOTATION) {
             openRunModelWindow(taskInstance);
-        } else if (action === Actions.EXPORT_TASK) {
+        } else if (action === Actions.BACKUP_TASK) {
             showExportModal(taskInstance, 'backup');
         } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
             openMoveTaskToProjectWindow(taskInstance.id);
@@ -115,10 +110,10 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             bugTracker={taskInstance.bugTracker}
             loaders={loaders}
             dumpers={dumpers}
-            loadActivity={loadActivity}
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
+            // backupIsActive={backupIsActive}
         />
     );
 }

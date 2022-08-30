@@ -28,12 +28,18 @@ export const exportActions = {
     exportDataset: (instance: any, format: string) => (
         createAction(ExportActionTypes.EXPORT_DATASET, { instance, format })
     ),
-    exportDatasetSuccess: (instance: any, format: string, isLocal: boolean) => (
-        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format, isLocal })
+    exportDatasetSuccess: (
+        instanceId: number,
+        instanceType: 'project' | 'task' | 'job',
+        format: string,
+        isLocal: boolean,
+    ) => (
+        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instanceId, instanceType, format, isLocal })
     ),
-    exportDatasetFailed: (instance: any, format: string, error: any) => (
+    exportDatasetFailed: (instanceId: number, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
-            instance,
+            instanceId,
+            instanceType,
             format,
             error,
         })
@@ -59,6 +65,9 @@ export const exportDatasetAsync = (
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
+    const instanceType = instance instanceof core.classes.Project ? 'project' :
+        instance instanceof core.classes.Task ? 'task' : 'job';
+
     try {
         const result = await instance.annotations.exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
         if (result) {
@@ -66,9 +75,9 @@ export const exportDatasetAsync = (
             downloadAnchor.href = result;
             downloadAnchor.click();
         }
-        dispatch(exportActions.exportDatasetSuccess(instance, format, !!result));
+        dispatch(exportActions.exportDatasetSuccess(instance.id, instanceType, format, !!result));
     } catch (error) {
-        dispatch(exportActions.exportDatasetFailed(instance, format, error));
+        dispatch(exportActions.exportDatasetFailed(instanceType, format, error));
     }
 };
 

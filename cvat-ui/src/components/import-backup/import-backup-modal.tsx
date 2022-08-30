@@ -12,7 +12,7 @@ import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 import { InboxOutlined } from '@ant-design/icons';
 import { CombinedState, StorageLocation } from 'reducers';
-import { importBackupActions, importBackupAsync } from 'actions/import-backup-actions';
+import { importActions, importBackupAsync } from 'actions/import-actions';
 import SourceStorageField from 'components/storage/source-storage-field';
 import Input from 'antd/lib/input/Input';
 
@@ -34,8 +34,13 @@ const initialValues: FormValues = {
 function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
     const [file, setFile] = useState<File | null>(null);
-    const instanceType = useSelector((state: CombinedState) => state.importBackup?.instanceType);
-    const modalVisible = useSelector((state: CombinedState) => state.importBackup.modalVisible);
+    const instanceType = useSelector((state: CombinedState) => state.import.instanceType);
+    const modalVisible = useSelector((state: CombinedState) => {
+        if (instanceType && ['project', 'task'].includes(instanceType)) {
+            return state.import[`${instanceType}s` as 'projects' | 'tasks'].backup.modalVisible;
+        }
+        return false;
+    });
     const dispatch = useDispatch();
     const [selectedSourceStorage, setSelectedSourceStorage] = useState<StorageData>({
         location: StorageLocation.LOCAL,
@@ -93,12 +98,12 @@ function ImportBackupModal(): JSX.Element {
     }
 
     const closeModal = useCallback((): void => {
-        form.resetFields();
         setSelectedSourceStorage({
             location: StorageLocation.LOCAL,
         });
         setFile(null);
-        dispatch(importBackupActions.closeImportModal());
+        dispatch(importActions.closeImportBackupModal(instanceType as 'project' | 'task'));
+        form.resetFields();
     }, [form, instanceType]);
 
     const handleImport = useCallback(

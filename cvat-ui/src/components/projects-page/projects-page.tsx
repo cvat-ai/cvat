@@ -23,7 +23,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const count = useSelector((state: CombinedState) => state.projects.current.length);
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const importing = useSelector((state: CombinedState) => state.importBackup.isProjectImported);
+    const importing = useSelector((state: CombinedState) => state.import.projects.backup.importing);
     const [isMounted, setIsMounted] = useState(false);
     const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
 

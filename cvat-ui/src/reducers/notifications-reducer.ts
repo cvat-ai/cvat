@@ -22,7 +22,6 @@ import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
-import { ImportBackupActionTypes } from 'actions/import-backup-actions';
 
 import { getCore } from 'cvat-core-wrapper';
 import { NotificationsState } from '.';
@@ -367,8 +366,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_DATASET_FAILED: {
-            const instanceID = action.payload.instance.id;
-            const instanceType = action.payload.instance instanceof core.classes.Project ? 'project' : 'task';
+            const { instanceId, instanceType } = action.payload;
             return {
                 ...state,
                 errors: {
@@ -378,8 +376,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message:
                                 'Could not export dataset for the ' +
-                                `<a href="/${instanceType}s/${instanceID}" target="_blank">` +
-                                `${instanceType} ${instanceID}</a>`,
+                                `<a href="/${instanceType}s/${instanceId}" target="_blank">` +
+                                `${instanceType} ${instanceId}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -387,7 +385,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { instance, isLocal } = action.payload;
+            const { instanceId, instanceType, isLocal } = action.payload;
             return {
                 ...state,
                 messages: {
@@ -395,7 +393,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     exporting: {
                         ...state.messages.exporting,
                         dataset:
-                            `Dataset for resource ${instance.id} has been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
+                            `Dataset for ${instanceType} ${instanceId} has been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
                     },
                 },
             };
@@ -472,7 +470,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ImportBackupActionTypes.IMPORT_BACKUP_SUCCESS: {
+        case ImportActionTypes.IMPORT_BACKUP_SUCCESS: {
             const { instanceId, instanceType } = action.payload;
             return {
                 ...state,
@@ -487,7 +485,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ImportBackupActionTypes.IMPORT_BACKUP_FAILED: {
+        case ImportActionTypes.IMPORT_BACKUP_FAILED: {
             const { instanceType } = action.payload;
             return {
                 ...state,

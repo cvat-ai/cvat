@@ -59,7 +59,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(exportActions.openExportModal(taskInstance, resource));
         },
         showImportModal(jobInstance: any): void {
-            dispatch(importActions.openImportModal(jobInstance, 'annotation'));
+            dispatch(importActions.openImportDatasetModal(jobInstance));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
             dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));

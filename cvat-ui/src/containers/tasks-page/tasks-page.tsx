@@ -25,7 +25,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         countInvisible: tasks.hideEmpty ?
             tasks.current.filter((task: Task): boolean => !task.instance.jobs.length).length :
             0,
-        importing: state.importBackup.isTaskImported,
+        importing: state.import.tasks.backup.importing,
     };
 }
 

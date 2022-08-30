@@ -18,9 +18,9 @@ interface Props {
     bugTracker: string;
     loaders: any[];
     dumpers: any[];
-    loadActivity: string | null;
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
+    // backupIsActive: boolean;
     onClickMenu: (params: MenuInfo) => void;
 }
 
@@ -31,7 +31,7 @@ export enum Actions {
     RUN_AUTO_ANNOTATION = 'run_auto_annotation',
     MOVE_TASK_TO_PROJECT = 'move_task_to_project',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
-    EXPORT_TASK = 'export_task',
+    BACKUP_TASK = 'backup_task',
 }
 
 function ActionsMenuComponent(props: Props): JSX.Element {
@@ -39,6 +39,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         taskID,
         bugTracker,
         inferenceIsActive,
+        // backupIsActive,
         onClickMenu,
     } = props;
 
@@ -78,9 +79,9 @@ function ActionsMenuComponent(props: Props): JSX.Element {
                 Automatic annotation
             </Menu.Item>
             <Menu.Item
-                key={Actions.EXPORT_TASK}
-                // disabled={exportIsActive}
-                // icon={exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
+                key={Actions.BACKUP_TASK}
+                // disabled={backupIsActive}
+                // icon={backupIsActive && <LoadingOutlined id='cvat-backup-task-loading' />}
             >
                 Backup Task
             </Menu.Item>

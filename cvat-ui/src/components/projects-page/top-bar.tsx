@@ -18,7 +18,7 @@ import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
 
-import { importBackupActions } from 'actions/import-backup-actions';
+import { importActions } from 'actions/import-actions';
 import { useDispatch } from 'react-redux';
 
 const FilteringComponent = ResourceFilterHOC(
@@ -108,7 +108,7 @@ function TopBarComponent(props: Props): JSX.Element {
                                     type='primary'
                                     disabled={importing}
                                     icon={<UploadOutlined />}
-                                    onClick={() => dispatch(importBackupActions.openImportModal('project'))}
+                                    onClick={() => dispatch(importActions.openImportBackupModal('project'))}
                                 >
                                     Create from backup
                                     {importing && <LoadingOutlined className='cvat-import-project-button-loading' />}

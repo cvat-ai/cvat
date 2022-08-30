@@ -5,7 +5,8 @@
 
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { connect } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -48,7 +49,7 @@ const initialValues: FormValues = {
 }
 
 interface UploadParams {
-    resource: 'annotation' | 'dataset' | null;
+    resource: 'annotation' | 'dataset';
     useDefaultSettings: boolean;
     sourceStorage: Storage;
     selectedFormat: string | null;
@@ -56,9 +57,16 @@ interface UploadParams {
     fileName: string | null;
 }
 
-function ImportDatasetModal(): JSX.Element | null {
+function ImportDatasetModal(props: StateToProps): JSX.Element {
+    const {
+        importers,
+        instanceT,
+        instance,
+        current,
+    } = props;
     const [form] = Form.useForm();
     const dispatch = useDispatch();
+    // TODO useState -> useReducer
     const [instanceType, setInstanceType] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [selectedLoader, setSelectedLoader] = useState<any>(null);
@@ -70,14 +78,16 @@ function ImportDatasetModal(): JSX.Element | null {
     const [uploadParams, setUploadParams] = useState<UploadParams>({
         useDefaultSettings: true,
     } as UploadParams);
-    const importers = useSelector((state: CombinedState) => state.formats.annotationFormats.loaders);
-    const resource = useSelector((state: CombinedState) =>  state.import.resource);
-    const instance = useSelector((state: CombinedState) =>  state.import.instance);
-    const projectsImportState = useSelector((state: CombinedState) => state.import.projects);
-    const tasksImportState = useSelector((state: CombinedState) => state.import.tasks);
-    const jobsImportState = useSelector((state: CombinedState) => state.import.jobs);
-    const importing = useSelector((state: CombinedState) => state.import.importing);
-    const modalVisible = useSelector((state: CombinedState) => state.import.modalVisible);
+    const [resource, setResource] = useState('');
+
+
+    useEffect(() => {
+        if (instanceT === 'project') {
+            setResource('dataset');
+        } else if (instanceT === 'task' || instanceT === 'job') {
+            setResource('annotation');
+        }
+    }, [instanceT])
 
     const isDataset = useCallback((): boolean => {
         return resource === 'dataset';
@@ -99,15 +109,7 @@ function ImportDatasetModal(): JSX.Element | null {
     }, [resource, defaultStorageLocation, defaultStorageCloudId]);
 
     useEffect(() => {
-        if (importing) {
-            setUploadParams({
-                useDefaultSettings: true,
-            } as UploadParams);
-        }
-    }, [importing])
-
-    useEffect(() => {
-        if (instance && modalVisible) {
+        if (instance) {
             if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
                 setDefaultStorageLocation(instance.sourceStorage?.location || StorageLocation.LOCAL);
                 setDefaultStorageCloudId(instance.sourceStorage?.cloudStorageId || null);
@@ -232,7 +234,7 @@ function ImportDatasetModal(): JSX.Element | null {
         setSelectedSourceStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
         setFile(null);
-        dispatch(importActions.closeImportModal(instance));
+        dispatch(importActions.closeImportDatasetModal(instance));
     }, [form, instance]);
 
     const onUpload = () => {
@@ -305,7 +307,7 @@ function ImportDatasetModal(): JSX.Element | null {
                         }
                     </>
                 )}
-                visible={modalVisible}
+                visible={!!instance}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
                 className='cvat-modal-import-dataset'
@@ -348,7 +350,7 @@ function ImportDatasetModal(): JSX.Element | null {
                                 )
                                 .map(
                                     (importer: any): JSX.Element => {
-                                        const pending = importing;
+                                        const pending = current ? instance.id in current : false;
                                         const disabled = !importer.enabled || pending;
                                         return (
                                             <Select.Option
@@ -413,4 +415,26 @@ function ImportDatasetModal(): JSX.Element | null {
     );
 }
 
-export default React.memo(ImportDatasetModal);
+interface StateToProps {
+    importers: any;
+    instanceT: 'project' | 'task' | 'job' | null;
+    instance: any;
+    current: any;
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const { instanceType } = state.import;
+
+    return {
+        importers: state.formats.annotationFormats.loaders,
+        instanceT: instanceType,
+        instance: !instanceType ? null : (
+            state.import[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
+        ).dataset.modalInstance,
+        current: !instanceType ? null : (
+            state.import[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
+        ).dataset.current,
+    };
+}
+
+export default connect(mapStateToProps)(ImportDatasetModal);

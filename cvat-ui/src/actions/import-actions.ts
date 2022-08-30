@@ -14,19 +14,24 @@ import { jobInfoGenerator, receiveAnnotationsParameters, AnnotationActionTypes }
 const core = getCore();
 
 export enum ImportActionTypes {
-    OPEN_IMPORT_MODAL = 'OPEN_IMPORT_MODAL',
-    CLOSE_IMPORT_MODAL = 'CLOSE_IMPORT_MODAL',
+    OPEN_IMPORT_DATASET_MODAL = 'OPEN_IMPORT_DATASET_MODAL',
+    CLOSE_IMPORT_DATASET_MODAL = 'CLOSE_IMPORT_DATASET_MODAL',
     IMPORT_DATASET = 'IMPORT_DATASET',
     IMPORT_DATASET_SUCCESS = 'IMPORT_DATASET_SUCCESS',
     IMPORT_DATASET_FAILED = 'IMPORT_DATASET_FAILED',
     IMPORT_DATASET_UPDATE_STATUS = 'IMPORT_DATASET_UPDATE_STATUS',
+    OPEN_IMPORT_BACKUP_MODAL = 'OPEN_IMPORT_BACKUP_MODAL',
+    CLOSE_IMPORT_BACKUP_MODAL = 'CLOSE_IMPORT_BACKUP_MODAL',
+    IMPORT_BACKUP = 'IMPORT_BACKUP',
+    IMPORT_BACKUP_SUCCESS = 'IMPORT_BACKUP_SUCCESS',
+    IMPORT_BACKUP_FAILED = 'IMPORT_BACKUP_FAILED',
 }
 
 export const importActions = {
-    openImportModal: (instance: any, resource: 'dataset' | 'annotation') =>
-        createAction(ImportActionTypes.OPEN_IMPORT_MODAL, { instance, resource }),
-    closeImportModal: (instance: any) =>
-        createAction(ImportActionTypes.CLOSE_IMPORT_MODAL, { instance }),
+    openImportDatasetModal: (instance: any) =>
+        createAction(ImportActionTypes.OPEN_IMPORT_DATASET_MODAL, { instance }),
+    closeImportDatasetModal: (instance: any) =>
+        createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance }),
     importDataset: (instance: any, format: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
     ),
@@ -42,6 +47,19 @@ export const importActions = {
     ),
     importDatasetUpdateStatus: (instance: any, progress: number, status: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS, { instance, progress, status })
+    ),
+    openImportBackupModal: (instanceType: 'project' | 'task') => (
+        createAction(ImportActionTypes.OPEN_IMPORT_BACKUP_MODAL, { instanceType })
+    ),
+    closeImportBackupModal: (instanceType: 'project' | 'task') => (
+        createAction(ImportActionTypes.CLOSE_IMPORT_BACKUP_MODAL, { instanceType })
+    ),
+    importBackup: () => createAction(ImportActionTypes.IMPORT_BACKUP),
+    importBackupSuccess: (instanceId: number, instanceType: 'project' | 'task') => (
+        createAction(ImportActionTypes.IMPORT_BACKUP_SUCCESS, { instanceId, instanceType })
+    ),
+    importBackupFailed: (instanceType: 'project' | 'task', error: any) => (
+        createAction(ImportActionTypes.IMPORT_BACKUP_FAILED, { instanceType, error })
     ),
 };
 
@@ -59,7 +77,7 @@ export const importDatasetAsync = (
             const state: CombinedState = getState();
 
             if (instance instanceof core.classes.Project) {
-                if (state.import.projects?.activities[instance.id]) {
+                if (state.import.projects.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
@@ -67,16 +85,16 @@ export const importDatasetAsync = (
                     dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
                 ));
             } else if (instance instanceof core.classes.Task) {
-                if (state.import.tasks?.activities[instance.id]) {
+                if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
                 await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file);
             } else { // job
-                if (state.import.tasks?.activities[instance.taskId]) {
+                if (state.import.tasks.dataset.current?.[instance.taskId]) {
                     throw Error('Annotations is being uploaded for the task');
                 }
-                if (state.import.jobs?.activities[instance.id]) {
+                if (state.import.jobs.dataset.current?.[instance.id]) {
                     throw Error('Only one uploading of annotations for a job allowed at the same time');
                 }
                 const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
@@ -128,5 +146,17 @@ export const importDatasetAsync = (
         }
     }
 );
+
+export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | string): ThunkAction => (
+    async (dispatch) => {
+        dispatch(importActions.importBackup());
+        try {
+            const inctanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
+            const instance = await inctanceClass.restore(storage, file);
+            dispatch(importActions.importBackupSuccess(instance.id, instanceType));
+        } catch (error) {
+            dispatch(importActions.importBackupFailed(instanceType, error));
+        }
+});
 
 export type ImportActions = ActionUnion<typeof importActions>;

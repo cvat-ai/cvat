@@ -17,7 +17,7 @@ import { usePrevious } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
-import { importBackupActions } from 'actions/import-backup-actions';
+import { importActions } from 'actions/import-actions';
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
@@ -104,7 +104,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     type='primary'
                                     disabled={importing}
                                     icon={<UploadOutlined />}
-                                    onClick={() => dispatch(importBackupActions.openImportModal('task'))}
+                                    onClick={() => dispatch(importActions.openImportBackupModal('task'))}
                                 >
                                     Create from backup
                                     {importing && <LoadingOutlined />}
