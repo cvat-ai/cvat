@@ -35,7 +35,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
     const isMultiTask = params.get('many') === 'true';
     const handleCreate: typeof onCreate = (...onCreateParams) => onCreate(...onCreateParams)
         .catch((err) => {
-            setError(err);
+            setError(err.toString());
             throw err;
         });
 
