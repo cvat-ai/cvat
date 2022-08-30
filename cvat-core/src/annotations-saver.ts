@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -151,9 +152,7 @@
 
         _updateCreatedObjects(saved, indexes) {
             const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
-
             const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
-
             if (indexesLength !== savedLength) {
                 throw new ScriptingError(
                     `Number of indexes is differed by number of saved objects ${indexesLength} vs ${savedLength}`,
@@ -164,7 +163,7 @@
             for (const type of Object.keys(indexes)) {
                 for (let i = 0; i < indexes[type].length; i++) {
                     const clientID = indexes[type][i];
-                    this.collection.objects[clientID].serverID = saved[type][i].id;
+                    this.collection.objects[clientID].updateServerID(saved[type][i]);
                 }
             }
         }
