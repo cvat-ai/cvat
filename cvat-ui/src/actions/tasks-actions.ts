@@ -21,6 +21,7 @@ export enum TasksActionTypes {
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
+    CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
@@ -298,9 +299,20 @@ export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
     };
 }
 
+function createTaskFailed(error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.CREATE_TASK_FAILED,
+        payload: {
+            error,
+        },
+    };
+
+    return action;
+}
+
 export function createTaskAsync(data: any, onProgress?: (status: string) => void):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (): Promise<any> => {
+    return async (dispatch): Promise<any> => {
         const description: any = {
             name: data.basic.name,
             labels: data.labels,
@@ -365,10 +377,16 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 gitPlugin.data.lfs = data.advanced.lfs;
             }
         }
-        const savedTask = await taskInstance.save((status: string): void => {
-            onProgress?.(status);
-        });
-        return savedTask;
+
+        try {
+            const savedTask = await taskInstance.save((status: string): void => {
+                onProgress?.(status);
+            });
+            return savedTask;
+        } catch (error) {
+            dispatch(createTaskFailed(error));
+            throw error;
+        }
     };
 }
 
