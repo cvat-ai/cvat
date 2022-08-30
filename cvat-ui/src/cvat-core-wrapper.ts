@@ -16,7 +16,7 @@ cvat.config.origin = window.location.origin;
 cvat.config.uploadChunkSize = 100;
 (globalThis as any).cvat = cvat;
 
-function getCore(): any {
+export default function getCore(): any {
     return cvat;
 }
 

@@ -46,7 +46,7 @@ import { ShortcutsContextProvider } from 'components/shortcuts.context';
 
 import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
-import EditWebhookPage from 'components/setup-webhook-pages/edit-webhook-page';
+import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
@@ -393,7 +393,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             />
                                             <Route exact path='/organization/webhooks' component={WebhooksPage} />
                                             <Route exact path='/webhooks/create' component={CreateWebhookPage} />
-                                            <Route exact path='/webhooks/update/:id' component={EditWebhookPage} />
+                                            <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
                                                 <Route exact path='/models' component={ModelsPageContainer} />

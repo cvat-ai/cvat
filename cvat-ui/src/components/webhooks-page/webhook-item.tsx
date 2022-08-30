@@ -15,6 +15,7 @@ import { MoreOutlined } from '@ant-design/icons';
 
 import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
 import { Modal } from 'antd';
+import Paragraph from 'antd/lib/typography/Paragraph';
 
 export interface WebhookItemProps {
     webhookInstance: any;
@@ -41,6 +42,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
         statusClassName = 'cvat-webhook-status-failed';
     }
 
+    const eventsList = groupEvents(events).join(', ');
     return (
         <Row className='cvat-webhooks-list-item' style={isRemoved ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
             <Col>
@@ -49,9 +51,14 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 </svg>
             </Col>
             <Col span={6}>
-                <Text strong type='secondary' className='cvat-item-webhook-id'>{`#${id}: `}</Text>
-                <Text strong className='cvat-item-webhook-description'>{description}</Text>
-                <br />
+                <Paragraph ellipsis={{
+                    tooltip: description,
+                    rows: 2,
+                }}
+                >
+                    <Text strong type='secondary' className='cvat-item-webhook-id'>{`#${id}: `}</Text>
+                    <Text strong className='cvat-item-webhook-description'>{description}</Text>
+                </Paragraph>
                 {username && (
                     <>
                         <Text type='secondary'>{`Created by ${username} on ${created}`}</Text>
@@ -61,12 +68,25 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
             <Col span={6} offset={1}>
-                <Text type='secondary' className='cvat-webhook-info-text'>URL:</Text>
-                <Text>{targetURL}</Text>
+                <Paragraph ellipsis={{
+                    tooltip: targetURL,
+                    rows: 3,
+                }}
+                >
+                    <Text type='secondary' className='cvat-webhook-info-text'>URL:</Text>
+                    {targetURL}
+                </Paragraph>
             </Col>
-            <Col span={7}>
-                <Text type='secondary' className='cvat-webhook-info-text'>Events:</Text>
-                <Text>{groupEvents(events).join(', ')}</Text>
+            <Col span={6} offset={1}>
+                <Paragraph ellipsis={{
+                    tooltip: eventsList,
+                    rows: 3,
+                }}
+                >
+                    <Text type='secondary' className='cvat-webhook-info-text'>Events:</Text>
+                    {eventsList}
+                </Paragraph>
+                <Text>{}</Text>
             </Col>
             <Col span={3}>
                 <Row justify='end'>

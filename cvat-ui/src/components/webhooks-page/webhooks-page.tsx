@@ -10,11 +10,12 @@ import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { CombinedState, Indexable } from 'reducers/interfaces';
+import { CombinedState, Indexable } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
+import EmptyWebhooksListComponent from './empty-list';
 
 const PAGE_SIZE = 10;
 
@@ -59,22 +60,29 @@ function WebhooksPage(): JSX.Element | null {
     return (
         <div className='cvat-webhooks-page'>
             <TopBar />
-            <WebhooksList />
-            <Row justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Pagination
-                        className='cvat-tasks-pagination'
-                        onChange={(page: number) => {
-                            dispatch(getWebhooksAsync({ page }));
-                        }}
-                        showSizeChanger={false}
-                        total={totalCount}
-                        current={query.page}
-                        pageSize={PAGE_SIZE}
-                        showQuickJumper
-                    />
-                </Col>
-            </Row>
+            {
+                totalCount ? (
+                    <>
+                        <WebhooksList />
+                        <Row justify='center' align='middle'>
+                            <Col md={22} lg={18} xl={16} xxl={14}>
+                                <Pagination
+                                    className='cvat-tasks-pagination'
+                                    onChange={(page: number) => {
+                                        dispatch(getWebhooksAsync({ page }));
+                                    }}
+                                    showSizeChanger={false}
+                                    total={totalCount}
+                                    current={query.page}
+                                    pageSize={PAGE_SIZE}
+                                    showQuickJumper
+                                />
+                            </Col>
+                        </Row>
+                    </>
+                ) : <EmptyWebhooksListComponent query={query} />
+            }
+
         </div>
     );
 }

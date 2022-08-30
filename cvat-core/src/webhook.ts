@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import PluginRegistry from './plugins';
 import User from './user';
 
-const PluginRegistry = require('./plugins');
 const serverProxy = require('./server-proxy');
 
 interface RawWebhookData {
