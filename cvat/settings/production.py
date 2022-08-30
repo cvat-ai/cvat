@@ -24,11 +24,12 @@ if USE_SENTRY:
     try:
         import sentry_sdk
         from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.rq import RqIntegration
 
         logging.info('Initializing sentry...')
         sentry_sdk.init(
             dsn="https://acc5a0b8c5f14f379c6aaa5baba2dc76@o29828.ingest.sentry.io/6420408",
-            integrations=[DjangoIntegration()],
+            integrations=[DjangoIntegration(), RqIntegration()],
             send_default_pii=True,
             release=VERSION,
             environment=ENVIRONMENT,
