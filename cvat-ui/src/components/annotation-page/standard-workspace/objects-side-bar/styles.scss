@@ -299,6 +299,7 @@
     height: 2.5em;
     border-bottom: 1px solid $border-color-1;
     padding: 5px 3px 3px 3px;
+    width: 100%;
 
     span {
         @extend .cvat-object-sidebar-icon;
@@ -313,6 +314,25 @@
 
     &:hover {
         @extend .cvat-objects-sidebar-label-active-item;
+    }
+}
+
+.cvat-objects-sidebar-label-group-collapse {
+    .ant-collapse-item {
+        > .ant-collapse-header {
+            padding: 0;
+            .anticon {
+                margin: 0;
+            }
+            .ant-collapse-arrow {
+                padding: 12px 5px 5px 5px;
+            }
+        }
+        > .ant-collapse-content {
+            > .ant-collapse-content-box {
+                padding: 0 0 0 23px;
+            }
+        }
     }
 }
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, MouseEvent } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -16,7 +16,7 @@ import { updateAnnotationsAsync, updateLabelShortcuts } from 'actions/annotation
 import { useDispatch, useSelector } from 'react-redux';
 import LabelKeySelectorPopover from './label-key-selector-popover';
 
-interface Props {
+interface Props extends React.HTMLAttributes<any>{
     labelID: number;
 }
 
@@ -94,13 +94,15 @@ function LabelItemComponent(props: Props): JSX.Element {
         },
     };
 
-    const setHidden = (value: boolean): void => {
+    const setHidden = (e: MouseEvent<any>, value: boolean): void => {
+        e.stopPropagation();
         if (ownObjectStates.length) {
             dispatch(updateAnnotationsAsync(ownObjectStates.map((state: any) => ((state.hidden = value), state))));
         }
     };
 
-    const setLock = (value: boolean): void => {
+    const setLock = (e: MouseEvent<any>, value: boolean): void => {
+        e.stopPropagation();
         if (ownObjectStates.length) {
             dispatch(updateAnnotationsAsync(ownObjectStates.map((state: any) => ((state.lock = value), state))));
         }
@@ -108,8 +110,6 @@ function LabelItemComponent(props: Props): JSX.Element {
 
     return (
         <Row
-            align='stretch'
-            justify='space-around'
             className={[
                 'cvat-objects-sidebar-label-item',
                 visible ? '' : 'cvat-objects-sidebar-label-item-disabled',
@@ -121,9 +121,9 @@ function LabelItemComponent(props: Props): JSX.Element {
                 </div>
             </Col>
             <Col span={12}>
-                <CVATTooltip title={label.name}>
+                <CVATTooltip title={`${label.name} - ${ownObjectStates.length} object(s)`}>
                     <Text strong className='cvat-text'>
-                        {label.name}
+                        {`(${ownObjectStates.length}) ${label.name}`}
                     </Text>
                 </CVATTooltip>
             </Col>
@@ -140,16 +140,16 @@ function LabelItemComponent(props: Props): JSX.Element {
             </Col>
             <Col span={2} offset={1}>
                 {statesLocked ? (
-                    <LockFilled {...classes.lock.enabled} onClick={() => setLock(false)} />
+                    <LockFilled {...classes.lock.enabled} onClick={(e) => setLock(e, false)} />
                 ) : (
-                    <UnlockOutlined {...classes.lock.disabled} onClick={() => setLock(true)} />
+                    <UnlockOutlined {...classes.lock.disabled} onClick={(e) => setLock(e, true)} />
                 )}
             </Col>
             <Col span={3}>
                 {statesHidden ? (
-                    <EyeInvisibleFilled {...classes.hidden.enabled} onClick={() => setHidden(false)} />
+                    <EyeInvisibleFilled {...classes.hidden.enabled} onClick={(e) => setHidden(e, false)} />
                 ) : (
-                    <EyeOutlined {...classes.hidden.disabled} onClick={() => setHidden(true)} />
+                    <EyeOutlined {...classes.hidden.disabled} onClick={(e) => setHidden(e, true)} />
                 )}
             </Col>
         </Row>

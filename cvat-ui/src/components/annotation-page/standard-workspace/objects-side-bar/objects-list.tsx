@@ -51,19 +51,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         showAllStates,
     } = props;
 
-    // const createHeader = (group: SortedLabelGroup) => (
-    //     <div style={{ display: 'inline-flex', alignContent: 'center', gap: '10px', height: '30px' }}>
-    //         <div style={{ background: group.label.color, width: '22px', height: '22px' }} className='cvat-label-item-color'>
-    //             {' '}
-    //         </div>
-    //         <CVATTooltip title={group.label.name}>
-    //             <Text strong className='cvat-text'>
-    //                 {group.label.name}
-    //             </Text>
-    //         </CVATTooltip>
-    //     </div>
-    // );
-
     return (
         <>
             <ObjectListHeader
@@ -86,7 +73,8 @@ function ObjectListComponent(props: Props): JSX.Element {
                 {groupedObjects.map(
                     (group: SortedLabelGroup): JSX.Element => (
                         <Collapse
-                            className='cvat-objects-sidebar-state-item-collapse'
+                            className='cvat-objects-sidebar-label-group-collapse'
+                            bordered={false}
                             defaultActiveKey='details'
                         >
                             <Collapse.Panel header={<LabelItem labelID={group.label.id ?? 0} />} key='details'>
@@ -103,40 +91,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                                 )}
                             </Collapse.Panel>
                         </Collapse>
-
-                        // <div>
-                        //     <Row
-                        //         align='stretch'
-                        //         className={[
-                        //             'cvat-objects-sidebar-label-item',
-                        //             true ? '' : 'cvat-objects-sidebar-label-item-disabled',
-                        //         ].join(' ')}
-                        //     >
-                        //         <Col span={2}>
-                        //             <div style={{ background: group.label.color }} className='cvat-label-item-color'>
-                        //                 {' '}
-                        //             </div>
-                        //         </Col>
-                        //         <Col span={12}>
-                        //             <CVATTooltip title={group.label.name}>
-                        //                 <Text strong className='cvat-text'>
-                        //                     {group.label.name}
-                        //                 </Text>
-                        //             </CVATTooltip>
-                        //         </Col>
-                        //     </Row>
-                        //     {group.objects.map(
-                        //         (state: ObjectState): JSX.Element => (
-                        //             <ObjectItemContainer
-                        //                 readonly={readonly}
-                        //                 activateOnClick
-                        //                 objectStates={objectStates}
-                        //                 key={state.clientID}
-                        //                 clientID={state.clientID ?? 0}
-                        //             />
-                        //         ),
-                        //     )}
-                        // </div>
                     ),
                 )}
             </div>
