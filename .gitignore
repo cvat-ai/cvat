@@ -64,3 +64,5 @@ cvat-core/reports
 
 .s3
 .env.local
+.db
+venv

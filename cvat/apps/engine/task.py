@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -56,7 +55,6 @@ def rq_handler(job, exc_type, exc_value, traceback):
     tid = split[split.index('tasks') + 1]
     try:
         tid = int(tid)
-        # TODO: Why is select_for_update here?
         models.Task.objects.select_for_update().get(pk=tid)  # to check task exists
         print_exception(exc_type, exc_value, traceback)
     except (models.Task.DoesNotExist, ValueError):
