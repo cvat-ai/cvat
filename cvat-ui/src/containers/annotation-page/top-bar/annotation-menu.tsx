@@ -29,7 +29,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    showExportModal: (jobInstance: any, resource: 'dataset' | 'backup') => void;
+    showExportModal: (jobInstance: any) => void;
     showImportModal: (jobInstance: any) => void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -55,8 +55,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        showExportModal(taskInstance: any, resource: 'dataset' | 'backup'): void {
-            dispatch(exportActions.openExportModal(taskInstance, resource));
+        showExportModal(jobInstance: any): void {
+            dispatch(exportActions.openExportDatasetModal(jobInstance));
         },
         showImportModal(jobInstance: any): void {
             dispatch(importActions.openImportDatasetModal(jobInstance));
@@ -93,13 +93,8 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
 
     const onClickMenu = (params: MenuInfo): void => {
         const [action] = params.keyPath;
-        if (action === Actions.EXPORT_TASK_DATASET) {
-            core.tasks.get({ id: jobInstance.taskId }).then((response: any) => {
-                if (response.length) {
-                    const [taskInstance] = response;
-                    showExportModal(taskInstance, 'dataset');
-                }
-            });
+        if (action === Actions.EXPORT_JOB_DATASET) {
+            showExportModal(jobInstance);
         } else if (action === Actions.RENEW_JOB) {
             jobInstance.state = core.enums.JobState.NEW;
             jobInstance.stage = JobStage.ANNOTATION;

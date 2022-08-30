@@ -25,6 +25,7 @@ interface OwnProps {
 interface StateToProps {
     annotationFormats: any;
     inferenceIsActive: boolean;
+    backupIsActive: boolean;
 }
 
 interface DispatchToProps {
@@ -47,13 +48,18 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     return {
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
+        backupIsActive: state.export.tasks.backup.current[tid],
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         showExportModal: (taskInstance: any, resource: 'dataset' | 'backup'): void => {
-            dispatch(exportActions.openExportModal(taskInstance, resource));
+            if (resource === 'dataset') {
+                dispatch(exportActions.openExportDatasetModal(taskInstance));
+            } else {
+                dispatch(exportActions.openExportBackupModal(taskInstance));
+            }
         },
         showImportModal: (taskInstance: any): void => {
             dispatch(importActions.openImportDatasetModal(taskInstance));
@@ -75,7 +81,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         taskInstance,
         annotationFormats: { loaders, dumpers },
         inferenceIsActive,
-        // backupIsActive,
+        backupIsActive,
         showExportModal,
         showImportModal,
         deleteTask,
@@ -113,7 +119,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
-            // backupIsActive={backupIsActive}
+            backupIsActive={backupIsActive}
         />
     );
 }

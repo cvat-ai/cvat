@@ -5,9 +5,9 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
+import { connect, useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
-import { useSelector, useDispatch } from 'react-redux';
 import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
@@ -41,9 +41,15 @@ const initialValues: FormValues = {
     useProjectTargetStorage: true,
 }
 
-function ExportDatasetModal(): JSX.Element | null {
+function ExportDatasetModal(props: StateToProps): JSX.Element {
+    const {
+        dumpers,
+        instance,
+        current,
+    } = props;
+
     const [instanceType, setInstanceType] = useState('');
-    const [activities, setActivities] = useState<string[]>([]);
+
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
     const [form] = Form.useForm();
     const [targetStorage, setTargetStorage] = useState<StorageData>({
@@ -53,43 +59,27 @@ function ExportDatasetModal(): JSX.Element | null {
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
     const dispatch = useDispatch();
-    const resource = useSelector((state: CombinedState) => state.export.resource);
-    const instance = useSelector((state: CombinedState) => state.export.instance);
-    const modalVisible = useSelector((state: CombinedState) => state.export.modalVisible);
-    const dumpers = useSelector((state: CombinedState) => state.formats.annotationFormats.dumpers);
-    const { tasks: taskExportActivities, projects: projectExportActivities, jobs: jobExportActivities } = useSelector(
-        (state: CombinedState) => state.export,
-    );
 
-    const initActivities = (): void => {
-        if (resource === 'dataset') {
-            if (instance instanceof core.classes.Project) {
-                setInstanceType(`project #${instance.id}`);
-                setActivities(projectExportActivities[instance.id]?.dataset || []);
-            } else if (instance instanceof core.classes.Task || instance instanceof core.classes.Job) {
-                if (instance instanceof core.classes.Task) {
-                    setInstanceType(`task #${instance.id}`);
-                    setActivities(taskExportActivities[instance.id]?.dataset || []);
-                } else {
-                    setInstanceType(`job #${instance.id}`);
-                    setActivities(jobExportActivities[instance.id]?.dataset || []);
-                }
-                if (instance.mode === 'interpolation' && instance.dimension === '2d') {
-                    form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
-                } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
-                    form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
-                }
+    useEffect(() => {
+        if (instance instanceof core.classes.Project) {
+            setInstanceType(`project #${instance.id}`);
+        } else if (instance instanceof core.classes.Task || instance instanceof core.classes.Job) {
+            if (instance instanceof core.classes.Task) {
+                setInstanceType(`task #${instance.id}`);
+            } else {
+                setInstanceType(`job #${instance.id}`);
+            }
+            if (instance.mode === 'interpolation' && instance.dimension === '2d') {
+                form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
+            } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
+                form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
             }
         }
-    };
-
-    useEffect(() => {
-        initActivities();
-    }, [instance?.id, resource, instance instanceof core.classes.Project, taskExportActivities, projectExportActivities, jobExportActivities]);
+    }, [instance?.id, instance instanceof core.classes.Project]);
 
 
     useEffect(() => {
-        if (instance && resource === 'dataset') {
+        if (instance) {
             if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
                 setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
                 setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
@@ -100,10 +90,16 @@ function ExportDatasetModal(): JSX.Element | null {
                         setDefaultStorageLocation(taskInstance.targetStorage?.location || StorageLocation.LOCAL);
                         setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId || null);
                     }
+                })
+                .catch((error: Error) => {
+                    Notification.error({
+                        message: `Could not fetch the task ${instance.taskId}`,
+                        description: error.toString(),
+                    });
                 });
             }
         }
-    }, [instance?.id, resource, instance?.targetStorage]);
+    }, [instance?.id, instance?.targetStorage]);
 
     useEffect(() => {
         setHelpMessage(
@@ -115,7 +111,7 @@ function ExportDatasetModal(): JSX.Element | null {
         setUseDefaultTargetStorage(true);
         setTargetStorage({ location: StorageLocation.LOCAL });
         form.resetFields();
-        dispatch(exportActions.closeExportModal());
+        dispatch(exportActions.closeExportDatasetModal(instance));
     };
 
     const handleExport = useCallback(
@@ -135,26 +131,22 @@ function ExportDatasetModal(): JSX.Element | null {
                 ),
             );
             closeModal();
-            const _resource = instanceType.includes('project') ? 'Dataset' : 'Annotations';
+            const resource = instanceType.includes('project') ? 'Dataset' : 'Annotations';
             Notification.info({
-                message: `${_resource} export started`,
+                message: `${resource} export started`,
                 description:
-                    `${_resource} export was started for ${instanceType}. ` +
-                    `Download will start automatically as soon as the ${_resource} is ready.`,
+                    `${resource} export was started for ${instanceType}. ` +
+                    `Download will start automatically as soon as the ${resource} is ready.`,
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
         [instance, instanceType, targetStorage],
     );
 
-    if (resource !== 'dataset') {
-        return null;
-    }
-
     return (
         <Modal
             title={<Text strong>{`Export ${instanceType} as a dataset`}</Text>}
-            visible={modalVisible}
+            visible={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className={`cvat-modal-export-${instanceType.split(' ')[0]}`}
@@ -178,7 +170,8 @@ function ExportDatasetModal(): JSX.Element | null {
                             .filter((dumper: any): boolean => dumper.dimension === instance?.dimension)
                             .map(
                                 (dumper: any): JSX.Element => {
-                                    const pending = (activities || []).includes(dumper.name);
+                                    const pending = (instance && current ? current : [])
+                                        .includes(dumper.name);
                                     const disabled = !dumper.enabled || pending;
                                     return (
                                         <Select.Option
@@ -228,4 +221,26 @@ function ExportDatasetModal(): JSX.Element | null {
     );
 }
 
-export default React.memo(ExportDatasetModal);
+
+interface StateToProps {
+    dumpers: any;
+    instance: any;
+    current: any;
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const { instanceType } = state.export;
+    const instance = !instanceType ? null : (
+        state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
+    ).dataset.modalInstance;
+
+    return {
+        instance,
+        current: !instanceType ? [] : (
+            state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
+        ).dataset.current[instance.id],
+        dumpers: state.formats.annotationFormats.dumpers,
+    };
+}
+
+export default connect(mapStateToProps)(ExportDatasetModal);

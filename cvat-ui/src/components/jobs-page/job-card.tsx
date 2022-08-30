@@ -100,7 +100,7 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
                     <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
                     <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
-                    <Menu.Item key='export_job' onClick={() => dispatch(exportActions.openExportModal(job, 'dataset'))}>Export job</Menu.Item>
+                    <Menu.Item key='export_job' onClick={() => dispatch(exportActions.openExportDatasetModal(job))}>Export job</Menu.Item>
                 </Menu>
             )}
             >

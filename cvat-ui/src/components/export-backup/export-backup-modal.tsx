@@ -4,14 +4,12 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
-import { useSelector, useDispatch } from 'react-redux';
-import { LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
-
 import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
 import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
@@ -35,7 +33,7 @@ const initialValues: FormValues = {
     useProjectTargetStorage: true,
 }
 
-function ExportBackupModal(): JSX.Element | null {
+function ExportBackupModal(): JSX.Element {
     const dispatch = useDispatch();
     const [form] = Form.useForm();
     const [instanceType, setInstanceType] = useState('');
@@ -44,42 +42,30 @@ function ExportBackupModal(): JSX.Element | null {
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
     const [helpMessage, setHelpMessage] = useState('');
-    const resource = useSelector((state: CombinedState) => state.export.resource);
-    const instance = useSelector((state: CombinedState) => state.export.instance);
-    const modalVisible = useSelector((state: CombinedState) => state.export.modalVisible);
-    const {
-        tasks: taskExportActivities,
-        projects: projectExportActivities,
-    } = useSelector((state: CombinedState) => state.export);
 
-    const initActivities = (): void => {
-        if (resource === 'backup') {
-            let activity = false;
-            if (instance instanceof core.classes.Project) {
-                setInstanceType(`project #${instance.id}`);
-                if (projectExportActivities[instance?.id]) {
-                    activity = projectExportActivities[instance?.id].backup;
-                }
-            } else if (instance instanceof core.classes.Task) {
-                setInstanceType(`task #${instance.id}`);
-                if (taskExportActivities[instance?.id]) {
-                    activity = taskExportActivities[instance?.id].backup;
-                }
-            }
+    const instanceT = useSelector((state: CombinedState) => state.export.instanceType);
+    const instance = useSelector((state: CombinedState) => {
+        if (!instanceT) {
+            return null;
         }
-    };
+        return state.export[`${instanceT}s` as 'projects' | 'tasks'].backup.modalInstance;
+    });
 
     useEffect(() => {
-        initActivities();
-    }, [instance?.id, resource, instance instanceof core.classes.Project, taskExportActivities, projectExportActivities]);
+        if (instance instanceof core.classes.Project) {
+            setInstanceType(`project #${instance.id}`);
+        } else if (instance instanceof core.classes.Task) {
+            setInstanceType(`task #${instance.id}`);
+        }
+    }, [instance?.id, instance instanceof core.classes.Project]);
 
 
     useEffect(() => {
-        if (instance && resource === 'backup') {
+        if (instance) {
             setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
             setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
         }
-    }, [instance?.id, resource, instance?.targetStorage]);
+    }, [instance?.id, instance?.targetStorage]);
 
     useEffect(() => {
         setHelpMessage(
@@ -91,7 +77,7 @@ function ExportBackupModal(): JSX.Element | null {
         setUseDefaultStorage(true);
         setStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
-        dispatch(exportActions.closeExportModal());
+        dispatch(exportActions.closeExportDatasetModal(instance));
     };
 
     const handleExport = useCallback(
@@ -119,13 +105,10 @@ function ExportBackupModal(): JSX.Element | null {
         [instance, instanceType, useDefaultStorage],
     );
 
-    if (resource !== 'backup') return null;
-
     return (
-        // TODO add pending on submit button
         <Modal
             title={<Text strong>{`Export ${instanceType}`}</Text>}
-            visible={modalVisible}
+            visible={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className={`cvat-modal-export-${instanceType.split(' ')[0]}`}

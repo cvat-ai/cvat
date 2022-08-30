@@ -5,146 +5,180 @@
 
 import { ExportActions, ExportActionTypes } from 'actions/export-actions';
 import { getCore } from 'cvat-core-wrapper';
+import { omit } from 'lodash';
 import deepCopy from 'utils/deep-copy';
 
 import { ExportState } from '.';
+import { defineActititiesField } from './import-reducer';
 
 const core = getCore();
 
 const defaultState: ExportState = {
-    tasks: {},
-    projects: {},
-    jobs: {},
-    resource: null,
-    instance: null,
-    modalVisible: false,
+    projects: {
+        dataset: {
+            current: {},
+            modalInstance: null,
+        },
+        backup: {
+            modalInstance: null,
+            current: {},
+        }
+    },
+    tasks: {
+        dataset: {
+            current: {},
+            modalInstance: null,
+        },
+        backup: {
+            modalInstance: null,
+            current: {},
+        }
+    },
+    jobs: {
+        dataset: {
+            current: {},
+            modalInstance: null,
+        },
+    },
+    instanceType: null,
 };
 
 export default (state: ExportState = defaultState, action: ExportActions): ExportState => {
     switch (action.type) {
-        case ExportActionTypes.OPEN_EXPORT_MODAL:
+        case ExportActionTypes.OPEN_EXPORT_DATASET_MODAL: {
+            const { instance } = action.payload;
+            const activitiesField = defineActititiesField(instance);
+
             return {
                 ...state,
-                modalVisible: true,
-                instance: action.payload.instance,
-                resource: action.payload.resource,
+                [activitiesField]: {
+                    ...state[activitiesField],
+                    dataset: {
+                        ...state[activitiesField].dataset,
+                        modalInstance: instance,
+                    },
+                },
+                instanceType: activitiesField
+                    .slice(0, activitiesField.length - 1) as 'project' | 'task' | 'job',
             };
-        case ExportActionTypes.CLOSE_EXPORT_MODAL:
+        }
+        case ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL: {
+            const { instance } = action.payload;
+            const activitiesField = defineActititiesField(instance);
+
             return {
                 ...state,
-                modalVisible: false,
-                // instance: null,
-                // resource: null,
+                [activitiesField]: {
+                    ...state[activitiesField],
+                    dataset: {
+                        ...state[activitiesField].dataset,
+                        modalInstance: null,
+                    }
+                },
+                instanceType: null,
             };
+        }
         case ExportActionTypes.EXPORT_DATASET: {
             const { instance, format } = action.payload;
-            let activities;
-            let field;
-            if (instance instanceof core.classes.Project) {
-                activities = deepCopy(state.projects);
-                field = 'projects';
-            } else if (instance instanceof core.classes.Task) {
-                activities = deepCopy(state.tasks);
-                field = 'tasks';
-            } else {
-                activities = deepCopy(state.jobs);
-                field = 'jobs';
-            }
-
-            const instanceId = instance.id;
-
-            if (!activities[instanceId]) {
-                activities[instanceId] = {
-                    'dataset': [],
-                    'backup': false,
-                }
-            }
-            activities[instanceId].dataset =
-                instanceId in activities && activities[instanceId].dataset
-                && !activities[instanceId].dataset.includes(format) ?
-                    [...activities[instanceId].dataset, format] :
-                    activities[instanceId]?.dataset || [format];
+            const field = defineActititiesField(instance) as 'projects' | 'tasks' | 'jobs';
 
             return {
                 ...state,
-                ...{[field]: activities},
+                [field]: {
+                    ...state[field],
+                    dataset: {
+                        ...state[field].dataset,
+                        current: {
+                            ...state[field].dataset.current,
+                            [instance.id]: !state[field].dataset.current[instance.id] ? [format]
+                                : [...state[field].dataset.current[instance.id], format],
+                        }
+                    }
+                }
             };
+
         }
         case ExportActionTypes.EXPORT_DATASET_FAILED:
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { instanceId, instanceType, format } = action.payload;
-            const field = `${instanceType}s` as 'projects' | 'tasks' | 'jobs';
+            const { instance, format } = action.payload;
+            const field: 'projects' | 'tasks' | 'jobs' = defineActititiesField(instance);
             const activities = deepCopy(state[field]);
 
-            activities[instanceId].dataset = activities[instanceId].dataset.filter(
+            activities.dataset.current[instance.id] = activities.dataset.current[instance.id].filter(
                 (exporterName: string): boolean => exporterName !== format,
             );
 
             return {
                 ...state,
-                ...{[field]: activities},
+                [field]: activities,
             };
         }
-        case ExportActionTypes.EXPORT_BACKUP: {
-            const { instanceId } = action.payload;
-            const { instance } = state;
-
-            let activities;
-            let field;
-            if (instance instanceof core.classes.Project) {
-                activities = deepCopy(state.projects);
-                field = 'projects';
-            } else if (instance instanceof core.classes.Task) {
-                activities = deepCopy(state.tasks);
-                field = 'tasks';
-            } else {
-                activities = deepCopy(state.jobs);
-                field = 'jobs';
-            }
-
-            activities[instanceId] = {
-                ...activities[instanceId],
-                'backup': true,
-            }
+        case ExportActionTypes.OPEN_EXPORT_BACKUP_MODAL: {
+            const { instance } = action.payload;
+            const field = defineActititiesField(instance) as 'projects' | 'tasks';
 
             return {
                 ...state,
                 [field]: {
-                    ...activities,
-                }
+                    ...state[field],
+                    backup: {
+                        ...state[field].backup,
+                        modalInstance: instance,
+                    },
+                },
+                instanceType: field
+                    .slice(0, field.length - 1) as 'project' | 'task',
+            };
+        }
+        case ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL: {
+            const { instance } = action.payload;
+            const field = defineActititiesField(instance) as 'projects' | 'tasks';
+
+            return {
+                ...state,
+                [field]: {
+                    ...state[field],
+                    backup: {
+                        ...state[field].backup,
+                        modalInstance: null,
+                    },
+                },
+                instanceType: null,
+            };
+        }
+        case ExportActionTypes.EXPORT_BACKUP: {
+            const { instance } = action.payload;
+            const field = defineActititiesField(instance) as 'projects' | 'tasks';
+
+            return {
+                ...state,
+                [field]: {
+                    ...state[field],
+                    backup: {
+                        ...state[field].backup,
+                        current: {
+                            ...state[field].backup.current,
+                            [instance.id]: true,
+                        },
+                    },
+                },
             };
         }
         case ExportActionTypes.EXPORT_BACKUP_FAILED:
         case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
-            const { instanceId } = action.payload;
+            const { instance } = action.payload;
 
-            const { instance } = state;
-
-            let activities;
-            let field;
-            if (instance instanceof core.classes.Project) {
-                activities = deepCopy(state.projects);
-                field = 'projects';
-            } else if (instance instanceof core.classes.Task) {
-                activities = deepCopy(state.tasks);
-                field = 'tasks';
-            } else {
-                activities = deepCopy(state.jobs);
-                field = 'jobs';
-            }
-
-            activities[instanceId] = {
-                ...activities[instanceId],
-                'backup': false,
-            }
+            const field = defineActititiesField(instance) as 'projects' | 'tasks';
 
             return {
                 ...state,
                 [field]: {
-                    ...activities,
+                    ...state[field],
+                    backup: {
+                        ...state[field].backup,
+                        current: omit(state[field].backup, instance.id),
+                    }
                 },
-                instance: null,
-                resource: null,
             };
         }
         default:

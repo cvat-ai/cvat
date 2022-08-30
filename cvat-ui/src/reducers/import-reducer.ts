@@ -13,7 +13,7 @@ const core = getCore();
 
 const defaultProgress = 0.0;
 
-function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
+export function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
     if  (instance instanceof core.classes.Project) {
         return 'projects';
     } else if (instance instanceof core.classes.Task) {

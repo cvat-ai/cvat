@@ -20,7 +20,7 @@ interface Props {
     dumpers: any[];
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
-    // backupIsActive: boolean;
+    backupIsActive: boolean;
     onClickMenu: (params: MenuInfo) => void;
 }
 
@@ -39,7 +39,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         taskID,
         bugTracker,
         inferenceIsActive,
-        // backupIsActive,
+        backupIsActive,
         onClickMenu,
     } = props;
 
@@ -80,8 +80,8 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             </Menu.Item>
             <Menu.Item
                 key={Actions.BACKUP_TASK}
-                // disabled={backupIsActive}
-                // icon={backupIsActive && <LoadingOutlined id='cvat-backup-task-loading' />}
+                disabled={backupIsActive}
+                icon={backupIsActive && <LoadingOutlined id='cvat-backup-task-loading' />}
             >
                 Backup Task
             </Menu.Item>

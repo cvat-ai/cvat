@@ -23,10 +23,7 @@ import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 
-import { getCore } from 'cvat-core-wrapper';
 import { NotificationsState } from '.';
-
-const core = getCore();
 
 const defaultState: NotificationsState = {
     errors: {
@@ -366,7 +363,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_DATASET_FAILED: {
-            const { instanceId, instanceType } = action.payload;
+            const { instance, instanceType } = action.payload;
             return {
                 ...state,
                 errors: {
@@ -376,8 +373,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message:
                                 'Could not export dataset for the ' +
-                                `<a href="/${instanceType}s/${instanceId}" target="_blank">` +
-                                `${instanceType} ${instanceId}</a>`,
+                                `<a href="/${instanceType}s/${instance.id}" target="_blank">` +
+                                `${instanceType} ${instance.id}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -385,7 +382,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { instanceId, instanceType, isLocal } = action.payload;
+            const { instance, instanceType, isLocal } = action.payload;
+            const resource = instanceType === 'project' ? 'Dataset' : 'Annotations';
+            const auxiliaryVerb = instanceType === 'project' ? 'has' : 'have';
             return {
                 ...state,
                 messages: {
@@ -393,7 +392,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     exporting: {
                         ...state.messages.exporting,
                         dataset:
-                            `Dataset for ${instanceType} ${instanceId} has been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
+                            `${resource} for ${instanceType} ${instance.id} ` +
+                            `${auxiliaryVerb} been ${(isLocal) ? "downloaded" : "uploaded"} ` +
+                            `${(isLocal) ? "locally" : "to cloud storage"}`,
                     },
                 },
             };
@@ -416,7 +417,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
-            const { instanceId, instanceType, isLocal } = action.payload;
+            const { instance, instanceType, isLocal } = action.payload;
             return {
                 ...state,
                 messages: {
@@ -424,7 +425,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     exporting: {
                         ...state.messages.exporting,
                         backup:
-                            `Backup for the ${instanceType} №${instanceId} has been ${(isLocal) ? "downloaded" : "uploaded"} ${(isLocal) ? "locally" : "to cloud storage"}`,
+                            `Backup for the ${instanceType} №${instance.id} ` +
+                            `has been ${(isLocal) ? "downloaded" : "uploaded"} ` +
+                            `${(isLocal) ? "locally" : "to cloud storage"}`,
                     },
                 },
             };

@@ -112,27 +112,43 @@ export interface TasksState {
 }
 
 export interface ExportState {
-    tasks: {
-        [tid: number]: {
-            dataset: string[];
-            backup: boolean;
+    projects: {
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+        backup: {
+            current: {
+                [id: number]: boolean;
+            };
+            modalInstance: any | null;
         };
     };
-    projects: {
-        [pid: number]: {
-            dataset: string[];
-            backup: boolean;
+    tasks: {
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+        backup: {
+            current: {
+                [id: number]: boolean;
+            };
+            modalInstance: any | null;
         };
     };
     jobs: {
-        [jid: number]: {
-            dataset: string[];
-            backup: boolean;
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
         };
-    }
-    instance: any;
-    resource: 'dataset' | 'backup' | null;
-    modalVisible: boolean;
+    };
+    instanceType: 'project' | 'task' | 'job' | null;
 }
 
 export interface ImportState {

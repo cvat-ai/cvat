@@ -10,48 +10,58 @@ import { getCore, Storage } from 'cvat-core-wrapper';
 const core = getCore();
 
 export enum ExportActionTypes {
-    OPEN_EXPORT_MODAL = 'OPEN_EXPORT_MODAL',
-    CLOSE_EXPORT_MODAL = 'CLOSE_EXPORT_MODAL',
+    OPEN_EXPORT_DATASET_MODAL = 'OPEN_EXPORT_DATASET_MODAL',
+    CLOSE_EXPORT_DATASET_MODAL = 'CLOSE_EXPORT_DATASET_MODAL',
     EXPORT_DATASET = 'EXPORT_DATASET',
     EXPORT_DATASET_SUCCESS = 'EXPORT_DATASET_SUCCESS',
     EXPORT_DATASET_FAILED = 'EXPORT_DATASET_FAILED',
+    OPEN_EXPORT_BACKUP_MODAL = 'OPEN_EXPORT_BACKUP_MODAL',
+    CLOSE_EXPORT_BACKUP_MODAL = 'CLOSE_EXPORT_BACKUP_MODAL',
     EXPORT_BACKUP = 'EXPORT_BACKUP',
     EXPORT_BACKUP_SUCCESS = 'EXPORT_BACKUP_SUCCESS',
     EXPORT_BACKUP_FAILED = 'EXPORT_BACKUP_FAILED',
 }
 
 export const exportActions = {
-    openExportModal: (instance: any, resource: 'dataset' | 'backup') => (
-        createAction(ExportActionTypes.OPEN_EXPORT_MODAL, { instance, resource })
+    openExportDatasetModal: (instance: any) => (
+        createAction(ExportActionTypes.OPEN_EXPORT_DATASET_MODAL, { instance })
     ),
-    closeExportModal: () => createAction(ExportActionTypes.CLOSE_EXPORT_MODAL),
+    closeExportDatasetModal: (instance: any) => (
+        createAction(ExportActionTypes.CLOSE_EXPORT_DATASET_MODAL, { instance })
+    ),
     exportDataset: (instance: any, format: string) => (
         createAction(ExportActionTypes.EXPORT_DATASET, { instance, format })
     ),
     exportDatasetSuccess: (
-        instanceId: number,
+        instance: any,
         instanceType: 'project' | 'task' | 'job',
         format: string,
         isLocal: boolean,
     ) => (
-        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instanceId, instanceType, format, isLocal })
+        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, instanceType, format, isLocal })
     ),
-    exportDatasetFailed: (instanceId: number, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
+    exportDatasetFailed: (instance: any, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
-            instanceId,
+            instance,
             instanceType,
             format,
             error,
         })
     ),
-    exportBackup: (instanceId: number) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP, { instanceId })
+    openExportBackupModal: (instance: any) => (
+        createAction(ExportActionTypes.OPEN_EXPORT_BACKUP_MODAL, { instance })
     ),
-    exportBackupSuccess: (instanceId: number, instanceType: 'task' | 'project', isLocal: boolean) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instanceId, instanceType, isLocal })
+    closeExportBackupModal: (instance: any) => (
+        createAction(ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL, { instance })
     ),
-    exportBackupFailed: (instanceId: number, instanceType: 'task' | 'project', error: any) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instanceId, instanceType, error })
+    exportBackup: (instance: any) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
+    ),
+    exportBackupSuccess: (instance: any, instanceType: 'task' | 'project', isLocal: boolean) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, isLocal })
+    ),
+    exportBackupFailed: (instance: any, instanceType: 'task' | 'project', error: any) => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instance, instanceType, error })
     ),
 };
 
@@ -75,14 +85,14 @@ export const exportDatasetAsync = (
             downloadAnchor.href = result;
             downloadAnchor.click();
         }
-        dispatch(exportActions.exportDatasetSuccess(instance.id, instanceType, format, !!result));
+        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result));
     } catch (error) {
-        dispatch(exportActions.exportDatasetFailed(instanceType, format, error));
+        dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
     }
 };
 
 export const exportBackupAsync = (instance: any, targetStorage: Storage, useDefaultSetting: boolean, fileName?: string): ThunkAction => async (dispatch) => {
-    dispatch(exportActions.exportBackup(instance.id));
+    dispatch(exportActions.exportBackup(instance));
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
@@ -92,9 +102,9 @@ export const exportBackupAsync = (instance: any, targetStorage: Storage, useDefa
             downloadAnchor.href = result;
             downloadAnchor.click();
         }
-        dispatch(exportActions.exportBackupSuccess(instance.id, instanceType, !!result));
+        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result));
     } catch (error) {
-        dispatch(exportActions.exportBackupFailed(instance.id, instanceType,  error as Error));
+        dispatch(exportActions.exportBackupFailed(instance, instanceType,  error as Error));
     }
 };
 

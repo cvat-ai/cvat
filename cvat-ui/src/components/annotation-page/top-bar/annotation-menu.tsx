@@ -33,7 +33,7 @@ interface Props {
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
-    EXPORT_TASK_DATASET = 'export_task_dataset',
+    EXPORT_JOB_DATASET = 'export_job_dataset',
     REMOVE_ANNO = 'remove_anno',
     OPEN_TASK = 'open_task',
     FINISH_JOB = 'finish_job',
@@ -185,7 +185,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
     return (
         <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
             <Menu.Item key={Actions.LOAD_JOB_ANNO}>Upload annotations</Menu.Item>
-            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
+            <Menu.Item key={Actions.EXPORT_JOB_DATASET}>Export job dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
                 <a
