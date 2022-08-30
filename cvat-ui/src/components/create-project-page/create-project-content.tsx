@@ -164,7 +164,7 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationProps): JSX.Eleme
             <Row justify='space-between'>
                 <Col span={11}>
                     <SourceStorageField
-                        projectId={null}
+                        instanceId={null}
                         storageDescription='Specify source storage for import resources like annotation, backups'
                         locationValue={sourceStorageLocation}
                         onChangeLocationValue={onChangeSourceStorageLocation}
@@ -172,7 +172,7 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationProps): JSX.Eleme
                 </Col>
                 <Col span={11} offset={1}>
                     <TargetStorageField
-                        projectId={null}
+                        instanceId={null}
                         storageDescription='Specify target storage for export resources like annotation, backups'
                         locationValue={targetStorageLocation}
                         onChangeLocationValue={onChangeTargetStorageLocation}
@@ -220,8 +220,12 @@ export default function CreateProjectContent(): JSX.Element {
                     ...projectData,
                     ...advancedValues,
                     name: basicValues.name,
-                    source_storage: new Storage(advancedValues.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
-                    target_storage: new Storage(advancedValues.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
+                    source_storage: new Storage(
+                        advancedValues.sourceStorage || { location: StorageLocation.LOCAL }
+                    ).toJSON(),
+                    target_storage: new Storage(
+                        advancedValues.targetStorage || { location: StorageLocation.LOCAL }
+                    ).toJSON(),
                 };
 
                 if (adaptiveAutoAnnotationValues) {

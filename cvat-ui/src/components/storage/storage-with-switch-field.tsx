@@ -16,7 +16,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { StorageData } from 'cvat-core-wrapper';
 import { StorageLocation } from 'reducers';
 export interface Props {
-    projectId: number | null;
+    instanceId: number | null;
     storageName: string;
     storageLabel: string;
     switchName: string;
@@ -24,25 +24,25 @@ export interface Props {
     switchDescription?: string;
     switchHelpMessage?: string;
     storageDescription?: string;
-    useProjectStorage?: boolean | null;
+    useDefaultStorage?: boolean | null;
     onChangeLocationValue?: (value: StorageLocation) => void;
     onChangeStorage?: (values: StorageData) => void;
-    onChangeUseProjectStorage?: (value: boolean) => void;
+    onChangeUseDefaultStorage?: (value: boolean) => void;
 }
 
 
 export default function StorageWithSwitchField(props: Props): JSX.Element {
     const {
-        projectId,
+        instanceId,
         storageName,
         storageLabel,
         switchName,
         switchDescription,
         switchHelpMessage,
         storageDescription,
-        useProjectStorage,
+        useDefaultStorage,
         locationValue,
-        onChangeUseProjectStorage,
+        onChangeUseDefaultStorage,
         onChangeStorage,
         onChangeLocationValue,
     } = props;
@@ -50,7 +50,7 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
     return (
         <>
             {
-                !!projectId &&
+                !!instanceId &&
                     <Space>
                         <Form.Item
                             name={switchName}
@@ -59,8 +59,8 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                             <Switch
                                 className='cvat-use-default-location'
                                 onChange={(value: boolean) => {
-                                    if (onChangeUseProjectStorage) {
-                                        onChangeUseProjectStorage(value)
+                                    if (onChangeUseDefaultStorage) {
+                                        onChangeUseDefaultStorage(value);
                                     }
                                 }}
                             />
@@ -72,7 +72,7 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                     </Space>
             }
             {
-                (!projectId || !useProjectStorage) &&
+                (!instanceId || !useDefaultStorage) &&
                 <Form.Item
                     label={(
                         <>

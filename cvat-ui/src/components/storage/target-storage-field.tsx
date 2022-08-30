@@ -8,43 +8,43 @@ import { StorageLocation } from 'reducers';
 import StorageWithSwitchField from './storage-with-switch-field';
 import { StorageData } from 'cvat-core-wrapper';
 export interface Props {
-    projectId: number | null;
+    instanceId: number | null;
     locationValue: StorageLocation;
     switchDescription?: string;
     switchHelpMessage?: string;
     storageDescription?: string;
-    useProjectStorage?: boolean | null;
+    useDefaultStorage?: boolean | null;
     onChangeLocationValue?: (value: StorageLocation) => void;
     onChangeStorage?: (values: StorageData) => void;
-    onChangeUseProjectStorage?: (value: boolean) => void;
+    onChangeUseDefaultStorage?: (value: boolean) => void;
 }
 
 export default function TargetStorageField(props: Props): JSX.Element {
     const {
-        projectId,
+        instanceId,
         locationValue,
         switchDescription,
         switchHelpMessage,
         storageDescription,
-        useProjectStorage,
+        useDefaultStorage,
         onChangeLocationValue,
-        onChangeUseProjectStorage,
+        onChangeUseDefaultStorage,
         onChangeStorage,
     } = props;
 
 
     return (
         <StorageWithSwitchField
-            projectId={projectId}
+            instanceId={instanceId}
             locationValue={locationValue}
             storageLabel='Target storage'
             storageName='targetStorage'
             switchName='useProjectTargetStorage'
-            useProjectStorage={useProjectStorage}
+            useDefaultStorage={useDefaultStorage}
             switchDescription={switchDescription}
             switchHelpMessage={switchHelpMessage}
             storageDescription={storageDescription}
-            onChangeUseProjectStorage={onChangeUseProjectStorage}
+            onChangeUseDefaultStorage={onChangeUseDefaultStorage}
             onChangeStorage={onChangeStorage}
             onChangeLocationValue={onChangeLocationValue}
         />

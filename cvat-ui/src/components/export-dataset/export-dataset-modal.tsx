@@ -211,14 +211,13 @@ function ExportDatasetModal(): JSX.Element | null {
                     />
                 </Form.Item>
                 <TargetStorageField
-                    // FIXME rename to instanse?
-                    projectId={instance?.id}
+                    instanceId={instance?.id}
                     switchDescription='Use default settings'
                     switchHelpMessage={helpMessage}
-                    useProjectStorage={useDefaultTargetStorage}
+                    useDefaultStorage={useDefaultTargetStorage}
                     storageDescription='Specify target storage for export dataset'
                     locationValue={targetStorage.location}
-                    onChangeUseProjectStorage={(value: boolean) => setUseDefaultTargetStorage(value)}
+                    onChangeUseDefaultStorage={(value: boolean) => setUseDefaultTargetStorage(value)}
                     onChangeStorage={(value: StorageData) => setTargetStorage(value)}
                     onChangeLocationValue={(value: StorageLocation) => {
                         setTargetStorage({ location: value });

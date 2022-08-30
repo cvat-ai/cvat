@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
 import { useSelector, useDispatch } from 'react-redux';
-import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
@@ -39,7 +39,6 @@ function ExportBackupModal(): JSX.Element | null {
     const dispatch = useDispatch();
     const [form] = Form.useForm();
     const [instanceType, setInstanceType] = useState('');
-    const [activity, setActivity] = useState(false);
     const [useDefaultStorage, setUseDefaultStorage] = useState(true);
     const [storageLocation, setStorageLocation] = useState(StorageLocation.LOCAL);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
@@ -48,7 +47,10 @@ function ExportBackupModal(): JSX.Element | null {
     const resource = useSelector((state: CombinedState) => state.export.resource);
     const instance = useSelector((state: CombinedState) => state.export.instance);
     const modalVisible = useSelector((state: CombinedState) => state.export.modalVisible);
-    const { tasks: taskExportActivities, projects: projectExportActivities } = useSelector((state: CombinedState) => state.export);
+    const {
+        tasks: taskExportActivities,
+        projects: projectExportActivities,
+    } = useSelector((state: CombinedState) => state.export);
 
     const initActivities = (): void => {
         if (resource === 'backup') {
@@ -58,7 +60,6 @@ function ExportBackupModal(): JSX.Element | null {
                 if (projectExportActivities[instance?.id]) {
                     activity = projectExportActivities[instance?.id].backup;
                 }
-                setActivity(activity);
             } else if (instance instanceof core.classes.Task) {
                 setInstanceType(`task #${instance.id}`);
                 if (taskExportActivities[instance?.id]) {
@@ -145,14 +146,13 @@ function ExportBackupModal(): JSX.Element | null {
                     />
                 </Form.Item>
                 <TargetStorageField
-                    // FIXME rename to instanse?
-                    projectId={instance?.id}
+                    instanceId={instance?.id}
                     switchDescription='Use default settings'
                     switchHelpMessage={helpMessage}
-                    useProjectStorage={useDefaultStorage}
+                    useDefaultStorage={useDefaultStorage}
                     storageDescription={`Specify target storage for export ${instanceType}`}
                     locationValue={storageLocation}
-                    onChangeUseProjectStorage={(value: boolean) => setUseDefaultStorage(value)}
+                    onChangeUseDefaultStorage={(value: boolean) => setUseDefaultStorage(value)}
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
                 />
             </Form>

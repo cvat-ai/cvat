@@ -148,7 +148,7 @@ function ImportBackupModal(): JSX.Element {
                     initialValues={initialValues}
                 >
                     <SourceStorageField
-                        projectId={null}
+                        instanceId={null}
                         storageDescription='Specify source storage with backup'
                         locationValue={selectedSourceStorage.location}
                         onChangeStorage={(value: StorageData) => setSelectedSourceStorage(new Storage(value))}

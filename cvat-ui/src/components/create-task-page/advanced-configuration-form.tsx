@@ -507,12 +507,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         } = this.props;
         return (
             <SourceStorageField
-                projectId={projectId}
+                instanceId={projectId}
                 locationValue={sourceStorageLocation}
                 switchDescription='Use project source storage'
                 storageDescription='Specify source storage for import resources like annotation, backups'
-                useProjectStorage={useProjectSourceStorage}
-                onChangeUseProjectStorage={onChangeUseProjectSourceStorage}
+                useDefaultStorage={useProjectSourceStorage}
+                onChangeUseDefaultStorage={onChangeUseProjectSourceStorage}
                 onChangeLocationValue={onChangeSourceStorageLocation}
             />
         );
@@ -528,12 +528,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         } = this.props;
         return (
             <TargetStorageField
-                projectId={projectId}
+                instanceId={projectId}
                 locationValue={targetStorageLocation}
                 switchDescription='Use project target storage'
                 storageDescription='Specify target storage for export resources like annotation, backups                '
-                useProjectStorage={useProjectTargetStorage}
-                onChangeUseProjectStorage={onChangeUseProjectTargetStorage}
+                useDefaultStorage={useProjectTargetStorage}
+                onChangeUseDefaultStorage={onChangeUseProjectTargetStorage}
                 onChangeLocationValue={onChangeTargetStorageLocation}
             />
         );
