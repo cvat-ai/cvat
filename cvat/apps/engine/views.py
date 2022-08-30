@@ -2255,46 +2255,43 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
-    if not rq_job:
-        fd = None
-        location = location_conf.get('location') if location_conf else None
-        if not filename and location != Location.CLOUD_STORAGE:
-            serializer = DatasetFileSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
-                    for chunk in dataset_file.chunks():
-                        f.write(chunk)
-        elif location == Location.CLOUD_STORAGE:
-            assert filename
-
-            # download project file from cloud storage
-            try:
-                storage_id = location_conf['storage_id']
-            except KeyError:
-                raise serializers.ValidationError(
-                    'Cloud storage location was selected for destination'
-                    ' but cloud storage id was not specified')
-            db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
-            storage = db_storage_to_storage_instance(db_storage)
-
-            data = _import_from_cloud_storage(storage, filename)
-
-            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+    fd = None
+    location = location_conf.get('location') if location_conf else None
+    if not filename and location != Location.CLOUD_STORAGE:
+        serializer = DatasetFileSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            dataset_file = serializer.validated_data['dataset_file']
+            fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
             with open(filename, 'wb+') as f:
-                f.write(data.getbuffer())
+                for chunk in dataset_file.chunks():
+                    f.write(chunk)
+    elif location == Location.CLOUD_STORAGE:
+        assert filename
 
-        rq_job = queue.enqueue_call(
-            func=rq_func,
-            args=(pk, filename, format_name),
-            job_id=rq_id,
-            meta={
-                    'tmp_file': filename,
-                    'tmp_file_descriptor': fd,
-                },
-            )
-    else:
-        return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+        # download project file from cloud storage
+        try:
+            storage_id = location_conf['storage_id']
+        except KeyError:
+            raise serializers.ValidationError(
+                'Cloud storage location was selected for destination'
+                ' but cloud storage id was not specified')
+        db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+        storage = db_storage_to_storage_instance(db_storage)
+
+        data = _import_from_cloud_storage(storage, filename)
+
+        fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+        with open(filename, 'wb+') as f:
+            f.write(data.getbuffer())
+
+    rq_job = queue.enqueue_call(
+        func=rq_func,
+        args=(pk, filename, format_name),
+        job_id=rq_id,
+        meta={
+                'tmp_file': filename,
+                'tmp_file_descriptor': fd,
+            },
+        )
 
     return Response(status=status.HTTP_202_ACCEPTED)

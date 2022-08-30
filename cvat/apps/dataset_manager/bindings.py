@@ -1593,13 +1593,13 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
                     if keyframe or outside:
                         if track_id not in tracks:
-                            tracks[track_id] = instance_data.Track(
-                                label=label_cat.items[ann.label].name,
-                                group=group_map.get(ann.group, 0),
-                                source=source,
-                                shapes=[],
-                                elements=[],
-                            )
+                            tracks[track_id] = {
+                                'label': label_cat.items[ann.label].name,
+                                'group': group_map.get(ann.group, 0),
+                                'source': source,
+                                'shapes': [],
+                                'elements':{},
+                            }
 
                         track = instance_data.TrackedShape(
                             type=shapes[ann.type],
@@ -1612,11 +1612,12 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                             source=source,
                             attributes=attributes,
                         )
+                        tracks[track_id]['shapes'].append(track)
 
                         if ann.type == datum_annotation.AnnotationType.skeleton:
                             for element in ann.elements:
-                                if element.label not in tracks[track_id].elements:
-                                    tracks[track_id].elements[element.label] = instance_data.Track(
+                                if element.label not in tracks[track_id]['elements']:
+                                    tracks[track_id]['elements'][element.label] = instance_data.Track(
                                         label=label_cat.items[element.label].name,
                                         group=0,
                                         source=source,
@@ -1630,8 +1631,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                 element_outside = cast(element.attributes.pop('outside', None), bool) is True
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
-                                tracks[track_id].elements[element.label].shapes.append(instance_data.TrackedShape(
-                                    type=shapes[ann.type],
+                                tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
+                                    type=shapes[element.type],
                                     frame=frame_number,
                                     occluded=element_occluded,
                                     outside=element_outside,
@@ -1641,8 +1642,6 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                     source=element_source,
                                     attributes=element_attributes,
                                 ))
-
-                        tracks[track_id].shapes.append(track)
 
                 elif ann.type == datum_annotation.AnnotationType.label:
                     instance_data.add_tag(instance_data.Tag(
@@ -1657,7 +1656,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
     for track in tracks.values():
-        instance_data.add_track(track)
+        track['elements'] = list(track['elements'].values())
+        instance_data.add_track(instance_data.Track(**track))
 
 
 def import_labels_to_project(project_annotation, dataset: Dataset):
