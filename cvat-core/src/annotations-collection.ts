@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -157,25 +158,9 @@
             return objectStates;
         }
 
-        merge(objectStates) {
-            checkObjectType('shapes for merge', objectStates, null, Array);
-            if (!objectStates.length) return;
-            const objectsForMerge = objectStates.map((state) => {
-                checkObjectType('object state', state, null, ObjectState);
-                const object = this.objects[state.clientID];
-                if (typeof object === 'undefined') {
-                    throw new ArgumentError(
-                        'The object is not in collection yet. Call ObjectState.put([state]) before you can merge it',
-                    );
-                }
-                return object;
-            });
-
+        _mergeInternal(objectsForMerge, shapeType, label): any {
             const keyframes = {}; // frame: position
-            const { label, shapeType } = objectStates[0];
-            if (!(label.id in this.labels)) {
-                throw new ArgumentError(`Unknown label for the task: ${label.id}`);
-            }
+            const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
 
             if (!Object.values(ShapeType).includes(shapeType)) {
                 throw new ArgumentError(`Got unknown shapeType "${shapeType}"`);
@@ -189,15 +174,16 @@
             for (let i = 0; i < objectsForMerge.length; i++) {
                 // For each state get corresponding object
                 const object = objectsForMerge[i];
-                const state = objectStates[i];
-                if (state.label.id !== label.id) {
+                if (object.label.id !== label.id) {
                     throw new ArgumentError(
-                        `All shape labels are expected to be ${label.name}, but got ${state.label.name}`,
+                        `All object labels are expected to be "${label.name}", but got "${object.label.name}"`,
                     );
                 }
 
-                if (state.shapeType !== shapeType) {
-                    throw new ArgumentError(`All shapes are expected to be ${shapeType}, but got ${state.shapeType}`);
+                if (object.shapeType !== shapeType) {
+                    throw new ArgumentError(
+                        `All shapes are expected to be "${shapeType}", but got "${object.shapeType}"`,
+                    );
                 }
 
                 // If this object is shape, get it position and save as a keyframe
@@ -211,10 +197,6 @@
                         type: shapeType,
                         frame: object.frame,
                         points: object.shapeType === ShapeType.SKELETON ? undefined : [...object.points],
-                        elements: object.shapeType === ShapeType.SKELETON ? object.elements.map((el) => {
-                            const { id, clientID, ...rest } = el.toJSON();
-                            return rest;
-                        }) : undefined,
                         occluded: object.occluded,
                         rotation: object.rotation,
                         z_order: object.zOrder,
@@ -232,7 +214,7 @@
                     };
 
                     // Push outside shape after each annotation shape
-                    // Any not outside shape rewrites it
+                    // Any not outside shape will rewrite it later
                     if (!(object.frame + 1 in keyframes) && object.frame + 1 <= this.stopFrame) {
                         keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
                         keyframes[object.frame + 1].outside = true;
@@ -244,15 +226,10 @@
                         });
                     }
                 } else if (object instanceof Track) {
-                    // If this object is track, iterate through all its
+                    // If this object is a track, iterate through all its
                     // keyframes and push copies to new keyframes
                     const attributes = {}; // id:value
                     const trackShapes = object.shapes;
-                    const exportedShapes = object.shapeType === ShapeType.SKELETON ?
-                        object.prepareShapesForServer().reduce((acc, val) => {
-                            acc[val.frame] = val;
-                            return acc;
-                        }, {}) : {};
                     for (const keyframe of Object.keys(trackShapes)) {
                         const shape = trackShapes[keyframe];
                         // Frame already saved and it is not outside
@@ -279,11 +256,6 @@
                             type: shapeType,
                             frame: +keyframe,
                             points: object.shapeType === ShapeType.SKELETON ? undefined : [...shape.points],
-                            elements: object.shapeType === ShapeType.SKELETON ?
-                                exportedShapes[keyframe].elements.map((el) => {
-                                    const { id, ...rest } = el;
-                                    return rest;
-                                }) : undefined,
                             rotation: shape.rotation,
                             occluded: shape.occluded,
                             outside: shape.outside,
@@ -304,6 +276,37 @@
                             'Only shapes and tracks are expected.',
                     );
                 }
+
+                if (object.shapeType === ShapeType.SKELETON) {
+                    for (const element of object.elements) {
+                        // for each track/shape element get its first objectState and keep it
+                        elements[element.label.id] = [
+                            ...(elements[element.label.id] || []), element,
+                        ];
+                    }
+                }
+            }
+
+            const mergedElements = [];
+            if (shapeType === ShapeType.SKELETON) {
+                for (const sublabel of label.structure.sublabels) {
+                    if (!(sublabel.id in elements)) {
+                        throw new ArgumentError(
+                            `Merged skeleton is absent some of its elements (sublabel id: ${sublabel.id})`,
+                        );
+                    }
+
+                    try {
+                        mergedElements.push(this._mergeInternal(
+                            elements[sublabel.id], elements[sublabel.id][0].shapeType, sublabel,
+                        ));
+                    } catch (error) {
+                        throw new ArgumentError(
+                            `Could not merge some skeleton parts (sublabel id: ${sublabel.id}).
+                            Original error is ${error.toString()}`,
+                        );
+                    }
+                }
             }
 
             let firstNonOutside = false;
@@ -317,21 +320,21 @@
                 }
             }
 
-            const clientID = ++this.count;
             const track = {
                 frame: Math.min.apply(
                     null,
                     Object.keys(keyframes).map((frame) => +frame),
                 ),
                 shapes: Object.values(keyframes),
+                elements: shapeType === ShapeType.SKELETON ? mergedElements : undefined,
                 group: 0,
-                source: objectStates[0].source,
+                source: Source.MANUAL,
                 label_id: label.id,
-                attributes: Object.keys(objectStates[0].attributes).reduce((accumulator, attrID) => {
+                attributes: Object.keys(objectsForMerge[0].attributes).reduce((accumulator, attrID) => {
                     if (!labelAttributes[attrID].mutable) {
                         accumulator.push({
                             spec_id: +attrID,
-                            value: objectStates[0].attributes[attrID],
+                            value: objectsForMerge[0].attributes[attrID],
                         });
                     }
 
@@ -339,30 +342,56 @@
                 }, []),
             };
 
-            const trackModel = trackFactory(track, clientID, this.injection);
-            this.tracks.push(trackModel);
-            this.objects[clientID] = trackModel;
+            return track;
+        }
+
+        merge(objectStates) {
+            checkObjectType('shapes for merge', objectStates, null, Array);
+            if (!objectStates.length) return;
+            const objectsForMerge = objectStates.map((state) => {
+                checkObjectType('object state', state, null, ObjectState);
+                const object = this.objects[state.clientID];
+                if (typeof object === 'undefined') {
+                    throw new ArgumentError(
+                        'The object is not in collection yet. Call ObjectState.put([state]) before you can merge it',
+                    );
+                }
+                return object;
+            });
+
+            const { label, shapeType } = objectStates[0];
+            if (!(label.id in this.labels)) {
+                throw new ArgumentError(`Unknown label for the task: ${label.id}`);
+            }
+
+            const track = this._mergeInternal(objectsForMerge, shapeType, label);
+            const imported = this.import({
+                tracks: [track],
+                tags: [],
+                shapes: [],
+            });
 
             // Remove other shapes
             for (const object of objectsForMerge) {
                 object.removed = true;
             }
 
+            const [importedTrack] = imported.tracks;
             this.history.do(
                 HistoryActions.MERGED_OBJECTS,
                 () => {
-                    trackModel.removed = true;
+                    importedTrack.removed = true;
                     for (const object of objectsForMerge) {
                         object.removed = false;
                     }
                 },
                 () => {
-                    trackModel.removed = false;
+                    importedTrack.removed = false;
                     for (const object of objectsForMerge) {
                         object.removed = true;
                     }
                 },
-                [...objectsForMerge.map((object) => object.clientID), trackModel.clientID],
+                [...objectsForMerge.map((object) => object.clientID), importedTrack.clientID],
                 objectStates[0].frame,
             );
         }
