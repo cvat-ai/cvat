@@ -379,8 +379,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         try {
-            const savedTask = await taskInstance.save((status: string): void => {
-                onProgress?.(status);
+            const savedTask = await taskInstance.save((status: string, progress: number): void => {
+                onProgress?.(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : ''));
             });
             return savedTask;
         } catch (error) {
