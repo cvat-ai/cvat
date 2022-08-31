@@ -756,7 +756,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
-                            frame: frame,
+                            frame: frame ,
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
                         });
