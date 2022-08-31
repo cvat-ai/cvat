@@ -213,7 +213,7 @@ export default function CreateProjectContent(): JSX.Element {
             let projectData: Record<string, any> = {};
             if (nameFormRef.current) {
                 const basicValues = await nameFormRef.current.validateFields();
-                const advancedValues = await advancedFormRef.current?.validateFields();
+                const advancedValues = advancedFormRef.current ? await advancedFormRef.current.validateFields() : {};
                 const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
 
                 projectData = {
