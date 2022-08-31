@@ -10,7 +10,7 @@ import logging
 import os
 from distutils.util import strtobool
 
-from cvat_sdk.core.types import ResourceType
+from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .version import VERSION
 

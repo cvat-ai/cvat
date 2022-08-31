@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -613,6 +614,7 @@ describe('Feature: merge annotations', () => {
             name: 'new_label',
             attributes: [],
         });
+        await states[1].save();
 
         expect(task.annotations.merge(states)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });

@@ -1,4 +1,3 @@
-# Copyright (C) 2020-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -6,23 +5,22 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import os.path as osp
 import urllib.parse
 from time import sleep
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import attrs
+import urllib3
 
-from cvat_sdk.api_client import ApiClient, ApiException, ApiValueError, Configuration, models
-from cvat_sdk.core.git import create_git_repo
-from cvat_sdk.core.helpers import get_paginated_collection
-from cvat_sdk.core.progress import ProgressReporter
-from cvat_sdk.core.tasks import TaskProxy
-from cvat_sdk.core.types import ResourceType
-from cvat_sdk.core.uploading import Uploader
-from cvat_sdk.core.utils import assert_status
+from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.core.helpers import expect_status
+from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
+from cvat_sdk.core.proxies.jobs import JobsRepo
+from cvat_sdk.core.proxies.model_proxy import Repo
+from cvat_sdk.core.proxies.projects import ProjectsRepo
+from cvat_sdk.core.proxies.tasks import TasksRepo
+from cvat_sdk.core.proxies.users import UsersRepo
 
 
 @attrs.define
@@ -43,10 +41,12 @@ class Client:
     ):
         # TODO: use requests instead of urllib3 in ApiClient
         # TODO: try to autodetect schema
-        self._api_map = _CVAT_API_V2(url)
+        self.api_map = CVAT_API_V2(url)
         self.api = ApiClient(Configuration(host=url))
         self.logger = logger or logging.getLogger(__name__)
         self.config = config or Config()
+
+        self._repos: Dict[str, Repo] = {}
 
     def __enter__(self):
         self.api.__enter__()
@@ -67,150 +67,93 @@ class Client:
         assert "csrftoken" in self.api.cookies
         self.api.set_default_header("Authorization", "Token " + auth.key)
 
-    def create_task(
-        self,
-        spec: models.ITaskWriteRequest,
-        resource_type: ResourceType,
-        resources: Sequence[str],
-        *,
-        data_params: Optional[Dict[str, Any]] = None,
-        annotation_path: str = "",
-        annotation_format: str = "CVAT XML 1.1",
-        status_check_period: int = None,
-        dataset_repository_url: str = "",
-        use_lfs: bool = False,
-        pbar: Optional[ProgressReporter] = None,
-    ) -> TaskProxy:
-        """
-        Create a new task with the given name and labels JSON and
-        add the files to it.
+    def _has_credentials(self):
+        return (
+            ("sessionid" in self.api.cookies)
+            or ("csrftoken" in self.api.cookies)
+            or (self.api.get_common_headers().get("Authorization", ""))
+        )
 
-        Returns: id of the created task
-        """
+    def logout(self):
+        if self._has_credentials():
+            self.api.auth_api.create_logout()
+
+    def wait_for_completion(
+        self: Client,
+        url: str,
+        *,
+        success_status: int,
+        status_check_period: Optional[int] = None,
+        query_params: Optional[Dict[str, Any]] = None,
+        post_params: Optional[Dict[str, Any]] = None,
+        method: str = "POST",
+        positive_statuses: Optional[Sequence[int]] = None,
+    ) -> urllib3.HTTPResponse:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
-        if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
-            raise ApiValueError(
-                "Can't set labels to a task inside a project. "
-                "Tasks inside a project use project's labels.",
-                ["labels"],
-            )
-        (task, _) = self.api.tasks_api.create(spec)
-        self.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
+        positive_statuses = set(positive_statuses) | {success_status}
 
-        task = TaskProxy(self, task)
-        task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
-
-        self.logger.info("Awaiting for task %s creation...", task.id)
-        status = None
-        while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
-            sleep(status_check_period)
-            (status, _) = self.api.tasks_api.retrieve_status(task.id)
-
-            self.logger.info(
-                "Task %s creation status=%s, message=%s",
-                task.id,
-                status.state.value,
-                status.message,
-            )
-
-            if status.state.value == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
-                raise ApiException(status=status.state.value, reason=status.message)
-
-            status = status.state.value
-
-        if annotation_path:
-            task.import_annotations(annotation_format, annotation_path, pbar=pbar)
-
-        if dataset_repository_url:
-            create_git_repo(
-                self,
-                task_id=task.id,
-                repo_url=dataset_repository_url,
-                status_check_period=status_check_period,
-                use_lfs=use_lfs,
-            )
-
-        task.fetch()
-
-        return task
-
-    def list_tasks(
-        self, *, return_json: bool = False, **kwargs
-    ) -> Union[List[TaskProxy], List[Dict[str, Any]]]:
-        """List all tasks in either basic or JSON format."""
-
-        results = get_paginated_collection(
-            endpoint=self.api.tasks_api.list_endpoint, return_json=return_json, **kwargs
-        )
-
-        if return_json:
-            return json.dumps(results)
-
-        return [TaskProxy(self, v) for v in results]
-
-    def retrieve_task(self, task_id: int) -> TaskProxy:
-        (task, _) = self.api.tasks_api.retrieve(task_id)
-        return TaskProxy(self, task)
-
-    def delete_tasks(self, task_ids: Sequence[int]):
-        """
-        Delete a list of tasks, ignoring those which don't exist.
-        """
-
-        for task_id in task_ids:
-            (_, response) = self.api.tasks_api.destroy(task_id, _check_status=False)
-            if 200 <= response.status <= 299:
-                self.logger.info(f"Task ID {task_id} deleted")
-            elif response.status == 404:
-                self.logger.info(f"Task ID {task_id} not found")
-            else:
-                self.logger.warning(
-                    f"Failed to delete task ID {task_id}: "
-                    f"{response.msg} (status {response.status})"
-                )
-
-    def create_task_from_backup(
-        self,
-        filename: str,
-        *,
-        status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
-    ) -> TaskProxy:
-        """
-        Import a task from a backup file
-        """
-        if status_check_period is None:
-            status_check_period = self.config.status_check_period
-
-        params = {"filename": osp.basename(filename)}
-        url = self._api_map.make_endpoint_url(self.api.tasks_api.create_backup_endpoint.path)
-        uploader = Uploader(self)
-        response = uploader.upload_file(
-            url, filename, meta=params, query_params=params, pbar=pbar, logger=self.logger.debug
-        )
-
-        rq_id = json.loads(response.data)["rq_id"]
-
-        # check task status
         while True:
             sleep(status_check_period)
 
-            response = self.api.rest_client.POST(
-                url, post_params={"rq_id": rq_id}, headers=self.api.get_common_headers()
+            response = self.api.rest_client.request(
+                method=method,
+                url=url,
+                headers=self.api.get_common_headers(),
+                query_params=query_params,
+                post_params=post_params,
             )
-            if response.status == 201:
+
+            self.logger.debug("STATUS %s", response.status)
+            expect_status(positive_statuses, response)
+            if response.status == success_status:
                 break
-            assert_status(202, response)
 
-        task_id = json.loads(response.data)["id"]
-        self.logger.info(f"Task has been imported sucessfully. Task ID: {task_id}")
+        return response
 
-        return self.retrieve_task(task_id)
+    def _get_repo(self, key: str) -> Repo:
+        _repo_map = {
+            "tasks": TasksRepo,
+            "projects": ProjectsRepo,
+            "jobs": JobsRepo,
+            "users": UsersRepo,
+            "issues": IssuesRepo,
+            "comments": CommentsRepo,
+        }
+
+        repo = self._repos.get(key, None)
+        if repo is None:
+            repo = _repo_map[key](self)
+            self._repos[key] = repo
+        return repo
+
+    @property
+    def tasks(self) -> TasksRepo:
+        return self._get_repo("tasks")
+
+    @property
+    def projects(self) -> ProjectsRepo:
+        return self._get_repo("projects")
+
+    @property
+    def jobs(self) -> JobsRepo:
+        return self._get_repo("jobs")
+
+    @property
+    def users(self) -> UsersRepo:
+        return self._get_repo("users")
+
+    @property
+    def issues(self) -> IssuesRepo:
+        return self._get_repo("issues")
+
+    @property
+    def comments(self) -> CommentsRepo:
+        return self._get_repo("comments")
 
 
-class _CVAT_API_V2:
+class CVAT_API_V2:
     """Build parameterized API URLs"""
 
     def __init__(self, host, https=False):

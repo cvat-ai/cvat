@@ -313,7 +313,7 @@ class JobGetAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class JobUpdateAPITestCase(APITestCase):
+class JobPartialUpdateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.task = create_dummy_db_tasks(self)[0]
@@ -327,7 +327,7 @@ class JobUpdateAPITestCase(APITestCase):
 
     def _run_api_v2_jobs_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put('/api/jobs/{}'.format(jid), data=data, format='json')
+            response = self.client.patch('/api/jobs/{}'.format(jid), data=data, format='json')
 
         return response
 
@@ -382,13 +382,6 @@ class JobUpdateAPITestCase(APITestCase):
         response = self._run_api_v2_jobs_id(self.job.id + 10, None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
-    def _run_api_v2_jobs_id(self, jid, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.patch('/api/jobs/{}'.format(jid), data=data, format='json')
-
-        return response
-
     def test_api_v2_jobs_id_annotator_partial(self):
         data = {"stage": StageChoice.ANNOTATION}
         response = self._run_api_v2_jobs_id(self.job.id, self.annotator, data)
@@ -398,6 +391,34 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         data = {"assignee_id": self.user.id}
         response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
+
+class JobUpdateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.task = create_dummy_db_tasks(self)[0]
+        self.job = Job.objects.filter(segment__task_id=self.task.id).first()
+        self.job.assignee = self.annotator
+        self.job.save()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _run_api_v2_jobs_id(self, jid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.put('/api/jobs/{}'.format(jid), data=data, format='json')
+
+        return response
+
+    def test_api_v2_jobs_id_annotator(self):
+        data = {"stage": StageChoice.ANNOTATION}
+        response = self._run_api_v2_jobs_id(self.job.id, self.annotator, data)
+        self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
+
+    def test_api_v2_jobs_id_admin(self):
+        data = {"assignee_id": self.user.id}
+        response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
+        self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
 
 class JobDataMetaPartialUpdateAPITestCase(APITestCase):
     def setUp(self):
@@ -1987,7 +2008,6 @@ class TaskDeleteAPITestCase(APITestCase):
             self.assertFalse(os.path.exists(task_dir))
 
 class TaskUpdateAPITestCase(APITestCase):
-
     def setUp(self):
         self.client = APIClient()
 
@@ -2002,6 +2022,39 @@ class TaskUpdateAPITestCase(APITestCase):
                 data=data, format="json")
 
         return response
+
+    def _check_api_v2_tasks_id(self, user, data):
+        for db_task in self.tasks:
+            response = self._run_api_v2_tasks_id(db_task.id, user, data)
+            if user is None:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_api_v2_tasks_id_admin(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(self.admin, data)
+
+    def test_api_v2_tasks_id_user(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(self.user, data)
+
+    def test_api_v2_tasks_id_somebody(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(self.somebody, data)
+
+    def test_api_v2_tasks_id_no_auth(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(None, data)
+
+class TaskPartialUpdateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
 
     def _check_response(self, response, db_task, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -2033,6 +2086,13 @@ class TaskUpdateAPITestCase(APITestCase):
                 [label.name for label in db_task.label_set.all()],
                 [label["name"] for label in response.data["labels"]]
             )
+
+    def _run_api_v2_tasks_id(self, tid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/tasks/{}'.format(tid),
+                data=data, format="json")
+
+        return response
 
     def _check_api_v2_tasks_id(self, user, data):
         for db_task in self.tasks:
@@ -2076,32 +2136,6 @@ class TaskUpdateAPITestCase(APITestCase):
             }]
         }
         self._check_api_v2_tasks_id(self.user, data)
-
-    def test_api_v2_tasks_id_somebody(self):
-        data = {
-            "name": "new name for the task",
-            "labels": [{
-                "name": "test",
-            }]
-        }
-        self._check_api_v2_tasks_id(self.somebody, data)
-
-    def test_api_v2_tasks_id_no_auth(self):
-        data = {
-            "name": "new name for the task",
-            "labels": [{
-                "name": "test",
-            }]
-        }
-        self._check_api_v2_tasks_id(None, data)
-
-class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
-    def _run_api_v2_tasks_id(self, tid, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.patch('/api/tasks/{}'.format(tid),
-                data=data, format="json")
-
-        return response
 
     def test_api_v2_tasks_id_admin_partial(self):
         data = {
