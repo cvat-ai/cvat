@@ -92,10 +92,12 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     }
                 })
                 .catch((error: Error) => {
-                    Notification.error({
-                        message: `Could not fetch the task ${instance.taskId}`,
-                        description: error.toString(),
-                    });
+                    if ((error as any).code !== 403) {
+                        Notification.error({
+                            message: `Could not fetch the task ${instance.taskId}`,
+                            description: error.toString(),
+                        });
+                    }
                 });
             }
         }

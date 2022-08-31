@@ -48,7 +48,7 @@ function ExportBackupModal(): JSX.Element {
         if (!instanceT) {
             return null;
         }
-        return state.export[`${instanceT}s` as 'projects' | 'tasks'].backup.modalInstance;
+        return state.export[`${instanceT}s` as 'projects' | 'tasks']?.backup?.modalInstance;
     });
 
     useEffect(() => {
