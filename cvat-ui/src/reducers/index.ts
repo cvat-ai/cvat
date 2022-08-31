@@ -1,8 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
-import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
