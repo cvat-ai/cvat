@@ -18,7 +18,7 @@ description: 'Instructions on how to run all existence tests.'
    ```
 1. Add test user in CVAT:
    ```
-   docker exec -i cvat \
+   docker exec -i cvat_server \
              /bin/bash -c \
              "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
    ```
