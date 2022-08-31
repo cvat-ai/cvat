@@ -611,14 +611,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private renderBasicBlock(): JSX.Element {
         const { isMultiTask } = this.props;
         const exampleMultiTaskName = isMultiTask ? this.getTaskName(0, 'local', 'fileName.mp4') : '';
-        const defaultValue = isMultiTask ? '{{file_name}}' : '';
 
         return (
             <Col span={24}>
                 <BasicConfigurationForm
                     ref={this.basicConfigurationComponent}
                     isMultiTask={isMultiTask}
-                    defaultValue={defaultValue}
                     exampleMultiTaskName={exampleMultiTaskName}
                     onChange={this.handleChangeBasicConfiguration}
                 />

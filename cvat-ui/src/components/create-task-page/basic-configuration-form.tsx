@@ -16,7 +16,6 @@ interface Props {
     onChange(values: BaseConfiguration): void;
     isMultiTask: boolean;
     exampleMultiTaskName?: string;
-    defaultValue?: string;
 }
 
 export default class BasicConfigurationForm extends React.PureComponent<Props> {
@@ -27,13 +26,6 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
         super(props);
         this.formRef = React.createRef<FormInstance>();
         this.inputRef = React.createRef<Input>();
-    }
-
-    componentDidMount(): void {
-        const { defaultValue, onChange } = this.props;
-        onChange({
-            name: defaultValue || '',
-        });
     }
 
     private handleChangeName(e: React.ChangeEvent<HTMLInputElement>): void {
@@ -64,7 +56,8 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { isMultiTask, exampleMultiTaskName, defaultValue } = this.props;
+        const { isMultiTask, exampleMultiTaskName } = this.props;
+        const initialValue = isMultiTask ? '{{file_name}}' : '';
 
         return (
             <Form ref={this.formRef} layout='vertical'>
@@ -78,7 +71,7 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                             message: 'Task name cannot be empty',
                         },
                     ]}
-                    initialValue={defaultValue}
+                    initialValue={initialValue}
                 >
                     <Input
                         ref={this.inputRef}
