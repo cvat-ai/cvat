@@ -68,8 +68,8 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec test_cvat_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes > assets/cvat_db/data.json
-docker exec test_cvat_1 tar -cjv /home/django/data > assets/cvat_db/cvat_data.tar.bz2
+docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes > assets/cvat_db/data.json
+docker exec test_cvat_server_1 tar -cjv /home/django/data > assets/cvat_db/cvat_data.tar.bz2
 ```
 
 > Note: if you won't be use --indent options or will be use with other value
@@ -89,8 +89,8 @@ python shared/utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat shared/assets/cvat_db/data.json | docker exec -i test_cvat_1 python manage.py loaddata --format=json -
-cat shared/assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_1 tar --strip 3 -C /home/django/data/ -xj
+cat shared/assets/cvat_db/data.json | docker exec -i test_cvat_server_1 python manage.py loaddata --format=json -
+cat shared/assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_server_1 tar --strip 3 -C /home/django/data/ -xj
 ```
 
 ## Assets directory structure
@@ -174,7 +174,7 @@ Assets directory has two parts:
    ```
    docker exec test_cvat_db_1 dropdb --if-exists cvat
    docker exec test_cvat_db_1 createdb cvat
-   docker exec test_cvat_1 python manage.py migrate
+   docker exec test_cvat_server_1 python manage.py migrate
    ```
 
 1. Perform migrate when some relation does not exists. Example of error message:
@@ -183,7 +183,7 @@ Assets directory has two parts:
    ```
    Solution:
    ```
-   docker exec test_cvat_1 python manage.py migrate
+   docker exec test_cvat_server_1 python manage.py migrate
    ```
 
 1. If for some reason you need to recreate cvat database, but using `dropdb`
@@ -195,5 +195,5 @@ Assets directory has two parts:
    In this case you should terminate all existent connections for cvat database,
    you can perform it with command:
    ```
-   docker exec test_cvat_db_1 psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql
+   docker exec test_cvat_db_1 psql -U root -d postgres -v from=cvat_server -v to=test_db -f restore.sql
    ```

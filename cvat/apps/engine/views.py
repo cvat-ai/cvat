@@ -71,7 +71,7 @@ from cvat.apps.engine.serializers import (
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 
 from . import models, task
 from .log import clogger, slogger
@@ -239,9 +239,9 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     create=extend_schema(
         summary='Method creates a new project',
-        request=ProjectWriteSerializer,
+        # request=ProjectWriteSerializer,
         responses={
-            '201': ProjectWriteSerializer,
+            '201': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific project',
@@ -255,12 +255,15 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a project',
-        request=ProjectWriteSerializer,
+        # request=ProjectWriteSerializer,
         responses={
-            '200': ProjectWriteSerializer,
+            '200': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         })
 )
-class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, SerializeMixin):
+class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+):
     queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
         queryset=models.Label.objects.order_by('id')
     ))
@@ -272,7 +275,6 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
-    http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options')
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -337,7 +339,7 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -358,7 +360,10 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
             OpenApiParameter('filename', description='Dataset file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=DatasetFileSerializer(required=False),
+        request=PolymorphicProxySerializer('DatasetWrite',
+            serializers=[DatasetFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '202': OpenApiResponse(description='Exporting has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
@@ -485,7 +490,11 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(PolymorphicProxySerializer(
+                component_name='AnnotationsRead',
+                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
+                resource_type_field_name=None
+            ), description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '401': OpenApiResponse(description='Format is not specified'),
@@ -539,12 +548,16 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=ProjectFileSerializer(required=False),
+        request=PolymorphicProxySerializer('BackupWrite',
+            serializers=[ProjectFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
-    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$', serializer_class=ProjectFileSerializer(required=False))
+    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
+        serializer_class=ProjectFileSerializer(required=False))
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
@@ -558,7 +571,8 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin, AnnotationMixin, Serial
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
+    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
+        serializer_class=None)
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -665,16 +679,14 @@ class DataChunkGetter:
         }),
     create=extend_schema(
         summary='Method creates a new task in a database without any attached images and videos',
+        request=TaskWriteSerializer,
         responses={
-            '201': TaskWriteSerializer,
+            '201': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific task',
-        responses=TaskReadSerializer),
-    update=extend_schema(
-        summary='Method updates a task by id',
         responses={
-            '200': TaskWriteSerializer,
+            '200': TaskReadSerializer
         }),
     destroy=extend_schema(
         summary='Method deletes a specific task, all attached jobs, annotations, and data',
@@ -683,16 +695,19 @@ class DataChunkGetter:
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a task',
+        request=TaskWriteSerializer(partial=True),
         responses={
-            '200': TaskWriteSerializer,
+            '200': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         })
 )
-class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, SerializeMixin):
+class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+):
     queryset = Task.objects.prefetch_related(
             Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
             "segment_set__job_set")
-    http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options', 'put')
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -800,10 +815,11 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
             db_project.save()
 
     @extend_schema(summary='Method returns a list of jobs for a specific task',
-        responses={
-            '200': JobReadSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer)
+        responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer(many=True),
+        # Remove regular list() parameters from swagger schema
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
@@ -903,13 +919,13 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
         })
     @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
         parameters=[
-            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=True,
+            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'preview', 'context_image'],
                 description='Specifies the type of the requested data'),
-            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=True,
+            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.INT,
+            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
         ],
         responses={
@@ -975,7 +991,11 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
                 default=True),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(PolymorphicProxySerializer(
+                component_name='AnnotationsRead',
+                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
+                resource_type_field_name=None
+            ), description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -985,12 +1005,17 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
         ],
+        request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
+            serializers=[LabeledDataSerializer, AnnotationFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['POST'], summary='Method allows to upload task annotations from storage',
+    @extend_schema(methods=['POST'],
+        summary="Method allows to upload task annotations from a local file or a cloud storage",
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1005,6 +1030,10 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
+        request=PolymorphicProxySerializer('TaskAnnotationsWrite',
+            serializers=[AnnotationFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
@@ -1014,13 +1043,17 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
         parameters=[
             OpenApiParameter('action', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['create', 'update', 'delete']),
-        ])
+        ],
+        request=LabeledDataSerializer,
+        responses={
+            '200': LabeledDataSerializer,
+        })
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific task',
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer(required=False))
+        serializer_class=None)
     def annotations(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
@@ -1127,6 +1160,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
             '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
+        request=DataMetaWriteSerializer,
         responses={
             '200': DataMetaReadSerializer,
         })
@@ -1183,7 +1217,7 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1213,19 +1247,16 @@ class TaskViewSet(UploadMixin, AnnotationMixin, viewsets.ModelViewSet, Serialize
         responses={
             '200': JobReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates a job by id',
-        responses={
-            '200': JobWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a job',
+        request=JobWriteSerializer,
         responses={
-            '200': JobWriteSerializer,
+            '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, UploadMixin, AnnotationMixin):
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
+):
     queryset = Job.objects.all()
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -1284,7 +1315,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
+    @extend_schema(methods=['GET'],
+        summary="Method returns annotations for a specific job as a JSON document. "
+            "If format is specified, a zip archive is returned.",
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
                 description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
@@ -1304,7 +1337,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
         ],
         responses={
-            '200': LabeledDataSerializer,
+            '200': OpenApiResponse(PolymorphicProxySerializer(
+                component_name='AnnotationsRead',
+                serializers=[LabeledDataSerializer, OpenApiTypes.BINARY],
+                resource_type_field_name=None
+            ), description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1324,13 +1361,23 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
+        request=AnnotationFileSerializer,
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PUT'], summary='Method performs an update of all annotations in a specific job',
-        request=AnnotationFileSerializer, responses={
+        parameters=[
+            OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+        ],
+        request=PolymorphicProxySerializer(
+            component_name='JobAnnotationsUpdate',
+            serializers=[LabeledDataSerializer, AnnotationFileSerializer],
+            resource_type_field_name=None
+        ),
+        responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1340,9 +1387,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('action', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR,
                 required=True, enum=['create', 'update', 'delete'])
         ],
+        request=LabeledDataSerializer,
         responses={
-            #TODO
-            '200': OpenApiResponse(description=''),
+            '200': OpenApiResponse(description='Annotations successfully uploaded'),
         })
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific job',
         responses={
@@ -1442,7 +1489,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
@@ -1460,12 +1507,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             callback=dm.views.export_job_as_dataset
         )
 
-    @extend_schema(
-        summary='Method returns list of issues for the job',
-        responses={
-            '200': IssueReadSerializer(many=True)
-        })
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer)
+    @extend_schema(summary='Method returns list of issues for the job',
+        responses=IssueReadSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer(many=True),
+        # Remove regular list() parameters from swagger schema
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
     def issues(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.issues
@@ -1477,16 +1524,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
-                location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.STR,
                 enum=['chunk', 'frame', 'preview', 'context_image']),
-            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=True,
+            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.NUMBER,
+            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
             ],
         responses={
-            '200': OpenApiResponse(description='Data of a specific type'),
+            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
         })
     @action(detail=True, methods=['GET'])
     def data(self, request, pk):
@@ -1506,6 +1553,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
+        request=DataMetaWriteSerializer,
         responses={
             '200': DataMetaReadSerializer,
         }, tags=['tasks'], versions=['2.0'])
@@ -1571,11 +1619,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-    @extend_schema(summary='The action returns the list of tracked '
-        'changes for the job', responses={
+    @extend_schema(summary='The action returns the list of tracked changes for the job',
+        responses={
             '200': JobCommitSerializer(many=True),
         })
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer)
+    @action(detail=True, methods=['GET'], serializer_class=None)
     def commits(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.commits.order_by('-id')
@@ -1600,20 +1648,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': IssueReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates an issue by id',
-        responses={
-            '200': IssueWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an issue',
+        request=IssueWriteSerializer,
         responses={
-            '200': IssueWriteSerializer,
+            '200': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates an issue',
+        request=IssueWriteSerializer,
         responses={
-            '201': IssueWriteSerializer,
+            '201': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes an issue',
@@ -1621,9 +1666,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The issue has been deleted'),
         })
 )
-class IssueViewSet(viewsets.ModelViewSet):
+class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
     queryset = Issue.objects.all().order_by('-id')
-    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
     iam_organization_field = 'job__segment__task__organization'
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved']
@@ -1654,11 +1701,14 @@ class IssueViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
-        responses={
-            '200': CommentReadSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer)
+        responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer(many=True),
+        # Remove regular list() parameters from swagger schema
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
     def comments(self, request, pk):
+        # TODO: remove this endpoint? It is totally covered by issue body.
+
         db_issue = self.get_object()
         queryset = db_issue.comments
         serializer = CommentReadSerializer(queryset,
@@ -1678,20 +1728,17 @@ class IssueViewSet(viewsets.ModelViewSet):
         responses={
             '200':CommentReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates a comment by id',
-        responses={
-            '200': CommentWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a comment',
+        request=CommentWriteSerializer,
         responses={
-            '200': CommentWriteSerializer,
+            '200': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates a comment',
+        request=CommentWriteSerializer,
         responses={
-            '201': CommentWriteSerializer,
+            '201': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes a comment',
@@ -1699,9 +1746,11 @@ class IssueViewSet(viewsets.ModelViewSet):
             '204': OpenApiResponse(description='The comment has been deleted'),
         })
 )
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
     queryset = Comment.objects.all().order_by('-id')
-    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
     iam_organization_field = 'issue__job__segment__task__organization'
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id']
@@ -1759,9 +1808,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         })
 )
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete', 'options']
     search_fields = ('username', 'first_name', 'last_name')
     iam_organization_field = 'memberships__organization'
 
@@ -1828,17 +1876,21 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a cloud storage instance',
+        request=CloudStorageWriteSerializer,
         responses={
-            '200': CloudStorageWriteSerializer,
+            '200': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates a cloud storage with a specified characteristics',
+        request=CloudStorageWriteSerializer,
         responses={
-            '201': CloudStorageWriteSerializer,
+            '201': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         })
 )
-class CloudStorageViewSet(viewsets.ModelViewSet):
-    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
     queryset = CloudStorageModel.objects.all().prefetch_related('data')
 
     search_fields = ('provider_type', 'display_name', 'resource',
@@ -2102,7 +2154,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                    fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
                     with open(filename, 'wb+') as f:
                         for chunk in anno_file.chunks():
                             f.write(chunk)
@@ -2116,7 +2168,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                         ' but cloud storage id was not specified')
                 db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                 key = filename
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
                 dependent_job = configure_dependent_job(
                     queue, rq_id, _download_file_from_bucket,
                     db_storage, filename, key)
@@ -2264,7 +2316,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
                 with open(filename, 'wb+') as f:
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
@@ -2278,7 +2330,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
             key = filename
-            fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+            fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
                 queue, rq_id, _download_file_from_bucket,
                 db_storage, filename, key)

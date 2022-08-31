@@ -109,6 +109,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-skeleton-configurator {
+    position: relative;
     width: 100%;
     margin-top: $grid-unit-size;
     margin-bottom: $grid-unit-size;
@@ -119,7 +120,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     > div:first-child {
         width: $grid-unit-size * 6;
         position: absolute;
-        left: 0;
+        left: 1px;
     }
 
     > .ant-alert {

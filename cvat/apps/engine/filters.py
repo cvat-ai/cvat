@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError
 class SearchFilter(filters.SearchFilter):
 
     def get_search_fields(self, view, request):
-        search_fields = getattr(view, 'search_fields', [])
+        search_fields = getattr(view, 'search_fields') or []
         lookup_fields = {field:field for field in search_fields}
         view_lookup_fields = getattr(view, 'lookup_fields', {})
         keys_to_update = set(search_fields) & set(view_lookup_fields.keys())

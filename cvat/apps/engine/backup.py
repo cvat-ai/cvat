@@ -844,7 +844,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                fd, filename = mkstemp(prefix='cvat_')
+                fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
                 with open(filename, 'wb+') as f:
                     for chunk in payload_file.chunks():
                         f.write(chunk)
@@ -859,7 +859,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
             key = filename
-            fd, filename = mkstemp(prefix='cvat_')
+            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
                 queue, rq_id, _download_file_from_bucket,
                 db_storage, filename, key)

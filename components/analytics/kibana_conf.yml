@@ -21,7 +21,7 @@ http:
   middlewares:
     analytics-auth:
       forwardauth:
-        address: http://cvat:8080/analytics
+        address: http://cvat_server:8080/analytics
         authRequestHeaders:
           - "Cookie"
           - "Authorization"
