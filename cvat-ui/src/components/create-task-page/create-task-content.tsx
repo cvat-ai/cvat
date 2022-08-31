@@ -382,15 +382,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             .catch(() => {});
     };
 
-    private createOneTask = (): Promise<any> => new Promise((resolve) => {
+    private createOneTask = (): Promise<any> => {
         const { onCreate } = this.props;
         this.startLoading();
-        onCreate(this.state, this.changeStatusInProgressTask)
-            .then((createdTask) => {
-                resolve(createdTask);
-            })
+        return onCreate(this.state, this.changeStatusInProgressTask)
             .finally(this.stopLoading);
-    });
+    };
 
     private setStatusOneOfMultiTasks = async (index: number, status: string): Promise<void> => {
         const { multiTasks } = this.state;
