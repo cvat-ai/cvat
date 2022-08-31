@@ -32,7 +32,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
     if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
         projectId = +(params.get('projectId') as string);
     }
-    const isMultiTask = params.get('many') === 'true';
+    const many = params.get('many') === 'true';
     const handleCreate: typeof onCreate = (...onCreateParams) => onCreate(...onCreateParams)
         .catch((err) => {
             setError(err.toString());
@@ -83,7 +83,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                     onCreate={handleCreate}
                     installedGit={installedGit}
                     dumpers={dumpers}
-                    isMultiTask={isMultiTask}
+                    many={many}
                 />
             </Col>
         </Row>

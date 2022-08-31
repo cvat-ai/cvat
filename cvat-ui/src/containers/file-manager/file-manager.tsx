@@ -15,7 +15,7 @@ import { ShareItem, CombinedState, ShareFileInfo } from 'reducers';
 
 interface OwnProps {
     ref: any;
-    isMultiTask: boolean
+    many: boolean
     onChangeActiveKey(key: string): void;
     onUploadLocalFiles(files: File[]): void;
     onUploadRemoteFiles(urls: string[]): void;
@@ -146,7 +146,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
         const {
             treeData,
             getTreeData,
-            isMultiTask,
+            many,
             onChangeActiveKey,
             onUploadLocalFiles,
             onUploadRemoteFiles,
@@ -155,7 +155,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
         return (
             <FileManagerComponent
                 treeData={treeData}
-                isMultiTask={isMultiTask}
+                many={many}
                 onLoadData={getTreeData}
                 onUploadLocalFiles={onUploadLocalFiles}
                 onUploadRemoteFiles={onUploadRemoteFiles}

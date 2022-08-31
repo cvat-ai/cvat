@@ -14,7 +14,7 @@ export interface BaseConfiguration {
 
 interface Props {
     onChange(values: BaseConfiguration): void;
-    isMultiTask: boolean;
+    many: boolean;
     exampleMultiTaskName?: string;
 }
 
@@ -56,8 +56,8 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { isMultiTask, exampleMultiTaskName } = this.props;
-        const initialValue = isMultiTask ? '{{file_name}}' : '';
+        const { many, exampleMultiTaskName } = this.props;
+        const initialValue = many ? '{{file_name}}' : '';
 
         return (
             <Form ref={this.formRef} layout='vertical'>
@@ -78,7 +78,7 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                         onChange={(e) => this.handleChangeName(e)}
                     />
                 </Form.Item>
-                {isMultiTask ? (
+                {many ? (
                     <Text type='secondary'>
                         <Tooltip title={() => (
                             <>

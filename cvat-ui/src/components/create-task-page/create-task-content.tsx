@@ -49,7 +49,7 @@ interface Props {
     projectId: number | null;
     installedGit: boolean;
     dumpers:[];
-    isMultiTask: boolean;
+    many: boolean;
 }
 
 type State = CreateTaskData & {
@@ -202,14 +202,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUploadLocalFiles = (uploadedFiles: File[]): void => {
-        const { isMultiTask } = this.props;
+        const { many } = this.props;
         const { files } = this.state;
 
         let uploadFileErrorMessage = '';
 
-        if (!isMultiTask && uploadedFiles.length > 1) {
+        if (!many && uploadedFiles.length > 1) {
             uploadFileErrorMessage = uploadedFiles.every((it) => (getFileContentType(it) === 'image' || it.name === 'manifest.jsonl')) ? '' : 'We can\'t process it. Support for a bulk image or single video';
-        } else if (isMultiTask && uploadedFiles.length > 1) {
+        } else if (many && uploadedFiles.length > 1) {
             uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
         }
 
@@ -228,7 +228,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUploadRemoteFiles = async (urls: string[]): Promise<void> => {
-        const { isMultiTask } = this.props;
+        const { many } = this.props;
 
         const { files } = this.state;
         const { length } = urls;
@@ -236,7 +236,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let uploadFileErrorMessage = '';
 
         try {
-            if (!isMultiTask && length > 1) {
+            if (!many && length > 1) {
                 let index = 0;
                 while (index < length) {
                     const isImageFile = await getContentTypeRemoteFile(urls[index]) === 'image';
@@ -246,7 +246,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     }
                     index++;
                 }
-            } else if (isMultiTask && length > 1) {
+            } else if (many && length > 1) {
                 let index = 0;
                 while (index < length) {
                     const isVideoFile = await getContentTypeRemoteFile(urls[index]) === 'video';
@@ -280,15 +280,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         type: string;
         mime_type: string;
     }[]): void => {
-        const { isMultiTask } = this.props;
+        const { many } = this.props;
         const { files } = this.state;
 
         let uploadFileErrorMessage = '';
 
-        if (!isMultiTask && shareFiles.length > 1) {
+        if (!many && shareFiles.length > 1) {
             uploadFileErrorMessage = shareFiles.every((it) => getFileContentTypeByMimeType(it.mime_type) === 'image') ?
                 '' : 'We can\'t process it. Support for a bulk image or single video';
-        } else if (isMultiTask && shareFiles.length > 1) {
+        } else if (many && shareFiles.length > 1) {
             uploadFileErrorMessage = shareFiles.every((it) => getFileContentTypeByMimeType(it.mime_type) === 'video') ?
                 '' : 'We can\'t process it. Support for a bulk videos';
         }
@@ -585,7 +585,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private getTaskName = (indexFile: number, fileManagerTabName: TabName, defaultFileName = ''): string => {
-        const { isMultiTask } = this.props;
+        const { many } = this.props;
         const { basic } = this.state;
         const { files } = this.state;
         const file = files[fileManagerTabName][indexFile];
@@ -601,7 +601,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 fileName = (file as File)?.name || (file as string) || defaultFileName;
                 break;
         }
-        return isMultiTask ?
+        return many ?
             basic.name
                 .replaceAll('{{file_name}}', fileName)
                 .replaceAll('{{index}}', indexFile.toString()) :
@@ -609,14 +609,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private renderBasicBlock(): JSX.Element {
-        const { isMultiTask } = this.props;
-        const exampleMultiTaskName = isMultiTask ? this.getTaskName(0, 'local', 'fileName.mp4') : '';
+        const { many } = this.props;
+        const exampleMultiTaskName = many ? this.getTaskName(0, 'local', 'fileName.mp4') : '';
 
         return (
             <Col span={24}>
                 <BasicConfigurationForm
                     ref={this.basicConfigurationComponent}
-                    isMultiTask={isMultiTask}
+                    many={many}
                     exampleMultiTaskName={exampleMultiTaskName}
                     onChange={this.handleChangeBasicConfiguration}
                 />
@@ -695,7 +695,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderFilesBlock(): JSX.Element {
-        const { isMultiTask } = this.props;
+        const { many } = this.props;
         const { uploadFileErrorMessage } = this.state;
 
         return (
@@ -704,7 +704,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Text type='danger'>* </Text>
                     <Text className='cvat-text-color'>Select files</Text>
                     <ConnectedFileManager
-                        isMultiTask={isMultiTask}
+                        many={many}
                         onChangeActiveKey={this.changeFileManagerTab}
                         onUploadLocalFiles={this.handleUploadLocalFiles}
                         onUploadRemoteFiles={this.handleUploadRemoteFiles}
@@ -808,7 +808,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     public render(): JSX.Element {
-        const { isMultiTask } = this.props;
+        const { many } = this.props;
 
         return (
             <Row justify='start' align='middle' className='cvat-create-task-content'>
@@ -824,7 +824,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderAdvancedBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
-                    {isMultiTask ? this.renderFooterMutliTasks() : this.renderFooterSingleTask() }
+                    {many ? this.renderFooterMutliTasks() : this.renderFooterSingleTask() }
                 </Col>
             </Row>
         );

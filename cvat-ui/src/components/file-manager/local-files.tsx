@@ -9,13 +9,13 @@ import { InboxOutlined } from '@ant-design/icons';
 
 interface Props {
     files: File[];
-    isMultiTask: boolean;
+    many: boolean;
     onUpload: (_: RcFile, uploadedFiles: RcFile[]) => boolean;
 }
 
 export default function LocalFiles(props: Props): JSX.Element {
-    const { files, onUpload, isMultiTask } = props;
-    const hintText = isMultiTask ? 'Support for a bulk videos' : 'Support for a bulk images or a single video';
+    const { files, onUpload, many } = props;
+    const hintText = many ? 'Support for a bulk videos' : 'Support for a bulk images or a single video';
 
     return (
         <>

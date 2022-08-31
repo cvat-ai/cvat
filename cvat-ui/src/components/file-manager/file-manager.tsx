@@ -38,7 +38,7 @@ interface State {
 
 interface Props {
     treeData: (TreeNodeNormal & { mime_type: string })[];
-    isMultiTask: boolean;
+    many: boolean;
     onLoadData: (key: string) => Promise<any>;
     onChangeActiveKey(key: string): void;
     onUploadLocalFiles(files: File[]): void;
@@ -115,14 +115,14 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderLocalSelector(): JSX.Element {
-        const { isMultiTask, onUploadLocalFiles } = this.props;
+        const { many, onUploadLocalFiles } = this.props;
         const { files } = this.state;
 
         return (
             <Tabs.TabPane className='cvat-file-manager-local-tab' key='local' tab='My computer'>
                 <LocalFiles
                     files={files.local}
-                    isMultiTask={isMultiTask}
+                    many={many}
                     onUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
                         this.setState({
                             files: {
@@ -259,7 +259,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { onChangeActiveKey, isMultiTask } = this.props;
+        const { onChangeActiveKey, many } = this.props;
         const { active } = this.state;
 
         return (
@@ -278,7 +278,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {this.renderRemoteSelector()}
-                    {!isMultiTask && this.renderCloudStorageSelector()}
+                    {!many && this.renderCloudStorageSelector()}
                 </Tabs>
             </>
         );
