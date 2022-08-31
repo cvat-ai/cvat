@@ -493,8 +493,7 @@ class TaskData(InstanceLabelData):
 
     def _import_shape(self, shape, parent_label_id=None):
         _shape = shape._asdict()
-        label = _shape.pop('label')
-        label_id = self._get_label_id(label, parent_label_id) if label is not None else None
+        label_id = self._get_label_id(_shape.pop('label'), parent_label_id)
         _shape['frame'] = self.rel_frame_id(int(_shape['frame']))
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
