@@ -1,22 +1,16 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import Button from 'antd/lib/button';
-import Divider from 'antd/lib/divider';
 import Layout from 'antd/lib/layout';
 
-import FooterDrawer from 'components/login-page/intel-footer-drawer';
-
-import consts from 'consts';
-import { OpenVINOIcon } from 'icons';
 import LoginForm, { LoginData } from './login-form';
 
 interface LoginPageComponentProps {
@@ -66,29 +60,9 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                 </Col>
                             </Row>
                         )}
-
-                    </Col>
-                </Row>
-                <Row className='cvat-login-openvino-block' justify='center'>
-                    <Col {...sizes}>
-                        <Divider />
-                        <Text type='secondary'>
-                            Learn more about products of
-                            {/* It is important to keep the referer header here */}
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a target='_blank' rel='noopener' href={consts.OPENVINO_URL}> OpenVINO™ Toolkit </a>
-                        </Text>
-                        <Button
-                            href={consts.OPENVINO_URL}
-                            icon={<OpenVINOIcon />}
-                            block
-                            type='link'
-                            target='_blank'
-                        />
                     </Col>
                 </Row>
             </Content>
-            <FooterDrawer />
         </Layout>
     );
 }

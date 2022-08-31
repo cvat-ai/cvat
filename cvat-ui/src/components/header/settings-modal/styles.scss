@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,9 +29,12 @@
 .cvat-workspace-settings-intelligent-polygon-cropping,
 .cvat-workspace-settings-show-text-always,
 .cvat-workspace-settings-show-interpolated,
+.cvat-workspace-settings-show-deleted,
 .cvat-workspace-settings-approx-poly-threshold,
 .cvat-workspace-settings-aam-zoom-margin,
-.cvat-workspace-settings-text-settings {
+.cvat-workspace-settings-show-frame-tags,
+.cvat-workspace-settings-text-settings,
+.cvat-workspace-settings-control-points-size {
     margin-bottom: $grid-unit-size * 3;
 
     > div:first-child {

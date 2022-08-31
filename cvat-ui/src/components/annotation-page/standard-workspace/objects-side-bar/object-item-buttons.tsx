@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,13 +19,14 @@ import Icon, {
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { ObjectType, ShapeType } from 'reducers/interfaces';
+import { ObjectType, ShapeType } from 'reducers';
 import {
     ObjectOutsideIcon, FirstIcon, LastIcon, PreviousIcon, NextIcon,
 } from 'icons';
 
 interface Props {
     readonly: boolean;
+    parentID: number;
     objectType: ObjectType;
     shapeType: ShapeType;
     occluded: boolean;
@@ -232,7 +233,9 @@ function SwitchKeyframe(props: Props): JSX.Element {
 }
 
 function ItemButtonsComponent(props: Props): JSX.Element {
-    const { readonly, objectType, shapeType } = props;
+    const {
+        readonly, objectType, shapeType, parentID,
+    } = props;
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -303,6 +306,11 @@ function ItemButtonsComponent(props: Props): JSX.Element {
         <Row align='middle' justify='space-around'>
             <Col span={20} style={{ textAlign: 'center' }}>
                 <Row justify='space-around'>
+                    { Number.isInteger(parentID) && (
+                        <Col>
+                            <SwitchOutside {...props} />
+                        </Col>
+                    )}
                     <Col>
                         <SwitchLock {...props} />
                     </Col>

@@ -1,9 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -29,7 +30,7 @@ import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import consts from 'consts';
 
 import { CVATLogo } from 'icons';
@@ -37,7 +38,7 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import SettingsModal from './settings-modal/settings-modal';
 
 const core = getCore();
@@ -166,13 +167,13 @@ function HeaderContainer(props: Props): JSX.Element {
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, FORUM_URL, GITHUB_URL, GUIDE_URL,
+        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
     } = consts;
 
     const history = useHistory();
     const location = useLocation();
 
-    function showAboutModal(): void {
+    const showAboutModal = useCallback((): void => {
         Modal.info({
             title: `${tool.name}`,
             content: (
@@ -202,7 +203,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         </Col>
                         <Col>
                             <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
-                                License
+                                MIT License
                             </a>
                         </Col>
                         <Col>
@@ -211,8 +212,8 @@ function HeaderContainer(props: Props): JSX.Element {
                             </a>
                         </Col>
                         <Col>
-                            <a href={FORUM_URL} target='_blank' rel='noopener noreferrer'>
-                                Forum on Intel Developer Zone
+                            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
+                                Find us on Discord
                             </a>
                         </Col>
                     </Row>
@@ -225,7 +226,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 },
             },
         });
-    }
+    }, [tool]);
 
     const resetOrganization = (): void => {
         localStorage.removeItem('currentOrganization');

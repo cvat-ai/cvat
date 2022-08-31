@@ -17,8 +17,8 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
-import getCore from 'cvat-core-wrapper';
-import { JobStage } from 'reducers/interfaces';
+import { getCore } from 'cvat-core-wrapper';
+import { JobStage } from 'reducers';
 
 const core = getCore();
 

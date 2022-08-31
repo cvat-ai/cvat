@@ -73,21 +73,10 @@ context('Actions on ellipse.', () => {
         it('Ellipse rotation/interpolation.', () => {
             Cypress.config('scrollBehavior', false);
             cy.get('.cvat-player-last-button').click();
-            cy.shapeRotate(
-                '#cvat_canvas_shape_4',
-                (createEllipseTrackSwitchLabel.rightX + createEllipseTrackSwitchLabel.cx) / 2,
-                createEllipseTrackSwitchLabel.topY + 20,
-                '53.1',
-            );
+            cy.shapeRotate('#cvat_canvas_shape_4', '19.5');
             testCompareRotate('cvat_canvas_shape_4', 0);
             // Rotation with shift
-            cy.shapeRotate(
-                '#cvat_canvas_shape_4',
-                (createEllipseTrackSwitchLabel.rightX + createEllipseTrackSwitchLabel.cx) / 2,
-                createEllipseTrackSwitchLabel.topY + 20,
-                '60.0',
-                true,
-            );
+            cy.shapeRotate('#cvat_canvas_shape_4', '15.0', true);
         });
     });
 });

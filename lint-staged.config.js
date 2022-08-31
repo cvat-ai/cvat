@@ -12,8 +12,11 @@ function makePattern(extension) {
 
 module.exports = (stagedFiles) => {
     const eslintExtensions = ['ts', 'tsx', 'js'].map(makePattern);
+    const scssExtensions = ['scss'].map(makePattern);
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
+    const scssFiles = micromatch(stagedFiles, scssExtensions);
 
+    const tests = containsInPath('/tests/', eslintFiles);
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
     const cvatCore = containsInPath('/cvat-core/', eslintFiles);
     const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
@@ -22,11 +25,13 @@ module.exports = (stagedFiles) => {
 
     const mapping = {};
     const commands = [];
-    mapping['npm run precommit:cvat-ui -- '] = cvatUI.join(' ');
-    mapping['npm run precommit:cvat-data -- '] = cvatData.join(' ');
-    mapping['npm run precommit:cvat-core -- '] = cvatCore.join(' ');
-    mapping['npm run precommit:cvat-canvas -- '] = cvatCanvas.join(' ');
-    mapping['npm run precommit:cvat-canvas3d -- '] = cvatCanvas3d.join(' ');
+    mapping['npx stylelint --fix '] = scssFiles.join(' ');
+    mapping['yarn run precommit:cvat-tests -- '] = tests.join(' ');
+    mapping['yarn run precommit:cvat-ui -- '] = cvatUI.join(' ');
+    mapping['yarn run precommit:cvat-data -- '] = cvatData.join(' ');
+    mapping['yarn run precommit:cvat-core -- '] = cvatCore.join(' ');
+    mapping['yarn run precommit:cvat-canvas -- '] = cvatCanvas.join(' ');
+    mapping['yarn run precommit:cvat-canvas3d -- '] = cvatCanvas3d.join(' ');
 
     for (const command of Object.keys(mapping)) {
         const files = mapping[command];

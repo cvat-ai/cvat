@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ import Layout from 'antd/lib/layout';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { CombinedState, DimensionType } from 'reducers/interfaces';
+import { CombinedState, DimensionType } from 'reducers';
 import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import { collapseSidebar as collapseSidebarAction } from 'actions/annotation-actions';

@@ -522,7 +522,7 @@ class VideoManifestManager(_ManifestManager):
 
     @property
     def data(self):
-        return (self.video_name)
+        return self.video_name
 
     def get_subset(self, subset_names):
         raise NotImplementedError()
