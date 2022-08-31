@@ -512,9 +512,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         jobInstance.logger.log(LogType.zoomImage);
     };
 
-    private onCanvasShapeClicked = (e: any): void => {
+    private onCanvasShapeClicked = async (e: any): Promise<void> => {
         const { clientID, parentID } = e.detail.state;
-        const { workspace, activatedStateIDs } = this.props;
+        const { jobInstance, workspace, activatedStateIDs } = this.props;
         let sidebarItem = null;
         if (Number.isInteger(parentID)) {
             sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-element-${clientID}`);
@@ -530,13 +530,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             return;
         }
 
-        // ROBTODO:
-        // const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
-        // if (e.detail.state.shapeType === 'polyline' || e.detail.state.shapeType === 'points') {
-        //     if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
-        //         return;
-        //     }
-        // }
+        if (e.detail.state.shapeType === 'polyline' || e.detail.state.shapeType === 'points') {
+            const result = await jobInstance.annotations.select(e.detail.states, e.detail.x, e.detail.y);
+            if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+                return;
+            }
+        }
 
         if (e.detail.event.button === 2) {
             // Right clicking on an inactive shape will single-select it, otherwise it will do nothing
@@ -577,39 +576,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         onActivateObjects(clientIDs, null, false);
     };
-
-    // private onCanvasShapeDeactivated = (e: any): void => {
-    //     // ROBTODO: shouldnt need to do this anymore
-    //     // const { onActivateObject, activatedStateIDs } = this.props;
-    //     // const { state } = e.detail;
-    //     // when we activate element, canvas deactivates the previous
-    //     // and triggers this event
-    //     // in this case we do not need to update our state
-    //     // if (state.clientID === activatedStateID) {
-    //     //     onActivateObject(null);
-    //     // }
-    // };
-
-    // private onCanvasCursorMoved = async (event: any): Promise<void> => {
-    //     // if (![Workspace.STANDARD, Workspace.REVIEW_WORKSPACE].includes(this.props.workspace)) {
-    //     //     return;
-    //     // }
-
-    //     // const result = await this.props.jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
-
-    //     // if (result && result.state) {
-    //     //     if (result.state.shapeType === 'polyline' || result.state.shapeType === 'points') {
-    //     //         if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
-    //     //             return;
-    //     //         }
-    //     //     }
-
-    //     //     // Automatically activate objects on mouseover, unless there is a multi-selection made
-    //     //     if (activatedStateIDs.length <= 1 && !activatedStateIDs.includes(result.state.clientID)) {
-    //     //         onActivateObject(result.state.clientID, false);
-    //     //     }
-    //     // }
-    // };
 
     private onCanvasEditStart = (): void => {
         const { onDeactivateObject, onEditShape } = this.props;
@@ -695,70 +661,23 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateIDs,
             activatedAttributeID,
-            // selectedOpacity,
-            // aamZoomMargin,
-            // workspace,
-            // annotations,
+            aamZoomMargin,
+            workspace,
+            annotations,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
-        // ROBTODO: auto zoom in attribute mode
-
         canvasInstance.setActiveElements(activatedStateIDs, activatedAttributeID);
 
-        // const activatedObjects = annotations.filter((a) => activatedStateIDs.includes(a.clientID));
-
-        // if (activatedObjects.length === 1 && activatedObjects[0].objectType !== ObjectType.TAG) {
-        //     canvasInstance.focus(activatedObjects[0].clientID, aamZoomMargin);
-        // }
-
-        // for (const activatedStateID of activatedStateIDs) {
-        //     //     const [activatedState] = annotations.filter((state: any): boolean => state.clientID === activatedStateID);
-        //     //     if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
-        //     //         if (activatedState.objectType !== ObjectType.TAG) {
-        //     //             canvasInstance.focus(activatedStateID, aamZoomMargin);
-        //     //         } else {
-        //     //             canvasInstance.fit();
-        //     //         }
-        //     //     }
-        //     //     if (activatedState && activatedState.objectType !== ObjectType.TAG) {
-        //     //         canvasInstance.activate(activatedStateID, activatedAttributeID);
-        //     //     }
-
-        //     // ROBTODO: why is opacity not set in the view????
-        //     const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
-        //     if (el) {
-        //         ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
-        //     }
-        // }
-    }
-
-    private updateShapesView(): void {
-        const {
-            annotations, opacity, colorBy, outlined, outlineColor,
-        } = this.props;
-
-        for (const state of annotations) {
-            let shapeColor = '';
-
-            if (colorBy === ColorBy.INSTANCE) {
-                shapeColor = state.color;
-            } else if (colorBy === ColorBy.GROUP) {
-                shapeColor = state.group.color;
-            } else if (colorBy === ColorBy.LABEL) {
-                shapeColor = state.label.color;
-            }
-
-            // TODO: In this approach CVAT-UI know details of implementations CVAT-CANVAS (svg.js)
-            const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
-            if (shapeView) {
-                const handler = (shapeView as any).instance.remember('_selectHandler');
-                if (handler && handler.nested) {
-                    handler.nested.fill({ color: shapeColor });
+        // Auto-zoom on active instance in attribute mode (only 1 object can be active in this mode)
+        if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            const activatedObject = annotations.find((a) => activatedStateIDs[0] === a.clientID);
+            if (activatedObject) {
+                if (activatedObject.objectType === ObjectType.TAG) {
+                    canvasInstance.fit();
+                } else {
+                    canvasInstance.focus(activatedObject.clientID, aamZoomMargin);
                 }
-
-                (shapeView as any).instance.fill({ color: shapeColor, opacity });
-                (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
         }
     }

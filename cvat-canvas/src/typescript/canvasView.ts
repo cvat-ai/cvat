@@ -99,7 +99,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     /**
-     * ROBTODO:
+     * Now that selection happens via clicking rather than mouseover, we need to be able to
+     * propagate a mousedown event to the drag handler for newly selected objects
+     * so you can click and drag an unselected object
      */
     private selectViaMouseEvent: PointerEvent;
     private isHackishlyInvokingShapeDrag = false;
@@ -734,11 +736,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .map((id: number): any => this.drawnStates[id]);
 
         if (deleted.length || updated.length || created.length) {
-            // ROBTODO: shouldnt need to do this anymore
-            // if (this.activeElements.clientIDs.length) {
-            //     this.deactivate();
-            // }
-
             this.deleteObjects(deleted);
             this.addObjects(created);
 
@@ -1262,9 +1259,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         model.subscribe(this);
     }
 
-    private updateShapeViews(states: DrawnState[], parentState?: DrawnState): void {
+    private updateShapeViews(configuration: Configuration, states: DrawnState[], parentState?: DrawnState): void {
         for (const state of states) {
-            const { fill, stroke, 'fill-opacity': fillOpacity } = this.getShapeColorization(state, { configuration: this.configuration, parentState });
+            const { fill, stroke, 'fill-opacity': fillOpacity } = this.getShapeColorization(state, { configuration, parentState });
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
             if (shapeView) {
                 const handler = (shapeView as any).instance.remember('_selectHandler');
@@ -1278,7 +1275,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (state.elements) {
-                this.updateShapeViews(state.elements, state);
+                this.updateShapeViews(configuration, state.elements, state);
             }
         }
     }
@@ -1294,7 +1291,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 configuration.selectedShapeOpacity !== this.configuration.selectedShapeOpacity ||
                 configuration.outlinedBorders !== this.configuration.outlinedBorders ||
                 configuration.colorBy !== this.configuration.colorBy) {
-                this.updateShapeViews(Object.values(this.drawnStates));
+                this.updateShapeViews(configuration, Object.values(this.drawnStates));
             }
 
             if (configuration.displayAllText && !this.configuration.displayAllText) {
@@ -1454,7 +1451,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             if (this.mode === Mode.IDLE) {
                 // In case label changed
-                this.updateShapeViews(Object.values(this.drawnStates));
+                this.updateShapeViews(this.configuration, Object.values(this.drawnStates));
             }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);
@@ -1998,13 +1995,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.selectViaMouseEvent = event;
                 }
 
+                const [x, y] = translateToSVG(this.content, [event.clientX, event.clientY]);
+
                 this.canvas.dispatchEvent(
                     new CustomEvent('canvas.clicked', {
                         bubbles: false,
                         cancelable: true,
                         detail: {
                             state,
+                            states: this.controller.objects,
                             event,
+                            x: x - this.geometry.offset,
+                            y: y - this.geometry.offset,
                         },
                     }),
                 );
