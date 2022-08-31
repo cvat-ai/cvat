@@ -55,7 +55,7 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
     activateObjects: (activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean) => void;
-    removeObject: (sessionInstance: any, objectState: any) => void;
+    removeObject: (objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeGroupColor(group: number, color: string): void;
@@ -85,6 +85,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     } = own;
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
+
+    if (index < 0) {
+        console.log('hello world');
+    }
 
     return {
         objectState: states[index],
@@ -149,11 +153,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private remove = (): void => {
         const {
-            objectState, jobInstance, readonly, removeObject,
+            objectState, readonly, removeObject,
         } = this.props;
 
         if (!readonly) {
-            removeObject(jobInstance, objectState);
+            removeObject(objectState, false);
         }
     };
 

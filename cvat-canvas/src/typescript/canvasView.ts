@@ -2388,8 +2388,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private setShapeFill(clientID: number, opacity: number): void {
-        console.log(`set opacity: ${clientID}: ${opacity}`);
-
         // Make sure opacity is filled for all active elements
         const el = window.document.getElementById(`cvat_canvas_shape_${clientID}`);
         if (el) {
