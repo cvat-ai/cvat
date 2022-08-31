@@ -352,8 +352,8 @@ jobs:
           SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/server
           UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/ui
         run: |
-          docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
-          docker push "${SERVER_IMAGE_REPO}:dev"
+          docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:latest"
+          docker push "${SERVER_IMAGE_REPO}:latest"
 
-          docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
-          docker push "${UI_IMAGE_REPO}:dev"
+          docker tag cvat/ui:latest "${UI_IMAGE_REPO}:latest"
+          docker push "${UI_IMAGE_REPO}:latest"
