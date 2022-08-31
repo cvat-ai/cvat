@@ -493,7 +493,8 @@ class TaskData(InstanceLabelData):
 
     def _import_shape(self, shape, parent_label_id=None):
         _shape = shape._asdict()
-        label_id = self._get_label_id(_shape.pop('label'), parent_label_id)
+        label = _shape.pop('label')
+        label_id = self._get_label_id(label, parent_label_id) if label is not None else None
         _shape['frame'] = self.rel_frame_id(int(_shape['frame']))
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
@@ -1585,13 +1586,17 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     shape_type = shapes[ann.type]
                     elements = []
                     if point_cat and shape_type == ShapeType.POINTS:
+                        labels = point_cat.items[ann.label].labels
                         shape_type = ShapeType.SKELETON
                         for i in range(len(ann.points) // 2):
+                            label = None
+                            if i < len(labels):
+                                label = labels[i]
                             elements.append(instance_data.LabeledShape(
                                 type=ShapeType.POINTS,
                                 frame=frame_number,
                                 points=ann.points[2 * i : 2 * i + 2],
-                                label=point_cat.items[ann.label].labels[i],
+                                label=label,
                                 occluded=ann.visibility[i] == datum_annotation.Points.Visibility.hidden,
                                 source=source,
                                 attributes=[],
