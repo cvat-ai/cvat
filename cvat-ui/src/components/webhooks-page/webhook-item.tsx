@@ -45,12 +45,12 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     const eventsList = groupEvents(events).join(', ');
     return (
         <Row className='cvat-webhooks-list-item' style={isRemoved ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
-            <Col>
+            <Col span={1}>
                 <svg height='32' width='32' className={statusClassName}>
                     <circle cx='16' cy='11' r='4' strokeWidth='0' />
                 </svg>
             </Col>
-            <Col span={6}>
+            <Col span={7}>
                 <Paragraph ellipsis={{
                     tooltip: description,
                     rows: 2,
@@ -67,7 +67,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 )}
                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
-            <Col span={6} offset={1}>
+            <Col span={7}>
                 <Paragraph ellipsis={{
                     tooltip: targetURL,
                     rows: 3,
@@ -77,7 +77,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                     {targetURL}
                 </Paragraph>
             </Col>
-            <Col span={6} offset={1}>
+            <Col span={6}>
                 <Paragraph ellipsis={{
                     tooltip: eventsList,
                     rows: 3,
@@ -86,7 +86,6 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                     <Text type='secondary' className='cvat-webhook-info-text'>Events:</Text>
                     {eventsList}
                 </Paragraph>
-                <Text>{}</Text>
             </Col>
             <Col span={3}>
                 <Row justify='end'>
@@ -96,6 +95,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                             type='primary'
                             disabled={pingFetching}
                             loading={pingFetching}
+                            size='large'
                             ghost
                             onClick={(): void => {
                                 setPingFetching(true);

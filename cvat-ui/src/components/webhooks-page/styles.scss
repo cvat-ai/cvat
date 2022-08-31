@@ -12,12 +12,16 @@
 
 .cvat-webhooks-list-item {
     width: 100%;
-    height: $grid-unit-size * 15;
+    height: $grid-unit-size * 16;
     border: 1px solid $border-color-1;
     border-radius: 3px;
     margin-bottom: $grid-unit-size * 2;
-    padding: $grid-unit-size * 2 0 $grid-unit-size 0;
+    padding: $grid-unit-size * 2 0 $grid-unit-size * 0.5 0;
     background: $background-color-1;
+
+    @media screen and (min-width: 1080px) {
+        height: $grid-unit-size * 15;
+    }
 
     &:hover {
         border: 1px solid $border-color-hover;

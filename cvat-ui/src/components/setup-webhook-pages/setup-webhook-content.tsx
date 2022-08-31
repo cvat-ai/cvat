@@ -18,7 +18,7 @@ import Select from 'antd/lib/select';
 import getCore from 'cvat-core-wrapper';
 import { notification } from 'antd';
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { useHistory } from 'react-router';
 
 export enum WebhookContentType {
@@ -51,7 +51,9 @@ export function groupEvents(events: string[]): string[] {
 }
 
 function collectEvents(method: EventsMethod, submittedGroups: Record<string, any>, allEvents: string[]): string[] {
-    return method === EventsMethod.SEND_EVERYTHING ? allEvents : (() => {
+    // Temporary disabled all events except job/task
+    const temporaryAllEvents = allEvents.filter((event) => event.includes('task') || event.includes('job'));
+    return method === EventsMethod.SEND_EVERYTHING ? temporaryAllEvents : (() => {
         const submittedEvents = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event_') && value).map(([key]) => key)
             .map((event: string) => event.split('_')[1]);
         return allEvents.filter((event) => submittedEvents.includes(event.split('_')[0]));
@@ -76,6 +78,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
     const history = useHistory();
     const [form] = Form.useForm();
     const [rerender, setRerender] = useState(false);
+    const [showDetailedEvents, setShowDetailedEvents] = useState(false);
     const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
     const organization = useSelector((state: CombinedState) => state.organizations.current);
 
@@ -95,11 +98,11 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (webhook) {
-            const maxEvents = webhookEvents.length;
-            // const eventsMethod = webhook.events.length === maxEvents ? EventsMethod.SEND_EVERYTHING :
-            //     EventsMethod.SELECT_INDIVIDUAL;
-            const eventsMethod = EventsMethod.SELECT_INDIVIDUAL;
-
+            // Temporary disabled everything except job/task
+            const temporaryAllEvents = groupEvents(webhookEvents).filter((event) => ['task', 'job'].includes(event));
+            const eventsMethod = temporaryAllEvents.length === groupEvents(webhook.events).length ?
+                EventsMethod.SEND_EVERYTHING : EventsMethod.SELECT_INDIVIDUAL;
+            setShowDetailedEvents(eventsMethod === EventsMethod.SELECT_INDIVIDUAL);
             const data: Record<string, string | boolean> = {
                 description: webhook.description,
                 targetURL: webhook.targetURL,
@@ -133,6 +136,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
                 webhook.save().then(() => {
                     form.resetFields();
+                    setShowDetailedEvents(false);
                     notification.info({
                         message: 'Webhook has been successfully updated',
                     });
@@ -167,6 +171,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
     const onEventsMethodChange = useCallback((event: RadioChangeEvent): void => {
         form.setFieldsValue({ eventsMethod: event.target.value });
+        setShowDetailedEvents(event.target.value === EventsMethod.SELECT_INDIVIDUAL);
         setRerender(!rerender);
     }, [rerender]);
 
@@ -181,7 +186,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     layout='vertical'
                     initialValues={{
                         contentType: WebhookContentType.APPLICATION_JSON,
-                        eventsMethod: EventsMethod.SELECT_INDIVIDUAL,
+                        eventsMethod: EventsMethod.SEND_EVERYTHING,
                         enableSSL: true,
                         isActive: true,
                     }}
@@ -251,7 +256,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                             message: 'The field is required',
                         }]}
                     >
-                        <Radio.Group onChange={onEventsMethodChange} disabled>
+                        <Radio.Group onChange={onEventsMethodChange}>
                             <Radio value={EventsMethod.SEND_EVERYTHING} key={EventsMethod.SEND_EVERYTHING}>
                                 <Text>Send </Text>
                                 <Text strong>everything</Text>
@@ -262,7 +267,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         </Radio.Group>
                     </Form.Item>
                     {
-                        form.getFieldValue('eventsMethod') === EventsMethod.SELECT_INDIVIDUAL && (
+                        showDetailedEvents && (
                             <Row>
                                 {groupEvents(webhookEvents).map((event: string, idx: number) => (
                                     <Col span={8} key={idx}>
@@ -270,6 +275,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                                             name={`event_${event}`}
                                             valuePropName='checked'
                                         >
+                                            {/* Temporary disabled everything except job/task */}
                                             <Checkbox disabled={!['job', 'task'].includes(event)}>
                                                 <Text className='cvat-text-color'>{event}</Text>
                                             </Checkbox>
