@@ -327,7 +327,7 @@ function buildDuplicatedAPI(prototype) {
  * @hideconstructor
  * @virtual
  */
-class Session {
+export class Session {
     constructor() {
         /**
          * An interaction with annotations
