@@ -31,7 +31,7 @@ const initialValues: FormValues = {
         cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
-}
+};
 
 function ExportBackupModal(): JSX.Element {
     const dispatch = useDispatch();
@@ -59,7 +59,6 @@ function ExportBackupModal(): JSX.Element {
         }
     }, [instance?.id, instance instanceof core.classes.Project]);
 
-
     useEffect(() => {
         if (instance) {
             setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
@@ -69,8 +68,10 @@ function ExportBackupModal(): JSX.Element {
 
     useEffect(() => {
         setHelpMessage(
+            // eslint-disable-next-line prefer-template
             `Export backup to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
+            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`
+        );
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
@@ -87,19 +88,23 @@ function ExportBackupModal(): JSX.Element {
                     instance,
                     new Storage({
                         location: useDefaultStorage ? defaultStorageLocation : values.targetStorage?.location,
-                        cloudStorageId: useDefaultStorage ? defaultStorageCloudId : values.targetStorage?.cloudStorageId,
+                        cloudStorageId: useDefaultStorage ? (
+                            defaultStorageCloudId
+                        ) : (
+                            values.targetStorage?.cloudStorageId
+                        ),
                     }),
                     useDefaultStorage,
-                    values.customName ? `${values.customName}.zip` : undefined
+                    values.customName ? `${values.customName}.zip` : undefined,
                 ),
             );
             closeModal();
             Notification.info({
                 message: 'Backup export started',
                 description:
-                    `Backup export was started. ` +
+                    'Backup export was started. ' +
                     'Download will start automatically as soon as the file is ready.',
-                className: `cvat-notification-notice-export-backup-start`,
+                className: 'cvat-notification-notice-export-backup-start',
             });
         },
         [instance, instanceType, useDefaultStorage],
