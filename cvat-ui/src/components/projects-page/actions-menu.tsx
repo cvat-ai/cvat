@@ -21,7 +21,9 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     const { projectInstance } = props;
 
     const dispatch = useDispatch();
-    const exportBackupIsActive = useSelector((state: CombinedState) => state.export.projects.backup.current[projectInstance.id]);
+    const exportBackupIsActive = useSelector((state: CombinedState) => {
+        return state.export.projects.backup.current[projectInstance.id];
+    });
 
     const onDeleteProject = useCallback((): void => {
         Modal.confirm({

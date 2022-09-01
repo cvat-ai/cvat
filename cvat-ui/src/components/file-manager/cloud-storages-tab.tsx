@@ -6,11 +6,10 @@
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Form from 'antd/lib/form';
-
 import Select from 'antd/lib/select';
 import { CloudStorage } from 'reducers';
-import CloudStorageFiles from './cloud-storages-files';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
+import CloudStorageFiles from './cloud-storages-files';
 
 interface Props {
     formRef: any;

@@ -18,23 +18,23 @@ function ImportDatasetStatusModal(): JSX.Element {
 
     useEffect(() => {
         const [id] = Object.keys(current);
-        setImportingId(parseInt(id));
+        setImportingId(parseInt(id, 10));
     }, [current]);
 
     const importing = useSelector((state: CombinedState) => {
-        if (!importingId){
+        if (!importingId) {
             return false;
         }
         return !!state.import.projects.dataset.current[importingId];
     });
     const progress = useSelector((state: CombinedState) => {
-        if (!importingId){
+        if (!importingId) {
             return 0;
         }
         return state.import.projects.dataset.current[importingId]?.progress;
     });
     const status = useSelector((state: CombinedState) => {
-        if (!importingId){
+        if (!importingId) {
             return '';
         }
         return state.import.projects.dataset.current[importingId]?.status;

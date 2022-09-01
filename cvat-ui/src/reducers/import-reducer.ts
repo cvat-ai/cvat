@@ -3,24 +3,22 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
 import { ImportState } from '.';
 import { getCore } from 'cvat-core-wrapper';
-
-import { omit } from 'lodash';
 
 const core = getCore();
 
 const defaultProgress = 0.0;
 
 export function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
-    if  (instance instanceof core.classes.Project) {
+    if (instance instanceof core.classes.Project) {
         return 'projects';
     } else if (instance instanceof core.classes.Task) {
         return 'tasks';
-    } else { // job
-        return 'jobs';
     }
+    return 'jobs';
 }
 
 const defaultState: ImportState = {
@@ -66,7 +64,7 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     dataset: {
                         ...state[activitiesField].dataset,
                         modalInstance: instance,
-                    }
+                    },
                 },
                 instanceType: activitiesField
                     .slice(0, activitiesField.length - 1) as 'project' | 'task' | 'job',
@@ -103,7 +101,7 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     ...updatedActivity,
                     status: 'The file is being uploaded to the server',
                     progress: defaultProgress,
-                }
+                };
             }
             return {
                 ...state,
@@ -169,7 +167,7 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     backup: {
                         modalVisible: true,
                         importing: false,
-                    }
+                    },
                 },
                 instanceType,
             };
@@ -185,7 +183,7 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     backup: {
                         ...state[field].backup,
                         modalVisible: false,
-                    }
+                    },
                 },
                 instanceType: null,
             };
@@ -201,9 +199,9 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     backup: {
                         ...state[field].backup,
                         importing: true,
-                    }
-                }
-            }
+                    },
+                },
+            };
         }
         case ImportActionTypes.IMPORT_BACKUP_FAILED:
         case ImportActionTypes.IMPORT_BACKUP_SUCCESS: {
@@ -217,8 +215,8 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
                     backup: {
                         ...state[field].backup,
                         importing: false,
-                    }
-                }
+                    },
+                },
             };
         }
         default:

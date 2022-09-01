@@ -39,7 +39,7 @@ const initialValues: FormValues = {
         cloudStorageId: undefined,
     },
     useProjectTargetStorage: true,
-}
+};
 
 function ExportDatasetModal(props: StateToProps): JSX.Element {
     const {
@@ -77,36 +77,36 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         }
     }, [instance?.id, instance instanceof core.classes.Project]);
 
-
     useEffect(() => {
         if (instance) {
             if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
                 setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
                 setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
             } else {
-                core.tasks.get({ id: instance.taskId }).then((response: any) => {
-                    if (response.length) {
-                        const [taskInstance] = response;
-                        setDefaultStorageLocation(taskInstance.targetStorage?.location || StorageLocation.LOCAL);
-                        setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId || null);
-                    }
-                })
-                .catch((error: Error) => {
-                    if ((error as any).code !== 403) {
-                        Notification.error({
-                            message: `Could not fetch the task ${instance.taskId}`,
-                            description: error.toString(),
-                        });
-                    }
-                });
+                core.tasks.get({ id: instance.taskId })
+                    .then((response: any) => {
+                        if (response.length) {
+                            const [taskInstance] = response;
+                            setDefaultStorageLocation(taskInstance.targetStorage?.location || StorageLocation.LOCAL);
+                            setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId || null);
+                        }
+                    })
+                    .catch((error: Error) => {
+                        if ((error as any).code !== 403) {
+                            Notification.error({
+                                message: `Could not fetch the task ${instance.taskId}`,
+                                description: error.toString(),
+                            });
+                        }
+                    });
             }
         }
     }, [instance?.id, instance?.targetStorage]);
 
     useEffect(() => {
-        setHelpMessage(
-            `Export to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
+        // eslint-disable-next-line prefer-template
+        setHelpMessage(`Export to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
+                        `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
@@ -128,7 +128,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     useDefaultTargetStorage ? new Storage({
                         location: defaultStorageLocation,
                         cloudStorageId: defaultStorageCloudId,
-                    }): new Storage(targetStorage),
+                    }) : new Storage(targetStorage),
                     values.customName ? `${values.customName}.zip` : null,
                 ),
             );
@@ -193,7 +193,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 </Form.Item>
                 <Space>
                     <Form.Item name='saveImages'>
-                        <Switch className='cvat-modal-export-save-images'/>
+                        <Switch className='cvat-modal-export-save-images' />
                     </Form.Item>
                     <Text strong>Save images</Text>
                 </Space>
@@ -222,7 +222,6 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         </Modal>
     );
 }
-
 
 interface StateToProps {
     dumpers: any;

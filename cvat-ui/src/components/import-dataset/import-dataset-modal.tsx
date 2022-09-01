@@ -140,8 +140,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         setHelpMessage(
             // eslint-disable-next-line prefer-template
             `Import from ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`
-        );
+            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const uploadLocalFile = (): JSX.Element => {
@@ -159,8 +158,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[_file.name.split('.').length - 1])) {
                         message.error(
                             `For ${selectedLoader.name} format only files with ` +
-                            `${selectedLoader.format.toLowerCase()} extension can be used`
-                        );
+                            `${selectedLoader.format.toLowerCase()} extension can be used`);
                     } else {
                         setFile(_file);
                         setUploadParams({
@@ -194,8 +192,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 if (!allowedExtensions.includes(extension)) {
                     return Promise.reject(new Error(
                         `For ${selectedLoader.name} format only files with ` +
-                        `${selectedLoader.format.toLowerCase()} extension can be used`
-                    ));
+                        `${selectedLoader.format.toLowerCase()} extension can be used`));
                 }
             }
             if (isDataset()) {
@@ -247,7 +244,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             dispatch(importDatasetAsync(
                 instance, uploadParams.selectedFormat as string,
                 uploadParams.useDefaultSettings, uploadParams.sourceStorage,
-                uploadParams.file || (uploadParams.fileName as string))
+                uploadParams.file || uploadParams.fileName as string)
             );
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
@@ -299,7 +296,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 title={(
                     <>
                         <Text strong>
-                            Import {resource} to {instanceType}
+                            {`Import ${resource} to ${instanceType}`}
                         </Text>
                         {
                             instance instanceof core.classes.Project && (

@@ -5,11 +5,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
+import { useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Input from 'antd/lib/input';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { importActions } from 'actions/import-actions';
 import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
@@ -17,9 +19,6 @@ import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'componen
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
-
-import { importActions } from 'actions/import-actions';
-import { useDispatch } from 'react-redux';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,

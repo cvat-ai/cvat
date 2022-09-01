@@ -393,14 +393,14 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages.exporting,
                         dataset:
                             `${resource} for ${instanceType} ${instance.id} ` +
-                            `${auxiliaryVerb} been ${(isLocal) ? "downloaded" : "uploaded"} ` +
-                            `${(isLocal) ? "locally" : "to cloud storage"}`,
+                            `${auxiliaryVerb} been ${(isLocal) ? 'downloaded' : 'uploaded'} ` +
+                            `${(isLocal) ? 'locally' : 'to cloud storage'}`,
                     },
                 },
             };
         }
         case ExportActionTypes.EXPORT_BACKUP_FAILED: {
-            const { instanceId, instanceType}  = action.payload;
+            const { instanceId, instanceType } = action.payload;
             return {
                 ...state,
                 errors: {
@@ -426,8 +426,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages.exporting,
                         backup:
                             `Backup for the ${instanceType} №${instance.id} ` +
-                            `has been ${(isLocal) ? "downloaded" : "uploaded"} ` +
-                            `${(isLocal) ? "locally" : "to cloud storage"}`,
+                            `has been ${(isLocal) ? 'downloaded' : 'uploaded'} ` +
+                            `${(isLocal) ? 'locally' : 'to cloud storage'}`,
                     },
                 },
             };
@@ -436,7 +436,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?
                 'Annotations have been loaded to the ' +
-                `<a href="/tasks/${instance.taskId || instance.id}" target="_blank">task ${instance.taskId || instance.id}</a>` :
+                `<a href="/tasks/${instance.taskId || instance.id}" target="_blank">` +
+                `task ${instance.taskId || instance.id}</a>` :
                 'Dataset has been imported to the ' +
                 `<a href="/projects/${instance.id}" target="_blank">project ${instance.id}</a>`;
             return {
@@ -456,7 +457,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 `<a href="/tasks/${instance.taskId || instance.id}" target="_blank">` :
                 'Could not import dataset to the ' +
                 `<a href="/projects/${instance.id}" target="_blank">` +
-                `project ${instance.id}</a>`
+                `project ${instance.id}</a>`;
             return {
                 ...state,
                 errors: {
@@ -464,10 +465,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.errors.importing,
                         dataset: {
-                            message: message,
+                            message,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-' +
-                                `${resource === 'annotation' ? "load-annotation" : "import-dataset"}-failed`
+                                `${resource === 'annotation' ? 'load-annotation' : 'import-dataset'}-failed`,
                         },
                     },
                 },

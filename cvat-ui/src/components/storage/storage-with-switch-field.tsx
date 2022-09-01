@@ -65,10 +65,9 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                             />
                         </Form.Item>
                         <Text strong>{switchDescription}</Text>
-                        {
-                            (switchHelpMessage) ?  (
+                        {(switchHelpMessage) ?  (
                                 <Tooltip title={switchHelpMessage}>
-                                    <QuestionCircleOutlined/>
+                                    <QuestionCircleOutlined />
                                 </Tooltip>
                             ) : null
                         }

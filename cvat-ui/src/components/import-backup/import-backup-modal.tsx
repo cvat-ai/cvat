@@ -28,8 +28,8 @@ const initialValues: FormValues = {
     sourceStorage: {
         location: StorageLocation.LOCAL,
         cloudStorageId: undefined,
-    }
-}
+    },
+};
 
 function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
@@ -80,7 +80,7 @@ function ImportBackupModal(): JSX.Element {
         }
 
         return Promise.resolve();
-    }
+    };
 
     const renderCustomName = (): JSX.Element => {
         return (
@@ -95,7 +95,7 @@ function ImportBackupModal(): JSX.Element {
                 />
             </Form.Item>
         );
-    }
+    };
 
     const closeModal = useCallback((): void => {
         setSelectedSourceStorage({
@@ -123,13 +123,12 @@ function ImportBackupModal(): JSX.Element {
 
             Notification.info({
                 message: `The ${instanceType} creating from the backup has been started`,
-                className: `cvat-notification-notice-import-backup-start`,
+                className: 'cvat-notification-notice-import-backup-start',
             });
             closeModal();
         },
         [instanceType, file],
     );
-
 
     return (
         <>

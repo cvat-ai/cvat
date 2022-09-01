@@ -19,7 +19,7 @@ const defaultState: ExportState = {
         backup: {
             modalInstance: null,
             current: {},
-        }
+        },
     },
     tasks: {
         dataset: {
@@ -29,7 +29,7 @@ const defaultState: ExportState = {
         backup: {
             modalInstance: null,
             current: {},
-        }
+        },
     },
     jobs: {
         dataset: {
@@ -70,7 +70,7 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                     dataset: {
                         ...state[activitiesField].dataset,
                         modalInstance: null,
-                    }
+                    },
                 },
                 instanceType: null,
             };
@@ -87,13 +87,12 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                         ...state[field].dataset,
                         current: {
                             ...state[field].dataset.current,
-                            [instance.id]: !state[field].dataset.current[instance.id] ? [format]
-                                : [...state[field].dataset.current[instance.id], format],
-                        }
-                    }
-                }
+                            [instance.id]: !state[field].dataset.current[instance.id] ? [format] :
+                                [...state[field].dataset.current[instance.id], format],
+                        },
+                    },
+                },
             };
-
         }
         case ExportActionTypes.EXPORT_DATASET_FAILED:
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
@@ -174,7 +173,7 @@ export default (state: ExportState = defaultState, action: ExportActions): Expor
                     backup: {
                         ...state[field].backup,
                         current: omit(state[field].backup, instance.id),
-                    }
+                    },
                 },
             };
         }
