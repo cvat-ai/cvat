@@ -60,6 +60,10 @@
         }
 
         .cvat-jobs-page-job-item-card-preview {
+            .ant-empty-image {
+                height: $grid-unit-size * 10;
+            }
+
             height: 100%;
             display: flex;
             align-items: center;

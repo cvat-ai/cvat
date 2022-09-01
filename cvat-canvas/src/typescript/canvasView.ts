@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -2657,7 +2658,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 const mouseover = (e: MouseEvent): void => {
                     const locked = this.drawnStates[state.clientID].lock;
-                    if (!locked && !e.ctrlKey) {
+                    if (!locked && !e.ctrlKey && this.mode === Mode.IDLE) {
                         circle.attr({
                             'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
                         });
@@ -2675,6 +2676,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         });
 
                         this.canvas.dispatchEvent(event);
+                    }
+                };
+
+                const mousemove = (e: MouseEvent) => {
+                    if (this.mode === Mode.IDLE) {
+                        // stop propagation to canvas where it calls another canvas.moved
+                        // and does not allow to activate an element
+                        e.stopPropagation();
                     }
                 };
 
@@ -2699,11 +2708,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 circle.on('mouseover', mouseover);
                 circle.on('mouseleave', mouseleave);
+                circle.on('mousemove', mousemove);
                 circle.on('click', click);
                 circle.on('remove', () => {
                     circle.off('remove');
                     circle.off('mouseover', mouseover);
                     circle.off('mouseleave', mouseleave);
+                    circle.off('mousemove', mousemove);
                     circle.off('click', click);
                 });
 
