@@ -27,7 +27,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -59,7 +59,7 @@ services:
 
   cvat_utils:
     container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -79,7 +79,7 @@ services:
 
   cvat_worker_default:
     container_name: cvat_worker_default
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -100,7 +100,7 @@ services:
 
   cvat_worker_low:
     container_name: cvat_worker_low
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -121,7 +121,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-latest}
+    image: cvat/ui:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_server
