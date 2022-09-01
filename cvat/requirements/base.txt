@@ -52,4 +52,3 @@ urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
 natsort==8.0.0
 mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
 dnspython==2.2.0
-python-magic==0.4.27

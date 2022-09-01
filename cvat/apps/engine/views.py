@@ -14,7 +14,6 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
 
-import magic
 import cv2
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
@@ -51,6 +50,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
@@ -187,7 +187,7 @@ class ServerViewSet(viewsets.ViewSet):
                 entry_mime_type = None
                 if entry.is_file():
                     entry_type = "REG"
-                    entry_mime_type = magic.from_file(os.path.join(settings.SHARE_ROOT, entry), mime=True)
+                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
                 elif entry.is_dir():
                     entry_type = "DIR"
                     entry_mime_type = "DIR"
