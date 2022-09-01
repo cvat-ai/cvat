@@ -14,29 +14,29 @@ type Params = {
     format?: string,
     filename?: string,
     action?: string,
-}
+};
 
 const FormData = require('form-data');
-const { ServerError } = require('./exceptions');
 const store = require('store');
 const config = require('./config');
 const DownloadWorker = require('./download.worker');
 const Axios = require('axios');
 const tus = require('tus-js-client');
+const { ServerError } = require('./exceptions');
 
 function enableOrganization() {
     return { org: config.organizationID || '' };
 }
 
-function configureStorage(storage: Storage, useDefaultLocation: boolean = false) {
+function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
     return {
         use_default_location: useDefaultLocation,
         ...(!useDefaultLocation ? {
             location: storage.location,
             ...(storage.cloudStorageId ? {
                 cloud_storage_id: storage.cloudStorageId,
-            } : {})
-        } : {})
+            } : {}),
+        } : {}),
     };
 }
 
@@ -612,7 +612,7 @@ class ServerProxy {
                 saveImages: boolean,
                 useDefaultSettings: boolean,
                 targetStorage: Storage,
-                name?: string
+                name?: string,
             ) {
                 const { backendAPI } = config;
                 const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
@@ -657,7 +657,7 @@ class ServerProxy {
             useDefaultLocation: boolean,
             sourceStorage: Storage,
             file: File | string,
-            onUpdate
+            onUpdate,
         ) {
             const { backendAPI, origin } = config;
             const params: Params = {
@@ -747,7 +747,7 @@ class ServerProxy {
             const params: Params = {
                 ...enableOrganization(),
                 ...configureStorage(targetStorage, useDefaultSettings),
-                ...(fileName ? { filename: fileName } : {})
+                ...(fileName ? { filename: fileName } : {}),
             };
             const url = `${backendAPI}/tasks/${id}/backup`;
 
@@ -789,7 +789,7 @@ class ServerProxy {
             const taskData = new FormData();
             let response;
 
-            async function wait(taskData, response) {
+            async function wait() {
                 return new Promise((resolve, reject) => {
                     async function checkStatus() {
                         try {
@@ -842,21 +842,21 @@ class ServerProxy {
                         headers: { 'Upload-Finish': true },
                     });
             }
-            return wait(taskData, response);
+            return wait();
         }
 
         async function backupProject(
             id: number,
             targetStorage: Storage,
             useDefaultSettings: boolean,
-            fileName?: string
+            fileName?: string,
         ) {
             const { backendAPI } = config;
             // keep current default params to 'freeze" them during this request
             const params: Params = {
                 ...enableOrganization(),
                 ...configureStorage(targetStorage, useDefaultSettings),
-                ...(fileName ? { filename: fileName } : {})
+                ...(fileName ? { filename: fileName } : {}),
             };
 
             const url = `${backendAPI}/projects/${id}/backup`;
@@ -893,13 +893,13 @@ class ServerProxy {
             const params: Params = {
                 ...enableOrganization(),
                 ...configureStorage(storage),
-            }
+            };
 
             const url = `${backendAPI}/projects/backup`;
             const projectData = new FormData();
             let response;
 
-            async function wait(projectData, response) {
+            async function wait() {
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
@@ -923,6 +923,7 @@ class ServerProxy {
                     setTimeout(request);
                 });
             };
+
             const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
 
             if (isCloudStorage) {
@@ -951,10 +952,9 @@ class ServerProxy {
                         params: { ...params, filename },
                         proxy: config.proxy,
                         headers: { 'Upload-Finish': true },
-                    }
-                );
+                    });
             }
-            return wait(projectData, response);
+            return wait();
         }
 
         async function createTask(taskSpec, taskDataSpec, onUpdate) {
@@ -1436,7 +1436,7 @@ class ServerProxy {
             format: string,
             useDefaultLocation: boolean,
             sourceStorage: Storage,
-            file: File | string
+            file: File | string,
         ) {
             const { backendAPI, origin } = config;
             const params: Params = {
@@ -1505,7 +1505,6 @@ class ServerProxy {
                             proxy: config.proxy,
                             headers: { 'Upload-Finish': true },
                         });
-
                 } catch (errorData) {
                     throw generateError(errorData);
                 }

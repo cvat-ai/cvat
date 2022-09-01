@@ -29,7 +29,6 @@ export class Storage {
             cloudStorageId: initialData?.cloudStorageId,
         };
 
-
         Object.defineProperties(
             this,
             Object.freeze({
@@ -41,7 +40,7 @@ export class Storage {
                  * @readonly
                  */
                 location: {
-                    get: () => data.location
+                    get: () => data.location,
                 },
                 /**
                  * @name cloudStorageId
@@ -51,7 +50,7 @@ export class Storage {
                  * @readonly
                  */
                 cloudStorageId: {
-                    get: () => data.cloudStorageId
+                    get: () => data.cloudStorageId,
                 },
             }),
         );
@@ -61,7 +60,7 @@ export class Storage {
             location: this.location,
             ...(this.cloudStorageId ? {
                 cloud_storage_id: this.cloudStorageId,
-            } : {})
+            } : {}),
         };
     }
 }

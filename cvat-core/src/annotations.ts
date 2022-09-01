@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { Storage } from './storage';
 const serverProxy = require('./server-proxy').default;
 const Collection = require('./annotations-collection');
 const AnnotationsSaver = require('./annotations-saver');
@@ -12,7 +13,6 @@ const Project = require('./project').default;
 const { Task, Job } = require('./session');
 const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
 const { getDeletedFrames } = require('./frames');
-import { Storage } from './storage';
 
 const jobCache = new WeakMap();
 const taskCache = new WeakMap();

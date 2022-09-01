@@ -38,7 +38,12 @@ export const exportActions = {
         format: string,
         isLocal: boolean,
     ) => (
-        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, instanceType, format, isLocal })
+        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, {
+            instance,
+            instanceType,
+            format,
+            isLocal
+        })
     ),
     exportDatasetFailed: (instance: any, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
@@ -71,15 +76,22 @@ export const exportDatasetAsync = (
     saveImages: boolean,
     useDefaultSettings: boolean,
     targetStorage: Storage,
-    name?: string
+    name?: string,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
-    const instanceType = instance instanceof core.classes.Project ? 'project' :
-        instance instanceof core.classes.Task ? 'task' : 'job';
+    let instanceType;
+    if (instance instanceof core.classes.Project) {
+        instanceType = 'project';
+    } else if (instance instanceof core.classes.Task) {
+        instanceType = 'task';
+    } else {
+        instanceType = 'job';
+    }
 
     try {
-        const result = await instance.annotations.exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
+        const result = await instance.annotations
+            .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
         if (result) {
             const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
             downloadAnchor.href = result;
@@ -91,7 +103,12 @@ export const exportDatasetAsync = (
     }
 };
 
-export const exportBackupAsync = (instance: any, targetStorage: Storage, useDefaultSetting: boolean, fileName?: string): ThunkAction => async (dispatch) => {
+export const exportBackupAsync = (
+    instance: any,
+    targetStorage: Storage,
+    useDefaultSetting: boolean,
+    fileName?: string
+): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance));
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
@@ -104,7 +121,7 @@ export const exportBackupAsync = (instance: any, targetStorage: Storage, useDefa
         }
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result));
     } catch (error) {
-        dispatch(exportActions.exportBackupFailed(instance, instanceType,  error as Error));
+        dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }
 };
 

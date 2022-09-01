@@ -161,7 +161,7 @@ function buildDuplicatedAPI(prototype) {
                     saveImages: boolean,
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
-                    customName?: string
+                    customName?: string,
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -170,7 +170,7 @@ function buildDuplicatedAPI(prototype) {
                         saveImages,
                         useDefaultSettings,
                         targetStorage,
-                        customName
+                        customName,
                     );
                     return result;
                 },
@@ -1770,12 +1770,12 @@ export class Task extends Session {
                  * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
                 sourceStorage: {
-                    get: () => {
-                        return new Storage({
+                    get: () => (
+                        new Storage({
                             location: data.source_storage?.location || StorageLocation.LOCAL,
                             cloudStorageId: data.source_storage?.cloud_storage_id,
-                        });
-                    },
+                        })
+                    ),
                 },
                 /**
                  * Target storage for export resources.
@@ -1786,12 +1786,12 @@ export class Task extends Session {
                  * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
                 targetStorage: {
-                    get: () => {
-                        return new Storage({
+                    get: () => (
+                        new Storage({
                             location: data.target_storage?.location || StorageLocation.LOCAL,
                             cloudStorageId: data.target_storage?.cloud_storage_id,
-                        });
-                    },
+                        })
+                    ),
                 },
                 _internalData: {
                     get: () => data,
@@ -1918,7 +1918,7 @@ export class Task extends Session {
             Task.prototype.backup,
             targetStorage,
             useDefaultSettings,
-            fileName
+            fileName,
         );
         return result;
     }
@@ -2229,7 +2229,7 @@ Job.prototype.annotations.upload.implementation = async function (
     format: string,
     useDefaultLocation: boolean,
     sourceStorage: Storage,
-    file: File | string
+    file: File | string,
 ) {
     const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file);
     return result;
@@ -2250,7 +2250,7 @@ Job.prototype.annotations.exportDataset.implementation = async function (
     saveImages: boolean,
     useDefaultSettings: boolean,
     targetStorage: Storage,
-    customName?: string
+    customName?: string,
 ) {
     const result = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
     return result;
@@ -2427,7 +2427,7 @@ Task.prototype.delete.implementation = async function () {
 Task.prototype.backup.implementation = async function (
     targetStorage: Storage,
     useDefaultSettings: boolean,
-    fileName?: string
+    fileName?: string,
 ) {
     const result = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
     return result;
@@ -2666,7 +2666,7 @@ Task.prototype.annotations.upload.implementation = async function (
     format: string,
     useDefaultLocation: boolean,
     sourceStorage: Storage,
-    file: File | string
+    file: File | string,
 ) {
     const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file);
     return result;
@@ -2687,7 +2687,7 @@ Task.prototype.annotations.exportDataset.implementation = async function (
     saveImages: boolean,
     useDefaultSettings: boolean,
     targetStorage: Storage,
-    customName?: string
+    customName?: string,
 ) {
     const result = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
     return result;

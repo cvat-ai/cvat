@@ -275,7 +275,7 @@ export default class Project {
                             location: data.target_storage?.location || StorageLocation.LOCAL,
                             cloudStorageId: data.target_storage?.cloud_storage_id,
                         });
-                    }
+                    },
                 },
                 _internalData: {
                     get: () => data,
@@ -359,7 +359,7 @@ export default class Project {
             Project.prototype.backup,
             targetStorage,
             useDefaultSettings,
-            fileName
+            fileName,
         );
         return result;
     }
@@ -391,7 +391,7 @@ Object.defineProperties(
                     saveImages: boolean,
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
-                    customName?: string
+                    customName?: string,
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -400,7 +400,7 @@ Object.defineProperties(
                         saveImages,
                         useDefaultSettings,
                         targetStorage,
-                        customName
+                        customName,
                     );
                     return result;
                 },
@@ -409,7 +409,7 @@ Object.defineProperties(
                     useDefaultSettings: boolean,
                     sourceStorage: Storage,
                     file: File | string,
-                    updateStatusCallback = null
+                    updateStatusCallback = null,
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -418,7 +418,7 @@ Object.defineProperties(
                         useDefaultSettings,
                         sourceStorage,
                         file,
-                        updateStatusCallback
+                        updateStatusCallback,
                     );
                     return result;
                 },

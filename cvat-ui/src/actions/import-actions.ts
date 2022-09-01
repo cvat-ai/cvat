@@ -5,11 +5,10 @@
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
-import { getProjectsAsync } from './projects-actions';
 import { getCore, Storage } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
-
-import { jobInfoGenerator, receiveAnnotationsParameters, AnnotationActionTypes } from 'actions/annotation-actions';
+import { getProjectsAsync } from './projects-actions';
+import { jobInfoGenerator, receiveAnnotationsParameters, AnnotationActionTypes } from './annotation-actions';
 
 const core = getCore();
 
@@ -28,10 +27,12 @@ export enum ImportActionTypes {
 }
 
 export const importActions = {
-    openImportDatasetModal: (instance: any) =>
-        createAction(ImportActionTypes.OPEN_IMPORT_DATASET_MODAL, { instance }),
-    closeImportDatasetModal: (instance: any) =>
-        createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance }),
+    openImportDatasetModal: (instance: any) => (
+        createAction(ImportActionTypes.OPEN_IMPORT_DATASET_MODAL, { instance })
+    ),
+    closeImportDatasetModal: (instance: any) => (
+        createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance })
+    ),
     importDataset: (instance: any, format: string) => (
         createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
     ),
@@ -68,7 +69,7 @@ export const importDatasetAsync = (
     format: string,
     useDefaultSettings: boolean,
     sourceStorage: Storage,
-    file: File | string
+    file: File | string,
 ): ThunkAction => (
     async (dispatch, getState) => {
         const resource = instance instanceof core.classes.Project ? 'dataset' : 'annotation';
@@ -81,9 +82,11 @@ export const importDatasetAsync = (
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                await instance.annotations.importDataset(format, useDefaultSettings, sourceStorage, file, (message: string, progress: number) => (
-                    dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
-                ));
+                await instance.annotations
+                    .importDataset(format, useDefaultSettings, sourceStorage, file,
+                        (message: string, progress: number) => (
+                            dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
+                        ));
             } else if (instance instanceof core.classes.Task) {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
@@ -157,6 +160,7 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
         } catch (error) {
             dispatch(importActions.importBackupFailed(instanceType, error));
         }
-});
+    }
+);
 
 export type ImportActions = ActionUnion<typeof importActions>;

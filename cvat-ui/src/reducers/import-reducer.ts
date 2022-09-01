@@ -5,8 +5,8 @@
 
 import { omit } from 'lodash';
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
-import { ImportState } from '.';
 import { getCore } from 'cvat-core-wrapper';
+import { ImportState } from '.';
 
 const core = getCore();
 
@@ -15,7 +15,8 @@ const defaultProgress = 0.0;
 export function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
     if (instance instanceof core.classes.Project) {
         return 'projects';
-    } else if (instance instanceof core.classes.Task) {
+    }
+    if (instance instanceof core.classes.Task) {
         return 'tasks';
     }
     return 'jobs';

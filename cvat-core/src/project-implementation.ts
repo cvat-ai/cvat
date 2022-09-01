@@ -75,7 +75,7 @@ export default function implementProject(projectClass) {
         saveImages: boolean,
         useDefaultSettings: boolean,
         targetStorage: Storage,
-        customName?: string
+        customName?: string,
     ) {
         const result = exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
         return result;
@@ -85,7 +85,7 @@ export default function implementProject(projectClass) {
         useDefaultSettings: boolean,
         sourceStorage: Storage,
         file: File | string,
-        updateStatusCallback
+        updateStatusCallback,
     ) {
         return importDataset(this, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
     };
@@ -93,7 +93,7 @@ export default function implementProject(projectClass) {
     projectClass.prototype.backup.implementation = async function (
         targetStorage: Storage,
         useDefaultSettings: boolean,
-        fileName?: string
+        fileName?: string,
     ) {
         const result = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
         return result;
