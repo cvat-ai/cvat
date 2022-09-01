@@ -56,7 +56,7 @@ export default function StorageField(props: Props): JSX.Element {
         if (onChangeStorage) {
             onChangeStorage({
                 location: locationValue,
-                cloudStorageId: cloudStorage?.id ? parseInt(cloudStorage?.id) : undefined,
+                cloudStorageId: cloudStorage?.id ? parseInt(cloudStorage?.id, 10) : undefined,
             });
         }
     }, [cloudStorage, locationValue]);
@@ -66,10 +66,10 @@ export default function StorageField(props: Props): JSX.Element {
             <Form.Item name={locationName}>
                 <Select
                     onChange={(location: StorageLocation) => {
-                        if (onChangeLocationValue) onChangeLocationValue(location)
+                        if (onChangeLocationValue) onChangeLocationValue(location);
                     }}
                     onClear={() => {
-                        if (onChangeLocationValue) onChangeLocationValue(StorageLocation.LOCAL)
+                        if (onChangeLocationValue) onChangeLocationValue(StorageLocation.LOCAL);
                     }}
                     allowClear
                 >

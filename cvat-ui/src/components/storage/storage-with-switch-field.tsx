@@ -8,13 +8,13 @@ import Form from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
-import StorageField from './storage-field';
 import Tooltip from 'antd/lib/tooltip';
 import { QuestionCircleFilled, QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-
 import { StorageData } from 'cvat-core-wrapper';
 import { StorageLocation } from 'reducers';
+import StorageField from './storage-field';
+
 export interface Props {
     instanceId: number | null;
     storageName: string;
@@ -29,7 +29,6 @@ export interface Props {
     onChangeStorage?: (values: StorageData) => void;
     onChangeUseDefaultStorage?: (value: boolean) => void;
 }
-
 
 export default function StorageWithSwitchField(props: Props): JSX.Element {
     const {
@@ -50,7 +49,7 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
     return (
         <>
             {
-                !!instanceId &&
+                !!instanceId && (
                     <Space>
                         <Form.Item
                             name={switchName}
@@ -66,36 +65,42 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                             />
                         </Form.Item>
                         <Text strong>{switchDescription}</Text>
-                        {(switchHelpMessage) ? <Tooltip title={switchHelpMessage}>
-                            <QuestionCircleOutlined/>
-                        </Tooltip> : null}
+                        {
+                            (switchHelpMessage) ?  (
+                                <Tooltip title={switchHelpMessage}>
+                                    <QuestionCircleOutlined/>
+                                </Tooltip>
+                            ) : null
+                        }
                     </Space>
+                )
             }
             {
-                (!instanceId || !useDefaultStorage) &&
-                <Form.Item
-                    label={(
-                        <>
-                            <Space>
-                                {storageLabel}
-                                <CVATTooltip title={storageDescription}>
-                                    <QuestionCircleFilled
-                                        // className='cvat-question-circle-filled-icon'
-                                        style={{ opacity: 0.5 }}
-                                    />
-                                </CVATTooltip>
-                            </Space>
-                        </>
-                    )}
-                >
-                    <StorageField
-                        locationName={[storageName, 'location']}
-                        selectCloudStorageName={[storageName, 'cloudStorageId']}
-                        locationValue={locationValue}
-                        onChangeStorage={onChangeStorage}
-                        onChangeLocationValue={onChangeLocationValue}
-                    />
-                </Form.Item>
+                (!instanceId || !useDefaultStorage) && (
+                    <Form.Item
+                        label={(
+                            <>
+                                <Space>
+                                    {storageLabel}
+                                    <CVATTooltip title={storageDescription}>
+                                        <QuestionCircleFilled
+                                            // className='cvat-question-circle-filled-icon'
+                                            style={{ opacity: 0.5 }}
+                                        />
+                                    </CVATTooltip>
+                                </Space>
+                            </>
+                        )}
+                    >
+                        <StorageField
+                            locationName={[storageName, 'location']}
+                            selectCloudStorageName={[storageName, 'cloudStorageId']}
+                            locationValue={locationValue}
+                            onChangeStorage={onChangeStorage}
+                            onChangeLocationValue={onChangeLocationValue}
+                        />
+                    </Form.Item>
+                )
             }
         </>
     );

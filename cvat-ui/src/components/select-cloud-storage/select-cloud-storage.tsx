@@ -12,6 +12,7 @@ import { CloudStorage } from 'reducers';
 import { AzureProvider, GoogleCloudProvider, S3Provider } from 'icons';
 import { ProviderType } from 'utils/enums';
 import { getCore } from 'cvat-core-wrapper';
+
 export interface Props {
     searchPhrase: string;
     cloudStorage: CloudStorage | null;
@@ -48,7 +49,9 @@ const searchCloudStoragesWrapper = debounce((phrase, setList) => {
 }, 500);
 
 function SelectCloudStorage(props: Props): JSX.Element {
-    const { searchPhrase, cloudStorage, name, setSearchPhrase, onSelectCloudStorage } = props;
+    const {
+        searchPhrase, cloudStorage, name, setSearchPhrase, onSelectCloudStorage,
+    } = props;
     const [initialList, setInitialList] = useState<CloudStorage[]>([]);
     const [list, setList] = useState<CloudStorage[]>([]);
 
@@ -83,7 +86,6 @@ function SelectCloudStorage(props: Props): JSX.Element {
             }
         }
     };
-
 
     return (
         <Form.Item
@@ -130,7 +132,6 @@ function SelectCloudStorage(props: Props): JSX.Element {
             </AutoComplete>
         </Form.Item>
     );
-
 }
 
 export default React.memo(SelectCloudStorage);
