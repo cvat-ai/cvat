@@ -47,8 +47,8 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         cy.get('.ant-select-dropdown')
             .not('.ant-select-dropdown-hidden').within(() => {
                 cy.get('.rc-virtual-list-holder')
-                .contains('.cvat-modal-import-dataset-option-item', format)
-                .click();
+                    .contains('.cvat-modal-import-dataset-option-item', format)
+                    .click();
             });
         cy.get('.cvat-modal-import-select').should('contain.text', format);
         cy.get('input[type="file"]').attachFile(file, { subjectType: 'drag-n-drop' });
@@ -58,7 +58,6 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
         cy.closeNotification('.cvat-notification-notice-import-annotation-start');
     }
-
 
     before(() => {
         cy.visit('auth/login');
@@ -116,7 +115,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             uploadAnnotation(
                 dumpType.split(' ')[0],
                 annotationArchiveName,
-                '.cvat-modal-content-load-job-annotation'
+                '.cvat-modal-content-load-job-annotation',
             );
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);

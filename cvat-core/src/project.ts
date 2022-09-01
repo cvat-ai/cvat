@@ -254,12 +254,12 @@ export default class Project {
                  * @instance
                  */
                 sourceStorage: {
-                    get: () => {
-                        return new Storage({
+                    get: () => (
+                        new Storage({
                             location: data.source_storage?.location || StorageLocation.LOCAL,
                             cloudStorageId: data.source_storage?.cloud_storage_id,
-                        });
-                    },
+                        })
+                    ),
                 },
                 /**
                  * Target storage for export resources.
@@ -270,12 +270,12 @@ export default class Project {
                  * @instance
                  */
                 targetStorage: {
-                    get: () => {
-                        return new Storage({
+                    get: () => (
+                        new Storage({
                             location: data.target_storage?.location || StorageLocation.LOCAL,
                             cloudStorageId: data.target_storage?.cloud_storage_id,
-                        });
-                    },
+                        })
+                    ),
                 },
                 _internalData: {
                     get: () => data,

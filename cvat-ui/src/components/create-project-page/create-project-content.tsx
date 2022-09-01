@@ -17,16 +17,14 @@ import Collapse from 'antd/lib/collapse';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
-
+import { StorageLocation } from 'reducers';
+import { createProjectAsync } from 'actions/projects-actions';
+import { Storage, StorageData } from 'cvat-core-wrapper';
 import patterns from 'utils/validation-patterns';
 import LabelsEditor from 'components/labels-editor/labels-editor';
-import { createProjectAsync } from 'actions/projects-actions';
-import CreateProjectContext from './create-project.context';
-import { StorageLocation } from 'reducers';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
-
-import { Storage, StorageData } from 'cvat-core-wrapper';
+import CreateProjectContext from './create-project.context';
 
 const { Option } = Select;
 
@@ -221,10 +219,10 @@ export default function CreateProjectContent(): JSX.Element {
                     ...advancedValues,
                     name: basicValues.name,
                     source_storage: new Storage(
-                        advancedValues.sourceStorage || { location: StorageLocation.LOCAL }
+                        advancedValues.sourceStorage || { location: StorageLocation.LOCAL, }
                     ).toJSON(),
                     target_storage: new Storage(
-                        advancedValues.targetStorage || { location: StorageLocation.LOCAL }
+                        advancedValues.targetStorage || { location: StorageLocation.LOCAL, }
                     ).toJSON(),
                 };
 

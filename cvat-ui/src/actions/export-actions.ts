@@ -80,7 +80,7 @@ export const exportDatasetAsync = (
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportDataset(instance, format));
 
-    let instanceType;
+    let instanceType: 'project' | 'task' | 'job';
     if (instance instanceof core.classes.Project) {
         instanceType = 'project';
     } else if (instance instanceof core.classes.Task) {

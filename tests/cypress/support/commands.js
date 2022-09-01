@@ -868,8 +868,8 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         .trigger('mousemove')
         .trigger('mouseover')
         .should('have.class', 'cvat_canvas_shape_activated');
-    cy.get('.svg_select_points_rot').then($el => {
-        let {x, y, width, height} = $el[0].getBoundingClientRect();
+    cy.get('.svg_select_points_rot').then(($el) => {
+        let { x, y, width, height } = $el[0].getBoundingClientRect();
         x += width / 2;
         y += height / 2;
 

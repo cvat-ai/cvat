@@ -80,7 +80,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             uploadAnnotation(
                 dumpTypePC.split(' ')[0],
                 annotationPCArchiveName,
-                '.cvat-modal-content-load-job-annotation'
+                '.cvat-modal-content-load-job-annotation',
             );
             cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
@@ -101,7 +101,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             uploadAnnotation(
                 dumpTypePC.split(' ')[0],
                 annotationPCArchiveName,
-                '.cvat-modal-content-load-task-annotation'
+                '.cvat-modal-content-load-task-annotation',
             );
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');

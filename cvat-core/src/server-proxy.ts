@@ -8,7 +8,7 @@ import { Storage } from './storage';
 
 type Params = {
     org: number | string,
-    use_default_location: boolean,
+    use_default_location?: boolean,
     location?: StorageLocation,
     cloud_storage_id?: number,
     format?: string,
@@ -20,9 +20,10 @@ const FormData = require('form-data');
 const store = require('store');
 const config = require('./config');
 const DownloadWorker = require('./download.worker');
+const { ServerError } = require('./exceptions');
 const Axios = require('axios');
 const tus = require('tus-js-client');
-const { ServerError } = require('./exceptions');
+
 
 function enableOrganization() {
     return { org: config.organizationID || '' };
@@ -46,7 +47,7 @@ function removeToken() {
 }
 
 function waitFor(frequencyHz, predicate) {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         if (typeof predicate !== 'function') {
             reject(new Error(`Predicate must be a function, got ${typeof predicate}`));
         }
@@ -921,7 +922,7 @@ class ServerProxy {
                     }
 
                     setTimeout(request);
-                });
+                })
             };
 
             const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;

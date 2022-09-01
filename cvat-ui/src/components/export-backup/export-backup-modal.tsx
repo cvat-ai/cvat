@@ -67,11 +67,10 @@ function ExportBackupModal(): JSX.Element {
     }, [instance?.id, instance?.targetStorage]);
 
     useEffect(() => {
-        setHelpMessage(
-            // eslint-disable-next-line prefer-template
-            `Export backup to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`
-        );
+        // eslint-disable-next-line prefer-template
+        const message = `Export backup to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
+                        `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`;
+        setHelpMessage(message);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {

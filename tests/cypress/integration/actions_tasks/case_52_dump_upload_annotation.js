@@ -102,7 +102,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
 
         it('Upload annotation to job.', () => {
             cy.interactMenu('Upload annotations');
-            cy.get('.cvat-modal-import-dataset')
+            cy.get('.cvat-modal-import-dataset');
             cy.get('.cvat-modal-import-select').click();
             cy.contains('.cvat-modal-import-dataset-option-item', exportFormat.split(' ')[0]).click();
             cy.get('.cvat-modal-import-select').should('contain.text', exportFormat.split(' ')[0]);

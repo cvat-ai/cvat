@@ -14,7 +14,8 @@ import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
-
+import { StorageLocation } from 'reducers';
+import { getCore, Storage } from 'cvat-core-wrapper';
 import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { Files } from 'components/file-manager/file-manager';
@@ -22,10 +23,6 @@ import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
-
-import { StorageLocation } from 'reducers';
-
-import { getCore, Storage } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -182,7 +179,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             advanced: {
                 ...state.advanced,
                 useProjectSourceStorage: value,
-            }
+            },
         }));
     };
 
@@ -191,7 +188,18 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             advanced: {
                 ...state.advanced,
                 useProjectTargetStorage: value,
-            }
+            },
+        }));
+    };
+
+    private handleChangeStorageLocation(field: 'sourceStorage' | 'targetStorage', value: StorageLocation): void {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                [field]: {
+                    location: value,
+                },
+            },
         }));
     };
 
@@ -261,15 +269,20 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     return core.projects.get({ id: projectId })
                         .then((response: any) => {
                             const [project] = response;
+                            const { advanced } = this.state;
                             this.handleSubmitAdvancedConfiguration({
-                                ...this.state.advanced,
-                                sourceStorage: new Storage(project.sourceStorage || { location: StorageLocation.LOCAL }),
-                                targetStorage: new Storage(project.targetStorage || { location: StorageLocation.LOCAL }),
+                                ...advanced,
+                                sourceStorage: new Storage(
+                                    project.sourceStorage || { location: StorageLocation.LOCAL }
+                                ),
+                                targetStorage: new Storage(
+                                    project.targetStorage || { location: StorageLocation.LOCAL }
+                                ),
                             });
                             return Promise.resolve();
                         })
                         .catch((error: Error): void => {
-                            throw new Error(`Couldn't fetch the project ${projectId} ` + error.toString());
+                            throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
                         });
                 }
                 return Promise.resolve();
@@ -391,24 +404,22 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
-    private handleChangeStorageLocation(field: 'sourceStorage' | 'targetStorage', value: StorageLocation): void {
-        this.setState((state) => ({
-            advanced: {
-                ...state.advanced,
-                [field]: {
-                    location: value,
-                }
-            }
-        }));
-    }
-
     private renderAdvancedBlock(): JSX.Element {
         const { installedGit, dumpers } = this.props;
         const { activeFileManagerTab, projectId } = this.state;
 
-        const {useProjectSourceStorage, useProjectTargetStorage } = this.state.advanced;
-        const { location: sourceStorageLocation } = this.state.advanced.sourceStorage;
-        const { location: targetStorageLocation } = this.state.advanced.targetStorage;
+        const {
+            advanced: {
+                useProjectSourceStorage,
+                useProjectTargetStorage,
+                sourceStorage: {
+                    location: sourceStorageLocation,
+                },
+                targetStorage: {
+                    location: targetStorageLocation,
+                },
+            },
+        } = this.state;
         return (
             <Col span={24}>
                 <Collapse>

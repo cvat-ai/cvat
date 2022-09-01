@@ -74,7 +74,7 @@ const initialValues: AdvancedConfiguration = {
     targetStorage: {
         location: StorageLocation.LOCAL,
         cloudStorageId: undefined,
-    }
+    },
 };
 
 interface Props {
@@ -199,33 +199,32 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
                         sourceStorage: values.useProjectSourceStorage ?
-                            new Storage(project.sourceStorage || { location: StorageLocation.LOCAL })
-                        : new Storage(values.sourceStorage),
+                            new Storage(project.sourceStorage || { location: StorageLocation.LOCAL }) :
+                            new Storage(values.sourceStorage),
                         targetStorage: values.useProjectTargetStorage ?
-                            new Storage(project.targetStorage || { location: StorageLocation.LOCAL })
-                        : new Storage(values.targetStorage),
+                            new Storage(project.targetStorage || { location: StorageLocation.LOCAL }) :
+                            new Storage(values.targetStorage),
                     });
                     return Promise.resolve();
-                })
-            } else {
-                return this.formRef.current.validateFields()
-                    .then(
-                        (values: Store): Promise<void> => {
-                            const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
-                            const entries = Object.entries(values).filter(
-                                (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
-                            );
-
-                            onSubmit({
-                                ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
-                                frameFilter,
-                                sourceStorage: new Storage(values.sourceStorage),
-                                targetStorage: new Storage(values.targetStorage),
-                            });
-                            return Promise.resolve();
-                        },
-                    );
+                });
             }
+            return this.formRef.current.validateFields()
+                .then(
+                    (values: Store): Promise<void> => {
+                        const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
+                        const entries = Object.entries(values).filter(
+                            (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
+                        );
+
+                        onSubmit({
+                            ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
+                            frameFilter,
+                            sourceStorage: new Storage(values.sourceStorage),
+                            targetStorage: new Storage(values.targetStorage),
+                        });
+                        return Promise.resolve();
+                    },
+                );
         }
 
         return Promise.reject(new Error('Form ref is empty'));
@@ -265,7 +264,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
                 help='Specify how to sort images. It is not relevant for videos.'
             >
-                <Radio.Group buttonStyle="solid">
+                <Radio.Group buttonStyle='solid'>
                     <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
                         Lexicographical
                     </Radio.Button>
@@ -364,7 +363,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Form.Item>
                 <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
                 <Tooltip title='If annotation files are large, you can use git LFS feature.'>
-                    <QuestionCircleFilled style={{opacity: 0.5}}/>
+                    <QuestionCircleFilled style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
         );
@@ -450,7 +449,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Form.Item>
                 <Text className='cvat-text-color'>Use zip/video chunks</Text>
                 <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
-                    <QuestionCircleFilled style={{opacity: 0.5}}/>
+                    <QuestionCircleFilled style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
         );
@@ -464,7 +463,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Form.Item>
                 <Text className='cvat-text-color'>Use cache</Text>
                 <Tooltip title='Using cache to store data.'>
-                    <QuestionCircleFilled style={{opacity: 0.5}}/>
+                    <QuestionCircleFilled style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
         );
@@ -585,8 +584,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     <Col span={24}>{this.renderBugTracker()}</Col>
                 </Row>
                 <Row justify='space-between'>
-                    <Col span={11}> {this.renderSourceStorage()} </Col>
-                    <Col span={11} offset={1}> {this.renderTargetStorage()} </Col>
+                    <Col span={11}>
+                        {this.renderSourceStorage()}
+                    </Col>
+                    <Col span={11} offset={1}>
+                        {this.renderTargetStorage()}
+                    </Col>
                 </Row>
             </Form>
         );
