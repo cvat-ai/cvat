@@ -5,8 +5,7 @@
 
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
-import { connect } from 'react-redux';
-import { useDispatch } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -14,18 +13,18 @@ import Select from 'antd/lib/select';
 import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
+import Input from 'antd/lib/input/Input';
 import {
     UploadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, StorageLocation } from 'reducers';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
-import ImportDatasetStatusModal from './import-dataset-status-modal';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
-import Input from 'antd/lib/input/Input';
+import ImportDatasetStatusModal from './import-dataset-status-modal';
 
 const { confirm } = Modal;
 
@@ -46,7 +45,7 @@ const initialValues: FormValues = {
         cloudStorageId: undefined,
     },
     useDefaultSettings: true,
-}
+};
 
 interface UploadParams {
     resource: 'annotation' | 'dataset';
@@ -80,14 +79,13 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     } as UploadParams);
     const [resource, setResource] = useState('');
 
-
     useEffect(() => {
         if (instanceT === 'project') {
             setResource('dataset');
         } else if (instanceT === 'task' || instanceT === 'job') {
             setResource('annotation');
         }
-    }, [instanceT])
+    }, [instanceT]);
 
     const isDataset = useCallback((): boolean => {
         return resource === 'dataset';
@@ -105,7 +103,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 location: defaultStorageLocation,
                 cloudStorageId: defaultStorageCloudId,
             } as Storage,
-        } as UploadParams)
+        } as UploadParams);
     }, [resource, defaultStorageLocation, defaultStorageCloudId]);
 
     useEffect(() => {
@@ -120,19 +118,19 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 }
             } else if (instance instanceof core.classes.Job) {
                 core.tasks.get({ id: instance.taskId })
-                .then((response: any) => {
-                    if (response.length) {
-                        const [taskInstance] = response;
-                        setDefaultStorageLocation(taskInstance.sourceStorage?.location || StorageLocation.LOCAL);
-                        setDefaultStorageCloudId(taskInstance.sourceStorage?.cloudStorageId || null);
-                    }
-                })
-                .catch((error: Error) => {
-                    Notification.error({
-                        message: `Could not get task instance ${instance.taskId}`,
-                        description: error.toString(),
+                    .then((response: any) => {
+                        if (response.length) {
+                            const [taskInstance] = response;
+                            setDefaultStorageLocation(taskInstance.sourceStorage?.location || StorageLocation.LOCAL);
+                            setDefaultStorageCloudId(taskInstance.sourceStorage?.cloudStorageId || null);
+                        }
+                    })
+                    .catch((error: Error) => {
+                        Notification.error({
+                            message: `Could not get task instance ${instance.taskId}`,
+                            description: error.toString(),
+                        });
                     });
-                });
                 setInstanceType(`job #${instance.id}`);
             }
         }
@@ -140,10 +138,11 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     useEffect(() => {
         setHelpMessage(
+            // eslint-disable-next-line prefer-template
             `Import from ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
+            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`
+        );
     }, [defaultStorageLocation, defaultStorageCloudId]);
-
 
     const uploadLocalFile = (): JSX.Element => {
         return (
@@ -158,7 +157,10 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         message.error('Only ZIP archive is supported for import a dataset');
                     } else if (isAnnotation() &&
                             !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[_file.name.split('.').length - 1])) {
-                        message.error(`For ${selectedLoader.name} format only files with ${selectedLoader.format.toLowerCase()} extension can be used`);
+                        message.error(
+                            `For ${selectedLoader.name} format only files with ` +
+                            `${selectedLoader.format.toLowerCase()} extension can be used`
+                        );
                     } else {
                         setFile(_file);
                         setUploadParams({
@@ -190,7 +192,10 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             if (isAnnotation()) {
                 const allowedExtensions = selectedLoader.format.toLowerCase().split(', ');
                 if (!allowedExtensions.includes(extension)) {
-                    return Promise.reject(new Error(`For ${selectedLoader.name} format only files with ${selectedLoader.format.toLowerCase()} extension can be used`));
+                    return Promise.reject(new Error(
+                        `For ${selectedLoader.name} format only files with ` +
+                        `${selectedLoader.format.toLowerCase()} extension can be used`
+                    ));
                 }
             }
             if (isDataset()) {
@@ -201,7 +206,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         }
 
         return Promise.resolve();
-    }
+    };
 
     const renderCustomName = (): JSX.Element => {
         return (
@@ -221,13 +226,13 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             setUploadParams({
                                 ...uploadParams,
                                 fileName: e.target.value,
-                            } as UploadParams)
-                        }}
-                    }
+                            } as UploadParams);
+                        }
+                    }}
                 />
             </Form.Item>
         );
-    }
+    };
 
     const closeModal = useCallback((): void => {
         setUseDefaultSettings(true);
@@ -237,22 +242,23 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         dispatch(importActions.closeImportDatasetModal(instance));
     }, [form, instance]);
 
-    const onUpload = () => {
+    const onUpload = (): void => {
         if (uploadParams && uploadParams.resource) {
             dispatch(importDatasetAsync(
                 instance, uploadParams.selectedFormat as string,
                 uploadParams.useDefaultSettings, uploadParams.sourceStorage,
-                uploadParams.file || (uploadParams.fileName as string)));
-            const _resource = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
+                uploadParams.file || (uploadParams.fileName as string))
+            );
+            const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
-                message: `${_resource} import started`,
-                description: `${_resource} import was started for ${instanceType}. `,
+                message: `${resToPrint} import started`,
+                description: `${resToPrint} import was started for ${instanceType}. `,
                 className: `cvat-notification-notice-import-${uploadParams.resource}-start`,
             });
         }
     };
 
-    const confirmUpload = () => {
+    const confirmUpload = (): void => {
         confirm({
             title: 'Current annotation will be lost',
             content: `You are going to upload new annotations to ${instanceType}. Continue?`,
@@ -265,8 +271,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 danger: true,
             },
             okText: 'Update',
-        })
-    }
+        });
+    };
 
     const handleImport = useCallback(
         (values: FormValues): void => {
@@ -292,18 +298,21 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             <Modal
                 title={(
                     <>
-                        <Text strong>Import {resource} to {instanceType}</Text>
+                        <Text strong>
+                            Import {resource} to {instanceType}
+                        </Text>
                         {
-                            instance instanceof core.classes.Project &&
-                            <CVATTooltip
-                                title={
-                                    instance && !instance.labels.length ?
-                                        'Labels will be imported from dataset' :
-                                        'Labels from project will be used'
-                                }
-                            >
-                                <QuestionCircleOutlined className='cvat-modal-import-header-question-icon' />
-                            </CVATTooltip>
+                            instance instanceof core.classes.Project && (
+                                <CVATTooltip
+                                    title={
+                                        instance && !instance.labels.length ?
+                                            'Labels will be imported from dataset' :
+                                            'Labels from project will be used'
+                                    }
+                                >
+                                    <QuestionCircleOutlined className='cvat-modal-import-header-question-icon' />
+                                </CVATTooltip>
+                            )
                         }
                     </>
                 )}
@@ -329,14 +338,14 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             placeholder={`Select ${resource} format`}
                             className='cvat-modal-import-select'
                             virtual={false}
-                            onChange={(_format: string) => {
-                                const [_loader] = importers.filter(
-                                    (importer: any): boolean => importer.name === _format
+                            onChange={(format: string) => {
+                                const [loader] = importers.filter(
+                                    (importer: any): boolean => importer.name === format,
                                 );
-                                setSelectedLoader(_loader);
+                                setSelectedLoader(loader);
                                 setUploadParams({
                                     ...uploadParams,
-                                    selectedFormat: _format
+                                    selectedFormat: format,
                                 } as UploadParams);
                             }}
                         >
@@ -379,35 +388,54 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                     setUploadParams({
                                         ...uploadParams,
                                         useDefaultSettings: value,
-                                    } as UploadParams)
+                                    } as UploadParams);
                                 }}
                             />
                         </Form.Item>
                         <Text strong>Use default settings</Text>
                         <CVATTooltip title={helpMessage}>
-                            <QuestionCircleOutlined/>
+                            <QuestionCircleOutlined />
                         </CVATTooltip>
                     </Space>
 
-                    {useDefaultSettings && (defaultStorageLocation === StorageLocation.LOCAL || defaultStorageLocation === null) && uploadLocalFile()}
-                    {useDefaultSettings && defaultStorageLocation === StorageLocation.CLOUD_STORAGE && renderCustomName()}
-                    {!useDefaultSettings && <StorageField
-                        locationName={['sourceStorage', 'location']}
-                        selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
-                        onChangeStorage={(value: StorageData) => {
-                            setUploadParams({
-                                ...uploadParams,
-                                sourceStorage: new Storage({
-                                    location: value?.location || defaultStorageLocation,
-                                    cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
-                                }),
-                            } as UploadParams);
-                        }}
-                        locationValue={selectedSourceStorageLocation}
-                        onChangeLocationValue={(value: StorageLocation) => setSelectedSourceStorageLocation(value)}
-                    />}
-                    {!useDefaultSettings && selectedSourceStorageLocation === StorageLocation.CLOUD_STORAGE && renderCustomName()}
-                    {!useDefaultSettings && selectedSourceStorageLocation === StorageLocation.LOCAL && uploadLocalFile()}
+                    {
+                        useDefaultSettings && (
+                            defaultStorageLocation === StorageLocation.LOCAL ||
+                            defaultStorageLocation === null
+                        ) && uploadLocalFile()
+                    }
+                    {
+                        useDefaultSettings &&
+                        defaultStorageLocation === StorageLocation.CLOUD_STORAGE &&
+                        renderCustomName()
+                    }
+                    {!useDefaultSettings && (
+                        <StorageField
+                            locationName={['sourceStorage', 'location']}
+                            selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
+                            onChangeStorage={(value: StorageData) => {
+                                setUploadParams({
+                                    ...uploadParams,
+                                    sourceStorage: new Storage({
+                                        location: value?.location || defaultStorageLocation,
+                                        cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
+                                    }),
+                                } as UploadParams);
+                            }}
+                            locationValue={selectedSourceStorageLocation}
+                            onChangeLocationValue={(value: StorageLocation) => setSelectedSourceStorageLocation(value)}
+                        />
+                    )}
+                    {
+                        !useDefaultSettings &&
+                        selectedSourceStorageLocation === StorageLocation.CLOUD_STORAGE &&
+                        renderCustomName()
+                    }
+                    {
+                        !useDefaultSettings &&
+                        selectedSourceStorageLocation === StorageLocation.LOCAL &&
+                        uploadLocalFile()
+                    }
                 </Form>
             </Modal>
             <ImportDatasetStatusModal />
