@@ -223,18 +223,7 @@ export function selectObject(session, objectStates, x, y) {
     );
 }
 
-export async function uploadAnnotations(
-    session,
-    format: string,
-    useDefaultLocation: boolean,
-    sourceStorage: Storage,
-    file: File | string
-) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    await serverProxy.annotations.uploadAnnotations(sessionType, session.id, format, useDefaultLocation, sourceStorage, file);
-}
-
-export function importAnnotations(session, data) {
+export function importCollection(session, data) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -248,7 +237,7 @@ export function importAnnotations(session, data) {
     );
 }
 
-export function exportAnnotations(session) {
+export function exportCollection(session) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -285,13 +274,16 @@ export async function exportDataset(
     return result;
 }
 
-export function importDataset(instance, format: string, useDefaultSettings: boolean, sourceStorage: Storage,
-        file: File | string, updateStatusCallback = () => {}) {
-    if (!(typeof format === 'string')) {
-        throw new ArgumentError('Format must be a string');
-    }
-    if (!(instance instanceof Project)) {
-        throw new ArgumentError('Instance should be a Project instance');
+export function importDataset(
+    instance: any,
+    format: string,
+    useDefaultSettings: boolean,
+    sourceStorage: Storage,
+    file: File | string,
+    updateStatusCallback = () => {}
+) {
+    if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
+        throw new ArgumentError('Instance should be a Project || Task || Job instance');
     }
     if (!(typeof updateStatusCallback === 'function')) {
         throw new ArgumentError('Callback should be a function');
@@ -302,7 +294,13 @@ export function importDataset(instance, format: string, useDefaultSettings: bool
     if (file instanceof File && !(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
         throw new ArgumentError('File should be file instance with ZIP extension');
     }
-    return serverProxy.projects.importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
+
+    if (instance instanceof Project) {
+        return serverProxy.projects.importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
+    }
+
+    const instanceType = instance instanceof Task ? 'task' : 'job';
+    return serverProxy.annotations.uploadAnnotations(instanceType, instance.id, format, useDefaultSettings, sourceStorage, file);
 }
 
 export function getHistory(session) {

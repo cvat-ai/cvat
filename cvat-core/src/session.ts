@@ -1952,9 +1952,9 @@ const {
     clearAnnotations,
     selectObject,
     annotationsStatistics,
-    uploadAnnotations,
-    importAnnotations,
-    exportAnnotations,
+    importCollection,
+    exportCollection,
+    importDataset,
     exportDataset,
     undoActions,
     redoActions,
@@ -2231,17 +2231,17 @@ Job.prototype.annotations.upload.implementation = async function (
     sourceStorage: Storage,
     file: File | string,
 ) {
-    const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file);
+    const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file);
     return result;
 };
 
 Job.prototype.annotations.import.implementation = function (data) {
-    const result = importAnnotations(this, data);
+    const result = importCollection(this, data);
     return result;
 };
 
 Job.prototype.annotations.export.implementation = function () {
-    const result = exportAnnotations(this);
+    const result = exportCollection(this);
     return result;
 };
 
@@ -2668,17 +2668,17 @@ Task.prototype.annotations.upload.implementation = async function (
     sourceStorage: Storage,
     file: File | string,
 ) {
-    const result = await uploadAnnotations(this, format, useDefaultLocation, sourceStorage, file);
+    const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file);
     return result;
 };
 
 Task.prototype.annotations.import.implementation = function (data) {
-    const result = importAnnotations(this, data);
+    const result = importCollection(this, data);
     return result;
 };
 
 Task.prototype.annotations.export.implementation = function () {
-    const result = exportAnnotations(this);
+    const result = exportCollection(this);
     return result;
 };
 
