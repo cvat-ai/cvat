@@ -54,8 +54,10 @@ class S3Client:
             Params={"Bucket": self.bucket, "Key": self._key(key)},
             ExpiresIn=expires,
         )
-        if settings.ENVIRONMENT == 'local' and 'minio' in url:
-            url = url.replace('minio', 'localhost', 1)
+        if settings.ENVIRONMENT == 'local':
+            hostname = url.split('/')[2]
+            if 'minio' in hostname:
+                url = url.replace('minio', 'localhost', 1)
         return url
 
     def delete_object(self, key: str) -> bool:
