@@ -37,7 +37,7 @@ function PopoverContent(props: LabelKeySelectorPopoverContentProps): JSX.Element
                         const previousLabelID = keyToLabelMapping[i];
                         const labelName = Number.isInteger(previousLabelID) ?
                             labels.filter((label: any): boolean => label.id === previousLabelID)[0]?.name ||
-                              'undefined' :
+                            'undefined' :
                             'None';
 
                         return (
@@ -65,20 +65,24 @@ function LabelKeySelectorPopover(props: LabelKeySelectorPopoverProps): JSX.Eleme
     } = props;
 
     return (
-        <Popover
-            destroyTooltipOnHide={{ keepParent: false }}
-            trigger='click'
-            content={(
-                <MemoizedContent
-                    keyToLabelMapping={keyToLabelMapping}
-                    labelID={labelID}
-                    updateLabelShortcutKey={updateLabelShortcutKey}
-                />
-            )}
-            placement='left'
-        >
-            {children}
-        </Popover>
+        // stop click propagation to play nice when this is used as part of a toggle element
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+        <div onClick={(e) => e.stopPropagation()}>
+            <Popover
+                destroyTooltipOnHide={{ keepParent: false }}
+                trigger='click'
+                content={(
+                    <MemoizedContent
+                        keyToLabelMapping={keyToLabelMapping}
+                        labelID={labelID}
+                        updateLabelShortcutKey={updateLabelShortcutKey}
+                    />
+                )}
+                placement='left'
+            >
+                {children}
+            </Popover>
+        </div>
     );
 }
 
