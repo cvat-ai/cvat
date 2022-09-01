@@ -88,6 +88,7 @@ const defaultState: AnnotationState = {
             statuses: [],
         },
         collapsed: {},
+        collapsedLabels: {},
         collapsedAll: true,
         states: [],
         filters: [],
@@ -422,7 +423,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states, collapsed } = action.payload;
 
             const updatedCollapsedStates = { ...state.annotations.collapsed };
-            const totalStatesCount = state.annotations.states.length;
             for (const objectState of states) {
                 updatedCollapsedStates[objectState.clientID] = collapsed;
                 for (const element of objectState.elements) {
@@ -435,7 +435,47 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     collapsed: updatedCollapsedStates,
-                    collapsedAll: states.length === totalStatesCount ? collapsed : state.annotations.collapsedAll,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLAPSE_LABEL_GROUPS: {
+            const { labelIDs, collapsed } = action.payload;
+            const updatedCollapsedLabelStates = { ...state.annotations.collapsedLabels };
+            for (const labelID of labelIDs) {
+                updatedCollapsedLabelStates[labelID] = collapsed;
+            }
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    collapsedLabels: updatedCollapsedLabelStates,
+                },
+            };
+        }
+        case AnnotationActionTypes.COLLAPSE_ALL: {
+            const { collapsed } = action.payload;
+
+            const updatedCollapsedStates = { ...state.annotations.collapsed };
+            for (const objectState of state.annotations.states) {
+                updatedCollapsedStates[objectState.clientID] = collapsed;
+                for (const element of objectState.elements) {
+                    updatedCollapsedStates[element.clientID] = collapsed;
+                }
+            }
+
+            const updatedCollapsedLabelStates = { ...state.annotations.collapsedLabels };
+            for (const label of state.job.labels) {
+                updatedCollapsedLabelStates[label.id] = collapsed;
+            }
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    collapsed: updatedCollapsedStates,
+                    collapsedLabels: updatedCollapsedLabelStates,
+                    collapsedAll: collapsed,
                 },
             };
         }

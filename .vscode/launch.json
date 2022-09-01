@@ -45,7 +45,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "env": {
-                "CVAT_SERVERLESS": "1"
+                "CVAT_SERVERLESS": "0"
             },
             "args": [
                 "runserver",

@@ -613,6 +613,7 @@ export interface AnnotationState {
         activatedElementID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
+        collapsedLabels: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
         filters: any[];

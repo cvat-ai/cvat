@@ -17,6 +17,7 @@ interface Props {
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsedAll: boolean;
+    collapsedLabelStates: Record<number, boolean>;
     statesOrdering: StatesOrdering;
     groupedObjects: SortedLabelGroup[];
     objectStates: any[];
@@ -29,6 +30,7 @@ interface Props {
     expandAllStates(): void;
     hideAllStates(): void;
     showAllStates(): void;
+    collapseLabelGroup(labelID: number, value: boolean): void;
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -37,6 +39,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesHidden,
         statesLocked,
         statesCollapsedAll,
+        collapsedLabelStates,
         statesOrdering,
         groupedObjects,
         objectStates,
@@ -47,9 +50,14 @@ function ObjectListComponent(props: Props): JSX.Element {
         unlockAllStates,
         collapseAllStates,
         expandAllStates,
+        collapseLabelGroup,
         hideAllStates,
         showAllStates,
     } = props;
+
+    const collapse = (labelID: number) => {
+        collapseLabelGroup(labelID, !collapsedLabelStates[labelID]);
+    };
 
     return (
         <>
@@ -75,7 +83,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                         <Collapse
                             className='cvat-objects-sidebar-label-group-collapse'
                             bordered={false}
-                            defaultActiveKey='details'
+                            key={group.label.id}
+                            activeKey={collapsedLabelStates[group.label.id ?? 0] ? [] : ['details']}
+                            onChange={() => collapse(group.label.id ?? 0)}
                         >
                             <Collapse.Panel header={<LabelItem labelID={group.label.id ?? 0} />} key='details'>
                                 {group.objects.map(

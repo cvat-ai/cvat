@@ -12,11 +12,12 @@ import ObjectsListComponent from 'components/annotation-page/standard-workspace/
 import {
     updateAnnotationsAsync,
     changeFrameAsync,
-    collapseObjectItems,
     changeGroupColorAsync,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
     removeObject as removeObjectAction,
+    collapseAll,
+    collapseLabelGroups,
 } from 'actions/annotation-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
@@ -36,6 +37,7 @@ interface StateToProps {
     statesLocked: boolean;
     statesCollapsedAll: boolean;
     collapsedStates: Record<number, boolean>;
+    collapsedLabelStates: Record<number, boolean>;
     objectStates: ObjectState[];
     annotationsFilters: any[];
     colors: string[];
@@ -50,7 +52,8 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
-    collapseStates(states: any[], value: boolean): void;
+    collapseAll(value: boolean): void;
+    collapseLabelGroups(labelIDs: number[], value: boolean): void;
     removeObject: (objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
@@ -65,6 +68,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 states: objectStates,
                 filters: annotationsFilters,
                 collapsed,
+                collapsedLabels,
                 collapsedAll,
                 activatedStateIDs,
                 activatedElementID,
@@ -106,6 +110,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         statesLocked,
         statesCollapsedAll: collapsedAll,
         collapsedStates: collapsed,
+        collapsedLabelStates: collapsedLabels,
         objectStates,
         frameNumber,
         jobInstance,
@@ -126,8 +131,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        collapseStates(states: ObjectState[], collapsed: boolean): void {
-            dispatch(collapseObjectItems(states, collapsed));
+        collapseAll(value: boolean): void {
+            dispatch(collapseAll(value));
+        },
+        collapseLabelGroups(labelIDs: number[], value: boolean): void {
+            dispatch(collapseLabelGroups(labelIDs, value));
         },
         removeObject(objectState: ObjectState, force: boolean): void {
             dispatch(removeObjectAction(objectState, force));
@@ -202,11 +210,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private onCollapseAllStates = (): void => {
-        this.collapseAllStates(true);
+        this.props.collapseAll(true);
     };
 
     private onExpandAllStates = (): void => {
-        this.collapseAllStates(false);
+        this.props.collapseAll(false);
     };
 
     private onHideAllStates = (): void => {
@@ -216,6 +224,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     private onShowAllStates = (): void => {
         this.hideAllStates(false);
     };
+
+    private onCollapseLabelGroup = (labelID: number, value: boolean): void => {
+        this.props.collapseLabelGroups([labelID], value);
+    }
 
     private lockAllStates(locked: boolean): void {
         const { objectStates, updateAnnotations, readonly } = this.props;
@@ -241,12 +253,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         }
     }
 
-    private collapseAllStates(collapsed: boolean): void {
-        const { objectStates, collapseStates } = this.props;
-
-        collapseStates(objectStates, collapsed);
-    }
-
     public render(): JSX.Element {
         const {
             statesHidden,
@@ -261,6 +267,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             colorBy,
             readonly,
             statesCollapsedAll,
+            collapsedLabelStates,
             updateAnnotations,
             changeGroupColor,
             removeObject,
@@ -483,6 +490,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}
                     statesCollapsedAll={statesCollapsedAll}
+                    collapsedLabelStates={collapsedLabelStates}
                     readonly={readonly || false}
                     statesOrdering={statesOrdering}
                     groupedObjects={groupedObjects}
@@ -496,6 +504,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     expandAllStates={this.onExpandAllStates}
                     hideAllStates={this.onHideAllStates}
                     showAllStates={this.onShowAllStates}
+                    collapseLabelGroup={this.onCollapseLabelGroup}
                 />
             </>
         );

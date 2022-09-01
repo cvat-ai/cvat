@@ -155,6 +155,8 @@ export enum AnnotationActionTypes {
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
+    COLLAPSE_LABEL_GROUPS = 'COLLAPSE_LABEL_GROUPS',
+    COLLAPSE_ALL = 'COLLAPSE_ALL',
     ACTIVATE_OBJECTS = 'ACTIVATE_OBJECTS',
     DEACTIVATE_OBJECT = 'DEACTIVATE_OBJECT',
     REMOVE_OBJECT = 'REMOVE_OBJECT',
@@ -646,6 +648,25 @@ export function collapseObjectItems(states: any[], collapsed: boolean): AnyActio
         type: AnnotationActionTypes.COLLAPSE_OBJECT_ITEMS,
         payload: {
             states,
+            collapsed,
+        },
+    };
+}
+
+export function collapseLabelGroups(labelIDs: number[], collapsed: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.COLLAPSE_LABEL_GROUPS,
+        payload: {
+            labelIDs,
+            collapsed,
+        },
+    };
+}
+
+export function collapseAll(collapsed: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.COLLAPSE_ALL,
+        payload: {
             collapsed,
         },
     };
