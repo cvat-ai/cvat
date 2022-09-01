@@ -7,10 +7,35 @@
 context('Manipulations with skeletons', () => {
     const labelName = 'skeleton';
     const taskName = 'skeletons main pipeline';
+    const imagesFolder = `cypress/fixtures/${taskName}`;
+    const archiveName = `${taskName}.zip`;
+    const archivePath = `cypress/fixtures/${archiveName}`;
+    const imageParams = {
+        width: 800,
+        height: 800,
+        color: 'gray',
+        textOffset: { x: 10, y: 10 },
+        text: 'skeletons pipeline',
+        count: 5,
+    };
+    let taskID = null;
 
     before(() => {
         cy.visit('auth/login');
         cy.login();
+
+        cy.imageGenerator(
+            imagesFolder,
+            taskName,
+            imageParams.width,
+            imageParams.height,
+            imageParams.color,
+            imageParams.textOffset.x,
+            imageParams.textOffset.y,
+            imageParams.text,
+            imageParams.count,
+        );
+        cy.createZipArchive(imagesFolder, archivePath);
     });
 
     describe('Create a task with skeletons', () => {
@@ -74,14 +99,47 @@ context('Manipulations with skeletons', () => {
                     });
                 });
 
-                cy.contains('Continue').click();
-                cy.contains('Continue').click();
+                cy.contains('Continue').scrollIntoView().click();
+                cy.contains('Continue').scrollIntoView().click();
+                cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
+
+                cy.intercept('/api/tasks?**').as('taskPost');
+                cy.contains('Submit & Open').scrollIntoView().click();
+
+                cy.wait('@taskPost').then((interception) => {
+                    taskID = interception.response.body.id;
+                    expect(interception.response.statusCode).to.be.equal(201);
+                    cy.intercept(`/api/tasks/${taskID}?**`).as('getTask');
+                    cy.wait('@getTask', { timeout: 10000 });
+                    cy.get('.cvat-task-jobs-table-row').should('exist').and('be.visible');
+                    cy.openJob();
+                });
             });
         });
     });
 
-    describe('Create a project with skeletons', () => {
-        it(`Set filter label == “${labelName}”.`, () => {
+    describe('Working with objects', () => {
+        it('Creating and removing a skeleton shape', () => {
+
+        });
+
+        it('Creating and removing a skeleton track', () => {
+
+        });
+
+        it('Merging two skeletons', () => {
+
+        });
+
+        it('Splitting two skeletons', () => {
+
+        });
+
+        it('Resizing and dragging a skeleton', () => {
+
+        });
+
+        it('Lock, outside, hidden, occluded', () => {
 
         });
     });
