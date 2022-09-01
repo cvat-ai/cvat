@@ -1206,7 +1206,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // User clicked on an empty canvas area
             if ([0, 1].includes(event.button)) {
                 if (this.mode === Mode.IDLE) {
-                    this.selectionBoxHandler.startBoxSelection();
+                    this.selectionBoxHandler.startBoxSelection(event);
                 } else if (
                     [Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
                         .includes(this.mode) || event.button === 1 || event.altKey

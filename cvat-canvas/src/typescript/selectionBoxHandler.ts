@@ -7,7 +7,7 @@ import { Geometry } from './canvasModel';
 import { BoxSelector } from './box-selector';
 
 export interface SelectionBoxHandler {
-    startBoxSelection(): void;
+    startBoxSelection(event: MouseEvent): void;
     cancelBoxSelection(): void;
     transform(geometry: Geometry): void;
 }
@@ -26,8 +26,12 @@ export class SelectionBoxHandlerImpl implements SelectionBoxHandler {
         this.boxSelector = new BoxSelector(this.onBoxDrawn.bind(this), canvas, geometry, 'cvat_canvas_zoom_selection');
     }
 
-    public startBoxSelection(): void {
-        this.boxSelector.startDrawingMode();
+    /**
+     * Enters drawing mode, where the next click will start drawing a box.
+     * @param event optional click event that already ocurred to trigger the box drawing
+     */
+    public startBoxSelection(event?: MouseEvent): void {
+        this.boxSelector.startDrawingMode(event);
     }
 
     public cancelBoxSelection(): void {

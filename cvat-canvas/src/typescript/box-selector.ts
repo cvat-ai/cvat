@@ -109,10 +109,18 @@ export class BoxSelector {
         }
     }
 
-    public startDrawingMode(): void {
+    /**
+     * Enters drawing mode, where the next click will start drawing a box.
+     * @param event optional click event that already ocurred to trigger the box drawing
+     */
+    public startDrawingMode(event?: MouseEvent): void {
         this.canvas.node.addEventListener('mousedown', this.bindedOnSelectStart);
         this.canvas.node.addEventListener('mousemove', this.bindedOnSelectUpdate);
         this.canvas.node.addEventListener('mouseup', this.bindedOnSelectStop);
+
+        if (event) {
+            this.bindedOnSelectStart(event);
+        }
     }
 
     public cancelDrawingMode(): void {
