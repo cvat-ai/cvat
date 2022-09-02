@@ -104,8 +104,3 @@ export function getContentTypeRemoteFile(url: string): Promise<string> {
 export function getNameRemoteFile(url: string): string {
     return url.split('/').filter(Boolean).pop()?.split(/[#?]/)?.[0] || '';
 }
-
-export function getNameShareFile(url: string): string {
-    console.log(url);
-    return url; // TODO
-}

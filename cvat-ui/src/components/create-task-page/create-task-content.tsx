@@ -286,10 +286,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let uploadFileErrorMessage = '';
 
         if (!many && shareFiles.length > 1) {
-            uploadFileErrorMessage = shareFiles.every((it) => getFileContentTypeByMimeType(it.mime_type) === 'image') ?
+            uploadFileErrorMessage = shareFiles.every((it) => it.mime_type === 'image') ?
                 '' : 'We can\'t process it. Support for a bulk image or single video';
         } else if (many && shareFiles.length > 1) {
-            uploadFileErrorMessage = shareFiles.every((it) => getFileContentTypeByMimeType(it.mime_type) === 'video') ?
+            uploadFileErrorMessage = shareFiles.every((it) => it.mime_type === 'video') ?
                 '' : 'We can\'t process it. Support for a bulk videos';
         }
 
@@ -592,7 +592,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 fileName = getNameRemoteFile(file as string) || defaultFileName;
                 break;
             case 'share':
-                fileName = getNameShareFile(file as string) || defaultFileName; // TODO
+                fileName = (file as string) || defaultFileName;
                 break;
             default:
                 fileName = (file as File)?.name || (file as string) || defaultFileName;
