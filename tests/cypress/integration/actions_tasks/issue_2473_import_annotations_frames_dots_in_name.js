@@ -83,8 +83,8 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     describe(`Testing case "${issueId}"`, () => {
         it('Save job. Dump annotation to YOLO format. Remove annotation. Save job.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
-            cy.intercept('GET', '/api/tasks/**/annotations**').as('dumpAnnotations');
-            cy.interactMenu('Export task dataset');
+            cy.intercept('GET', '/api/jobs/**/annotations**').as('dumpAnnotations');
+            cy.interactMenu('Export job dataset');
             cy.get('.cvat-modal-export-select').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden');
@@ -92,9 +92,9 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
                 .contains('.cvat-modal-export-option-item', dumpType)
                 .click();
             cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
-            cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
-            cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-export-task-start');
+            cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
+            cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-export-job-start');
             cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);
             cy.verifyNotification();

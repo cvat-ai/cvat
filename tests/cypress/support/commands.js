@@ -855,6 +855,24 @@ Cypress.Commands.add('exportTask', ({
     cy.closeNotification('.cvat-notification-notice-export-task-start');
 });
 
+Cypress.Commands.add('exportJob', ({
+    type, format, archiveCustomeName,
+}) => {
+    cy.interactMenu('Export job dataset');
+    cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
+    cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
+    if (type === 'dataset') {
+        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-save-images').should('not.be.checked').click();
+    }
+    if (archiveCustomeName) {
+        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    }
+    cy.contains('button', 'OK').click();
+    cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
+    cy.closeNotification('.cvat-notification-notice-export-job-start');
+});
+
 Cypress.Commands.add('renameTask', (oldName, newName) => {
     cy.get('.cvat-task-details-task-name').within(() => {
         cy.get('[aria-label="edit"]').click();

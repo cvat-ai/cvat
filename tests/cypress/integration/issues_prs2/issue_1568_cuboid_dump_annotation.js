@@ -35,7 +35,7 @@ context('Dump annotation if cuboid created.', () => {
                 type: 'annotations',
                 format: exportFormat,
             };
-            cy.exportTask(exportAnnotation);
+            cy.exportJob(exportAnnotation);
             cy.waitForDownload();
         });
 
