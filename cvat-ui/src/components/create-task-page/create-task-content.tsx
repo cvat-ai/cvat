@@ -22,8 +22,6 @@ import {
     getFileContentType,
     getContentTypeRemoteFile,
     getNameRemoteFile,
-    getNameShareFile,
-    getFileContentTypeByMimeType,
 } from 'utils/files';
 
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
@@ -491,12 +489,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.validateBlocks()
             .then(() => {
                 this.addMultiTasks();
-            })
-            .then(() => {
-                notification.info({
-                    message: 'Tasks started to be created',
-                    className: 'cvat-notification-create-task-success',
-                });
             })
             .then(this.createMultiTasks)
             .then(() => {
