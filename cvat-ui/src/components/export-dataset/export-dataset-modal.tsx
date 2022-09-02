@@ -75,7 +75,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
             }
         }
-    }, [instance?.id, instance instanceof core.classes.Project]);
+    }, [instance]);
 
     useEffect(() => {
         if (instance) {
@@ -101,7 +101,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     });
             }
         }
-    }, [instance?.id, instance?.targetStorage]);
+    }, [instance]);
 
     useEffect(() => {
         // eslint-disable-next-line prefer-template
@@ -133,7 +133,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 ),
             );
             closeModal();
-            const resource = instanceType.includes('project') ? 'Dataset' : 'Annotations';
+            const resource = values.saveImages ? 'Dataset' : 'Annotations';
             Notification.info({
                 message: `${resource} export started`,
                 description:
@@ -142,7 +142,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
-        [instance, instanceType, targetStorage],
+        [instance, useDefaultTargetStorage, targetStorage],
     );
 
     return (

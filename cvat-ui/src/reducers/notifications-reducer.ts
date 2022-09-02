@@ -382,9 +382,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { instance, instanceType, isLocal } = action.payload;
-            const resource = instanceType === 'project' ? 'Dataset' : 'Annotations';
-            const auxiliaryVerb = instanceType === 'project' ? 'has' : 'have';
+            const { instance, instanceType, isLocal, resource } = action.payload;
+            const auxiliaryVerb = resource === 'Dataset' ? 'has' : 'have';
             return {
                 ...state,
                 messages: {

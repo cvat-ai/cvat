@@ -134,7 +134,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 setInstanceType(`job #${instance.id}`);
             }
         }
-    }, [instance?.id, resource, instance?.sourceStorage]);
+    }, [instance, resource]);
 
     useEffect(() => {
         setHelpMessage(
@@ -273,7 +273,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     const handleImport = useCallback(
         (values: FormValues): void => {
-            if (file === null && !values.fileName) {
+            if (uploadParams.file === null && !values.fileName) {
                 Notification.error({
                     message: `No ${uploadParams.resource} file specified`,
                 });
@@ -287,7 +287,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             }
             closeModal();
         },
-        [instance?.id, uploadParams],
+        [instance, uploadParams],
     );
 
     return (

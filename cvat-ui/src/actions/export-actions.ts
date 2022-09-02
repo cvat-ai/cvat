@@ -37,12 +37,14 @@ export const exportActions = {
         instanceType: 'project' | 'task' | 'job',
         format: string,
         isLocal: boolean,
+        resource: 'Dataset' | 'Annotations',
     ) => (
         createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, {
             instance,
             instanceType,
             format,
-            isLocal
+            isLocal,
+            resource,
         })
     ),
     exportDatasetFailed: (instance: any, instanceType: 'project' | 'task' | 'job', format: string, error: any) => (
@@ -97,7 +99,8 @@ export const exportDatasetAsync = (
             downloadAnchor.href = result;
             downloadAnchor.click();
         }
-        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result));
+        const resource = saveImages ? 'Dataset' : 'Annotations';
+        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!result, resource));
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
     }

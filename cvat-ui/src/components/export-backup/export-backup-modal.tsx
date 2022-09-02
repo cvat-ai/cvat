@@ -57,14 +57,14 @@ function ExportBackupModal(): JSX.Element {
         } else if (instance instanceof core.classes.Task) {
             setInstanceType(`task #${instance.id}`);
         }
-    }, [instance?.id, instance instanceof core.classes.Project]);
+    }, [instance]);
 
     useEffect(() => {
         if (instance) {
             setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
             setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
         }
-    }, [instance?.id, instance?.targetStorage]);
+    }, [instance]);
 
     useEffect(() => {
         // eslint-disable-next-line prefer-template
@@ -106,7 +106,7 @@ function ExportBackupModal(): JSX.Element {
                 className: 'cvat-notification-notice-export-backup-start',
             });
         },
-        [instance, instanceType, useDefaultStorage],
+        [instance, useDefaultStorage],
     );
 
     return (
