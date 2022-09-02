@@ -403,7 +403,7 @@
             }, {});
 
             // first clear all server ids which may exist in the object being splitted
-            const copy = trackFactory(object.toJSON(), ++this.count, this.injection);
+            const copy = trackFactory(object.toJSON(), -1, this.injection);
             copy.clearServerID();
             const exported = copy.toJSON();
 
