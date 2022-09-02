@@ -7,6 +7,7 @@ import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 import Tooltip from 'antd/lib/tooltip';
 import Form, { FormInstance } from 'antd/lib/form';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 export interface BaseConfiguration {
     name: string;
@@ -108,6 +109,8 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                         )}
                         >
                             When forming the name, a template is used.
+                            {' '}
+                            <QuestionCircleOutlined />
                         </Tooltip>
                     </Text>
                 ) : null}
