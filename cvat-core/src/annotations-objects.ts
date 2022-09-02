@@ -446,7 +446,7 @@ class Annotation {
         }
     }
 
-    _clearServerID(): void {
+    clearServerID(): void {
         this.serverID = undefined;
     }
 
@@ -509,7 +509,7 @@ class Annotation {
 
     public set removed(value: boolean) {
         if (value) {
-            this._clearServerID();
+            this.clearServerID();
         }
         this._removed = value;
     }
@@ -1162,9 +1162,8 @@ export class Track extends Drawn {
         }
     }
 
-    _clearServerID(): void {
-        /* eslint-disable-next-line no-underscore-dangle */
-        Drawn.prototype._clearServerID.call(this);
+    clearServerID(): void {
+        Drawn.prototype.clearServerID.call(this);
         for (const keyframe of Object.keys(this.shapes)) {
             this.shapes[keyframe].serverID = undefined;
         }
@@ -2156,12 +2155,10 @@ export class SkeletonShape extends Shape {
         }
     }
 
-    _clearServerID(): void {
-        /* eslint-disable-next-line no-underscore-dangle */
-        Shape.prototype._clearServerID.call(this);
+    clearServerID(): void {
+        Shape.prototype.clearServerID.call(this);
         for (const element of this.elements) {
-            /* eslint-disable-next-line no-underscore-dangle */
-            element._clearServerID();
+            element.clearServerID();
         }
     }
 
@@ -2722,6 +2719,11 @@ export class SkeletonTrack extends Track {
     constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.SKELETON;
+
+        for (const shape of Object.values(this.shapes)) {
+            delete shape.points;
+        }
+
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
         this.elements = data.elements.map((element: RawTrackData['elements'][0]) => (
@@ -2748,12 +2750,10 @@ export class SkeletonTrack extends Track {
         }
     }
 
-    _clearServerID(): void {
-        /* eslint-disable-next-line no-underscore-dangle */
-        Track.prototype._clearServerID.call(this);
+    clearServerID(): void {
+        Track.prototype.clearServerID.call(this);
         for (const element of this.elements) {
-            /* eslint-disable-next-line no-underscore-dangle */
-            element._clearServerID();
+            element.clearServerID();
         }
     }
 
