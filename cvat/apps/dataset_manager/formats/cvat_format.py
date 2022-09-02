@@ -11,6 +11,9 @@ import zipfile
 from collections import OrderedDict
 from tempfile import TemporaryDirectory
 from defusedxml import ElementTree
+import json
+
+from django.conf import settings
 
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.extractor import Importer, Extractor, DEFAULT_SUBSET_NAME
@@ -1043,13 +1046,34 @@ def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectDat
         with open(img_path, 'wb') as f:
             f.write(frame_data.getvalue())
 
+
+def dump_s3_files(task_data: TaskData, img_dir: str):
+    # does not work with video.
+    # does not use project info for now.
+
+    name_url_map = {}
+    for file in task_data.db_task.data.s3_files.all():
+        name_url_map[file.file.name] = file.file.url
+
+    image_urls_path = osp.join(img_dir, 'image_urls.txt')
+    with open(image_urls_path, 'w') as f:
+        f.write('\n'.join(name_url_map.values()))
+
+    name_url_map_path = osp.join(img_dir, 'image_urls.json')
+    with open(name_url_map_path, 'w') as f:
+        f.write(json.dumps(name_url_map))
+
+
 def _export_task(dst_file, task_data, anno_callback, save_images=False):
     with TemporaryDirectory() as temp_dir:
         with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
             dump_task_anno(f, task_data, anno_callback)
 
         if save_images:
-            dump_media_files(task_data, osp.join(temp_dir, 'images'))
+            if settings.USE_S3:
+                dump_s3_files(task_data, temp_dir)
+            else:
+                dump_media_files(task_data, osp.join(temp_dir, 'images'))
 
         make_zip_archive(temp_dir, dst_file)
 
