@@ -19,7 +19,6 @@ module.exports = {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname,
     },
-    ignorePatterns: ['tests/**/*.js'],
     plugins: ['jest'],
     rules: {
         'jest/no-disabled-tests': 'warn',
@@ -27,5 +26,4 @@ module.exports = {
         'jest/no-identical-title': 'error',
         'jest/prefer-to-have-length': 'warn',
     },
-    ignorePatterns: ['tests/**/*.js']
 };
