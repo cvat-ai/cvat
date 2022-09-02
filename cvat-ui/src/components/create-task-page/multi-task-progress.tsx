@@ -63,24 +63,24 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                         </>
                     ) :
                         null}
-                    pending:
+                    pending:&nbsp;
                     {countPending}
                     ,
-                    progress:
+                    progress:&nbsp;
                     {countProgress}
                     ,
-                    completed:
+                    completed:&nbsp;
                     {countCompleted}
                     ,
-                    failed:
+                    failed:&nbsp;
                     {countFailed}
+                    ,
                     {
                         countCancelled ?
                             ` cancelled: ${countCancelled}, ` :
                             null
                     }
-                    ,
-                    total:
+                    total:&nbsp;
                     {countAll}
                     .
                     <Progress
