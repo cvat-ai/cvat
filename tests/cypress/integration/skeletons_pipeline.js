@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 context('Manipulations with skeletons', () => {
+    const skeletonSize = 5;
     const labelName = 'skeleton';
     const taskName = 'skeletons main pipeline';
     const imagesFolder = `cypress/fixtures/${taskName}`;
@@ -23,7 +24,6 @@ context('Manipulations with skeletons', () => {
     before(() => {
         cy.visit('auth/login');
         cy.login();
-
         cy.imageGenerator(
             imagesFolder,
             taskName,
@@ -36,6 +36,19 @@ context('Manipulations with skeletons', () => {
             imageParams.count,
         );
         cy.createZipArchive(imagesFolder, archivePath);
+    });
+
+    after(() => {
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.request({
+                method: 'DELETE',
+                url: `/api/tasks/${taskID}`,
+                headers: {
+                    Authorization: `Token ${authKey}`,
+                },
+            });
+        });
     });
 
     describe('Create a task with skeletons', () => {
@@ -59,6 +72,7 @@ context('Manipulations with skeletons', () => {
                 { x: 0.63, y: 0.38 },
                 { x: 0.27, y: 0.15 },
             ];
+            expect(skeletonSize).to.be.equal(pointsOffset.length);
 
             cy.get('.cvat-skeleton-configurator-svg').then(($canvas) => {
                 const canvas = $canvas[0];
@@ -119,28 +133,96 @@ context('Manipulations with skeletons', () => {
     });
 
     describe('Working with objects', () => {
-        it('Creating and removing a skeleton shape', () => {
+        function createSkeletonObject(shapeType) {
+            cy.createSkeleton({
+                labelName,
+                xtl: 100,
+                ytl: 100,
+                xbr: 300,
+                ybr: 300,
+                type: `${shapeType[0].toUpperCase()}${shapeType.slice(1).toLowerCase()}`,
+            });
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.get('#cvat-objects-sidebar-state-item-1').should('exist').and('be.visible')
+                .within(() => {
+                    cy.get('.cvat-objects-sidebar-state-item-object-type-text').should('have.text', `SKELETON ${shapeType}`.toUpperCase());
+                    cy.get('.cvat-objects-sidebar-state-item-label-selector').within(() => {
+                        cy.get('input').should('be.disabled');
+                    });
+                    cy.get('.cvat-objects-sidebar-state-item-elements-collapse').should('exist').and('be.visible').click();
+                    cy.get('.cvat-objects-sidebar-state-item-elements').should('have.length', skeletonSize);
+                });
+        }
 
+        function deleteSkeleton(selector, shapeType, force) {
+            cy.get(selector).trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type(force ? '{shift}{del}' : '{del}');
+            if (shapeType.toLowerCase() === 'track' && !force) {
+                cy.get('.cvat-remove-object-confirm-wrapper').should('exist').and('be.visible');
+                cy.get('.ant-modal-content').within(() => {
+                    cy.contains('Yes').click();
+                });
+            }
+            cy.get(selector).should('not.exist');
+        }
+
+        it('Creating and removing a skeleton shape', () => {
+            createSkeletonObject('shape');
+            deleteSkeleton('#cvat_canvas_shape_1', 'shape', false);
+            cy.removeAnnotations();
         });
 
         it('Creating and removing a skeleton track', () => {
+            createSkeletonObject('track');
+            deleteSkeleton('#cvat_canvas_shape_1', 'track', false);
 
+            cy.removeAnnotations();
+
+            createSkeletonObject('track');
+            deleteSkeleton('#cvat_canvas_shape_1', 'track', true);
+
+            cy.removeAnnotations();
         });
 
-        it('Merging two skeletons', () => {
+        it('Splitting two skeletons and merge them back', () => {
+            createSkeletonObject('track');
 
-        });
+            const splittingFrame = Math.trunc(imageParams.count / 2);
+            cy.goCheckFrameNumber(splittingFrame);
 
-        it('Splitting two skeletons', () => {
+            cy.get('.cvat-split-track-control').click();
+            cy.get('#cvat_canvas_shape_1').click().click();
 
-        });
+            // check objects after splitting
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+            cy.get('#cvat_canvas_shape_18').should('exist').and('not.be.visible');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
 
-        it('Resizing and dragging a skeleton', () => {
+            cy.goToNextFrame(splittingFrame + 1);
 
-        });
+            cy.get('#cvat_canvas_shape_18').should('not.exist');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
 
-        it('Lock, outside, hidden, occluded', () => {
+            // now merge them back
+            cy.get('.cvat-merge-control').click();
+            cy.get('#cvat_canvas_shape_24').click();
 
+            cy.goCheckFrameNumber(0);
+
+            cy.get('#cvat_canvas_shape_18').click();
+            cy.get('body').type('m');
+
+            // and check objects after merge
+            cy.get('#cvat_canvas_shape_18').should('not.exist');
+            cy.get('#cvat_canvas_shape_24').should('not.exist');
+
+            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.goCheckFrameNumber(splittingFrame + 1);
+            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.goCheckFrameNumber(imageParams.count - 1);
+            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+
+            cy.removeAnnotations();
         });
     });
 });
