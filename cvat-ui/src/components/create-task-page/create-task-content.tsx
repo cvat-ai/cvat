@@ -86,6 +86,11 @@ const defaultState: State = {
     statusInProgressTask: '',
 };
 
+const UploadFileErrorMessages = {
+    one: 'We can\'t process it. Support for a bulk image or single video',
+    multi: 'We can\'t process it. Support for a bulk videos',
+};
+
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
     private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
@@ -206,9 +211,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let uploadFileErrorMessage = '';
 
         if (!many && uploadedFiles.length > 1) {
-            uploadFileErrorMessage = uploadedFiles.every((it) => (getFileContentType(it) === 'image' || it.name === 'manifest.jsonl')) ? '' : 'We can\'t process it. Support for a bulk image or single video';
-        } else if (many && uploadedFiles.length > 1) {
-            uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'video') ? '' : 'We can\'t process it. Support for a bulk videos';
+            uploadFileErrorMessage = uploadedFiles.every((it) => (getFileContentType(it) === 'image' || it.name === 'manifest.jsonl')) ? '' : UploadFileErrorMessages.one;
+        } else if (many) {
+            uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'video') ? '' : UploadFileErrorMessages.multi;
         }
 
         this.setState({
@@ -239,17 +244,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 while (index < length) {
                     const isImageFile = await getContentTypeRemoteFile(urls[index]) === 'image';
                     if (!isImageFile) {
-                        uploadFileErrorMessage = 'We can\'t process it. Support for a bulk image or single video';
+                        uploadFileErrorMessage = UploadFileErrorMessages.one;
                         break;
                     }
                     index++;
                 }
-            } else if (many && length > 1) {
+            } else if (many) {
                 let index = 0;
                 while (index < length) {
                     const isVideoFile = await getContentTypeRemoteFile(urls[index]) === 'video';
                     if (!isVideoFile) {
-                        uploadFileErrorMessage = 'We can\'t process it. Support for a bulk videos';
+                        uploadFileErrorMessage = UploadFileErrorMessages.multi;
                         break;
                     }
                     index++;
@@ -285,10 +290,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         if (!many && shareFiles.length > 1) {
             uploadFileErrorMessage = shareFiles.every((it) => it.mime_type === 'image') ?
-                '' : 'We can\'t process it. Support for a bulk image or single video';
-        } else if (many && shareFiles.length > 1) {
+                '' : UploadFileErrorMessages.one;
+        } else if (many) {
             uploadFileErrorMessage = shareFiles.every((it) => it.mime_type === 'video') ?
-                '' : 'We can\'t process it. Support for a bulk videos';
+                '' : UploadFileErrorMessages.multi;
         }
 
         this.setState({
