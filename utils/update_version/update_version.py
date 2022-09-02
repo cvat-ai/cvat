@@ -166,7 +166,16 @@ def main() -> None:
     for v, v_config in version_types.items():
         parser.add_argument(f'--{v}', **v_config)
 
+    parser.add_argument('--current', '--show-current',
+        action='store_true', help='Display current version')
+
     args = parser.parse_args()
+
+    version_str, version = get_current_version()
+
+    if args.current:
+        print(version)
+        return
 
     try:
         verify_input(version_types, vars(args))
@@ -174,8 +183,6 @@ def main() -> None:
         print(f'\u2716 ERROR: {e}\n')
         parser.print_help()
         return
-
-    version_str, version = get_current_version()
 
     if args.prerelease_number:
         version.increment_prerelease_number()
