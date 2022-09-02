@@ -400,7 +400,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ExportActionTypes.EXPORT_BACKUP_FAILED: {
-            const { instanceId, instanceType } = action.payload;
+            const { instance, instanceType } = action.payload;
             return {
                 ...state,
                 errors: {
@@ -409,7 +409,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.exporting,
                         backup: {
                             message:
-                                `Could not export the ${instanceType} №${instanceId}`,
+                                `Could not export the ${instanceType} №${instance.id}`,
                             reason: action.payload.error.toString(),
                         },
                     },
