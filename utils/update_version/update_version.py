@@ -5,7 +5,7 @@ import re
 
 
 CVAT_VERSION_PATTERN = r'VERSION\s*=\s*\((\d+),\s*(\d*),\s*(\d+),\s*[\',\"](\w+)[\',\"],\s*(\d+)\)'
-COMPOSE_VERSION_PATTERN = r'(\$\{CVAT_VERSION:-)(\w+)\}'
+COMPOSE_VERSION_PATTERN = r'(\$\{CVAT_VERSION:-)([\w.]+)(\})'
 
 @dataclass()
 class Version:
@@ -76,18 +76,24 @@ def update_compose_config(new_version: Version) -> None:
     with open(compose_file, 'r') as fp:
         compose_text = fp.read()
 
-    if new_version.prerelease != 'final':
-        current_point = re.search(COMPOSE_VERSION_PATTERN, compose_text)[2]
-        print(f'''\u2716 WARNING: {compose_file} was not updated due to non-final prerelease version
-        and currenlty point to '{current_point}' tag.\n''')
-        return
+    if new_version.prerelease == 'final':
+        new_version_repr = new_version.compose_repr()
+    else:
+        new_version_repr = 'dev'
 
-    compose_text = re.sub(COMPOSE_VERSION_PATTERN, new_version.compose_repr(), compose_text)
+    match = re.search(COMPOSE_VERSION_PATTERN, compose_text)
+    if not match:
+        raise RuntimeError('Cannot match version pattern')
 
-    with open(compose_file, 'w') as fp:
-        fp.write(compose_text)
+    if match[2] != new_version_repr:
+        compose_text = re.sub(COMPOSE_VERSION_PATTERN, f'\\g<1>{new_version_repr}\\g<3>', compose_text)
+        with open(compose_file, 'w') as fp:
+            fp.write(compose_text)
 
-    print(f'\u2714 {compose_file} was updated.\n')
+        print(f'\u2714 {compose_file} was updated. {match[2]} -> {new_version_repr}\n')
+
+    else:
+        print(f'\u2714 {compose_file} no need to update.')
 
 def update_cvat_version(old_version: str, new_version: Version) -> None:
     version_file = get_cvat_version_filename()
@@ -100,7 +106,7 @@ def update_cvat_version(old_version: str, new_version: Version) -> None:
     with open(version_file, 'w') as fp:
         fp.write(version_text)
 
-    print(f'\u2714 {version_file} was updated.\n')
+    print(f'\u2714 {version_file} was updated. {old_version} -> {new_version_str}\n')
 
 def verify_input(version_types: dict, args: dict) -> None:
     versions_to_bump = [args[v_type] for v_type in version_types]
