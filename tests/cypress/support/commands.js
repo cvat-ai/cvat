@@ -1,8 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+/* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix } from './utils';
 
@@ -386,6 +389,22 @@ Cypress.Commands.add('createEllipse', (createEllipseParams) => {
         .click(createEllipseParams.rightX, createEllipseParams.topY);
     cy.checkPopoverHidden('draw-ellipse');
     cy.checkObjectParameters(createEllipseParams, 'ELLIPSE');
+});
+
+Cypress.Commands.add('createSkeleton', (skeletonParameters) => {
+    cy.interactControlButton('draw-skeleton');
+    cy.switchLabel(skeletonParameters.labelName, 'draw-skeleton');
+    cy.get('.cvat-draw-skeleton-popover').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
+        });
+        cy.contains('button', skeletonParameters.type).click();
+    });
+    cy.get('.cvat-canvas-container')
+        .click(skeletonParameters.xtl, skeletonParameters.ytl)
+        .click(skeletonParameters.xbr, skeletonParameters.ybr);
+    cy.checkPopoverHidden('draw-skeleton');
+    cy.checkObjectParameters(skeletonParameters, 'SKELETON');
 });
 
 Cypress.Commands.add('changeAppearance', (colorBy) => {
@@ -887,35 +906,30 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         .trigger('mouseover')
         .should('have.class', 'cvat_canvas_shape_activated');
     cy.get('.svg_select_points_rot').then(($el) => {
-        let { x, y, width, height } = $el[0].getBoundingClientRect();
+        const rect = $el[0].getBoundingClientRect();
+        let { x, y } = rect;
+        const { width, height } = rect;
         x += width / 2;
         y += height / 2;
 
-        cy.window().then((win) => {
-            const [container] = win.document.getElementsByClassName('cvat-canvas-container');
-            const {x: offsetX, y: offsetY} = container.getBoundingClientRect();
-            // x -= offsetX;
-            // y -= offsetY;
-            cy.get('#root')
-                .trigger('mousemove', x, y)
-                .trigger('mouseenter', x, y);
-            cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
-            cy.get('#root').trigger('mousedown', x, y, { button: 0 });
-            if (pressShift) {
-                cy.get('body').type('{shift}', { release: false });
-            }
-            cy.get('#root').trigger('mousemove', x + 20, y);
-            cy.get(shape).should('have.attr', 'transform');
-            cy.document().then((doc) => {
-                const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
-                cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
-                expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
-            });
-            cy.get('#root').trigger('mouseup');
-        })
+        cy.get('#root')
+            .trigger('mousemove', x, y)
+            .trigger('mouseenter', x, y);
+        cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
+        cy.get('#root').trigger('mousedown', x, y, { button: 0 });
+        if (pressShift) {
+            cy.get('body').type('{shift}', { release: false });
+        }
+        cy.get('#root').trigger('mousemove', x + 20, y);
+        cy.get(shape).should('have.attr', 'transform');
+        cy.document().then((doc) => {
+            const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
+            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
+            expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
+        });
+        cy.get('#root').trigger('mouseup');
     });
-
 });
 
 Cypress.Commands.add('deleteFrame', (action = 'delete') => {
