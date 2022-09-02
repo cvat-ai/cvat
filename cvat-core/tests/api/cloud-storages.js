@@ -14,6 +14,8 @@ window.cvat = require('../../src/api');
 const { CloudStorage } = require('../../src/cloud-storage');
 const { cloudStoragesDummyData } = require('../mocks/dummy-data.mock');
 
+
+
 describe('Feature: get cloud storages', () => {
     test('get all cloud storages', async () => {
         const result = await window.cvat.cloudStorages.get();

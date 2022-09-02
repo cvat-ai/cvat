@@ -16,12 +16,12 @@ module.exports = (stagedFiles) => {
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
     const scssFiles = micromatch(stagedFiles, scssExtensions);
 
-    const tests = containsInPath('/tests/', eslintFiles);
-    const cvatData = containsInPath('/cvat-data/', eslintFiles);
-    const cvatCore = containsInPath('/cvat-core/', eslintFiles);
-    const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
-    const cvatCanvas3d = containsInPath('/cvat-canvas3d/', eslintFiles);
-    const cvatUI = containsInPath('/cvat-ui/', eslintFiles);
+    const tests = containsInPath('/tests/cypress', eslintFiles);
+    const cvatData = containsInPath('/cvat-data/src', eslintFiles);
+    const cvatCore = containsInPath('/cvat-core/src', eslintFiles);
+    const cvatCanvas = containsInPath('/cvat-canvas/src', eslintFiles);
+    const cvatCanvas3d = containsInPath('/cvat-canvas3d/src', eslintFiles);
+    const cvatUI = containsInPath('/cvat-ui/src', eslintFiles);
 
     const mapping = {};
     const commands = [];
