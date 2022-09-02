@@ -72,6 +72,7 @@ from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
 from .log import clogger, slogger
@@ -841,7 +842,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     # UploadMixin method
     def upload_finished(self, request):
         if self.action == 'annotations':
-            # db_task = self.get_object()
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             tmp_dir = self._object.get_tmp_dirname()
@@ -1077,13 +1077,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PUT':
             format_name = request.query_params.get('format')
             if format_name:
-                return self.import_annotations(
+                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                obj = self._object if use_settings else request.query_params
+                location_conf = get_location_configuration(
+                    obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
+                )
+                return _import_annotations(
                     request=request,
-                    pk=pk,
-                    db_obj=self._object,
-                    import_func=_import_annotations,
+                    rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_task_annotations,
-                    rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk)
+                    pk=pk,
+                    format_name=format_name,
+                    location_conf=location_conf
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
@@ -1422,13 +1427,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
-                return self.import_annotations(
+                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                obj = self._object.segment.task if use_settings else request.query_params
+                location_conf = get_location_configuration(
+                    obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
+                )
+                return _import_annotations(
                     request=request,
-                    pk=pk,
-                    db_obj=self._object.segment.task,
-                    import_func=_import_annotations,
+                    rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_job_annotations,
-                    rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk)
+                    pk=pk,
+                    format_name=format_name,
+                    location_conf=location_conf
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
