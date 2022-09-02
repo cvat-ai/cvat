@@ -13,12 +13,26 @@ def current_function_name(depth=1):
     return inspect.getouterframes(inspect.currentframe())[depth].function
 
 
+def _archive(src_path, dst_path, mode='w'):
+    if osp.isfile(src_path):
+        with zipfile.ZipFile(dst_path, mode) as archive:
+            archive.write(src_path, osp.basename(src_path))
+    elif osp.isdir(src_path):
+        with zipfile.ZipFile(dst_path, mode) as archive:
+            for (dirpath, _, filenames) in os.walk(src_path):
+                for name in filenames:
+                    path = osp.join(dirpath, name)
+                    archive.write(path, osp.relpath(path, src_path))
+    else:
+        raise ValueError('Unsupported path')
+
+
 def make_zip_archive(src_path, dst_path):
-    with zipfile.ZipFile(dst_path, 'w') as archive:
-        for (dirpath, _, filenames) in os.walk(src_path):
-            for name in filenames:
-                path = osp.join(dirpath, name)
-                archive.write(path, osp.relpath(path, src_path))
+    _archive(src_path, dst_path, 'w')
+
+
+def add_to_archive(src_path, dst_path):
+    _archive(src_path, dst_path, 'a')
 
 
 def bulk_create(db_model, objects, flt_param):
