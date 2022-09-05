@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import os.path as osp
-from typing import Optional
+from typing import List, Optional
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
@@ -19,6 +19,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelUpdateMixin,
     build_model_bases,
 )
+from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.uploading import DatasetUploader, Uploader
 
 _ProjectEntityBase, _ProjectRepoBase = build_model_bases(
@@ -109,6 +110,9 @@ class Project(
     def get_annotations(self) -> models.ILabeledData:
         (annotations, _) = self.api.retrieve_annotations(self.id)
         return annotations
+
+    def get_tasks(self) -> List[Task]:
+        return [Task(self._client, m) for m in self.api.list_tasks(id=self.id)[0]]
 
 
 class ProjectsRepo(

@@ -89,20 +89,20 @@ class TestCloudstorageUsecases:
     def test_can_get_storage_actions(self, fxt_storage_with_data: CloudStorage):
         actions = fxt_storage_with_data.get_actions()
 
-        assert actions == {'read', 'write'}
+        assert actions == {"read", "write"}
 
-    @pytest.mark.parametrize('manifest_path', ('', 'manifest.jsonl'))
-    def test_can_get_storage_manifest_contents(self,
-        fxt_storage_with_data: CloudStorage, manifest_path: str
+    @pytest.mark.parametrize("manifest_path", ("", "manifest.jsonl"))
+    def test_can_get_storage_manifest_contents(
+        self, fxt_storage_with_data: CloudStorage, manifest_path: str
     ):
         files = fxt_storage_with_data.get_content(manifest_path=manifest_path)
 
-        assert set(files) == {'image_case_65_1.png', 'image_case_65_2.png'}
+        assert set(files) == {"image_case_65_1.png", "image_case_65_2.png"}
 
     def test_can_get_storage_status(self, fxt_storage_with_data: CloudStorage):
         status = fxt_storage_with_data.get_status()
 
-        assert status == 'AVAILABLE'
+        assert status == "AVAILABLE"
 
     def test_can_get_cloud_storage_preview(self, fxt_storage_with_data: CloudStorage):
         preview = fxt_storage_with_data.get_preview()

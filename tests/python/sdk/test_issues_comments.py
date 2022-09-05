@@ -15,7 +15,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from shared.utils.config import USER_PASS
 
 
-class TestIssuesUsecases:
+class TestIssueUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -134,7 +134,7 @@ class TestIssuesUsecases:
         assert self.stdout.getvalue() == ""
 
 
-class TestCommentsUsecases:
+class TestCommentUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
