@@ -72,7 +72,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         "--https",
         default=False,
         action="store_true",
-        help="using https connection (default: %(default)s)",
+        help="force https connection (default: try to detect automatically)",
     )
     parser.add_argument(
         "--debug",
