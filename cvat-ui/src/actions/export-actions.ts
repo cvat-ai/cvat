@@ -110,7 +110,7 @@ export const exportBackupAsync = (
     instance: any,
     targetStorage: Storage,
     useDefaultSetting: boolean,
-    fileName?: string
+    fileName?: string,
 ): ThunkAction => async (dispatch) => {
     dispatch(exportActions.exportBackup(instance));
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
