@@ -70,7 +70,8 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 return WebhookWriteSerializer
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(owner=self.request.user,
+            organization=self.request.iam_context["organization"])
 
     @extend_schema(
         summary="Method return a list of available webhook events",

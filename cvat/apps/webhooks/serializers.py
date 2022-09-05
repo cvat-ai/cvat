@@ -67,14 +67,6 @@ class WebhookReadSerializer(serializers.ModelSerializer):
         source="deliveries.last.delivered_at", read_only=True
     )
 
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        if ret.get("type", "") == WebhookTypeChoice.PROJECT.value:
-            ret.pop(WebhookTypeChoice.ORGANIZATION.value)
-        elif ret.get("type", "") == WebhookTypeChoice.ORGANIZATION.value:
-            ret.pop(WebhookTypeChoice.PROJECT.value)
-        return ret
-
     class Meta:
         model = Webhook
         fields = (
