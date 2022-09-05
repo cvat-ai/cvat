@@ -5,7 +5,7 @@
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { PercentageOutlined, QuestionCircleFilled } from '@ant-design/icons';
+import { PercentageOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Select from 'antd/lib/select';
 import Space from 'antd/lib/space';
@@ -364,7 +364,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Form.Item>
                 <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
                 <Tooltip title='If annotation files are large, you can use git LFS feature.'>
-                    <QuestionCircleFilled style={{ opacity: 0.5 }} />
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
         );
@@ -451,7 +451,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Form.Item>
                 <Text className='cvat-text-color'>Use zip/video chunks</Text>
                 <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
-                    <QuestionCircleFilled style={{ opacity: 0.5 }} />
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
         );
@@ -469,7 +469,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Form.Item>
                 <Text className='cvat-text-color'>Use cache</Text>
                 <Tooltip title='Using cache to store data.'>
-                    <QuestionCircleFilled style={{ opacity: 0.5 }} />
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
         );

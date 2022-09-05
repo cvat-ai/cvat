@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import Tooltip from 'antd/lib/tooltip';
-import { QuestionCircleFilled, QuestionCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { StorageData } from 'cvat-core-wrapper';
 import { StorageLocation } from 'reducers';
@@ -81,8 +81,7 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                                 <Space>
                                     {storageLabel}
                                     <CVATTooltip title={storageDescription}>
-                                        <QuestionCircleFilled
-                                            // className='cvat-question-circle-filled-icon'
+                                        <QuestionCircleOutlined
                                             style={{ opacity: 0.5 }}
                                         />
                                     </CVATTooltip>
