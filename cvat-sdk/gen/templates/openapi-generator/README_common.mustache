@@ -14,6 +14,7 @@ Let's see how a task with local files can be created. We will use the basic auth
 to make things simpler.
 
 ```python
+from time import sleep
 from cvat_sdk.api_client import Configuration, ApiClient, models, apis, exceptions
 
 configuration = Configuration(
@@ -118,7 +119,7 @@ with make_client(host="{{{basePath}}}") as client:
 
     # Models are used the same way as in the layer 1
     task_spec = {
-        "name": f"example task 2",
+        "name": "example task 2",
         "labels": [
             {
                 "name": "car",
