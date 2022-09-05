@@ -39,8 +39,15 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
     const percent = countAll ?
         Math.ceil(((countAll - (countPending + countProgress)) / countAll) * 100) :
         0;
+
     const failedFiles: string[] = percent === 100 && countFailed ?
-        items.filter((item) => item.status === 'failed').map((item) => item.files.local[0].name) :
+        items.filter((item) => item.status === 'failed')
+            .map((item): string => {
+                const tabs = Object.keys(item.files);
+                const itemType = tabs.find((key) => (item.files[key][0])) || 'local';
+                return item.files[itemType][0]?.name || item.files[itemType][0] || '';
+            })
+            .filter(Boolean) :
         [];
 
     if (percent === 100) {

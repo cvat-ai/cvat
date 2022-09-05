@@ -22,11 +22,22 @@ interface Props {
 export default class BasicConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
     private inputRef: RefObject<Input>;
+    private initialName: string;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
         this.inputRef = React.createRef<Input>();
+
+        const { many } = this.props;
+        this.initialName = many ? '{{file_name}}' : '';
+    }
+
+    componentDidMount(): void {
+        const { onChange } = this.props;
+        onChange({
+            name: this.initialName,
+        });
     }
 
     private handleChangeName(e: React.ChangeEvent<HTMLInputElement>): void {
@@ -58,7 +69,6 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const { many, exampleMultiTaskName } = this.props;
-        const initialValue = many ? '{{file_name}}' : '';
 
         return (
             <Form ref={this.formRef} layout='vertical'>
@@ -72,7 +82,7 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                             message: 'Task name cannot be empty',
                         },
                     ]}
-                    initialValue={initialValue}
+                    initialValue={this.initialName}
                 >
                     <Input
                         ref={this.inputRef}

@@ -589,7 +589,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 fileName = getNameRemoteFile(file as string) || defaultFileName;
                 break;
             case 'share':
-                fileName = (file as string) || defaultFileName;
+                fileName = getNameRemoteFile(file as string) || defaultFileName;
                 break;
             default:
                 fileName = (file as File)?.name || (file as string) || defaultFileName;
