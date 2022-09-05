@@ -1,2 +1,2 @@
-cvat-sdk==2.0
+cvat-sdk==2.0a1.*
 Pillow>=6.2.0
