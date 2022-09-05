@@ -76,13 +76,13 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
         });
 
         it('Upload "Velodyne Points" format annotation to job.', () => {
+            cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.interactMenu('Upload annotations');
             uploadAnnotation(
                 dumpTypeVC.split(' ')[0],
                 annotationVCArchiveName,
                 '.cvat-modal-content-load-job-annotation',
             );
-            cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');

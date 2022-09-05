@@ -76,13 +76,13 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
         });
 
         it('Upload "Point Cloud" format annotation to job.', () => {
+            cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.interactMenu('Upload annotations');
             uploadAnnotation(
                 dumpTypePC.split(' ')[0],
                 annotationPCArchiveName,
                 '.cvat-modal-content-load-job-annotation',
             );
-            cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.verifyNotification();
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
