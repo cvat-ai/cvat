@@ -87,13 +87,9 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         }
     }, [instanceT]);
 
-    const isDataset = useCallback((): boolean => {
-        return resource === 'dataset';
-    }, [resource]);
+    const isDataset = useCallback((): boolean => resource === 'dataset', [resource]);
 
-    const isAnnotation = useCallback((): boolean => {
-        return resource === 'annotation';
-    }, [resource]);
+    const isAnnotation = useCallback((): boolean => resource === 'annotation', [resource]);
 
     useEffect(() => {
         setUploadParams({
@@ -126,10 +122,12 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         }
                     })
                     .catch((error: Error) => {
-                        Notification.error({
-                            message: `Could not get task instance ${instance.taskId}`,
-                            description: error.toString(),
-                        });
+                        if ((error as any).code !== 403) {
+                            Notification.error({
+                                message: `Could not get task instance ${instance.taskId}`,
+                                description: error.toString(),
+                            });
+                        }
                     });
                 setInstanceType(`job #${instance.id}`);
             }
@@ -140,45 +138,45 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         setHelpMessage(
             // eslint-disable-next-line prefer-template
             `Import from ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-            `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
+            `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`,
+        );
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
-    const uploadLocalFile = (): JSX.Element => {
-        return (
-            <Upload.Dragger
-                listType='text'
-                fileList={file ? [file] : ([] as any[])}
-                accept='.zip,.json,.xml'
-                beforeUpload={(_file: RcFile): boolean => {
-                    if (!selectedLoader) {
-                        message.warn('Please select a format first', 3);
-                    } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                        message.error('Only ZIP archive is supported for import a dataset');
-                    } else if (isAnnotation() &&
+    const uploadLocalFile = (): JSX.Element => (
+        <Upload.Dragger
+            listType='text'
+            fileList={file ? [file] : ([] as any[])}
+            accept='.zip,.json,.xml'
+            beforeUpload={(_file: RcFile): boolean => {
+                if (!selectedLoader) {
+                    message.warn('Please select a format first', 3);
+                } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
+                    message.error('Only ZIP archive is supported for import a dataset');
+                } else if (isAnnotation() &&
                             !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[_file.name.split('.').length - 1])) {
-                        message.error(
-                            `For ${selectedLoader.name} format only files with ` +
-                            `${selectedLoader.format.toLowerCase()} extension can be used`);
-                    } else {
-                        setFile(_file);
-                        setUploadParams({
-                            ...uploadParams,
-                            file: _file,
-                        } as UploadParams);
-                    }
-                    return false;
-                }}
-                onRemove={() => {
-                    setFile(null);
-                }}
-            >
-                <p className='ant-upload-drag-icon'>
-                    <InboxOutlined />
-                </p>
-                <p className='ant-upload-text'>Click or drag file to this area</p>
-            </Upload.Dragger>
-        );
-    };
+                    message.error(
+                        `For ${selectedLoader.name} format only files with ` +
+                            `${selectedLoader.format.toLowerCase()} extension can be used`,
+                    );
+                } else {
+                    setFile(_file);
+                    setUploadParams({
+                        ...uploadParams,
+                        file: _file,
+                    } as UploadParams);
+                }
+                return false;
+            }}
+            onRemove={() => {
+                setFile(null);
+            }}
+        >
+            <p className='ant-upload-drag-icon'>
+                <InboxOutlined />
+            </p>
+            <p className='ant-upload-text'>Click or drag file to this area</p>
+        </Upload.Dragger>
+    );
 
     const validateFileName = (_: RuleObject, value: string): Promise<void> => {
         if (!selectedLoader) {
@@ -192,7 +190,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 if (!allowedExtensions.includes(extension)) {
                     return Promise.reject(new Error(
                         `For ${selectedLoader.name} format only files with ` +
-                        `${selectedLoader.format.toLowerCase()} extension can be used`));
+                        `${selectedLoader.format.toLowerCase()} extension can be used`,
+                    ));
                 }
             }
             if (isDataset()) {
@@ -205,31 +204,29 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         return Promise.resolve();
     };
 
-    const renderCustomName = (): JSX.Element => {
-        return (
-            <Form.Item
-                label={<Text strong>File name</Text>}
-                name='fileName'
-                hasFeedback
-                dependencies={['selectedFormat']}
-                rules={[{ validator: validateFileName }]}
-                required
-            >
-                <Input
-                    placeholder='Dataset file name'
-                    className='cvat-modal-import-filename-input'
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        if (e.target.value) {
-                            setUploadParams({
-                                ...uploadParams,
-                                fileName: e.target.value,
-                            } as UploadParams);
-                        }
-                    }}
-                />
-            </Form.Item>
-        );
-    };
+    const renderCustomName = (): JSX.Element => (
+        <Form.Item
+            label={<Text strong>File name</Text>}
+            name='fileName'
+            hasFeedback
+            dependencies={['selectedFormat']}
+            rules={[{ validator: validateFileName }]}
+            required
+        >
+            <Input
+                placeholder='Dataset file name'
+                className='cvat-modal-import-filename-input'
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (e.target.value) {
+                        setUploadParams({
+                            ...uploadParams,
+                            fileName: e.target.value,
+                        } as UploadParams);
+                    }
+                }}
+            />
+        </Form.Item>
+    );
 
     const closeModal = useCallback((): void => {
         setUseDefaultSettings(true);
@@ -244,8 +241,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             dispatch(importDatasetAsync(
                 instance, uploadParams.selectedFormat as string,
                 uploadParams.useDefaultSettings, uploadParams.sourceStorage,
-                uploadParams.file || uploadParams.fileName as string)
-            );
+                uploadParams.file || uploadParams.fileName as string,
+            ));
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
                 message: `${resToPrint} import started`,
