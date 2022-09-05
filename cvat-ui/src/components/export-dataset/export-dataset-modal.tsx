@@ -142,7 +142,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
-        [instance, useDefaultTargetStorage, targetStorage],
+        [instance, instanceType, useDefaultTargetStorage, defaultStorageLocation, defaultStorageCloudId, targetStorage],
     );
 
     return (

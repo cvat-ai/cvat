@@ -106,7 +106,7 @@ function ExportBackupModal(): JSX.Element {
                 className: 'cvat-notification-notice-export-backup-start',
             });
         },
-        [instance, useDefaultStorage],
+        [instance, useDefaultStorage, defaultStorageLocation, defaultStorageCloudId],
     );
 
     return (
