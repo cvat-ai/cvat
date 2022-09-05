@@ -21,7 +21,7 @@ import { Files } from 'components/file-manager/file-manager';
 import {
     getFileContentType,
     getContentTypeRemoteFile,
-    getNameRemoteFile,
+    getFileNameFromPath,
 } from 'utils/files';
 
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
@@ -586,10 +586,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let fileName = defaultFileName;
         switch (fileManagerTabName) {
             case 'remote':
-                fileName = getNameRemoteFile(file as string) || defaultFileName;
+                fileName = getFileNameFromPath(file as string) || defaultFileName;
                 break;
             case 'share':
-                fileName = getNameRemoteFile(file as string) || defaultFileName;
+                fileName = getFileNameFromPath(file as string) || defaultFileName;
                 break;
             default:
                 fileName = (file as File)?.name || (file as string) || defaultFileName;
