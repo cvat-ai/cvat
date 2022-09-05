@@ -56,12 +56,12 @@ class _S3ResourceTest:
             bucket = storage['resource']
 
             # check that file doesn't exist on the bucket
-            self.s3_client.assert_file_does_not_exist(bucket, filename)
+            assert not self.s3_client.file_exists(bucket, filename)
 
             func(*args, **kwargs)
 
             # check that file exists on the bucket
-            self.s3_client.assert_file_exists(bucket, filename)
+            assert self.s3_client.file_exists(bucket, filename)
 
         return wrapper
 
@@ -117,7 +117,7 @@ class _S3ResourceTest:
             storage=cloud_storage)(*args, **kwargs)
 
         self.exit_stack.callback(
-            lambda: self.s3_client.remove_asset(cloud_storage['resource'], kwargs['filename']))
+            lambda: self.s3_client.remove_file(cloud_storage['resource'], kwargs['filename']))
 
 
 @pytest.mark.usefixtures('dontchangedb')

@@ -27,7 +27,10 @@ _ProjectEntityBase, _ProjectRepoBase = build_model_bases(
 
 
 class Project(
-    _ProjectEntityBase, models.IProjectRead, ModelUpdateMixin[models.IPatchedProjectWriteRequest]
+    _ProjectEntityBase,
+    models.IProjectRead,
+    ModelUpdateMixin[models.IPatchedProjectWriteRequest],
+    ModelDeleteMixin,
 ):
     _model_partial_update_arg = "patched_project_write_request"
 

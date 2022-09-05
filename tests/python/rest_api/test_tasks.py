@@ -7,6 +7,7 @@ import json
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
+from typing import List
 from cvat_sdk.api_client import models, apis
 from cvat_sdk.core.helpers import get_paginated_collection
 
@@ -17,12 +18,13 @@ from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 from .utils import export_dataset
 
-def get_cloud_storage_content(username, cloud_storage_id, manifest):
-    with make_api_client(username) as api_client:
-        (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id,
-            manifest_path=manifest)
+def get_cloud_storage_contents(
+    user: str, cloud_storage_id: int, manifest_path: str, **kwargs
+) -> List[str]:
+    with make_api_client(user) as client:
+        (data, _) = client.cloudstorages_api.retrieve_content(cloud_storage_id,
+            manifest_path=manifest_path, **kwargs)
         return data
-
 
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetTasks:
@@ -314,8 +316,13 @@ class TestPostTaskData:
         (2, 'sub/manifest.jsonl', True, 'org2'), # private bucket
     ])
     def test_create_task_with_cloud_storage_files(self, cloud_storage_id, manifest, use_bucket_content, org):
+        kwargs = {}
+        if org is not None:
+            kwargs['org'] = org
+
         if use_bucket_content:
-            cloud_storage_content = get_cloud_storage_content(self._USERNAME, cloud_storage_id, manifest)
+            cloud_storage_content = get_cloud_storage_contents(self._USERNAME,
+                cloud_storage_id, manifest, **kwargs)
         else:
             cloud_storage_content = ['image_case_65_1.png', 'image_case_65_2.png']
         cloud_storage_content.append(manifest)
@@ -336,4 +343,4 @@ class TestPostTaskData:
         }
 
         self._test_create_task(self._USERNAME, task_spec, data_spec,
-            content_type="application/json", org=org)
+            content_type="application/json", **kwargs)

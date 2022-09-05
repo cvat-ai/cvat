@@ -1939,7 +1939,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = HttpResponseBadRequest(str(ex))
         return response
 
-    @extend_schema(summary='Method returns a manifest content',
+    @extend_schema(summary='Method returns a manifest contents',
         parameters=[
             OpenApiParameter('manifest_path',
                 description='Path to the manifest file in a cloud storage',
@@ -1947,8 +1947,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 type=OpenApiTypes.STR),
         ],
         responses={
-            '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)),
-                description='A manifest content'),
+            '200': OpenApiResponse(build_array_type(build_basic_type(OpenApiTypes.STR)),
+                description='A manifest contents - a list of file paths.'),
+            '400': OpenApiResponse(description='Cloud storage configuration or operation problem'),
+            '404': OpenApiResponse(description='Cloud storage or file was not found'),
         })
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
@@ -2065,7 +2067,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 msg = str(ex)
             return HttpResponseBadRequest(msg)
 
-    @extend_schema(summary='Method returns a cloud storage status',
+    @extend_schema(summary='Method returns a cloud storage status (one of: {})'.format(
+            ', '.join(str(v) for v, _ in CloudStorageStatus.choices())),
         responses={
             '200': OpenApiResponse(
                 response=build_choice_field(serializers.ChoiceField(CloudStorageStatus.choices())),
@@ -2086,10 +2089,12 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
-    @extend_schema(summary='Method returns allowed actions for the cloud storage',
+    @extend_schema(
+        summary='Method returns allowed actions for the cloud storage (a list of: {})'.format(
+            ', '.join(str(v) for v, _ in Permissions.choices())),
         responses={
             '200': OpenApiResponse(
-                response=build_choice_field(serializers.ChoiceField(Permissions.choices())),
+                response=build_array_type(build_choice_field(serializers.ChoiceField(Permissions.choices()))),
                 description='Cloud Storage actions'),
         })
     @action(detail=True, methods=['GET'], url_path='actions')

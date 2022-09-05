@@ -145,10 +145,10 @@ class ModelListMixin(Generic[_EntityT]):
         ...
 
     @overload
-    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Any]:
+    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Dict[str, Any]]:
         ...
 
-    def list(self: Repo, *, return_json: bool = False) -> List[Union[_EntityT, Any]]:
+    def list(self: Repo, *, return_json: bool = False) -> List[Union[_EntityT, Dict[str, Any]]]:
         """
         Retrieves all objects from the server and returns them in basic or JSON format.
         """

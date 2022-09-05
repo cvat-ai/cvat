@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Type
+from typing import Sequence, Type
 from rest_framework import serializers
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from drf_spectacular.plumbing import force_instance, build_basic_type
@@ -22,7 +22,56 @@ def _copy_serializer(
     instance_kwargs.update(kwargs)
     return _new_type(*instance._args, **instance._kwargs)
 
-class DataSerializerExtension(OpenApiSerializerExtension):
+
+class _FieldReplacerExtension(OpenApiSerializerExtension):
+    """
+    Allows to replace separate fields using the target fields.
+    """
+
+    _EXPECTED_TARGET_FIELDS: Sequence[str]
+
+    def _get_field(
+        self,
+        instance: serializers.ModelSerializer,
+        source_name: str,
+        field_name: str,
+        expected_field_names: Sequence[str]
+    ) -> serializers.ModelField:
+        child_instance = force_instance(instance.fields[source_name].child)
+        assert isinstance(child_instance, serializers.ModelSerializer)
+
+        child_fields = child_instance.fields
+        assert child_fields.keys() == set(expected_field_names) # protection from implementation changes
+        return child_fields[field_name]
+
+    def _sanitize_field(self, field: serializers.ModelField) -> serializers.ModelField:
+        field.source = None
+        field.source_attrs = []
+        return field
+
+    def _make_field(self, instance: serializers.Serializer,
+            source_name: str, field_name: str) -> serializers.ModelField:
+        return self._sanitize_field(self._get_field(instance, source_name, field_name,
+            expected_field_names=self._EXPECTED_TARGET_FIELDS))
+
+    def _make_resulting_serializer(self, auto_schema, direction,
+            instance: serializers.Serializer) -> Type[serializers.Serializer]:
+        raise NotImplementedError
+
+    def map_serializer(self, auto_schema, direction):
+        assert issubclass(self.target_class, serializers.ModelSerializer)
+
+        instance = self.target
+        assert isinstance(instance, serializers.ModelSerializer)
+
+        new_type = self._make_resulting_serializer(auto_schema=auto_schema,
+            direction=direction, instance=instance)
+
+        return auto_schema._map_serializer(
+            _copy_serializer(instance, _new_type=new_type, context={'view': auto_schema.view}),
+            direction, bypass_extensions=False)
+
+class DataSerializerExtension(_FieldReplacerExtension):
     # *FileSerializer mimics a FileField
     # but it is mapped as an object with a file field, which
     # is different from what we have for a regular file
@@ -36,43 +85,34 @@ class DataSerializerExtension(OpenApiSerializerExtension):
 
     target_class = 'cvat.apps.engine.serializers.DataSerializer'
 
+    _EXPECTED_TARGET_FIELDS = {'file'}
+
+    def _make_resulting_serializer(self, auto_schema, direction, instance):
+        class _Override(self.target_class): # pylint: disable=inherit-non-class
+            client_files = serializers.ListField(
+                child=self._make_field(instance, 'client_files', 'file'), default=[])
+            server_files = serializers.ListField(
+                child=self._make_field(instance, 'server_files', 'file'), default=[])
+            remote_files = serializers.ListField(
+                child=self._make_field(instance, 'remote_files', 'file'), default=[])
+
+        return _Override
+
+class ManifestSerializerExtension(OpenApiSerializerExtension):
+    # ManifestSerializer mimics a string
+    # By default, it is mapped to an object with a filename field, but it is used as a string
+    # This class changes the result to be a simple string
+
+    target_class = 'cvat.apps.engine.serializers.ManifestSerializer'
+
     def map_serializer(self, auto_schema, direction):
         assert issubclass(self.target_class, serializers.ModelSerializer)
 
         instance = self.target
         assert isinstance(instance, serializers.ModelSerializer)
 
-        def _get_field(
-            instance: serializers.ModelSerializer,
-            source_name: str,
-            field_name: str
-        ) -> serializers.ModelField:
-            child_instance = force_instance(instance.fields[source_name].child)
-            assert isinstance(child_instance, serializers.ModelSerializer)
-
-            child_fields = child_instance.fields
-            assert child_fields.keys() == {'file'} # protection from implementation changes
-            return child_fields[field_name]
-
-        def _sanitize_field(field: serializers.ModelField) -> serializers.ModelField:
-            field.source = None
-            field.source_attrs = []
-            return field
-
-        def _make_field(source_name: str, field_name: str) -> serializers.ModelField:
-            return _sanitize_field(_get_field(instance, source_name, field_name))
-
-        class _Override(self.target_class): # pylint: disable=inherit-non-class
-            client_files = serializers.ListField(
-                child=_make_field('client_files', 'file'), default=[])
-            server_files = serializers.ListField(
-                child=_make_field('server_files', 'file'), default=[])
-            remote_files = serializers.ListField(
-                child=_make_field('remote_files', 'file'), default=[])
-
-        return auto_schema._map_serializer(
-            _copy_serializer(instance, _new_type=_Override, context={'view': auto_schema.view}),
-            direction, bypass_extensions=False)
+        assert instance.fields.keys() == {'filename'}
+        return build_basic_type(OpenApiTypes.STR)
 
 class WriteOnceSerializerExtension(OpenApiSerializerExtension):
     """

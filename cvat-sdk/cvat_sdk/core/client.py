@@ -15,6 +15,7 @@ import urllib3
 
 from cvat_sdk.api_client import ApiClient, Configuration, models
 from cvat_sdk.core.helpers import expect_status
+from cvat_sdk.core.proxies.cloudstorages import CloudStoragesRepo
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
@@ -120,6 +121,7 @@ class Client:
             "users": UsersRepo,
             "issues": IssuesRepo,
             "comments": CommentsRepo,
+            "cloud_storages": CloudStoragesRepo,
         }
 
         repo = self._repos.get(key, None)
@@ -151,6 +153,10 @@ class Client:
     @property
     def comments(self) -> CommentsRepo:
         return self._get_repo("comments")
+
+    @property
+    def cloud_storages(self) -> CloudStoragesRepo:
+        return self._get_repo("cloud_storages")
 
 
 class CVAT_API_V2:
