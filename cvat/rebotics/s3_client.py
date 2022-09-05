@@ -1,6 +1,6 @@
 import os
 from io import BytesIO, IOBase
-from tempfile import SpooledTemporaryFile
+from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from cvat.rebotics.utils import setting
 
 import boto3
@@ -47,6 +47,15 @@ class S3Client:
         self._client.download_fileobj(self.bucket, self._key(key), io)
         io.seek(0)
         return io
+
+    def download_to_temp(self, key, prefix='cvat', suffix=None) -> str:
+        """Caller is responsible for deleting the file"""
+        if suffix is None:
+            suffix = key.replace(os.path.sep, '#')
+        with NamedTemporaryFile(mode='w+b', prefix=prefix,
+                                suffix=suffix, delete=False) as f:
+            self.download_to_io(key, f)
+        return f.name
 
     def get_presigned_url(self, key: str, expires=DEFAULT_EXPIRES) -> str:
         url = self._client.generate_presigned_url(

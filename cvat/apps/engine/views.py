@@ -518,9 +518,9 @@ class DataChunkGetter:
             if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
                 buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
                 if settings.USE_CACHE_S3:
-                    # buff is an url to s3 storage, return url + mime in a json response
+                    # buff is an s3 key, return url + mime in a json response
                     return Response(data={
-                        'url': buff,
+                        'url': s3_client.get_presigned_url(buff),
                         'mime': mime_type
                     })
                 else:

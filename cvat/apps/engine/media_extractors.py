@@ -29,6 +29,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import VideoManifestManager, CachedIndexManifestManager, S3ManifestManager
+from cvat.rebotics.s3_client import s3_client
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -383,6 +384,28 @@ class ZipReader(ImageListReader):
         self._zip_source.extractall(self.extract_dir if self.extract_dir else os.path.dirname(self._zip_source.filename))
         if not self.extract_dir:
             os.remove(self._zip_source.filename)
+
+
+class S3ZipReader(ZipReader):
+    def __init__(self, source_path,
+                 step=1, start=0, stop=None,
+                 dimension=DimensionType.DIM_2D,
+                 sorting_method=SortingMethod.LEXICOGRAPHICAL,
+                 extract_dir=None):
+        source_path[0] = s3_client.download_to_temp(source_path[0])
+        if extract_dir is None:
+            extract_dir = os.path.splitext(source_path[0])[0]
+        super().__init__(source_path, step=step, start=start, stop=stop,
+                         dimension=dimension, sorting_method=sorting_method,
+                         extract_dir=extract_dir)
+
+    def __del__(self):
+        super().__del__()
+        if os.path.exists(self._zip_source.filename):
+            os.remove(self._zip_source.filename)
+        if os.path.exists(self.extract_dir):
+            os.rmdir(self.extract_dir)
+
 
 class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
