@@ -46,30 +46,28 @@ function ImportBackupModal(): JSX.Element {
         location: StorageLocation.LOCAL,
     });
 
-    const uploadLocalFile = (): JSX.Element => {
-        return (
-            <Upload.Dragger
-                listType='text'
-                fileList={file ? [file] : ([] as any[])}
-                beforeUpload={(_file: RcFile): boolean => {
-                    if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                        message.error('Only ZIP archive is supported');
-                    } else {
-                        setFile(_file);
-                    }
-                    return false;
-                }}
-                onRemove={() => {
-                    setFile(null);
-                }}
-            >
-                <p className='ant-upload-drag-icon'>
-                    <InboxOutlined />
-                </p>
-                <p className='ant-upload-text'>Click or drag file to this area</p>
-            </Upload.Dragger>
-        );
-    };
+    const uploadLocalFile = (): JSX.Element => (
+        <Upload.Dragger
+            listType='text'
+            fileList={file ? [file] : ([] as any[])}
+            beforeUpload={(_file: RcFile): boolean => {
+                if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
+                    message.error('Only ZIP archive is supported');
+                } else {
+                    setFile(_file);
+                }
+                return false;
+            }}
+            onRemove={() => {
+                setFile(null);
+            }}
+        >
+            <p className='ant-upload-drag-icon'>
+                <InboxOutlined />
+            </p>
+            <p className='ant-upload-text'>Click or drag file to this area</p>
+        </Upload.Dragger>
+    );
 
     const validateFileName = (_: RuleObject, value: string): Promise<void> => {
         if (value) {
@@ -82,20 +80,18 @@ function ImportBackupModal(): JSX.Element {
         return Promise.resolve();
     };
 
-    const renderCustomName = (): JSX.Element => {
-        return (
-            <Form.Item
-                label={<Text strong>File name</Text>}
-                name='fileName'
-                rules={[{ validator: validateFileName }]}
-            >
-                <Input
-                    placeholder='Backup file name'
-                    className='cvat-modal-import-filename-input'
-                />
-            </Form.Item>
-        );
-    };
+    const renderCustomName = (): JSX.Element => (
+        <Form.Item
+            label={<Text strong>File name</Text>}
+            name='fileName'
+            rules={[{ validator: validateFileName }]}
+        >
+            <Input
+                placeholder='Backup file name'
+                className='cvat-modal-import-filename-input'
+            />
+        </Form.Item>
+    );
 
     const closeModal = useCallback((): void => {
         setSelectedSourceStorage({
@@ -133,7 +129,14 @@ function ImportBackupModal(): JSX.Element {
     return (
         <>
             <Modal
-                title={<Text strong>Create {instanceType} from backup</Text>}
+                title={(
+                    <Text strong>
+                        Create
+                        {instanceType}
+                        {' '}
+                        from backup
+                    </Text>
+                )}
                 visible={modalVisible}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
