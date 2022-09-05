@@ -106,7 +106,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     useEffect(() => {
         // eslint-disable-next-line prefer-template
         setHelpMessage(`Export to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-                        `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`);
+                        `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
@@ -192,7 +192,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     </Select>
                 </Form.Item>
                 <Space>
-                    <Form.Item name='saveImages'>
+                    <Form.Item name='saveImages' className='cvat-modal-export-switch-use-default-storage'>
                         <Switch className='cvat-modal-export-save-images' />
                     </Form.Item>
                     <Text strong>Save images</Text>

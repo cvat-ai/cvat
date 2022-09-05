@@ -375,6 +375,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         <Form.Item
                             name='useDefaultSettings'
                             valuePropName='checked'
+                            className='cvat-modal-import-switch-use-default-storage'
                         >
                             <Switch
                                 onChange={(value: boolean) => {

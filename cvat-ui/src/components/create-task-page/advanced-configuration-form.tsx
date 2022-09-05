@@ -358,6 +358,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Form.Item
                     name='lfs'
                     valuePropName='checked'
+                    className='cvat-settings-switch'
                 >
                     <Switch />
                 </Form.Item>
@@ -444,6 +445,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Form.Item
                     name='useZipChunks'
                     valuePropName='checked'
+                    className='cvat-settings-switch'
                 >
                     <Switch />
                 </Form.Item>
@@ -458,8 +460,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderCreateTaskMethod(): JSX.Element {
         return (
             <Space>
-                <Form.Item name='useCache' valuePropName='checked'>
-                    <Switch defaultChecked/>
+                <Form.Item
+                    name='useCache'
+                    valuePropName='checked'
+                    className='cvat-settings-switch'
+                >
+                    <Switch defaultChecked />
                 </Form.Item>
                 <Text className='cvat-text-color'>Use cache</Text>
                 <Tooltip title='Using cache to store data.'>

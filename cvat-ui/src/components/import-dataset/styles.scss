@@ -17,6 +17,10 @@
     color: $text-color-secondary;
 }
 
+.cvat-modal-import-switch-use-default-storage {
+    display: table-cell;
+}
+
 .cvat-modal-import-dataset-status .ant-modal-body {
     display: flex;
     align-items: center;
