@@ -212,6 +212,7 @@ class Uploader:
                 http request to the tus server to retrieve the offset.
                 """
                 # FIXME: traefik changes HEAD to GET for some reason, and it breaks the protocol
+                # https://github.com/opencv/cvat/issues/4839
 
                 # Assume we are starting from scratch. This effectively disallows us to resume
                 # old file uploading
