@@ -9,9 +9,11 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from django.conf import settings
 from rest_framework.exceptions import ValidationError
+
 from cvat.apps.engine.cache import CacheInteraction
-from cvat.apps.engine.media_extractors import VideoReader, ZipReader
+from cvat.apps.engine.media_extractors import VideoReader, ZipReader, S3ZipReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
 from cvat.apps.engine.constants import FrameQuality, FrameType
@@ -81,32 +83,7 @@ class FrameProvider:
     def __init__(self, db_data, dimension=DimensionType.DIM_2D):
         self._db_data = db_data
         self._loaders = {}
-
-        reader_class = {
-            DataChoice.IMAGESET: ZipReader,
-            DataChoice.VIDEO: VideoReader,
-        }
-
-        if db_data.storage_method == StorageMethodChoice.CACHE:
-            cache = CacheInteraction(dimension=dimension)
-
-            self._loaders[FrameQuality.COMPRESSED] = BuffChunkLoader(
-                reader_class[db_data.compressed_chunk_type],
-                cache.get_buff_mime,
-                FrameQuality.COMPRESSED,
-                self._db_data)
-            self._loaders[FrameQuality.ORIGINAL] = BuffChunkLoader(
-                reader_class[db_data.original_chunk_type],
-                cache.get_buff_mime,
-                FrameQuality.ORIGINAL,
-                self._db_data)
-        else:
-            self._loaders[FrameQuality.COMPRESSED] = ChunkLoader(
-                reader_class[db_data.compressed_chunk_type],
-                db_data.get_compressed_chunk_path)
-            self._loaders[FrameQuality.ORIGINAL] = ChunkLoader(
-                reader_class[db_data.original_chunk_type],
-                db_data.get_original_chunk_path)
+        self._init_loaders(db_data, dimension)
 
     def __len__(self):
         return self._db_data.size
@@ -123,6 +100,43 @@ class FrameProvider:
 
     def get_chunk_number(self, frame_number):
         return int(frame_number) // self._db_data.chunk_size
+
+    def _init_loaders(self, db_data, dimension):
+        if db_data.storage_method == StorageMethodChoice.CACHE:
+            cache = CacheInteraction(dimension=dimension)
+
+            self._loaders[FrameQuality.COMPRESSED] = BuffChunkLoader(
+                self._get_reader_class(db_data.compressed_chunk_type),
+                cache.get_buff_mime,
+                FrameQuality.COMPRESSED,
+                self._db_data)
+            self._loaders[FrameQuality.ORIGINAL] = BuffChunkLoader(
+                self._get_reader_class(db_data.original_chunk_type),
+                cache.get_buff_mime,
+                FrameQuality.ORIGINAL,
+                self._db_data)
+        else:
+            self._loaders[FrameQuality.COMPRESSED] = ChunkLoader(
+                self._get_reader_class(db_data.compressed_chunk_type),
+                db_data.get_compressed_chunk_path)
+            self._loaders[FrameQuality.ORIGINAL] = ChunkLoader(
+                self._get_reader_class(db_data.original_chunk_type),
+                db_data.get_original_chunk_path)
+
+    def _get_reader_class(self, chunk_type):
+        reader_classes = {
+            DataChoice.IMAGESET: ZipReader,
+            DataChoice.VIDEO: VideoReader,
+        }
+        s3_reader_classes = {
+            DataChoice.IMAGESET: S3ZipReader,
+        }
+        choices = s3_reader_classes if settings.USE_S3 else reader_classes
+        reader = choices.get(chunk_type)
+        if reader is None:
+            raise ValueError('Unsupported chunk type {} for current settings USE_S3 = {}'
+                             .format(chunk_type, settings.USE_S3))
+        return reader
 
     def _validate_chunk_number(self, chunk_number):
         chunk_number_ = int(chunk_number)
