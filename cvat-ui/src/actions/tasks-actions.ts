@@ -6,7 +6,7 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import {
-    TasksQuery,CombinedState, Indexable, StorageLocation
+    TasksQuery, CombinedState, Indexable, StorageLocation,
 } from 'reducers';
 import { getCore, Storage } from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';

@@ -69,7 +69,7 @@ function ExportBackupModal(): JSX.Element {
     useEffect(() => {
         // eslint-disable-next-line prefer-template
         const message = `Export backup to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
-                        `storage ${(defaultStorageCloudId) ? '№' + defaultStorageCloudId : ''}`;
+                        `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`;
         setHelpMessage(message);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 

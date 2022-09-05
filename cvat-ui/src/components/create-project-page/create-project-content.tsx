@@ -219,10 +219,10 @@ export default function CreateProjectContent(): JSX.Element {
                     ...advancedValues,
                     name: basicValues.name,
                     source_storage: new Storage(
-                        advancedValues.sourceStorage || { location: StorageLocation.LOCAL, }
+                        advancedValues.sourceStorage || { location: StorageLocation.LOCAL },
                     ).toJSON(),
                     target_storage: new Storage(
-                        advancedValues.targetStorage || { location: StorageLocation.LOCAL, }
+                        advancedValues.targetStorage || { location: StorageLocation.LOCAL },
                     ).toJSON(),
                 };
 

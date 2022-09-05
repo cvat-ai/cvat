@@ -103,6 +103,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.focusToForm();
     }
 
+    private handleChangeStorageLocation(field: 'sourceStorage' | 'targetStorage', value: StorageLocation): void {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                [field]: {
+                    location: value,
+                },
+            },
+        }));
+    }
+
     private resetState = (): void => {
         this.basicConfigurationComponent.current?.resetFields();
         this.advancedConfigurationComponent.current?.resetFields();
@@ -192,17 +203,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     };
 
-    private handleChangeStorageLocation(field: 'sourceStorage' | 'targetStorage', value: StorageLocation): void {
-        this.setState((state) => ({
-            advanced: {
-                ...state.advanced,
-                [field]: {
-                    location: value,
-                },
-            },
-        }));
-    };
-
     private focusToForm = (): void => {
         this.basicConfigurationComponent.current?.focus();
     };
@@ -273,10 +273,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             this.handleSubmitAdvancedConfiguration({
                                 ...advanced,
                                 sourceStorage: new Storage(
-                                    project.sourceStorage || { location: StorageLocation.LOCAL }
+                                    project.sourceStorage || { location: StorageLocation.LOCAL },
                                 ),
                                 targetStorage: new Storage(
-                                    project.targetStorage || { location: StorageLocation.LOCAL }
+                                    project.targetStorage || { location: StorageLocation.LOCAL },
                                 ),
                             });
                             return Promise.resolve();
