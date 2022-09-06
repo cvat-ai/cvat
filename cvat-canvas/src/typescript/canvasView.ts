@@ -263,7 +263,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (data) {
-            const { clientID, points } = data as any;
+            const { clientID, elements } = data as any;
+            const points = data.points || elements.map((el: any) => el.points).flat();
             if (typeof clientID === 'number') {
                 const event: CustomEvent = new CustomEvent('canvas.canceled', {
                     bubbles: false,
