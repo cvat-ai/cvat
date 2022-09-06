@@ -169,7 +169,7 @@ context('Manipulations with skeletons', () => {
             cy.get(selector).should('not.exist');
         }
 
-        it.skip('Creating and removing a skeleton shape', () => {
+        it('Creating and removing a skeleton shape', () => {
             createSkeletonObject('shape');
             deleteSkeleton('#cvat_canvas_shape_1', 'shape', false);
             cy.removeAnnotations();
@@ -212,7 +212,7 @@ context('Manipulations with skeletons', () => {
             cy.removeAnnotations();
         });
 
-        it.skip('Splitting two skeletons and merge them back', () => {
+        it('Splitting two skeletons and merge them back', () => {
             createSkeletonObject('track');
 
             const splittingFrame = Math.trunc(imageParams.count / 2);
