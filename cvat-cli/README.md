@@ -1,5 +1,20 @@
 # Command-line client for CVAT
 
+A simple command line interface for working with CVAT tasks. At the moment it
+implements a basic feature set but may serve as the starting point for a more
+comprehensive CVAT administration tool in the future.
+
+Overview of functionality:
+
+- Create a new task (supports name, bug tracker, project, labels JSON, local/share/remote files)
+- Delete tasks (supports deleting a list of task IDs)
+- List all tasks (supports basic CSV or JSON output)
+- Download JPEG frames (supports a list of frame IDs)
+- Dump annotations (supports all formats via format string)
+- Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0')
+- Export and download a whole task
+- Import a task
+
 ## Installation
 
 `pip install cvat-cli`
@@ -10,7 +25,7 @@
 $ cvat-cli --help
 
 usage: cvat-cli [-h] [--version] [--auth USER:[PASS]]
-  [--server-host SERVER_HOST] [--server-port SERVER_PORT] [--https] [--debug]
+  [--server-host SERVER_HOST] [--server-port SERVER_PORT] [--debug]
   {create,delete,ls,frames,dump,upload,export,import} ...
 
 Perform common operations related to CVAT tasks.
@@ -28,7 +43,6 @@ optional arguments:
                         host (default: localhost)
   --server-port SERVER_PORT
                         port (default: 8080)
-  --https               force https connection (default: try to detect automatically)
   --debug               show debug output
 ```
 

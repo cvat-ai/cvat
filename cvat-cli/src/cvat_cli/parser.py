@@ -72,13 +72,6 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         help="port (default: 80 for http and 443 for https connections)",
     )
     parser.add_argument(
-        "--https",
-        default=False,
-        action="store_true",
-        help="Deprecated. Does nothing, CLI tries to detect schema automatically, "
-        "unless specified explicitly",
-    )
-    parser.add_argument(
         "--debug",
         action="store_const",
         dest="loglevel",
