@@ -951,6 +951,26 @@ Cypress.Commands.add('verifyNotification', () => {
     cy.closeNotification('.ant-notification-notice-info');
 });
 
+Cypress.Commands.add('goToCloudStoragesPage', () => {
+    cy.get('a[value="cloudstorages"]').click();
+    cy.url().should('include', '/cloudstorages');
+});
+
+Cypress.Commands.add('deleteCloudStorage', (id, displayName) => {
+    cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove').trigger('mouseover');
+    cy.get('.ant-dropdown')
+        .not('.ant-dropdown-hidden')
+        .within(() => {
+            cy.contains('[role="menuitem"]', 'Delete').click();
+        });
+    cy.get('.cvat-delete-cloud-storage-modal')
+        .should('contain', `You are going to remove the cloudstorage "${displayName}"`)
+        .within(() => {
+            cy.contains('button', 'Delete').click();
+        });
+    // cy.get('.cvat-cloud-storage-item-menu-button')..should('be.hidden');
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();
