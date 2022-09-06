@@ -510,7 +510,7 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    'VERSION': 'alpha (2.0)',
+    'VERSION': '2.1.0',
     'CONTACT': {
         'name': 'CVAT.ai team',
         'url': 'https://github.com/cvat-ai/cvat',
@@ -567,4 +567,3 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': False,
 }
-
