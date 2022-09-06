@@ -205,14 +205,13 @@ context('Manipulations with skeletons', () => {
             deleteSkeleton('#cvat_canvas_shape_1', 'track', false);
 
             cy.removeAnnotations();
-
+            cy.goCheckFrameNumber(0);
             createSkeletonObject('track');
             deleteSkeleton('#cvat_canvas_shape_1', 'track', true);
-
-            cy.removeAnnotations();
         });
 
         it('Splitting two skeletons and merge them back', () => {
+            cy.removeAnnotations();
             createSkeletonObject('track');
 
             const splittingFrame = Math.trunc(imageParams.count / 2);
@@ -223,32 +222,32 @@ context('Manipulations with skeletons', () => {
 
             // check objects after splitting
             cy.get('#cvat_canvas_shape_1').should('not.exist');
-            cy.get('#cvat_canvas_shape_18').should('exist').and('not.be.visible');
-            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_12').should('exist').and('not.be.visible');
+            cy.get('#cvat_canvas_shape_18').should('exist').and('be.visible');
 
             cy.goToNextFrame(splittingFrame + 1);
 
-            cy.get('#cvat_canvas_shape_18').should('not.exist');
-            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_12').should('not.exist');
+            cy.get('#cvat_canvas_shape_18').should('exist').and('be.visible');
 
             // now merge them back
             cy.get('.cvat-merge-control').click();
-            cy.get('#cvat_canvas_shape_24').click();
+            cy.get('#cvat_canvas_shape_18').click();
 
             cy.goCheckFrameNumber(0);
 
-            cy.get('#cvat_canvas_shape_18').click();
+            cy.get('#cvat_canvas_shape_12').click();
             cy.get('body').type('m');
 
             // and check objects after merge
+            cy.get('#cvat_canvas_shape_12').should('not.exist');
             cy.get('#cvat_canvas_shape_18').should('not.exist');
-            cy.get('#cvat_canvas_shape_24').should('not.exist');
 
-            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
             cy.goCheckFrameNumber(splittingFrame + 1);
-            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
             cy.goCheckFrameNumber(imageParams.count - 1);
-            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
 
             cy.removeAnnotations();
         });
