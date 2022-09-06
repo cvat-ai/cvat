@@ -76,3 +76,4 @@ requirements/
 docs/
 setup.py
 README.md
+MANIFEST.in
