@@ -19,7 +19,7 @@ def fxt_client(fxt_logger):
     logger, _ = fxt_logger
 
     client = Client(BASE_URL, logger=logger)
-    api_client = client.api
+    api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
     client.config.status_check_period = 0.01
