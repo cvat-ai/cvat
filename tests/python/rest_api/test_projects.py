@@ -160,7 +160,9 @@ class TestGetProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         self._test_cannot_get_project_backup(user['username'], project['id'], org_id=project['organization'])
@@ -172,7 +174,9 @@ class TestGetProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         self._test_can_get_project_backup(user['username'], project['id'], org_id=project['organization'])
@@ -184,7 +188,9 @@ class TestGetProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         self._test_can_get_project_backup(user['username'], project['id'], org_id=project['organization'])
@@ -196,7 +202,9 @@ class TestGetProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         self._test_cannot_get_project_backup(user['username'], project['id'], org_id=project['organization'])
@@ -208,7 +216,9 @@ class TestGetProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         self._test_can_get_project_backup(user['username'], project['id'], org_id=project['organization'])
@@ -220,7 +230,9 @@ class TestGetProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         self._test_can_get_project_backup(user['username'], project['id'], org_id=project['organization'])
@@ -395,7 +407,9 @@ class TestPatchProjectLabel:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         labels = {'name': 'new name'}
@@ -410,7 +424,9 @@ class TestPatchProjectLabel:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         labels = {'name': 'new name'}
@@ -424,7 +440,9 @@ class TestPatchProjectLabel:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         labels = {'name': 'new name'}
@@ -438,7 +456,9 @@ class TestPatchProjectLabel:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         labels = {'name': 'new name'}
@@ -453,7 +473,9 @@ class TestPatchProjectLabel:
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
-            if not is_project_staff(user['id'], project['id']) and is_org_member(user['id'], project['organization'])
+            if not is_project_staff(user['id'], project['id'])
+                and project['organization']
+                and is_org_member(user['id'], project['organization'])
         )
 
         labels = {'name': 'new name'}
