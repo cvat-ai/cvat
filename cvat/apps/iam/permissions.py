@@ -763,6 +763,90 @@ class TaskPermission(OpenPolicyAgentPermission):
 
         return data
 
+
+class WebhookPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'webhook':
+
+            project_id = request.data.get('project_id')
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj,
+                    project_id=project_id)
+                permissions.append(self)
+
+            owner = request.data.get('owner_id') or request.data.get('owner')
+            if owner:
+                perm = UserPermission.create_scope_view(request, owner)
+                permissions.append(perm)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/webhooks/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        scope = {
+            ('create', 'POST'): 'create',
+            ('partial_update', 'PATCH'): 'update',
+            ('update', 'PUT'): 'update',
+        }.get((view.action, request.method))
+
+        scopes = []
+        if scope == 'create':
+            webhook_type = request.data.get('type')
+            if webhook_type:
+                scope += f'@{webhook_type}'
+                scopes.append(scope)
+        elif scope == 'update':
+            scopes.append(scope)
+
+        return scopes
+
+
+    def get_resource(self):
+        data = None
+        if self.obj:
+            data = {
+                "id": self.obj.id,
+                "owner": {"id": getattr(self.obj.owner, 'id', None) },
+                'organization': { "id": self.org_id },
+                "project": None
+            }
+            if self.obj.type == 'project' and getattr(self.obj, 'project', None):
+                data['project'] = {
+                    'id': getattr(self.obj.project, 'id', None),
+                    'owner': {'id': getattr(self.obj.project, 'id', None)}
+                }
+        elif self.scope in ['create@project', 'create@organization']:
+            project = None
+            if self.project_id:
+                try:
+                    project = Project.objects.get(id=self.project_id)
+                except Project.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
+
+            data = {
+                'id': None,
+                'owner': self.user_id,
+                'organization': {
+                    'id': self.org_id
+                },
+                'num_resources': 0
+            }
+
+            data['project'] = None if project is None else {
+                'id': getattr(project, 'id', None),
+                'owner': {
+                    'id': getattr(project.owner, 'id', None)
+                },
+            }
+
+        return data
+
 class JobPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
@@ -1029,6 +1113,7 @@ class IssuePermission(OpenPolicyAgentPermission):
 
         return data
 
+
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
@@ -1071,3 +1156,4 @@ class IsMemberInOrganization(BasePermission):
             return membership is not None
 
         return True
+
