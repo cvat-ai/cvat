@@ -61,8 +61,6 @@ class Webhook(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = ("target_url", "secret", "enable_ssl", "type", "content_type", "events", "project_id", "organization_id")
-
         constraints = [
             models.CheckConstraint(
                 name="webhooks_project_or_organization",
