@@ -37,6 +37,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
     before(() => {
         cy.openTask(taskName);
         cy.openJob();
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
         cy.saveJob('PATCH', 200, 'saveJob');

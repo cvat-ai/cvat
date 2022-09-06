@@ -85,7 +85,9 @@ export const importDatasetAsync = (
                 await instance.annotations
                     .importDataset(format, useDefaultSettings, sourceStorage, file,
                         (message: string, progress: number) => (
-                            dispatch(importActions.importDatasetUpdateStatus(instance, Math.floor(progress * 100), message))
+                            dispatch(importActions.importDatasetUpdateStatus(
+                                instance, Math.floor(progress * 100), message,
+                            ))
                         ));
             } else if (instance instanceof core.classes.Task) {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
