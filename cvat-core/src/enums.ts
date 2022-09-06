@@ -423,3 +423,17 @@ export enum SortingMethod {
     PREDEFINED = 'predefined',
     RANDOM = 'random',
 }
+
+/**
+ * Webhook source types
+ * @enum {string}
+ * @name WebhookSourceType
+ * @memberof module:API.cvat.enums
+ * @property {string} ORGANIZATION 'organization'
+ * @property {string} PROJECT 'project'
+ * @readonly
+*/
+export enum WebhookSourceType {
+    ORGANIZATION = 'organization',
+    PROJECT = 'project',
+}

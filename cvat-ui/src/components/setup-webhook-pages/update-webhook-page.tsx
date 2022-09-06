@@ -8,7 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import { LeftOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { useHistory, useParams } from 'react-router';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { useDispatch, useSelector } from 'react-redux';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
 import SetupWebhookContent from './setup-webhook-content';
@@ -32,10 +32,9 @@ function UpdateWebhookPage(): JSX.Element {
 
     return (
         <div className='cvat-create-webhook-page'>
-            {/* TODO: parametrize backlink */}
             <Row justify='center' align='middle'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
-                    <Button onClick={() => history.push('/organization/webhooks')} type='link' size='large'>
+                    <Button onClick={() => history.goBack()} type='link' size='large'>
                         <LeftOutlined />
                         Back to webhooks
                     </Button>

@@ -14,7 +14,7 @@ import Upload from 'antd/lib/upload';
 import Input from 'antd/lib/input';
 
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
-import { TasksQuery } from 'reducers/interfaces';
+import { WebhooksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
@@ -28,13 +28,15 @@ interface VisibleTopBarProps {
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
-    query: TasksQuery;
+    query: WebhooksQuery;
     importing: boolean;
+    onCreateWebhook(): void;
+    goBackContent: JSX.Element;
 }
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const {
-        importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportTask,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportTask, onCreateWebhook, goBackContent,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
@@ -51,10 +53,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
         <>
             <Row justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Button onClick={() => history.push('/organization')} type='link' size='large'>
-                        <LeftOutlined />
-                        Back to organization
-                    </Button>
+                    {goBackContent}
                 </Col>
             </Row>
             <Row className='cvat-webhooks-page-top-bar' justify='center' align='middle'>
@@ -102,7 +101,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                         </Col>
                         <Col>
                             <div className='cvat-webhooks-add-wrapper'>
-                                <Button onClick={() => history.push('/webhooks/create')} type='primary' className='cvat-create-webhook' icon={<PlusOutlined />} />
+                                <Button onClick={onCreateWebhook} type='primary' className='cvat-create-webhook' icon={<PlusOutlined />} />
                             </div>
                         </Col>
                     </Row>

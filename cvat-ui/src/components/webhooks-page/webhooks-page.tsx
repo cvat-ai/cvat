@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
+import {
+    useHistory, useRouteMatch,
+} from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
@@ -13,9 +15,15 @@ import Pagination from 'antd/lib/pagination';
 import { CombinedState, Indexable } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { getWebhooksAsync } from 'actions/webhooks-actions';
+import { LeftOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 import EmptyWebhooksListComponent from './empty-list';
+
+interface ProjectRouteMatch {
+    id?: string | undefined;
+}
 
 const PAGE_SIZE = 10;
 
@@ -25,7 +33,24 @@ function WebhooksPage(): JSX.Element | null {
     const fetching = useSelector((state: CombinedState) => state.webhooks.fetching);
     const totalCount = useSelector((state: CombinedState) => state.webhooks.totalCount);
     const query = useSelector((state: CombinedState) => state.webhooks.query);
-    const organization = useSelector((state: CombinedState) => state.organizations.current);
+
+    const projectsMatch = useRouteMatch<ProjectRouteMatch>({ path: '/projects/:id/webhooks' });
+
+    const [onCreateParams, setOnCreateParams] = useState<string | null>(null);
+    const onCreateWebhook = useCallback(() => {
+        history.push(`/webhooks/create?${onCreateParams}`);
+    }, [onCreateParams]);
+
+    const goBackContent = (
+        <Button
+            onClick={() => history.push(projectsMatch ? `/projects/${projectsMatch.params.id}` : '/organization')}
+            type='link'
+            size='large'
+        >
+            <LeftOutlined />
+            {projectsMatch ? 'Back to project' : 'Back to organization'}
+        </Button>
+    );
 
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery = { ...query };
@@ -37,14 +62,13 @@ function WebhooksPage(): JSX.Element | null {
     }
 
     useEffect(() => {
-        if (!organization) {
-            // currently available only in an organization
-            history.push('/');
+        if (projectsMatch) {
+            const { id } = projectsMatch.params;
+            setOnCreateParams(`projectId=${id}`);
+            dispatch(getWebhooksAsync({ ...updatedQuery, projectId: +id }));
+        } else {
+            dispatch(getWebhooksAsync(updatedQuery));
         }
-    }, [organization]);
-
-    useEffect(() => {
-        dispatch(getWebhooksAsync(updatedQuery));
     }, []);
 
     useEffect(() => {
@@ -59,7 +83,10 @@ function WebhooksPage(): JSX.Element | null {
 
     return (
         <div className='cvat-webhooks-page'>
-            <TopBar />
+            <TopBar
+                onCreateWebhook={onCreateWebhook}
+                goBackContent={goBackContent}
+            />
             {
                 totalCount ? (
                     <>

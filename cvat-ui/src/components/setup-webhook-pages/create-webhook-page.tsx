@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,12 +12,12 @@ import SetupWebhookContent from './setup-webhook-content';
 
 function CreateWebhookPage(): JSX.Element {
     const history = useHistory();
+
     return (
         <div className='cvat-create-webhook-page'>
-            {/* TODO: parametrize backlink */}
             <Row justify='center' align='middle'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
-                    <Button onClick={() => history.push('/organization/webhooks')} type='link' size='large'>
+                    <Button onClick={() => history.goBack()} type='link' size='large'>
                         <LeftOutlined />
                         Back to webhooks
                     </Button>
