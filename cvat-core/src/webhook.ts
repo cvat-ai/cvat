@@ -4,12 +4,13 @@
 
 import PluginRegistry from './plugins';
 import User from './user';
+import { WebhookSourceType } from './enums';
 
 const serverProxy = require('./server-proxy');
 
 interface RawWebhookData {
     id?: number;
-    type: 'project' | 'organization';
+    type: WebhookSourceType;
     target_url: string;
     organization_id?: number;
     project_id?: number;
@@ -28,7 +29,7 @@ interface RawWebhookData {
 
 export default class Webhook {
     public readonly id?: number;
-    public readonly type: RawWebhookData['type'];
+    public readonly type: WebhookSourceType;
     public readonly organizationID?: number;
     public readonly projectID?: number;
     public readonly owner?: User;
@@ -43,15 +44,15 @@ export default class Webhook {
     public isActive?: boolean;
     public enableSSL: boolean;
 
-    static async events(): Promise<string[]> {
-        return serverProxy.webhooks.events();
+    static async events(type: WebhookSourceType): Promise<string[]> {
+        return serverProxy.webhooks.events(type);
     }
 
     constructor(initialData: RawWebhookData) {
         const data: RawWebhookData = {
             id: undefined,
             target_url: '',
-            type: 'organization',
+            type: WebhookSourceType.ORGANIZATION,
             events: [],
             content_type: 'application/json',
             organization_id: undefined,
@@ -166,7 +167,7 @@ export default class Webhook {
             events: [...this.events],
             content_type: this.contentType,
             enable_ssl: this.enableSSL,
-            type: this.type || 'organization', // TODO: Fix hardcoding
+            type: this.type || WebhookSourceType.ORGANIZATION,
         };
 
         if (Number.isInteger(this.id)) {

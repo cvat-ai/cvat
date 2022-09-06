@@ -292,10 +292,28 @@ const config = require('./config');
             checkFilter(filter, {
                 page: isInteger,
                 id: isInteger,
+                projectId: isInteger,
+                filter: isString,
             });
 
-            checkExclusiveFields(filter, ['id'], ['page']);
-            const webhooksData = await serverProxy.webhooks.get(filter);
+            checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['page', 'id', 'filter'].includes(key)) {
+                    searchParams[key] = filter[key];
+                }
+            }
+
+            if (filter.projectId) {
+                if (searchParams.filter) {
+                    const parsed = JSON.parse(searchParams.filter);
+                    searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
+                } else {
+                    searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
+                }
+            }
+
+            const webhooksData = await serverProxy.webhooks.get(searchParams);
             const webhooks = webhooksData.results.map((webhookData) => new Webhook(webhookData));
             webhooks.count = webhooksData.count;
             return webhooks;

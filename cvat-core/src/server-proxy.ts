@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+
 (() => {
     const FormData = require('form-data');
     const { ServerError } = require('./exceptions');
@@ -11,6 +12,7 @@
     const DownloadWorker = require('./download.worker');
     const Axios = require('axios');
     const tus = require('tus-js-client');
+    const { WebhookSourceType }= require('./enums');
 
     function enableOrganization() {
         return { org: config.organizationID || '' };
@@ -1970,12 +1972,15 @@
                 }
             }
 
-            async function receiveWebhookEvents(): Promise<string[]> {
+            async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> {
                 const { backendAPI } = config;
 
                 try {
                     const response = await Axios.get(`${backendAPI}/webhooks/events`, {
                         proxy: config.proxy,
+                        params: {
+                            type,
+                        },
                         headers: {
                             'Content-Type': 'application/json',
                         },

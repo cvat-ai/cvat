@@ -17,12 +17,18 @@ import Select from 'antd/lib/select';
 
 import getCore from 'cvat-core-wrapper';
 import { notification } from 'antd';
+import ProjectSearchField from 'components/create-task-page/project-search-field';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { useHistory } from 'react-router';
+import { useLocation } from 'react-router';
 
 export enum WebhookContentType {
     APPLICATION_JSON = 'application/json',
+}
+
+export enum WebhookSourceType {
+    ORGANIZATION = 'organization',
+    PROJECT = 'project',
 }
 
 export enum EventsMethod {
@@ -75,26 +81,34 @@ function throwError(message: string, error: any): void {
 
 function SetupWebhookContent(props: Props): JSX.Element {
     const { webhook } = props;
-    const history = useHistory();
     const [form] = Form.useForm();
     const [rerender, setRerender] = useState(false);
     const [showDetailedEvents, setShowDetailedEvents] = useState(false);
     const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+
     const organization = useSelector((state: CombinedState) => state.organizations.current);
+
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    let defaultProjectId = null;
+    if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
+        defaultProjectId = +(params.get('projectId') as string);
+    }
+    const [projectId, setProjectId] = useState<number | null>(defaultProjectId);
 
     useEffect(() => {
         const core = getCore();
-        core.classes.Webhook.events().then((events: string[]) => {
-            setWebhookEvents(events);
-        });
-    }, []);
-
-    useEffect(() => {
-        if (!organization) {
-            // currently available only in an organization
-            history.push('/');
+        if (webhook) {
+            core.classes.Webhook.events(webhook.type).then((events: string[]) => {
+                setWebhookEvents(events);
+            });
+        } else {
+            core.classes.Webhook.events(projectId ?
+                WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION).then((events: string[]) => {
+                setWebhookEvents(events);
+            });
         }
-    }, [organization]);
+    }, [projectId]);
 
     useEffect(() => {
         if (webhook) {
@@ -119,6 +133,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
             });
 
             form.setFieldsValue(data);
+            setProjectId(webhook.projectID);
             setRerender(!rerender);
         }
     }, [webhook, webhookEvents]);
@@ -151,8 +166,10 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     secret: values.secret,
                     enable_ssl: values.enableSSL,
                     is_active: values.isActive,
-                    organization_id: organization.id, // TODO: temporary hardcoded for organizations
                     events: collectEvents(values.eventsMethod, values, webhookEvents),
+                    organization_id: projectId ? undefined : organization.id,
+                    project_id: projectId,
+                    type: projectId ? WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION,
                 };
                 const WebhookClass = getCore().classes.Webhook;
                 const webhookInstance = new WebhookClass(rawWebhookData);
@@ -167,7 +184,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 });
             }
         });
-    }, [webhook, webhookEvents, organization]);
+    }, [webhook, webhookEvents]);
 
     const onEventsMethodChange = useCallback((event: RadioChangeEvent): void => {
         form.setFieldsValue({ eventsMethod: event.target.value });
@@ -211,6 +228,22 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     >
                         <Input />
                     </Form.Item>
+                    {
+                        !webhook && (
+                            <Row className='ant-form-item'>
+                                <Col className='ant-form-item-label' span={24}>
+                                    <Text className='cvat-text-color'>Project</Text>
+                                </Col>
+                                <Col span={24}>
+                                    <ProjectSearchField
+                                        onSelect={(_projectId: number | null) => setProjectId(_projectId)}
+                                        value={projectId}
+                                    />
+                                </Col>
+                            </Row>
+                        )
+                    }
+
                     <Form.Item
                         hasFeedback
                         name='contentType'

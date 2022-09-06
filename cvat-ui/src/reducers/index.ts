@@ -779,6 +779,7 @@ export interface OrganizationState {
 export interface WebhooksQuery {
     page: number;
     id?: number;
+    projectId?: number;
 }
 
 export interface WebhooksState {

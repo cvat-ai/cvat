@@ -73,10 +73,6 @@ function OrganizationTopBar(props: Props): JSX.Element {
     let organizationContacts = contact;
     const history = useHistory();
 
-    // TODO: make types for menu
-    // function onClickMenuWrapper (params: any): void {
-
-    // }
     return (
         <>
             <Row justify='space-between'>
@@ -89,8 +85,6 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 </Text>
                             </Col>
                             <Col>
-                                {/* TODO: make menu more elegant */}
-                                {/* TODO: move Remove organization to Menu */}
                                 <Dropdown overlay={() => (
                                     <Menu>
                                         <Menu.Item key={MenuActions.SET_WEBHOOKS}>
@@ -98,7 +92,9 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                                 href='/organization/webhooks'
                                                 onClick={(e: React.MouseEvent) => {
                                                     e.preventDefault();
-                                                    history.push('/organization/webhooks');
+                                                    history.push({
+                                                        pathname: '/organization/webhooks',
+                                                    });
                                                     return false;
                                                 }}
                                             >

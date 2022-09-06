@@ -4,7 +4,7 @@
 
 import getCore from 'cvat-core-wrapper';
 import { Dispatch, ActionCreator } from 'redux';
-import { Indexable, WebhooksQuery } from 'reducers/interfaces';
+import { Indexable, WebhooksQuery } from 'reducers';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 const cvat = getCore();
