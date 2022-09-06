@@ -39,9 +39,9 @@ Uploaded file: a single unpacked `*.json` or a zip archive with the structure de
 [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
 (without images).
 
-- supported annotations: Polygons, Rectangles (if the `segmentation` field is empty
+- supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 
-# [MS COCO Keypoint Detection](http://cocodataset.org/#format-data)
+# [MS COCO Keypoint Detection](https://cocodataset.org/#keypoints-2020)
 
 - [Format specification](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/)
 
