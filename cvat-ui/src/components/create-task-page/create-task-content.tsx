@@ -433,7 +433,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.startLoading();
         const { length } = multiTasks;
         let index = 0;
-        const queueSize = 2;
+        const queueSize = 1;
         const promises = Array(queueSize)
             .fill(undefined)
             .map(async (): Promise<void> => {
