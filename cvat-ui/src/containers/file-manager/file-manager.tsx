@@ -98,8 +98,8 @@ export class FileManagerContainer extends React.PureComponent<Props> {
             }[] = [];
             for await (const key of localKeys) {
                 const partsPath = key.split('/').filter(Boolean);
-                const itemTreeData =
-                getItemTreeDataByPath(treeData[0], partsPath);
+
+                const itemTreeData = partsPath.length ? getItemTreeDataByPath(treeData[0], partsPath) : treeData[0];
                 if (itemTreeData.isLeaf) {
                     files = [...files, {
                         key,
