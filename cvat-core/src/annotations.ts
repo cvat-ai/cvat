@@ -264,11 +264,14 @@ export async function exportDataset(
 
     let result = null;
     if (instance instanceof Task) {
-        result = await serverProxy.tasks.exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
+        result = await serverProxy.tasks
+            .exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
     } else if (instance instanceof Job) {
-        result = await serverProxy.jobs.exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
+        result = await serverProxy.jobs
+            .exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
     } else {
-        result = await serverProxy.projects.exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
+        result = await serverProxy.projects
+            .exportDataset(instance.id, format, saveImages, useDefaultSettings, targetStorage, name);
     }
 
     return result;
@@ -280,7 +283,7 @@ export function importDataset(
     useDefaultSettings: boolean,
     sourceStorage: Storage,
     file: File | string,
-    updateStatusCallback = () => {}
+    updateStatusCallback = () => {},
 ) {
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
         throw new ArgumentError('Instance should be a Project || Task || Job instance');
@@ -288,7 +291,7 @@ export function importDataset(
     if (!(typeof updateStatusCallback === 'function')) {
         throw new ArgumentError('Callback should be a function');
     }
-    if (typeof file === 'string' && !file.endsWith('.zip')) {
+    if (typeof file === 'string' && !file.toLowerCase().endsWith('.zip')) {
         throw new ArgumentError('File should be file instance with ZIP extension');
     }
     if (file instanceof File && !(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
@@ -296,11 +299,13 @@ export function importDataset(
     }
 
     if (instance instanceof Project) {
-        return serverProxy.projects.importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
+        return serverProxy.projects
+            .importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
     }
 
     const instanceType = instance instanceof Task ? 'task' : 'job';
-    return serverProxy.annotations.uploadAnnotations(instanceType, instance.id, format, useDefaultSettings, sourceStorage, file);
+    return serverProxy.annotations
+        .uploadAnnotations(instanceType, instance.id, format, useDefaultSettings, sourceStorage, file);
 }
 
 export function getHistory(session) {
