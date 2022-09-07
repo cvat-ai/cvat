@@ -19,6 +19,12 @@ context('Manipulations with skeletons', () => {
         text: 'skeletons pipeline',
         count: 5,
     };
+    const skeletonPosition = {
+        xtl: 100,
+        ytl: 100,
+        xbr: 300,
+        ybr: 300,
+    };
     let taskID = null;
 
     before(() => {
@@ -135,11 +141,8 @@ context('Manipulations with skeletons', () => {
     describe('Working with objects', () => {
         function createSkeletonObject(shapeType) {
             cy.createSkeleton({
+                ...skeletonPosition,
                 labelName,
-                xtl: 100,
-                ytl: 100,
-                xbr: 300,
-                ybr: 300,
                 type: `${shapeType[0].toUpperCase()}${shapeType.slice(1).toLowerCase()}`,
             });
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
@@ -172,19 +175,43 @@ context('Manipulations with skeletons', () => {
             cy.removeAnnotations();
         });
 
-        it('Creating and removing a skeleton track', () => {
+        it('Creating, re-drawing, and removing a skeleton track', () => {
             createSkeletonObject('track');
+
+            // redraw a tracked shape on the latest frame
+            const REDRAW_MARGIN = 400;
+            let prevX = Number.MAX_SAFE_INTEGER;
+            let prevY = Number.MAX_SAFE_INTEGER;
+            cy.goCheckFrameNumber(imageParams.count - 1);
+            cy.get('#cvat_canvas_shape_1').within(() => {
+                cy.get('rect').then(($rect) => {
+                    prevX = +$rect[0].getAttribute('x');
+                    prevY = +$rect[0].getAttribute('y');
+                });
+            });
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').trigger('keydown', { keyCode: 78, code: 'KeyN', shiftKey: true });
+            cy.get('.cvat-canvas-container')
+                .click(skeletonPosition.xtl + REDRAW_MARGIN, skeletonPosition.ytl + REDRAW_MARGIN)
+                .click(skeletonPosition.xbr + REDRAW_MARGIN, skeletonPosition.ybr + REDRAW_MARGIN);
+            cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+            cy.get('#cvat_canvas_shape_1').within(() => {
+                cy.get('rect').then(($rect) => {
+                    expect(+$rect[0].getAttribute('x')).to.be.gt(prevX);
+                    expect(+$rect[0].getAttribute('y')).to.be.gt(prevY);
+                });
+            });
+            // and, finally delete the skeleton
             deleteSkeleton('#cvat_canvas_shape_1', 'track', false);
 
             cy.removeAnnotations();
-
+            cy.goCheckFrameNumber(0);
             createSkeletonObject('track');
             deleteSkeleton('#cvat_canvas_shape_1', 'track', true);
-
-            cy.removeAnnotations();
         });
 
         it('Splitting two skeletons and merge them back', () => {
+            cy.removeAnnotations();
             createSkeletonObject('track');
 
             const splittingFrame = Math.trunc(imageParams.count / 2);
@@ -195,32 +222,32 @@ context('Manipulations with skeletons', () => {
 
             // check objects after splitting
             cy.get('#cvat_canvas_shape_1').should('not.exist');
-            cy.get('#cvat_canvas_shape_18').should('exist').and('not.be.visible');
-            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_12').should('exist').and('not.be.visible');
+            cy.get('#cvat_canvas_shape_18').should('exist').and('be.visible');
 
             cy.goToNextFrame(splittingFrame + 1);
 
-            cy.get('#cvat_canvas_shape_18').should('not.exist');
-            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_12').should('not.exist');
+            cy.get('#cvat_canvas_shape_18').should('exist').and('be.visible');
 
             // now merge them back
             cy.get('.cvat-merge-control').click();
-            cy.get('#cvat_canvas_shape_24').click();
+            cy.get('#cvat_canvas_shape_18').click();
 
             cy.goCheckFrameNumber(0);
 
-            cy.get('#cvat_canvas_shape_18').click();
+            cy.get('#cvat_canvas_shape_12').click();
             cy.get('body').type('m');
 
             // and check objects after merge
+            cy.get('#cvat_canvas_shape_12').should('not.exist');
             cy.get('#cvat_canvas_shape_18').should('not.exist');
-            cy.get('#cvat_canvas_shape_24').should('not.exist');
 
-            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
             cy.goCheckFrameNumber(splittingFrame + 1);
-            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
             cy.goCheckFrameNumber(imageParams.count - 1);
-            cy.get('#cvat_canvas_shape_30').should('exist').and('be.visible');
+            cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
 
             cy.removeAnnotations();
         });

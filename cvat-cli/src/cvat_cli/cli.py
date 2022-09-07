@@ -19,7 +19,7 @@ class CLI:
 
         # allow arbitrary kwargs in models
         # TODO: will silently ignore invalid args, so remove this ASAP
-        self.client.api.configuration.discard_unknown_keys = True
+        self.client.api_client.configuration.discard_unknown_keys = True
 
         self.client.login(credentials)
 
