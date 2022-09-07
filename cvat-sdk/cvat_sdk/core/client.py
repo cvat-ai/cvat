@@ -13,8 +13,6 @@ from typing import Any, Dict, Optional, Sequence, Tuple
 
 import attrs
 import urllib3
-
-from cvat_sdk.api_client import ApiClient, Configuration, models
 import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, models
