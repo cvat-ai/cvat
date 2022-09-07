@@ -11,6 +11,9 @@ import zipfile
 from collections import OrderedDict
 from tempfile import TemporaryDirectory
 from defusedxml import ElementTree
+import json
+
+from django.conf import settings
 
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.extractor import Importer, Extractor, DEFAULT_SUBSET_NAME
@@ -1026,22 +1029,52 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
     callback(dumper, project_data)
     dumper.close_document()
 
-def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectData = None):
-    ext = ''
-    if task_data.meta['task']['mode'] == 'interpolation':
-        ext = FrameProvider.VIDEO_FRAME_EXT
 
-    frame_provider = FrameProvider(task_data.db_task.data)
-    frames = frame_provider.get_frames(
-        FrameQuality.ORIGINAL,
-        FrameType.BUFFER)
-    for frame_id, (frame_data, _) in enumerate(frames):
-        frame_name = task_data.frame_info[frame_id]['path'] if project_data is None \
-            else project_data.frame_info[(task_data.db_task.id, frame_id)]['path']
-        img_path = osp.join(img_dir, frame_name + ext)
-        os.makedirs(osp.dirname(img_path), exist_ok=True)
-        with open(img_path, 'wb') as f:
-            f.write(frame_data.getvalue())
+def dump_s3_files(task_data: TaskData, img_dir: str):
+    # does not work with video.
+    # does not use project info for now.
+    os.makedirs(img_dir, exist_ok=True)
+
+    urls = []
+    url_names = []
+    for file in task_data.db_task.data.s3_files.all():
+        urls.append(file.file.url)
+        url_names.append({
+            'name': file.file.name,
+            'url': file.file.url,
+        })
+
+    urls_path = osp.join(img_dir, 'urls.txt')
+    mode = 'a' if osp.exists(urls_path) else 'w'
+    with open(urls_path, mode) as f:
+        f.write('\n'.join(urls))
+
+    url_names_path = osp.join(img_dir, 'urls.json')
+    mode = 'a' if osp.exists(url_names_path) else 'w'
+    with open(url_names_path, mode) as f:
+        f.write(json.dumps(url_names))
+
+
+def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectData = None):
+    if settings.USE_S3:
+        dump_s3_files(task_data, img_dir)
+    else:
+        ext = ''
+        if task_data.meta['task']['mode'] == 'interpolation':
+            ext = FrameProvider.VIDEO_FRAME_EXT
+
+        frame_provider = FrameProvider(task_data.db_task.data)
+        frames = frame_provider.get_frames(
+            FrameQuality.ORIGINAL,
+            FrameType.BUFFER)
+        for frame_id, (frame_data, _) in enumerate(frames):
+            frame_name = task_data.frame_info[frame_id]['path'] if project_data is None \
+                else project_data.frame_info[(task_data.db_task.id, frame_id)]['path']
+            img_path = osp.join(img_dir, frame_name + ext)
+            os.makedirs(osp.dirname(img_path), exist_ok=True)
+            with open(img_path, 'wb') as f:
+                f.write(frame_data.getvalue())
+
 
 def _export_task(dst_file, task_data, anno_callback, save_images=False):
     with TemporaryDirectory() as temp_dir:

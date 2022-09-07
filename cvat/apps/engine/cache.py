@@ -50,8 +50,7 @@ class CacheInteraction:
             slogger.glob.info('Chunk {} not found, creating.'.format(key))
             chunk, tag = self.prepare_chunk_buff(db_data, quality, chunk_number)
             self._save_s3_chunk(db_data, chunk_number, quality, chunk, tag)
-        url = s3_client.get_presigned_url(key)
-        return url, tag
+        return key, tag
 
     def prepare_chunk_buff(self, db_data, quality, chunk_number):
         upload_dir = {
@@ -116,12 +115,8 @@ class CacheInteraction:
         images = []
         for item in reader:
             file_name = f"{item['name']}{item['extension']}"
-            with NamedTemporaryFile(mode='w+b', prefix='cvat',
-                                    suffix=file_name.replace(os.path.sep, '#'),
-                                    delete=False) as f:
-                key = db_data.get_s3_uploaded_file_path(file_name)
-                s3_client.download_to_io(key, f)
-                path = f.name
+            key = db_data.get_s3_uploaded_file_path(file_name)
+            path = s3_client.download_to_temp(key, suffix=file_name.replace(os.path.sep, '#'))
             self._validate_checksum(item, path, file_name, slogger.glob)
             images.append((path, path, None))
 
