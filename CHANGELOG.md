@@ -22,8 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
 - OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
 - Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
-- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
+- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type:
+Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv/cvat/pull/4829>)
 - Added helm chart support for serverless functions and analytics (<https://github.com/cvat-ai/cvat/pull/110>)
+- Added confirmation when remove a track (<https://github.com/opencv/cvat/pull/4846>)
+- [COCO Keypoints](https://cocodataset.org/#keypoints-2020) format support (<https://github.com/opencv/cvat/pull/4821>)
+- Support for Oracle OCI Buckets (<https://github.com/opencv/cvat/pull/4876>)
+- `cvat-sdk` and `cvat-cli` packages on PyPI (<https://github.com/opencv/cvat/pull/4903>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
@@ -52,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset password functionality (<https://github.com/cvat-ai/cvat/pull/52>)
 - Creating task with cloud storage data (<https://github.com/cvat-ai/cvat/pull/116>)
 - Show empty tasks (<https://github.com/cvat-ai/cvat/pull/100>)
+- Fixed project filtration (<https://github.com/opencv/cvat/pull/4878>)
+- Maximum callstack exceed when create task with 100000+ files from cloud storage (<https://github.com/opencv/cvat/pull/4836>)
+- Fixed invocation of serverless functions (<https://github.com/opencv/cvat/pull/4907>)
 
 ### Security
 - TDB

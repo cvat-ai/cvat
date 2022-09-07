@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -201,7 +202,7 @@ class Annotation {
     protected group: number;
     public label: Label;
     protected frame: number;
-    protected removed: boolean;
+    private _removed: boolean;
     protected lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
@@ -223,7 +224,7 @@ class Annotation {
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
-        this.removed = false;
+        this._removed = false;
         this.lock = false;
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
@@ -445,6 +446,14 @@ class Annotation {
         }
     }
 
+    clearServerID(): void {
+        this.serverID = undefined;
+    }
+
+    updateServerID(body: any): void {
+        this.serverID = body.id;
+    }
+
     appendDefaultAttributes(label: Label): void {
         const labelAttributes = label.attributes;
         for (const attribute of labelAttributes) {
@@ -464,11 +473,9 @@ class Annotation {
     delete(frame: number, force: boolean): boolean {
         if (!this.lock || force) {
             this.removed = true;
-
             this.history.do(
                 HistoryActions.REMOVED_OBJECT,
                 () => {
-                    this.serverID = undefined;
                     this.removed = false;
                     this.updated = Date.now();
                 },
@@ -494,6 +501,17 @@ class Annotation {
 
     toJSON(): void {
         throw new ScriptingError('Is not implemented');
+    }
+
+    public get removed(): boolean {
+        return this._removed;
+    }
+
+    public set removed(value: boolean) {
+        if (value) {
+            this.clearServerID();
+        }
+        this._removed = value;
     }
 }
 
@@ -1135,6 +1153,20 @@ export class Track extends Drawn {
         }
 
         return result;
+    }
+
+    updateServerID(body: RawTrackData): void {
+        this.serverID = body.id;
+        for (const shape of body.shapes) {
+            this.shapes[shape.frame].serverID = shape.id;
+        }
+    }
+
+    clearServerID(): void {
+        Drawn.prototype.clearServerID.call(this);
+        for (const keyframe of Object.keys(this.shapes)) {
+            this.shapes[keyframe].serverID = undefined;
+        }
     }
 
     _saveLabel(label: Label, frame: number): void {
@@ -2115,6 +2147,21 @@ export class SkeletonShape extends Shape {
         };
     }
 
+    updateServerID(body: RawShapeData): void {
+        Shape.prototype.updateServerID.call(this, body);
+        for (const element of body.elements) {
+            const thisElement = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
+            thisElement.updateServerID(element);
+        }
+    }
+
+    clearServerID(): void {
+        Shape.prototype.clearServerID.call(this);
+        for (const element of this.elements) {
+            element.clearServerID();
+        }
+    }
+
     _saveRotation(rotation, frame) {
         const undoSkeletonPoints = this.elements.map((element) => element.points);
         const undoSource = this.source;
@@ -2672,6 +2719,11 @@ export class SkeletonTrack extends Track {
     constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.SKELETON;
+
+        for (const shape of Object.values(this.shapes)) {
+            delete shape.points;
+        }
+
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
         this.elements = data.elements.map((element: RawTrackData['elements'][0]) => (
@@ -2688,6 +2740,21 @@ export class SkeletonTrack extends Track {
 
             // todo z_order: this.zOrder,
         )).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id) as any as Track[];
+    }
+
+    updateServerID(body: RawTrackData): void {
+        Track.prototype.updateServerID.call(this, body);
+        for (const element of body.elements) {
+            const thisElement = this.elements.find((_element: Track) => _element.label.id === element.label_id);
+            thisElement.updateServerID(element);
+        }
+    }
+
+    clearServerID(): void {
+        Track.prototype.clearServerID.call(this);
+        for (const element of this.elements) {
+            element.clearServerID();
+        }
     }
 
     _saveRotation(rotation: number, frame: number): void {

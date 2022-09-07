@@ -21,8 +21,8 @@ from .utils import export_dataset
 def get_cloud_storage_contents(
     user: str, cloud_storage_id: int, manifest_path: str, **kwargs
 ) -> List[str]:
-    with make_api_client(user) as client:
-        (data, _) = client.cloudstorages_api.retrieve_content(cloud_storage_id,
+    with make_api_client(user) as api_client:
+        (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id,
             manifest_path=manifest_path, **kwargs)
         return data
 

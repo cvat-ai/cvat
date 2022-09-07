@@ -72,7 +72,7 @@ class _FieldReplacerExtension(OpenApiSerializerExtension):
             direction, bypass_extensions=False)
 
 class DataSerializerExtension(_FieldReplacerExtension):
-    # *FileSerializer mimics a FileField
+# *FileSerializer mimics a FileField
     # but it is mapped as an object with a file field, which
     # is different from what we have for a regular file
     # field - a string of binary format.
@@ -146,6 +146,36 @@ class OpenApiTypeProxySerializerExtension(PolymorphicProxySerializerExtension):
     Provides support for OpenApiTypes in the PolymorphicProxySerializer list
     """
     priority = 0 # restore normal priority
+
+    def _process_serializer(self, auto_schema, serializer, direction):
+        if isinstance(serializer, OpenApiTypes):
+            schema = build_basic_type(serializer)
+            return (None, schema)
+        else:
+            return super()._process_serializer(auto_schema=auto_schema,
+                serializer=serializer, direction=direction)
+
+    def map_serializer(self, auto_schema, direction):
+        """ custom handling for @extend_schema's injection of PolymorphicProxySerializer """
+        result = super().map_serializer(auto_schema=auto_schema, direction=direction)
+
+        if isinstance(self.target.serializers, dict):
+            required = OpenApiTypes.NONE not in self.target.serializers.values()
+        else:
+            required = OpenApiTypes.NONE not in self.target.serializers
+
+        if not required:
+            result['nullable'] = True
+
+        return result
+
+class ComponentProxySerializerExtension(OpenApiTypeProxySerializerExtension):
+    """
+    Allows to patch PolymorphicProxySerializer-based component schema.
+
+    Override the "target_component" field in children classes.
+    """
+    priority = 1 # higher than in the parent class
 
     def _process_serializer(self, auto_schema, serializer, direction):
         if isinstance(serializer, OpenApiTypes):
