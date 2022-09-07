@@ -1,0 +1,163 @@
+# Copyright (C) 2018-2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+# Compose file for running the just the UI and servers, using external infrastructure
+
+version: '3.3'
+
+services:
+  cvat_server:
+    container_name: cvat_server
+    image: cvat/server:${CVAT_VERSION:-latest}
+    restart: always
+    depends_on:
+      - cvat_opa
+    environment:
+      DJANGO_MODWSGI_EXTRA_ARGS: ''
+      ALLOWED_HOSTS: '*'
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      ADAPTIVE_AUTO_ANNOTATION: 'false'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/server.conf
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.cvat.loadbalancer.server.port=8080
+      - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
+        PathPrefix(`/api/`, `/git/`, `/opencv/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+      - traefik.http.routers.cvat.entrypoints=web
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  cvat_utils:
+    container_name: cvat_utils
+    image: cvat/server:${CVAT_VERSION:-latest}
+    restart: always
+    depends_on:
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+    command: -c supervisord/utils.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
+  cvat_worker_default:
+    container_name: cvat_worker_default
+    image: cvat/server:${CVAT_VERSION:-latest}
+    restart: always
+    depends_on:
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 2
+    command: -c supervisord/worker.default.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
+  cvat_worker_low:
+    container_name: cvat_worker_low
+    image: cvat/server:${CVAT_VERSION:-latest}
+    restart: always
+    depends_on:
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/worker.low.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
+  cvat_ui:
+    container_name: cvat_ui
+    # image: cvat/ui:${CVAT_VERSION:-latest}
+    build:
+      context: .
+      args:
+        http_proxy:
+        https_proxy:
+        no_proxy:
+        socks_proxy:
+      dockerfile: Dockerfile.ui
+    restart: always
+    depends_on:
+      - cvat_server
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.cvat-ui.loadbalancer.server.port=80
+      - traefik.http.routers.cvat-ui.rule=Host(`${CVAT_HOST:-localhost}`)
+      - traefik.http.routers.cvat-ui.entrypoints=web
+    networks:
+      - cvat
+
+  traefik:
+    image: traefik:v2.4
+    container_name: traefik
+    restart: always
+    command:
+      - '--providers.docker.exposedByDefault=false'
+      - '--providers.docker.network=cvat'
+      - '--entryPoints.web.address=:8080'
+      - '--providers.file.directory=/etc/traefik/rules'
+    # Uncomment to get Traefik dashboard
+    #   - "--entryPoints.dashboard.address=:8090"
+    #   - "--api.dashboard=true"
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.dashboard.entrypoints=dashboard
+    #   - traefik.http.routers.dashboard.service=api@internal
+    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
+    ports:
+      - 8080:8080
+      - 8090:8090
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - cvat
+
+  cvat_opa:
+    container_name: cvat_opa
+    image: openpolicyagent/opa:0.34.2-rootless
+    restart: always
+    networks:
+      cvat:
+        aliases:
+          - opa
+    volumes:
+      - ./cvat/apps/iam/rules:/rules
+    ports:
+      - '8181:8181'
+    command: run --server --addr :8181 --set=decision_logs.console=true /rules
+
+volumes:
+  cvat_data:
+  cvat_keys:
+  cvat_logs:
+
+networks:
+  cvat:
