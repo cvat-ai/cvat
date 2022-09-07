@@ -95,15 +95,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    # image: cvat/ui:${CVAT_VERSION:-latest}
-    build:
-      context: .
-      args:
-        http_proxy:
-        https_proxy:
-        no_proxy:
-        socks_proxy:
-      dockerfile: Dockerfile.ui
+    image: cvat/ui:${CVAT_VERSION:-latest}
     restart: always
     depends_on:
       - cvat_server
