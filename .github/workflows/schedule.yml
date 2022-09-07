@@ -382,7 +382,7 @@ jobs:
       - name: Creating a log file from "cvat" container logs
         if: failure()
         run: |
-            docker logs cvat > ${{ github.workspace }}/tests/cvat.log
+            docker logs cvat_server > ${{ github.workspace }}/tests/cvat.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
