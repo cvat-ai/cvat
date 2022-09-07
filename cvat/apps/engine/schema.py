@@ -177,36 +177,6 @@ class ComponentProxySerializerExtension(OpenApiTypeProxySerializerExtension):
     """
     priority = 1 # higher than in the parent class
 
-    def _process_serializer(self, auto_schema, serializer, direction):
-        if isinstance(serializer, OpenApiTypes):
-            schema = build_basic_type(serializer)
-            return (None, schema)
-        else:
-            return super()._process_serializer(auto_schema=auto_schema,
-                serializer=serializer, direction=direction)
-
-    def map_serializer(self, auto_schema, direction):
-        """ custom handling for @extend_schema's injection of PolymorphicProxySerializer """
-        result = super().map_serializer(auto_schema=auto_schema, direction=direction)
-
-        if isinstance(self.target.serializers, dict):
-            required = OpenApiTypes.NONE not in self.target.serializers.values()
-        else:
-            required = OpenApiTypes.NONE not in self.target.serializers
-
-        if not required:
-            result['nullable'] = True
-
-        return result
-
-class ComponentProxySerializerExtension(OpenApiTypeProxySerializerExtension):
-    """
-    Allows to patch PolymorphicProxySerializer-based component schema.
-
-    Override the "target_component" field in children classes.
-    """
-    priority = 1 # higher than in the parent class
-
     target_component: str = ''
 
     @classmethod
