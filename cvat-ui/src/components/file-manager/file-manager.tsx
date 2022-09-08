@@ -38,6 +38,7 @@ interface State {
 
 interface Props {
     treeData: (TreeNodeNormal & { mime_type: string })[];
+    share: any;
     many: boolean;
     onLoadData: (key: string) => Promise<any>;
     onChangeActiveKey(key: string): void;
@@ -154,7 +155,12 @@ export class FileManager extends React.PureComponent<Props, State> {
         }
 
         const { SHARE_MOUNT_GUIDE_URL } = consts;
-        const { treeData, onUploadShareFiles, onLoadData } = this.props;
+        const {
+            treeData,
+            share,
+            onUploadShareFiles,
+            onLoadData,
+        } = this.props;
         const { expandedKeys, files } = this.state;
 
         return (
@@ -206,6 +212,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                         </Paragraph>
                     </div>
                 )}
+                {JSON.stringify(share, null, 2)}
             </Tabs.TabPane>
         );
     }

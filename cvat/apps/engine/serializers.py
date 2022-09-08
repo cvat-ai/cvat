@@ -960,7 +960,10 @@ class LabeledDataSerializer(serializers.Serializer):
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
-    mime_type = serializers.CharField(max_length=16)
+    mime_type_16 = serializers.CharField(max_length=16)
+    mime_type_64 = serializers.CharField(max_length=64)
+    mime_type_1024 = serializers.CharField(max_length=1024)
+    test = serializers.CharField(max_length=1024)
 
 class LogEventSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False)

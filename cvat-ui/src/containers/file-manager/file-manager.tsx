@@ -29,6 +29,7 @@ interface OwnProps {
 
 interface StateToProps {
     treeData: (TreeNodeNormal & { mime_type: string })[];
+    share: any;
 }
 
 interface DispatchToProps {
@@ -53,8 +54,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
     }
 
     const { root } = state.share;
+
     return {
         treeData: convert([root], ''),
+        share: state.share,
     };
 }
 
@@ -101,8 +104,10 @@ export class FileManagerContainer extends React.PureComponent<Props> {
                 const partsPath = key.split('/').filter(Boolean);
 
                 const itemTreeData = partsPath.length ? getItemTreeDataByPath(treeData[0], partsPath) : treeData[0];
+                console.log(itemTreeData);
                 if (itemTreeData.isLeaf) {
                     files = [...files, {
+                        ...itemTreeData,
                         key,
                         type: itemTreeData.type,
                         mime_type: itemTreeData.mime_type,
@@ -146,6 +151,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     public render(): JSX.Element {
         const {
             treeData,
+            share,
             getTreeData,
             many,
             onChangeActiveKey,
@@ -157,6 +163,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
         return (
             <FileManagerComponent
                 treeData={treeData}
+                share={share}
                 many={many}
                 onLoadData={getTreeData}
                 onUploadLocalFiles={onUploadLocalFiles}
