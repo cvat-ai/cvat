@@ -24,6 +24,7 @@ interface OwnProps {
         type: string;
         mime_type: string;
     }[]): void;
+    onUploadCloudStorageFiles(urls: string[]): void;
 }
 
 interface StateToProps {
@@ -150,6 +151,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
             onChangeActiveKey,
             onUploadLocalFiles,
             onUploadRemoteFiles,
+            onUploadCloudStorageFiles,
         } = this.props;
 
         return (
@@ -160,6 +162,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
                 onUploadLocalFiles={onUploadLocalFiles}
                 onUploadRemoteFiles={onUploadRemoteFiles}
                 onUploadShareFiles={this.handleUploadShareFiles}
+                onUploadCloudStorageFiles={onUploadCloudStorageFiles}
                 onChangeActiveKey={onChangeActiveKey}
                 ref={(component): void => {
                     this.managerComponentRef = component;

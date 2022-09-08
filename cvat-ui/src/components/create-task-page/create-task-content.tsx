@@ -131,19 +131,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private validateFiles = (): boolean => {
-        const { activeFileManagerTab } = this.state;
-        const files = this.fileManagerContainer.getFiles();
-
-        this.setState({
-            files,
-        });
+        const { activeFileManagerTab, files } = this.state;
 
         if (activeFileManagerTab === 'cloudStorage') {
             this.setState({
                 cloudStorageId: this.fileManagerContainer.getCloudStorageId(),
             });
         }
-        const totalLen = Object.keys(files).reduce((acc, key) => acc + files[key].length, 0);
+        const totalLen = Object.keys(files).reduce((acc, key: string) => acc + files[(key as TabName)].length, 0);
 
         return !!totalLen;
     };
@@ -310,6 +305,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
+    private handleUploadCloudStorageFiles = (cloudStorageFiles: string[]): void => {
+        const { files } = this.state;
+
+        this.setState({
+            files: {
+                ...files,
+                cloudStorage: cloudStorageFiles,
+            },
+        });
+    };
+
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
         if (!this.validateLabelsOrProject()) {
             notification.error({
@@ -459,28 +465,20 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             cloudStorageId,
         } = this.state;
 
-        const files: { file: (File | string), type: TabName }[] = Object
-            .entries(allFiles)
-            .reduce((acc: { file: (File | string), type: TabName }[], prevValue) => {
-                const [tabName, setFiles] = prevValue;
-                return [
-                    ...acc,
-                    ...setFiles.map((it: (File | string)) => ({ file: it, type: tabName })),
-                ];
-            }, []);
+        const files: (File | string)[] = allFiles[activeFileManagerTab];
 
         this.setState({
-            multiTasks: files.map(({ file, type }, index) => ({
+            multiTasks: files.map((file, index) => ({
                 projectId,
                 basic: {
-                    name: this.getTaskName(index, type),
+                    name: this.getTaskName(index, activeFileManagerTab),
                 },
                 subset,
                 advanced,
                 labels,
                 files: {
                     ...defaultState.files,
-                    [type]: [file],
+                    [activeFileManagerTab]: [file],
                 },
                 activeFileManagerTab,
                 cloudStorageId,
@@ -703,6 +701,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         onUploadLocalFiles={this.handleUploadLocalFiles}
                         onUploadRemoteFiles={this.handleUploadRemoteFiles}
                         onUploadShareFiles={this.handleUploadShareFiles}
+                        onUploadCloudStorageFiles={this.handleUploadCloudStorageFiles}
                         ref={(container: any): void => {
                             this.fileManagerContainer = container;
                         }}

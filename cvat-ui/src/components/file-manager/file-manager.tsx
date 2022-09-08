@@ -44,6 +44,7 @@ interface Props {
     onUploadLocalFiles(files: File[]): void;
     onUploadRemoteFiles(urls: string[]): void;
     onUploadShareFiles(keys: string[]): Promise<void>;
+    onUploadCloudStorageFiles(cloudStorageFiles: string[]): void;
 }
 
 export class FileManager extends React.PureComponent<Props, State> {
@@ -70,14 +71,16 @@ export class FileManager extends React.PureComponent<Props, State> {
         onLoadData('/');
     }
 
-    private onSelectCloudStorageFiles = (cloudStorageFiles: string[]): void => {
+    private handleUploadCloudStorageFiles = (cloudStorageFiles: string[]): void => {
         const { files } = this.state;
+        const { onUploadCloudStorageFiles } = this.props;
         this.setState({
             files: {
                 ...files,
                 cloudStorage: cloudStorageFiles,
             },
         });
+        onUploadCloudStorageFiles(cloudStorageFiles);
     };
 
     public getCloudStorageId(): number | null {
@@ -252,7 +255,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                     setSearchPhrase={(_potentialCloudStorage: string) => {
                         this.setState({ potentialCloudStorage: _potentialCloudStorage });
                     }}
-                    onSelectFiles={this.onSelectCloudStorageFiles}
+                    onSelectFiles={this.handleUploadCloudStorageFiles}
                 />
             </Tabs.TabPane>
         );
