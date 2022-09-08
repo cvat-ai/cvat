@@ -7,11 +7,12 @@ from __future__ import annotations
 import os
 import os.path as osp
 from contextlib import ExitStack, closing
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import requests
 import urllib3
 
+from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.helpers import StreamWithProgress, expect_status
@@ -80,21 +81,9 @@ class Uploader:
         url: str,
         *,
         success_status: int,
-        status_check_period: Optional[int] = None,
-        query_params: Optional[Dict[str, Any]] = None,
-        post_params: Optional[Dict[str, Any]] = None,
-        method: str = "POST",
-        positive_statuses: Optional[Sequence[int]] = None,
+        **kwargs,
     ) -> urllib3.HTTPResponse:
-        return self._client.wait_for_completion(
-            url,
-            success_status=success_status,
-            status_check_period=status_check_period,
-            query_params=query_params,
-            post_params=post_params,
-            method=method,
-            positive_statuses=positive_statuses,
-        )
+        return self._client.wait_for_completion(url, success_status=success_status, **kwargs)
 
     def _split_files_by_requests(
         self, filenames: List[str]
@@ -316,12 +305,38 @@ class DatasetUploader(Uploader):
         url_params: Optional[Dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
+        restart: bool = False,
     ):
         url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": osp.basename(filename)}
-        self.upload_file(
-            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
-        )
+
+        try:
+            self.upload_file(
+                url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+            )
+        except exceptions.ApiException as ex:
+            if ex.status == 409 and restart:
+                self._client.logger.debug(f"Failed to upload dataset: {ex}. Retrying...")
+
+                # Remove the previous request
+                # TODO: Not sure if it works at all
+                self._wait_for_completion(
+                    url,
+                    success_status=201,
+                    positive_statuses=[202],
+                    status_check_period=status_check_period,
+                    query_params=params,
+                    method="GET",
+                    max_checks=1,
+                )
+
+                self.upload_file(
+                    url,
+                    filename,
+                    pbar=pbar,
+                    query_params=params,
+                    meta={"filename": params["filename"]},
+                )
 
         self._wait_for_completion(
             url,

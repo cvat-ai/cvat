@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os.path as osp
+import os
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -13,10 +13,9 @@ from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
-from PIL import Image
+from cvat_sdk.core.utils import filter_dict
 
 from shared.utils.config import USER_PASS
-from shared.utils.helpers import generate_image_files
 
 from .util import make_pbar
 
@@ -40,15 +39,6 @@ class TestProjectUsecases:
         self.client.login((self.user, USER_PASS))
 
         yield
-
-    @pytest.fixture
-    def fxt_backup_file(self, fxt_new_task: Task, fxt_coco_file: str):
-        backup_path = self.tmp_path / "backup.zip"
-
-        fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
-        fxt_new_task.download_backup(str(backup_path))
-
-        yield backup_path
 
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file: Path):
@@ -191,3 +181,12 @@ class TestProjectUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+    def test_can_create_from_backup(self, fxt_backup_file: Path):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        restored_project = self.client.projects.create_from_backup(fxt_backup_file, pbar=pbar)
+
+        assert restored_project.get_tasks()[0].size == 1
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""

@@ -132,13 +132,15 @@ class Client:
         post_params: Optional[Dict[str, Any]] = None,
         method: str = "POST",
         positive_statuses: Optional[Sequence[int]] = None,
+        max_checks: int = 0,
     ) -> urllib3.HTTPResponse:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
         positive_statuses = set(positive_statuses) | {success_status}
 
-        while True:
+        attempt = 0
+        while not max_checks or attempt < max_checks:
             sleep(status_check_period)
 
             response = self.api_client.rest_client.request(
@@ -153,6 +155,8 @@ class Client:
             expect_status(positive_statuses, response)
             if response.status == success_status:
                 break
+
+            attempt += 1
 
         return response
 
