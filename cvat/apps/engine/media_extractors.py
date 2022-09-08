@@ -727,6 +727,8 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         input_h = images[0][0].height
 
         downscale_factor = 1
+        while input_h / downscale_factor >= 1080:
+            downscale_factor *= 2
 
         output_h = input_h // downscale_factor
         output_w = input_w // downscale_factor
