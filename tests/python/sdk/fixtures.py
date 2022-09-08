@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 from cvat_sdk import Client
@@ -45,3 +46,13 @@ def fxt_coco_file(tmp_path: Path, fxt_image_file: Path):
     generate_coco_json(ann_filename, img_info=(img_filename, *img_size))
 
     yield ann_filename
+
+
+@pytest.fixture
+def fxt_coco_dataset(tmp_path: Path, fxt_image_file: Path, fxt_coco_file: Path):
+    dataset_path = tmp_path / "coco_dataset.zip"
+    with ZipFile(str(dataset_path), "x") as f:
+        f.write(str(fxt_image_file), arcname="images/" + fxt_image_file.name)
+        f.write(str(fxt_coco_file), arcname="annotations/instances_default.json")
+
+    yield dataset_path

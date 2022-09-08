@@ -112,7 +112,7 @@ class Project(
         return annotations
 
     def get_tasks(self) -> List[Task]:
-        return [Task(self._client, m) for m in self.api.list_tasks(id=self.id)[0]]
+        return [Task(self._client, m) for m in self.api.list_tasks(id=self.id)[0].results]
 
 
 class ProjectsRepo(

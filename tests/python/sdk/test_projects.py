@@ -92,6 +92,34 @@ class TestProjectUsecases:
 
         return project
 
+    @pytest.fixture
+    def fxt_empty_project(self):
+        project = self.client.projects.create(spec={"name": "test_project"})
+
+        return project
+
+    @pytest.fixture
+    def fxt_project_with_shapes(self, fxt_empty_project: Project, fxt_task_with_shapes: Task):
+        fxt_empty_project.update(
+            models.PatchedProjectWriteRequest(
+                labels=[
+                    models.PatchedLabelRequest(**filter_dict(label.to_dict(), drop=["id"]))
+                    for label in fxt_task_with_shapes.labels
+                ]
+            )
+        )
+        fxt_task_with_shapes.update(models.PatchedTaskWriteRequest(project_id=fxt_empty_project.id))
+        fxt_empty_project.fetch()
+        return fxt_empty_project
+
+    @pytest.fixture
+    def fxt_backup_file(self, fxt_project_with_shapes: Project):
+        backup_path = self.tmp_path / "backup.zip"
+
+        fxt_project_with_shapes.download_backup(str(backup_path))
+
+        yield backup_path
+
     def test_can_create_empty_project(self):
         project = self.client.projects.create(spec=models.ProjectWriteRequest(name="test project"))
 
@@ -105,10 +133,11 @@ class TestProjectUsecases:
         project = self.client.projects.create_from_dataset(
             spec=models.ProjectWriteRequest(name="project with data"),
             dataset_path=fxt_coco_dataset,
+            dataset_format="COCO 1.0",
             pbar=pbar,
         )
 
-        assert project.get_tasks()[0].size == 7
+        assert project.get_tasks()[0].size == 1
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
@@ -142,3 +171,23 @@ class TestProjectUsecases:
         with pytest.raises(exceptions.NotFoundException):
             fxt_new_project.fetch()
         assert self.stdout.getvalue() == ""
+
+    def test_can_get_tasks(self, fxt_project_with_shapes: Project):
+        task_ids = set(fxt_project_with_shapes.tasks)
+
+        tasks = fxt_project_with_shapes.get_tasks()
+
+        assert len(tasks) == 1
+        assert {tasks[0].id} == task_ids
+
+    def test_can_download_backup(self, fxt_project_with_shapes: Project):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+        backup_path = self.tmp_path / "backup.zip"
+
+        fxt_project_with_shapes.download_backup(str(backup_path), pbar=pbar)
+
+        assert os.stat(str(backup_path)).st_size > 0
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
