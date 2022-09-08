@@ -70,7 +70,6 @@ export default function ManifestsManager(props: Props): JSX.Element {
     return (
         <>
             <Form.Item
-                name='manifests'
                 className='cvat-manifests-manager-form-item'
                 label={(
                     <>
@@ -87,9 +86,21 @@ export default function ManifestsManager(props: Props): JSX.Element {
                         </Tooltip>
                     </>
                 )}
-                rules={[{ required: true, message: 'Please, specify at least one manifest file' }]}
+                required
             />
-            <Form.List name='manifests'>
+            <Form.List
+                name='manifests'
+                rules={[
+                    {
+                        validator: async (_, names) => {
+                            if (!names || !names.length) {
+                                return Promise.reject(new Error('Please, specify at least one manifest file'));
+                            }
+                            return Promise.resolve();
+                        },
+                    },
+                ]}
+            >
                 {
                     (fields) => (
                         <>
