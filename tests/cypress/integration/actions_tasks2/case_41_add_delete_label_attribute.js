@@ -45,7 +45,8 @@ context('Add/delete labels and attributes.', () => {
             cy.get('.cvat-attribute-type-input').click();
             cy.get('.cvat-attribute-type-input-text').click();
             cy.get('.cvat-attribute-values-input').type(textDefaultValue);
-            cy.contains('[type="submit"]', 'Done').click();
+            cy.contains('[type="submit"]', 'Continue').click();
+            cy.contains('[type="button"]', 'Cancel').click();
             cy.get('.cvat-constructor-viewer-item').should('exist');
         });
 

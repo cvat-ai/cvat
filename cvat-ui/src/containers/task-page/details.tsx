@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import DetailsComponent from 'components/task-page/details';
 import { updateTaskAsync } from 'actions/tasks-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
-import { Task, CombinedState, ActiveInference } from 'reducers/interfaces';
+import { Task, CombinedState, ActiveInference } from 'reducers';
 
 interface OwnProps {
     task: Task;

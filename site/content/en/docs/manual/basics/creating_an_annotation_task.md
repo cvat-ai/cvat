@@ -5,8 +5,11 @@ weight: 2
 description: 'Instructions on how to create and configure an annotation task.'
 ---
 
-Create an annotation task pressing `Create new task` button on the tasks page or on the project page.
+Create an annotation task pressing `+` button and select `Create new task` on the tasks page or on the project page.
 ![](/images/image004.jpg)
+
+> Notice that the task will be created in the organization that you selected at the time of creation.
+> Read more about [organizations](/docs/manual/advanced/organization/).
 
 Specify parameters of the task:
 
@@ -136,9 +139,9 @@ For example, the sequence `2.jpeg, 10.jpeg, 1.jpeg` after sorting will be:
 - `natural`: 1.jpeg, 2.jpeg, 10.jpeg
 - `predefined`: 2.jpeg, 10.jpeg, 1.jpeg
 
-### Use zip chunks
+### Use zip/video chunks
 
-Force to use zip chunks as compressed data. Actual for videos only.
+Force to use zip chunks as compressed data. Cut out content for videos only.
 
 ### Use cache
 
@@ -238,5 +241,6 @@ If the annotation file is large, you can create a repository with
 
 Specify full issue tracker's URL if it's necessary.
 
-Push `Submit` button and it will be added into the list of annotation tasks.
-Then, the created task will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).
+To save and open task click on `Submit & Open` button. Also you
+can click on `Submit & Continue` button for creating several tasks in sequence.
+Then, the created tasks will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).

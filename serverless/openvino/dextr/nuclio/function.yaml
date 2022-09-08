@@ -7,7 +7,7 @@ metadata:
     spec:
     framework: openvino
     min_pos_points: 4
-    animated_gif: https://raw.githubusercontent.com/openvinotoolkit/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/dextr_example.gif
+    animated_gif: https://raw.githubusercontent.com/opencv/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/dextr_example.gif
     help_message: The interactor allows to get a mask of an object using its extreme points (more or equal than 4). You can add a point left-clicking the image
 
 spec:
@@ -18,6 +18,16 @@ spec:
   env:
     - name: NUCLIO_PYTHON_EXE_PATH
       value: /opt/nuclio/common/openvino/python3
+
+  volumes:
+    - volume:
+        name: openvino-common
+        configMap:
+          name: "cvat-nuclio-openvino-common"
+          defaultMode: 0750
+      volumeMount:
+        name: openvino-common
+        mountPath: /opt/nuclio/common/openvino
 
   build:
     image: cvat/openvino.dextr

@@ -1,10 +1,10 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import CreateTaskComponent from 'components/create-task-page/create-task-page';
 import { CreateTaskData } from 'components/create-task-page/create-task-content';
 import { createTaskAsync } from 'actions/tasks-actions';
@@ -23,7 +23,7 @@ interface DispatchToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onCreate: (data: CreateTaskData): void => dispatch(createTaskAsync(data)),
+        onCreate: (data: CreateTaskData): Promise<any> => dispatch(createTaskAsync(data)),
     };
 }
 

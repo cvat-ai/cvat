@@ -44,3 +44,4 @@ Common scheme for our REST API is `<VERB> [namespace] <objects> <id> <action>`.
 - [Best practices for REST API design](https://stackoverflow.blog/2020/03/02/best-practices-for-rest-api-design/)
 - [Flat vs. nested resources](https://stackoverflow.com/questions/20951419/what-are-best-practices-for-rest-nested-resources)
 - [REST API Design Best Practices for Sub and Nested Resources](https://www.moesif.com/blog/technical/api-design/REST-API-Design-Best-Practices-for-Sub-and-Nested-Resources/)
+- [A specification for building APIs in JSON](https://jsonapi.org/)

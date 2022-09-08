@@ -18,13 +18,9 @@
         }
     ],
     "npm.exclude": "**/.env/**",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pycodestyleEnabled": false,
     "licenser.license": "Custom",
     "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT",
     "files.trimTrailingWhitespace": true,
-    "python.pythonPath": ".env/bin/python",
     "sqltools.connections": [
         {
             "previewLimit": 50,
@@ -33,9 +29,15 @@
             "database": "${workspaceFolder:cvat}/db.sqlite3"
         }
     ],
+    "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pycodestyleEnabled": false,
     "python.testing.pytestArgs": [
-        "tests"
+        "--rootdir","${workspaceFolder}/tests/"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": "${workspaceFolder}/.env/bin/pytest",
+    "python.testing.cwd": "${workspaceFolder}/tests"
 }

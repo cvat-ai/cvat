@@ -14,7 +14,7 @@ import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
 
-import { CombinedState, CloudStorage } from 'reducers/interfaces';
+import { CombinedState, CloudStorage } from 'reducers';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
@@ -48,6 +48,7 @@ interface CloudStorageForm {
     prefix?: string;
     project_id?: string;
     manifests: string[];
+    endpoint_url?: string;
 }
 
 const { Dragger } = Upload;
@@ -73,7 +74,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const fakeCredentialsData = {
         accountName: 'X'.repeat(24),
         sessionToken: 'X'.repeat(300),
-        key: 'X'.repeat(20),
+        key: 'X'.repeat(128),
         secretKey: 'X'.repeat(40),
         keyFile: new File([], 'fakeKey.json'),
     };
@@ -117,15 +118,19 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             const location = parsedOptions.get('region') || parsedOptions.get('location');
             const prefix = parsedOptions.get('prefix');
             const projectId = parsedOptions.get('project_id');
+            const endpointUrl = parsedOptions.get('endpoint_url');
+
             if (location) {
                 setSelectedRegion(location);
             }
             if (prefix) {
                 fieldsValue.prefix = prefix;
             }
-
             if (projectId) {
                 fieldsValue.project_id = projectId;
+            }
+            if (endpointUrl) {
+                fieldsValue.endpoint_url = endpointUrl;
             }
         }
 
@@ -221,6 +226,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         if (formValues.project_id) {
             delete cloudStorageData.project_id;
             specificAttributes.append('project_id', formValues.project_id);
+        }
+        if (formValues.endpoint_url) {
+            delete cloudStorageData.endpoint_url;
+            specificAttributes.append('endpoint_url', formValues.endpoint_url);
         }
 
         cloudStorageData.specific_attributes = specificAttributes.toString();
@@ -323,7 +332,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={20}
+                            maxLength={128}
                             visibilityToggle={keyVisibility}
                             onChange={() => setKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('key', 'key')}
@@ -337,7 +346,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={40}
+                            maxLength={44}
                             visibilityToggle={secretKeyVisibility}
                             onChange={() => setSecretKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('secretKey', 'secret_key')}
@@ -489,6 +498,14 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     </Select>
                 </Form.Item>
                 {credentialsBlok()}
+                <Form.Item
+                    label='Endpoint URL'
+                    help='You can specify an endpoint for your storage when using the AWS S3 cloud storage compatible API'
+                    name='endpoint_url'
+                    {...internalCommonProps}
+                >
+                    <Input />
+                </Form.Item>
                 <S3Region
                     selectedRegion={selectedRegion}
                     onSelectRegion={onSelectRegion}

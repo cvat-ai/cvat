@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import ErrorStackParser from 'error-stack-parser';
 
 import { ThunkDispatch } from 'utils/redux';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import logger, { LogType } from 'cvat-logger';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import consts from 'consts';

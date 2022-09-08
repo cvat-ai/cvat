@@ -5,7 +5,7 @@
 title: 'Installation Analytics'
 linkTitle: 'Installation Analytics'
 weight: 2
-description: 'Instructions for deployment and customization of Analytics. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics).'
+description: 'Instructions for deployment and customization of Analytics. This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/components/analytics).'
 
 ---
 

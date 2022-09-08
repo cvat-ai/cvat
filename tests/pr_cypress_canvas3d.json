@@ -1,0 +1,22 @@
+{
+  "video": false,
+  "baseUrl": "http://localhost:8080",
+  "viewportWidth": 1300,
+  "viewportHeight": 960,
+  "defaultCommandTimeout": 25000,
+  "downloadsFolder": "cypress/fixtures",
+  "env": {
+    "user": "admin",
+    "email": "admin@localhost.company",
+    "password": "12qwaszx",
+    "coverage": false
+  },
+  "testFiles": [
+    "actions_projects_models/case_104_project_export_3d.js",
+    "canvas3d_functionality_2/case_56_canvas3d_functionality_basic_actions.js",
+    "canvas3d_functionality_2/case_62_canvas3d_functionality_views_resize.js",
+    "canvas3d_functionality_2/case_63_canvas3d_functionality_control_button_mouse_interaction.js",
+    "canvas3d_functionality_2/case_64_canvas3d_functionality_cuboid.js",
+    "remove_users_tasks_projects_organizations.js"
+  ]
+}

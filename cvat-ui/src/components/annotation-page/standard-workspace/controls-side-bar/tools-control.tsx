@@ -25,11 +25,11 @@ import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState,
-} from 'reducers/interfaces';
+    CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
+} from 'reducers';
 import {
     interactWithCanvas,
     switchNavigationBlocked as switchNavigationBlockedAction,
@@ -37,9 +37,10 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
-import DetectorRunner from 'components/model-runner-modal/detector-runner';
+import DetectorRunner, { DetectorRequestBody } from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { Attribute, Label } from 'components/labels-editor/common';
 
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
@@ -62,6 +63,7 @@ interface StateToProps {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
+    frameIsDeleted: boolean;
 }
 
 interface DispatchToProps {
@@ -77,29 +79,42 @@ const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { annotation } = state;
-    const { settings } = state;
-    const { number: frame } = annotation.player.frame;
-    const { instance: jobInstance } = annotation.job;
-    const { instance: canvasInstance, activeControl } = annotation.canvas;
-    const { models } = state;
-    const { interactors, detectors, trackers } = models;
-    const { toolsBlockerState } = state.settings.workspace;
+    const {
+        annotation: {
+            job: { instance: jobInstance, labels },
+            canvas: { instance: canvasInstance, activeControl },
+            player: {
+                frame: { number: frame, data: { deleted: frameIsDeleted } },
+            },
+            annotations: {
+                zLayer: { cur: curZOrder },
+                states,
+            },
+            drawing: { activeLabelID },
+        },
+        models: {
+            interactors, detectors, trackers,
+        },
+        settings: {
+            workspace: { toolsBlockerState, defaultApproxPolyAccuracy },
+        },
+    } = state;
 
     return {
         interactors,
         detectors,
         trackers,
         isActivated: activeControl === ActiveControl.AI_TOOLS,
-        activeLabelID: annotation.drawing.activeLabelID,
-        labels: annotation.job.labels,
-        states: annotation.annotations.states,
+        activeLabelID,
+        labels,
+        states,
         canvasInstance: canvasInstance as Canvas,
         jobInstance,
         frame,
-        curZOrder: annotation.annotations.zLayer.cur,
-        defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
+        curZOrder,
+        defaultApproxPolyAccuracy,
         toolsBlockerState,
+        frameIsDeleted,
     };
 }
 
@@ -336,7 +351,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction.latestRequest = null;
 
         try {
-            this.interaction.hideMessage = message.loading(`Waiting a response from ${activeInteractor?.name}..`, 0);
+            this.interaction.hideMessage = message.loading({
+                content: `Waiting a response from ${activeInteractor?.name}..`,
+                duration: 0,
+                className: 'cvat-tracking-notice',
+            });
             try {
                 // run server request
                 this.setState({ fetching: true });
@@ -374,7 +393,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
 
             setTimeout(() => this.runInteractionRequest(interactionId));
-        } catch (err) {
+        } catch (err: any) {
             notification.error({
                 description: err.toString(),
                 message: 'Interaction error occured',
@@ -466,7 +485,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             // update annotations on a canvas
             fetchAnnotations();
-        } catch (err) {
+        } catch (err: any) {
             notification.error({
                 description: err.toString(),
                 message: 'Tracking error occured',
@@ -682,12 +701,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                         const trackableObjects = trackingData.stateless[trackerID];
                         const numOfObjects = trackableObjects.clientIDs.length;
-                        hideMessage = message.loading(
-                            `${tracker.name}: states are being initialized for ${numOfObjects} ${
+                        hideMessage = message.loading({
+                            content: `${tracker.name}: states are being initialized for ${numOfObjects} ${
                                 numOfObjects > 1 ? 'objects' : 'object'
                             } ..`,
-                            0,
-                        );
+                            duration: 0,
+                            className: 'cvat-tracking-notice',
+                        });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,
@@ -706,7 +726,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         Array.prototype.push.apply(statefullContainer.states, serverlessStates);
                         trackingData.statefull[trackerID] = statefullContainer;
                         delete trackingData.stateless[trackerID];
-                    } catch (error) {
+                    } catch (error: any) {
                         notification.error({
                             message: 'Tracker initialization error',
                             description: error.toString(),
@@ -727,15 +747,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                         const trackableObjects = trackingData.statefull[trackerID];
                         const numOfObjects = trackableObjects.clientIDs.length;
-                        hideMessage = message.loading(
-                            `${tracker.name}: ${numOfObjects} ${
+                        hideMessage = message.loading({
+                            content: `${tracker.name}: ${numOfObjects} ${
                                 numOfObjects > 1 ? 'objects are' : 'object is'
                             } being tracked..`,
-                            0,
-                        );
+                            duration: 0,
+                            className: 'cvat-tracking-notice',
+                        });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
-                            frame: frame - 1,
+                            frame: frame ,
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
                         });
@@ -757,7 +778,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 trackedShape.shapePoints = shape;
                             });
                         }
-                    } catch (error) {
+                    } catch (error: any) {
                         notification.error({
                             message: 'Tracking error',
                             description: error.toString(),
@@ -1022,41 +1043,106 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             });
         });
 
+        function checkAttributesCompatibility(
+            functionAttribute: ModelAttribute | undefined,
+            dbAttribute: Attribute | undefined,
+            value: string,
+        ): boolean {
+            if (!dbAttribute || !functionAttribute) {
+                return false;
+            }
+
+            const { inputType } = (dbAttribute as any as { inputType: string });
+            if (functionAttribute.input_type === inputType) {
+                if (functionAttribute.input_type === 'number') {
+                    const [min, max, step] = dbAttribute.values;
+                    return !Number.isNaN(+value) && +value >= +min && +value <= +max && !(+value % +step);
+                }
+
+                if (functionAttribute.input_type === 'checkbox') {
+                    return ['true', 'false'].includes(value.toLowerCase());
+                }
+
+                if (['select', 'radio'].includes(functionAttribute.input_type)) {
+                    return dbAttribute.values.includes(value);
+                }
+
+                return true;
+            }
+
+            switch (functionAttribute.input_type) {
+                case 'number':
+                    return dbAttribute.values.includes(value) || inputType === 'text';
+                case 'text':
+                    return ['select', 'radio'].includes(dbAttribute.input_type) && dbAttribute.values.includes(value);
+                case 'select':
+                    return (inputType === 'radio' && dbAttribute.values.includes(value)) || inputType === 'text';
+                case 'radio':
+                    return (inputType === 'select' && dbAttribute.values.includes(value)) || inputType === 'text';
+                case 'checkbox':
+                    return dbAttribute.values.includes(value) || inputType === 'text';
+                default:
+                    return false;
+            }
+        }
+
         return (
             <DetectorRunner
                 withCleanup={false}
                 models={detectors}
                 labels={jobInstance.labels}
                 dimension={jobInstance.dimension}
-                runInference={async (model: Model, body: object) => {
+                runInference={async (model: Model, body: DetectorRequestBody) => {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
                         const result = await core.lambda.call(jobInstance.taskId, model, { ...body, frame });
                         const states = result.map(
-                            (data: any): any => new core.classes.ObjectState({
-                                shapeType: data.type,
-                                label: jobInstance.labels.filter((label: any): boolean => label.name === data.label)[0],
-                                points: data.points,
-                                objectType: ObjectType.SHAPE,
-                                frame,
-                                occluded: false,
-                                source: 'auto',
-                                attributes: (data.attributes as { name: string, value: string }[])
-                                    .reduce((mapping, attr) => {
-                                        mapping[attrsMap[data.label][attr.name]] = attr.value;
-                                        return mapping;
-                                    }, {} as Record<number, string>),
-                                zOrder: curZOrder,
-                            }),
-                        );
+                            (data: any): any => {
+                                const jobLabel = (jobInstance.labels as Label[])
+                                    .find((jLabel: Label): boolean => jLabel.name === data.label);
+                                const [modelLabel] = Object.entries(body.mapping)
+                                    .find(([, { name }]) => name === data.label) || [];
+
+                                if (!jobLabel || !modelLabel) return null;
+
+                                return new core.classes.ObjectState({
+                                    shapeType: data.type,
+                                    label: jobLabel,
+                                    points: data.points,
+                                    objectType: ObjectType.SHAPE,
+                                    frame,
+                                    occluded: false,
+                                    source: 'auto',
+                                    attributes: (data.attributes as { name: string, value: string }[])
+                                        .reduce((acc, attr) => {
+                                            const [modelAttr] = Object.entries(body.mapping[modelLabel].attributes)
+                                                .find((value: string[]) => value[1] === attr.name) || [];
+                                            const areCompatible = checkAttributesCompatibility(
+                                                model.attributes[modelLabel].find((mAttr) => mAttr.name === modelAttr),
+                                                jobLabel.attributes.find((jobAttr: Attribute) => (
+                                                    jobAttr.name === attr.name
+                                                )),
+                                                attr.value,
+                                            );
+
+                                            if (areCompatible) {
+                                                acc[attrsMap[data.label][attr.name]] = attr.value;
+                                            }
+
+                                            return acc;
+                                        }, {} as Record<number, string>),
+                                    zOrder: curZOrder,
+                                });
+                            },
+                        ).filter((state: any) => state);
 
                         createAnnotations(jobInstance, frame, states);
                         const { onSwitchToolsBlockerState } = this.props;
                         onSwitchToolsBlockerState({ buttonVisible: false });
-                    } catch (error) {
+                    } catch (error: any) {
                         notification.error({
                             description: error.toString(),
-                            message: 'Detection error occured',
+                            message: 'Detection error occurred',
                         });
                     } finally {
                         this.setState({ fetching: false });
@@ -1095,7 +1181,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated, canvasInstance, labels,
+            interactors, detectors, trackers, isActivated, canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
             fetching, approxPolyAccuracy, pointsRecieved, mode, portals,
@@ -1122,7 +1208,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        const showAnyContent = !!labels.length;
+        const showAnyContent = labels.length && !frameIsDeleted;
         const showInteractionContent = isActivated && mode === 'interaction' && pointsRecieved;
         const showDetectionContent = fetching && mode === 'detection';
 

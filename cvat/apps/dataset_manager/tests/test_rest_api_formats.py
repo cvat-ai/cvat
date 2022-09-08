@@ -237,6 +237,36 @@ class _DbTestBase(APITestCase):
                                 "spec_id": spec_id,
                                 "value": value,
                             })
+                    elements = tmp_annotations[item][index_elem].get("elements", [])
+                    labels = task["labels"][0].get("sublabels", [])
+                    for element, label in zip(elements, labels):
+                        element["label_id"] = label["id"]
+
+                        for index_attribute, attribute in enumerate(label["attributes"]):
+                            spec_id = label["attributes"][index_attribute]["id"]
+
+                            if key_get_values == "random":
+                                if attribute["input_type"] == "number":
+                                    start = int(attribute["values"][0])
+                                    stop = int(attribute["values"][1]) + 1
+                                    step = int(attribute["values"][2])
+                                    value = str(random.randrange(start, stop, step))
+                                else:
+                                    value = random.choice(label["attributes"][index_attribute]["values"])
+                            elif key_get_values == "default":
+                                value = attribute["default_value"]
+
+                            if item == "tracks" and attribute["mutable"]:
+                                for index_shape, _ in enumerate(element["shapes"]):
+                                    element["shapes"][index_shape]["attributes"].append({
+                                        "spec_id": spec_id,
+                                        "value": value,
+                                    })
+                            else:
+                                element["attributes"].append({
+                                    "spec_id": spec_id,
+                                    "value": value,
+                                })
         response = self._put_api_v2_task_id_annotations(task["id"], tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -358,7 +388,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0"
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -421,7 +451,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             if upload_format_name in [
                                 "Market-1501 1.0", "Cityscapes 1.0", \
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0"
+                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
                             ]:
                                 task = self._create_task(tasks[upload_format_name], images)
                             else:
@@ -464,7 +494,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0"
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], video)
                     else:
@@ -525,7 +555,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             if upload_format_name in [
                                 "Market-1501 1.0", "Cityscapes 1.0", \
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0"
+                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
                             ]:
                                 task = self._create_task(tasks[upload_format_name], video)
                             else:
@@ -806,7 +836,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0"
+                        "ICDAR Segmentation 1.0","COCO Keypoints 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -910,7 +940,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0"
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -1024,7 +1054,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0"
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:

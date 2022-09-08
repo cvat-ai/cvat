@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.isort]
+profile = "black"
+forced_separate = ["tests"]
+line_length = 100
+skip_gitignore = true # align tool behavior with Black
+
+# Can't just use a pyproject in the root dir, so duplicate
+# https://github.com/psf/black/issues/2863
+[tool.black]
+line-length = 100
+target-version = ['py38']

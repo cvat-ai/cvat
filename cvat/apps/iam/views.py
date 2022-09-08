@@ -1,4 +1,5 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,7 +9,7 @@ from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from rest_framework.response import Response
-from rest_auth.registration.views import RegisterView
+from dj_rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
 from furl import furl
 
@@ -32,13 +33,13 @@ def get_context(request):
         org_id = request.GET.get('org_id')
         org_header = request.headers.get('X-Organization')
 
-        if org_id != None and (org_slug != None or org_header != None):
-            raise BadRequest('You cannot specify "org_id" query parameter with ' +
+        if org_id is not None and (org_slug is not None or org_header is not None):
+            raise BadRequest('You cannot specify "org_id" query parameter with '
                 '"org" query parameter or "X-Organization" HTTP header at the same time.')
-        if org_slug != None and org_header != None and org_slug != org_header:
-            raise BadRequest('You cannot specify "org" query parameter and ' +
+        if org_slug is not None and org_header is not None and org_slug != org_header:
+            raise BadRequest('You cannot specify "org" query parameter and '
                 '"X-Organization" HTTP header with different values.')
-        org_slug = org_slug if org_slug != None else org_header
+        org_slug = org_slug if org_slug is not None else org_header
 
         org_filter = None
         if org_slug:
@@ -78,7 +79,7 @@ class ContextMiddleware:
 
         return self.get_response(request)
 
-
+@extend_schema(tags=['auth'])
 @extend_schema_view(post=extend_schema(
     summary='This method signs URL for access to the server',
     description='Signed URL contains a token which authenticates a user on the server.'
@@ -89,7 +90,7 @@ class ContextMiddleware:
             'url': serializers.CharField(),
         }
     ),
-    responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')}, tags=['auth'], versions=['2.0']))
+    responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')}))
 class SigningView(views.APIView):
 
     def post(self, request):
