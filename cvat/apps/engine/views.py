@@ -2254,13 +2254,13 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             db_instance.__class__.__name__.lower(),
                             db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
                             timestamp, format_name, osp.splitext(file_path)[1]
-                        )
+                        ).lower()
 
                     # save annotation to specified location
                     location = location_conf.get('location')
                     if location == Location.LOCAL:
                         return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
+                            attachment_filename=filename)
                     elif location == Location.CLOUD_STORAGE:
                         try:
                             storage_id = location_conf['storage_id']
