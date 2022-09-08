@@ -3,11 +3,13 @@ linkTitle: 'MS COCO'
 weight: 5
 ---
 
-# [MS COCO Object Detection](http://cocodataset.org/#format-data)
+[MS COCO Object Detection](http://cocodataset.org/#format-data)
+==============
 
 - [Format specification](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/)
 
-## COCO export
+COCO export
+---------------
 
 Downloaded file: a zip archive with the structure described [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
 
@@ -33,7 +35,8 @@ For example, [support for COCO keypoints over Datumaro](https://github.com/openv
 This way, one can export CVAT points as single keypoints or
 keypoint lists (without the `visibility` COCO flag).
 
-## COCO import
+COCO import
+---------------
 
 Uploaded file: a single unpacked `*.json` or a zip archive with the structure described
 [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
@@ -41,11 +44,13 @@ Uploaded file: a single unpacked `*.json` or a zip archive with the structure de
 
 - supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 
-# [MS COCO Keypoint Detection](https://cocodataset.org/#keypoints-2020)
+[MS COCO Keypoint Detection](https://cocodataset.org/#keypoints-2020)
+==============
 
 - [Format specification](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/)
 
-## COCO export
+COCO export
+---------------
 
 Downloaded file: a zip archive with the structure described [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
 
@@ -59,7 +64,8 @@ Downloaded file: a zip archive with the structure described [here](https://openv
   - `score` (number) - the annotation `score` field
   - arbitrary attributes - will be stored in the `attributes` annotation section
 
-## COCO import
+COCO import
+---------------
 
 Uploaded file: a single unpacked `*.json` or a zip archive with the structure described
 [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
@@ -67,7 +73,8 @@ Uploaded file: a single unpacked `*.json` or a zip archive with the structure de
 
 - supported annotations: Skeletons
 
-## How to create a task from MS COCO dataset
+How to create a task from MS COCO dataset
+==============
 
 1. Download the [MS COCO dataset](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset).
 
