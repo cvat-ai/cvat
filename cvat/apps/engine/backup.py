@@ -505,7 +505,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         else:
             uploaded_files = _write_data(self._file)
 
-        use_zip_chunks = data.pop('use_zip_chunks', False) or data.pop('chunk_type') == DataChoice.IMAGESET
+        use_zip_chunks = data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data
         data['use_zip_chunks'] = use_zip_chunks
         data['client_files'] = uploaded_files
