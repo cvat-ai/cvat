@@ -60,7 +60,8 @@ In tab `Workspace` you can:
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
 
-- `Control points size` — defines a size of any interactable points in the tool (polygon's vertexes, rectangle dragging points, etc.)
+- `Control points size` — defines a size of any interactable points in the tool
+(polygon's vertexes, rectangle dragging points, etc.)
 
 - `Default number of points in polygon approximation`
   With this setting, you can choose the default number of points in polygon.
