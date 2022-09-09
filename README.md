@@ -30,9 +30,10 @@ Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a 
 - [Installation guide](https://opencv.github.io/cvat/docs/administration/basics/installation/)
 - [Manual](https://opencv.github.io/cvat/docs/manual/)
 - [Contributing](https://opencv.github.io/cvat/docs/contributing/)
-- [Django REST API documentation](https://opencv.github.io/cvat/docs/administration/basics/rest_api_guide/)
 - [Datumaro dataset framework](https://github.com/cvat-ai/datumaro/blob/develop/README.md)
-- [Command line interface](https://opencv.github.io/cvat/docs/manual/advanced/cli/)
+- [Server API](https://opencv.github.io/cvat/docs/integration/api/)
+- [Python SDK](https://opencv.github.io/cvat/docs/integration/sdk/)
+- [Command line tool](https://opencv.github.io/cvat/docs/integration/cli/)
 - [XML annotation format](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/)
 - [AWS Deployment Guide](https://opencv.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
 - [Frequently asked questions](https://opencv.github.io/cvat/docs/faq/)
@@ -85,10 +86,23 @@ Prebuilt docker images are the easiest way to start using CVAT locally. They are
 
 The images have been downloaded more than 1M times so far.
 
-## REST API
+## Integration
 
-CVAT has a REST API: [documentation](https://opencv.github.io/cvat/docs/administration/basics/rest_api_guide/).
-Its current version is `2.0-alpha`. We focus on its improvement, and the API may be changed in the next releases.
+### Server API
+
+- [Documentation](https://opencv.github.io/cvat/docs/integration/api/)
+
+### Python SDK
+
+- Install with `pip install cvat-sdk`
+- [PyPI package homepage](https://pypi.org/project/cvat-sdk/)
+- [Documentation](https://opencv.github.io/cvat/docs/integration/sdk/)
+
+### CLI
+
+- Install with `pip install cvat-cli`
+- [PyPI package homepage](https://pypi.org/project/cvat-cli/)
+- [Documentation](https://opencv.github.io/cvat/docs/integration/cli/)
 
 ## Screencasts 🎦
 
