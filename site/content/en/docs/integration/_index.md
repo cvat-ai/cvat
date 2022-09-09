@@ -1,7 +1,7 @@
 ---
 title: "Integration"
 linkTitle: "Integration"
-weight: 2
+weight: 4
 description: 'CVAT integration info'
 ---
 

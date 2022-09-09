@@ -1,8 +1,8 @@
 ---
 title: 'Command line interface (CLI)'
 linkTitle: 'CLI'
-weight: 1
-description: 'Command line tool information'
+weight: 4
+description: ''
 ---
 
 ## Overview

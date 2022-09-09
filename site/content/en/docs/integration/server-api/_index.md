@@ -1,8 +1,8 @@
 ---
 title: 'Server API'
 linkTitle: 'Server API'
-weight: 1
-description: 'Server API documentation'
+weight: 2
+description: ''
 ---
 
 ## Overview
@@ -22,7 +22,7 @@ the official CVAT.ai application has API documentation [here](https://app.cvat.a
 
 Here you can see how a task is created in CVAT:
 
-![Task creation example](/images/server_api_create_task_example.svg)
+![Task creation example](/images/server_api_create_task_example.png)
 
 1. At first, we have to login
 1. Then we create a task from its configuration

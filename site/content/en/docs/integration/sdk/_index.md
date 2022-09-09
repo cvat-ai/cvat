@@ -1,8 +1,8 @@
 ---
 title: 'Python SDK'
 linkTitle: 'SDK'
-weight: 1
-description: 'Python SDK documentation'
+weight: 3
+description: ''
 ---
 
 ## Overview
