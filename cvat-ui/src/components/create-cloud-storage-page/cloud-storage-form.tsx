@@ -267,20 +267,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
     };
 
-    const handleOnFinishFailed = (
-        { errorFields }: { errorFields: any[] },
-    ): void => {
-        const [manifestsErrors] = errorFields.filter((value) => value.name[0] === 'manifests');
-        if (manifestsErrors) {
-            const msg = manifestsErrors.errors.join('; ');
-            notification.error({
-                message: 'Could not attach a cloud storage',
-                description: msg,
-                className: 'cvat-notification-attach-cloud-storage',
-            });
-        }
-    };
-
     const resetCredentialsValues = (): void => {
         form.setFieldsValue({
             key: undefined,
@@ -624,7 +610,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             layout='vertical'
             form={form}
             onFinish={(values: CloudStorageForm): void => handleOnFinish(values)}
-            onFinishFailed={(values: any): void => handleOnFinishFailed(values)}
         >
             <Form.Item
                 {...commonProps}

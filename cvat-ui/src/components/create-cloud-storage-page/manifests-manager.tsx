@@ -6,11 +6,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { DeleteOutlined, PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Col from 'antd/lib/col';
-import Form from 'antd/lib/form';
+import Form, { RuleObject } from 'antd/lib/form';
+import { FormListFieldData, FormListOperation } from 'antd/lib/form/FormList';
 import Input from 'antd/lib/input';
 import Row from 'antd/lib/row';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
+import consts from 'consts';
 
 interface Props {
     form: any;
@@ -22,6 +24,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
     const { form, manifestNames, setManifestNames } = props;
     const maxManifestsCount = useRef(5);
     const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState(false);
+    const { DATASET_MANIFEST_GUIDE_URL } = consts;
 
     const updateManifestFields = (): void => {
         const newManifestFormItems = manifestNames.map((name, idx) => ({
@@ -79,7 +82,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                 type='link'
                                 target='_blank'
                                 className='cvat-cloud-storage-help-button'
-                                href='https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/'
+                                href={DATASET_MANIFEST_GUIDE_URL}
                             >
                                 <QuestionCircleOutlined />
                             </Button>
@@ -92,17 +95,16 @@ export default function ManifestsManager(props: Props): JSX.Element {
                 name='manifests'
                 rules={[
                     {
-                        validator: async (_, names) => {
+                        validator: async (_: RuleObject, names: string[]): Promise<void> => {
                             if (!names || !names.length) {
-                                return Promise.reject(new Error('Please, specify at least one manifest file'));
+                                throw new Error('Please, specify at least one manifest file');
                             }
-                            return Promise.resolve();
                         },
                     },
                 ]}
             >
                 {
-                    (fields) => (
+                    (fields: FormListFieldData[], _: FormListOperation, { errors }: { errors: React.ReactNode[] }) => (
                         <>
                             {fields.map((field, idx): JSX.Element => (
                                 <Form.Item key={idx} shouldUpdate>
@@ -134,6 +136,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                     </Row>
                                 </Form.Item>
                             ))}
+                            <Form.ErrorList errors={errors} />
                         </>
                     )
                 }
