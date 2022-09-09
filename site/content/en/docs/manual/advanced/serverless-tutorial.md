@@ -4,4 +4,4 @@ linkTitle: 'Serverless tutorial'
 weight: 32
 ---
 
-This page was moved [here](/integration/serverless-tutorial).
+This page was moved [here](/docs/integration/serverless-tutorial).

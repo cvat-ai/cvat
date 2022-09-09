@@ -1,13 +1,37 @@
 ---
-title: 'REST API design principles'
-linkTitle: 'REST API design principles'
-weight: 100
-description: 'Information on using the REST API scheme and principles of its design.'
+title: 'Server API'
+linkTitle: 'Server API'
+weight: 1
+description: 'Server API documentation'
 ---
 
-## REST API scheme
+## Overview
 
-Common scheme for our REST API is `<VERB> [namespace] <objects> <id> <action>`.
+CVAT server provides HTTP REST API for interation. Each client application - be it
+a command line tool, browser or a script - all interact with CVAT via HTTP requests and
+responses:
+
+![CVAT server interaction image](/images/server_api_interaction.svg)
+
+## API schema
+
+You can obtain schema for your server at `<yourserver>/api/docs`. For example,
+the official CVAT.ai application has API documentation [here](https://app.cvat.ai/api/docs/).
+
+## Examples
+
+Here you can see how a task is created in CVAT:
+
+![Task creation example](/images/server_api_create_task_example.svg)
+
+1. At first, we have to login
+1. Then we create a task from its configuration
+1. Then we send task data (images, videos etc.)
+1. We wait for data processing and finish
+
+## Design principles
+
+Common pattern for our REST API is `<VERB> [namespace] <objects> <id> <action>`.
 
 - `VERB` can be `POST`, `GET`, `PATCH`, `PUT`, `DELETE`.
 - `namespace` should scope some specific functionality like `auth`, `lambda`.
@@ -18,7 +42,7 @@ Common scheme for our REST API is `<VERB> [namespace] <objects> <id> <action>`.
   without `objects` endpoint like `annotations`, `data`, `data/meta`. Note: action
   should not duplicate other endpoints without a reason.
 
-## Design principles
+When you're developing new endpoints, follow these guidelines:
 
 - Use nouns instead of verbs in endpoint paths. For example,
   `POST /api/tasks` instead of `POST /api/tasks/create`.

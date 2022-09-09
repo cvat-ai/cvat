@@ -19,6 +19,6 @@ CVAT provides the following integration layers:
 In this section, you can find documentation about each separate layer.
 
 Besides this, CVAT also has other parts that can be used by other tools. These can be:
-- imported and exported annotations (read docs [here]()), including CVAT own format
+- imported and exported annotations (read docs [here](/manual/advanced/formats)), including CVAT's own format
 - backups
 - serverless functions used for model launch inside CVAT

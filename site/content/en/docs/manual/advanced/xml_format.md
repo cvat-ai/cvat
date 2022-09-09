@@ -4,4 +4,4 @@ linkTitle: 'XML annotation format'
 weight: 22
 ---
 
-This page was moved [here](/integration/xml-format).
+This page was moved [here](/docs/integration/xml-format).
