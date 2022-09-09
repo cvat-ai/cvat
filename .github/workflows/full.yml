@@ -252,11 +252,9 @@ jobs:
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
-        env:
-          LOGS_DIR: "${{ github.workspace }}/unit_testing"
         with:
           name: container_logs
-          path: $LOGS_DIR
+          path: "${{ github.workspace }}/unit_testing"
 
   e2e_testing:
     needs: build
