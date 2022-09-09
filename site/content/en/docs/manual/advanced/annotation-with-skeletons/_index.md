@@ -13,3 +13,4 @@ Any point itself is considered like an individual object with its own attributes
 (like color, occluded, outside, etc). At the same time a skeleton point can exist only within the parent skeleton.
 
 Any skeleton elements can be hidden (by marking them `outside`) if necessary (for example if a part is out of a frame).
+Currently there are two formats which support exporting skeletons: CVAT & COCO.
