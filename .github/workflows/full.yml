@@ -69,7 +69,7 @@ jobs:
           mkdir /tmp/cvat_server
           mkdir /tmp/cvat_ui
 
-      - name: CVAT server. Build and push
+      - name: CVAT server. Build
         uses: docker/build-push-action@v3
         with:
           cache-from: type=local,src=/tmp/cvat_cache_server
@@ -78,7 +78,7 @@ jobs:
           tags: cvat/server
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
-      - name: CVAT UI. Build and push
+      - name: CVAT UI. Build
         uses: docker/build-push-action@v3
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
@@ -162,6 +162,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/ui:latest cvat/server:dev
           docker image ls -a
 
       - name: Running REST API and SDK tests
@@ -217,6 +219,7 @@ jobs:
       - name: Load Docker images
         run: |
           docker load --input /tmp/cvat_server/image.tar
+          docker tag cvat/server:latest cvat/server:dev
           docker image ls -a
 
       - name: Running OPA tests
@@ -294,6 +297,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/ui:latest cvat/ui:dev
           docker image ls -a
 
       - name: Run CVAT instance
