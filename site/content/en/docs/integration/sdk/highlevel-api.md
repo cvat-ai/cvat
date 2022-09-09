@@ -8,7 +8,7 @@ description: 'SDK high-level API documentation'
 ## Overview
 
 This layer provides high-level APIs, allowing easier access to server operations.
-API includes *Repositories* and *Entities*. Repositories provide management
+API includes _Repositories_ and _Entities_. Repositories provide management
 operations for Entitites. Entitites represent separate objects on the server
 (e.g. tasks, jobs etc).
 
