@@ -3,7 +3,8 @@ import data.utils
 import data.organizations
 
 # input : {
-#     "scope": <"create@project" | "create@organization" | "update" > or null,
+#     "scope": <"create@project" | "create@organization" | "update" | "delete" |
+#         "list" | "view"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>
@@ -32,8 +33,6 @@ import data.organizations
 # }
 #
 
-default allow = false
-
 is_project_owner {
     input.resource.project.owner.id == input.auth.user.id
 }
@@ -41,6 +40,8 @@ is_project_owner {
 is_webhook_owner {
     input.resource.owner.id == input.auth.user.id
 }
+
+default allow = false
 
 allow {
     utils.is_admin
@@ -53,41 +54,77 @@ allow {
     is_project_owner
 }
 
+
 allow {
-    {utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION, utils.UPDATE}[input.scope]
+    input.scope == utils.LIST
+    utils.is_sandbox
+}
+
+allow {
+    input.scope == utils.LIST
+    organizations.is_member
+}
+
+filter = [] { # Django Q object to filter list of entries
+    utils.is_admin
+    utils.is_sandbox
+} else = qobject {
+    utils.is_admin
+    utils.is_organization
+    qobject := [ {"organization": input.auth.organization.id} ]
+} else = qobject {
+    utils.is_sandbox
+    user := input.auth.user
+    qobject := [ {"owner_id": user.id}, {"project__owner_id": user.id}, "|" ]
+} else = qobject {
+    utils.is_organization
+    utils.has_perm(utils.WORKER)
+    organizations.has_perm(organizations.MAINTAINER)
+    qobject := [ {"organization": input.auth.organization.id} ]
+} else = qobject {
+    utils.is_organization
+    utils.has_perm(utils.WORKER)
+    organizations.has_perm(organizations.WORKER)
+    user := input.auth.user
+    qobject := [ {"owner_id": user.id}, {"project__owner_id": user.id},
+        "|", {"organization": input.auth.organization.id}, "&"]
+}
+
+
+allow {
+    { utils.VIEW, utils.UPDATE, utils.DELETE }[input.scope]
+    utils.is_sandbox
+    utils.has_perm(utils.WORKER)
+    utils.is_resource_owner
+}
+
+allow {
+    { utils.VIEW, utils.UPDATE, utils.DELETE }[input.scope]
+    utils.is_sandbox
+    utils.has_perm(utils.WORKER)
+    is_project_owner
+}
+
+allow {
+    { utils.VIEW, utils.UPDATE, utils.DELETE }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.WORKER)
+    organizations.has_perm(organizations.WORKER)
+    utils.is_resource_owner
+}
+
+allow {
+    { utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION, utils.UPDATE,
+      utils.DELETE, utils.VIEW }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow {
-    {utils.CREATE_IN_PROJECT, utils.UPDATE}[input.scope]
+    { utils.CREATE_IN_PROJECT, utils.UPDATE, utils.DELETE, utils.VIEW }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_project_owner
 }
-
-allow {
-    input.scope == utils.UPDATE
-    utils.is_sandbox
-    utils.has_perm(utils.WORKER)
-    utils.is_resource_owner
-}
-
-allow {
-    input.scope == utils.UPDATE
-    utils.is_sandbox
-    utils.has_perm(utils.WORKER)
-    is_project_owner
-}
-
-allow {
-    input.scope == utils.UPDATE
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    utils.is_resource_owner
-}
-
-

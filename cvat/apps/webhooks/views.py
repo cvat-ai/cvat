@@ -10,6 +10,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
+from cvat.apps.iam.permissions import WebhookPermission
+
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 from .serializers import (
@@ -68,6 +70,14 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 return WebhookReadSerializer
             else:
                 return WebhookWriteSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            perm = WebhookPermission.create_scope_list(self.request)
+            queryset = perm.filter(queryset)
+
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user,

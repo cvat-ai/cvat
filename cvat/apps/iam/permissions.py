@@ -791,8 +791,11 @@ class WebhookPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         scope = {
             ('create', 'POST'): 'create',
+            ('destroy', 'DELETE'): 'delete',
             ('partial_update', 'PATCH'): 'update',
             ('update', 'PUT'): 'update',
+            ('list', 'GET'): 'list',
+            ('retrieve', 'GET'): 'view',
         }.get((view.action, request.method))
 
         scopes = []
@@ -801,7 +804,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
             if webhook_type:
                 scope += f'@{webhook_type}'
                 scopes.append(scope)
-        elif scope == 'update':
+        elif scope in ['update', 'delete', 'list', 'view']:
             scopes.append(scope)
 
         return scopes
@@ -813,13 +816,14 @@ class WebhookPermission(OpenPolicyAgentPermission):
             data = {
                 "id": self.obj.id,
                 "owner": {"id": getattr(self.obj.owner, 'id', None) },
-                'organization': { "id": self.org_id },
+                'organization': {
+                    "id": getattr(self.obj.organization, 'id', None)
+                },
                 "project": None
             }
             if self.obj.type == 'project' and getattr(self.obj, 'project', None):
                 data['project'] = {
-                    'id': getattr(self.obj.project, 'id', None),
-                    'owner': {'id': getattr(self.obj.project, 'id', None)}
+                    'owner': {'id': getattr(self.obj.project.owner, 'id', None)}
                 }
         elif self.scope in ['create@project', 'create@organization']:
             project = None
@@ -839,7 +843,6 @@ class WebhookPermission(OpenPolicyAgentPermission):
             }
 
             data['project'] = None if project is None else {
-                'id': getattr(project, 'id', None),
                 'owner': {
                     'id': getattr(project.owner, 'id', None)
                 },
