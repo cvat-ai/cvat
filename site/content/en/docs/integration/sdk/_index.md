@@ -7,15 +7,21 @@ description: 'Python SDK documentation'
 
 ## Overview
 
-SDK is a Python library. It provides you access to
+SDK is a Python library. It provides you access to Python function and objects, which
+simplify server interaction and provide additional functionality like data validation.
 
 SDK API includes 2 layers:
 - Low-level API with REST API wrappers. Located in at `cvat_sdk.api_client`. [Read more](/integration/sdk/lowlevel-api)
 - High-level API. Located at `cvat_sdk.core`. [Read more](/integration/sdk/highlevel-api)
 
+Roughly, low-level API provides single-request operations, while the high-level one allows you
+to use composite, multi-request operations and have local counterparts for server objects.
+For most uses, the high-level API should be good enough and sufficient, and it should be
+right point to start your integration with CVAT.
+
 ## Installation
 
-You can install the official release from PyPI with the following command:
+To install an [official release of CVAT SDK](https://pypi.org/project/cvat-sdk/) use this command:
 ```bash
 pip install cvat-sdk
 ```

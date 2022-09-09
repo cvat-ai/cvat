@@ -24,7 +24,7 @@ Overview of functionality:
 
 ## Installation
 
-To install an official release of CVAT CLI, use this command:
+To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/), use this command:
 
 ```bash
 pip install cvat-cli
