@@ -336,11 +336,13 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
+              --env coverage=false
               --config-file cypress_canvas3d.json \
               --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
+              --env coverage=false
               --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
           fi
 
