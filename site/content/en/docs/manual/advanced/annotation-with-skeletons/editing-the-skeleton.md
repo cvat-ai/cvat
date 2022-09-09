@@ -31,4 +31,9 @@ It works a similar way, like for other kinds of objects supported by CVAT, but w
 - `Outside` property is always available for skeleton elements (it does not matter if they are tracks or not)
 - Additional collapse is available for a user, to see a list of skeleton parts
 
-![](/images/image-skeleton-shape-sidebar.jpg)    ![](/images/image-skeleton-track-sidebar.jpg)
+<div style="display: flex; align-items: flex-start;">
+    <img src="/images/image-skeleton-track-sidebar.jpg" width="300px" />
+    <img src="/images/image-skeleton-shape-sidebar.jpg" width="300px" />
+</div>
+
+
