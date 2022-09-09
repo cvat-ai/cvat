@@ -5,11 +5,6 @@ from http import HTTPStatus
 from shared.utils.config import get_method, patch_method, post_method, delete_method
 from itertools import product
 
-# TO-DO:
-# - use find_users
-# - use is_admin_user
-# - use admin user
-# DONE TestPostWebhooks rename proj_webhook on proj_webhook
 
 @pytest.mark.usefixtures('changedb')
 class TestPostWebhooks:
@@ -76,15 +71,16 @@ class TestPostWebhooks:
         not_org_members = [(u, o) for u, o in product(admins, organizations)
             if not is_org_member(u['id'], o['id'])]
 
-        for u, o in not_org_members:
-            for p in projects_by_org.get(o['id'], []):
-                if p['owner']['id'] != u['id']:
-                    username, pid, oid = u['username'], p['id'], o['id']
-                    break
+        username, org_id = next((
+            (u['username'], o['id'])
+            for u, o in not_org_members
+            for p in projects_by_org.get(o['id'], [])
+            if p['owner']['id'] != u['id']
+        ))
 
         webhook = deepcopy(self.org_webhook)
 
-        response = post_method(username, 'webhooks', webhook, org_id=oid)
+        response = post_method(username, 'webhooks', webhook, org_id=org_id)
 
         assert response.status_code == HTTPStatus.CREATED
         assert 'secret' not in response.json()
@@ -346,20 +342,339 @@ class TestPostWebhooks:
 
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetWebhooks:
-    def test_can_get_webhook_by_id(self, webhooks):
-        webhook = next(iter(webhooks))
-        response = get_method('admin2', f"webhooks/{webhook['id']}")
+    def test_admin_can_get_webhook(self, webhooks, users, projects):
+        proj_webhooks = [w for w in webhooks if w['type'] == 'project']
+        username, wid = next((
+            (user['username'], webhook['id'])
+            for user in users
+            for webhook in proj_webhooks
+            if 'admin' in user['groups']
+                and webhook['owner']['id'] != user['id']
+                and projects[webhook['project']]['owner']['id'] != user['id']
+        ))
+
+        response = get_method(username, f"webhooks/{wid}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert 'secret' not in response.json()
+        assert DeepDiff(webhooks[wid], response.json(), ignore_order=True) == {}
+
+    @pytest.mark.parametrize('privilege', ['user', 'business'])
+    def test_project_owner_can_get_webhook(self, privilege, webhooks, projects, users):
+        proj_webhooks = [w for w in webhooks if w['type'] == 'project']
+        username, wid = next((
+            (user['username'], webhook['id'])
+            for user in users
+            for webhook in proj_webhooks
+            if privilege not in user['groups']
+                and projects[webhook['project']]['owner']['id'] == user['id']
+        ))
+
+        response = get_method(username, f"webhooks/{wid}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert 'secret' not in response.json()
+        assert DeepDiff(webhooks[wid], response.json(), ignore_order=True) == {}
+
+    @pytest.mark.parametrize('privilege', ['user', 'business'])
+    def test_webhook_owner_can_get_webhook(self, privilege, webhooks, projects, users):
+        proj_webhooks = [w for w in webhooks if w['type'] == 'project']
+        username, wid = next((
+            (user['username'], webhook['id'])
+            for user in users
+            for webhook in proj_webhooks
+            if privilege in user['groups']
+                and webhook['owner']['id'] == user['id']
+        ))
+
+        response = get_method(username, f"webhooks/{wid}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert 'secret' not in response.json()
+        assert DeepDiff(webhooks[wid], response.json(), ignore_order=True) == {}
+
+    @pytest.mark.parametrize('privilege', ['user', 'business'])
+    def test_not_project_staff_cannot_get_webhook(self, privilege, webhooks,
+            projects, users):
+        proj_webhooks = [w for w in webhooks if w['type'] == 'project']
+        username, wid = next((
+            (user['username'], webhook['id'])
+            for user in users
+            for webhook in proj_webhooks
+            if privilege in user['groups']
+                and projects[webhook['project']]['owner']['id'] != user['id']
+                and webhook['owner']['id'] != user['id']
+        ))
+
+        response = get_method(username, f"webhooks/{wid}")
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize('role', ['owner', 'maintainer'])
+    def test_org_staff_can_see_org_webhook(self, role, webhooks, find_users):
+        webhook = next((w for w in webhooks if w['type'] == 'organization'))
+        username = next((
+            u['username'] for u in find_users(role=role, org=webhook['organization'])
+        ))
+
+        response = get_method(username, f"webhooks/{webhook['id']}",
+                org_id=webhook['organization'])
 
         assert response.status_code == HTTPStatus.OK
         assert 'secret' not in response.json()
         assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
 
+    @pytest.mark.parametrize('role', ['owner', 'maintainer'])
+    def test_org_staff_can_see_project_webhook_in_org(self, role, webhooks, find_users,
+            projects):
+        proj_webhooks = [w for w in webhooks if w['organization'] is not None and
+                w['type'] == 'project']
+        username, webhook = next((
+            (user['username'], webhook)
+            for webhook in proj_webhooks
+            for user in find_users(role=role, org=webhook['organization'])
+            if projects[webhook['project']]['owner']['id'] != user['id']
+                and webhook['owner']['id'] != user['id']
+        ))
+
+        response = get_method(username, f"webhooks/{webhook['id']}",
+                org_id=webhook['organization'])
+
+        assert response.status_code == HTTPStatus.OK
+        assert 'secret' not in response.json()
+        assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
+
+    @pytest.mark.parametrize('role', ['worker', 'supervisor'])
+    def test_member_cannot_get_org_webhook(self, role, webhooks, find_users):
+        webhook = next((w for w in webhooks if w['type'] == 'organization'))
+        username = next((
+            u['username'] for u in find_users(role=role, org=webhook['organization'])
+        ))
+
+        response = get_method(username, f"webhooks/{webhook['id']}",
+                org_id=webhook['organization'])
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize('role', ['worker', 'supervisor'])
+    def test_member_cannot_get_project_webhook_in_org(self, role, webhooks, find_users,
+            projects):
+        proj_webhooks = [w for w in webhooks if w['organization'] is not None and
+                w['type'] == 'project']
+        username, webhook = next((
+            (user['username'], webhook)
+            for webhook in proj_webhooks
+            for user in find_users(role=role, org=webhook['organization'])
+            if projects[webhook['project']]['owner']['id'] != user['id']
+                and webhook['owner']['id'] != user['id']
+        ))
+
+        response = get_method(username, f"webhooks/{webhook['id']}",
+                org_id=webhook['organization'])
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize('role', ['supervisor'])
+    def test_member_can_get_project_webhook_in_org(self, role, webhooks, find_users,
+            projects):
+        proj_webhooks = [w for w in webhooks if w['organization'] is not None and
+                w['type'] == 'project']
+        username, webhook = next((
+            (user['username'], webhook)
+            for webhook in proj_webhooks
+            for user in find_users(role=role, org=webhook['organization'])
+            if projects[webhook['project']]['owner']['id'] == user['id']
+                or webhook['owner']['id'] == user['id']
+        ))
+
+        response = get_method(username, f"webhooks/{webhook['id']}",
+                org_id=webhook['organization'])
+
+        assert response.status_code == HTTPStatus.OK
+        assert 'secret' not in response.json()
+        assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
+
+
+@pytest.mark.usefixtures('dontchangedb')
+class TestGetListWebhooks:
     def test_can_get_webhooks_list(self, webhooks):
         response = get_method('admin2', 'webhooks')
 
         assert response.status_code == HTTPStatus.OK
         assert all(['secret' not in webhook for webhook in response.json()['results']])
         assert DeepDiff(webhooks.raw, response.json()['results'], ignore_order=True) == {}
+
+    def test_admin_can_get_webhooks_for_project(self, webhooks):
+        pid = next((webhook['project'] for webhook in webhooks
+            if webhook['type'] == 'project' and webhook['organization'] is None))
+
+        expected_response = [webhook for webhook in webhooks
+                if webhook['type'] == 'project' and webhook['project'] == pid]
+        filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
+
+        response = get_method('admin2', "webhooks", filter=filter_val)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(expected_response, response.json()['results'], ignore_order=True) == {}
+
+    def test_admin_can_get_webhooks_for_organization(self, webhooks):
+        org_id = next((webhook['organization'] for webhook in webhooks
+            if webhook['organization'] is not None))
+
+        expected_response = [webhook for webhook in webhooks
+                if webhook['organization'] == org_id]
+
+        response = get_method('admin2', "webhooks", org_id=org_id)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(expected_response, response.json()['results'], ignore_order=True) == {}
+
+    def test_admin_can_get_webhooks_for_project_in_org(self, webhooks):
+        pid, oid = next((
+            (webhook['project'], webhook['organization'])
+            for webhook in webhooks
+            if webhook['type'] == 'project'
+                and webhook['organization'] is not None
+        ))
+
+        expected_response = [webhook for webhook in webhooks
+                if webhook['project'] == pid and webhook['organization'] == oid]
+        filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
+
+        response = get_method('admin2', "webhooks", org_id=oid, filter=filter_val)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(expected_response, response.json()['results'], ignore_order=True) == {}
+
+    @pytest.mark.parametrize('privilege', ['user', 'business'])
+    def test_user_cannot_get_webhook_list_for_project(self, privilege, find_users,
+            webhooks, projects):
+        username, pid = next((
+            (user['username'], webhook['project'])
+            for user in find_users(privilege=privilege)
+            for webhook in webhooks
+            if webhook['type'] == 'project'
+                and webhook['organization'] is None
+                and webhook['owner']['id'] != user['id']
+                and projects[webhook['project']]['owner']['id'] != user['id']
+        ))
+
+        filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
+
+        response = get_method(username, "webhooks", filter=filter_val)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff([], response.json()['results'], ignore_order=True) == {}
+
+    @pytest.mark.parametrize('privilege', ['user', 'business'])
+    def test_user_can_get_webhook_list_for_project(self, privilege, find_users,
+            webhooks, projects):
+        username, pid = next((
+            (user['username'], webhook['project'])
+            for user in find_users(privilege=privilege)
+            for webhook in webhooks
+            if webhook['type'] == 'project'
+                and webhook['organization'] is None
+                and projects[webhook['project']]['owner']['id'] == user['id']
+        ))
+
+        expected_response = [w for w in webhooks
+                if w['type'] == 'project' and w['project'] == pid]
+        filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
+
+        response = get_method(username, "webhooks", filter=filter_val)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(expected_response, response.json()['results'],
+                ignore_order=True) == {}
+
+    def test_non_member_cannot_see_webhook_list_for_org(self, webhooks, users,
+            is_org_member):
+        username, org_id = next((
+            (user['username'], webhook['organization'])
+            for webhook in webhooks
+            for user in users
+            if webhook['organization'] is not None
+                and not is_org_member(user['id'], webhook['organization'])
+                and 'admin' not in user['groups']
+        ))
+
+        response = get_method(username, 'webhooks', org_id=org_id)
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize('role', ['maintainer', 'owner'])
+    def test_org_staff_can_see_all_org_webhooks(self, role, webhooks, organizations,
+            find_users):
+        username, org_id = next((
+            (user['username'], org['id'])
+            for webhook in webhooks
+            for org in organizations
+            for user in find_users(role=role, org=org['id'])
+            if webhook['organization'] == org['id']
+        ))
+
+        expected_response = [webhook for webhook in webhooks
+                if webhook['organization'] == org_id]
+
+        response = get_method(username, 'webhooks', org_id=org_id)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(expected_response, response.json()['results'],
+                ignore_order=True) == {}
+
+    @pytest.mark.parametrize('role', ['worker', 'supervisor'])
+    def test_member_cannot_see_all_org_webhook(self, role, webhooks, organizations,
+            find_users, projects):
+        username, org_id = next((
+            (user['username'], org['id'])
+            for webhook in webhooks
+            for org in organizations
+            for user in find_users(role=role, org=org['id'])
+            if webhook['organization'] == org['id']
+        ))
+
+        expected_response = [
+           webhook for webhook in webhooks
+           if webhook['organization'] == org_id
+               and (webhook['owner']['username'] == username
+               or (webhook['project']
+               and projects[webhook['project']]['owner']['username'] == username))
+        ]
+
+        response = get_method(username, 'webhooks', org_id=org_id)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(expected_response, response.json()['results'],
+                ignore_order=True) == {}
+
+    @pytest.mark.parametrize('role', ['supervisor'])
+    def test_member_can_see_list_of_project_webhooks_in_org(self, role, webhooks,
+            organizations, find_users, projects):
+        username, org_id = next((
+            (user['username'], org['id'])
+            for webhook in webhooks
+            for org in organizations
+            for user in find_users(role=role, org=org['id'])
+            if webhook['organization'] == org['id']
+                and webhook['type'] == 'project'
+                and projects[webhook['project']]['owner']['id'] == user['id']
+        ))
+
+        expected_response = [
+           webhook for webhook in webhooks
+           if webhook['organization'] == org_id
+               and webhook['type'] == 'project'
+               and projects[webhook['project']]['owner']['username'] == username
+        ]
+
+        response = get_method(username, 'webhooks', org_id=org_id)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(expected_response, response.json()['results'],
+                ignore_order=True) == {}
+
+
 @pytest.mark.usefixtures('changedb')
 class TestPatchWebhooks:
     WID = 1
@@ -508,8 +823,8 @@ class TestPatchWebhooks:
     def test_member_can_update_any_project_webhook_in_org(self, role, allow, find_users,
             organizations, projects_by_org, webhooks, is_project_staff):
         proj_webhooks = [w for w in webhooks if w['type'] == 'project']
-        username, oid, pid, webhook = next((
-            (u['username'], o['id'], p['id'], deepcopy(w))
+        username, oid, webhook = next((
+            (u['username'], o['id'], deepcopy(w))
             for o in organizations
             for u in find_users(role=role, org=o['id'])
             for w in proj_webhooks
@@ -537,8 +852,8 @@ class TestPatchWebhooks:
     def test_member_can_update_project_webhook_in_org(self, role, find_users,
             organizations, projects_by_org, webhooks):
         proj_webhooks = [w for w in webhooks if w['type'] == 'project']
-        username, oid, pid, webhook = next((
-            (u['username'], o['id'], p['id'], deepcopy(w))
+        username, oid, webhook = next((
+            (u['username'], o['id'], deepcopy(w))
             for o in organizations
             for u in find_users(role=role, org=o['id'])
             for w in proj_webhooks
@@ -562,16 +877,178 @@ class TestPatchWebhooks:
 
 @pytest.mark.usefixtures('changedb')
 class TestDeleteWebhooks:
-    def test_can_delete_webhook(self, webhooks):
-        webhook_id = next(iter(webhooks))['id']
+    @pytest.mark.parametrize('privilege, allow', [
+        ('user', False), ('business', False), ('admin', True)
+    ])
+    def test_user_can_delete_project_webhook(self, privilege, allow, find_users,
+            webhooks, projects):
+        users = find_users(privilege=privilege)
+        username, webhook_id = next((
+            (user['username'], webhook['id'])
+            for webhook in webhooks for user in users
+            if webhook['type'] == 'project'
+                and webhook['organization'] is None
+                and webhook['owner']['id'] != user['id']
+                and projects[webhook['project']]['owner']['id'] != user['id']
+        ))
 
-        response = get_method('admin2', f'webhooks/{webhook_id}')
-        assert response.status_code == HTTPStatus.OK
+        if not allow:
+            response = delete_method(username, f'webhooks/{webhook_id}')
+            assert response.status_code == HTTPStatus.FORBIDDEN
+        else:
+            response = delete_method(username, f'webhooks/{webhook_id}')
+            assert response.status_code == HTTPStatus.NO_CONTENT
 
-        response = delete_method('admin2', f'webhooks/{webhook_id}')
+            response = get_method(username, f'webhooks/{webhook_id}')
+            assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_admin_can_delete_project_webhook_in_org(self, find_users, webhooks,
+            projects, is_org_member):
+        admins = find_users(privilege='admin')
+        username, webhook_id = next((
+            (user['username'], webhook['id'])
+            for user in admins
+            for webhook in webhooks
+            if webhook['type'] == 'project'
+                and webhook['organization'] is not None
+                and webhook['owner']['id'] != user['id']
+                and projects[webhook['project']]['owner']['id'] != user['id']
+                and not is_org_member(user['id'], webhook['organization'])
+        ))
+
+        response = delete_method(username, f'webhooks/{webhook_id}')
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        response = get_method('admin2', f'webhooks/{webhook_id}')
+        response = get_method(username, f'webhooks/{webhook_id}')
         assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_admin_can_delete_org_webhook(self, find_users, webhooks, is_org_member):
+        admins = find_users(privilege='admin')
+        username, webhook_id = next((
+            (user['username'], webhook['id'])
+            for user in admins
+            for webhook in webhooks
+            if webhook['type'] == 'organization'
+                and webhook['organization'] is not None
+                and webhook['owner']['id'] != user['id']
+                and not is_org_member(user['id'], webhook['organization'])
+        ))
+
+        response = delete_method(username, f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        response = get_method(username, f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    @pytest.mark.parametrize('privilege', ['user', 'business'])
+    def test_project_owner_can_delete_project_webhook(self, privilege, find_users,
+            webhooks, projects):
+        users = find_users(privilege=privilege)
+        username, webhook_id = next((
+            (user['username'], webhook['id'])
+            for user in users
+            for webhook in webhooks
+            if webhook['type'] == 'project'
+                and webhook['organization'] is None
+                and projects[webhook['project']]['owner']['id'] == user['id']
+        ))
+
+        response = delete_method(username, f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        response = get_method(username, f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    @pytest.mark.parametrize('privilege', ['user', 'business'])
+    def test_webhook_owner_can_delete_project_webhook(self, privilege, find_users,
+            webhooks, projects):
+        users = find_users(privilege=privilege)
+        username, webhook_id = next((
+            (user['username'], webhook['id'])
+            for user in users
+            for webhook in webhooks
+            if webhook['type'] == 'project'
+                and webhook['organization'] is None
+                and webhook['owner']['id'] == user['id']
+        ))
+
+        response = delete_method(username, f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        response = get_method(username, f'webhooks/{webhook_id}')
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    @pytest.mark.parametrize('role, allow', [
+        ('owner', True), ('maintainer', True),
+        ('worker', False), ('supervisor', False)
+    ])
+    def test_member_can_delete_org_webhook(self, role, allow, find_users, organizations,
+            webhooks):
+        org_webhooks = [w for w in webhooks if w['type'] == 'organization']
+        username, org_id, webhook_id = next((
+            (user['username'], org['id'], webhook['id'])
+            for org in organizations
+            for webhook in org_webhooks
+            for user in find_users(role=role, org=org['id'])
+            if webhook['organization'] == org['id']
+        ))
+
+        if not allow:
+            response = delete_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+            assert response.status_code == HTTPStatus.FORBIDDEN
+        else:
+            response = delete_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+            assert response.status_code == HTTPStatus.NO_CONTENT
+
+            response = get_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+            assert response.status_code == HTTPStatus.NOT_FOUND
+
+    @pytest.mark.parametrize('role, allow', [
+        ('owner', True), ('maintainer', True),
+        ('worker', False), ('supervisor', False)
+    ])
+    def test_member_can_delete_project_webhook_in_org(self, role, allow, find_users,
+            organizations, projects, webhooks):
+        proj_webhooks = [w for w in webhooks if w['type'] == 'project']
+        username, org_id, webhook_id = next((
+            (user['username'], webhook['organization'], webhook['id'])
+            for org in organizations
+            for user in find_users(role=role, org=org['id'])
+            for webhook in proj_webhooks
+            if webhook['organization'] == org['id']
+                and projects[webhook['project']]['owner']['id'] != user['id']
+                and webhook['owner']['id'] != user['id']
+        ))
+
+        if not allow:
+            response = delete_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+            assert response.status_code == HTTPStatus.FORBIDDEN
+        else:
+            response = delete_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+            assert response.status_code == HTTPStatus.NO_CONTENT
+
+            response = get_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+            assert response.status_code == HTTPStatus.NOT_FOUND
+
+    @pytest.mark.parametrize('role', ['supervisor'])
+    def test_member_webhook_staff_can_delete_project_webhook_in_org(self, role,
+            find_users, organizations, projects, webhooks):
+        proj_webhooks = [w for w in webhooks if w['type'] == 'project']
+        username, org_id, webhook_id = next((
+            (user['username'], webhook['organization'], webhook['id'])
+            for org in organizations
+            for user in find_users(role=role, org=org['id'])
+            for webhook in proj_webhooks
+            if webhook['organization'] == org['id']
+                and (projects[webhook['project']]['owner']['id'] == user['id']
+                or webhook['owner']['id'] == user['id'])
+        ))
+
+        response = delete_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        response = get_method(username, f'webhooks/{webhook_id}', org_id=org_id)
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
 
 
