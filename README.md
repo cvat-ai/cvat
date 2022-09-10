@@ -21,21 +21,21 @@ organizations around the world to solve real problems using the Data-centric
 AI approach.
 
 Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a self-hosted solution:
-[read here](https://cvat-ai.github.io/cvat/docs/administration/basics/installation/).
+[read here](https://opencv.github.io/cvat/docs/administration/basics/installation/).
 
 ![CVAT screencast](site/content/en/images/cvat-ai-screencast.gif)
 
 ## Quick start ⚡
 
-- [Installation guide](https://cvat-ai.github.io/cvat/docs/administration/basics/installation/)
-- [Manual](https://cvat-ai.github.io/cvat/docs/manual/)
-- [Contributing](https://cvat-ai.github.io/cvat/docs/contributing/)
-- [Django REST API documentation](https://cvat-ai.github.io/cvat/docs/administration/basics/rest_api_guide/)
+- [Installation guide](https://opencv.github.io/cvat/docs/administration/basics/installation/)
+- [Manual](https://opencv.github.io/cvat/docs/manual/)
+- [Contributing](https://opencv.github.io/cvat/docs/contributing/)
+- [Django REST API documentation](https://opencv.github.io/cvat/docs/administration/basics/rest_api_guide/)
 - [Datumaro dataset framework](https://github.com/cvat-ai/datumaro/blob/develop/README.md)
-- [Command line interface](https://cvat-ai.github.io/cvat/docs/manual/advanced/cli/)
-- [XML annotation format](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/)
-- [AWS Deployment Guide](https://cvat-ai.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
-- [Frequently asked questions](https://cvat-ai.github.io/cvat/docs/faq/)
+- [Command line interface](https://opencv.github.io/cvat/docs/manual/advanced/cli/)
+- [XML annotation format](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/)
+- [AWS Deployment Guide](https://opencv.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
+- [Frequently asked questions](https://opencv.github.io/cvat/docs/faq/)
 - [Where to ask questions](#where-to-ask-questions)
 
 ## Partners ❤️
@@ -71,7 +71,7 @@ This is an online version of CVAT. It's free, efficient, and easy to use.
 to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
 visible to you or people you assign to it.
 
-For now, it does not have [analytics features](https://cvat-ai.github.io/cvat/docs/administration/advanced/analytics/)
+For now, it does not have [analytics features](https://opencv.github.io/cvat/docs/administration/advanced/analytics/)
 like management and monitoring the data annotation team.
 
 We plan to enhance [cvat.ai](https://cvat.ai) with new powerful features. Stay tuned!
@@ -87,7 +87,7 @@ The images have been downloaded more than 1M times so far.
 
 ## REST API
 
-CVAT has a REST API: [documentation](https://cvat-ai.github.io/cvat/docs/administration/basics/rest_api_guide/).
+CVAT has a REST API: [documentation](https://opencv.github.io/cvat/docs/administration/basics/rest_api_guide/).
 Its current version is `2.0-alpha`. We focus on its improvement, and the API may be changed in the next releases.
 
 ## Screencasts 🎦
@@ -112,19 +112,20 @@ dataset framework allows additional dataset transformations via its command
 line tool and Python library.
 
 For more information about the supported formats, look at the
-[documentation](https://cvat-ai.github.io/cvat/docs/manual/advanced/formats/).
+[documentation](https://opencv.github.io/cvat/docs/manual/advanced/formats/).
 
 <!--lint disable maximum-line-length-->
 
 | Annotation format                                                                                         | Import | Export |
 | --------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| [CVAT for images](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     |   ✔️    |   ✔️    |
-| [CVAT for a video](https://cvat-ai.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) |   ✔️    |   ✔️    |
+| [CVAT for images](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     |   ✔️    |   ✔️    |
+| [CVAT for a video](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) |   ✔️    |   ✔️    |
 | [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |        |   ✔️    |
 | [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     |   ✔️    |   ✔️    |
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             |   ✔️    |   ✔️    |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                                |   ✔️    |   ✔️    |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           |   ✔️    |   ✔️    |
+| [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                                        |   ✔️    |   ✔️    |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       |   ✔️    |   ✔️    |
 | [MOT](https://motchallenge.net/)                                                                          |   ✔️    |   ✔️    |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    |   ✔️    |   ✔️    |

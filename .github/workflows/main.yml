@@ -129,6 +129,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/ui:latest cvat/ui:dev
           docker image ls -a
 
       - name: Running REST API tests
@@ -181,6 +183,7 @@ jobs:
       - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
+          docker tag cvat/server:latest cvat/server:dev
           docker image ls -a
 
       - name: Running OPA tests
@@ -211,7 +214,7 @@ jobs:
           LOGS_DIR: "${{ github.workspace }}/unit_testing"
         run: |
             mkdir $LOGS_DIR
-            docker logs cvat > $LOGS_DIR/cvat.log
+            docker logs cvat_server > $LOGS_DIR/cvat.log
             docker logs cvat_opa 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
@@ -256,6 +259,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/ui:latest cvat/ui:dev
           docker image ls -a
 
       - name: Run CVAT instance
@@ -301,7 +306,7 @@ jobs:
       - name: Creating a log file from "cvat" container logs
         if: failure()
         run: |
-            docker logs cvat > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+            docker logs cvat_server > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
