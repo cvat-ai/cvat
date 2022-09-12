@@ -13,28 +13,35 @@ signal_redelivery = Signal()
 signal_ping = Signal()
 
 
-def send_webhook(webhook, data, redelivery):
+def send_webhook(webhook, payload, delivery):
     response = None
     try:
-        response = requests.post(webhook.target_url, json=data)
+        response = requests.post(webhook.target_url, json=payload)
         status_code = str(response.status_code)
     except requests.ConnectionError:
         status_code = "Failed to connect to target url"
 
-    WebhookDelivery.objects.create(
-        webhook_id=webhook.id,
-        event=data["event"],
-        status_code=status_code,
-        changed_fields=",".join(list(data.get("before_update", {}).keys())),
-        redelivery=redelivery,
-        request=data,
-        response="" if response is None else response.text,
-    )
+    setattr(delivery, 'status_code', status_code)
+    if response is not None:
+        setattr(delivery, 'response', response.text)
 
+    delivery.save()
 
 def add_to_queue(webhook, payload, redelivery=False):
+    delivery = WebhookDelivery.objects.create(
+        webhook_id=webhook.id,
+        event=payload["event"],
+        status_code=None,
+        changed_fields=",".join(list(payload.get("before_update", {}).keys())),
+        redelivery=redelivery,
+        request=payload,
+        response="",
+    )
+
     queue = django_rq.get_queue("webhooks")
-    queue.enqueue_call(func=send_webhook, args=(webhook, payload, redelivery))
+    queue.enqueue_call(func=send_webhook, args=(webhook, payload, delivery))
+
+    return delivery
 
 
 def payload(data, request):
@@ -109,4 +116,5 @@ def redelivery(sender, data=None, **kwargs):
 @receiver(signal_ping)
 def ping(sender, serializer=None, **kwargs):
     data = {"event": "ping", "webhook": serializer.data}
-    add_to_queue(serializer.instance, payload(data, sender.request))
+    delivery = add_to_queue(serializer.instance, payload(data, sender.request))
+    return delivery
