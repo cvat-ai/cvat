@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ import {
     propagateObjectAsync,
 } from 'actions/annotation-actions';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
 
 interface StateToProps {

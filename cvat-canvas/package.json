@@ -1,13 +1,13 @@
 {
   "name": "cvat-canvas",
-  "version": "2.13.2",
+  "version": "2.15.3",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
   "main": "src/canvas.ts",
   "scripts": {
     "build": "tsc && webpack --config ./webpack.config.js",
     "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",

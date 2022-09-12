@@ -66,18 +66,8 @@ context('Rotated bounding boxes.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check that bounding boxes can be rotated.', () => {
-            cy.shapeRotate(
-                '#cvat_canvas_shape_1',
-                (createRectangleShape2Points.firstX + createRectangleShape2Points.secondX) / 2,
-                createRectangleShape2Points.firstY + 20,
-                '33.7',
-            );
-            cy.shapeRotate(
-                '#cvat_canvas_shape_2',
-                (createRectangleTrack2Points.firstX + createRectangleTrack2Points.secondX) / 2,
-                createRectangleTrack2Points.firstY + 20,
-                '33.7',
-            );
+            cy.shapeRotate('#cvat_canvas_shape_1', '15.7');
+            cy.shapeRotate('#cvat_canvas_shape_2', '15.7');
         });
 
         it('Check interpolation, merging/splitting rotated shapes.', () => {
@@ -95,7 +85,7 @@ context('Rotated bounding boxes.', () => {
                 }
             });
 
-            cy.shapeRotate('#cvat_canvas_shape_2', 320, 225, '53.0');
+            cy.shapeRotate('#cvat_canvas_shape_2', '29.8');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_2', 0);
@@ -120,12 +110,7 @@ context('Rotated bounding boxes.', () => {
             cy.get('#cvat_canvas_shape_4').should('be.visible');
             cy.goCheckFrameNumber(9);
 
-            cy.shapeRotate(
-                '#cvat_canvas_shape_4',
-                (createRectangleShape2Points.firstX + createRectangleShape2Points.secondX) / 2,
-                createRectangleShape2Points.firstY + 20,
-                '33.7',
-            );
+            cy.shapeRotate('#cvat_canvas_shape_4', '15.7');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_4', 2);
@@ -147,8 +132,9 @@ context('Rotated bounding boxes.', () => {
 
         it('Check rotation with hold Shift button.', () => {
             cy.goCheckFrameNumber(0);
-            cy.shapeRotate('#cvat_canvas_shape_4', 320, 375, '60.0', true);
-            cy.shapeRotate('#cvat_canvas_shape_4', 325, 385, '75.0', true);
+            cy.shapeRotate('#cvat_canvas_shape_4', '30.0', true).then(() => {
+                cy.shapeRotate('#cvat_canvas_shape_4', '45.0', true);
+            });
         });
 
         it('Copy/paste a rotated shape.', () => {

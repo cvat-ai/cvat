@@ -1,10 +1,10 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
 import { registerGitPlugin } from 'utils/git-utils';
-import { PluginsState } from './interfaces';
+import { PluginsState } from '.';
 
 const defaultState: PluginsState = {
     fetching: false,

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { getProjectsAsync } from './projects-actions';
 
 export enum ImportActionTypes {
@@ -44,7 +44,7 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
             }
             dispatch(importActions.importDataset(instance.id));
             await instance.annotations.importDataset(format, file, (message: string, progress: number) => (
-                dispatch(importActions.importDatasetUpdateStatus(progress * 100, message))
+                dispatch(importActions.importDatasetUpdateStatus(Math.floor(progress * 100), message))
             ));
         } catch (error) {
             dispatch(importActions.importDatasetFailed(instance, error));
