@@ -4,7 +4,7 @@
 
 import PluginRegistry from './plugins';
 import User from './user';
-import { WebhookSourceType } from './enums';
+import { WebhookSourceType, WebhookContentType } from './enums';
 
 const serverProxy = require('./server-proxy');
 
@@ -15,7 +15,7 @@ interface RawWebhookData {
     organization_id?: number;
     project_id?: number;
     events: string[];
-    content_type: 'application/json';
+    content_type: WebhookContentType;
     secret?: string;
     enable_ssl: boolean;
     description?: string;
@@ -54,7 +54,7 @@ export default class Webhook {
             target_url: '',
             type: WebhookSourceType.ORGANIZATION,
             events: [],
-            content_type: 'application/json',
+            content_type: WebhookContentType.JSON,
             organization_id: undefined,
             project_id: undefined,
             description: undefined,
@@ -90,21 +90,41 @@ export default class Webhook {
                 targetURL: {
                     get: () => data.target_url,
                     set: (value: string) => {
-                        // todo: make validation
+                        if (typeof value !== 'string') {
+                            throw ArgumentError(
+                                `targetURL property must be a string, tried to set ${typeof value}`,
+                            );
+                        }
                         data.target_url = value;
                     },
                 },
                 events: {
                     get: () => data.events,
                     set: (events: string[]) => {
-                        // todo: make validation
+                        if (!Array.isArray(events)) {
+                            throw ArgumentError(
+                                `Events must be an array, tried to set ${typeof events}`,
+                            );
+                        }
+                        events.forEach((event: string) => {
+                            if (typeof event !== 'string') {
+                                throw ArgumentError(
+                                    `Event must be a string, tried to set ${typeof event}`,
+                                );
+                            }
+                        });
                         data.events = [...events];
                     },
                 },
                 contentType: {
                     get: () => data.content_type,
-                    set: (value: RawWebhookData['content_type']) => {
-                        // todo: make validation
+                    set: (value: WebhookContentType) => {
+                        if (!isEnum.call(WebhookContentType, value)) {
+                            throw new ArgumentError(
+                                `Webhook contentType must be member of WebhookContentType,
+                                 got wrong value ${typeof value}`,
+                            );
+                        }
                         data.content_type = value;
                     },
                 },
@@ -117,28 +137,44 @@ export default class Webhook {
                 description: {
                     get: () => data.description,
                     set: (value: string) => {
-                        // todo: make validation
+                        if (typeof value !== 'string') {
+                            throw ArgumentError(
+                                `Description property must be a string, tried to set ${typeof value}`,
+                            );
+                        }
                         data.description = value;
                     },
                 },
                 secret: {
                     get: () => data.secret,
                     set: (value: string) => {
-                        // todo: make validation
+                        if (typeof value !== 'string') {
+                            throw ArgumentError(
+                                `Secret property must be a string, tried to set ${typeof value}`,
+                            );
+                        }
                         data.secret = value;
                     },
                 },
                 isActive: {
                     get: () => data.is_active,
                     set: (value: boolean) => {
-                        // todo: make validation
+                        if (typeof value !== 'boolean') {
+                            throw ArgumentError(
+                                `isActive property must be a boolean, tried to set ${typeof value}`,
+                            );
+                        }
                         data.is_active = value;
                     },
                 },
                 enableSSL: {
                     get: () => data.enable_ssl,
                     set: (value: boolean) => {
-                        // todo: make validation
+                        if (typeof value !== 'boolean') {
+                            throw ArgumentError(
+                                `enableSSL property must be a boolean, tried to set ${typeof value}`,
+                            );
+                        }
                         data.enable_ssl = value;
                     },
                 },
@@ -213,6 +249,71 @@ export default class Webhook {
     }
 }
 
+interface RawWebhookDeliveryData {
+    id?: number;
+    event?: string;
+    webhook_id?: number;
+    status_code?: string;
+    redelivery?: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export class WebhookDelivery {
+    public readonly id?: number;
+    public readonly event: string;
+    public readonly webhookId: number;
+    public readonly statusCode: string;
+    public readonly redelivery: boolean;
+    public readonly createdDate?: string;
+    public readonly updatedDate?: string;
+
+    constructor(initialData: RawWebhookDeliveryData) {
+        const data: RawWebhookDeliveryData = {
+            id: undefined,
+            event: '',
+            webhook_id: undefined,
+            status_code: undefined,
+            redelivery: undefined,
+            created_at: undefined,
+            updated_at: undefined,
+        };
+
+        for (const property in data) {
+            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
+                data[property] = initialData[property];
+            }
+        }
+
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                id: {
+                    get: () => data.id,
+                },
+                event: {
+                    get: () => data.event,
+                },
+                webhookId: {
+                    get: () => data.webhook_id,
+                },
+                statusCode: {
+                    get: () => data.status_code,
+                },
+                redelivery: {
+                    get: () => data.redelivery,
+                },
+                createdDate: {
+                    get: () => data.created_at,
+                },
+                updatedDate: {
+                    get: () => data.updated_at,
+                },
+            }),
+        );
+    }
+}
+
 Object.defineProperties(Webhook.prototype.save, {
     implementation: {
         writable: false,
@@ -253,11 +354,8 @@ Object.defineProperties(Webhook.prototype.ping, {
         writable: false,
         enumerable: false,
         value: async function implementation() {
-            if (Number.isInteger(this.id)) {
-                await serverProxy.webhooks.ping(this.id);
-            } else {
-                throw new Error('The webhook has not been saved on the server yet');
-            }
+            const result = await serverProxy.webhooks.ping(this.id);
+            return new WebhookDelivery(result);
         },
     },
 });

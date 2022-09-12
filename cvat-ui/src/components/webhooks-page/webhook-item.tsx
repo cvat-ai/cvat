@@ -21,6 +21,30 @@ export interface WebhookItemProps {
     webhookInstance: any;
 }
 
+interface WebhookStatus {
+    message: string;
+    className: string;
+}
+
+function setUpWebhookStatus(httpStatus: string): WebhookStatus {
+    if (httpStatus.startsWith('2')) {
+        return {
+            message: `Last delivery was succesful. Http response: ${httpStatus}`,
+            className: 'cvat-webhook-status-available',
+        };
+    }
+    if (httpStatus.startsWith('5')) {
+        return {
+            message: `Last delivery was not succesful. Http response: ${httpStatus}`,
+            className: 'cvat-webhook-status-failed',
+        };
+    }
+    return {
+        message: `Http response: ${httpStatus}`,
+        className: 'cvat-webhook-status-unavailable',
+    };
+}
+
 function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     const [isRemoved, setIsRemoved] = useState<boolean>(false);
     const [pingFetching, setPingFetching] = useState<boolean>(false);
@@ -34,20 +58,15 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     const created = moment(createdDate).format('MMMM Do YYYY');
     const username = owner ? owner.username : null;
 
-    const lastStatus = `${webhookInstance.lastStatus}`;
-    let statusClassName = 'cvat-webhook-status-unavailable';
-    if (lastStatus.startsWith('2')) {
-        statusClassName = 'cvat-webhook-status-available';
-    } else if (lastStatus.startsWith('5')) {
-        statusClassName = 'cvat-webhook-status-failed';
-    }
+    const { lastStatus } = webhookInstance;
+    const [webhookStatus, setWebhookStatus] = useState<WebhookStatus>(setUpWebhookStatus(lastStatus));
 
     const eventsList = groupEvents(events).join(', ');
     return (
         <Row className='cvat-webhooks-list-item' style={isRemoved ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
             <Col span={1}>
-                <svg height='32' width='32' className={statusClassName}>
-                    <circle cx='16' cy='11' r='4' strokeWidth='0' />
+                <svg height='24' width='24' className={webhookStatus.className}>
+                    <circle cx='18' cy='11' r='5' strokeWidth='0' />
                 </svg>
             </Col>
             <Col span={7}>
@@ -99,7 +118,9 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                             ghost
                             onClick={(): void => {
                                 setPingFetching(true);
-                                webhookInstance.ping().finally(() => {
+                                webhookInstance.ping().then((deliveryInstance: any) => {
+                                    setWebhookStatus(setUpWebhookStatus(deliveryInstance.statusCode));
+                                }).finally(() => {
                                     setPingFetching(false);
                                 });
                             }}

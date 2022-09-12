@@ -1879,6 +1879,24 @@
                 return response.data;
             }
 
+            async function getWebhookDelivery(webhookID: number, deliveryID: number): Promise<any> {
+                const params = enableOrganization();
+                const { backendAPI } = config;
+
+                try {
+                    const response = await Axios.get(`${backendAPI}/webhooks/${webhookID}/deliveries/${deliveryID}`, {
+                        proxy: config.proxy,
+                        params,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    return response.data;
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function getWebhooks(filter, pageSize = 10): Promise<any> {
                 const params = enableOrganization();
                 const { backendAPI } = config;
@@ -1955,18 +1973,38 @@
                 }
             }
 
-            async function pingWebhook(webhookID: number): Promise<void> {
+            async function pingWebhook(webhookID: number): Promise<any> {
                 const params = enableOrganization();
                 const { backendAPI } = config;
 
+                async function waitPingDelivery(deliveryID: number): Promise<any> {
+                    return new Promise((resolve) => {
+                        let retries = 0;
+                        async function checkStatus(): Promise<any> {
+                            const delivery = await getWebhookDelivery(webhookID, deliveryID);
+                            retries += 1;
+                            if (delivery.status_code || retries >= 10) {
+                                resolve(delivery);
+                            } else {
+                                setTimeout(checkStatus, 1000);
+                            }
+                        }
+                        setTimeout(checkStatus, 1000);
+                    });
+                }
+
                 try {
-                    await Axios.post(`${backendAPI}/webhooks/${webhookID}/ping`, {
+                    const response = await Axios.post(`${backendAPI}/webhooks/${webhookID}/ping`, {
                         proxy: config.proxy,
                         params,
                         headers: {
                             'Content-Type': 'application/json',
                         },
                     });
+
+                    const deliveryID = response.data.id;
+                    const delivery = await waitPingDelivery(deliveryID);
+                    return delivery;
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -2151,7 +2189,6 @@
                         writable: false,
                     },
 
-                    // TODO add other methods
                     webhooks: {
                         value: Object.freeze({
                             get: getWebhooks,

@@ -437,3 +437,15 @@ export enum WebhookSourceType {
     ORGANIZATION = 'organization',
     PROJECT = 'project',
 }
+
+/**
+ * Webhook content types
+ * @enum {string}
+ * @name WebhookContentType
+ * @memberof module:API.cvat.enums
+ * @property {string} JSON 'json'
+ * @readonly
+*/
+export enum WebhookContentType {
+    JSON = 'application/json',
+}
