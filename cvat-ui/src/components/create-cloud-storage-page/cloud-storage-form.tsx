@@ -203,10 +203,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
     }, []);
 
-    const onSubmit = async (): Promise<void> => {
-        let cloudStorageData: Record<string, any> = {};
-        const formValues = await form.validateFields();
-        cloudStorageData = { ...formValues };
+    const handleOnFinish = (formValues: CloudStorageForm): void => {
+        const cloudStorageData: Record<string, any> = { ...formValues };
         // specific attributes
         const specificAttributes = new URLSearchParams();
 
@@ -607,7 +605,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     };
 
     return (
-        <Form className='cvat-cloud-storage-form' layout='vertical' form={form}>
+        <Form
+            className='cvat-cloud-storage-form'
+            layout='vertical'
+            form={form}
+            onFinish={(values: CloudStorageForm): void => handleOnFinish(values)}
+        >
             <Form.Item
                 {...commonProps}
                 label='Display name'
@@ -672,7 +675,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Button
                         type='primary'
                         htmlType='submit'
-                        onClick={onSubmit}
                         className='cvat-cloud-storage-submit-button'
                         loading={loading}
                         disabled={loading}

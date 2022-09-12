@@ -62,6 +62,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Maximum callstack exceed when create task with 100000+ files from cloud storage (<https://github.com/opencv/cvat/pull/4836>)
 - Fixed invocation of serverless functions (<https://github.com/opencv/cvat/pull/4907>)
 - Removing label attributes (<https://github.com/opencv/cvat/pull/4927>)
+- Notification with a required manifest file (<https://github.com/opencv/cvat/pull/4921>)
 
 ### Security
 - TDB
