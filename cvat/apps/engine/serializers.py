@@ -198,7 +198,9 @@ class JobReadSerializer(serializers.ModelSerializer):
 
 class JobWriteSerializer(serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
+
     def to_representation(self, instance):
+        # FIXME: deal with resquest/response separation
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
 
@@ -307,8 +309,8 @@ class RqStatusSerializer(serializers.Serializer):
     progress = serializers.FloatField(max_value=100, default=0)
 
 class WriteOnceMixin:
-
-    """Adds support for write once fields to serializers.
+    """
+    Adds support for write once fields to serializers.
 
     To use it, specify a list of fields as `write_once_fields` on the
     serializer's Meta:
@@ -329,12 +331,15 @@ class WriteOnceMixin:
 
         # We're only interested in PATCH/PUT.
         if 'update' in getattr(self.context.get('view'), 'action', ''):
-            return self._set_write_once_fields(extra_kwargs)
+            extra_kwargs = self._set_write_once_fields(extra_kwargs)
 
         return extra_kwargs
 
     def _set_write_once_fields(self, extra_kwargs):
-        """Set all fields in `Meta.write_once_fields` to read_only."""
+        """
+        Set all fields in `Meta.write_once_fields` to read_only.
+        """
+
         write_once_fields = getattr(self.Meta, 'write_once_fields', None)
         if not write_once_fields:
             return extra_kwargs
@@ -352,7 +357,7 @@ class WriteOnceMixin:
 
         return extra_kwargs
 
-class DataSerializer(serializers.ModelSerializer):
+class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     use_zip_chunks = serializers.BooleanField(default=False)
     client_files = ClientFileSerializer(many=True, default=[])
@@ -596,7 +601,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
-                        new_label = project.label_set.filter(name=old_label.name).first()
+                        if old_label.parent:
+                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                        else:
+                            new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
                     old_label.attributespec_set.all().delete()
@@ -611,7 +619,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     if len(new_label_for_name):
                         old_label.name = new_label_for_name[0].get('name', old_label.name)
                     try:
-                        new_label = project.label_set.filter(name=old_label.name).first()
+                        if old_label.parent:
+                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                        else:
+                            new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
                     for (model, attr, attr_name) in (
@@ -646,18 +657,42 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
+            new_sublabel_names = {}
             for old_label in old_labels:
                 new_labels = tuple(filter(lambda x: x.get('id') == old_label.id, attrs.get('label_set', [])))
                 if len(new_labels):
-                    new_label_names.add(new_labels[0].get('name', old_label.name))
+                    parent = new_labels[0].get('parent', old_label.parent)
+                    if parent:
+                        if parent.name not in new_sublabel_names:
+                            new_sublabel_names[parent.name] = set()
+                        new_sublabel_names[parent.name].add(new_labels[0].get('name', old_label.name))
+                    else:
+                        new_label_names.add(new_labels[0].get('name', old_label.name))
                 else:
-                    new_label_names.add(old_label.name)
+                    parent = old_label.parent
+                    if parent:
+                        if parent.name not in new_sublabel_names:
+                            new_sublabel_names[parent.name] = set()
+                        new_sublabel_names[parent.name].add(old_label.name)
+                    else:
+                        new_label_names.add(old_label.name)
             target_project = models.Project.objects.get(id=project_id)
             target_project_label_names = set()
+            target_project_sublabel_names = {}
             for label in target_project.label_set.all():
-                target_project_label_names.add(label.name)
+                parent = label.parent
+                if parent:
+                    if parent.name not in target_project_sublabel_names:
+                        target_project_sublabel_names[parent.name] = set()
+                    target_project_sublabel_names[parent.name].add(label.name)
+                else:
+                    target_project_label_names.add(label.name)
             if not new_label_names.issubset(target_project_label_names):
                 raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+
+            for label, sublabels in new_sublabel_names.items():
+                if sublabels != target_project_sublabel_names.get(label):
+                    raise serializers.ValidationError('All task or project label names must be mapped to the target project')
         else:
             if 'label_set' in attrs.keys():
                 label_names = [label['name'] for label in attrs.get('label_set')]
@@ -876,16 +911,16 @@ class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0, allow_null=True)
-    source = serializers.CharField(default = 'manual')
+    group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
+    source = serializers.CharField(default='manual')
 
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
-        source="labeledimageattributeval_set")
+        source="labeledimageattributeval_set", default=[])
 
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
-    occluded = serializers.BooleanField()
+    occluded = serializers.BooleanField(default=False)
     outside = serializers.BooleanField(default=False, required=False)
     z_order = serializers.IntegerField(default=0)
     rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
@@ -896,7 +931,7 @@ class ShapeSerializer(serializers.Serializer):
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
-        source="labeledshapeattributeval_set")
+        source="labeledshapeattributeval_set", default=[])
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -905,22 +940,22 @@ class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     attributes = AttributeValSerializer(many=True,
-        source="trackedshapeattributeval_set")
+        source="trackedshapeattributeval_set", default=[])
 
 class SubLabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True,
         source="trackedshape_set")
     attributes = AttributeValSerializer(many=True,
-        source="labeledtrackattributeval_set")
+        source="labeledtrackattributeval_set", default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
 
 class LabeledDataSerializer(serializers.Serializer):
-    version = serializers.IntegerField()
-    tags   = LabeledImageSerializer(many=True)
-    shapes = LabeledShapeSerializer(many=True)
-    tracks = LabeledTrackSerializer(many=True)
+    version = serializers.IntegerField(default=0) # TODO: remove
+    tags   = LabeledImageSerializer(many=True, default=[])
+    shapes = LabeledShapeSerializer(many=True, default=[])
+    tracks = LabeledTrackSerializer(many=True, default=[])
 
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
@@ -991,6 +1026,10 @@ class IssueReadSerializer(serializers.ModelSerializer):
         fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
             'created_date', 'updated_date', 'comments', 'resolved')
         read_only_fields = fields
+        extra_kwargs = {
+            'created_date': { 'allow_null': True },
+            'updated_date': { 'allow_null': True },
+        }
 
 
 class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -1009,6 +1048,12 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         models.Comment.objects.create(issue=db_issue,
             message=message, owner=db_issue.owner)
         return db_issue
+
+    def update(self, instance, validated_data):
+        message = validated_data.pop('message', None)
+        if message:
+            raise NotImplementedError('Check https://github.com/cvat-ai/cvat/issues/122')
+        return super().update(instance, validated_data)
 
     class Meta:
         model = models.Issue
@@ -1105,8 +1150,8 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
 class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
-    key = serializers.CharField(max_length=20, allow_blank=True, required=False)
-    secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=44, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])

@@ -11,3 +11,4 @@ from cvat_sdk.api_client.exceptions import (
     ApiValueError,
     OpenApiException,
 )
+from cvat_sdk.core.exceptions import CvatSdkException

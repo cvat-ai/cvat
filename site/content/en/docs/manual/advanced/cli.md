@@ -28,7 +28,7 @@ To access the CLI, you need to have python in environment,
 as well as a clone of the CVAT repository and the necessary modules:
 
 ```bash
-pip install 'git+https://github.com/cvat-ai/cvat#subdirectory=cvat-cli'
+pip install cvat-cli
 ```
 
 You can get help with `cvat-cli --help`.
@@ -51,8 +51,6 @@ optional arguments:
                         host (default: localhost)
   --server-port SERVER_PORT
                         port (default: 8080)
-  --https
-                        using https connection (default: False)
   --debug               show debug output
 ```
 

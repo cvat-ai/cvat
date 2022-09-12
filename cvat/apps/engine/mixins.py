@@ -317,17 +317,29 @@ class SerializeMixin:
             return import_func(request, filename=file_name)
         return self.upload_data(request)
 
-class UpdateModelMixin(mixins.UpdateModelMixin):
+
+class CreateModelMixin(mixins.CreateModelMixin):
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        signal_create.send(self, serializer=serializer)
+
+class PartialUpdateModelMixin:
+    """
+    Update fields of a model instance.
+
+    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
+    """
+
     def perform_update(self, serializer):
         old_values = {
             attr: serializer.to_representation(serializer.instance).get(attr, None)
             for attr in self.request.data.keys()
         }
 
-        super().perform_update(serializer)
+        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
+
         signal_update.send(self, serializer=serializer, old_values=old_values)
 
-class CreateModelMixin(mixins.CreateModelMixin):
-    def perform_create(self, serializer):
-        super().perform_create(serializer)
-        signal_create.send(self, serializer=serializer)
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return mixins.UpdateModelMixin.update(self, request=request, *args, **kwargs)
