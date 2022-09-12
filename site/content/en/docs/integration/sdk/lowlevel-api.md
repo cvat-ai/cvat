@@ -170,9 +170,9 @@ _JobsApi_ | **jobs_list_commits** | **GET** /api/jobs/{id}/commits | The action 
 _JobsApi_ | **jobs_list_issues** | **GET** /api/jobs/{id}/issues | Method returns list of issues for the job
 _JobsApi_ | **jobs_partial_update** | **PATCH** /api/jobs/{id} | Methods does a partial update of chosen fields in a job
 _JobsApi_ | **jobs_partial_update_annotations** | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
-*JobsApi* | **jobs_partial_update_annotations_file** | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS _ile_uploading protocol.
+_JobsApi_ | **jobs_partial_update_annotations_file** | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 _JobsApi_ | **jobs_retrieve** | **GET** /api/jobs/{id} | Method returns details of a job
-*JobsApi* | **jobs_retrieve_annotations** | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job as a JSON document. If format is _pecified_ a zip archive is returned.
+_JobsApi_ | **jobs_retrieve_annotations** | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job as a JSON document. If format is specified a zip archive is returned.
 _JobsApi_ | **jobs_retrieve_data** | **GET** /api/jobs/{id}/data | Method returns data for a specific job
 _JobsApi_ | **jobs_retrieve_data_meta** | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 _JobsApi_ | **jobs_retrieve_dataset** | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
@@ -199,14 +199,14 @@ _ProjectsApi_ | **projects_destroy** | **DELETE** /api/projects/{id} | Method de
 _ProjectsApi_ | **projects_list** | **GET** /api/projects | Returns a paginated list of projects according to query parameters (12 projects per page)
 _ProjectsApi_ | **projects_list_tasks** | **GET** /api/projects/{id}/tasks | Method returns information of the tasks of the project with the selected id
 _ProjectsApi_ | **projects_partial_update** | **PATCH** /api/projects/{id} | Methods does a partial update of chosen fields in a project
-*ProjectsApi* | **projects_partial_update_backup_file** | **PATCH** /api/projects/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading _rotocol_
-*ProjectsApi* | **projects_partial_update_dataset_file** | **PATCH** /api/projects/{id}/dataset/{file_id} | Allows to upload a file chunk. Implements TUS file _ploading_protocol.
+_ProjectsApi_ | **projects_partial_update_backup_file** | **PATCH** /api/projects/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol
+_ProjectsApi_ | **projects_partial_update_dataset_file** | **PATCH** /api/projects/{id}/dataset/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 _ProjectsApi_ | **projects_retrieve** | **GET** /api/projects/{id} | Method returns details of a specific project
 _ProjectsApi_ | **projects_retrieve_annotations** | **GET** /api/projects/{id}/annotations | Method allows to download project annotations
 _ProjectsApi_ | **projects_retrieve_backup** | **GET** /api/projects/{id}/backup | Methods creates a backup copy of a project
 _ProjectsApi_ | **projects_retrieve_dataset** | **GET** /api/projects/{id}/dataset/ | Export project as a dataset in a specific format
 _RestrictionsApi_ | **restrictions_retrieve_terms_of_use** | **GET** /api/restrictions/terms-of-use | Method provides CVAT terms of use
-*RestrictionsApi* | **restrictions_retrieve_user_agreements** | **GET** /api/restrictions/user-agreements | Method provides user agreements that the user must accept _o_register
+_RestrictionsApi_ | **restrictions_retrieve_user_agreements** | **GET** /api/restrictions/user-agreements | Method provides user agreements that the user must accept to register
 _SchemaApi_ | **schema_retrieve** | **GET** /api/schema/ |
 _ServerApi_ | **server_create_exception** | **POST** /api/server/exception | Method saves an exception from a client on the server
 _ServerApi_ | **server_create_logs** | **POST** /api/server/logs | Method saves logs from a client on the server
@@ -214,27 +214,29 @@ _ServerApi_ | **server_list_share** | **GET** /api/server/share | Returns all fi
 _ServerApi_ | **server_retrieve_about** | **GET** /api/server/about | Method provides basic CVAT information
 _ServerApi_ | **server_retrieve_annotation_formats** | **GET** /api/server/annotation/formats | Method provides the list of supported annotations formats
 _ServerApi_ | **server_retrieve_plugins** | **GET** /api/server/plugins | Method provides allowed plugins
-*TasksApi* | **jobs_partial_update_data_meta** | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the _ob_TasksApi_ | **tasks_create** | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
+_TasksApi_ | **jobs_partial_update_data_meta** | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
+_TasksApi_ | **tasks_create** | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
 _TasksApi_ | **tasks_create_annotations** | **POST** /api/tasks/{id}/annotations/ | Method allows to upload task annotations from a local file or a cloud storage
 _TasksApi_ | **tasks_create_backup** | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
-*TasksApi* | **tasks_create_data** | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more <https://tus.io/>
+_TasksApi_ | **tasks_create_data** | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more <https://tus.io/>
 _TasksApi_ | **tasks_destroy** | **DELETE** /api/tasks/{id} | Method deletes a specific task, all attached jobs, annotations, and data
 _TasksApi_ | **tasks_destroy_annotations** | **DELETE** /api/tasks/{id}/annotations/ | Method deletes all annotations for a specific task
 _TasksApi_ | **tasks_list** | **GET** /api/tasks | Returns a paginated list of tasks according to query parameters (10 tasks per page)
 _TasksApi_ | **tasks_list_jobs** | **GET** /api/tasks/{id}/jobs | Method returns a list of jobs for a specific task
 _TasksApi_ | **tasks_partial_update** | **PATCH** /api/tasks/{id} | Methods does a partial update of chosen fields in a task
 _TasksApi_ | **tasks_partial_update_annotations** | **PATCH** /api/tasks/{id}/annotations/ | Method performs a partial update of annotations in a specific task
-*TasksApi* | **tasks_partial_update_annotations_file** | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS _ile_uploading protocol.
+_TasksApi_ | **tasks_partial_update_annotations_file** | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 _TasksApi_ | **tasks_partial_update_backup_file** | **PATCH** /api/tasks/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 _TasksApi_ | **tasks_partial_update_data_file** | **PATCH** /api/tasks/{id}/data/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
-*TasksApi* | **tasks_partial_update_data_meta** | **PATCH** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with _he_task
+_TasksApi_ | **tasks_partial_update_data_meta** | **PATCH** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with _he_task
 _TasksApi_ | **tasks_retrieve** | **GET** /api/tasks/{id} | Method returns details of a specific task
 _TasksApi_ | **tasks_retrieve_annotations** | **GET** /api/tasks/{id}/annotations/ | Method allows to download task annotations
 _TasksApi_ | **tasks_retrieve_backup** | **GET** /api/tasks/{id}/backup | Method backup a specified task
 _TasksApi_ | **tasks_retrieve_data** | **GET** /api/tasks/{id}/data/ | Method returns data for a specific task
 _TasksApi_ | **tasks_retrieve_data_meta** | **GET** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
 _TasksApi_ | **tasks_retrieve_dataset** | **GET** /api/tasks/{id}/dataset | Export task as a dataset in a specific format
-*TasksApi* | **tasks_retrieve_status** | **GET** /api/tasks/{id}/status | When task is being created the method returns information about a status of the creation _rocess_TasksApi_ | **tasks_update_annotations** | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
+_TasksApi_ | **tasks_retrieve_status** | **GET** /api/tasks/{id}/status | When task is being created the method returns information about a status of the creation process
+_TasksApi_ | **tasks_update_annotations** | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 _UsersApi_ | **users_destroy** | **DELETE** /api/users/{id} | Method deletes a specific user from the server
 _UsersApi_ | **users_list** | **GET** /api/users | Method provides a paginated list of users registered on the server
 _UsersApi_ | **users_partial_update** | **PATCH** /api/users/{id} | Method updates chosen fields of a user
