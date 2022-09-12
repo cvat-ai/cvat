@@ -12,7 +12,11 @@ Cypress.Commands.add('goToProjectsList', () => {
 
 Cypress.Commands.add(
     'createProjects',
-    (projectName, labelName, attrName, textDefaultValue, multiAttrParams, expectedResult = 'success') => {
+    (
+        projectName, labelName, attrName, textDefaultValue,
+        multiAttrParams, advancedConfigurationParams,
+        expectedResult = 'success',
+    ) => {
         cy.get('.cvat-create-project-dropdown').click();
         cy.get('.cvat-create-project-button').click();
         cy.get('#name').type(projectName);
@@ -25,6 +29,9 @@ Cypress.Commands.add(
         cy.get('[placeholder="Default value"]').type(textDefaultValue);
         if (multiAttrParams) {
             cy.updateAttributes(multiAttrParams);
+        }
+        if (advancedConfigurationParams) {
+            cy.advancedConfiguration(advancedConfigurationParams);
         }
         cy.contains('button', 'Continue').click();
         cy.get('.cvat-create-project-content').within(() => {
@@ -177,6 +184,14 @@ Cypress.Commands.add('getDownloadFileName', () => {
         // need to remove quotes
         return filename.substring(1, filename.length - 1);
     });
+});
+
+Cypress.Commands.add('waitForFileUploadToCloudStorage', () => {
+    cy.intercept('GET', '**=download').as('download');
+    cy.wait('@download', { requestTimeout: 7000 }).then((interseption) => {
+        expect(interseption.response.statusCode).to.be.equal(200);
+    });
+    cy.verifyNotification();
 });
 
 Cypress.Commands.add('waitForDownload', () => {

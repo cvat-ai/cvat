@@ -65,6 +65,7 @@ export default function StorageField(props: Props): JSX.Element {
         <>
             <Form.Item name={locationName}>
                 <Select
+                    virtual={false}
                     onChange={(location: StorageLocation) => {
                         if (onChangeLocationValue) onChangeLocationValue(location);
                     }}
@@ -72,9 +73,22 @@ export default function StorageField(props: Props): JSX.Element {
                         if (onChangeLocationValue) onChangeLocationValue(StorageLocation.LOCAL);
                     }}
                     allowClear
+                    className={`cvat-select-${locationName[0]}-storage`}
                 >
-                    <Option value={StorageLocation.LOCAL}>Local</Option>
-                    <Option value={StorageLocation.CLOUD_STORAGE}>Cloud storage</Option>
+                    <Option
+                        value={StorageLocation.LOCAL}
+                        key={`${locationName[0]}_${StorageLocation.LOCAL.toLowerCase()}`}
+                        className={`cvat-select-${locationName[0]}-location`}
+                    >
+                        Local
+                    </Option>
+                    <Option
+                        value={StorageLocation.CLOUD_STORAGE}
+                        key={`${locationName[0]}_${StorageLocation.CLOUD_STORAGE.toLowerCase()}`}
+                        className={`cvat-select-${locationName[0]}-location`}
+                    >
+                        Cloud storage
+                    </Option>
                 </Select>
             </Form.Item>
             {locationValue === StorageLocation.CLOUD_STORAGE && renderCloudStorage()}

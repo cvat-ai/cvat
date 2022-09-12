@@ -5,16 +5,94 @@
 /// <reference types="cypress" />
 
 context('Cloud storage.', () => {
+    let taskId;
+    let taskBackupArchiveFullName;
+    let ctmBeforeExport;
+    let archiveWithAnnotations;
+    let createdCloudStorageId;
+
     const caseId = '113';
+
+    const taskName = `Case ${caseId}`;
+    const labelName = 'car';
+    const attrName = 'color';
+    const textDefaultValue = 'red';
+    const imagesCount = 1;
+    const imageFileName = `image_${taskName.replace(/\s+/g, '_').toLowerCase()}`;
+    const width = 800;
+    const height = 800;
+    const posX = 10;
+    const posY = 10;
+    const color = 'gray';
+    const archiveName = `${imageFileName}.zip`;
+    const archivePath = `cypress/fixtures/${archiveName}`;
+    const imagesFolder = `cypress/fixtures/${imageFileName}`;
+    const directoryToArchive = imagesFolder;
+    const format = 'CVAT for images';
+
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        labelName,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450,
+    };
+
+    const serverHost = Cypress.config('baseUrl').includes('localhost') ? 'localhost' : 'minio';
 
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'manifest.jsonl',
-        endpointUrl: 'http://localhost:9000', // for running in docker: http://minio:9000
+        endpointUrl: `http://${serverHost}:9000`,
     };
 
-    let createdCloudStorageId;
+    const storageConnectedToCloud = {
+        location: 'Cloud storage',
+        cloudStorageId: undefined,
+    };
+
+    const defaultProject = {
+        name: `Case ${caseId}`,
+        label: labelName,
+        attrName: 'color',
+        attrVaue: 'red',
+        multiAttrParams: false,
+    };
+
+    const firstProject = {
+        ...defaultProject,
+        name: `${defaultProject.name}_1`,
+        advancedConfiguration: {
+            sourceStorage: {
+                ...storageConnectedToCloud,
+                displayName: cloudStorageData.displayName,
+            },
+            targetStorage: {
+                ...storageConnectedToCloud,
+                displayName: cloudStorageData.displayName,
+            },
+        },
+    };
+
+    const secondProject = {
+        ...defaultProject,
+        name: `${defaultProject}_2`,
+    };
+
+    const firstTask = {
+        name: taskName,
+        label: labelName,
+        attrName,
+        textDefaultValue,
+        archiveName,
+        multiAttrParams: false,
+        forProject: true,
+        attachToProject: true,
+        projectName: firstProject.name,
+    };
 
     function attachS3Bucket(data) {
         cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
@@ -51,27 +129,78 @@ context('Cloud storage.', () => {
         cy.wait('@createCloudStorage').then((interseption) => {
             console.log(interseption);
             expect(interseption.response.statusCode).to.be.equal(201);
-            // expect(interseption.response.body.id).to.exist();
             createdCloudStorageId = interseption.response.body.id;
         });
+        cy.verifyNotification();
     }
 
-    afterEach(() => {
+    before(() => {
         cy.visit('auth/login');
         cy.login();
         attachS3Bucket(cloudStorageData);
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
+        cy.createZipArchive(directoryToArchive, archivePath);
     });
 
-    afterEach(() => {
+    after(() => {
         cy.goToCloudStoragesPage();
-        cy.deleteCloudStorage(createdCloudStorageId, cloudStorageData.displayName);
+        cy.deleteCloudStorage(cloudStorageData.displayName);
         cy.logout();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('', () => {
+        it('Use project source & target storage for exporting/importing job annotations', () => {
+            cy.goToProjectsList();
 
+            firstProject.advancedConfiguration.sourceStorage.cloudStorageId = createdCloudStorageId;
+            firstProject.advancedConfiguration.targetStorage.cloudStorageId = createdCloudStorageId;
+
+            cy.createProjects(
+                firstProject.name,
+                firstProject.label,
+                firstProject.attrName,
+                firstProject.attrVaue,
+                firstProject.multiAttrParams,
+                firstProject.advancedConfiguration,
+            );
+            cy.goToTaskList();
+            cy.createAnnotationTask(
+                firstTask.name,
+                firstTask.label,
+                firstTask.attrName,
+                firstTask.textDefaultValue,
+                archiveName,
+                firstTask.multiAttrParams,
+                null,
+                firstTask.forProject,
+                firstTask.attachToProject,
+                firstTask.projectName,
+
+            );
+            cy.goToTaskList();
+            cy.openTask(firstTask.name);
+            cy.url().then((link) => {
+                taskId = Number(link.split('/').slice(-1)[0]);
+            });
+            cy.openJob();
+            cy.createRectangle(createRectangleShape2Points).then(() => {
+                Cypress.config('scrollBehavior', false);
+            });
+            cy.document().then((doc) => {
+                ctmBeforeExport = doc.getElementById('cvat_canvas_shape_1').getCTM();
+            });
+            cy.saveJob('PATCH', 200, 'saveJobDump');
+            const exportParams = {
+                type: 'annotations',
+                format,
+                archiveName: 'job_annotations',
+            };
+            cy.exportJob(exportParams);
+            cy.waitForFileUploadToCloudStorage();
+            cy.goToTaskList();
+            cy.deleteTask(firstTask.name);
         });
+
         // test cases:
         // 1. create a project with source & target storages,
         // create a task in a project with default source & target storages
