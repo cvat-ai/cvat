@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check -- --watch",
     "lint": "eslint './src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"<<<<<<< mk/ui_source_target_storage
+    "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
   },
   "browserslist": [
     "Chrome >= 63",
