@@ -84,10 +84,12 @@ class WebhookDelivery(models.Model):
     )
     event = models.CharField(max_length=64)
 
-    status_code = models.CharField(max_length=128)
+    status_code = models.CharField(max_length=128, null=True)
     redelivery = models.BooleanField(default=False)
 
-    delivered_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     changed_fields = models.CharField(max_length=4096, default="")
 
     request = models.JSONField(default=dict)
