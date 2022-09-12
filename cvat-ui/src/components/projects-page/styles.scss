@@ -124,6 +124,10 @@
             height: inherit;
             display: grid;
 
+            .ant-empty-image {
+                height: $grid-unit-size * 10;
+            }
+
             > div:first-child {
                 margin: auto;
             }

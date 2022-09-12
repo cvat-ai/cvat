@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1526,6 +1527,16 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
     };
 }
 
+const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
+    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+};
+
 export function pasteShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
@@ -1538,22 +1549,7 @@ export function pasteShapeAsync(): ThunkAction {
         } = getStore().getState().annotation;
 
         if (initialState && canvasInstance) {
-            let activeControl = ActiveControl.CURSOR;
-            if (initialState.shapeType === ShapeType.RECTANGLE) {
-                activeControl = ActiveControl.DRAW_RECTANGLE;
-            } else if (initialState.shapeType === ShapeType.POINTS) {
-                activeControl = ActiveControl.DRAW_POINTS;
-            } else if (initialState.shapeType === ShapeType.POLYGON) {
-                activeControl = ActiveControl.DRAW_POLYGON;
-            } else if (initialState.shapeType === ShapeType.POLYLINE) {
-                activeControl = ActiveControl.DRAW_POLYLINE;
-            } else if (initialState.shapeType === ShapeType.CUBOID) {
-                activeControl = ActiveControl.DRAW_CUBOID;
-            } else if (initialState.shapeType === ShapeType.ELLIPSE) {
-                activeControl = ActiveControl.DRAW_ELLIPSE;
-            } else if (initialState.shapeType === ShapeType.SKELETON) {
-                activeControl = ActiveControl.DRAW_SKELETON;
-            }
+            const activeControl = ShapeTypeToControl[initialState.shapeType as ShapeType] || ActiveControl.CURSOR;
 
             dispatch({
                 type: AnnotationActionTypes.PASTE_SHAPE,
@@ -1633,21 +1629,8 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
             return;
         }
-        if (activeShapeType === ShapeType.RECTANGLE) {
-            activeControl = ActiveControl.DRAW_RECTANGLE;
-        } else if (activeShapeType === ShapeType.POINTS) {
-            activeControl = ActiveControl.DRAW_POINTS;
-        } else if (activeShapeType === ShapeType.POLYGON) {
-            activeControl = ActiveControl.DRAW_POLYGON;
-        } else if (activeShapeType === ShapeType.POLYLINE) {
-            activeControl = ActiveControl.DRAW_POLYLINE;
-        } else if (activeShapeType === ShapeType.CUBOID) {
-            activeControl = ActiveControl.DRAW_CUBOID;
-        } else if (activeShapeType === ShapeType.ELLIPSE) {
-            activeControl = ActiveControl.DRAW_ELLIPSE;
-        } else if (activeShapeType === ShapeType.SKELETON) {
-            activeControl = ActiveControl.DRAW_SKELETON;
-        }
+
+        activeControl = ShapeTypeToControl[activeShapeType];
 
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
@@ -1699,31 +1682,20 @@ export function redrawShapeAsync(): ThunkAction {
         if (activatedStateID !== null) {
             const [state] = states.filter((_state: any): boolean => _state.clientID === activatedStateID);
             if (state && state.objectType !== ObjectType.TAG) {
-                let activeControl = ActiveControl.CURSOR;
-                if (state.shapeType === ShapeType.RECTANGLE) {
-                    activeControl = ActiveControl.DRAW_RECTANGLE;
-                } else if (state.shapeType === ShapeType.POINTS) {
-                    activeControl = ActiveControl.DRAW_POINTS;
-                } else if (state.shapeType === ShapeType.POLYGON) {
-                    activeControl = ActiveControl.DRAW_POLYGON;
-                } else if (state.shapeType === ShapeType.POLYLINE) {
-                    activeControl = ActiveControl.DRAW_POLYLINE;
-                } else if (state.shapeType === ShapeType.CUBOID) {
-                    activeControl = ActiveControl.DRAW_CUBOID;
-                } else if (state.shapeType === ShapeType.SKELETON) {
-                    activeControl = ActiveControl.DRAW_SKELETON;
-                }
-
+                const activeControl = ShapeTypeToControl[state.shapeType as ShapeType] || ActiveControl.CURSOR;
                 dispatch({
                     type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
                     payload: {
                         activeControl,
                     },
                 });
+
                 if (canvasInstance instanceof Canvas) {
                     canvasInstance.cancel();
                 }
+
                 canvasInstance.draw({
+                    skeletonSVG: state.shapeType === ShapeType.SKELETON ? state.label.structure.svg : undefined,
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,

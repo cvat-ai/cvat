@@ -48,7 +48,7 @@ class Processor:
         tokenized_path = tokenized_path[2:]
 
         prefix = tokenized_path[0] + "_"
-        if new_name.startswith(prefix):
+        if new_name.startswith(prefix) and tokenized_path[0] in operation["tags"]:
             new_name = new_name[len(prefix) :]
 
         return new_name

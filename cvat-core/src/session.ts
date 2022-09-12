@@ -1573,8 +1573,8 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     serverFiles: {
-                        get: () => [...data.files.server_files],
-                        set: (serverFiles) => {
+                        get: () => Array.from(data.files.server_files),
+                        set: (serverFiles: string[]) => {
                             if (!Array.isArray(serverFiles)) {
                                 throw new ArgumentError(
                                     `Value must be an array. But ${typeof serverFiles} has been got.`,
@@ -1589,7 +1589,9 @@
                                 }
                             }
 
-                            Array.prototype.push.apply(data.files.server_files, serverFiles);
+                            for (const file of serverFiles) {
+                                data.files.server_files.push(file);
+                            }
                         },
                     },
                     /**
@@ -1601,8 +1603,8 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     clientFiles: {
-                        get: () => [...data.files.client_files],
-                        set: (clientFiles) => {
+                        get: () => Array.from(data.files.client_files),
+                        set: (clientFiles: File[]) => {
                             if (!Array.isArray(clientFiles)) {
                                 throw new ArgumentError(
                                     `Value must be an array. But ${typeof clientFiles} has been got.`,
@@ -1617,19 +1619,21 @@
                                 }
                             }
 
-                            Array.prototype.push.apply(data.files.client_files, clientFiles);
+                            for (const file of clientFiles) {
+                                data.files.client_files.push(file);
+                            }
                         },
                     },
                     /**
                      * List of files from remote host
                      * @name remoteFiles
-                     * @type {File[]}
+                     * @type {string[]}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     remoteFiles: {
-                        get: () => [...data.files.remote_files],
+                        get: () => Array.from(data.files.remote_files),
                         set: (remoteFiles) => {
                             if (!Array.isArray(remoteFiles)) {
                                 throw new ArgumentError(
@@ -1645,7 +1649,9 @@
                                 }
                             }
 
-                            Array.prototype.push.apply(data.files.remote_files, remoteFiles);
+                            for (const file of remoteFiles) {
+                                data.files.remote_files.push(file);
+                            }
                         },
                     },
                     /**

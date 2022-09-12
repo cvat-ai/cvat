@@ -20,11 +20,11 @@ export interface EditHandler {
 export class EditHandlerImpl implements EditHandler {
     private onEditDone: (state: any, points: number[]) => void;
     private autoborderHandler: AutoborderHandler;
-    private geometry: Geometry;
+    private geometry: Geometry | null;
     private canvas: SVG.Container;
-    private editData: PolyEditData;
-    private editedShape: SVG.Shape;
-    private editLine: SVG.PolyLine;
+    private editData: PolyEditData | null;
+    private editedShape: SVG.Shape | null;
+    private editLine: SVG.PolyLine | null;
     private clones: SVG.Polygon[];
     private controlPointsSize: number;
     private autobordersEnabled: boolean;

@@ -17,18 +17,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Possibility to display tags on frame
 - Support source and target storages (server part)
 - Tests for import/export annotation, dataset, backup from/to cloud storage
-- Added Python SDK package (`cvat-sdk`)
+- Added Python SDK package (`cvat-sdk`) (<https://github.com/opencv/cvat/pull/4813>)
 - Previews for jobs
 - Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
 - OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
 - Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
-- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
+- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type:
+Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv/cvat/pull/4829>)
 - Added helm chart support for serverless functions and analytics (<https://github.com/cvat-ai/cvat/pull/110>)
+- Added confirmation when remove a track (<https://github.com/opencv/cvat/pull/4846>)
+- [COCO Keypoints](https://cocodataset.org/#keypoints-2020) format support (<https://github.com/opencv/cvat/pull/4821>,
+  <https://github.com/opencv/cvat/pull/4908>)
+- Support for Oracle OCI Buckets (<https://github.com/opencv/cvat/pull/4876>)
+- `cvat-sdk` and `cvat-cli` packages on PyPI (<https://github.com/opencv/cvat/pull/4903>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
 - Simplified running REST API tests. Extended CI-nightly workflow
-- REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`)
+- REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`, `issues`)
 - cvat-ui: Improve UI/UX on label, create task and create project forms (<https://github.com/cvat-ai/cvat/pull/7>)
 - Removed link to OpenVINO documentation (<https://github.com/cvat-ai/cvat/pull/35>)
 - Clarified meaning of chunking for videos
@@ -52,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset password functionality (<https://github.com/cvat-ai/cvat/pull/52>)
 - Creating task with cloud storage data (<https://github.com/cvat-ai/cvat/pull/116>)
 - Show empty tasks (<https://github.com/cvat-ai/cvat/pull/100>)
+- Fixed project filtration (<https://github.com/opencv/cvat/pull/4878>)
+- Maximum callstack exceed when create task with 100000+ files from cloud storage (<https://github.com/opencv/cvat/pull/4836>)
+- Fixed invocation of serverless functions (<https://github.com/opencv/cvat/pull/4907>)
+- Removing label attributes (<https://github.com/opencv/cvat/pull/4927>)
+- Notification with a required manifest file (<https://github.com/opencv/cvat/pull/4921>)
 
 ### Security
 - TDB

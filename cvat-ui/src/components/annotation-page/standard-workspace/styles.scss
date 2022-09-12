@@ -329,3 +329,9 @@
         margin: 0 5px;
     }
 }
+
+.cvat-remove-object-confirm-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: $grid-unit-size * 2;
+}

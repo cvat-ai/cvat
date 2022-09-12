@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
@@ -59,7 +59,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     private nodeCounter: number;
     private elementCounter: number;
     private draggableElement: SVGElement | null;
-    private labels: Record<string, LabelOptColor>;
+    private labels: Record<number, LabelOptColor>;
 
     public constructor(props: Props) {
         super(props);
@@ -463,7 +463,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             if (recreate) {
                 Array.from<SVGElement>(svg.children as any as SVGElement[]).forEach((element: SVGElement): void => {
                     if (!(element instanceof SVGElement)) return;
-                    const elementID = element.getAttribute('data-element-id');
+                    const elementID = +(element.getAttribute('data-element-id') as string);
                     const cx = element.getAttribute('cx');
                     const cy = element.getAttribute('cy');
 
@@ -574,7 +574,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
             const dataType = child.getAttribute('data-type');
             if (dataType && dataType.includes('element')) {
-                const elementID = child.getAttribute('data-element-id');
+                const elementID = +(child.getAttribute('data-element-id') as string);
                 if (elementID !== null) {
                     elements++;
                     const elementLabel = this.labels[elementID];
@@ -631,9 +631,10 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             activeTool, contextMenuVisible, contextMenuElement, error,
         } = this.state;
         const keyMap = this.context;
+        const disabledStyle: CSSProperties = disabled ? { opacity: 0.5, pointerEvents: 'none' } : {};
 
         return (
-            <Row className='cvat-skeleton-configurator' style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
+            <Row className='cvat-skeleton-configurator'>
                 <GlobalHotKeys
                     keyMap={{
                         CANCEL_SKELETON_EDGE: keyMap.CANCEL_SKELETON_EDGE,
@@ -700,7 +701,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             </p>
                         </Upload>
                     </div>
-                    <Row justify='center' className='cvat-skeleton-configurator-shape-buttons'>
+                    <Row
+                        justify='center'
+                        style={disabledStyle}
+                        className='cvat-skeleton-configurator-shape-buttons'
+                    >
                         <Col span={24}>
                             <Radio.Group
                                 value={activeTool}
@@ -742,16 +747,24 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                 onClick={() => {
                                     if (svgRef.current) {
                                         this.setupTextLabels(false);
+                                        const copy = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                                        // eslint-disable-next-line no-unsanitized/property
+                                        copy.innerHTML = svgRef.current.innerHTML;
+                                        this.setupTextLabels();
 
                                         const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
                                         desc.setAttribute('data-description-type', 'labels-specification');
                                         (desc as SVGDescElement).textContent = JSON.stringify(this.labels);
-                                        svgRef.current.appendChild(desc);
+                                        copy.appendChild(desc);
+                                        Array.from(copy.children).forEach((child: Element) => {
+                                            if (child.hasAttribute('data-label-id')) {
+                                                const elementID = +(child.getAttribute('data-element-id') as string);
+                                                child.removeAttribute('data-label-id');
+                                                child.setAttribute('data-label-name', this.labels[elementID].name);
+                                            }
+                                        });
 
-                                        const text = svgRef.current.innerHTML;
-                                        desc.remove();
-
-                                        this.setupTextLabels();
+                                        const text = copy.innerHTML;
                                         const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
                                         const url = URL.createObjectURL(blob);
                                         const anchor = window.document.getElementById('downloadAnchor');
@@ -767,6 +780,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             />
                         </CVATTooltip>
                         <Upload
+                            disabled={disabled}
                             showUploadList={false}
                             beforeUpload={(file: RcFile) => {
                                 file.text().then((result) => {
@@ -805,12 +819,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             }}
                         >
                             <CVATTooltip title='Upload a skeleton from SVG'>
-                                <Button icon={<UploadOutlined />} type='default' />
+                                <Button style={disabledStyle} icon={<UploadOutlined />} type='default' />
                             </CVATTooltip>
                         </Upload>
                     </Row>
                 </div>
-                <div className='cvat-skeleton-canvas-wrapper'>
+                <div className='cvat-skeleton-canvas-wrapper' style={disabledStyle}>
                     <canvas ref={canvasRef} className='cvat-skeleton-configurator-canvas' />
                     <svg width={100} height={100} ref={svgRef} className='cvat-skeleton-configurator-svg' />
                 </div>

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,8 +10,6 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
-
-import FooterDrawer from 'components/login-page/intel-footer-drawer';
 
 import LoginForm, { LoginData } from './login-form';
 
@@ -64,7 +63,6 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                     </Col>
                 </Row>
             </Content>
-            <FooterDrawer />
         </Layout>
     );
 }
