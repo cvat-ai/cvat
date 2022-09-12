@@ -86,7 +86,9 @@ class Client:
                         _request_timeout=5, _parse_response=False, _check_status=False
                     )
 
-                    if response.status == 401:
+                    if response.status in [200, 401]:
+                        # Versions prior to 2.2.0 respond with unauthorized
+                        # 2.2.0 allows unauthorized access
                         return schema
 
         raise InvalidHostException(

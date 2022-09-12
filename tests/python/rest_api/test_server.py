@@ -10,8 +10,8 @@ from shared.utils.config import make_api_client
 
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetServer:
-    def test_can_retrieve_about(self, admin_user: str):
-        with make_api_client(admin_user) as api_client:
+    def test_can_retrieve_about_unauthorized(self):
+        with make_api_client(user=None, password=None) as api_client:
             (data, response) = api_client.server_api.retrieve_about()
 
             assert response.status == HTTPStatus.OK
@@ -28,8 +28,8 @@ class TestGetServer:
 
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetSchema:
-    def test_can_get_schema(self, admin_user: str):
-        with make_api_client(admin_user) as api_client:
+    def test_can_get_schema_unauthorized(self):
+        with make_api_client(user=None, password=None) as api_client:
             (data, response) = api_client.schema_api.retrieve()
 
             assert response.status == HTTPStatus.OK
