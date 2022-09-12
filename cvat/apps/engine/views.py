@@ -186,14 +186,18 @@ class ServerViewSet(viewsets.ViewSet):
                 entry_type = None
                 entry_mime_type = None
                 if entry.is_file():
-                    entry_type = "DIR"
+                    entry_type = "REG"
                     entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
                 elif entry.is_dir():
-                    entry_type = "REG"
+                    entry_type = "DIR"
                     entry_mime_type = "DIR"
 
                 if entry_type:
-                    data.append({"name": entry.name, "type": entry_type, "mime_type_16": entry_mime_type, "mime_type_64": entry_mime_type,  "mime_type_1024": entry_mime_type, "test": "test_value"})
+                    data.append({
+                        "name": entry.name,
+                        "type": entry_type,
+                        "mime_type": entry_mime_type,
+                    })
 
             serializer = FileInfoSerializer(many=True, data=data)
             if serializer.is_valid(raise_exception=True):

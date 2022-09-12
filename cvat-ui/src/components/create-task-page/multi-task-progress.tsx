@@ -148,7 +148,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                                 </>
                             ) : (
                                 <Col>
-                                    <Button onClick={onCancel}>
+                                    <Button onClick={onCancel} disabled={!countPending}>
                                         Cancel
                                     </Button>
                                 </Col>
