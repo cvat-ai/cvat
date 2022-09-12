@@ -70,11 +70,7 @@ from cvat.apps.engine.serializers import (
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine import backup
-<<<<<<< HEAD
-from cvat.apps.engine.mixins import UploadMixin, AnnotationMixin, SerializeMixin, UpdateModelMixin
-=======
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
->>>>>>> develop
 
 from . import models, task
 from .log import clogger, slogger
@@ -1327,14 +1323,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-<<<<<<< HEAD
-
-    @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
-=======
     @extend_schema(methods=['GET'],
         summary="Method returns annotations for a specific job as a JSON document. "
             "If format is specified, a zip archive is returned.",
->>>>>>> develop
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY,
                 description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
@@ -1525,22 +1516,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             callback=dm.views.export_job_as_dataset
         )
 
-<<<<<<< HEAD
-
-    @extend_schema(
-        summary='Method returns list of issues for the job',
-        responses={
-            '200': IssueReadSerializer(many=True)
-        })
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer)
-=======
     @extend_schema(summary='Method returns list of issues for the job',
         responses=IssueReadSerializer(many=True)) # Duplicate to still get 'list' op. name
     @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer(many=True),
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
->>>>>>> develop
     def issues(self, request, pk):
         db_job = self.get_object()
         queryset = db_job.issues
@@ -1649,14 +1630,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-<<<<<<< HEAD
-
-    @extend_schema(summary='The action returns the list of tracked '
-        'changes for the job', responses={
-=======
     @extend_schema(summary='The action returns the list of tracked changes for the job',
         responses={
->>>>>>> develop
             '200': JobCommitSerializer(many=True),
         })
     @action(detail=True, methods=['GET'], serializer_class=None)
