@@ -86,7 +86,7 @@ export class DrawHandlerImpl implements DrawHandler {
         y: number;
     };
     private crosshair: Crosshair;
-    private drawData: DrawData;
+    private drawData: DrawData | null;
     private geometry: Geometry;
     private autoborderHandler: AutoborderHandler;
     private autobordersEnabled: boolean;
@@ -100,7 +100,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private initialized: boolean;
     private canceled: boolean;
     private pointsGroup: SVG.G | null;
-    private shapeSizeElement: ShapeSizeElement;
+    private shapeSizeElement: ShapeSizeElement | null;
 
     private getFinalEllipseCoordinates(points: number[], fitIntoFrame: boolean): number[] {
         const { offset } = this.geometry;

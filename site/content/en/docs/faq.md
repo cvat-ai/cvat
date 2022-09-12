@@ -171,3 +171,7 @@ section.
 ## How to transfer CVAT to another machine
 
 Follow the [backup/restore guide](/docs/administration/advanced/backup_guide/#how-to-backup-all-cvat-data).
+
+## How to load your own DL model into CVAT
+
+See the information here in the [Serverless tutorial](/docs/manual/advanced/serverless-tutorial/#adding-your-own-dl-models).

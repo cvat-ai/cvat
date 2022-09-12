@@ -13,7 +13,6 @@ from typing import (
     Dict,
     Generic,
     List,
-    Literal,
     Optional,
     Tuple,
     Type,
@@ -22,7 +21,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self
+from typing_extensions import Literal, Self
 
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -47,7 +46,7 @@ class ModelProxy(ABC, Generic[ModelType, ApiType]):
 
     @classmethod
     def get_api(cls, client: Client) -> ApiType:
-        return getattr(client.api, cls._api_member_name)
+        return getattr(client.api_client, cls._api_member_name)
 
     @property
     def api(self) -> ApiType:
