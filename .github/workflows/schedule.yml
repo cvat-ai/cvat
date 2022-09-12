@@ -214,7 +214,7 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
 
       - name: OPA tests
         run: |
@@ -308,10 +308,10 @@ jobs:
       - name: Pull CVAT UI image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
 
           docker pull ${{ steps.meta-ui.outputs.tags }}
-          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui
+          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui:dev
 
       - name: Run CVAT instance
         run: |
@@ -430,7 +430,7 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
 
       - name: Downloading coverage results
         uses: actions/download-artifact@v2
