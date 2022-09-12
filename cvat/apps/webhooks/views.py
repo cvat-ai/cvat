@@ -171,11 +171,17 @@ class WebhookViewSet(viewsets.ModelViewSet):
         # Questionable: should we provide a body for this response?
         return Response({})
 
-    @extend_schema(summary="Method send ping webhook")
-    @action(detail=True, methods=["POST"])
+    @extend_schema(
+        summary="Method send ping webhook",
+        responses={"200": WebhookDeliveryReadSerializer}
+    )
+    @action(detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer)
     def ping(self, request, pk):
         instance = self.get_object()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
-        signal_ping.send(sender=self, serializer=serializer)
-        return Response({})
+        delivery = signal_ping.send(sender=self, serializer=serializer)[0][1]
+        serializer = WebhookDeliveryReadSerializer(
+            delivery, context={"request": request}
+        )
+        return Response(serializer.data)
