@@ -12,11 +12,12 @@ from time import sleep
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 import attrs
+import packaging.version as pv
 import urllib3
 import urllib3.exceptions
 
-from cvat_sdk.api_client import ApiClient, Configuration, models
-from cvat_sdk.core.exceptions import InvalidHostException
+from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
+from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
@@ -24,12 +25,16 @@ from cvat_sdk.core.proxies.model_proxy import Repo
 from cvat_sdk.core.proxies.projects import ProjectsRepo
 from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
+from cvat_sdk.version import VERSION
 
 
 @attrs.define
 class Config:
     status_check_period: float = 5
-    """In seconds"""
+    """Operation status check period, in seconds"""
+
+    allow_unsupported_server: bool = True
+    """Allow to use SDK with an unsupported server version. If disabled, raise an exception."""
 
 
 class Client:
@@ -45,6 +50,7 @@ class Client:
         self.api_client = ApiClient(Configuration(host=self.api_map.host))
         self.logger = logger or logging.getLogger(__name__)
         self.config = config or Config()
+        self.check_server_version()
 
         self._repos: Dict[str, Repo] = {}
 
@@ -76,7 +82,7 @@ class Client:
         for schema in cls.ALLOWED_SCHEMAS:
             with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
                 with suppress(urllib3.exceptions.RequestError):
-                    (_, response) = api_client.schema_api.retrieve(
+                    (_, response) = api_client.server_api.retrieve_about(
                         _request_timeout=5, _parse_response=False, _check_status=False
                     )
 
@@ -154,6 +160,42 @@ class Client:
                 break
 
         return response
+
+    def check_server_version(self, fail_if_unsupported: Optional[bool] = None) -> None:
+        if fail_if_unsupported is None:
+            fail_if_unsupported = not self.config.allow_unsupported_server
+
+        try:
+            server_version = self.get_server_version()
+        except exceptions.ApiException as e:
+            msg = (
+                "Failed to retrieve server API version: %s. "
+                "Some SDK functions may not work properly with this server."
+            ) % (e,)
+            self.logger.warning(msg)
+            if fail_if_unsupported:
+                raise IncompatibleVersionException(msg)
+            return
+
+        sdk_version = pv.Version(VERSION)
+
+        # We only check base version match. Micro releases and fixes do not affect
+        # API compatibility in general.
+        if server_version.base_version != sdk_version.base_version:
+            msg = (
+                "Server version '%s' is not compatible with SDK version '%s'. "
+                "Some SDK functions may not work properly with this server. "
+                "You can continue using this SDK, or you can "
+                "try to update with 'pip install cvat-sdk'."
+            ) % (server_version, sdk_version)
+            self.logger.warning(msg)
+            if fail_if_unsupported:
+                raise IncompatibleVersionException(msg)
+
+    def get_server_version(self) -> pv.Version:
+        # TODO: allow to use this endpoint unauthorized
+        (about, _) = self.api_client.server_api.retrieve_about()
+        return pv.Version(about.version)
 
     def _get_repo(self, key: str) -> Repo:
         _repo_map = {
