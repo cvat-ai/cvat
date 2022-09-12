@@ -71,15 +71,16 @@ class TestPostWebhooks:
         not_org_members = [(u, o) for u, o in product(admins, organizations)
             if not is_org_member(u['id'], o['id'])]
 
-        for u, o in not_org_members:
-            for p in projects_by_org.get(o['id'], []):
-                if p['owner']['id'] != u['id']:
-                    username, pid, oid = u['username'], p['id'], o['id']
-                    break
+        username, org_id = next((
+            (u['username'], o['id'])
+            for u, o in not_org_members
+            for p in projects_by_org.get(o['id'], [])
+            if p['owner']['id'] != u['id']
+        ))
 
         webhook = deepcopy(self.org_webhook)
 
-        response = post_method(username, 'webhooks', webhook, org_id=oid)
+        response = post_method(username, 'webhooks', webhook, org_id=org_id)
 
         assert response.status_code == HTTPStatus.CREATED
         assert 'secret' not in response.json()
@@ -346,7 +347,7 @@ class TestGetWebhooks:
         username, wid = next((
             (user['username'], webhook['id'])
             for user in users
-            for webhook in webhooks
+            for webhook in proj_webhooks
             if 'admin' in user['groups']
                 and webhook['owner']['id'] != user['id']
                 and projects[webhook['project']]['owner']['id'] != user['id']
@@ -822,8 +823,8 @@ class TestPatchWebhooks:
     def test_member_can_update_any_project_webhook_in_org(self, role, allow, find_users,
             organizations, projects_by_org, webhooks, is_project_staff):
         proj_webhooks = [w for w in webhooks if w['type'] == 'project']
-        username, oid, pid, webhook = next((
-            (u['username'], o['id'], p['id'], deepcopy(w))
+        username, org_id, webhook = next((
+            (u['username'], o['id'], deepcopy(w))
             for o in organizations
             for u in find_users(role=role, org=o['id'])
             for w in proj_webhooks
@@ -837,7 +838,8 @@ class TestPatchWebhooks:
         patch_data = {'target_url': 'http://newexample.com'}
         webhook.update(patch_data)
 
-        response = patch_method(username, f"webhooks/{webhook['id']}", patch_data, org_id=oid)
+        response = patch_method(username, f"webhooks/{webhook['id']}",
+            patch_data, org_id=org_id)
 
         if not allow:
             assert response.status_code == HTTPStatus.FORBIDDEN
@@ -851,8 +853,8 @@ class TestPatchWebhooks:
     def test_member_can_update_project_webhook_in_org(self, role, find_users,
             organizations, projects_by_org, webhooks):
         proj_webhooks = [w for w in webhooks if w['type'] == 'project']
-        username, oid, pid, webhook = next((
-            (u['username'], o['id'], p['id'], deepcopy(w))
+        username, org_id, webhook = next((
+            (u['username'], o['id'], deepcopy(w))
             for o in organizations
             for u in find_users(role=role, org=o['id'])
             for w in proj_webhooks
@@ -865,7 +867,8 @@ class TestPatchWebhooks:
         patch_data = {'target_url': 'http://newexample.com'}
         webhook.update(patch_data)
 
-        response = patch_method(username, f"webhooks/{webhook['id']}", patch_data, org_id=oid)
+        response = patch_method(username, f"webhooks/{webhook['id']}",
+            patch_data, org_id=org_id)
 
         assert response.status_code == HTTPStatus.OK
         assert 'secret' not in response.json()
@@ -1050,6 +1053,3 @@ class TestDeleteWebhooks:
 
         response = get_method(username, f'webhooks/{webhook_id}', org_id=org_id)
         assert response.status_code == HTTPStatus.NOT_FOUND
-
-                
-
