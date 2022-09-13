@@ -86,24 +86,6 @@ Prebuilt docker images are the easiest way to start using CVAT locally. They are
 
 The images have been downloaded more than 1M times so far.
 
-## Integration
-
-### Server API
-
-- [Documentation](https://opencv.github.io/cvat/docs/integration/api/)
-
-### Python SDK
-
-- Install with `pip install cvat-sdk`
-- [PyPI package homepage](https://pypi.org/project/cvat-sdk/)
-- [Documentation](https://opencv.github.io/cvat/docs/integration/sdk/)
-
-### CLI
-
-- Install with `pip install cvat-cli`
-- [PyPI package homepage](https://pypi.org/project/cvat-cli/)
-- [Documentation](https://opencv.github.io/cvat/docs/integration/cli/)
-
 ## Screencasts 🎦
 
 Here are some screencasts showing how to use CVAT.
@@ -117,6 +99,22 @@ Here are some screencasts showing how to use CVAT.
 - [Segmentation mode](https://youtu.be/9Fe_GzMLo3E)
 - [Tutorial for polygons](https://youtu.be/C7-r9lZbjBw)
 - [Semi-automatic segmentation](https://youtu.be/9HszWP_qsRQ)
+
+## API
+
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/api/)
+
+## SDK
+
+- Install with `pip install cvat-sdk`
+- [PyPI package homepage](https://pypi.org/project/cvat-sdk/)
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/sdk/)
+
+## CLI
+
+- Install with `pip install cvat-cli`
+- [PyPI package homepage](https://pypi.org/project/cvat-cli/)
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/cli/)
 
 ## Supported annotation formats
 
