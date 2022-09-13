@@ -204,8 +204,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     }, []);
 
     const handleOnFinish = (formValues: CloudStorageForm): void => {
-        let cloudStorageData: Record<string, any> = {};
-        cloudStorageData = { ...formValues };
+        const cloudStorageData: Record<string, any> = { ...formValues };
         // specific attributes
         const specificAttributes = new URLSearchParams();
 
@@ -266,12 +265,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         } else {
             dispatch(createCloudStorageAsync(cloudStorageData));
         }
-    };
-
-    const handleOnFinishFailed = (
-        { values, errorFields, outOfDate }: { values: CloudStorageForm, errorFields: any[], outOfDate: boolean },
-    ): void => {
-        console.log(values, errorFields, outOfDate);
     };
 
     const resetCredentialsValues = (): void => {
@@ -351,7 +344,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={40}
+                            maxLength={44}
                             visibilityToggle={secretKeyVisibility}
                             onChange={() => setSecretKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('secretKey', 'secret_key')}
@@ -617,7 +610,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             layout='vertical'
             form={form}
             onFinish={(values: CloudStorageForm): void => handleOnFinish(values)}
-            onFinishFailed={(values: any): void => handleOnFinishFailed(values)}
         >
             <Form.Item
                 {...commonProps}

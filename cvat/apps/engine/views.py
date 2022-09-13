@@ -52,6 +52,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
@@ -186,13 +187,20 @@ class ServerViewSet(viewsets.ViewSet):
             content = os.scandir(directory)
             for entry in content:
                 entry_type = None
+                entry_mime_type = None
                 if entry.is_file():
                     entry_type = "REG"
+                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
                 elif entry.is_dir():
                     entry_type = "DIR"
+                    entry_mime_type = "DIR"
 
                 if entry_type:
-                    data.append({"name": entry.name, "type": entry_type})
+                    data.append({
+                        "name": entry.name,
+                        "type": entry_type,
+                        "mime_type": entry_mime_type,
+                    })
 
             serializer = FileInfoSerializer(many=True, data=data)
             if serializer.is_valid(raise_exception=True):
@@ -2254,13 +2262,13 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             db_instance.__class__.__name__.lower(),
                             db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
                             timestamp, format_name, osp.splitext(file_path)[1]
-                        )
+                        ).lower()
 
                     # save annotation to specified location
                     location = location_conf.get('location')
                     if location == Location.LOCAL:
                         return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
+                            attachment_filename=filename)
                     elif location == Location.CLOUD_STORAGE:
                         try:
                             storage_id = location_conf['storage_id']

@@ -201,7 +201,7 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
         }
     } else {
         console.log('file: ', archiveWithBackup);
-        cy.get('input[type="file"]').attachFile(archiveWithBackup, { subjectType: 'drag-n-drop' });
+        cy.get('input[type=file]').attachFile(archiveWithBackup, { subjectType: 'drag-n-drop' });
         cy.get(`[title="${archiveWithBackup}"]`).should('be.visible');
     }
 

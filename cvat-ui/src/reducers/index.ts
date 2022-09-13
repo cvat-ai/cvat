@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -99,11 +100,6 @@ export interface TasksState {
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
-        };
-        creates: {
-            taskId: number | null;
-            status: string;
-            error: string;
         };
         jobUpdates: {
             [jid: number]: boolean,
@@ -296,11 +292,13 @@ export interface ShareFileInfo {
     // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
+    mime_type: string;
 }
 
 export interface ShareItem {
     name: string;
     type: 'DIR' | 'REG';
+    mime_type: string;
     children: ShareItem[];
 }
 

@@ -885,9 +885,10 @@ Cypress.Commands.add('interactMenu', (choice) => {
 
 Cypress.Commands.add('setJobState', (choice) => {
     cy.interactMenu('Change job state');
-    cy.get('.cvat-annotation-menu-job-state-submenu').within(() => {
-        cy.contains(choice).click();
-    });
+    cy.get('.cvat-annotation-menu-job-state-submenu')
+        .should('not.have.class', 'ant-zoom-big').within(() => {
+            cy.contains(choice).click();
+        });
     cy.get('.cvat-modal-content-change-job-state')
         .should('be.visible')
         .within(() => {
@@ -1067,7 +1068,6 @@ Cypress.Commands.add('deleteCloudStorage', (displayName) => {
         .within(() => {
             cy.contains('button', 'Delete').click();
         });
-    // cy.get('.cvat-cloud-storage-item-menu-button')..should('be.hidden');
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {

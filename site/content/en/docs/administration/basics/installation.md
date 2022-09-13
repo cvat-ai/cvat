@@ -71,12 +71,14 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat) with Git.
 
+  Following command will clone latest develop branch:
   ```shell
-  sudo apt-get --no-install-recommends install -y git
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
-  See [alternatives](#how-to-get-cvat-source-code) with `wget` or `curl`.
+
+  See [alternatives](#how-to-get-cvat-source-code) if you want to download one of the release
+  versions or use the `wget` or `curl` tools.
 
 - To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
 
@@ -91,7 +93,10 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   docker-compose up -d
   ```
 
-- Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to install (e.g `v2.1.0`, `dev`):
+- (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
+  install specific version (e.g `v2.1.0`, `dev`).
+  Default behavior: `dev` images will be pulled for develop branch,
+  and corresponding release images for release versions.
   ```shell
   CVAT_VERSION=dev docker-compose up -d
   ```
@@ -152,16 +157,28 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
 
+  The following command will clone the latest develop branch:
   ```shell
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
+
+  See [alternatives](#how-to-get-cvat-source-code) if you want to download one of the release
+  versions.
 
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
   docker-compose up -d
+  ```
+
+- (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
+  install specific version (e.g `v2.1.0`, `dev`).
+  Default behavior: `dev` images will be pulled for develop branch,
+  and corresponding release images for release versions.
+  ```shell
+  CVAT_VERSION=dev docker-compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
@@ -223,17 +240,27 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat) with Git.
 
+  The following command will clone the latest develop branch:
   ```shell
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
-  See [alternatives](#how-to-get-cvat-source-code) with `wget` or `curl`.
+  See [alternatives](#how-to-get-cvat-source-code) if you want to download one of the release
+  versions or use the `wget` or `curl` tools.
 
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
   docker-compose up -d
+  ```
+
+- (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
+  install specific version (e.g `v2.1.0`, `dev`).
+  Default behavior: `dev` images will be pulled for develop branch,
+  and corresponding release images for release versions.
+  ```shell
+  CVAT_VERSION=dev docker-compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
