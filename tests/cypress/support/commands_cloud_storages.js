@@ -38,7 +38,6 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
         cy.contains('button', 'Submit').click();
     });
     cy.wait('@createCloudStorage').then((interseption) => {
-        console.log(interseption);
         expect(interseption.response.statusCode).to.be.equal(201);
         createdCloudStorageId = interseption.response.body.id;
     });
