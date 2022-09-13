@@ -137,6 +137,7 @@ For more information about the supported formats, look at the
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             |   ✔️    |   ✔️    |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                                |   ✔️    |   ✔️    |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           |   ✔️    |   ✔️    |
+| [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                                        |   ✔️    |   ✔️    |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       |   ✔️    |   ✔️    |
 | [MOT](https://motchallenge.net/)                                                                          |   ✔️    |   ✔️    |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    |   ✔️    |   ✔️    |

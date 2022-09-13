@@ -129,6 +129,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/ui:latest cvat/ui:dev
           docker image ls -a
 
       - name: Running REST API tests
@@ -157,11 +159,9 @@ jobs:
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
-        env:
-          LOGS_DIR: "${{ github.workspace }}/rest_api"
         with:
           name: container_logs
-          path: $LOGS_DIR
+          path: "${{ github.workspace }}/rest_api"
 
   unit_testing:
     needs: build
@@ -181,6 +181,7 @@ jobs:
       - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
+          docker tag cvat/server:latest cvat/server:dev
           docker image ls -a
 
       - name: Running OPA tests
@@ -217,11 +218,10 @@ jobs:
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
-        env:
-          LOGS_DIR: "${{ github.workspace }}/unit_testing"
         with:
           name: container_logs
-          path: $LOGS_DIR
+          path: "${{ github.workspace }}/unit_testing"
+
 
   e2e_testing:
     needs: build
@@ -256,6 +256,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/ui:latest cvat/ui:dev
           docker image ls -a
 
       - name: Run CVAT instance

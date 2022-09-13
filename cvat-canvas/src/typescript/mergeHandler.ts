@@ -24,7 +24,7 @@ export class MergeHandlerImpl implements MergeHandler {
     private constraints: {
         labelID: number;
         shapeType: string;
-    };
+    } | null;
 
     private addConstraints(): void {
         const shape = this.statesToBeMerged[0];
