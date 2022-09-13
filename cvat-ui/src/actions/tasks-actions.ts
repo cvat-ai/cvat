@@ -1,12 +1,14 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { TasksQuery, CombinedState, Indexable } from 'reducers';
-import { getCVATStore } from 'cvat-store';
-import { getCore } from 'cvat-core-wrapper';
+import {
+    TasksQuery, CombinedState, Indexable, StorageLocation,
+} from 'reducers';
+import { getCore, Storage } from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();
@@ -15,9 +17,6 @@ export enum TasksActionTypes {
     GET_TASKS = 'GET_TASKS',
     GET_TASKS_SUCCESS = 'GET_TASKS_SUCCESS',
     GET_TASKS_FAILED = 'GET_TASKS_FAILED',
-    LOAD_ANNOTATIONS = 'LOAD_ANNOTATIONS',
-    LOAD_ANNOTATIONS_SUCCESS = 'LOAD_ANNOTATIONS_SUCCESS',
-    LOAD_ANNOTATIONS_FAILED = 'LOAD_ANNOTATIONS_FAILED',
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
@@ -29,12 +28,6 @@ export enum TasksActionTypes {
     UPDATE_JOB_SUCCESS = 'UPDATE_JOB_SUCCESS',
     UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
-    EXPORT_TASK = 'EXPORT_TASK',
-    EXPORT_TASK_SUCCESS = 'EXPORT_TASK_SUCCESS',
-    EXPORT_TASK_FAILED = 'EXPORT_TASK_FAILED',
-    IMPORT_TASK = 'IMPORT_TASK',
-    IMPORT_TASK_SUCCESS = 'IMPORT_TASK_SUCCESS',
-    IMPORT_TASK_FAILED = 'IMPORT_TASK_FAILED',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
@@ -97,157 +90,6 @@ export function getTasksAsync(query: TasksQuery, updateQuery = true): ThunkActio
 
         dispatch(getInferenceStatusAsync());
         dispatch(getTasksSuccess(array, await Promise.all(promises), result.count));
-    };
-}
-
-function loadAnnotations(task: any, loader: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.LOAD_ANNOTATIONS,
-        payload: {
-            task,
-            loader,
-        },
-    };
-
-    return action;
-}
-
-function loadAnnotationsSuccess(task: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS,
-        payload: {
-            task,
-        },
-    };
-
-    return action;
-}
-
-function loadAnnotationsFailed(task: any, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.LOAD_ANNOTATIONS_FAILED,
-        payload: {
-            task,
-            error,
-        },
-    };
-
-    return action;
-}
-
-export function loadAnnotationsAsync(
-    task: any,
-    loader: any,
-    file: File,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const store = getCVATStore();
-            const state: CombinedState = store.getState();
-            if (state.tasks.activities.loads[task.id]) {
-                throw Error('Only one loading of annotations for a task allowed at the same time');
-            }
-            dispatch(loadAnnotations(task, loader));
-            await task.annotations.upload(file, loader);
-        } catch (error) {
-            dispatch(loadAnnotationsFailed(task, error));
-            return;
-        }
-
-        dispatch(loadAnnotationsSuccess(task));
-    };
-}
-
-function importTask(): AnyAction {
-    const action = {
-        type: TasksActionTypes.IMPORT_TASK,
-        payload: {},
-    };
-
-    return action;
-}
-
-function importTaskSuccess(task: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.IMPORT_TASK_SUCCESS,
-        payload: {
-            task,
-        },
-    };
-
-    return action;
-}
-
-function importTaskFailed(error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.IMPORT_TASK_FAILED,
-        payload: {
-            error,
-        },
-    };
-
-    return action;
-}
-
-export function importTaskAsync(file: File): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            dispatch(importTask());
-            const taskInstance = await cvat.classes.Task.import(file);
-            dispatch(importTaskSuccess(taskInstance));
-        } catch (error) {
-            dispatch(importTaskFailed(error));
-        }
-    };
-}
-
-function exportTask(taskID: number): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_TASK,
-        payload: {
-            taskID,
-        },
-    };
-
-    return action;
-}
-
-function exportTaskSuccess(taskID: number): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_TASK_SUCCESS,
-        payload: {
-            taskID,
-        },
-    };
-
-    return action;
-}
-
-function exportTaskFailed(taskID: number, error: Error): AnyAction {
-    const action = {
-        type: TasksActionTypes.EXPORT_TASK_FAILED,
-        payload: {
-            taskID,
-            error,
-        },
-    };
-
-    return action;
-}
-
-export function exportTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(exportTask(taskInstance.id));
-
-        try {
-            const url = await taskInstance.export();
-            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-            downloadAnchor.href = url;
-            downloadAnchor.click();
-            dispatch(exportTaskSuccess(taskInstance.id));
-        } catch (error) {
-            dispatch(exportTaskFailed(taskInstance.id, error as Error));
-        }
     };
 }
 
@@ -320,6 +162,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
+            source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
         };
 
         if (data.projectId) {

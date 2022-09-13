@@ -64,32 +64,30 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
             message={(
                 <div>
                     {percent === 100 ? (
-                        <>
-                            Finished
-                            <br />
-                        </>
-                    ) :
-                        null}
-                    pending:&nbsp;
-                    {countPending}
-                    ,
-                    progress:&nbsp;
-                    {countProgress}
-                    ,
-                    completed:&nbsp;
-                    {countCompleted}
-                    ,
-                    failed:&nbsp;
-                    {countFailed}
-                    ,
-                    {
-                        countCancelled ?
-                            ` cancelled: ${countCancelled}, ` :
-                            null
-                    }
-                    total:&nbsp;
-                    {countAll}
-                    .
+                        <Row>
+                            <Col>
+                                Finished
+                            </Col>
+                        </Row>
+                    ) : null}
+                    <Row>
+                        <Col>
+                            {`Pending: ${countPending} `}
+                        </Col>
+                        <Col offset={1}>
+                            {`Progress: ${countProgress} `}
+                        </Col>
+                        <Col offset={1}>
+                            {`Completed: ${countCompleted} `}
+                        </Col>
+                        <Col offset={1}>
+                            {`Failed: ${countFailed} `}
+                        </Col>
+                        {countCancelled ? (<Col offset={1}>{`Cancelled: ${countCancelled} `}</Col>) : null}
+                        <Col offset={1}>
+                            {`Total: ${countAll}.`}
+                        </Col>
+                    </Row>
                     <Progress
                         status='normal'
                         percent={percent}
@@ -149,7 +147,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                             ) : (
                                 <Col>
                                     <Button onClick={onCancel} disabled={!countPending}>
-                                        Cancel
+                                        Cancel pending tasks
                                     </Button>
                                 </Col>
                             )}
