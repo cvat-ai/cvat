@@ -163,7 +163,7 @@ jobs:
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
           docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/server:dev
+          docker tag cvat/ui:latest cvat/ui:dev
           docker image ls -a
 
       - name: Running REST API and SDK tests
@@ -193,11 +193,9 @@ jobs:
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
-        env:
-          LOGS_DIR: "${{ github.workspace }}/rest_api"
         with:
           name: container_logs
-          path: $LOGS_DIR
+          path: "${{ github.workspace }}/rest_api"
 
   unit_testing:
     needs: build
@@ -339,13 +337,13 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
-              --env coverage=false
+              --env coverage=false \
               --config-file cypress_canvas3d.json \
               --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
-              --env coverage=false
+              --env coverage=false \
               --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
           fi
 

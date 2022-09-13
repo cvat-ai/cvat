@@ -648,3 +648,11 @@ def db_storage_to_storage_instance(db_storage):
         'specific_attributes': db_storage.get_specific_attributes()
     }
     return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+
+@validate_bucket_status
+def import_from_cloud_storage(storage, file_name):
+    return storage.download_fileobj(file_name)
+
+@validate_bucket_status
+def export_to_cloud_storage(storage, file_path, file_name):
+    storage.upload_file(file_path, file_name)

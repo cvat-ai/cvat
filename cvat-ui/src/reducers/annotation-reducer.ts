@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -941,19 +942,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, job, history } = action.payload;
-            const { loads } = state.activities;
-
-            delete loads[job.id];
+            const { states, history } = action.payload;
 
             return {
                 ...state,
-                activities: {
-                    ...state.activities,
-                    loads: {
-                        ...loads,
-                    },
-                },
                 annotations: {
                     ...state.annotations,
                     history,
