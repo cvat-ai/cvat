@@ -87,8 +87,8 @@ class WebhookDelivery(models.Model):
     status_code = models.CharField(max_length=128, null=True)
     redelivery = models.BooleanField(default=False)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
 
     changed_fields = models.CharField(max_length=4096, default="")
 
