@@ -2,7 +2,7 @@
 title: 'Low-level API'
 linkTitle: 'Low-level API'
 weight: 3
-description: 'SDK low-level API documentation'
+description: ''
 ---
 
 ## Overview

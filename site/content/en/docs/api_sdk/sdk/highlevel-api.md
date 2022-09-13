@@ -2,7 +2,7 @@
 title: 'High-level API'
 linkTitle: 'High-level API'
 weight: 4
-description: 'SDK high-level API documentation'
+description: ''
 ---
 
 ## Overview

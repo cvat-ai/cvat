@@ -2,7 +2,7 @@
 title: 'Developer guide'
 linkTitle: 'Developer guide'
 weight: 10
-description: 'SDK developer guide'
+description: ''
 ---
 
 ## Overview
