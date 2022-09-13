@@ -15,7 +15,8 @@ interface Props {
 
 export default function LocalFiles(props: Props): JSX.Element {
     const { files, onUpload, many } = props;
-    const hintText = many ? 'Support for a bulk videos' : 'Support for a bulk images or a single video';
+    const hintText = many ? 'You can upload one or more videos' :
+        'You can upload an archive with images, a video, or multiple images';
 
     return (
         <>

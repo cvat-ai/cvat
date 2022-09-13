@@ -101,8 +101,8 @@ const defaultState: State = {
 };
 
 const UploadFileErrorMessages = {
-    one: 'We can\'t process it. Support for a bulk image or single video',
-    multi: 'We can\'t process it. Support for a bulk videos',
+    one: 'It can not be processed. You can upload an archive with images, a video or multiple images',
+    multi: 'It can not be processed. You can upload one or more videos',
 };
 
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
