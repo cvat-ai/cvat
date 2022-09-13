@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Update serverless function yamls (<https://github.com/opencv/cvat/pull/4944>)
 
 ### Security
 - TDB
