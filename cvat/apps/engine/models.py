@@ -498,7 +498,7 @@ class Label(models.Model):
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
     type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=LabelType.ANY)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sublabels')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sublabels')
 
     def __str__(self):
         return self.name
@@ -743,9 +743,9 @@ class CloudStorage(models.Model):
     # restrictions:
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
     # https://cloud.google.com/storage/docs/naming-buckets#requirements
-    # AWS access key id - 20
-    # AWS secret access key - 40
-    # AWS temporary session tocken - None
+    # AWS access key id - 20, Oracle OCI access key id - 40
+    # AWS secret access key - 40, Oracle OCI secret key id - 44
+    # AWS temporary session token - None
     # The size of the security token that AWS STS API operations return is not fixed.
     # We strongly recommend that you make no assumptions about the maximum size.
     # The typical token size is less than 4096 bytes, but that can vary.

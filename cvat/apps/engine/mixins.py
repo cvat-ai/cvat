@@ -9,7 +9,7 @@ import uuid
 from django.conf import settings
 from django.core.cache import cache
 from distutils.util import strtobool
-from rest_framework import status
+from rest_framework import status, mixins
 from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
@@ -315,3 +315,17 @@ class SerializeMixin:
             file_name = request.query_params.get("filename", "")
             return import_func(request, filename=file_name)
         return self.upload_data(request)
+
+class PartialUpdateModelMixin:
+    """
+    Update fields of a model instance.
+
+    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
+    """
+
+    def perform_update(self, serializer):
+        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return mixins.UpdateModelMixin.update(self, request=request, *args, **kwargs)

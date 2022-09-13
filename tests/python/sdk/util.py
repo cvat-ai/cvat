@@ -33,44 +33,44 @@ def generate_coco_anno(image_path: str, image_width: int, image_height: int) -> 
     {
         "categories": [
             {
-            "id": 1,
-            "name": "car",
-            "supercategory": ""
+                "id": 1,
+                "name": "car",
+                "supercategory": ""
             },
             {
-            "id": 2,
-            "name": "person",
-            "supercategory": ""
+                "id": 2,
+                "name": "person",
+                "supercategory": ""
             }
         ],
         "images": [
             {
-            "coco_url": "",
-            "date_captured": "",
-            "flickr_url": "",
-            "license": 0,
-            "id": 0,
-            "file_name": "%(image_path)s",
-            "height": %(image_height)d,
-            "width": %(image_width)d
+                "coco_url": "",
+                "date_captured": "",
+                "flickr_url": "",
+                "license": 0,
+                "id": 0,
+                "file_name": "%(image_path)s",
+                "height": %(image_height)d,
+                "width": %(image_width)d
             }
         ],
         "annotations": [
             {
-            "category_id": 1,
-            "id": 1,
-            "image_id": 0,
-            "iscrowd": 0,
-            "segmentation": [
-                []
-            ],
-            "area": 17702.0,
-            "bbox": [
-                574.0,
-                407.0,
-                167.0,
-                106.0
-            ]
+                "category_id": 1,
+                "id": 1,
+                "image_id": 0,
+                "iscrowd": 0,
+                "segmentation": [
+                    []
+                ],
+                "area": 17702.0,
+                "bbox": [
+                    574.0,
+                    407.0,
+                    167.0,
+                    106.0
+                ]
             }
         ]
     }

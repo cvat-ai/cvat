@@ -282,3 +282,40 @@ describe('Feature: delete object', () => {
         expect(annotationsAfter).toHaveLength(length - 1);
     });
 });
+
+describe('Feature: skeletons', () => {
+    test('lock, hide, occluded, outside for skeletons', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        let [skeleton] = await job.annotations.get(0, false, JSON.parse('[{"and":[{"==":[{"var":"shape"},"skeleton"]}]}]'));
+        expect(skeleton.shapeType).toBe('skeleton');
+        skeleton.lock = true;
+        skeleton.outside = true;
+        skeleton.occluded = true;
+        skeleton.hidden = true;
+        skeleton = await skeleton.save();
+        expect(skeleton.lock).toBe(true);
+        expect(skeleton.outside).toBe(true);
+        expect(skeleton.occluded).toBe(true);
+        expect(skeleton.hidden).toBe(true);
+        expect(skeleton.elements).toBeInstanceOf(Array);
+        expect(skeleton.elements.length).toBe(skeleton.label.structure.sublabels.length);
+        for (const element of skeleton.elements) {
+            expect(element.lock).toBe(true);
+            expect(element.outside).toBe(true);
+            expect(element.occluded).toBe(true);
+            expect(element.hidden).toBe(true);
+        }
+
+        skeleton.elements[0].lock = false;
+        skeleton.elements[0].outside = false;
+        skeleton.elements[0].occluded = false;
+        skeleton.elements[0].hidden = false;
+        skeleton.elements[0].save();
+
+        [skeleton] = await job.annotations.get(0, false, JSON.parse('[{"and":[{"==":[{"var":"shape"},"skeleton"]}]}]'));
+        expect(skeleton.lock).toBe(false);
+        expect(skeleton.outside).toBe(false);
+        expect(skeleton.occluded).toBe(false);
+        expect(skeleton.hidden).toBe(false);
+    });
+});
