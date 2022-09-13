@@ -526,9 +526,7 @@ class TaskData(InstanceLabelData):
             ]
             shape['attributes'] = [self._import_attribute(label_id, attrib, mutable=True)
                 for attrib in shape['attributes']
-                if self._get_mutable_attribute_id(label_id, attrib.name) or (
-                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
-                )
+                if self._get_mutable_attribute_id(label_id, attrib.name)
             ]
             shape['points'] = list(map(float, shape['points']))
 
@@ -1532,7 +1530,6 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
     }
 
     label_cat = dm_dataset.categories()[datum_annotation.AnnotationType.label]
-    point_cat = dm_dataset.categories().get(datum_annotation.AnnotationType.points)
 
     root_hint = find_dataset_root(dm_dataset, instance_data)
 
@@ -1589,26 +1586,6 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
 
                     shape_type = shapes[ann.type]
-                    elements = []
-                    if point_cat and shape_type == ShapeType.POINTS:
-                        labels = point_cat.items[ann.label].labels
-                        shape_type = ShapeType.SKELETON
-                        for i in range(len(ann.points) // 2):
-                            label = None
-                            if i < len(labels):
-                                label = labels[i]
-                            elements.append(instance_data.LabeledShape(
-                                type=ShapeType.POINTS,
-                                frame=frame_number,
-                                points=ann.points[2 * i : 2 * i + 2],
-                                label=label,
-                                occluded=ann.visibility[i] == datum_annotation.Points.Visibility.hidden,
-                                source=source,
-                                attributes=[],
-                                outside=ann.visibility[i] == datum_annotation.Points.Visibility.absent,
-                            ))
-
-
                     if track_id is None or dm_dataset.format != 'cvat' :
                         elements = []
                         if ann.type == datum_annotation.AnnotationType.skeleton:
@@ -1617,8 +1594,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                                     instance_data.Attribute(name=n, value=str(v))
                                     for n, v in element.attributes.items()
                                 ]
-                                element_occluded = cast(element.attributes.pop('occluded', None), bool) is True
-                                element_outside = cast(element.attributes.pop('outside', None), bool) is True
+                                element_occluded = element.visibility[0] == datum_annotation.Points.Visibility.hidden
+                                element_outside = element.visibility[0] == datum_annotation.Points.Visibility.absent
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
                                 elements.append(instance_data.LabeledShape(

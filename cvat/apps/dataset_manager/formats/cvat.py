@@ -158,14 +158,14 @@ class CvatExtractor(Extractor):
                     if shape and shape['type'] == 'skeleton':
                         attributes = {}
                         shape_element = {
-                            'type': None,
+                            'type': 'rectangle' if el.tag == 'box' else el.tag,
                             'attributes': element_attributes,
                         }
                         shape_element.update(image)
                     else:
                         attributes = {}
                         shape = {
-                            'type': None,
+                            'type': 'rectangle' if el.tag == 'box' else el.tag,
                             'attributes': attributes,
                         }
                         shape['elements'] = []
@@ -216,7 +216,6 @@ class CvatExtractor(Extractor):
                     shape_element['group'] = int(el.attrib.get('group_id', 0))
 
                     shape_element['type'] = el.tag
-                    shape_element['occluded'] = (el.attrib.get('occluded') == '1')
                     shape_element['z_order'] = int(el.attrib.get('z_order', 0))
 
                     if el.tag == 'box':
@@ -228,6 +227,16 @@ class CvatExtractor(Extractor):
                         shape_element['points'] = []
                         for pair in el.attrib['points'].split(';'):
                             shape_element['points'].extend(map(float, pair.split(',')))
+
+                    if el.tag == 'points' and el.attrib.get('occluded') == '1':
+                        shape_element['visibility'] = [Points.Visibility.hidden] * (len(shape_element['points']) // 2)
+                    else:
+                        shape_element['occluded'] = (el.attrib.get('occluded') == '1')
+
+                    if el.tag == 'points' and el.attrib.get('outside') == '1':
+                        shape_element['visibility'] = [Points.Visibility.absent] * (len(shape_element['points']) // 2)
+                    else:
+                        shape_element['outside'] = (el.attrib.get('outside') == '1')
 
                     shape['elements'].append(shape_element)
                     shape_element = None
@@ -250,6 +259,8 @@ class CvatExtractor(Extractor):
                             el.attrib['xtl'], el.attrib['ytl'],
                             el.attrib['xbr'], el.attrib['ybr'],
                         ]))
+                    elif el.tag == 'skeleton':
+                        shape['points'] = []
                     else:
                         shape['points'] = []
                         for pair in el.attrib['points'].split(';'):
@@ -276,11 +287,11 @@ class CvatExtractor(Extractor):
                     if track_element:
                         track_element = None
                     else:
-                        for shape in track_shapes.values():
-                            frame_desc = items.get((subset, shape['frame']), {'annotations': []})
+                        for track_shape in track_shapes.values():
+                            frame_desc = items.get((subset, track_shape['frame']), {'annotations': []})
                             frame_desc['annotations'].append(
-                                cls._parse_shape_ann(shape, categories))
-                            items[(subset, shape['frame'])] = frame_desc
+                                cls._parse_shape_ann(track_shape, categories))
+                            items[(subset, track_shape['frame'])] = frame_desc
                         track = None
                 elif el.tag == 'image':
                     frame_desc = items.get((subset, image['frame']), {'annotations': []})
@@ -446,7 +457,8 @@ class CvatExtractor(Extractor):
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'points':
-            return Points(points, label=label_id, z_order=z_order,
+            visibility = ann.get('visibility', None)
+            return Points(points, visibility, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'box':
