@@ -52,6 +52,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
@@ -186,13 +187,20 @@ class ServerViewSet(viewsets.ViewSet):
             content = os.scandir(directory)
             for entry in content:
                 entry_type = None
+                entry_mime_type = None
                 if entry.is_file():
                     entry_type = "REG"
+                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
                 elif entry.is_dir():
                     entry_type = "DIR"
+                    entry_mime_type = "DIR"
 
                 if entry_type:
-                    data.append({"name": entry.name, "type": entry_type})
+                    data.append({
+                        "name": entry.name,
+                        "type": entry_type,
+                        "mime_type": entry_mime_type,
+                    })
 
             serializer = FileInfoSerializer(many=True, data=data)
             if serializer.is_valid(raise_exception=True):

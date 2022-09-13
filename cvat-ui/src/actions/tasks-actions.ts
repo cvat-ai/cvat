@@ -20,9 +20,6 @@ export enum TasksActionTypes {
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
-    CREATE_TASK = 'CREATE_TASK',
-    CREATE_TASK_STATUS_UPDATED = 'CREATE_TASK_STATUS_UPDATED',
-    CREATE_TASK_SUCCESS = 'CREATE_TASK_SUCCESS',
     CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
@@ -144,26 +141,6 @@ export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
     };
 }
 
-function createTask(): AnyAction {
-    const action = {
-        type: TasksActionTypes.CREATE_TASK,
-        payload: {},
-    };
-
-    return action;
-}
-
-function createTaskSuccess(taskId: number): AnyAction {
-    const action = {
-        type: TasksActionTypes.CREATE_TASK_SUCCESS,
-        payload: {
-            taskId,
-        },
-    };
-
-    return action;
-}
-
 function createTaskFailed(error: any): AnyAction {
     const action = {
         type: TasksActionTypes.CREATE_TASK_FAILED,
@@ -175,19 +152,9 @@ function createTaskFailed(error: any): AnyAction {
     return action;
 }
 
-function createTaskUpdateStatus(status: string): AnyAction {
-    const action = {
-        type: TasksActionTypes.CREATE_TASK_STATUS_UPDATED,
-        payload: {
-            status,
-        },
-    };
-
-    return action;
-}
-
-export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<any> => {
+export function createTaskAsync(data: any, onProgress?: (status: string) => void):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch): Promise<any> => {
         const description: any = {
             name: data.basic.name,
             labels: data.labels,
@@ -246,7 +213,7 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
 
             if (gitPlugin) {
                 gitPlugin.callbacks.onStatusChange = (status: string): void => {
-                    dispatch(createTaskUpdateStatus(status));
+                    onProgress?.(status);
                 };
                 gitPlugin.data.task = taskInstance;
                 gitPlugin.data.repos = data.advanced.repository;
@@ -255,12 +222,10 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             }
         }
 
-        dispatch(createTask());
         try {
             const savedTask = await taskInstance.save((status: string, progress: number): void => {
-                dispatch(createTaskUpdateStatus(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : '')));
+                onProgress?.(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : ''));
             });
-            dispatch(createTaskSuccess(savedTask.id));
             return savedTask;
         } catch (error) {
             dispatch(createTaskFailed(error));
