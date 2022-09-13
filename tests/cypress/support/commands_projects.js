@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -143,24 +144,67 @@ Cypress.Commands.add('importProject', ({
     cy.get('.cvat-modal-import-dataset-status').should('not.exist');
 });
 
-Cypress.Commands.add('backupProject', (projectName, backupFileName) => {
-    cy.projectActions(projectName);
-    cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
-    cy.get('.cvat-modal-export-project').should('be.visible');
-    if (backupFileName) {
-        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(backupFileName);
-    }
-    cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
-    cy.get('.cvat-notification-notice-export-backup-start').should('be.visible');
-    cy.closeNotification('.cvat-notification-notice-export-backup-start');
-});
+Cypress.Commands.add(
+    'backupProject',
+    (
+        projectName,
+        backupFileName,
+        targetStorage = null,
+        useDefaultLocation = true,
+    ) => {
+        cy.projectActions(projectName);
+        cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
+        cy.get('.cvat-modal-export-project').should('be.visible');
+        if (backupFileName) {
+            cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(backupFileName);
+        }
+        if (!useDefaultLocation) {
+            cy.get('.cvat-modal-export-project')
+                .find('.cvat-settings-switch')
+                .click();
+            cy.get('.cvat-select-targetStorage-storage').within(() => {
+                cy.get('.ant-select-selection-item').click();
+            });
+            cy.contains('.cvat-select-targetStorage-location', targetStorage.location)
+                .should('be.visible')
+                .click();
 
-Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
+            if (targetStorage && targetStorage.cloudStorageId) {
+                cy.get('.cvat-search-targetStorage-cloud-storage-field').click();
+                cy.get('.cvat-cloud-storage-select-provider').click();
+            }
+        }
+        cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
+        cy.get('.cvat-notification-notice-export-backup-start').should('be.visible');
+        cy.closeNotification('.cvat-notification-notice-export-backup-start');
+    },
+);
+
+Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null) => {
     cy.intercept({ method: /PATCH|POST/, url: /\/api\/projects\/backup.*/ }).as('restoreProject');
     cy.get('.cvat-create-project-dropdown').click();
     cy.get('.cvat-import-project-button').click();
-    cy.get('input[type=file]').attachFile(archiveWithBackup, { subjectType: 'drag-n-drop' });
-    cy.get(`[title="${archiveWithBackup}"]`).should('be.visible');
+
+    if (sourceStorage) {
+        cy.get('.cvat-select-sourceStorage-storage').within(() => {
+            cy.get('.ant-select-selection-item').click();
+        });
+        cy.contains('.cvat-select-sourceStorage-location', sourceStorage.location)
+            .should('be.visible')
+            .click();
+        if (sourceStorage.cloudStorageId) {
+            cy.get('.cvat-search-sourceStorage-cloud-storage-field').click();
+            cy.get('.cvat-cloud-storage-select-provider').click();
+            cy.get('.cvat-modal-import-backup')
+                .find('.cvat-modal-import-filename-input')
+                .type(archiveWithBackup);
+        }
+    } else {
+        console.log('file: ', archiveWithBackup);
+        cy.get('input[type="file"]').attachFile(archiveWithBackup, { subjectType: 'drag-n-drop' });
+        cy.get(`[title="${archiveWithBackup}"]`).should('be.visible');
+    }
+
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-import-backup-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-import-backup-start');
@@ -169,7 +213,7 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 204);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
-    cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
+    cy.wait('@restoreProject', { timeout: 2000 }).its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
     cy.contains('The project has been restored succesfully. Click here to open')
         .should('exist')
