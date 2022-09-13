@@ -49,6 +49,9 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
   <https://github.com/opencv/cvat/pull/4908>)
 - Support for Oracle OCI Buckets (<https://github.com/opencv/cvat/pull/4876>)
 - `cvat-sdk` and `cvat-cli` packages on PyPI (<https://github.com/opencv/cvat/pull/4903>)
+- UI part for source and target storages (<https://github.com/opencv/cvat/pull/4842>)
+- Backup import/export modals (<https://github.com/opencv/cvat/pull/4842>)
+- Annotations import modal (<https://github.com/opencv/cvat/pull/4842>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
