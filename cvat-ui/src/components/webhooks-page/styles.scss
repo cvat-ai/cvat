@@ -33,16 +33,19 @@
 }
 
 .cvat-webhook-status-available {
+    margin-left: $grid-unit-size;
     color: green;
     fill: green;
 }
 
 .cvat-webhook-status-failed {
+    margin-left: $grid-unit-size;
     color: red;
     fill: red;
 }
 
 .cvat-webhook-status-unavailable {
+    margin-left: $grid-unit-size;
     color: gray;
     fill: gray;
 }

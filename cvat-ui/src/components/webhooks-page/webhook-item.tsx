@@ -16,31 +16,32 @@ import { MoreOutlined } from '@ant-design/icons';
 import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
 import { Modal } from 'antd';
 import Paragraph from 'antd/lib/typography/Paragraph';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 export interface WebhookItemProps {
     webhookInstance: any;
 }
 
 interface WebhookStatus {
-    message: string;
+    message?: string;
     className: string;
 }
 
-function setUpWebhookStatus(httpStatus: string): WebhookStatus {
-    if (httpStatus.startsWith('2')) {
+function setUpWebhookStatus(status: string): WebhookStatus {
+    if (status && status.startsWith('2')) {
         return {
-            message: `Last delivery was succesful. Http response: ${httpStatus}`,
+            message: `Last delivery was succesful. Response: ${status}`,
             className: 'cvat-webhook-status-available',
         };
     }
-    if (httpStatus.startsWith('5')) {
+    if (status && status.startsWith('5')) {
         return {
-            message: `Last delivery was not succesful. Http response: ${httpStatus}`,
+            message: `Last delivery was not succesful. Response: ${status}`,
             className: 'cvat-webhook-status-failed',
         };
     }
     return {
-        message: `Http response: ${httpStatus}`,
+        message: status ? `Response: ${status}` : undefined,
         className: 'cvat-webhook-status-unavailable',
     };
 }
@@ -65,9 +66,20 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     return (
         <Row className='cvat-webhooks-list-item' style={isRemoved ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
             <Col span={1}>
-                <svg height='24' width='24' className={webhookStatus.className}>
-                    <circle cx='18' cy='11' r='5' strokeWidth='0' />
-                </svg>
+                {
+                    webhookStatus.message ? (
+                        <CVATTooltip title={webhookStatus.message} overlayStyle={{ maxWidth: '300px' }}>
+                            <svg height='24' width='24' className={webhookStatus.className}>
+                                <circle cx='12' cy='12' r='5' strokeWidth='0' />
+                            </svg>
+                        </CVATTooltip>
+                    ) : (
+                        <svg height='24' width='24' className={webhookStatus.className}>
+                            <circle cx='12' cy='12' r='5' strokeWidth='0' />
+                        </svg>
+                    )
+                }
+
             </Col>
             <Col span={7}>
                 <Paragraph ellipsis={{
@@ -119,7 +131,9 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                             onClick={(): void => {
                                 setPingFetching(true);
                                 webhookInstance.ping().then((deliveryInstance: any) => {
-                                    setWebhookStatus(setUpWebhookStatus(deliveryInstance.statusCode));
+                                    setWebhookStatus(setUpWebhookStatus(
+                                        deliveryInstance.statusCode ? deliveryInstance.statusCode : 'Timeout',
+                                    ));
                                 }).finally(() => {
                                     setPingFetching(false);
                                 });
