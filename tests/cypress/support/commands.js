@@ -864,7 +864,7 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
-        cy.get('.cvat-modal-export-task').find('[type="checkbox"]').should('not.be.checked').check();
+        cy.get('.cvat-modal-export-task').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
     if (archiveCustomeName) {
         cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
@@ -872,6 +872,24 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
+});
+
+Cypress.Commands.add('exportJob', ({
+    type, format, archiveCustomeName,
+}) => {
+    cy.interactMenu('Export job dataset');
+    cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
+    cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
+    if (type === 'dataset') {
+        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-save-images').should('not.be.checked').click();
+    }
+    if (archiveCustomeName) {
+        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    }
+    cy.contains('button', 'OK').click();
+    cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
+    cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
 
 Cypress.Commands.add('renameTask', (oldName, newName) => {
@@ -926,6 +944,11 @@ Cypress.Commands.add('deleteFrame', (action = 'delete') => {
     }
     cy.saveJob('PATCH', 200);
     cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
+});
+
+Cypress.Commands.add('verifyNotification', () => {
+    cy.get('.ant-notification-notice-info').should('be.visible');
+    cy.closeNotification('.ant-notification-notice-info');
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {

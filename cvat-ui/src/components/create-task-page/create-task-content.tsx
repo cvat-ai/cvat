@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +14,8 @@ import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
-
+import { StorageLocation } from 'reducers';
+import { getCore, Storage } from 'cvat-core-wrapper';
 import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { Files } from 'components/file-manager/file-manager';
@@ -21,6 +23,8 @@ import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+
+const core = getCore();
 
 export interface CreateTaskData {
     projectId: number | null;
@@ -55,6 +59,16 @@ const defaultState = {
         useZipChunks: true,
         useCache: true,
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
+        sourceStorage: {
+            location: StorageLocation.LOCAL,
+            cloudStorageId: undefined,
+        },
+        targetStorage: {
+            location: StorageLocation.LOCAL,
+            cloudStorageId: undefined,
+        },
+        useProjectSourceStorage: true,
+        useProjectTargetStorage: true,
     },
     labels: [],
     files: {
@@ -87,6 +101,17 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
 
         this.focusToForm();
+    }
+
+    private handleChangeStorageLocation(field: 'sourceStorage' | 'targetStorage', value: StorageLocation): void {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                [field]: {
+                    location: value,
+                },
+            },
+        }));
     }
 
     private resetState = (): void => {
@@ -160,6 +185,24 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
+    private handleUseProjectSourceStorageChange = (value: boolean): void => {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                useProjectSourceStorage: value,
+            },
+        }));
+    };
+
+    private handleUseProjectTargetStorageChange = (value: boolean): void => {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                useProjectTargetStorage: value,
+            },
+        }));
+    };
+
     private focusToForm = (): void => {
         this.basicConfigurationComponent.current?.focus();
     };
@@ -189,6 +232,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleSubmit = (): Promise<any> => new Promise((resolve, reject) => {
+        const { projectId } = this.state;
+
         if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
@@ -219,6 +264,26 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             .then(() => {
                 if (this.advancedConfigurationComponent.current) {
                     return this.advancedConfigurationComponent.current.submit();
+                }
+                if (projectId) {
+                    return core.projects.get({ id: projectId })
+                        .then((response: any) => {
+                            const [project] = response;
+                            const { advanced } = this.state;
+                            this.handleSubmitAdvancedConfiguration({
+                                ...advanced,
+                                sourceStorage: new Storage(
+                                    project.sourceStorage || { location: StorageLocation.LOCAL },
+                                ),
+                                targetStorage: new Storage(
+                                    project.targetStorage || { location: StorageLocation.LOCAL },
+                                ),
+                            });
+                            return Promise.resolve();
+                        })
+                        .catch((error: Error): void => {
+                            throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
+                        });
                 }
                 return Promise.resolve();
             })
@@ -341,7 +406,20 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderAdvancedBlock(): JSX.Element {
         const { installedGit, dumpers } = this.props;
-        const { activeFileManagerTab } = this.state;
+        const { activeFileManagerTab, projectId } = this.state;
+
+        const {
+            advanced: {
+                useProjectSourceStorage,
+                useProjectTargetStorage,
+                sourceStorage: {
+                    location: sourceStorageLocation,
+                },
+                targetStorage: {
+                    location: targetStorageLocation,
+                },
+            },
+        } = this.state;
         return (
             <Col span={24}>
                 <Collapse>
@@ -352,6 +430,19 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             activeFileManagerTab={activeFileManagerTab}
                             ref={this.advancedConfigurationComponent}
                             onSubmit={this.handleSubmitAdvancedConfiguration}
+                            projectId={projectId}
+                            useProjectSourceStorage={useProjectSourceStorage}
+                            useProjectTargetStorage={useProjectTargetStorage}
+                            sourceStorageLocation={sourceStorageLocation}
+                            targetStorageLocation={targetStorageLocation}
+                            onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
+                            onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
+                            onChangeSourceStorageLocation={(value: StorageLocation) => {
+                                this.handleChangeStorageLocation('sourceStorage', value);
+                            }}
+                            onChangeTargetStorageLocation={(value: StorageLocation) => {
+                                this.handleChangeStorageLocation('targetStorage', value);
+                            }}
                         />
                     </Collapse.Panel>
                 </Collapse>
