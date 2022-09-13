@@ -1,8 +1,8 @@
 ---
-title: "Integration"
-linkTitle: "Integration"
+title: "API & SDK"
+linkTitle: "API & SDK"
 weight: 4
-description: 'CVAT integration info'
+description: 'How to interact with CVAT'
 ---
 
 ## Overview
@@ -18,14 +18,9 @@ CVAT provides the following integration layers:
 
 In this section, you can find documentation about each separate layer.
 
-Besides this, CVAT also has other parts that can be used by other tools. These can be:
-- imported and exported annotations (read docs [here](/manual/advanced/formats)), including CVAT's own format
-- backups
-- serverless functions used for model launch inside CVAT
-
 ## Component compatibility
 
 Currently, the only supported configuration is when the server API major and minor versions
-are the same as SDK and CLI major and minor versions, i.e. server v2.1.* is supported by
+are the same as SDK and CLI major and minor versions, e.g. server v2.1.* is supported by
 SDK and CLI v2.1.*. Different versions may have incompatibilities, which lead to some functions
 in SDK or CLI may not work properly.

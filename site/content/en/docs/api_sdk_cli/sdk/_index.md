@@ -26,6 +26,8 @@ To install an [official release of CVAT SDK](https://pypi.org/project/cvat-sdk/)
 pip install cvat-sdk
 ```
 
+We support Python versions 3.7 - 3.9.
+
 ## Usage
 
 To import the package components, use the following code:

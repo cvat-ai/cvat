@@ -1,13 +1,13 @@
 ---
 title: 'Server API'
-linkTitle: 'Server API'
+linkTitle: 'API'
 weight: 2
 description: ''
 ---
 
 ## Overview
 
-CVAT server provides HTTP REST API for interation. Each client application - be it
+CVAT server provides HTTP REST API for interaction. Each client application - be it
 a command line tool, browser or a script - all interact with CVAT via HTTP requests and
 responses:
 
