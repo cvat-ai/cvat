@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
-import { TasksQuery } from 'reducers/interfaces';
+import { TasksQuery } from 'reducers';
 import Empty from 'antd/lib/empty';
 
 interface Props {

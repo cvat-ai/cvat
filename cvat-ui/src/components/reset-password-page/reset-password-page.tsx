@@ -1,4 +1,5 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,8 +12,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
-import { CombinedState } from 'reducers/interfaces';
-import FooterDrawer from 'components/login-page/intel-footer-drawer';
+import { CombinedState } from 'reducers';
 import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
 
 interface StateToProps {
@@ -73,7 +73,6 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
                     </Col>
                 </Row>
             </Content>
-            <FooterDrawer />
         </Layout>
     );
 }

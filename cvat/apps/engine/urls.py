@@ -1,5 +1,5 @@
-
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -30,7 +30,7 @@ urlpatterns = [
          query_string=True)),
 
     # documentation for API
-    path('api/schema/', SpectacularAPIView.as_view(api_version='2.0'), name='schema'),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
     path('api/docs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 

@@ -17,7 +17,7 @@ import Button from 'antd/lib/button';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Menu from 'antd/lib/menu';
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { User } from 'components/task-page/user-selector';
 
 interface ResourceFilterProps {

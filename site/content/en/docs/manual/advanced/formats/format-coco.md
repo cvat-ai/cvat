@@ -41,6 +41,32 @@ Uploaded file: a single unpacked `*.json` or a zip archive with the structure de
 
 - supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 
+# [MS COCO Keypoint Detection](https://cocodataset.org/#keypoints-2020)
+
+- [Format specification](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/)
+
+## COCO export
+
+Downloaded file: a zip archive with the structure described [here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
+
+- supported annotations: Skeletons
+- supported attributes:
+  - `is_crowd` (checkbox or integer with values 0 and 1) -
+    specifies that the instance (an object group) should have an
+    RLE-encoded mask in the `segmentation` field. All the grouped shapes
+    are merged into a single mask, the largest one defines all
+    the object properties
+  - `score` (number) - the annotation `score` field
+  - arbitrary attributes - will be stored in the `attributes` annotation section
+
+## COCO import
+
+Uploaded file: a single unpacked `*.json` or a zip archive with the structure described
+[here](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset)
+(without images).
+
+- supported annotations: Skeletons
+
 ## How to create a task from MS COCO dataset
 
 1. Download the [MS COCO dataset](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/#import-coco-dataset).

@@ -5,12 +5,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers';
 import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import getCore from 'cvat-core-wrapper';
+import { getCore, Label } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 interface DispatchToProps {
@@ -22,6 +22,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas;
     jobInstance: any;
+    states: any[];
     labels: any[];
     frame: number;
 }
@@ -45,6 +46,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance },
+            annotations: { states },
             job: { instance: jobInstance, labels },
             player: {
                 frame: { number: frame },
@@ -54,8 +56,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     } = state;
 
     return {
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         jobInstance,
+        states,
         labels,
         frame,
         normalizedKeyMap,
@@ -65,22 +68,60 @@ function mapStateToProps(state: CombinedState): StateToProps {
 type Props = StateToProps & DispatchToProps;
 
 interface State {
-    selectedLabelID: number;
+    selectedLabelID: number | null;
+    frameTags: any[]
+    canAddSelectedTag: boolean;
 }
 
 class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
+    private satisfiedLabels: Label[];
     constructor(props: Props) {
         super(props);
 
-        const defaultLabelID = props.labels[0].id;
+        const { states } = props;
+        const frameTags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
+        this.satisfiedLabels = props.labels.filter((label: Label) => (
+            ['any', ObjectType.TAG].includes(label.type)
+        ));
+
+        const defaultLabelID = this.satisfiedLabels.length ? this.satisfiedLabels[0].id as number : null;
         this.state = {
             selectedLabelID: defaultLabelID,
+            canAddSelectedTag: frameTags.every((objectState: any): boolean => objectState.label.id !== defaultLabelID),
+            frameTags,
         };
     }
 
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        const { frameTags: prevFrameTags } = prevState;
+        const { frame: prevFrame } = prevProps;
+        const { states, frame } = this.props;
+        const { selectedLabelID } = this.state;
+
+        const frameTags = states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG);
+        if (prevFrame === frame && prevFrameTags.length === frameTags.length) {
+            // do not update state if not necessary
+            return;
+        }
+
+        const canAddSelectedTag = frameTags
+            .every((objectState: any): boolean => objectState.label.id !== selectedLabelID);
+
+        this.setState({
+            frameTags,
+            canAddSelectedTag,
+        });
+    }
+
     private onChangeLabel = (value: any): void => {
+        const { onRememberObject } = this.props;
+        const { frameTags } = this.state;
+        const canAddSelectedTag = frameTags.every((objectState: any): boolean => objectState.label.id !== value.id);
+        onRememberObject(value.id);
+
         this.setState({
             selectedLabelID: value.id,
+            canAddSelectedTag,
         });
     };
 
@@ -89,28 +130,29 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             frame, labels, jobInstance, canvasInstance, onAnnotationCreate, onRememberObject,
         } = this.props;
 
-        const { selectedLabelID } = this.state;
+        const { selectedLabelID, canAddSelectedTag } = this.state;
+        if (selectedLabelID !== null && canAddSelectedTag) {
+            canvasInstance.cancel();
 
-        canvasInstance.cancel();
+            onRememberObject(selectedLabelID);
 
-        onRememberObject(selectedLabelID);
+            const objectState = new cvat.classes.ObjectState({
+                objectType: ObjectType.TAG,
+                label: labels.filter((label: any) => label.id === selectedLabelID)[0],
+                frame,
+            });
 
-        const objectState = new cvat.classes.ObjectState({
-            objectType: ObjectType.TAG,
-            label: labels.filter((label: any) => label.id === selectedLabelID)[0],
-            frame,
-        });
-
-        onAnnotationCreate(jobInstance, frame, [objectState]);
+            onAnnotationCreate(jobInstance, frame, [objectState]);
+        }
     };
 
     public render(): JSX.Element {
         const { selectedLabelID } = this.state;
-        const { normalizedKeyMap, labels } = this.props;
+        const { normalizedKeyMap } = this.props;
 
         return (
             <SetupTagPopoverComponent
-                labels={labels}
+                labels={this.satisfiedLabels}
                 selectedLabelID={selectedLabelID}
                 repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
                 onChangeLabel={this.onChangeLabel}

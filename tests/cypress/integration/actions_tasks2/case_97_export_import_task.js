@@ -48,7 +48,9 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         });
         cy.addNewLabel(newLabelName);
         cy.openJob();
-        cy.createRectangle(createRectangleShape2Points);
+        cy.createRectangle(createRectangleShape2Points).then(() => {
+            Cypress.config('scrollBehavior', false);
+        });
         cy.get('#cvat_canvas_shape_1')
             .trigger('mousemove')
             .trigger('mouseover')
@@ -59,7 +61,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             .trigger('mousemove')
             .trigger('mouseover');
         cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
-        cy.get('.cvat-canvas-container').trigger('mousemove', 350, 150);
+        cy.get('.cvat-canvas-container').trigger('mousemove', 340, 150);
         cy.get('.cvat-canvas-container').trigger('mouseup');
         cy.get('#cvat_canvas_shape_1').should('have.attr', 'transform');
         cy.document().then((doc) => {
@@ -93,9 +95,13 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         });
 
         it('Import the task. Check id, labels, shape.', () => {
-            cy.intercept('POST', '/api/tasks/backup?**').as('importTask');
+            cy.intercept({ method: /PATCH|POST/, url: /\/api\/tasks\/backup.*/ }).as('importTask');
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-import-task').click().find('input[type=file]').attachFile(taskBackupArchiveFullName);
+            cy.wait('@importTask').its('response.statusCode').should('equal', 202);
+            cy.wait('@importTask').its('response.statusCode').should('equal', 201);
+            cy.wait('@importTask').its('response.statusCode').should('equal', 204);
+            cy.wait('@importTask').its('response.statusCode').should('equal', 202);
             cy.wait('@importTask', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@importTask').its('response.statusCode').should('equal', 201);
             cy.contains('Task has been imported succesfully').should('exist').and('be.visible');

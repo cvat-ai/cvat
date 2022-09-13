@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,33 +9,29 @@ import { taskName, labelName } from '../../support/const';
 context('Tag annotation mode.', () => {
     const caseId = '22';
 
+    function checkFrameTagsDontExist() {
+        cy.get('.cvat-canvas-frame-tags span.cvat-frame-tag').should('not.exist');
+    }
+
     function checkCountFrameTags(countTags) {
-        if (countTags == 0) {
-            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('not.exist');
-        } else {
-            cy.get('span.cvat-tag-annotation-sidebar-frame-tag-label').should('have.length', countTags);
-        }
+        cy.get('.cvat-canvas-frame-tags span.cvat-frame-tag').should('have.length', countTags);
     }
 
     function checkPresenceFrameTags() {
-        cy.get('.cvat-tag-annotation-sidebar-frame-tags').within(() => {
-            cy.get('.cvat-tag-annotation-sidebar-frame-tag-label').should('exist');
+        cy.get('.cvat-canvas-frame-tags').within(() => {
+            cy.get('.cvat-frame-tag').should('exist');
         });
     }
 
     function addTag() {
-        cy.get('.cvat-tag-annotation-sidebar-buttons').contains('Add tag').click();
-    }
-
-    function skipFrame() {
-        cy.get('.cvat-tag-annotation-sidebar-buttons').contains('Skip frame').click();
+        cy.get('.cvat-add-tag-button').click();
     }
 
     function changeCheckboxAutomaticallyGoToNextFrame(value) {
         cy.get('.cvat-tag-annotation-sidebar-checkbox-skip-frame').within(() => {
-            if (value == 'check') {
+            if (value === 'check') {
                 cy.get('[type="checkbox"]').check();
-            } else if (value == 'uncheck') {
+            } else if (value === 'uncheck') {
                 cy.get('[type="checkbox"]').uncheck();
             }
         });
@@ -48,15 +44,7 @@ context('Tag annotation mode.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Go to tag annotation', () => {
             cy.changeWorkspace('Tag annotation', labelName);
-            checkCountFrameTags(0);
-        });
-
-        it('Skip frame', () => {
-            skipFrame();
-            cy.checkFrameNum(1);
-            checkCountFrameTags(0);
-            cy.goToPreviousFrame(0);
-            checkCountFrameTags(0);
+            checkFrameTagsDontExist();
         });
 
         it('Add tag', () => {
@@ -67,14 +55,37 @@ context('Tag annotation mode.', () => {
 
         it('Set "Automatically go to the next frame" to true and add tag', () => {
             cy.goToNextFrame(1);
-            checkCountFrameTags(0);
+            checkFrameTagsDontExist();
             changeCheckboxAutomaticallyGoToNextFrame('check');
             addTag();
             cy.checkFrameNum(2);
-            checkCountFrameTags(0);
+            checkFrameTagsDontExist();
             cy.goToPreviousFrame(1);
             checkCountFrameTags(1);
             checkPresenceFrameTags();
         });
+
+        it('Disable show tags on frame', () => {
+            cy.openSettings();
+            cy.get('.cvat-settings-modal').within(() => {
+                cy.contains('Workspace').click();
+                cy.get('.cvat-workspace-settings-show-frame-tags').within(() => {
+                    cy.get('[type="checkbox"]').uncheck();
+                });
+            });
+            cy.closeSettings();
+            cy.get('.cvat-canvas-frame-tags').should('not.exist');
+        });
+    });
+
+    after(() => {
+        cy.openSettings();
+        cy.get('.cvat-settings-modal').within(() => {
+            cy.contains('Workspace').click();
+            cy.get('.cvat-workspace-settings-show-frame-tags').within(() => {
+                cy.get('[type="checkbox"]').check();
+            });
+        });
+        cy.closeSettings();
     });
 });

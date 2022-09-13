@@ -6,3 +6,4 @@
 # B406 : import_xml_sax
 # B410 : import_lxml
 skips: B101,B102,B320,B404,B406,B410
+exclude: **/tests/**,tests

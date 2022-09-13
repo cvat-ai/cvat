@@ -6,28 +6,35 @@
 
 context('New organization pipeline.', () => {
     const caseId = '113';
+
     const firstUserName = 'Firstuser';
     const secondUserName = 'Seconduser';
     const thirdUserName = 'Thirduser';
+    const users = {
+        thirdUser: {
+            name: thirdUserName,
+            firstName: `${thirdUserName} fitstname`,
+            lastName: `${thirdUserName} lastname`,
+            emailAddr: `${thirdUserName.toLowerCase()}@local.local`,
+            password: 'Fv5Df3#f55g',
+        },
+        secondUser: {
+            name: secondUserName,
+            firstName: `${secondUserName} fitstname`,
+            lastName: `${secondUserName} lastname`,
+            emailAddr: `${secondUserName.toLowerCase()}@local.local`,
+            password: 'UfdU21!dds',
+        },
+        firstUser: {
+            name: firstUserName,
+            firstName: `${firstUserName} fitstname`,
+            lastName: `${firstUserName} lastname`,
+            emailAddr: `${firstUserName.toLowerCase()}@local.local`,
+            password: 'UfdU21!dds',
+        },
+    };
+    const { firstUser, secondUser, thirdUser } = users;
 
-    const firstUser = {
-        firstName: `${firstUserName} fitstname`,
-        lastName: `${firstUserName} lastname`,
-        emailAddr: `${firstUserName.toLowerCase()}@local.local`,
-        password: 'UfdU21!dds',
-    };
-    const secondUser = {
-        firstName: `${secondUserName} fitstname`,
-        lastName: `${secondUserName} lastname`,
-        emailAddr: `${secondUserName.toLowerCase()}@local.local`,
-        password: 'UfdU21!dds',
-    };
-    const thirdUser = {
-        firstName: `${thirdUserName} fitstname`,
-        lastName: `${thirdUserName} lastname`,
-        emailAddr: `${thirdUserName.toLowerCase()}@local.local`,
-        password: 'Fv5Df3#f55g',
-    };
     const organizationParams = {
         shortName: 'TestOrganization',
         fullName: 'Organization full name. Only for test.',
@@ -78,6 +85,8 @@ context('New organization pipeline.', () => {
     }
 
     before(() => {
+        cy.visit('/');
+        cy.login();
         cy.imageGenerator(
             imagesFolder,
             imageFileName,
@@ -90,36 +99,19 @@ context('New organization pipeline.', () => {
             imagesCount,
         );
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.logout();
 
-        cy.visit('/');
-        cy.goToRegisterPage();
-        cy.userRegistration(
-            secondUser.firstName,
-            secondUser.lastName,
-            secondUserName,
-            secondUser.emailAddr,
-            secondUser.password,
-        );
-        cy.logout(secondUserName);
-
-        cy.goToRegisterPage();
-        cy.userRegistration(
-            thirdUser.firstName,
-            thirdUser.lastName,
-            thirdUserName,
-            thirdUser.emailAddr,
-            thirdUser.password,
-        );
-        cy.logout(thirdUserName);
-
-        cy.goToRegisterPage();
-        cy.userRegistration(
-            firstUser.firstName,
-            firstUser.lastName,
-            firstUserName,
-            firstUser.emailAddr,
-            firstUser.password,
-        );
+        for (const user of Object.values(users)) {
+            cy.goToRegisterPage();
+            cy.userRegistration(
+                user.firstName,
+                user.lastName,
+                user.name,
+                user.emailAddr,
+                user.password,
+            );
+            if (user.name !== firstUserName) cy.logout(user.name);
+        }
     });
 
     beforeEach(() => {

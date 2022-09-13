@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,6 +19,7 @@
 .cvat-empty-cloud-storages-list-icon {
     font-size: $grid-unit-size * 14;
     opacity: 0.5;
+    margin-bottom: $grid-unit-size * 2;
 }
 
 .cvat-cloud-storages-pagination {

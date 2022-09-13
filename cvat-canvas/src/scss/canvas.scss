@@ -1,4 +1,5 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +9,12 @@
 
 .cvat_canvas_shape {
     stroke-opacity: 1;
+}
+
+g.cvat_canvas_shape {
+    > circle {
+        fill-opacity: 1;
+    }
 }
 
 polyline.cvat_canvas_shape {
@@ -93,6 +100,10 @@ polyline.cvat_canvas_shape_grouping {
     @extend .cvat_shape_action_opacity;
 
     fill: blue;
+
+    > circle[data-node-id] {
+        fill: blue;
+    }
 }
 
 polyline.cvat_canvas_shape_merging {
@@ -120,7 +131,6 @@ polyline.cvat_canvas_shape_splitting {
     @extend .cvat_shape_drawing_opacity;
 
     fill: white;
-    stroke: black;
 }
 
 .cvat_canvas_zoom_selection {
@@ -132,6 +142,12 @@ polyline.cvat_canvas_shape_splitting {
 
 .cvat_canvas_shape_occluded {
     stroke-dasharray: 5;
+}
+
+g.cvat_canvas_shape_occluded {
+    > rect {
+        stroke-dasharray: 5;
+    }
 }
 
 .svg_select_points_rot {
@@ -226,6 +242,12 @@ polyline.cvat_canvas_shape_splitting {
     }
 }
 
+.cvat_canvas_skeleton_wrapping_rect {
+    // wrapping rect must not apply transform attribute from selectize.js
+    // otherwise it rotated twice, because we apply the same rotation value to parent element (skeleton itself)
+    transform: none !important;
+}
+
 .cvat_canvas_pixelized {
     image-rendering: optimizeSpeed;             /* Legal fallback */
     image-rendering: -moz-crisp-edges;          /* Firefox        */
@@ -235,6 +257,10 @@ polyline.cvat_canvas_shape_splitting {
     image-rendering: crisp-edges;               /* CSS4 Proposed  */
     image-rendering: pixelated;                 /* CSS4 Proposed  */
     -ms-interpolation-mode: nearest-neighbor;   /* IE8+           */
+}
+
+.cvat_canvas_removed_image {
+    filter: saturate(0) brightness(1.2) contrast(0.75) !important;
 }
 
 #cvat_canvas_wrapper {
