@@ -215,6 +215,7 @@ jobs:
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
           docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:latest
 
       - name: OPA tests
         run: |
