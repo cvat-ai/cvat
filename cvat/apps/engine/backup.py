@@ -172,37 +172,37 @@ class _TaskBackupBase(_BackupBase):
                 source, dest = attribute.pop('spec_id'), 'name'
             attribute[dest] = label_mapping[label]['attributes'][source]
 
-        def _update_label(shape):
+        def _update_label(shape, parent_label=""):
             if 'label_id' in shape:
                 source, dest = shape.pop('label_id'), 'label'
             elif 'label' in shape:
                 source, dest = shape.pop('label'), 'label_id'
-            shape[dest] = label_mapping[source]['value']
+            shape[dest] = label_mapping[parent_label + source]['value']
 
             return source
 
-        def _prepare_shapes(shapes):
+        def _prepare_shapes(shapes, parent_label=""):
             for shape in shapes:
-                label = _update_label(shape)
+                label = _update_label(shape, parent_label)
                 for attr in shape['attributes']:
-                    _update_attribute(attr, label)
+                    _update_attribute(attr, parent_label + label)
 
-                _prepare_shapes(shape.get('elements', []))
+                _prepare_shapes(shape.get('elements', []), label)
 
                 self._prepare_meta(allowed_fields, shape)
 
-        def _prepare_tracks(tracks):
+        def _prepare_tracks(tracks, parent_label=""):
             for track in tracks:
-                label = _update_label(track)
+                label = _update_label(track, parent_label)
                 for shape in track['shapes']:
                     for attr in shape['attributes']:
-                        _update_attribute(attr, label)
+                        _update_attribute(attr, parent_label + label)
                     self._prepare_meta(allowed_fields, shape)
 
-                _prepare_tracks(track.get('elements', []))
+                _prepare_tracks(track.get('elements', []), label)
 
                 for attr in track['attributes']:
-                    _update_attribute(attr, label)
+                    _update_attribute(attr, parent_label + label)
                 self._prepare_meta(allowed_fields, track)
 
         for tag in annotations['tags']:
@@ -426,10 +426,16 @@ class _ImporterBase():
             sublabels  = label.pop('sublabels', [])
 
             db_label = models.Label.objects.create(**label_relation, parent=parent_label, **label)
-            label_mapping[label_name] = {
-                'value': db_label.id,
-                'attributes': {},
-            }
+            if parent_label:
+                label_mapping[parent_label.name + label_name] = {
+                    'value': db_label.id,
+                    'attributes': {},
+                }
+            else:
+                label_mapping[label_name] = {
+                    'value': db_label.id,
+                    'attributes': {},
+                }
 
             label_mapping.update(self._create_labels(sublabels, db_task, db_project, db_label))
 
