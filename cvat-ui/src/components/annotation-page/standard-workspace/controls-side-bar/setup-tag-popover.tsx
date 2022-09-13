@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,14 +8,15 @@ import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
 import LabelSelector from 'components/label-selector/label-selector';
+import { PlusOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     labels: any[];
-    selectedLabelID: number;
+    selectedLabelID: number | null;
     repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
-    onSetup(labelID: number): void;
+    onSetup(): void;
 }
 
 function SetupTagPopover(props: Props): JSX.Element {
@@ -37,20 +38,21 @@ function SetupTagPopover(props: Props): JSX.Element {
                     <Text className='cvat-text-color'>Label</Text>
                 </Col>
             </Row>
-            <Row justify='center'>
-                <Col span={24}>
+            <Row justify='start'>
+                <Col>
                     <LabelSelector
-                        style={{ width: '100%' }}
                         labels={labels}
                         value={selectedLabelID}
                         onChange={onChangeLabel}
+                        onEnterPress={() => onSetup()}
                     />
-                </Col>
-            </Row>
-            <Row justify='space-around'>
-                <Col span={24}>
                     <CVATTooltip title={`Press ${repeatShapeShortcut} to add a tag again`}>
-                        <Button onClick={() => onSetup(selectedLabelID)}>Tag</Button>
+                        <Button
+                            type='primary'
+                            className='cvat-add-tag-button'
+                            onClick={() => onSetup()}
+                            icon={<PlusOutlined />}
+                        />
                     </CVATTooltip>
                 </Col>
             </Row>

@@ -1,10 +1,10 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
 
-import { ImportState } from './interfaces';
+import { ImportState } from '.';
 
 const defaultState: ImportState = {
     progress: 0.0,

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,9 +14,9 @@ import Checkbox from 'antd/lib/checkbox';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -114,7 +114,7 @@ function ExportDatasetModal(): JSX.Element {
                     label='Export format'
                     rules={[{ required: true, message: 'Format must be selected' }]}
                 >
-                    <Select placeholder='Select dataset format' className='cvat-modal-export-select'>
+                    <Select virtual={false} placeholder='Select dataset format' className='cvat-modal-export-select'>
                         {dumpers
                             .sort((a: any, b: any) => a.name.localeCompare(b.name))
                             .filter((dumper: any): boolean => dumper.dimension === instance?.dimension)

@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 import shutil
@@ -39,7 +39,7 @@ def create_profile(instance, **kwargs):
 
 @receiver(post_delete, sender=Task, dispatch_uid="delete_task_files_on_delete_task")
 def delete_task_files_on_delete_task(instance, **kwargs):
-    shutil.rmtree(instance.get_task_dirname(), ignore_errors=True)
+    shutil.rmtree(instance.get_dirname(), ignore_errors=True)
 
 
 @receiver(post_delete, sender=Data, dispatch_uid="delete_data_files_on_delete_data")

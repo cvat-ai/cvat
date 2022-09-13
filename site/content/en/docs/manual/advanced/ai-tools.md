@@ -97,6 +97,11 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 
   ![](/images/image187.jpg)
 
+- Some of models supports attributes annotation (like facial emotions, for example: ``serverless/openvino/omz/intel/face-detection-0205``).
+  In this case you can also match attributes of the DL model with the attributes of a CVAT label.
+
+  ![](/images/image187_1.jpg)
+
 - This action will automatically annotates one frame.
   In the [Automatic annotation](/docs/manual/advanced/automatic-annotation/) section you can read
   how to make automatic annotation of all frames.

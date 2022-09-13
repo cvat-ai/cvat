@@ -13203,11 +13203,11 @@ test_scope_DELETE_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_
 
 
 # invitations_test.gen.rego.py
-# # Copyright (C) 2021 Intel Corporation
+# # Copyright (C) 2021-2022 Intel Corporation
 # #
 # # SPDX-License-Identifier: MIT
 #
-# # Copyright (C) 2021 Intel Corporation
+# # Copyright (C) 2021-2022 Intel Corporation
 # #
 # # SPDX-License-Identifier: MIT
 #

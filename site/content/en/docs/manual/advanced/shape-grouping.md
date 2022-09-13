@@ -1,7 +1,7 @@
 ---
 title: 'Shape grouping'
 linkTitle: 'Shape grouping'
-weight: 26
+weight: 27
 description: 'Grouping multiple shapes during annotation.'
 ---
 

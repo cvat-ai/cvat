@@ -52,7 +52,6 @@ context('Register user, change password, login with new password', () => {
             cy.logout(userName);
         });
         it('Login with the new password', () => {
-            cy.closeModalUnsupportedPlatform();
             cy.login(userName, newPassword);
         });
         it('Change password with incorrect current password', () => {

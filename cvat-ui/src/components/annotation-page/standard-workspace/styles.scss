@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -116,6 +116,7 @@
 .cvat-draw-points-control,
 .cvat-draw-ellipse-control,
 .cvat-draw-cuboid-control,
+.cvat-draw-skeleton-control,
 .cvat-setup-tag-control,
 .cvat-merge-control,
 .cvat-group-control,
@@ -226,6 +227,10 @@
         width: $grid-unit-size * 14;
         justify-content: center;
     }
+
+    .ant-progress {
+        margin-left: $grid-unit-size;
+    }
 }
 
 .cvat-opencv-initialization-button {
@@ -268,8 +273,7 @@
     margin-top: $grid-unit-size;
 }
 
-.cvat-setup-tag-popover-content,
-.cvat-draw-shape-popover-content {
+.cvat-popover-content {
     padding: $grid-unit-size;
     border-radius: $grid-unit-size;
     background: $background-color-2;
@@ -278,6 +282,22 @@
     > div {
         margin-top: $grid-unit-size;
     }
+}
+
+.cvat-setup-tag-popover-content {
+    @extend .cvat-popover-content;
+
+    .ant-select {
+        width: 27 * $grid-unit-size;
+    }
+
+    > div:last-child {
+        margin-bottom: $grid-unit-size;
+    }
+}
+
+.cvat-draw-shape-popover-content {
+    @extend .cvat-popover-content;
 
     > div:nth-child(3) > div > div {
         width: 100%;
@@ -307,4 +327,10 @@
         width: 70px;
         margin: 0 5px;
     }
+}
+
+.cvat-remove-object-confirm-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: $grid-unit-size * 2;
 }

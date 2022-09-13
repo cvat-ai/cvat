@@ -275,6 +275,7 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual({f.DISPLAY_NAME for f in formats},
         {
             'COCO 1.0',
+            'COCO Keypoints 1.0',
             'CVAT for images 1.1',
             'CVAT for video 1.1',
             'Datumaro 1.0',
@@ -308,6 +309,7 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual({f.DISPLAY_NAME for f in formats},
         {
             'COCO 1.0',
+            'COCO Keypoints 1.0',
             'CVAT 1.1',
             'LabelMe 3.0',
             'MOT 1.1',
@@ -360,6 +362,7 @@ class TaskExportTest(_DbTestBase):
 
         for format_name, importer_name in [
             ('COCO 1.0', 'coco'),
+            ('COCO Keypoints 1.0', 'coco_person_keypoints'),
             ('CVAT for images 1.1', 'cvat'),
             # ('CVAT for video 1.1', 'cvat'), # does not support
             ('Datumaro 1.0', 'datumaro'),

@@ -14,7 +14,7 @@ import Text from 'antd/lib/typography/Text';
 
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, Indexable } from 'reducers/interfaces';
+import { CombinedState, Indexable } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 
 import TopBarComponent from './top-bar';

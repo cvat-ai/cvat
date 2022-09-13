@@ -11,7 +11,7 @@ There are two ways of deploying the CVAT.
    One of the easy ways to launch CVAT with the tf-annotation app is to use AWS P3 instances,
    which provides the NVIDIA GPU.
    Read more about [P3 instances here.](https://aws.amazon.com/about-aws/whats-new/2017/10/introducing-amazon-ec2-p3-instances/)
-   Overall setup instruction is explained in [main readme file](https://github.com/openvinotoolkit/cvat/),
+   Overall setup instruction is explained in [main readme file](https://github.com/cvat-ai/cvat/),
    except Installing Nvidia drivers.
    So we need to download the drivers and install it.
    For Amazon P3 instances, download the Nvidia Drivers from Nvidia website.

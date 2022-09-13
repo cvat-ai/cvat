@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);

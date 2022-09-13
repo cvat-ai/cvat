@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 import argparse
@@ -57,7 +57,7 @@ def main():
 
         # If the source is a glob expression, we need additional processing
         abs_root = source
-        while abs_root and re.search('[*?\[\]]', abs_root):
+        while abs_root and re.search(r'[*?\[\]]', abs_root):
             abs_root = os.path.split(abs_root)[0]
 
         related_images = detect_related_images(sources, abs_root)

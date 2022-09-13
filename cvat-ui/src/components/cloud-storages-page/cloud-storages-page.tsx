@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState, Indexable } from 'reducers/interfaces';
+import { CombinedState, Indexable } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import CloudStoragesListComponent from './cloud-storages-list';

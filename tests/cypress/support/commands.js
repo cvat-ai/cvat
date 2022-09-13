@@ -1,8 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+/* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix } from './utils';
 
@@ -35,8 +38,9 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
-    cy.visit('/auth/login'); // clear query parameter "next"
-    cy.closeModalUnsupportedPlatform();
+    cy.visit('/auth/login');
+    cy.url().should('not.include', '?next=');
+    cy.contains('Login').should('exist');
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
@@ -196,7 +200,7 @@ Cypress.Commands.add(
                 if (multiAttrParams) {
                     cy.updateAttributes(multiAttrParams);
                 }
-                cy.contains('button', 'Done').click();
+                cy.contains('button', 'Continue').click();
             } else {
                 if (attachToProject) {
                     cy.get('.cvat-project-search-field').click();
@@ -216,7 +220,7 @@ Cypress.Commands.add(
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
-            cy.contains('button', 'Submit').click();
+            cy.contains('button', 'Submit & Continue').click();
             if (expectedResult === 'success') {
                 cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
             }
@@ -385,6 +389,22 @@ Cypress.Commands.add('createEllipse', (createEllipseParams) => {
         .click(createEllipseParams.rightX, createEllipseParams.topY);
     cy.checkPopoverHidden('draw-ellipse');
     cy.checkObjectParameters(createEllipseParams, 'ELLIPSE');
+});
+
+Cypress.Commands.add('createSkeleton', (skeletonParameters) => {
+    cy.interactControlButton('draw-skeleton');
+    cy.switchLabel(skeletonParameters.labelName, 'draw-skeleton');
+    cy.get('.cvat-draw-skeleton-popover').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
+        });
+        cy.contains('button', skeletonParameters.type).click();
+    });
+    cy.get('.cvat-canvas-container')
+        .click(skeletonParameters.xtl, skeletonParameters.ytl)
+        .click(skeletonParameters.xbr, skeletonParameters.ybr);
+    cy.checkPopoverHidden('draw-skeleton');
+    cy.checkObjectParameters(skeletonParameters, 'SKELETON');
 });
 
 Cypress.Commands.add('changeAppearance', (colorBy) => {
@@ -698,7 +718,9 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
             cy.updateAttributes(additionalAttrs[i]);
         }
     }
-    cy.contains('button', 'Done').click();
+    cy.contains('button', 'Continue').click();
+    cy.contains('button', 'Cancel').click();
+    cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-constructor-viewer').should('be.visible');
     cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${newLabelName}$`)).should('exist');
 });
@@ -709,12 +731,9 @@ Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
             cy.get('.cvat-constructor-viewer-new-item').click();
             for (let j = 0; j < additionalLabels.length; j++) {
                 cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
-                if (j !== additionalLabels.length - 1) {
-                    cy.contains('button', 'Continue').click();
-                } else {
-                    cy.contains('button', 'Done').click();
-                }
+                cy.contains('button', 'Continue').click();
             }
+            cy.contains('button', 'Cancel').click();
         }
     });
 });
@@ -830,7 +849,7 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
 });
 
 Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
-    if (Cypress.browser.family !== 'chromium') {
+    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotiticationShown')) {
         cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
             cy.contains('button', 'OK').click();
         });
@@ -863,26 +882,58 @@ Cypress.Commands.add('renameTask', (oldName, newName) => {
     cy.contains('.cvat-task-details-task-name', newName).should('exist');
 });
 
-Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift = false) => {
+Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = false) => {
     cy.get(shape)
         .trigger('mousemove')
         .trigger('mouseover')
         .should('have.class', 'cvat_canvas_shape_activated');
-    cy.get('.cvat-canvas-container')
-        .trigger('mousemove', x, y)
-        .trigger('mouseenter', x, y);
-    cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
-    cy.get('.cvat-canvas-container').trigger('mousedown', x, y, { button: 0 });
-    if (pressShift) {
-        cy.get('body').type('{shift}', { release: false });
-    }
-    cy.get('.cvat-canvas-container').trigger('mousemove', x + 20, y);
-    cy.get(shape).should('have.attr', 'transform');
-    cy.document().then((doc) => {
-        const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-        const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
-        cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
-        expect(`${expectedRotateDeg}°`).to.be.equal(`${shapeTranformMatrix}°`);
+    cy.get('.svg_select_points_rot').then(($el) => {
+        const rect = $el[0].getBoundingClientRect();
+        let { x, y } = rect;
+        const { width, height } = rect;
+        x += width / 2;
+        y += height / 2;
+
+        cy.get('#root')
+            .trigger('mousemove', x, y)
+            .trigger('mouseenter', x, y);
+        cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
+        cy.get('#root').trigger('mousedown', x, y, { button: 0 });
+        if (pressShift) {
+            cy.get('body').type('{shift}', { release: false });
+        }
+        cy.get('#root').trigger('mousemove', x + 20, y);
+        cy.get(shape).should('have.attr', 'transform');
+        cy.document().then((doc) => {
+            const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
+            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
+            expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
+        });
+        cy.get('#root').trigger('mouseup');
     });
-    cy.get('.cvat-canvas-container').trigger('mouseup');
+});
+
+Cypress.Commands.add('deleteFrame', (action = 'delete') => {
+    cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
+    if (action === 'restore') {
+        cy.get('.cvat-player-restore-frame').click();
+    } else if (action === 'delete') {
+        cy.get('.cvat-player-delete-frame').click();
+        cy.get('.cvat-modal-delete-frame').within(() => {
+            cy.contains('button', 'Delete').click();
+        });
+    }
+    cy.saveJob('PATCH', 200);
+    cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
+});
+
+Cypress.Commands.overwrite('visit', (orig, url, options) => {
+    orig(url, options);
+    cy.closeModalUnsupportedPlatform();
+});
+
+Cypress.Commands.overwrite('reload', (orig, options) => {
+    orig(options);
+    cy.closeModalUnsupportedPlatform();
 });
