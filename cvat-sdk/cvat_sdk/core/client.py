@@ -31,6 +31,11 @@ class Config:
     status_check_period: float = 5
     """In seconds"""
 
+    verify_ssl: Optional[bool] = None
+    """
+    Whether to verify host SSL certificate or not.
+    """
+
 
 class Client:
     """
@@ -41,10 +46,12 @@ class Client:
         self, url: str, *, logger: Optional[logging.Logger] = None, config: Optional[Config] = None
     ):
         url = self._validate_and_prepare_url(url)
-        self.api_map = CVAT_API_V2(url)
-        self.api_client = ApiClient(Configuration(host=self.api_map.host))
         self.logger = logger or logging.getLogger(__name__)
         self.config = config or Config()
+        self.api_map = CVAT_API_V2(url)
+        self.api_client = ApiClient(
+            Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
+        )
 
         self._repos: Dict[str, Repo] = {}
 

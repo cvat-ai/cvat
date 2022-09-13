@@ -8,7 +8,7 @@ from typing import Tuple
 
 import pytest
 from cvat_sdk import Client
-from cvat_sdk.core.client import make_client
+from cvat_sdk.core.client import Config, make_client
 from cvat_sdk.core.exceptions import InvalidHostException
 from cvat_sdk.exceptions import ApiException
 
@@ -69,3 +69,12 @@ def test_can_reject_invalid_server_schema():
         make_client(host="ftp://" + host, port=int(port) + 1)
 
     assert capture.match(r"Invalid url schema 'ftp'")
+
+
+@pytest.mark.parametrize("verify", [True, False])
+def test_can_control_ssl_verification_with_config(verify: bool):
+    config = Config(verify_ssl=verify)
+
+    client = Client(BASE_URL, config=config)
+
+    assert client.api_client.configuration.verify_ssl == verify

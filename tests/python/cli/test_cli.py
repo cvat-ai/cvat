@@ -5,9 +5,12 @@
 import io
 import json
 import os
+from distutils.util import strtobool
 from pathlib import Path
 
 import pytest
+from cvat_cli.cli import CLI
+from cvat_cli.parser import SSL_VERIFICATION_ENV_VAR
 from cvat_sdk import make_client
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -188,3 +191,25 @@ class TestCLI:
         assert task_id
         assert task_id != fxt_new_task.id
         assert self.client.tasks.retrieve(task_id).size == fxt_new_task.size
+
+    @pytest.mark.parametrize("verify", ["on", "off"])
+    def test_can_control_ssl_verification_with_env_var(self, monkeypatch, verify: str):
+        # TODO: Very hacky implementation, improve it, if possible
+
+        monkeypatch.setenv(SSL_VERIFICATION_ENV_VAR, verify)
+
+        class MyException(Exception):
+            pass
+
+        normal_init = CLI.__init__
+
+        def my_init(self, *args, **kwargs):
+            normal_init(self, *args, **kwargs)
+            raise MyException(self.client.api_client.configuration.verify_ssl)
+
+        monkeypatch.setattr(CLI, "__init__", my_init)
+
+        with pytest.raises(MyException) as capture:
+            self.run_cli("ls")
+
+        assert capture.value.args[0] == strtobool(verify)
