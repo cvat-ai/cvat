@@ -5,7 +5,7 @@
 /// <reference types="cypress" />
 
 context('Tests source & target storage for backups.', () => {
-    const backupArchiveName = 'task_backup';
+    const backupArchiveName = 'project_backup';
     let projectID = '';
     let createdCloudStorageId;
     const caseId = '117';
