@@ -37,7 +37,6 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - cvat-ui: Improve UI/UX on label, create task and create project forms (<https://github.com/cvat-ai/cvat/pull/7>)
 - Removed link to OpenVINO documentation (<https://github.com/cvat-ai/cvat/pull/35>)
 - Clarified meaning of chunking for videos
-- Added `integration` section in docs, added `develop` version docs
 
 ### Deprecated
 - TDB
