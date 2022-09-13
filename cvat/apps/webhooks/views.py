@@ -55,7 +55,8 @@ class WebhookViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "delete", "patch", "put"]
 
     search_fields = ("url", "owner", "type")
-    filter_fields = list(search_fields) + ["id", "project_id"]
+    filter_fields = list(search_fields) \
+        + ["id", "project_id", "owner", "description", "updated_date"]
     ordering_fields = filter_fields
     lookup_fields = {"owner": "owner__username"}
     iam_organization_field = "organization"
