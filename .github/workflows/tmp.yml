@@ -30,10 +30,10 @@ jobs:
           SERVER_IMAGE_REPO: 'server'
           UI_IMAGE_REPO: 'ui'
         run: |
-          docker tag "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}"
+          docker tag "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:v2.2.0"
           docker push "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:v2.2.0
           docker push "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:latest"
 
-          docker tag "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:${{ github.event.release.tag_name }}"
+          docker tag "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:v2.2.0"
           docker push "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:v2.2.0
           docker push "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:latest"
