@@ -51,7 +51,7 @@ context('Tests for source and target storage.', () => {
         cloudStorageId: undefined,
     };
 
-    const firstProject = {
+    const project = {
         name: `Case ${caseId}`,
         label: labelName,
         attrName: 'color',
@@ -69,7 +69,7 @@ context('Tests for source and target storage.', () => {
         },
     };
 
-    const firstTask = {
+    const task = {
         name: taskName,
         label: labelName,
         attrName,
@@ -78,7 +78,7 @@ context('Tests for source and target storage.', () => {
         multiAttrParams: false,
         forProject: true,
         attachToProject: true,
-        projectName: firstProject.name,
+        projectName: project.name,
         advancedConfiguration: {
             sourceStorage: {
                 disableSwitch: true,
@@ -100,16 +100,16 @@ context('Tests for source and target storage.', () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToProjectsList();
-        firstProject.advancedConfiguration.sourceStorage.cloudStorageId = createdCloudStorageId;
-        firstProject.advancedConfiguration.targetStorage.cloudStorageId = createdCloudStorageId;
+        project.advancedConfiguration.sourceStorage.cloudStorageId = createdCloudStorageId;
+        project.advancedConfiguration.targetStorage.cloudStorageId = createdCloudStorageId;
 
         cy.createProjects(
-            firstProject.name,
-            firstProject.label,
-            firstProject.attrName,
-            firstProject.attrVaue,
-            firstProject.multiAttrParams,
-            firstProject.advancedConfiguration,
+            project.name,
+            project.label,
+            project.attrName,
+            project.attrVaue,
+            project.multiAttrParams,
+            project.advancedConfiguration,
         );
     });
 
@@ -118,7 +118,7 @@ context('Tests for source and target storage.', () => {
         cy.deleteCloudStorage(cloudStorageData.displayName);
         cy.logout();
         cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [firstProject.name]);
+            cy.deleteProjects(authKey, [project.name]);
         });
     });
 
@@ -127,19 +127,19 @@ context('Tests for source and target storage.', () => {
             // create an annotation task with custom local source & target storages
             cy.goToTaskList();
             cy.createAnnotationTask(
-                firstTask.name,
-                firstTask.label,
-                firstTask.attrName,
-                firstTask.textDefaultValue,
+                task.name,
+                task.label,
+                task.attrName,
+                task.textDefaultValue,
                 dataArchiveName,
-                firstTask.multiAttrParams,
-                firstTask.advancedConfiguration,
-                firstTask.forProject,
-                firstTask.attachToProject,
-                firstTask.projectName,
+                task.multiAttrParams,
+                task.advancedConfiguration,
+                task.forProject,
+                task.attachToProject,
+                task.projectName,
             );
             cy.goToTaskList();
-            cy.openTask(firstTask.name);
+            cy.openTask(task.name);
 
             // create dummy annotations and export them to default local storage
             cy.openJob();
@@ -152,7 +152,7 @@ context('Tests for source and target storage.', () => {
                 type: 'annotations',
                 format,
                 archiveCustomeName: 'job_annotations',
-                targetStorage: firstProject.advancedConfiguration.targetStorage,
+                targetStorage: project.advancedConfiguration.targetStorage,
             };
             cy.exportJob(exportParams);
             cy.getDownloadFileName().then((file) => {
@@ -170,7 +170,7 @@ context('Tests for source and target storage.', () => {
 
         it('Import job annotations from default minio bucket that was attached to the task in the project.', () => {
             cy.goToTaskList();
-            cy.openTask(firstTask.name);
+            cy.openTask(task.name);
             cy.openJob();
 
             // upload annotations from default local storage
@@ -180,7 +180,7 @@ context('Tests for source and target storage.', () => {
                 format.split(' ')[0],
                 annotationsArchiveName,
                 '.cvat-modal-content-load-job-annotation',
-                firstTask.advancedConfiguration.sourceStorage,
+                task.advancedConfiguration.sourceStorage,
             );
 
             cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
@@ -188,7 +188,7 @@ context('Tests for source and target storage.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
 
             cy.goToTaskList();
-            cy.deleteTask(firstTask.name);
+            cy.deleteTask(task.name);
         });
     });
 });

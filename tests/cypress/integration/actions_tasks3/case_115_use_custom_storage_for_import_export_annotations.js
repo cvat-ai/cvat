@@ -43,7 +43,7 @@ context('Import and export annotations: specify source and target storage in mod
         endpointUrl: `http://${serverHost}:9000`,
     };
 
-    const firstProject = {
+    const project = {
         name: `Case ${caseId}`,
         label: labelName,
         attrName: 'color',
@@ -51,7 +51,7 @@ context('Import and export annotations: specify source and target storage in mod
         multiAttrParams: false,
     };
 
-    const firstTask = {
+    const task = {
         name: taskName,
         label: labelName,
         attrName,
@@ -60,7 +60,7 @@ context('Import and export annotations: specify source and target storage in mod
         multiAttrParams: false,
         forProject: true,
         attachToProject: true,
-        projectName: firstProject.name,
+        projectName: project.name,
     };
 
     before(() => {
@@ -72,11 +72,11 @@ context('Import and export annotations: specify source and target storage in mod
         cy.goToProjectsList();
 
         cy.createProjects(
-            firstProject.name,
-            firstProject.label,
-            firstProject.attrName,
-            firstProject.attrVaue,
-            firstProject.multiAttrParams,
+            project.name,
+            project.label,
+            project.attrName,
+            project.attrVaue,
+            project.multiAttrParams,
         );
     });
 
@@ -85,7 +85,7 @@ context('Import and export annotations: specify source and target storage in mod
         cy.deleteCloudStorage(cloudStorageData.displayName);
         cy.logout();
         cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [firstProject.name]);
+            cy.deleteProjects(authKey, [project.name]);
         });
     });
 
@@ -94,19 +94,19 @@ context('Import and export annotations: specify source and target storage in mod
             // create an annotation task with local source & target storages
             cy.goToTaskList();
             cy.createAnnotationTask(
-                firstTask.name,
-                firstTask.label,
-                firstTask.attrName,
-                firstTask.textDefaultValue,
+                task.name,
+                task.label,
+                task.attrName,
+                task.textDefaultValue,
                 dataArchiveName,
-                firstTask.multiAttrParams,
+                task.multiAttrParams,
                 null,
-                firstTask.forProject,
-                firstTask.attachToProject,
-                firstTask.projectName,
+                task.forProject,
+                task.attachToProject,
+                task.projectName,
             );
             cy.goToTaskList();
-            cy.openTask(firstTask.name);
+            cy.openTask(task.name);
             cy.openJob();
 
             // create dummy annotations and export them to "public" minio bucket
