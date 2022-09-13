@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
 import LoginPageComponent from 'components/login-page/login-page';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { loginAsync } from 'actions/auth-actions';
 
 interface StateToProps {

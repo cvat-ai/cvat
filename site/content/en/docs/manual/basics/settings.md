@@ -55,11 +55,18 @@ In tab `Workspace` you can:
 
 - `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](/docs/manual/advanced/annotation-with-polygons/edit-polygon/)
 
+- `Show tags on frame` - shows/hides frame tags on current frame
+
 - `Attribute annotation mode (AAM) zoom margin` input box — defines margins (in px)
   for shape in the attribute annotation mode.
-- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed).
-  Click `Cancel` or press `F2` to return to the annotation.
+
+- `Control points size` — defines a size of any interactable points in the tool
+(polygon's vertexes, rectangle dragging points, etc.)
 
 - `Default number of points in polygon approximation`
   With this setting, you can choose the default number of points in polygon.
   Works for serverless interactors and OpenCV scissors.
+
+- Click `Save` to save settings (settings will be saved on the server and will not change after the page is refreshed).
+  Click `Cancel` or press `F2` to return to the annotation.
+

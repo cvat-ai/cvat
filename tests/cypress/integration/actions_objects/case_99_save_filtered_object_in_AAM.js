@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,20 +31,8 @@ context('Save filtered object in AAM.', () => {
         });
         cy.document().then((doc) => {
             // Getting list of labels again
-            const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item'));
-            for (let i = 0; i < labelsList.length; i++) {
-                if (labelsList[i].innerText === labelName) {
-                    cy.get(labelsList[i]).then(($el) => {
-                        // If "labelName" is not first in the labels list and previous element is not "Add label" button than getting previous label
-                        if ($el.prev().length !== 0 && ! $el.prev().hasClass('cvat-constructor-viewer-new-item')) {
-                            secondLabel = $el.prev().text();
-                        // If "labelName" is not last in the labels list than getting next label
-                        } else if ($el.next().length !== 0) {
-                            secondLabel = $el.next().text();
-                        }
-                    })
-                }
-            }
+            const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item')).map((el) => el.innerText);
+            [, secondLabel] = labelsList;
         });
         cy.openJob();
         cy.createCuboid(createCuboidShape2Points);

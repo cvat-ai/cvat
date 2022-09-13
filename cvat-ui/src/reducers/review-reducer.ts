@@ -6,7 +6,7 @@ import consts from 'consts';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { ReviewState } from './interfaces';
+import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
     issues: [],
@@ -37,6 +37,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME: {
+            return {
+                ...state,
+                newIssuePosition: null,
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
             return {
                 ...state,
                 newIssuePosition: null,

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
-import { JobStage } from 'reducers/interfaces';
+import { JobStage } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import UserSelector, { User } from './user-selector';
 
@@ -234,6 +234,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     className='cvat-job-assignee-selector'
                     value={jobInstance.assignee}
                     onSelect={(value: User | null): void => {
+                        if (jobInstance?.assignee?.id === value?.id) return;
                         jobInstance.assignee = value;
                         onJobUpdate(jobInstance);
                     }}
@@ -253,7 +254,7 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             completed++;
         }
 
-        const created = moment(props.taskInstance.createdDate);
+        const created = moment(taskInstance.createdDate);
 
         const now = moment(moment.now());
         acc.push({

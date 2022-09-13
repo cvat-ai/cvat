@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,7 @@ export class MergeHandlerImpl implements MergeHandler {
     private constraints: {
         labelID: number;
         shapeType: string;
-    };
+    } | null;
 
     private addConstraints(): void {
         const shape = this.statesToBeMerged[0];

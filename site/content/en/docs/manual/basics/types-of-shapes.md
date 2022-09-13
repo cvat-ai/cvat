@@ -13,6 +13,7 @@ There are several shapes with which you can annotate your images:
 - `Ellipse`
 - `Cuboid`
 - `Cuboid in 3d task`
+- `Skeleton`
 - `Tag`
 
 And there is how they all look like:
@@ -23,6 +24,8 @@ And there is how they all look like:
 
 ![](/images/image240_mapillary_vistas.jpg 'Ellipse') ![](/images/image015_detrac.jpg 'Cuboid')
 
-![](/images/image218_carla_town3.jpg 'Cuboid in 3d task') ![](/images/image135.jpg 'Tag')
+![](/images/image218_carla_town3.jpg 'Cuboid in 3d task') ![](/images/image_skeleton_sample.jpg 'Skeleton')
+
+![](/images/image135.jpg 'Tag')
 
 `Tag` - has no shape in the workspace, but is displayed in objects sidebar.

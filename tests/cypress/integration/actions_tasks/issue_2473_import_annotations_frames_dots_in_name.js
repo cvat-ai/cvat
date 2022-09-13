@@ -72,9 +72,8 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
                     cy.get('.rc-virtual-list-holder')
-                        .trigger('wheel', { deltaY: 1000 })
-                        .trigger('wheel', { deltaY: 1000 })
                         .contains('.cvat-modal-export-option-item', dumpType)
+                        .scrollIntoView()
                         .should('be.visible')
                         .click();
                 });

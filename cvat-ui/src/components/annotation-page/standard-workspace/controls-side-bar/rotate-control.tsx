@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import Icon from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 
 import { RotateIcon } from 'icons';
-import { Rotation } from 'reducers/interfaces';
+import { Rotation } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import withVisibilityHandling from './handle-popover-visibility';
 

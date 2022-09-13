@@ -1,0 +1,73 @@
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "created_date": "2022-06-29T12:56:18.257000Z",
+      "credentials_type": "KEY_SECRET_KEY_PAIR",
+      "description": "Bucket for importing and exporting annotations and backups",
+      "display_name": "Import/Export bucket",
+      "id": 3,
+      "manifests": [
+        "manifest.jsonl"
+      ],
+      "organization": 2,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "provider_type": "AWS_S3_BUCKET",
+      "resource": "importexportbucket",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "updated_date": "2022-06-29T12:56:18.264000Z"
+    },
+    {
+      "created_date": "2022-03-17T07:23:59.305000Z",
+      "credentials_type": "KEY_SECRET_KEY_PAIR",
+      "description": "",
+      "display_name": "Bucket 2",
+      "id": 2,
+      "manifests": [
+        "sub/manifest.jsonl"
+      ],
+      "organization": 2,
+      "owner": {
+        "first_name": "Business",
+        "id": 11,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/11",
+        "username": "business2"
+      },
+      "provider_type": "AWS_S3_BUCKET",
+      "resource": "private",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "updated_date": "2022-07-13T12:46:45.587000Z"
+    },
+    {
+      "created_date": "2022-03-17T07:22:49.519000Z",
+      "credentials_type": "ANONYMOUS_ACCESS",
+      "description": "",
+      "display_name": "Bucket 1",
+      "id": 1,
+      "manifests": [
+        "manifest.jsonl"
+      ],
+      "organization": null,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "provider_type": "AWS_S3_BUCKET",
+      "resource": "public",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "updated_date": "2022-03-17T07:22:49.529000Z"
+    }
+  ]
+}

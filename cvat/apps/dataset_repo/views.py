@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 import http.client
@@ -109,10 +109,8 @@ def update_git_repo(request, tid):
             status=http.HTTPStatus.OK,
         )
     except Exception as ex:
-        try:
+        with contextlib.suppress(Exception):
             slogger.task[tid].error("error occurred during changing repository request", exc_info=True)
-        except Exception:
-            pass
         return HttpResponseBadRequest(str(ex))
 
 

@@ -1,7 +1,7 @@
-name: Linter
+name: StyleLint
 on: pull_request
 jobs:
-  StyleLint:
+  Linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            npm ci
+            yarn install --frozen-lockfile
             mkdir -p stylelint_report
 
             echo "StyleLint version: "$(npx stylelint --version)
