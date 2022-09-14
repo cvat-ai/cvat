@@ -46,7 +46,7 @@ jobs:
     - name: Wait for CVAT to be ready
       run: |
         max_tries=30
-        while [[  $(curl -s -o /dev/null -w "%{http_code}" cvat.local/api/restrictions/user-agreements) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
+        while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for pod" && (( max_tries-- )) && sleep 5; done
         kubectl get pods
 
     - name: Generate schema
