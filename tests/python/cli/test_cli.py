@@ -13,6 +13,7 @@ from cvat_cli.cli import CLI
 from cvat_cli.parser import SSL_VERIFICATION_ENV_VAR
 from cvat_sdk import make_client
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client.model_utils import to_json
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
@@ -117,17 +118,53 @@ class TestCLI:
         task_id = int(stdout.split()[-1])
         assert self.client.tasks.retrieve(task_id).size == 5
 
-    def test_can_list_tasks_in_simple_format(self, fxt_new_task: Task):
+    def test_can_list_tasks_in_csv_format(self, fxt_new_task: Task):
         output = self.run_cli("ls")
 
         results = output.split("\n")
-        assert any(str(fxt_new_task.id) in r for r in results)
+        assert any(f"{fxt_new_task.id}," in r for r in results)
+
+    def test_can_list_tasks_in_csv_format_and_select_output_fields(self, fxt_new_task: Task):
+        output = self.run_cli("ls", "--fields", "name,size,assignee")
+
+        expected = [
+            f"{r.name},{getattr(r, 'size', None)},{r.assignee.id if r.assignee is not None else None}"
+            for r in self.client.tasks.list()
+        ]
+        expected.insert(0, "name,size,assignee")
+        expected.append("")
+        results = output.split("\n")
+        assert results
+        assert expected == results
 
     def test_can_list_tasks_in_json_format(self, fxt_new_task: Task):
         output = self.run_cli("ls", "--json")
 
         results = json.loads(output)
         assert any(r["id"] == fxt_new_task.id for r in results)
+
+    def test_can_list_tasks_in_json_format_and_select_output_fields(self, fxt_new_task: Task):
+        output = self.run_cli("ls", "--json", "--fields", "name,size,assignee")
+
+        expected = [
+            dict(
+                **{
+                    "name": r.name,
+                    "assignee": to_json(r.assignee),
+                },
+                **(
+                    {
+                        "size": r.size,
+                    }
+                    if hasattr(r, "size")
+                    else {}
+                ),
+            )
+            for r in self.client.tasks.list()
+        ]
+        results = json.loads(output)
+        assert results
+        assert expected == results
 
     def test_can_delete_task(self, fxt_new_task: Task):
         self.run_cli("delete", str(fxt_new_task.id))

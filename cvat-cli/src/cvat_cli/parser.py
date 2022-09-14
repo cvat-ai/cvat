@@ -12,6 +12,7 @@ from distutils.util import strtobool
 
 from cvat_sdk.core.proxies.tasks import ResourceType
 
+from .cli import CLI
 from .version import VERSION
 
 SSL_VERIFICATION_ENV_VAR = "SSL_VERIFY"
@@ -223,6 +224,18 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         default=False,
         action="store_true",
         help="output JSON data",
+    )
+    ls_parser.add_argument(
+        "--fields",
+        dest="output_fields",
+        type=lambda s: [v.strip() for v in s.split(",")],
+        default=None,
+        help="A comma-separated output fields list "
+        "(available: %s. Default: %s for CSV and all for the JSON format)"
+        % (
+            ", ".join(CLI.get_available_task_fields()),
+            ", ".join(CLI.DEFAULT_CSV_TASK_OUTPUT_FIELDS),
+        ),
     )
 
     #######################################################################

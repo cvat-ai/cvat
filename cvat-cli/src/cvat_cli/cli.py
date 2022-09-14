@@ -5,12 +5,14 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import tqdm
 from cvat_sdk import Client, models
+from cvat_sdk.api_client.model_utils import to_json
 from cvat_sdk.core.helpers import TqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
+from cvat_sdk.core.utils import filter_dict
 
 
 class CLI:
@@ -23,14 +25,55 @@ class CLI:
 
         self.client.login(credentials)
 
-    def tasks_list(self, *, use_json_output: bool = False, **kwargs):
-        """List all tasks in either basic or JSON format."""
-        results = self.client.tasks.list(return_json=use_json_output, **kwargs)
+    @staticmethod
+    def get_available_task_fields() -> set[str]:
+        # We don't need to resolve forward references here and all the stuff from get_type_hints()
+        # Just the field names
+        return set(models.ITaskRead.__annotations__.keys())
+
+    DEFAULT_CSV_TASK_OUTPUT_FIELDS = ("id", "name")
+
+    def tasks_list(
+        self,
+        *,
+        use_json_output: bool = False,
+        output_fields: Optional[Sequence[str]] = None,
+        **kwargs,
+    ) -> None:
+        """
+        List all tasks in either CSV or JSON format.
+        """
+
+        def _render_field_to_csv(field: Any) -> str:
+            if isinstance(field, dict) and "id" in field:
+                return str(field["id"])
+            else:
+                return str(field)
+
+        if output_fields:
+            # verify requested fields
+            available_fields = self.get_available_task_fields()
+            unknown_fields = set(output_fields).difference(available_fields)
+            if unknown_fields:
+                raise ValueError(
+                    "Unknown task fields requested for output: %s. Available fields are: %s"
+                    % (", ".join(unknown_fields), ", ".join(available_fields))
+                )
+        elif not output_fields and not use_json_output:
+            output_fields = self.DEFAULT_CSV_TASK_OUTPUT_FIELDS
+
+        results = self.client.tasks.list(**kwargs)
+
+        results = (to_json(r._model) for r in results)
+        if output_fields:
+            results = (filter_dict(r, keep=output_fields) for r in results)
+
         if use_json_output:
-            print(json.dumps(json.loads(results), indent=2))
+            print(json.dumps(list(results), indent=2))
         else:
+            print(",".join(output_fields))
             for r in results:
-                print(r.id)
+                print(",".join(_render_field_to_csv(r.get(k, None)) for k in output_fields))
 
     def tasks_create(
         self,
