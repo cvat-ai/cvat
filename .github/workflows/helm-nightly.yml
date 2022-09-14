@@ -1,4 +1,4 @@
-name: CI-nightly
+name: Helm-nightly
 on:
   schedule:
     - cron: '0 0 * * 6'
