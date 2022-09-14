@@ -13,7 +13,7 @@ from cvat_sdk import exceptions
 from cvat_sdk.core.client import Client, Config
 
 from cvat_cli.cli import CLI
-from cvat_cli.parser import get_action_args, make_cmdline_parser
+from cvat_cli.parser import get_action_args, get_auth, make_cmdline_parser
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,11 @@ def main(args: List[str] = None):
     }
     parser = make_cmdline_parser()
     parsed_args = parser.parse_args(args)
+
+    # Can't run this funciton earlier because it pops up with password request
+    # before printing help from subparsers
+    parsed_args.auth = get_auth(parsed_args.auth)
+
     configure_logger(parsed_args.loglevel)
 
     with build_client(parsed_args, logger=logger) as client:

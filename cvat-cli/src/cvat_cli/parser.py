@@ -64,7 +64,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     #######################################################################
     parser.add_argument(
         "--auth",
-        type=get_auth,
+        type=str,
         metavar="USER:[PASS]",
         default=getpass.getuser(),
         help="""defaults to the current user and supports the PASS
