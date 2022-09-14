@@ -162,15 +162,15 @@ Cypress.Commands.add(
             cy.get('.cvat-modal-export-project')
                 .find('.cvat-settings-switch')
                 .click();
-            cy.get('.cvat-select-targetStorage-storage').within(() => {
+            cy.get('.cvat-select-target-storage').within(() => {
                 cy.get('.ant-select-selection-item').click();
             });
-            cy.contains('.cvat-select-targetStorage-location', targetStorage.location)
+            cy.contains('.cvat-select-target-storage-location', targetStorage.location)
                 .should('be.visible')
                 .click();
 
             if (targetStorage && targetStorage.cloudStorageId) {
-                cy.get('.cvat-search-targetStorage-cloud-storage-field').click();
+                cy.get('.cvat-search-target-storage-cloud-storage-field').click();
                 cy.get('.cvat-cloud-storage-select-provider').click();
             }
         }
@@ -186,14 +186,14 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
     cy.get('.cvat-import-project-button').click();
 
     if (sourceStorage) {
-        cy.get('.cvat-select-sourceStorage-storage').within(() => {
+        cy.get('.cvat-select-source-storage').within(() => {
             cy.get('.ant-select-selection-item').click();
         });
-        cy.contains('.cvat-select-sourceStorage-location', sourceStorage.location)
+        cy.contains('.cvat-select-source-storage-location', sourceStorage.location)
             .should('be.visible')
             .click();
         if (sourceStorage.cloudStorageId) {
-            cy.get('.cvat-search-sourceStorage-cloud-storage-field').click();
+            cy.get('.cvat-search-source-storage-cloud-storage-field').click();
             cy.get('.cvat-cloud-storage-select-provider').click();
             cy.get('.cvat-modal-import-backup')
                 .find('.cvat-modal-import-filename-input')

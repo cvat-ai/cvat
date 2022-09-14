@@ -31,6 +31,11 @@ export default function StorageField(props: Props): JSX.Element {
     } = props;
     const [cloudStorage, setCloudStorage] = useState<CloudStorage | null>(null);
     const [potentialCloudStorage, setPotentialCloudStorage] = useState('');
+    const [storageType, setStorageType] = useState('');
+
+    useEffect(() => {
+        setStorageType(locationName[0].replace('Storage', '-storage'));
+    }, [locationName]);
 
     function renderCloudStorage(): JSX.Element {
         return (
@@ -73,19 +78,19 @@ export default function StorageField(props: Props): JSX.Element {
                         if (onChangeLocationValue) onChangeLocationValue(StorageLocation.LOCAL);
                     }}
                     allowClear
-                    className={`cvat-select-${locationName[0]}-storage`}
+                    className={`cvat-select-${storageType}`}
                 >
                     <Option
                         value={StorageLocation.LOCAL}
-                        key={`${locationName[0]}_${StorageLocation.LOCAL.toLowerCase()}`}
-                        className={`cvat-select-${locationName[0]}-location`}
+                        key={`${storageType}-${StorageLocation.LOCAL.toLowerCase()}`}
+                        className={`cvat-select-${storageType}-location`}
                     >
                         Local
                     </Option>
                     <Option
                         value={StorageLocation.CLOUD_STORAGE}
-                        key={`${locationName[0]}_${StorageLocation.CLOUD_STORAGE.toLowerCase()}`}
-                        className={`cvat-select-${locationName[0]}-location`}
+                        key={`${storageType}-${StorageLocation.CLOUD_STORAGE.toLowerCase()}`}
+                        className={`cvat-select-${storageType}-location`}
                     >
                         Cloud storage
                     </Option>

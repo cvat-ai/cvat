@@ -652,13 +652,13 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
             cy.get('.ant-collapse-content-box').find('#useProjectSourceStorage').click();
         }
 
-        cy.get('.cvat-select-sourceStorage-storage').within(() => {
+        cy.get('.cvat-select-source-storage').within(() => {
             cy.get('.ant-select-selection-item').click();
         });
-        cy.contains('.cvat-select-sourceStorage-location', sourceStorage.location).should('be.visible').click();
+        cy.contains('.cvat-select-source-storage-location', sourceStorage.location).should('be.visible').click();
 
         if (sourceStorage.cloudStorageId) {
-            cy.get('.cvat-search-sourceStorage-cloud-storage-field').click();
+            cy.get('.cvat-search-source-storage-cloud-storage-field').click();
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
@@ -670,13 +670,13 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
             cy.get('.ant-collapse-content-box').find('#useProjectTargetStorage').click();
         }
 
-        cy.get('.cvat-select-targetStorage-storage').within(() => {
+        cy.get('.cvat-select-target-storage').within(() => {
             cy.get('.ant-select-selection-item').click();
         });
-        cy.contains('.cvat-select-targetStorage-location', targetStorage.location).should('be.visible').click();
+        cy.contains('.cvat-select-target-storage-location', targetStorage.location).should('be.visible').click();
 
         if (targetStorage.cloudStorageId) {
-            cy.get('.cvat-search-targetStorage-cloud-storage-field').click();
+            cy.get('.cvat-search-target-storage-cloud-storage-field').click();
             cy.get('.cvat-cloud-storage-select-provider').last().click();
         }
     }
@@ -714,14 +714,14 @@ Cypress.Commands.add(
             cy.get('.cvat-modal-import-dataset')
                 .find('.cvat-modal-import-switch-use-default-storage')
                 .click();
-            cy.get('.cvat-select-sourceStorage-storage').within(() => {
+            cy.get('.cvat-select-source-storage').within(() => {
                 cy.get('.ant-select-selection-item').click();
             });
-            cy.contains('.cvat-select-sourceStorage-location', sourceStorage.location)
+            cy.contains('.cvat-select-source-storage-location', sourceStorage.location)
                 .should('be.visible')
                 .click();
             if (sourceStorage.cloudStorageId) {
-                cy.get('.cvat-search-sourceStorage-cloud-storage-field').click();
+                cy.get('.cvat-search-source-storage-cloud-storage-field').click();
                 cy.get('.cvat-cloud-storage-select-provider').click();
             }
         }
@@ -977,13 +977,13 @@ Cypress.Commands.add('exportJob', ({
     }
     if (!useDefaultLocation) {
         cy.get('.cvat-modal-export-job').find('.cvat-settings-switch').click();
-        cy.get('.cvat-select-targetStorage-storage').within(() => {
+        cy.get('.cvat-select-target-storage').within(() => {
             cy.get('.ant-select-selection-item').click();
         });
-        cy.contains('.cvat-select-targetStorage-location', targetStorage.location).should('be.visible').click();
+        cy.contains('.cvat-select-target-storage-location', targetStorage.location).should('be.visible').click();
 
         if (targetStorage.cloudStorageId) {
-            cy.get('.cvat-search-targetStorage-cloud-storage-field').click();
+            cy.get('.cvat-search-target-storage-cloud-storage-field').click();
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
