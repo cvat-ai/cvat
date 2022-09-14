@@ -83,7 +83,7 @@ class Client:
         for schema in cls.ALLOWED_SCHEMAS:
             with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
                 with suppress(urllib3.exceptions.RequestError):
-                    (_, response) = api_client.schema_api.retrieve(
+                    (_, response) = api_client.server_api.retrieve_about(
                         _request_timeout=5, _parse_response=False, _check_status=False
                     )
 
