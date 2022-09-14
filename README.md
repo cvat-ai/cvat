@@ -3,6 +3,17 @@
 - [Official CVAT Repo](https://github.com/opencv/cvat)
 - [CVAT documentation](https://opencv.github.io/cvat/docs)
 
+# Building CVAT
+
+To build new cvat-server and cvat-ui images from the BossaNova cvat repo:
+
+```
+git clone https://github.com/BossaNova/cvat.git
+cd cvat
+docker-compose -f docker-compose.no-infra.yml -f docker-compose.dev.yml build
+```
+
+To push to GCP artifact registry for use in the cloud: https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling
 
 # Running CVAT in Bossa Nova GCP
 
