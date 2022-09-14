@@ -29,7 +29,7 @@ class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
         with make_api_client(user) as api_client:
             results = get_paginated_collection(api_client.projects_api.list_tasks_endpoint,
-                return_json=True, id=project_id, **kwargs)
+                parse_models=False, id=project_id, **kwargs)
             assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
 
     def _test_task_list_403(self, user, project_id, **kwargs):

@@ -139,23 +139,12 @@ class ModelRetrieveMixin(Generic[_EntityT]):
 
 
 class ModelListMixin(Generic[_EntityT]):
-    @overload
-    def list(self: Repo, *, return_json: Literal[False] = False) -> List[_EntityT]:
-        ...
-
-    @overload
-    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Any]:
-        ...
-
-    def list(self: Repo, *, return_json: bool = False) -> List[Union[_EntityT, Any]]:
+    def list(self: Repo) -> List[_EntityT]:
         """
-        Retrieves all objects from the server and returns them in basic or JSON format.
+        Retrieves all objects from the server.
         """
 
-        results = get_paginated_collection(endpoint=self.api.list_endpoint, return_json=return_json)
-
-        if return_json:
-            return json.dumps(results)
+        results = get_paginated_collection(endpoint=self.api.list_endpoint)
         return [self._entity_type(self._client, model) for model in results]
 
 

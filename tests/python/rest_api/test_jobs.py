@@ -90,7 +90,7 @@ class TestListJobs:
     def _test_list_jobs_200(self, user, data, **kwargs):
         with make_api_client(user) as client:
             results = get_paginated_collection(client.jobs_api.list_endpoint,
-                return_json=True, **kwargs)
+                parse_models=False, **kwargs)
             assert DeepDiff(data, results, exclude_paths="root['updated_date']",
                 ignore_order=True) == {}
 

@@ -17,10 +17,13 @@ from cvat_sdk.core.progress import ProgressReporter
 
 
 def get_paginated_collection(
-    endpoint: Endpoint, *, return_json: bool = False, **kwargs
+    endpoint: Endpoint, *, parse_models: bool = True, **kwargs
 ) -> Union[List, List[Dict[str, Any]]]:
     """
-    Accumulates results from all the pages
+    Accumulates results from all the pages of the collection at endpoint.
+
+    Params:
+        parse_models - whether to return plain dicts or models
     """
 
     results = []
@@ -29,10 +32,10 @@ def get_paginated_collection(
         (page_contents, response) = endpoint.call_with_http_info(**kwargs, page=page)
         expect_status(200, response)
 
-        if return_json:
-            results.extend(json.loads(response.data).get("results", []))
-        else:
+        if parse_models:
             results.extend(page_contents.results)
+        else:
+            results.extend(json.loads(response.data).get("results", []))
 
         if not page_contents.next:
             break
