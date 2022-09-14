@@ -287,11 +287,7 @@ def services(request):
             ["/bin/sh", "-c", "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"]
         )
 
-
-
         yield
-
-
 
 
 @pytest.fixture(scope="function")
