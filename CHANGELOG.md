@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding non-ascii paths while adding files from "Connected file share" (issue #4428)
 
 ### Security
 - TDB
