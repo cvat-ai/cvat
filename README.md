@@ -18,6 +18,9 @@ A theoretical startup script to run everything:
 ```
 export CVAT_REDIS_HOST=whatever
 export CVAT_POSTGRES_HOST=whatever
+cd ~
+git clone https://github.com/BossaNova/cvat.git
+cd cvat
 docker-compose -f docker-compose.no-infra.yml up
 ```
 
