@@ -38,11 +38,12 @@ function WebhooksPage(): JSX.Element | null {
 
     const [onCreateParams, setOnCreateParams] = useState<string | null>(null);
     const onCreateWebhook = useCallback(() => {
-        history.push(`/webhooks/create?${onCreateParams}`);
+        history.push(`/webhooks/create?${onCreateParams || ''}`);
     }, [onCreateParams]);
 
     const goBackContent = (
         <Button
+            className='cvat-webhooks-go-back'
             onClick={() => history.push(projectsMatch ? `/projects/${projectsMatch.params.id}` : '/organization')}
             type='link'
             size='large'
@@ -77,39 +78,69 @@ function WebhooksPage(): JSX.Element | null {
         });
     }, [query]);
 
-    if (fetching) {
-        return <Spin className='cvat-spinner' />;
-    }
+    const content = totalCount ? (
+        <>
+            <WebhooksList />
+            <Row justify='center' align='middle'>
+                <Col md={22} lg={18} xl={16} xxl={14}>
+                    <Pagination
+                        className='cvat-tasks-pagination'
+                        onChange={(page: number) => {
+                            dispatch(getWebhooksAsync({
+                                ...query,
+                                page,
+                            }));
+                        }}
+                        showSizeChanger={false}
+                        total={totalCount}
+                        current={query.page}
+                        pageSize={PAGE_SIZE}
+                        showQuickJumper
+                    />
+                </Col>
+            </Row>
+        </>
+    ) : <EmptyWebhooksListComponent query={query} />;
 
     return (
         <div className='cvat-webhooks-page'>
             <TopBar
+                query={updatedQuery}
                 onCreateWebhook={onCreateWebhook}
                 goBackContent={goBackContent}
+                onApplySearch={(search: string | null) => {
+                    dispatch(
+                        getWebhooksAsync({
+                            ...query,
+                            search,
+                            page: 1,
+                        }),
+                    );
+                }}
+                onApplyFilter={(filter: string | null) => {
+                    dispatch(
+                        getWebhooksAsync({
+                            ...query,
+                            filter,
+                            page: 1,
+                        }),
+                    );
+                }}
+                onApplySorting={(sorting: string | null) => {
+                    dispatch(
+                        getWebhooksAsync({
+                            ...query,
+                            sort: sorting,
+                            page: 1,
+                        }),
+                    );
+                }}
             />
-            {
-                totalCount ? (
-                    <>
-                        <WebhooksList />
-                        <Row justify='center' align='middle'>
-                            <Col md={22} lg={18} xl={16} xxl={14}>
-                                <Pagination
-                                    className='cvat-tasks-pagination'
-                                    onChange={(page: number) => {
-                                        dispatch(getWebhooksAsync({ page }));
-                                    }}
-                                    showSizeChanger={false}
-                                    total={totalCount}
-                                    current={query.page}
-                                    pageSize={PAGE_SIZE}
-                                    showQuickJumper
-                                />
-                            </Col>
-                        </Row>
-                    </>
-                ) : <EmptyWebhooksListComponent query={query} />
-            }
-
+            { fetching ? (
+                <div className='cvat-empty-webhooks-list'>
+                    <Spin size='large' className='cvat-spinner' />
+                </div>
+            ) : content }
         </div>
     );
 }

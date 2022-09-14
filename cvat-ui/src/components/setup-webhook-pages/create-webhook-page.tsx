@@ -17,7 +17,7 @@ function CreateWebhookPage(): JSX.Element {
         <div className='cvat-create-webhook-page'>
             <Row justify='center' align='middle'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
-                    <Button onClick={() => history.goBack()} type='link' size='large'>
+                    <Button className='cvat-webhooks-go-back' onClick={() => history.goBack()} type='link' size='large'>
                         <LeftOutlined />
                         Back to webhooks
                     </Button>

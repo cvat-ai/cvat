@@ -4,13 +4,18 @@
 
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { WebhooksActions, WebhooksActionsTypes } from 'actions/webhooks-actions';
-import { WebhooksState } from './interfaces';
+import { WebhooksState } from 'reducers';
 
 const defaultState: WebhooksState = {
     current: [],
     totalCount: 0,
     query: {
         page: 1,
+        id: null,
+        projectId: null,
+        search: null,
+        filter: null,
+        sort: null,
     },
     fetching: false,
 };

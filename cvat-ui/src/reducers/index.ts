@@ -778,8 +778,11 @@ export interface OrganizationState {
 
 export interface WebhooksQuery {
     page: number;
-    id?: number;
-    projectId?: number;
+    id: number | null;
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+    projectId: number | null;
 }
 
 export interface WebhooksState {

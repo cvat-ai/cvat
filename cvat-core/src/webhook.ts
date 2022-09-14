@@ -5,6 +5,7 @@
 import PluginRegistry from './plugins';
 import User from './user';
 import { WebhookSourceType, WebhookContentType } from './enums';
+import { isEnum } from './common';
 
 const serverProxy = require('./server-proxy');
 
@@ -255,8 +256,8 @@ interface RawWebhookDeliveryData {
     webhook_id?: number;
     status_code?: string;
     redelivery?: boolean;
-    created_at?: string;
-    updated_at?: string;
+    created_date?: string;
+    updated_date?: string;
 }
 
 export class WebhookDelivery {
@@ -275,8 +276,8 @@ export class WebhookDelivery {
             webhook_id: undefined,
             status_code: undefined,
             redelivery: undefined,
-            created_at: undefined,
-            updated_at: undefined,
+            created_date: undefined,
+            updated_date: undefined,
         };
 
         for (const property in data) {
@@ -304,10 +305,10 @@ export class WebhookDelivery {
                     get: () => data.redelivery,
                 },
                 createdDate: {
-                    get: () => data.created_at,
+                    get: () => data.created_date,
                 },
                 updatedDate: {
-                    get: () => data.updated_at,
+                    get: () => data.updated_date,
                 },
             }),
         );

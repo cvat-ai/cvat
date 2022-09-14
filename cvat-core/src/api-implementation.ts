@@ -294,12 +294,14 @@ const config = require('./config');
                 id: isInteger,
                 projectId: isInteger,
                 filter: isString,
+                search: isString,
+                sort: isString,
             });
 
             checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
             const searchParams = {};
             for (const key of Object.keys(filter)) {
-                if (['page', 'id', 'filter'].includes(key)) {
+                if (['page', 'id', 'filter', 'search', 'sort'].includes(key)) {
                     searchParams[key] = filter[key];
                 }
             }

@@ -176,6 +176,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
                 webhookInstance.save().then(() => {
                     form.resetFields();
+                    setShowDetailedEvents(false);
                     notification.info({
                         message: 'Webhook has been successfully added',
                     });

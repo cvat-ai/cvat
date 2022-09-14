@@ -5,7 +5,7 @@
 import { Row, Col } from 'antd';
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import WebhookItem from './webhook-item';
 
 function WebhooksList(): JSX.Element {

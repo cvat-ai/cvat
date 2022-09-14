@@ -17,9 +17,8 @@ function EmptyWebhooksListComponent(props: Props): JSX.Element {
     const { query } = props;
 
     return (
-        // TODO: add empty search after implementing queries
         <div className='cvat-empty-webhooks-list'>
-            <Empty description={(
+            <Empty description={!query.filter && !query.search && !query.page ? (
                 <>
                     <Row justify='center' align='middle'>
                         <Col>
@@ -27,7 +26,7 @@ function EmptyWebhooksListComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                 </>
-            )}
+            ) : (<Text>No results matched your search</Text>)}
             />
         </div>
     );
