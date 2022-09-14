@@ -43,11 +43,13 @@ jobs:
       run: |
         sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
         echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
+        cat /etc/hosts
         mkdir cvat-sdk/schema
 
         max_tries=30
         while [[  $(curl -s -o /dev/null -w "%{http_code}" cvat.local/api/restrictions/user-agreements) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
+        kubectl get pods
         kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- /bin/bash -c "python manage.py spectacular --file /tmp/schema.yml"
         kubectl cp $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/tmp/schema.yml cvat-sdk/schema/schema.yml
         pip3 install --user -r cvat-sdk/gen/requirements.txt
