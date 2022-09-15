@@ -72,8 +72,6 @@ with ApiClient(configuration) as api_client:
     # Here we will use models instead of a dict
     task_data = models.DataRequest(
         image_quality=75,
-        start_frame=2,
-        stop_frame=5,
         client_files=[
             open('image1.jpg', 'rb'),
             open('image2.jpg', 'rb'),
