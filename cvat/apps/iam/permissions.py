@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
+from cvat.apps.webhooks.models import Webhook
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
 
@@ -809,7 +810,6 @@ class WebhookPermission(OpenPolicyAgentPermission):
 
         return scopes
 
-
     def get_resource(self):
         data = None
         if self.obj:
@@ -833,13 +833,16 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 except Project.DoesNotExist as ex:
                     raise ValidationError(str(ex))
 
+            num_resources = Webhook.objects.filter(project=self.project_id).count() if project \
+                else Webhook.objects.filter(organization=self.org_id, project=None).count()
+
             data = {
                 'id': None,
                 'owner': self.user_id,
                 'organization': {
                     'id': self.org_id
                 },
-                'num_resources': 0
+                'num_resources': num_resources
             }
 
             data['project'] = None if project is None else {

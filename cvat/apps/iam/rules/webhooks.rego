@@ -52,6 +52,7 @@ allow {
     utils.is_sandbox
     utils.has_perm(utils.USER)
     is_project_owner
+    input.resource.num_resources < 11
 }
 
 
@@ -114,17 +115,33 @@ allow {
 }
 
 allow {
-    { utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION, utils.UPDATE,
-      utils.DELETE, utils.VIEW }[input.scope]
+    { utils.UPDATE, utils.DELETE, utils.VIEW }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow {
-    { utils.CREATE_IN_PROJECT, utils.UPDATE, utils.DELETE, utils.VIEW }[input.scope]
+    { utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.WORKER)
+    organizations.has_perm(organizations.MAINTAINER)
+    input.resource.num_resources < 11
+}
+
+allow {
+    { utils.UPDATE, utils.DELETE, utils.VIEW }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
+    is_project_owner
+}
+
+allow {
+    { utils.CREATE_IN_PROJECT }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.WORKER)
+    organizations.has_perm(organizations.WORKER)
+    input.resource.num_resources < 11
     is_project_owner
 }
