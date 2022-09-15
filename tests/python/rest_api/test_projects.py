@@ -20,14 +20,9 @@ from .utils import export_dataset
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetProjects:
     def _find_project_by_user_org(self, user, projects, is_project_staff_flag, is_project_staff):
-        if is_project_staff_flag:
-            for p in projects:
-                if is_project_staff(user['id'], p['id']):
-                    return p['id']
-        else:
-            for p in projects:
-                if not is_project_staff(user['id'], p['id']):
-                    return p['id']
+        for p in projects:
+            if is_project_staff(user['id'], p['id']) == is_project_staff_flag:
+                return p['id']
 
     def _test_response_200(self, username, project_id, **kwargs):
         with make_api_client(username) as api_client:
@@ -78,48 +73,43 @@ class TestGetProjects:
         )
         self._test_response_403(user['username'], project['id'])
 
-    # Member of organization that has role supervisor or worker cannot see
-    # project if this member not in [project:owner, project:assignee]
     @pytest.mark.parametrize('role', ('supervisor', 'worker'))
     def test_if_supervisor_or_worker_cannot_see_project(self, projects, is_project_staff,
             find_users, role):
-        non_admins = find_users(role=role, exclude_privilege='admin')
-        assert non_admins is not None
+        user, pid = next((
+            (user, project['id'])
+            for user in find_users(role=role, exclude_privilege='admin')
+            for project in projects
+            if project['organization'] == user['org'] \
+                and not is_project_staff(user['id'], project['id'])
+        ))
 
-        project_id = self._find_project_by_user_org(non_admins[0], projects, False, is_project_staff)
-        assert project_id is not None
+        self._test_response_403(user['username'], pid)
 
-        self._test_response_403(non_admins[0]['username'], project_id)
-
-    # Member of organization that has role maintainer or owner can see any
-    # project even this member not in [project:owner, project:assignee]
     @pytest.mark.parametrize('role', ('maintainer', 'owner'))
     def test_if_maintainer_or_owner_can_see_project(self, find_users, projects, is_project_staff, role):
-        non_admins = find_users(role=role, exclude_privilege='admin')
-        assert non_admins is not None
+        user, pid = next((
+            (user, project['id'])
+            for user in find_users(role=role, exclude_privilege='admin')
+            for project in projects
+            if project['organization'] == user['org'] \
+                and not is_project_staff(user['id'], project['id'])
+        ))
 
-        project_id = self._find_project_by_user_org(non_admins[0], projects, False, is_project_staff)
-        assert project_id is not None
+        self._test_response_200(user['username'], pid, org_id=user['org'])
 
-        self._test_response_200(non_admins[0]['username'], project_id, org_id=non_admins[0]['org'])
-
-    # Member of organization that has role supervisor or worker can see
-    # project if this member in [project:owner, project:assignee]
     @pytest.mark.parametrize('role', ('supervisor', 'worker'))
     def test_if_org_member_supervisor_or_worker_can_see_project(self, projects,
             find_users, is_project_staff, role):
-        non_admins = find_users(role=role, exclude_privilege='admin')
-        assert len(non_admins)
+        user, pid = next((
+            (user, project['id'])
+            for user in find_users(role=role, exclude_privilege='admin')
+            for project in projects
+            if project['organization'] == user['org'] \
+                and is_project_staff(user['id'], project['id'])
+        ))
 
-        for u in non_admins:
-            project_id = self._find_project_by_user_org(u, projects, True, is_project_staff)
-            if project_id:
-                user_in_project = u
-                break
-
-        assert project_id is not None
-
-        self._test_response_200(user_in_project['username'], project_id, org_id=user_in_project['org'])
+        self._test_response_200(user['username'], pid, org_id=user['org'])
 
 class TestGetProjectBackup:
     def _test_can_get_project_backup(self, username, pid, **kwargs):
