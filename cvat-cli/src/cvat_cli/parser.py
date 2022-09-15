@@ -14,8 +14,6 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .version import VERSION
 
-SSL_VERIFICATION_ENV_VAR = "SSL_VERIFY"
-
 
 def get_auth(s):
     """Parse USER[:PASS] strings and prompt for password if none was
@@ -50,10 +48,9 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument(
-        "--ssl-verify",
-        type=strtobool,
-        default=strtobool(os.getenv(SSL_VERIFICATION_ENV_VAR, "yes")),
-        help=argparse.SUPPRESS,
+        "--insecure",
+        action="store_true",
+        help="Allows to disable SSL certificate check",
     )
 
     task_subparser = parser.add_subparsers(dest="action")

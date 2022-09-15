@@ -31,7 +31,7 @@ def configure_logger(level):
 
 
 def build_client(parsed_args: SimpleNamespace, logger: logging.Logger) -> Client:
-    config = Config(verify_ssl=parsed_args.ssl_verify)
+    config = Config(verify_ssl=not parsed_args.insecure)
 
     return Client(
         url="{host}:{port}".format(host=parsed_args.server_host, port=parsed_args.server_port),
