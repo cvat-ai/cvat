@@ -13,7 +13,7 @@ CVAT provides the following integration layers:
 - Server REST API + Swagger schema
 - Python client library (SDK)
   - REST API client
-  - Highlevel wrappers
+  - High-level wrappers
 - Command-line tool (CLI)
 
 In this section, you can find documentation about each separate layer.
