@@ -1199,7 +1199,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
     def _read_cvat_anno(self, cvat_frame_anno: TaskData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[datum_annotation.AnnotationType.label]
-        def map_label(name, parent=None): return label_cat.find((parent if parent else "") + name)[0]
+        def map_label(name, parent=""): return label_cat.find(name, parent)[0]
         label_attrs = {
             label.get("parent", "") + label['name']: label['attributes']
             for _, label in labels
@@ -1448,8 +1448,6 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             else:
                 continue
         elif shape_obj.type == ShapeType.SKELETON:
-            # points = []
-            # vis = []
             elements = []
             for element in shape_obj.elements:
                 element_attr = convert_attrs(shape_obj.label + element.label, element.attributes)
@@ -1463,7 +1461,7 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 elif element.occluded:
                     element_vis = datum_annotation.Points.Visibility.hidden
                 elements.append(datum_annotation.Points(element.points, [element_vis],
-                    label=map_label(shape_obj.label + element.label), attributes=element_attr))
+                    label=map_label(element.label, shape_obj.label), attributes=element_attr))
 
             anno = datum_annotation.Skeleton(elements, label=anno_label,
                 attributes=anno_attr, group=anno_group, z_order=shape_obj.z_order)
