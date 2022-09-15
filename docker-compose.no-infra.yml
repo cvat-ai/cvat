@@ -9,7 +9,7 @@ version: '3.3'
 services:
   cvat_server:
     container_name: cvat_server
-    image: gcr.io/cvat-dev-rob-db35/cvat-server:latest
+    image: us-east1-docker.pkg.dev/cloud-run-example-317621/cvat-docker-repo/cvat-server:latest
     restart: always
     depends_on:
       - cvat_opa
@@ -39,7 +39,7 @@ services:
 
   cvat_utils:
     container_name: cvat_utils
-    image: gcr.io/cvat-dev-rob-db35/cvat-server:latest
+    image: us-east1-docker.pkg.dev/cloud-run-example-317621/cvat-docker-repo/cvat-server:latest
     restart: always
     depends_on:
       - cvat_opa
@@ -57,7 +57,7 @@ services:
 
   cvat_worker_default:
     container_name: cvat_worker_default
-    image: gcr.io/cvat-dev-rob-db35/cvat-server:latest
+    image: us-east1-docker.pkg.dev/cloud-run-example-317621/cvat-docker-repo/cvat-server:latest
     restart: always
     depends_on:
       - cvat_opa
@@ -76,7 +76,7 @@ services:
 
   cvat_worker_low:
     container_name: cvat_worker_low
-    image: gcr.io/cvat-dev-rob-db35/cvat-server:latest
+    image: us-east1-docker.pkg.dev/cloud-run-example-317621/cvat-docker-repo/cvat-server:latest
     restart: always
     depends_on:
       - cvat_opa
@@ -95,7 +95,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: gcr.io/cvat-dev-rob-db35/cvat-ui:latest
+    image: us-east1-docker.pkg.dev/cloud-run-example-317621/cvat-docker-repo/cvat-ui:latest
     restart: always
     depends_on:
       - cvat_server
