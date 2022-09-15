@@ -1,0 +1,5 @@
+Organization,Project,TaskName,UploadType,UploadPath,Assignee,JobStage,JobState
+"organzation_name, project_name, task_name1,computer,'/home',user_name,annotation,new"
+"organzation_name_2, project_name_2, task_name_2,connected_file,'/home',user_name_2,validation,in_progress"
+"organzation_name_2, project_name_2, task_name_3,remote,'/home/dir',user_name_2,acceptance,rejected"
+"organzation_name_2, project_name_3, task_name_4,remote,'/home/temp',,acceptance,completed"
