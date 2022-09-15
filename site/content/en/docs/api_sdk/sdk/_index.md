@@ -11,8 +11,8 @@ SDK is a Python library. It provides you access to Python function and objects, 
 simplify server interaction and provide additional functionality like data validation.
 
 SDK API includes 2 layers:
-- Low-level API with REST API wrappers. Located in at `cvat_sdk.api_client`. [Read more](/integration/sdk/lowlevel-api)
-- High-level API. Located at `cvat_sdk.core`. [Read more](/integration/sdk/highlevel-api)
+- Low-level API with REST API wrappers. Located in at `cvat_sdk.api_client`. [Read more](/api_sdk/sdk/lowlevel-api)
+- High-level API. Located at `cvat_sdk.core`. [Read more](/api_sdk/sdk/highlevel-api)
 
 Roughly, low-level API provides single-request operations, while the high-level one allows you
 to use composite, multi-request operations and have local counterparts for server objects.
