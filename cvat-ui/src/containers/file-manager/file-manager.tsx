@@ -105,7 +105,6 @@ export class FileManagerContainer extends React.PureComponent<Props> {
                 const partsPath = key.split('/').filter(Boolean);
 
                 const itemTreeData = partsPath.length ? getItemTreeDataByPath(treeData[0], partsPath) : treeData[0];
-                console.log(itemTreeData);
                 if (itemTreeData.isLeaf) {
                     files = [...files, {
                         ...itemTreeData,
