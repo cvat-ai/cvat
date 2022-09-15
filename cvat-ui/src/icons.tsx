@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -56,6 +57,7 @@ import SVGBrushIcon from './assets/brush.svg';
 import SVGEraserIcon from './assets/eraser.svg';
 import SVGPolygonPlusIcon from './assets/polygon-plus.svg';
 import SVGPolygonMinusIcon from './assets/polygon-minus.svg';
+import SVGMultiPlusIcon from './assets/multi-plus-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -109,3 +111,4 @@ export const BrushIcon = React.memo((): JSX.Element => <SVGBrushIcon />);
 export const EraserIcon = React.memo((): JSX.Element => <SVGEraserIcon />);
 export const PolygonPlusIcon = React.memo((): JSX.Element => <SVGPolygonPlusIcon />);
 export const PolygonMinusIcon = React.memo((): JSX.Element => <SVGPolygonMinusIcon />);
+export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);

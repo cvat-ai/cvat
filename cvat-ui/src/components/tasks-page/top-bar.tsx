@@ -19,6 +19,7 @@ import { usePrevious } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
+import { MutliPlusIcon } from '../../icons';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
@@ -100,6 +101,14 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     icon={<PlusOutlined />}
                                 >
                                     Create a new task
+                                </Button>
+                                <Button
+                                    className='cvat-create-multi-tasks-button'
+                                    type='primary'
+                                    onClick={(): void => history.push('/tasks/create?many=true')}
+                                    icon={<span className='anticon'><MutliPlusIcon /></span>}
+                                >
+                                    Create multi tasks
                                 </Button>
                                 <Button
                                     className='cvat-import-task-button'
