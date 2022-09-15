@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,17 +32,9 @@ const defaultState: TasksState = {
         projectId: null,
     },
     activities: {
-        loads: {},
         deletes: {},
-        creates: {
-            taskId: null,
-            status: '',
-            error: '',
-        },
-        backups: {},
         jobUpdates: {},
     },
-    importing: false,
 };
 
 export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
@@ -82,40 +75,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 initialized: true,
                 fetching: false,
             };
-        case TasksActionTypes.LOAD_ANNOTATIONS: {
-            const { task } = action.payload;
-            const { loader } = action.payload;
-            const { loads } = state.activities;
-
-            loads[task.id] = task.id in loads ? loads[task.id] : loader.name;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    loads: {
-                        ...loads,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.LOAD_ANNOTATIONS_FAILED:
-        case TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS: {
-            const { task } = action.payload;
-            const { loads } = state.activities;
-
-            delete loads[task.id];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    loads: {
-                        ...loads,
-                    },
-                },
-            };
-        }
         case TasksActionTypes.DELETE_TASK: {
             const { taskID } = action.payload;
             const { deletes } = state.activities;
@@ -160,103 +119,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     deletes: {
                         ...deletes,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_TASK: {
-            const { taskID } = action.payload;
-            const { backups } = state.activities;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    backups: {
-                        ...backups,
-                        ...Object.fromEntries([[taskID, true]]),
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_TASK_FAILED:
-        case TasksActionTypes.EXPORT_TASK_SUCCESS: {
-            const { taskID } = action.payload;
-            const { backups } = state.activities;
-
-            delete backups[taskID];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    backups: omit(backups, [taskID]),
-                },
-            };
-        }
-        case TasksActionTypes.IMPORT_TASK: {
-            return {
-                ...state,
-                importing: true,
-            };
-        }
-        case TasksActionTypes.IMPORT_TASK_FAILED:
-        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
-            return {
-                ...state,
-                importing: false,
-            };
-        }
-        case TasksActionTypes.CREATE_TASK: {
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        taskId: null,
-                        status: '',
-                        error: '',
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.CREATE_TASK_STATUS_UPDATED: {
-            const { status } = action.payload;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        ...state.activities.creates,
-                        status,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.CREATE_TASK_SUCCESS: {
-            const { taskId } = action.payload;
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        ...state.activities.creates,
-                        taskId,
-                        status: 'CREATED',
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.CREATE_TASK_FAILED: {
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    creates: {
-                        ...state.activities.creates,
-                        status: 'FAILED',
-                        error: action.payload.error.toString(),
                     },
                 },
             };

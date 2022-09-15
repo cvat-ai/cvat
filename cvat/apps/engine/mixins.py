@@ -279,6 +279,11 @@ class AnnotationMixin:
             return Response(serializer.data)
 
     def import_annotations(self, request, pk, db_obj, import_func, rq_func, rq_id):
+        is_tus_request = request.headers.get('Upload-Length', None) is not None or \
+            request.method == 'OPTIONS'
+        if is_tus_request:
+            return self.init_tus_upload(request)
+
         use_default_location = request.query_params.get('use_default_location', True)
         use_settings = strtobool(str(use_default_location))
         obj = db_obj if use_settings else request.query_params

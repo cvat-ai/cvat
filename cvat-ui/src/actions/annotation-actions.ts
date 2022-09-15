@@ -50,7 +50,7 @@ function getStore(): Store<CombinedState> {
     return store;
 }
 
-function receiveAnnotationsParameters(): AnnotationsParameters {
+export function receiveAnnotationsParameters(): AnnotationsParameters {
     if (store === null) {
         store = getCVATStore();
     }
@@ -89,7 +89,7 @@ export function computeZRange(states: any[]): number[] {
     return [minZ, maxZ];
 }
 
-async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
+export async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
     const { total } = await job.annotations.statistics();
     return {
         'frame count': job.stopFrame - job.startFrame + 1,
@@ -343,74 +343,6 @@ export function removeAnnotationsAsync(
             dispatch({
                 type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_FAILED,
                 payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
-export function uploadJobAnnotationsAsync(job: any, loader: any, file: File): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const state: CombinedState = getStore().getState();
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-
-            if (state.tasks.activities.loads[job.taskId]) {
-                throw Error('Annotations is being uploaded for the task');
-            }
-            if (state.annotation.activities.loads[job.id]) {
-                throw Error('Only one uploading of annotations for a job allowed at the same time');
-            }
-
-            dispatch({
-                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS,
-                payload: {
-                    job,
-                    loader,
-                },
-            });
-
-            const frame = state.annotation.player.frame.number;
-            await job.annotations.upload(file, loader);
-
-            await job.logger.log(LogType.uploadAnnotations, {
-                ...(await jobInfoGenerator(job)),
-            });
-
-            await job.annotations.clear(true);
-            await job.actions.clear();
-            const history = await job.actions.get();
-
-            // One more update to escape some problems
-            // in canvas when shape with the same
-            // clientID has different type (polygon, rectangle) for example
-            dispatch({
-                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
-                payload: {
-                    job,
-                    states: [],
-                    history,
-                },
-            });
-
-            const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
-
-            setTimeout(() => {
-                dispatch({
-                    type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
-                    payload: {
-                        history,
-                        job,
-                        states,
-                    },
-                });
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED,
-                payload: {
-                    job,
                     error,
                 },
             });
