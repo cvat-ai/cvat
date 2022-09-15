@@ -3,9 +3,10 @@ from django.dispatch import Signal, receiver
 import requests
 
 from cvat.apps.engine.serializers import BasicUserSerializer
+from cvat.apps.engine.models import Project
 
 from .event_type import EventTypeChoice
-from .models import Webhook, WebhookDelivery
+from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 
 signal_update = Signal()
 signal_create = Signal()
@@ -50,20 +51,34 @@ def payload(data, request):
         "sender": BasicUserSerializer(request.user, context={"request": request}).data,
     }
 
+def project_id(instance):
+    if isinstance(instance, Project):
+        return instance.id
+
+    try:
+        return instance.get_project_id()
+    except Exception:
+        return None
+
 
 @receiver(signal_update)
-def update(sender, serializer=None, old_values=None, **kwargs):
+def update(sender, instance=None, old_values=None, **kwargs):
     event_name = f"{sender.basename}_updated"
-    pid = serializer.data["project_id"]
-    if "organization" in serializer.data:
-        oid = serializer.data["organization"]
-    else:
-        oid = serializer.instance.get_organization_id()
-
     if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
-    if oid is None and pid is None:
+    serializer = sender.get_serializer_class()(
+        instance=instance,
+        context={"request": sender.request}
+    )
+
+    pid = project_id(instance)
+    if "organization" in serializer.data:
+        oid = serializer.data["organization"]
+    else:
+        oid = instance.get_organization_id()
+
+    if not any((oid, pid)):
         return
 
     data = {
@@ -73,13 +88,15 @@ def update(sender, serializer=None, old_values=None, **kwargs):
     }
 
     if oid is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, organization=oid)
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
+            type=WebhookTypeChoice.ORGANIZATION, organization=oid)
         for webhook in webhooks:
             data.update({"webhook_id": webhook.id})
             add_to_queue(webhook, payload(data, sender.request))
 
     if pid is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, project=pid)
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
+            type=WebhookTypeChoice.PROJECT, organization=oid, project=pid)
         for webhook in webhooks:
             data.update({"webhook_id": webhook.id})
             add_to_queue(webhook, payload(data, sender.request))

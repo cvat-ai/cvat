@@ -338,7 +338,7 @@ class PartialUpdateModelMixin:
 
         mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
 
-        signal_update.send(self, serializer=serializer, old_values=old_values)
+        signal_update.send(self, instance=serializer.instance, old_values=old_values)
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
