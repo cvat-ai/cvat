@@ -11,6 +11,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - uses: jitterbit/get-changed-files@v1
+      id: files
+      continue-on-error: true
+
     - name: Run checks
       id: check_helm_files
       env:
