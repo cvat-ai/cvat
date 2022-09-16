@@ -5,7 +5,7 @@ class Events:
     RESOURCES = {
         "project":      ["created", "updated", "deleted"],
         "task":         ["created", "updated", "deleted"],
-        "issue":        ["created", "updated", "deleted"],
+        "issue":        ["created", "deleted"], # TO-DO: implement issue_updated
         "comment":      ["created", "updated", "deleted"],
         "invitation":   ["created", "updated", "deleted"],
         "membership":   ["updated", "deleted"],

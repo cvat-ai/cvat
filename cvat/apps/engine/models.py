@@ -693,6 +693,14 @@ class Comment(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_project_id(self):
+        return self.issue.get_project_id()
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_organization_id(self):
+        return self.issue.get_organization_id()
+
 class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'
     AZURE_CONTAINER = 'AZURE_CONTAINER'

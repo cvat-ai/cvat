@@ -73,7 +73,7 @@ from cvat.apps.engine.serializers import (
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
@@ -271,7 +271,7 @@ class ServerViewSet(viewsets.ViewSet):
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
@@ -308,6 +308,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user,
             organization=self.request.iam_context['organization'])
+        signal_create.send(self, instance=serializer.instance)
 
     @extend_schema(
         summary='Method returns information of the tasks of the project with the selected id',
@@ -711,7 +712,7 @@ class DataChunkGetter:
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = Task.objects.prefetch_related(
@@ -825,7 +826,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project = instance.project
             db_project.save()
             assert instance.organization == db_project.organization
-        signal_create.send(self, serializer=serializer)
+        signal_create.send(self, instance=serializer.instance)
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_dirname()
@@ -837,7 +838,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if instance.project:
             db_project = instance.project
             db_project.save()
-        signal_delete.send(self, instance=instance)
 
 
     @extend_schema(summary='Method returns a list of jobs for a specific task',
@@ -1706,7 +1706,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Issue.objects.all().order_by('-id')
@@ -1738,6 +1738,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        signal_create.send(self, instance=serializer.instance)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
         responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -1786,7 +1787,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Comment.objects.all().order_by('-id')
@@ -1813,6 +1814,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        signal_create.send(self, instance=serializer.instance)
 
 @extend_schema(tags=['users'])
 @extend_schema_view(

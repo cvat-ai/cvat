@@ -7,6 +7,8 @@ from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.webhooks.signals import signal_create, signal_update
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -25,7 +27,7 @@ from .serializers import (
             '200': OrganizationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of organizatins according to query parameters',
+        summary='Method returns a paginated list of organizations according to query parameters',
         responses={
             '200': OrganizationReadSerializer(many=True),
         }),
@@ -50,7 +52,13 @@ from .serializers import (
             '204': OpenApiResponse(description='The organization has been deleted'),
         })
 )
-class OrganizationViewSet(viewsets.ModelViewSet):
+class OrganizationViewSet(viewsets.GenericViewSet,
+                   mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin,
+                   PartialUpdateModelMixin,
+    ):
     queryset = Organization.objects.all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
@@ -110,8 +118,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             '204': OpenApiResponse(description='The membership has been deleted'),
         })
 )
-class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
-    mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
+    mixins.ListModelMixin, PartialUpdateModelMixin, viewsets.GenericViewSet):
     queryset = Membership.objects.all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
@@ -165,7 +173,13 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
             '204': OpenApiResponse(description='The invitation has been deleted'),
         })
 )
-class InvitationViewSet(viewsets.ModelViewSet):
+class InvitationViewSet(viewsets.GenericViewSet,
+                   mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.UpdateModelMixin,
+                   DestroyModelMixin,
+    ):
     queryset = Invitation.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     iam_organization_field = 'membership__organization'
@@ -194,6 +208,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
             'organization': self.request.iam_context['organization']
         }
         serializer.save(**extra_kwargs)
+        signal_create.send(self, instance=serializer.instance)
 
     def perform_update(self, serializer):
         if 'accepted' in self.request.query_params:

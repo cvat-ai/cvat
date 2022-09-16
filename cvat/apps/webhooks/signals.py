@@ -4,6 +4,7 @@ import requests
 
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.engine.models import Project
+from cvat.apps.organizations.models import Organization
 
 from .event_type import EventTypeChoice
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
@@ -70,7 +71,22 @@ def project_id(instance):
         return instance.id
 
     try:
-        return instance.get_project_id()
+        pid = getattr(instance, 'project_id', None)
+        if pid is None:
+            return instance.get_project_id()
+        return pid
+    except Exception:
+        return None
+
+def organization_id(instance):
+    if isinstance(instance, Organization):
+        return instance.id
+
+    try:
+        oid = getattr(instance, 'organization_id', None)
+        if oid is None:
+            return instance.get_organization_id()
+        return oid
     except Exception:
         return None
 
@@ -86,10 +102,7 @@ def update(sender, instance=None, old_values=None, **kwargs):
     )
 
     pid = project_id(instance)
-    if "organization" in serializer.data:
-        oid = serializer.data["organization"]
-    else:
-        oid = instance.get_organization_id()
+    oid = organization_id(instance)
 
     if not any((oid, pid)):
         return
@@ -105,14 +118,22 @@ def update(sender, instance=None, old_values=None, **kwargs):
         add_to_queue(webhook, payload(data, sender.request))
 
 @receiver(signal_create)
-def resource_created(sender, serializer=None, **kwargs):
+def resource_created(sender, instance=None, **kwargs):
     event_name = f"{sender.basename}_created"
-    pid = serializer.data["project_id"]
-    oid = serializer.data["organization"]
+
+    pid = project_id(instance)
+    oid = organization_id(instance)
+    if not any((oid, pid)):
+        return
+
+    serializer = sender.get_serializer_class()(
+        instance=instance,
+        context={"request": sender.request}
+    )
 
     data = {
         "event": event_name,
-        sender.basename: serializer.data,
+        sender.basename: serializer.data
     }
 
     for webhook in select_webhooks(pid, oid, event_name):
@@ -124,8 +145,10 @@ def resource_created(sender, serializer=None, **kwargs):
 def resource_deleted(sender, instance=None, **kwargs):
     event_name = f"{sender.basename}_deleted"
 
-    pid = getattr(instance, "project_id")
-    oid = getattr(instance, "organization_id")
+    pid = project_id(instance)
+    oid = organization_id(instance)
+    if not any((oid, pid)):
+        return
 
     serializer = sender.get_serializer_class()(
         instance=instance,
