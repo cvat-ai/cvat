@@ -1,9 +1,13 @@
-import django_rq
-from django.dispatch import Signal, receiver
-import requests
+import hashlib
+import hmac
+import json
 
-from cvat.apps.engine.serializers import BasicUserSerializer
+import django_rq
+import requests
+from django.dispatch import Signal, receiver
+
 from cvat.apps.engine.models import Project
+from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.organizations.models import Organization
 
 from .event_type import EventTypeChoice
@@ -17,9 +21,23 @@ signal_ping = Signal()
 
 
 def send_webhook(webhook, payload, delivery):
+    headers = {}
+    if webhook.secret:
+        headers["X-Signature-256"] = "sha256=" + \
+            hmac.new(
+                webhook.secret.encode("utf-8"),
+                (json.dumps(payload) + "\n").encode("utf-8"),
+                digestmod=hashlib.sha256
+            ).hexdigest()
+
     response = None
     try:
-        response = requests.post(webhook.target_url, json=payload)
+        response = requests.post(
+            webhook.target_url,
+            json=payload,
+            verify=webhook.enable_ssl,
+            headers=headers
+        )
         status_code = str(response.status_code)
     except requests.ConnectionError:
         status_code = "Failed to connect to target url"
