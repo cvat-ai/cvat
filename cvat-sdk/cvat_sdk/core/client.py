@@ -45,6 +45,13 @@ class Client:
     Manages session and configuration.
     """
 
+    SUPPORTED_SERVER_VERSIONS = (
+        pv.Version("2.0"),
+        pv.Version("2.1"),
+        pv.Version("2.2"),
+        pv.Version("2.3"),
+    )
+
     def __init__(
         self, url: str, *, logger: Optional[logging.Logger] = None, config: Optional[Config] = None
     ):
@@ -92,8 +99,8 @@ class Client:
                     )
 
                     if response.status in [200, 401]:
-                        # Versions prior to 2.2.0 respond with unauthorized
-                        # 2.2.0 allows unauthorized access
+                        # Versions prior to 2.3.0 respond with unauthorized
+                        # 2.3.0 allows unauthorized access
                         return schema
 
         raise InvalidHostException(
@@ -188,7 +195,9 @@ class Client:
 
         # We only check base version match. Micro releases and fixes do not affect
         # API compatibility in general.
-        if server_version.base_version != sdk_version.base_version:
+        if all(
+            server_version.base_version != sv.base_version for sv in self.SUPPORTED_SERVER_VERSIONS
+        ):
             msg = (
                 "Server version '%s' is not compatible with SDK version '%s'. "
                 "Some SDK functions may not work properly with this server. "
