@@ -23,7 +23,10 @@ To push to GCP artifact registry for use in the cloud: https://cloud.google.com/
 - Endpoints for managed Postgres and Redis instances need to be configured as environment variables
   - CVAT_REDIS_HOST - url of redis instance
   - CVAT_POSTGRES_HOST - url of postgres instance
-
+  - CVAT_POSTGRES_DBNAME - defaults to 'cvat' if not set
+  - CVAT_POSTGRES_USER - defaults to 'root' if not set
+  - CVAT_POSTGRES_PASSWORD - defaults to '' if not set
+  - CVAT_POSTGRES_PORT - defaults to 5432 if not set (the postgres default)
 
 A theoretical startup script to run everything:
 ```
