@@ -7,7 +7,7 @@ import User from './user';
 import { WebhookSourceType, WebhookContentType } from './enums';
 import { isEnum } from './common';
 
-const serverProxy = require('./server-proxy');
+const serverProxy = require('./server-proxy').default;
 
 interface RawWebhookData {
     id?: number;

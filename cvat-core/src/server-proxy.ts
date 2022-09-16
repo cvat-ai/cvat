@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { StorageLocation } from './enums';
+import { StorageLocation, WebhookSourceType } from './enums';
 import { Storage } from './storage';
 
 type Params = {
@@ -23,10 +23,21 @@ const tus = require('tus-js-client');
 const config = require('./config');
 const DownloadWorker = require('./download.worker');
 const { ServerError } = require('./exceptions');
-const { WebhookSourceType } = require('./enums');
 
 function enableOrganization() {
     return { org: config.organizationID || '' };
+}
+
+function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
+    return {
+        use_default_location: useDefaultLocation,
+        ...(!useDefaultLocation ? {
+            location: storage.location,
+            ...(storage.cloudStorageId ? {
+                cloud_storage_id: storage.cloudStorageId,
+            } : {}),
+        } : {}),
+    };
 }
 
 function removeToken() {
@@ -35,7 +46,7 @@ function removeToken() {
 }
 
 function waitFor(frequencyHz, predicate) {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         if (typeof predicate !== 'function') {
             reject(new Error(`Predicate must be a function, got ${typeof predicate}`));
         }
@@ -724,7 +735,7 @@ class ServerProxy {
                 }
             }
             try {
-                return await wait();
+                return wait();
             } catch (errorData) {
                 throw generateError(errorData);
             }
@@ -1499,7 +1510,7 @@ class ServerProxy {
             }
 
             try {
-                return await wait();
+                return wait();
             } catch (errorData) {
                 throw generateError(errorData);
             }
@@ -2010,6 +2021,7 @@ class ServerProxy {
                 response = await Axios.get(`${backendAPI}/invitations/${id}`, {
                     proxy: config.proxy,
                 });
+                return response.data;
             } catch (errorData) {
                 throw generateError(errorData);
             }
