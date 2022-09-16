@@ -1,4 +1,4 @@
-name: Helm-nightly
+name: Helm
 on:
   pull_request:
     types: [edited, ready_for_review, opened, synchronize, reopened]
@@ -22,11 +22,9 @@ jobs:
         PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
       run: |
         PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-        echo QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ $PR_FILES
         for FILE in $PR_FILES; do
             if [[ $FILE == helm-chart/* ]] ; then
               echo "::set-output name=helm_dir_changed::true"
-              echo 'RRRRRRRRRRRRRRRRRRRRRRRRRRRR'
               break
             fi
         done
@@ -68,6 +66,7 @@ jobs:
       if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
+        find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
         echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
 
     - name: Wait for CVAT to be ready
@@ -99,10 +98,7 @@ jobs:
       if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         pytest --platform kube \
-          tests/python/rest_api/test_auth.py \
-          tests/python/rest_api/test_cache_policy.py \
-          tests/python/rest_api/test_invitations.py \
-          tests/python/rest_api/test_issues.py \
-          tests/python/rest_api/test_projects.py \
-          tests/python/cli/ \
-          tests/python/sdk/test_client.py
+          --ignore=test_analytics.py \
+          --ignore=test_cloud_storages.py \
+          -k 'not create_task_with_cloud_storage_files' \
+        tests/python
