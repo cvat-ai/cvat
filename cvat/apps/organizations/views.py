@@ -7,8 +7,8 @@ from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
-from cvat.apps.webhooks.signals import signal_create, signal_update
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin
+from cvat.apps.webhooks.signals import signal_create
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
