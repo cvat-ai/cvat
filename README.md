@@ -18,8 +18,7 @@ To push to GCP artifact registry for use in the cloud: https://cloud.google.com/
 # Running CVAT in Bossa Nova GCP
 
 - Docker and other pre-reqs come installed in the Compute Engine VMs
-- cvat-server and cvat-ui images built from our changes pushed to Container Registry (currently in the cvat-dev-rob project)
-- docker-compose.no-infra.yaml uses those images, and doesn't run postgres or redis since we have the managed instances
+- docker-compose.no-infra.yaml (in the repo root) will run everything using the images in Bossa Nova GCP artifact registry. It does not run postgres or redis, as there are managed instances in GCP for those.
 - Endpoints for managed Postgres and Redis instances need to be configured as environment variables
   - CVAT_REDIS_HOST - url of redis instance
   - CVAT_POSTGRES_HOST - url of postgres instance
