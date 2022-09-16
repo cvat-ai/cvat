@@ -10,6 +10,7 @@ from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 
 signal_update = Signal()
 signal_create = Signal()
+signal_delete = Signal()
 signal_redelivery = Signal()
 signal_ping = Signal()
 
@@ -44,6 +45,19 @@ def add_to_queue(webhook, payload, redelivery=False):
 
     return delivery
 
+def select_webhooks(project_id, org_id, event_name):
+    selected_webhooks = []
+    if org_id is not None:
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
+            type=WebhookTypeChoice.ORGANIZATION, organization=org_id)
+        selected_webhooks += list(webhooks)
+
+    if project_id is not None:
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
+            type=WebhookTypeChoice.PROJECT, organization=org_id, project=project_id)
+        selected_webhooks += list(webhooks)
+
+    return selected_webhooks
 
 def payload(data, request):
     return {
@@ -59,7 +73,6 @@ def project_id(instance):
         return instance.get_project_id()
     except Exception:
         return None
-
 
 @receiver(signal_update)
 def update(sender, instance=None, old_values=None, **kwargs):
@@ -87,22 +100,12 @@ def update(sender, instance=None, old_values=None, **kwargs):
         "before_update": old_values,
     }
 
-    if oid is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
-            type=WebhookTypeChoice.ORGANIZATION, organization=oid)
-        for webhook in webhooks:
-            data.update({"webhook_id": webhook.id})
-            add_to_queue(webhook, payload(data, sender.request))
-
-    if pid is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
-            type=WebhookTypeChoice.PROJECT, organization=oid, project=pid)
-        for webhook in webhooks:
-            data.update({"webhook_id": webhook.id})
-            add_to_queue(webhook, payload(data, sender.request))
+    for webhook in select_webhooks(pid, oid, event_name):
+        data.update({"webhook_id": webhook.id})
+        add_to_queue(webhook, payload(data, sender.request))
 
 @receiver(signal_create)
-def task_created(sender, serializer=None, **kwargs):
+def resource_created(sender, serializer=None, **kwargs):
     event_name = f"{sender.basename}_created"
     pid = serializer.data["project_id"]
     oid = serializer.data["organization"]
@@ -112,17 +115,31 @@ def task_created(sender, serializer=None, **kwargs):
         sender.basename: serializer.data,
     }
 
-    if oid is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, organization=oid)
-        for webhook in webhooks:
-            data.update({"webhook_id": webhook.id})
-            add_to_queue(webhook, payload(data, sender.request))
+    for webhook in select_webhooks(pid, oid, event_name):
+        data.update({"webhook_id": webhook.id})
+        add_to_queue(webhook, payload(data, sender.request))
 
-    if pid is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name, project=pid)
-        for webhook in webhooks:
-            data.update({"webhook_id": webhook.id})
-            add_to_queue(webhook, payload(data, sender.request))
+
+@receiver(signal_delete)
+def resource_deleted(sender, instance=None, **kwargs):
+    event_name = f"{sender.basename}_deleted"
+
+    pid = getattr(instance, "project_id")
+    oid = getattr(instance, "organization_id")
+
+    serializer = sender.get_serializer_class()(
+        instance=instance,
+        context={"request": sender.request}
+    )
+
+    data = {
+        "event": event_name,
+        sender.basename: serializer.data
+    }
+
+    for webhook in select_webhooks(pid, oid, event_name):
+        data.update({"webhook_id": webhook.id})
+        add_to_queue(webhook, payload(data, sender.request))
 
 
 @receiver(signal_redelivery)
