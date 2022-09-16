@@ -18,9 +18,11 @@ jobs:
         PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
       run: |
         PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+        echo QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ $PR_FILES
         for FILE in $PR_FILES; do
             if [[ $FILE == helm-chart/* ]] ; then
               echo "::set-output name=helm_dir_changed::true"
+              echo 'RRRRRRRRRRRRRRRRRRRRRRRRRRRR'
               break
             fi
         done
