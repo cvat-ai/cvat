@@ -29,6 +29,17 @@ export const config: Partial<Config> = {
             type: 'datetime',
             operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
+        type: {
+            label: 'Type',
+            type: 'select',
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'organization', title: 'Organization' },
+                    { value: 'project', title: 'Project' },
+                ],
+            },
+        },
         id: {
             label: 'ID',
             type: 'number',
