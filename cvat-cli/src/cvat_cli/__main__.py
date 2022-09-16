@@ -6,9 +6,11 @@
 import logging
 import sys
 from http.client import HTTPConnection
+from types import SimpleNamespace
 from typing import List
 
-from cvat_sdk import exceptions, make_client
+from cvat_sdk import exceptions
+from cvat_sdk.core.client import Client, Config
 
 from cvat_cli.cli import CLI
 from cvat_cli.parser import get_action_args, make_cmdline_parser
@@ -28,6 +30,16 @@ def configure_logger(level):
         HTTPConnection.debuglevel = 1
 
 
+def build_client(parsed_args: SimpleNamespace, logger: logging.Logger) -> Client:
+    config = Config(verify_ssl=not parsed_args.insecure)
+
+    return Client(
+        url="{host}:{port}".format(host=parsed_args.server_host, port=parsed_args.server_port),
+        logger=logger,
+        config=config,
+    )
+
+
 def main(args: List[str] = None):
     actions = {
         "create": CLI.tasks_create,
@@ -43,9 +55,7 @@ def main(args: List[str] = None):
     parsed_args = parser.parse_args(args)
     configure_logger(parsed_args.loglevel)
 
-    with make_client(parsed_args.server_host, port=parsed_args.server_port) as client:
-        client.logger = logger
-
+    with build_client(parsed_args, logger=logger) as client:
         action_args = get_action_args(parser, parsed_args)
         try:
             cli = CLI(client=client, credentials=parsed_args.auth)
