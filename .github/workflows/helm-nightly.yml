@@ -97,7 +97,7 @@ jobs:
     - name: REST API and SDK tests
       if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
-        pytest --platform kube \
+        pytest --platform=kube \
           --ignore=test_analytics.py \
           --ignore=test_cloud_storages.py \
           -k 'not create_task_with_cloud_storage_files' \
