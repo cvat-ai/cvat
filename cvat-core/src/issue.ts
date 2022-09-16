@@ -9,7 +9,7 @@ const PluginRegistry = require('./plugins').default;
 const Comment = require('./comment');
 const User = require('./user').default;
 const { ArgumentError } = require('./exceptions');
-const serverProxy = require('./server-proxy');
+const serverProxy = require('./server-proxy').default;
 
 /**
  * Class representing a single issue

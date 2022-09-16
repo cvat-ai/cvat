@@ -16,6 +16,7 @@ const SHARE_MOUNT_GUIDE_URL =
     'https://opencv.github.io/cvat/docs/administration/basics/installation/#share-path';
 const NUCLIO_GUIDE =
     'https://opencv.github.io/cvat//docs/administration/advanced/installation_automatic_annotation/';
+const DATASET_MANIFEST_GUIDE_URL = 'https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/';
 const CANVAS_BACKGROUND_COLORS = ['#ffffff', '#f1f1f1', '#e5e5e5', '#d8d8d8', '#CCCCCC', '#B3B3B3', '#999999'];
 const NEW_LABEL_COLOR = '#b3b3b3';
 const LATEST_COMMENTS_SHOWN_QUICK_ISSUE = 3;
@@ -103,4 +104,5 @@ export default {
     DEFAULT_AWS_S3_REGIONS,
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
     OUTSIDE_PIC_URL,
+    DATASET_MANIFEST_GUIDE_URL,
 };

@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 import pytest
+from cvat_cli.cli import CLI
 from cvat_sdk import make_client
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -188,3 +189,22 @@ class TestCLI:
         assert task_id
         assert task_id != fxt_new_task.id
         assert self.client.tasks.retrieve(task_id).size == fxt_new_task.size
+
+    @pytest.mark.parametrize("verify", [True, False])
+    def test_can_control_ssl_verification_with_arg(self, monkeypatch, verify: bool):
+        # TODO: Very hacky implementation, improve it, if possible
+        class MyException(Exception):
+            pass
+
+        normal_init = CLI.__init__
+
+        def my_init(self, *args, **kwargs):
+            normal_init(self, *args, **kwargs)
+            raise MyException(self.client.api_client.configuration.verify_ssl)
+
+        monkeypatch.setattr(CLI, "__init__", my_init)
+
+        with pytest.raises(MyException) as capture:
+            self.run_cli(*(["--insecure"] if not verify else []), "ls")
+
+        assert capture.value.args[0] == verify

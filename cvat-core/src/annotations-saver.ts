@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
-    const serverProxy = require('./server-proxy');
+    const serverProxy = require('./server-proxy').default;
     const { Task } = require('./session');
     const { ScriptingError } = require('./exceptions');
 

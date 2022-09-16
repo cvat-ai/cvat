@@ -17,8 +17,8 @@ function build() {
     const Comment = require('./comment');
     const Issue = require('./issue');
     const { Job, Task } = require('./session');
-    const { Project } = require('./project');
-    const implementProject = require('./project-implementation');
+    const Project = require('./project').default;
+    const implementProject = require('./project-implementation').default;
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
     const { FrameData } = require('./frames');

@@ -5,7 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.2.0] - Unreleased
+## \[2.3.0] - Unreleased
+### Added
+- SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
+- An env variable to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
+
+### Changed
+- `api/docs`, `api/swagger`, `api/schema` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding 
+non-ascii paths while adding files from "Connected file share" (issue #4428)
+- Removed unnecessary volumes defined in docker-compose.serverless.yml 
+(<https://github.com/openvinotoolkit/cvat/pull/4659>)
+
+### Security
+- TDB
+
+## \[2.2.0] - 2022-09-12
 ### Added
 - Added ability to delete frames from a job based on (<https://github.com/openvinotoolkit/cvat/pull/4194>)
 - Support of attributes returned by serverless functions based on (<https://github.com/openvinotoolkit/cvat/pull/4506>)
@@ -30,6 +53,9 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
   <https://github.com/opencv/cvat/pull/4908>)
 - Support for Oracle OCI Buckets (<https://github.com/opencv/cvat/pull/4876>)
 - `cvat-sdk` and `cvat-cli` packages on PyPI (<https://github.com/opencv/cvat/pull/4903>)
+- UI part for source and target storages (<https://github.com/opencv/cvat/pull/4842>)
+- Backup import/export modals (<https://github.com/opencv/cvat/pull/4842>)
+- Annotations import modal (<https://github.com/opencv/cvat/pull/4842>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
@@ -38,12 +64,6 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - cvat-ui: Improve UI/UX on label, create task and create project forms (<https://github.com/cvat-ai/cvat/pull/7>)
 - Removed link to OpenVINO documentation (<https://github.com/cvat-ai/cvat/pull/35>)
 - Clarified meaning of chunking for videos
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
 
 ### Fixed
 - Task creation progressbar bug
@@ -62,9 +82,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Maximum callstack exceed when create task with 100000+ files from cloud storage (<https://github.com/opencv/cvat/pull/4836>)
 - Fixed invocation of serverless functions (<https://github.com/opencv/cvat/pull/4907>)
 - Removing label attributes (<https://github.com/opencv/cvat/pull/4927>)
-
-### Security
-- TDB
+- Notification with a required manifest file (<https://github.com/opencv/cvat/pull/4921>)
 
 ## \[2.1.0] - 2022-04-08
 ### Added
