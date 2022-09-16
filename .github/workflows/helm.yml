@@ -1,7 +1,7 @@
-name: Helm-nightly
+name: Helm
 on:
-  schedule:
-    - cron: '0 0 * * 6'
+  pull_request:
+    types: [edited, ready_for_review, opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
@@ -11,13 +11,34 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - uses: jitterbit/get-changed-files@v1
+      id: files
+      continue-on-error: true
+
+    - name: Run checks
+      id: check_helm_files
+      env:
+        PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+        PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
+      run: |
+        PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+        for FILE in $PR_FILES; do
+            if [[ $FILE == helm-chart/* ]] ; then
+              echo "::set-output name=helm_dir_changed::true"
+              break
+            fi
+        done
+
     - name: Start minikube
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       uses: medyagh/setup-minikube@latest
 
     - name: Try the cluster!
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: kubectl get pods -A
 
     - name: Pull images
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         export SHELL=/bin/bash
         eval $(minikube -p minikube docker-env)
@@ -25,11 +46,14 @@ jobs:
         docker pull cvat/ui
         echo -n "verifying images:"
         docker images
+
     - uses: azure/setup-helm@v3
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       with:
         version: 'v3.9.4'
 
     - name: Deploy to minikube
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         printf "traefik:\n  service:\n    externalIPs:\n      - $(minikube ip)\n" > helm-chart/values.override.yaml
         find cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | tar -czf helm-chart/rules.tar.gz -C cvat/apps/iam/rules/ -T -
@@ -39,17 +63,20 @@ jobs:
         helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml
 
     - name: Update test config
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
         echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
 
     - name: Wait for CVAT to be ready
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         max_tries=30
         while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for pod" && (( max_tries-- )) && sleep 5; done
         kubectl get pods
 
     - name: Generate schema
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         mkdir cvat-sdk/schema
         kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- /bin/bash -c "python manage.py spectacular --file /tmp/schema.yml"
@@ -60,12 +87,14 @@ jobs:
         cd ..
 
     - name: Install test requrements
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         pip3 install --user cvat-sdk/
         pip3 install --user cvat-cli/
         pip3 install --user -r tests/python/requirements.txt
 
     - name: REST API and SDK tests
+      if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         pytest --platform kube \
           tests/python/rest_api/test_auth.py \

@@ -229,6 +229,10 @@ def services(request):
     dumpdb = request.config.getoption("--dumpdb")
     platform = request.config.getoption("--platform")
 
+    if platform == 'kube' and any((stop, start, rebuild, cleanup, dumpdb)):
+        raise Exception('''--platform=kube is not compatible with any of the other options
+            --stop-services --start-services --rebuild --cleanup --dumpdb''')
+
     if platform == 'local':
         if start and stop:
             raise Exception("--start-services and --stop-services are incompatible")
