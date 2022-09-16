@@ -27,6 +27,3 @@ services:
   cvat_worker_low:
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-volumes:
-  cvat_events:

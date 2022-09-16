@@ -34,7 +34,10 @@ class Config:
     """Operation status check period, in seconds"""
 
     allow_unsupported_server: bool = True
-    """Allow to use SDK with an unsupported server version. If disabled, raise an exception."""
+    """Allow to use SDK with an unsupported server version. If disabled, raise an exception"""
+
+    verify_ssl: Optional[bool] = None
+    """Whether to verify host SSL certificate or not"""
 
 
 class Client:
@@ -46,10 +49,12 @@ class Client:
         self, url: str, *, logger: Optional[logging.Logger] = None, config: Optional[Config] = None
     ):
         url = self._validate_and_prepare_url(url)
-        self.api_map = CVAT_API_V2(url)
-        self.api_client = ApiClient(Configuration(host=self.api_map.host))
         self.logger = logger or logging.getLogger(__name__)
         self.config = config or Config()
+        self.api_map = CVAT_API_V2(url)
+        self.api_client = ApiClient(
+            Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
+        )
         self.check_server_version()
 
         self._repos: Dict[str, Repo] = {}

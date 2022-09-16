@@ -101,3 +101,12 @@ def test_can_warn_on_mismatching_server_version(
         Client(url=BASE_URL, logger=logger, config=config)
 
     assert "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
+
+
+@pytest.mark.parametrize("verify", [True, False])
+def test_can_control_ssl_verification_with_config(verify: bool):
+    config = Config(verify_ssl=verify)
+
+    client = Client(BASE_URL, config=config)
+
+    assert client.api_client.configuration.verify_ssl == verify
