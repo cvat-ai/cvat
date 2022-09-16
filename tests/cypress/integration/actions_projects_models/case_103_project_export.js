@@ -98,6 +98,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 datasetArchiveName = file;
                 cy.verifyDownload(datasetArchiveName);
             });
+            cy.verifyNotification();
         });
 
         it('Export project dataset. Dataset.', () => {
@@ -143,6 +144,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 archive: datasetArchiveName,
             };
             cy.importProject(importDataset);
+            cy.verifyNotification();
             cy.openProject(projectName);
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
         });
@@ -172,6 +174,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 archive: datasetArchiveName,
             };
             cy.importProject(importDataset);
+            cy.verifyNotification();
             cy.openProject(projectName);
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
             cy.get('.cvat-constructor-viewer-item')

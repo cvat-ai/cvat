@@ -8,7 +8,7 @@ const config = require('./config');
 const { MembershipRole } = require('./enums');
 const { ArgumentError, ServerError } = require('./exceptions');
 const PluginRegistry = require('./plugins').default;
-const serverProxy = require('./server-proxy');
+const serverProxy = require('./server-proxy').default;
 const User = require('./user').default;
 
 /**

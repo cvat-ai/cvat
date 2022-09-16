@@ -57,9 +57,7 @@ export function groupEvents(events: string[]): string[] {
 }
 
 function collectEvents(method: EventsMethod, submittedGroups: Record<string, any>, allEvents: string[]): string[] {
-    // Temporary disabled all events except job/task
-    const temporaryAllEvents = allEvents.filter((event) => event.includes('task') || event.includes('job'));
-    return method === EventsMethod.SEND_EVERYTHING ? temporaryAllEvents : (() => {
+    return method === EventsMethod.SEND_EVERYTHING ? allEvents : (() => {
         const submittedEvents = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event_') && value).map(([key]) => key)
             .map((event: string) => event.split('_')[1]);
         return allEvents.filter((event) => submittedEvents.includes(event.split('_')[0]));
@@ -112,9 +110,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (webhook) {
-            // Temporary disabled everything except job/task
-            const temporaryAllEvents = groupEvents(webhookEvents).filter((event) => ['task', 'job'].includes(event));
-            const eventsMethod = temporaryAllEvents.length === groupEvents(webhook.events).length ?
+            const eventsMethod = groupEvents(webhookEvents).length === groupEvents(webhook.events).length ?
                 EventsMethod.SEND_EVERYTHING : EventsMethod.SELECT_INDIVIDUAL;
             setShowDetailedEvents(eventsMethod === EventsMethod.SELECT_INDIVIDUAL);
             const data: Record<string, string | boolean> = {
@@ -263,7 +259,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                         name='secret'
                         label='Secret'
                     >
-                        <Input disabled />
+                        <Input />
                     </Form.Item>
                     <Form.Item
                         help='Verify SSL certificates when delivering payloads'
@@ -309,8 +305,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                                             name={`event_${event}`}
                                             valuePropName='checked'
                                         >
-                                            {/* Temporary disabled everything except job/task */}
-                                            <Checkbox disabled={!['job', 'task'].includes(event)}>
+                                            <Checkbox>
                                                 <Text className='cvat-text-color'>{event}</Text>
                                             </Checkbox>
                                         </Form.Item>

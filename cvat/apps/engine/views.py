@@ -45,12 +45,15 @@ from cvat.apps.webhooks.signals import signal_create, signal_update, signal_dele
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, validate_bucket_status, Status as CloudStorageStatus)
+    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage,
+    Status as CloudStorageStatus
+)
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
@@ -68,9 +71,10 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
 from .log import clogger, slogger
@@ -184,13 +188,20 @@ class ServerViewSet(viewsets.ViewSet):
             content = os.scandir(directory)
             for entry in content:
                 entry_type = None
+                entry_mime_type = None
                 if entry.is_file():
                     entry_type = "REG"
+                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
                 elif entry.is_dir():
                     entry_type = "DIR"
+                    entry_mime_type = "DIR"
 
                 if entry_type:
-                    data.append({"name": entry.name, "type": entry_type})
+                    data.append({
+                        "name": entry.name,
+                        "type": entry_type,
+                        "mime_type": entry_mime_type,
+                    })
 
             serializer = FileInfoSerializer(many=True, data=data)
             if serializer.is_valid(raise_exception=True):
@@ -393,14 +404,16 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 elif rq_job.is_finished:
                     if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
+                    if rq_job.dependency:
+                        rq_job.dependency.delete()
                     rq_job.delete()
                     return Response(status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed:
-                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-                    os.remove(rq_job.meta['tmp_file'])
-                    rq_job.delete()
+                elif rq_job.is_failed or \
+                        rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+                    exc_info = process_failed_job(rq_job)
+
                     return Response(
-                        data=str(rq_job.exc_info),
+                        data=str(exc_info),
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
                 else:
@@ -854,7 +867,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     # UploadMixin method
     def upload_finished(self, request):
         if self.action == 'annotations':
-            # db_task = self.get_object()
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             tmp_dir = self._object.get_tmp_dirname()
@@ -1090,12 +1102,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PUT':
             format_name = request.query_params.get('format')
             if format_name:
+                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                obj = self._object if use_settings else request.query_params
+                location_conf = get_location_configuration(
+                    obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
+                )
                 return _import_annotations(
                     request=request,
                     rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_task_annotations,
                     pk=pk,
                     format_name=format_name,
+                    location_conf=location_conf
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
@@ -1434,12 +1452,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
+                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                obj = self._object.segment.task if use_settings else request.query_params
+                location_conf = get_location_configuration(
+                    obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
+                )
                 return _import_annotations(
                     request=request,
                     rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_job_annotations,
                     pk=pk,
-                    format_name=format_name
+                    format_name=format_name,
+                    location_conf=location_conf
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
@@ -2136,13 +2160,12 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
-@validate_bucket_status
-def _export_to_cloud_storage(storage, file_path, file_name):
-    storage.upload_file(file_path, file_name)
+def _download_file_from_bucket(db_storage, filename, key):
+    storage = db_storage_to_storage_instance(db_storage)
 
-@validate_bucket_status
-def _import_from_cloud_storage(storage, file_name):
-    return storage.download_fileobj(file_name)
+    data = import_from_cloud_storage(storage, key)
+    with open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
 
 def _import_annotations(request, rq_id, rq_func, pk, format_name,
                         filename=None, location_conf=None):
@@ -2162,6 +2185,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
         # Then we dont need to create temporary file
         # Or filename specify key in cloud storage so we need to download file
         fd = None
+        dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
         if not filename or location == Location.CLOUD_STORAGE:
@@ -2174,28 +2198,26 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                         for chunk in anno_file.chunks():
                             f.write(chunk)
             else:
-                # download annotation file from cloud storage
+                assert filename, 'The filename was not spesified'
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
-                    raise serializer.ValidationError(
+                    raise serializers.ValidationError(
                         'Cloud storage location was selected for destination'
                         ' but cloud storage id was not specified')
                 db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
-                storage = db_storage_to_storage_instance(db_storage)
-                assert filename, 'filename was not spesified'
-
-                data = _import_from_cloud_storage(storage, filename)
-
+                key = filename
                 fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
-                    f.write(data.getbuffer())
+                dependent_job = configure_dependent_job(
+                    queue, rq_id, _download_file_from_bucket,
+                    db_storage, filename, key)
 
         av_scan_paths(filename)
         rq_job = queue.enqueue_call(
             func=rq_func,
             args=(pk, filename, format_name),
-            job_id=rq_id
+            job_id=rq_id,
+            depends_on=dependent_job
         )
         rq_job.meta['tmp_file'] = filename
         rq_job.meta['tmp_file_descriptor'] = fd
@@ -2206,12 +2228,9 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
-            exc_info = str(rq_job.exc_info)
-            rq_job.delete()
-
+        elif rq_job.is_failed or \
+                rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+            exc_info = process_failed_job(rq_job)
             # RQ adds a prefix with exception class name
             import_error_prefix = '{}.{}'.format(
                 CvatImportError.__module__, CvatImportError.__name__)
@@ -2264,13 +2283,13 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             db_instance.__class__.__name__.lower(),
                             db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
                             timestamp, format_name, osp.splitext(file_path)[1]
-                        )
+                        ).lower()
 
                     # save annotation to specified location
                     location = location_conf.get('location')
                     if location == Location.LOCAL:
                         return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
+                            attachment_filename=filename)
                     elif location == Location.CLOUD_STORAGE:
                         try:
                             storage_id = location_conf['storage_id']
@@ -2282,7 +2301,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                         storage = db_storage_to_storage_instance(db_storage)
 
-                        _export_to_cloud_storage(storage, file_path, filename)
+                        export_to_cloud_storage(storage, file_path, filename)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()
@@ -2330,6 +2349,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
 
     if not rq_job:
         fd = None
+        dependent_job = None
         location = location_conf.get('location') if location_conf else None
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
@@ -2340,9 +2360,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
         elif location == Location.CLOUD_STORAGE:
-            assert filename
-
-            # download project file from cloud storage
+            assert filename, 'The filename was not spesified'
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
@@ -2350,23 +2368,22 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
                     'Cloud storage location was selected for destination'
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
-            storage = db_storage_to_storage_instance(db_storage)
-
-            data = _import_from_cloud_storage(storage, filename)
-
-            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
-            with open(filename, 'wb+') as f:
-                f.write(data.getbuffer())
+            key = filename
+            fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+            dependent_job = configure_dependent_job(
+                queue, rq_id, _download_file_from_bucket,
+                db_storage, filename, key)
 
         rq_job = queue.enqueue_call(
             func=rq_func,
             args=(pk, filename, format_name),
             job_id=rq_id,
             meta={
-                    'tmp_file': filename,
-                    'tmp_file_descriptor': fd,
-                },
-            )
+                'tmp_file': filename,
+                'tmp_file_descriptor': fd,
+            },
+            depends_on=dependent_job
+        )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

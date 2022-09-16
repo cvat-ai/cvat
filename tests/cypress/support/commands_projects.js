@@ -104,13 +104,14 @@ Cypress.Commands.add('exportProject', ({
     cy.contains('.cvat-modal-export-option-item', dumpType).should('be.visible').click();
     cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
     if (type === 'dataset') {
-        cy.get('.cvat-modal-export-project').find('[type="checkbox"]').should('not.be.checked').check();
+        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
     if (archiveCustomeName) {
         cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
     }
     cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
+    cy.closeNotification('.cvat-notification-notice-export-project-start');
 });
 
 Cypress.Commands.add('importProject', ({
@@ -131,28 +132,42 @@ Cypress.Commands.add('importProject', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-modal-import-dataset-status').should('be.visible');
     cy.get('.cvat-notification-notice-import-dataset-start').should('be.visible');
+    cy.closeNotification('.cvat-notification-notice-import-dataset-start');
     cy.get('.cvat-modal-import-dataset-status').should('not.exist');
 });
 
-Cypress.Commands.add('backupProject', (projectName) => {
+Cypress.Commands.add('backupProject', (projectName, backupFileName) => {
     cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
+    cy.get('.cvat-modal-export-project').should('be.visible');
+    if (backupFileName) {
+        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(backupFileName);
+    }
+    cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
+    cy.get('.cvat-notification-notice-export-backup-start').should('be.visible');
+    cy.closeNotification('.cvat-notification-notice-export-backup-start');
 });
 
 Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
     cy.intercept({ method: /PATCH|POST/, url: /\/api\/projects\/backup.*/ }).as('restoreProject');
     cy.get('.cvat-create-project-dropdown').click();
-    cy.get('.cvat-import-project').click().find('input[type=file]').attachFile(archiveWithBackup);
+    cy.get('.cvat-import-project-button').click();
+    cy.get('input[type=file]').attachFile(archiveWithBackup, { subjectType: 'drag-n-drop' });
+    cy.get(`[title="${archiveWithBackup}"]`).should('be.visible');
+    cy.contains('button', 'OK').click();
+    cy.get('.cvat-notification-notice-import-backup-start').should('be.visible');
+    cy.closeNotification('.cvat-notification-notice-import-backup-start');
+
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 204);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
-    cy.contains('Project has been created succesfully')
+    cy.contains('The project has been restored succesfully. Click here to open')
         .should('exist')
         .and('be.visible');
-    cy.get('[data-icon="close"]').click(); // Close the notification
+    cy.closeNotification('.ant-notification-notice-info');
 });
 
 Cypress.Commands.add('getDownloadFileName', () => {
@@ -168,6 +183,7 @@ Cypress.Commands.add('waitForDownload', () => {
     cy.getDownloadFileName().then((filename) => {
         cy.verifyDownload(filename);
     });
+    cy.verifyNotification();
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
