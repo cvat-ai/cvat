@@ -5,7 +5,8 @@
     - [Installing dependencies](#installing-dependencies)
     - [Optional steps](#optional-steps)
   - [Configuration](#configuration)
-    - [Postgresql password?](#postgresql-password)
+
+- [Postgresql password?](#postgresql-password)
     - [(Optional) Enable Auto annotation feature](#optional-enable-auto-annotation-feature)
     - [(Optional) Enable Analytics](#optional-enable-analytics)
   - [Deployment](#deployment)
