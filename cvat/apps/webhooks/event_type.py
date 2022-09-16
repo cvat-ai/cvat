@@ -3,23 +3,21 @@ from .models import WebhookTypeChoice
 
 class Events:
     RESOURCES = {
-        "project",
-        "task",
-        "job",
-        "issue",
-        "comment",
-        "membership",
-        "invitation",
+        "project":      ["created", "updated", "deleted"],
+        "task":         ["created", "updated", "deleted"],
+        "issue":        ["created", "updated", "deleted"],
+        "comment":      ["created", "updated", "deleted"],
+        "invitation":   ["created", "updated", "deleted"],
+        "membership":   ["updated", "deleted"],
+        "job":          ["updated"],
+        "organization": ["updated"]
     }
-    ACTIONS = {"created", "updated", "deleted"}
 
     @classmethod
     def select(cls, resources):
         ret = set()
         for resource in resources:
-            if resource not in cls.RESOURCES:
-                continue
-            ret |= set(f"{resource}_{action}" for action in cls.ACTIONS)
+            ret |= set(f"{resource}_{action}" for action in cls.RESOURCES.get(resource, []))
         return ret
 
 
@@ -34,10 +32,9 @@ class AllEvents:
     events = list(
         set(
             f"{resource}_{action}"
-            for resource in Events.RESOURCES
-            for action in Events.ACTIONS
+            for resource, actions in Events.RESOURCES.items()
+            for action in actions
         )
-        | set(("organization_updated",))
     )
 
 
