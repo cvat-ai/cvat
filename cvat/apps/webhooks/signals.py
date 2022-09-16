@@ -138,6 +138,8 @@ def update(sender, instance=None, old_values=None, **kwargs):
 @receiver(signal_create)
 def resource_created(sender, instance=None, **kwargs):
     event_name = f"{sender.basename}_created"
+    if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
+        return
 
     pid = project_id(instance)
     oid = organization_id(instance)
@@ -162,6 +164,8 @@ def resource_created(sender, instance=None, **kwargs):
 @receiver(signal_delete)
 def resource_deleted(sender, instance=None, **kwargs):
     event_name = f"{sender.basename}_deleted"
+    if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
+        return
 
     pid = project_id(instance)
     oid = organization_id(instance)
