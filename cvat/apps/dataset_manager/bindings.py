@@ -1209,7 +1209,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
 
 class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin):
     def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
-        super().__init__()
+        super().__init__(media_type=Image if dimension == DimensionType.DIM_2D else PointCloud)
         self._categories = self._load_categories(project_data.meta['project']['labels'])
         self._user = self._load_user_info(project_data.meta['project']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
