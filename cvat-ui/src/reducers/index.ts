@@ -1,7 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -51,11 +53,7 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
-        backups: {
-            [projectId: number]: boolean;
-        }
     };
-    restoring: boolean;
 }
 
 export interface TasksQuery {
@@ -88,7 +86,6 @@ export interface JobsState {
 }
 
 export interface TasksState {
-    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
@@ -101,20 +98,8 @@ export interface TasksState {
     count: number;
     current: Task[];
     activities: {
-        loads: {
-            // only one loading simultaneously
-            [tid: number]: string; // loader name
-        };
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
-        };
-        creates: {
-            taskId: number | null;
-            status: string;
-            error: string;
-        };
-        backups: {
-            [tid: number]: boolean;
         };
         jobUpdates: {
             [jid: number]: boolean,
@@ -123,22 +108,83 @@ export interface TasksState {
 }
 
 export interface ExportState {
-    tasks: {
-        [tid: number]: string[];
-    };
     projects: {
-        [pid: number]: string[];
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+        backup: {
+            current: {
+                [id: number]: boolean;
+            };
+            modalInstance: any | null;
+        };
     };
-    instance: any;
-    modalVisible: boolean;
+    tasks: {
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+        backup: {
+            current: {
+                [id: number]: boolean;
+            };
+            modalInstance: any | null;
+        };
+    };
+    jobs: {
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+    };
+    instanceType: 'project' | 'task' | 'job' | null;
 }
 
 export interface ImportState {
-    importingId: number | null;
-    progress: number;
-    status: string;
-    instance: any;
-    modalVisible: boolean;
+    projects: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: {
+                    format: string;
+                    progress: number;
+                    status: string;
+                };
+            };
+        };
+        backup: {
+            modalVisible: boolean;
+            importing: boolean;
+        }
+    };
+    tasks: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: string;
+            };
+        };
+        backup: {
+            modalVisible: boolean;
+            importing: boolean;
+        }
+    };
+    jobs: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: string;
+            };
+        };
+    };
+    instanceType: 'project' | 'task' | 'job' | null;
 }
 
 export interface FormatsState {
@@ -246,11 +292,13 @@ export interface ShareFileInfo {
     // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
+    mime_type: string;
 }
 
 export interface ShareItem {
     name: string;
     type: 'DIR' | 'REG';
+    mime_type: string;
     children: ShareItem[];
 }
 
@@ -438,10 +486,12 @@ export interface NotificationsState {
         exporting: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
+            backup: null | ErrorState;
         };
         importing: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
+            backup: null | ErrorState;
         };
         cloudStorages: {
             creating: null | ErrorState;
@@ -478,7 +528,17 @@ export interface NotificationsState {
         };
         projects: {
             restoringDone: string;
-        }
+        };
+        exporting: {
+            dataset: string;
+            annotation: string;
+            backup: string;
+        };
+        importing: {
+            dataset: string;
+            annotation: string;
+            backup: string;
+        };
     };
 }
 
@@ -738,6 +798,11 @@ export interface ShortcutsState {
     visibleShortcutsHelp: boolean;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+}
+
+export enum StorageLocation {
+    LOCAL = 'local',
+    CLOUD_STORAGE = 'cloud_storage',
 }
 
 export enum ReviewStatus {

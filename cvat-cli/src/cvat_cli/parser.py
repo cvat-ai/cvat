@@ -47,6 +47,11 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         description="Perform common operations related to CVAT tasks.\n\n"
     )
     parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Allows to disable SSL certificate check",
+    )
 
     task_subparser = parser.add_subparsers(dest="action")
 
