@@ -66,13 +66,15 @@ jobs:
       if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
+        find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
         echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
 
     - name: Wait for CVAT to be ready
       if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
         max_tries=30
-        while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for pod" && (( max_tries-- )) && sleep 5; done
+        while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
+        while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for DB pod" && (( max_tries-- )) && sleep 5; done
         kubectl get pods
 
     - name: Generate schema
@@ -96,11 +98,9 @@ jobs:
     - name: REST API and SDK tests
       if: steps.check_helm_files.outputs.helm_dir_changed == 'true'
       run: |
-        pytest --platform kube \
-          tests/python/rest_api/test_auth.py \
-          tests/python/rest_api/test_cache_policy.py \
-          tests/python/rest_api/test_invitations.py \
-          tests/python/rest_api/test_issues.py \
-          tests/python/rest_api/test_projects.py \
-          tests/python/cli/ \
-          tests/python/sdk/test_client.py
+        pytest --platform=kube \
+          --ignore=tests/python/rest_api/test_cloud_storages.py \
+          --ignore=tests/python/rest_api/test_analytics.py \
+          --ignore=tests/python/rest_api/test_resource_import_export.py \
+          -k 'not create_task_with_cloud_storage_files' \
+        tests/python
