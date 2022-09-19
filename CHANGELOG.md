@@ -20,10 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding 
+- Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
 non-ascii paths while adding files from "Connected file share" (issue #4428)
-- Removed unnecessary volumes defined in docker-compose.serverless.yml 
+- Removed unnecessary volumes defined in docker-compose.serverless.yml
 (<https://github.com/openvinotoolkit/cvat/pull/4659>)
+- Handling "Use zip chunks" option when importing a task (<https://github.com/opencv/cvat/pull/4452>)
 
 ### Security
 - TDB
