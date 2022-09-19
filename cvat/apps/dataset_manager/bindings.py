@@ -17,8 +17,8 @@ import datumaro.components.extractor as datum_extractor
 import rq
 from attr import attrib, attrs
 from datumaro.components.dataset import Dataset
-from datumaro.util import cast
 from datumaro.components.media import ByteImage, Image, PointCloud
+from datumaro.util import cast
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -1058,7 +1058,7 @@ class ProjectData(InstanceLabelData):
         self._project_annotation.add_task(task, files, self)
 
 class CVATDataExtractorMixin:
-    def __init__(self):
+    def __init__(self, media_type=Image):
         super().__init__()
 
     def categories(self) -> dict:
