@@ -10,7 +10,7 @@ from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.organizations.models import Organization
 
-from .event_type import EventTypeChoice
+from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 
 signal_update = Signal()
@@ -64,15 +64,15 @@ def add_to_queue(webhook, payload, redelivery=False):
 
     return delivery
 
-def select_webhooks(project_id, org_id, event_name):
+def select_webhooks(project_id, org_id, event):
     selected_webhooks = []
     if org_id is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event,
             type=WebhookTypeChoice.ORGANIZATION, organization=org_id)
         selected_webhooks += list(webhooks)
 
     if project_id is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event_name,
+        webhooks = Webhook.objects.filter(is_active=True, events__contains=event,
             type=WebhookTypeChoice.PROJECT, organization=org_id, project=project_id)
         selected_webhooks += list(webhooks)
 
@@ -110,8 +110,8 @@ def organization_id(instance):
 
 @receiver(signal_update)
 def update(sender, instance=None, old_values=None, **kwargs):
-    event_name = f"{sender.basename}_updated"
-    if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
+    event = event_name("update", sender.basename)
+    if event not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
     serializer = sender.get_serializer_class()(
@@ -126,19 +126,19 @@ def update(sender, instance=None, old_values=None, **kwargs):
         return
 
     data = {
-        "event": event_name,
+        "event": event,
         sender.basename: serializer.data,
         "before_update": old_values,
     }
 
-    for webhook in select_webhooks(pid, oid, event_name):
+    for webhook in select_webhooks(pid, oid, event):
         data.update({"webhook_id": webhook.id})
         add_to_queue(webhook, payload(data, sender.request))
 
 @receiver(signal_create)
 def resource_created(sender, instance=None, **kwargs):
-    event_name = f"{sender.basename}_created"
-    if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
+    event = event_name("create", sender.basename)
+    if event not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
     pid = project_id(instance)
@@ -152,19 +152,19 @@ def resource_created(sender, instance=None, **kwargs):
     )
 
     data = {
-        "event": event_name,
+        "event": event,
         sender.basename: serializer.data
     }
 
-    for webhook in select_webhooks(pid, oid, event_name):
+    for webhook in select_webhooks(pid, oid, event):
         data.update({"webhook_id": webhook.id})
         add_to_queue(webhook, payload(data, sender.request))
 
 
 @receiver(signal_delete)
 def resource_deleted(sender, instance=None, **kwargs):
-    event_name = f"{sender.basename}_deleted"
-    if event_name not in map(lambda a: a[0], EventTypeChoice.choices()):
+    event = event_name("delete", sender.basename)
+    if event not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
     pid = project_id(instance)
@@ -178,11 +178,11 @@ def resource_deleted(sender, instance=None, **kwargs):
     )
 
     data = {
-        "event": event_name,
+        "event": event,
         sender.basename: serializer.data
     }
 
-    for webhook in select_webhooks(pid, oid, event_name):
+    for webhook in select_webhooks(pid, oid, event):
         data.update({"webhook_id": webhook.id})
         add_to_queue(webhook, payload(data, sender.request))
 

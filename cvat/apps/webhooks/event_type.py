@@ -1,23 +1,25 @@
 from .models import WebhookTypeChoice
 
+def event_name(action, resource):
+    return f"{action}:{resource}"
 
 class Events:
     RESOURCES = {
-        "project":      ["created", "updated", "deleted"],
-        "task":         ["created", "updated", "deleted"],
-        "issue":        ["created", "deleted"], # TO-DO: implement issue_updated
-        "comment":      ["created", "updated", "deleted"],
-        "invitation":   ["created", "updated", "deleted"],
-        "membership":   ["updated", "deleted"],
-        "job":          ["updated"],
-        "organization": ["updated"]
+        "project":      ["create", "update", "delete"],
+        "task":         ["create", "update", "delete"],
+        "issue":        ["create", "delete"], # TO-DO: implement issue_updated
+        "comment":      ["create", "update", "delete"],
+        "invitation":   ["create", "update", "delete"],
+        "membership":   ["update", "delete"],
+        "job":          ["update"],
+        "organization": ["update"]
     }
 
     @classmethod
     def select(cls, resources):
         ret = set()
         for resource in resources:
-            ret |= set(f"{resource}_{action}" for action in cls.RESOURCES.get(resource, []))
+            ret |= set(f"{event_name(action, resource)}" for action in cls.RESOURCES.get(resource, []))
         return ret
 
 
@@ -31,7 +33,7 @@ class AllEvents:
     webhook_type = "all"
     events = list(
         set(
-            f"{resource}_{action}"
+            event_name(action, resource)
             for resource, actions in Events.RESOURCES.items()
             for action in actions
         )
@@ -41,14 +43,14 @@ class AllEvents:
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events = list(
-        set(("project_updated",)) | Events.select(["job", "task", "issue", "comment"])
+        set((event_name("update", "project"),)) | Events.select(["job", "task", "issue", "comment"])
     )
 
 
 class OrganizationEvents:
     webhook_type = WebhookTypeChoice.ORGANIZATION
     events = list(
-        set(("organization_updated",))
+        set((event_name("update", "organization"),))
         | Events.select(["membership", "invitation", "project"])
         | set(ProjectEvents.events)
     )
