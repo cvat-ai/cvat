@@ -45,7 +45,7 @@ export default class Webhook {
     public isActive?: boolean;
     public enableSSL: boolean;
 
-    static async events(type: WebhookSourceType): Promise<string[]> {
+    static async eventList(type: WebhookSourceType): Promise<string[]> {
         return serverProxy.webhooks.events(type);
     }
 

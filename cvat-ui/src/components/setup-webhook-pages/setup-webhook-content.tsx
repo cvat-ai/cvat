@@ -97,11 +97,11 @@ function SetupWebhookContent(props: Props): JSX.Element {
     useEffect(() => {
         const core = getCore();
         if (webhook) {
-            core.classes.Webhook.events(webhook.type).then((events: string[]) => {
+            core.classes.Webhook.eventList(webhook.type).then((events: string[]) => {
                 setWebhookEvents(events);
             });
         } else {
-            core.classes.Webhook.events(projectId ?
+            core.classes.Webhook.eventList(projectId ?
                 WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION).then((events: string[]) => {
                 setWebhookEvents(events);
             });
@@ -125,11 +125,10 @@ function SetupWebhookContent(props: Props): JSX.Element {
             };
 
             webhook.events.forEach((event: string) => {
-                data[`event_${event.split('_')[0]}`] = true;
+                data[`event:${event.split(':')[1]}`] = true;
             });
 
             form.setFieldsValue(data);
-            setProjectId(webhook.projectID);
             setRerender(!rerender);
         }
     }, [webhook, webhookEvents]);
