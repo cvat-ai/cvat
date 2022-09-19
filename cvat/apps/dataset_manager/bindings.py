@@ -1114,8 +1114,6 @@ class CVATDataExtractorMixin:
 class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMixin):
     def __init__(self, task_data, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
         super().__init__(media_type=Image if dimension == DimensionType.DIM_2D else PointCloud)
-        if dimension == DimensionType.DIM_3D:
-            a = 6
         self._categories = self._load_categories(task_data.meta['task']['labels'])
         self._user = self._load_user_info(task_data.meta['task']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
