@@ -21,7 +21,7 @@ services:
       driver: "json-file"
       options:
         max-size: 100m
-        max-file: 3
+        max-file: "3"
 
   cvat_server:
     environment:
