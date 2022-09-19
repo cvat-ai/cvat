@@ -4884,18 +4884,18 @@
 },
 {
   "model": "webhooks.webhook",
-  "pk": 1,
+  "pk": 2,
   "fields": {
     "target_url": "http://example.com",
     "description": "",
-    "events": "job_updated",
+    "events": "update:job",
     "type": "organization",
     "content_type": "application/json",
-    "secret": "OHehfhN3omJIFhp2Vzq7AwdXLPXpO0IIxyEO4ENO",
+    "secret": "",
     "is_active": true,
     "enable_ssl": false,
-    "created_date": "2022-08-09T12:17:50.042Z",
-    "updated_date": "2022-08-09T12:17:50.042Z",
+    "created_date": "2022-09-19T07:50:36.708Z",
+    "updated_date": "2022-09-19T07:50:36.708Z",
     "owner": [
       "admin1"
     ],
@@ -4905,18 +4905,18 @@
 },
 {
   "model": "webhooks.webhook",
-  "pk": 2,
+  "pk": 3,
   "fields": {
     "target_url": "http://testexample.com",
     "description": "webhook description",
-    "events": "task_created,task_deleted",
+    "events": "delete:task,create:task",
     "type": "project",
     "content_type": "application/json",
-    "secret": "secret",
+    "secret": "",
     "is_active": true,
     "enable_ssl": false,
-    "created_date": "2022-09-06T06:15:21.436Z",
-    "updated_date": "2022-09-06T06:15:21.436Z",
+    "created_date": "2022-09-19T08:04:04.444Z",
+    "updated_date": "2022-09-19T08:04:04.444Z",
     "owner": [
       "business1"
     ],
@@ -4926,18 +4926,18 @@
 },
 {
   "model": "webhooks.webhook",
-  "pk": 3,
+  "pk": 4,
   "fields": {
     "target_url": "http://testexample.com",
     "description": "webhook description",
-    "events": "task_created,task_deleted",
+    "events": "delete:task,create:task",
     "type": "project",
     "content_type": "application/json",
-    "secret": "secret",
+    "secret": "",
     "is_active": true,
     "enable_ssl": false,
-    "created_date": "2022-09-06T08:06:22.813Z",
-    "updated_date": "2022-09-06T08:06:22.813Z",
+    "created_date": "2022-09-19T08:04:54.788Z",
+    "updated_date": "2022-09-19T08:04:54.788Z",
     "owner": [
       "user1"
     ],
@@ -4947,18 +4947,18 @@
 },
 {
   "model": "webhooks.webhook",
-  "pk": 4,
+  "pk": 5,
   "fields": {
     "target_url": "http://testexample.com",
     "description": "webhook description",
-    "events": "task_deleted,task_created",
+    "events": "delete:task,create:task",
     "type": "organization",
     "content_type": "application/json",
-    "secret": "secret",
+    "secret": "",
     "is_active": true,
     "enable_ssl": false,
-    "created_date": "2022-09-06T08:28:53.554Z",
-    "updated_date": "2022-09-06T08:28:53.554Z",
+    "created_date": "2022-09-19T08:05:36.146Z",
+    "updated_date": "2022-09-19T08:05:36.146Z",
     "owner": [
       "business2"
     ],
@@ -4968,18 +4968,18 @@
 },
 {
   "model": "webhooks.webhook",
-  "pk": 5,
+  "pk": 6,
   "fields": {
     "target_url": "http://testexample.com",
     "description": "webhook description",
-    "events": "task_deleted,task_created",
+    "events": "delete:task,create:task",
     "type": "project",
     "content_type": "application/json",
-    "secret": "secret",
+    "secret": "",
     "is_active": true,
     "enable_ssl": false,
-    "created_date": "2022-09-06T08:58:39.923Z",
-    "updated_date": "2022-09-06T08:58:39.923Z",
+    "created_date": "2022-09-19T08:06:23.633Z",
+    "updated_date": "2022-09-19T08:06:23.633Z",
     "owner": [
       "business2"
     ],

@@ -13,8 +13,8 @@ class TestPostWebhooks:
         'content_type': 'application/json',
         'enable_ssl': False,
         'events': [
-            'task_created',
-            'task_deleted'
+            'create:task',
+            'delete:task'
         ],
         'is_active': True,
         'project_id': 1,
@@ -28,8 +28,8 @@ class TestPostWebhooks:
         'content_type': 'application/json',
         'enable_ssl': False,
         'events': [
-            'task_created',
-            'task_deleted'
+            'create:task',
+            'delete:task'
         ],
         'is_active': True,
         'secret': 'secret',
@@ -320,7 +320,7 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-    @pytest.mark.parametrize('event', ['some_event', 'project_created', 'organization_updated', 'invitation_created'])
+    @pytest.mark.parametrize('event', ['some:event', 'create:project', 'update:organization', 'create:invitation'])
     def test_cannot_create_project_webhook_with_non_supported_event_type(self, event):
         post_data = deepcopy(self.proj_webhook)
         post_data['events'] = [event]
@@ -329,7 +329,7 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-    @pytest.mark.parametrize('event', ['some_event', 'organization_created'])
+    @pytest.mark.parametrize('event', ['some:event', 'create:organization'])
     def test_cannot_create_organization_webhook_with_non_supported_event_type(self, event, organizations):
         post_data = deepcopy(self.proj_webhook)
         post_data['type'] = 'organization'
@@ -677,7 +677,7 @@ class TestGetListWebhooks:
 
 @pytest.mark.usefixtures('changedb')
 class TestPatchWebhooks:
-    WID = 1
+    WID = 2
 
     def test_sandbox_admin_can_update_any_webhook(self, webhooks, find_users):
         username, webhook = next((
@@ -689,7 +689,7 @@ class TestPatchWebhooks:
         patch_data = {
             'target_url': 'http://newexample.com',
             'secret': 'newsecret',
-            'events': ['task_created'],
+            'events': ['create:task'],
             'is_active': not webhook['is_active'],
             'enable_ssl': not webhook['enable_ssl'],
         }
@@ -701,16 +701,6 @@ class TestPatchWebhooks:
         assert 'secret' not in response.json()
         assert DeepDiff(webhook, response.json(), ignore_order=True,
             exclude_paths=["root['updated_date']", "root['secret']"]) == {}
-
-    def test_cannot_update_type_of_webhook(self, projects):
-        pytest.skip('need to check this test')
-        patch_data = {
-            'type': 'project',
-            'project_id': next(iter(projects))['id'],
-        }
-
-        response = patch_method('admin2', f'webhooks/{self.WID}', patch_data)
-        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     def test_cannot_update_with_nonexistent_contenttype(self):
         patch_data = {

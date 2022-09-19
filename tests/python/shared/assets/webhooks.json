@@ -5,14 +5,14 @@
   "results": [
     {
       "content_type": "application/json",
-      "created_date": "2022-09-06T08:58:39.923000Z",
+      "created_date": "2022-09-19T08:06:23.633000Z",
       "description": "webhook description",
       "enable_ssl": false,
       "events": [
-        "task_created",
-        "task_deleted"
+        "create:task",
+        "delete:task"
       ],
-      "id": 5,
+      "id": 6,
       "is_active": true,
       "organization": 2,
       "owner": {
@@ -25,19 +25,19 @@
       "project": 3,
       "target_url": "http://testexample.com",
       "type": "project",
-      "updated_date": "2022-09-06T08:58:39.923000Z",
-      "url": "http://localhost:8080/api/webhooks/5"
+      "updated_date": "2022-09-19T08:06:23.633000Z",
+      "url": "http://localhost:8080/api/webhooks/6"
     },
     {
       "content_type": "application/json",
-      "created_date": "2022-09-06T08:28:53.554000Z",
+      "created_date": "2022-09-19T08:05:36.146000Z",
       "description": "webhook description",
       "enable_ssl": false,
       "events": [
-        "task_created",
-        "task_deleted"
+        "create:task",
+        "delete:task"
       ],
-      "id": 4,
+      "id": 5,
       "is_active": true,
       "organization": 2,
       "owner": {
@@ -50,19 +50,19 @@
       "project": null,
       "target_url": "http://testexample.com",
       "type": "organization",
-      "updated_date": "2022-09-06T08:28:53.554000Z",
-      "url": "http://localhost:8080/api/webhooks/4"
+      "updated_date": "2022-09-19T08:05:36.146000Z",
+      "url": "http://localhost:8080/api/webhooks/5"
     },
     {
       "content_type": "application/json",
-      "created_date": "2022-09-06T08:06:22.813000Z",
+      "created_date": "2022-09-19T08:04:54.788000Z",
       "description": "webhook description",
       "enable_ssl": false,
       "events": [
-        "task_created",
-        "task_deleted"
+        "create:task",
+        "delete:task"
       ],
-      "id": 3,
+      "id": 4,
       "is_active": true,
       "organization": null,
       "owner": {
@@ -75,19 +75,19 @@
       "project": 5,
       "target_url": "http://testexample.com",
       "type": "project",
-      "updated_date": "2022-09-06T08:06:22.813000Z",
-      "url": "http://localhost:8080/api/webhooks/3"
+      "updated_date": "2022-09-19T08:04:54.788000Z",
+      "url": "http://localhost:8080/api/webhooks/4"
     },
     {
       "content_type": "application/json",
-      "created_date": "2022-09-06T06:15:21.436000Z",
+      "created_date": "2022-09-19T08:04:04.444000Z",
       "description": "webhook description",
       "enable_ssl": false,
       "events": [
-        "task_created",
-        "task_deleted"
+        "create:task",
+        "delete:task"
       ],
-      "id": 2,
+      "id": 3,
       "is_active": true,
       "organization": null,
       "owner": {
@@ -100,18 +100,18 @@
       "project": 1,
       "target_url": "http://testexample.com",
       "type": "project",
-      "updated_date": "2022-09-06T06:15:21.436000Z",
-      "url": "http://localhost:8080/api/webhooks/2"
+      "updated_date": "2022-09-19T08:04:04.444000Z",
+      "url": "http://localhost:8080/api/webhooks/3"
     },
     {
       "content_type": "application/json",
-      "created_date": "2022-08-09T12:17:50.042000Z",
+      "created_date": "2022-09-19T07:50:36.708000Z",
       "description": "",
       "enable_ssl": false,
       "events": [
-        "job_updated"
+        "update:job"
       ],
-      "id": 1,
+      "id": 2,
       "is_active": true,
       "organization": 1,
       "owner": {
@@ -124,8 +124,8 @@
       "project": null,
       "target_url": "http://example.com",
       "type": "organization",
-      "updated_date": "2022-08-09T12:17:50.042000Z",
-      "url": "http://localhost:8080/api/webhooks/1"
+      "updated_date": "2022-09-19T07:50:36.708000Z",
+      "url": "http://localhost:8080/api/webhooks/2"
     }
   ]
 }
