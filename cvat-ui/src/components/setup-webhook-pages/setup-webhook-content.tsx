@@ -52,15 +52,15 @@ interface Props {
 
 export function groupEvents(events: string[]): string[] {
     return Array.from(
-        new Set(events.map((event: string) => event.split('_')[0])),
+        new Set(events.map((event: string) => event.split(':')[1])),
     );
 }
 
 function collectEvents(method: EventsMethod, submittedGroups: Record<string, any>, allEvents: string[]): string[] {
     return method === EventsMethod.SEND_EVERYTHING ? allEvents : (() => {
-        const submittedEvents = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event_') && value).map(([key]) => key)
-            .map((event: string) => event.split('_')[1]);
-        return allEvents.filter((event) => submittedEvents.includes(event.split('_')[0]));
+        const submittedEvents = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event:') && value).map(([key]) => key)
+            .map((event: string) => event.split(':')[1]);
+        return allEvents.filter((event) => submittedEvents.includes(event.split(':')[1]));
     })();
 }
 
@@ -302,7 +302,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                                 {groupEvents(webhookEvents).map((event: string, idx: number) => (
                                     <Col span={8} key={idx}>
                                         <Form.Item
-                                            name={`event_${event}`}
+                                            name={`event:${event}`}
                                             valuePropName='checked'
                                         >
                                             <Checkbox>
