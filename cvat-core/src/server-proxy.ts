@@ -243,13 +243,12 @@ class ServerProxy {
 
         async function share(directoryArg) {
             const { backendAPI } = config;
-            const directory = encodeURI(directoryArg);
 
             let response = null;
             try {
                 response = await Axios.get(`${backendAPI}/server/share`, {
                     proxy: config.proxy,
-                    params: { directory },
+                    params: { directory: directoryArg },
                 });
             } catch (errorData) {
                 throw generateError(errorData);
