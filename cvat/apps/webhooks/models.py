@@ -31,7 +31,7 @@ class WebhookContentTypeChoice(str, Enum):
 
 class Webhook(models.Model):
     target_url = models.URLField()
-    description = models.CharField(max_length=128, default="")
+    description = models.CharField(max_length=128, default="", blank=True)
 
     events = models.CharField(max_length=4096, default="")
     type = models.CharField(max_length=16, choices=WebhookTypeChoice.choices())
