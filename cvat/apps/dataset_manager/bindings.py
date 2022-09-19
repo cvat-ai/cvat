@@ -18,7 +18,7 @@ import rq
 from attr import attrib, attrs
 from datumaro.components.dataset import Dataset
 from datumaro.util import cast
-from datumaro.util.image import ByteImage, Image
+from datumaro.components.media import ByteImage, Image, PointCloud
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -1113,7 +1113,9 @@ class CVATDataExtractorMixin:
 
 class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMixin):
     def __init__(self, task_data, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
-        super().__init__()
+        super().__init__(media_type=Image if dimension == DimensionType.DIM_2D else PointCloud)
+        if dimension == DimensionType.DIM_3D:
+            a = 6
         self._categories = self._load_categories(task_data.meta['task']['labels'])
         self._user = self._load_user_info(task_data.meta['task']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
@@ -1146,7 +1148,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
                     loader = lambda _: frame_provider.get_frame(i,
                         quality=frame_provider.Quality.ORIGINAL,
                         out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-                    return Image(loader=loader, **kwargs)
+                    return Image(data=loader, **kwargs)
             else:
                 # for images use encoded data to avoid recoding
                 def _make_image(i, **kwargs):
@@ -1172,7 +1174,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
             if dimension == DimensionType.DIM_2D:
                 dm_item = datum_extractor.DatasetItem(
                         id=osp.splitext(frame_data.name)[0],
-                        annotations=dm_anno, image=dm_image,
+                        annotations=dm_anno, media=dm_image,
                         attributes={'frame': frame_data.frame
                     })
             elif dimension == DimensionType.DIM_3D:
@@ -1188,7 +1190,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
 
                 dm_item = datum_extractor.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                    annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
                     attributes=attributes
                 )
 
@@ -1249,7 +1251,7 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
                             loader = lambda _: frame_provider.get_frame(i,
                                 quality=frame_provider.Quality.ORIGINAL,
                                 out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-                            return Image(loader=loader, **kwargs)
+                            return Image(data=loader, **kwargs)
                         return _make_image
                 else:
                     # for images use encoded data to avoid recoding
@@ -1278,7 +1280,7 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
             if self._dimension == DimensionType.DIM_2D:
                 dm_item = datum_extractor.DatasetItem(
                     id=osp.splitext(frame_data.name)[0],
-                    annotations=dm_anno, image=dm_image,
+                    annotations=dm_anno, media=dm_image,
                     subset=frame_data.subset,
                     attributes={'frame': frame_data.frame}
                 )
@@ -1295,7 +1297,7 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
 
                 dm_item = datum_extractor.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                    annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
                     attributes=attributes, subset=frame_data.subset
                 )
             dm_items.append(dm_item)
@@ -1563,13 +1565,12 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     for n, v in ann.attributes.items()
                 ]
 
+                points = []
                 if ann.type in shapes:
                     if ann.type == datum_annotation.AnnotationType.cuboid_3d:
-                        try:
-                            ann.points = [*ann.position,*ann.rotation,*ann.scale,0,0,0,0,0,0,0]
-                        except Exception:
-                            ann.points = ann.points
-                        ann.z_order = 0
+                        points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
+                    elif ann.type != datum_annotation.AnnotationType.skeleton:
+                        points = ann.points
 
                     # Use safe casting to bool instead of plain reading
                     # because in some formats return type can be different
@@ -1612,10 +1613,10 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         instance_data.add_shape(instance_data.LabeledShape(
                             type=shape_type,
                             frame=frame_number,
-                            points=ann.points if ann.type is not datum_annotation.AnnotationType.skeleton else [],
+                            points=points,
                             label=label_cat.items[ann.label].name,
                             occluded=occluded,
-                            z_order=ann.z_order,
+                            z_order=ann.z_order if ann.type != datum_annotation.AnnotationType.cuboid_3d else 0,
                             group=group_map.get(ann.group, 0),
                             source=source,
                             attributes=attributes,
@@ -1639,8 +1640,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                             occluded=occluded,
                             outside=outside,
                             keyframe=keyframe,
-                            points=ann.points if ann.type is not datum_annotation.AnnotationType.skeleton else [],
-                            z_order=ann.z_order,
+                            points=points,
+                            z_order=ann.z_order if ann.type != datum_annotation.AnnotationType.cuboid_3d else 0,
                             source=source,
                             attributes=attributes,
                         )
