@@ -127,6 +127,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
                     setSearchPhrase(selectedCloudStorage?.displayName || '');
                 }}
                 allowClear
+                className={`cvat-search${!name ? '-' : `-${name[0].replace('Storage', '-storage')}-`}cloud-storage-field`}
             >
                 <Input />
             </AutoComplete>

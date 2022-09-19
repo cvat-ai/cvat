@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
+
 const serverProxy = require('./server-proxy').default;
 const Collection = require('./annotations-collection');
 const AnnotationsSaver = require('./annotations-saver');
