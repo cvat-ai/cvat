@@ -4,7 +4,7 @@
 
 title: 'Installation Analytics'
 linkTitle: 'Installation Analytics'
-weight: 2
+weight: 20
 description: 'Instructions for deployment and customization of Analytics. This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/components/analytics).'
 
 ---
