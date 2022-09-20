@@ -33,8 +33,12 @@ def configure_logger(level):
 def build_client(parsed_args: SimpleNamespace, logger: logging.Logger) -> Client:
     config = Config(verify_ssl=not parsed_args.insecure)
 
+    url = parsed_args.server_host
+    if parsed_args.server_port:
+        url += ':{parsed_args.server_port}'
+
     return Client(
-        url="{host}:{port}".format(host=parsed_args.server_host, port=parsed_args.server_port),
+        url=url,
         logger=logger,
         config=config,
     )
