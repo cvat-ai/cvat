@@ -182,6 +182,8 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
     def fetch(self: Entity) -> Self:
         """
         Updates current object from the server
+
+        The local changes in the object are discarded when `fetch()` is called.
         """
 
         # TODO: implement revision checking
@@ -191,6 +193,8 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
     def update(self: Entity, values: Union[Dict[str, Any], IModel]) -> Self:
         """
         Commits local model changes to the server
+
+        The local object is updated from the server after this operation.
         """
 
         # TODO: implement revision checking

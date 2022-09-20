@@ -28,6 +28,10 @@ from cvat_sdk.core.proxies.users import UsersRepo
 
 @attrs.define
 class Config:
+    """
+    Allows to tweak behavior of Client instances.
+    """
+
     status_check_period: float = 5
     """In seconds"""
 
@@ -39,21 +43,30 @@ class Config:
 
 class Client:
     """
-    Manages session and configuration.
+    Manages session and configuration, provides resource location.
     """
 
     def __init__(
         self, url: str, *, logger: Optional[logging.Logger] = None, config: Optional[Config] = None
     ):
         url = self._validate_and_prepare_url(url)
+
         self.logger = logger or logging.getLogger(__name__)
+        """The root logger"""
+
         self.config = config or Config()
+        """Configuration for this object"""
+
         self.api_map = CVAT_API_V2(url)
+        """Handles server API URL interaction logic"""
+
         self.api_client = ApiClient(
             Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
         )
+        """Provides low-level access to CVAT server"""
 
         self._repos: Dict[str, Repo] = {}
+        """Cache for created Repository instances"""
 
     ALLOWED_SCHEMAS = ("https", "http")
 
