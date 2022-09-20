@@ -95,10 +95,53 @@ def test_can_warn_on_mismatching_server_version(
 
     with ExitStack() as es:
         if raise_exception:
-            es.enter_context(pytest.raises(IncompatibleVersionException))
             config.allow_unsupported_server = False
+            es.enter_context(pytest.raises(IncompatibleVersionException))
 
         Client(url=BASE_URL, logger=logger, config=config)
+
+    assert "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
+
+
+@pytest.mark.parametrize("do_check", (True, False))
+def test_can_check_server_version_in_ctor(
+    fxt_logger: Tuple[Logger, io.StringIO], monkeypatch, do_check: bool
+):
+    logger, logger_stream = fxt_logger
+
+    def mocked_version(_):
+        return pv.Version("0")
+
+    monkeypatch.setattr(Client, "get_server_version", mocked_version)
+
+    config = Config()
+    config.allow_unsupported_server = False
+
+    with ExitStack() as es:
+        if do_check:
+            es.enter_context(pytest.raises(IncompatibleVersionException))
+
+        Client(url=BASE_URL, logger=logger, config=config, check_server_version=do_check)
+
+    assert (
+        "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
+    ) == do_check
+
+
+def test_can_check_server_version_in_method(fxt_logger: Tuple[Logger, io.StringIO], monkeypatch):
+    logger, logger_stream = fxt_logger
+
+    def mocked_version(_):
+        return pv.Version("0")
+
+    monkeypatch.setattr(Client, "get_server_version", mocked_version)
+
+    config = Config()
+    config.allow_unsupported_server = False
+    client = Client(url=BASE_URL, logger=logger, config=config, check_server_version=False)
+
+    with client, pytest.raises(IncompatibleVersionException):
+        client.check_server_version()
 
     assert "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
 

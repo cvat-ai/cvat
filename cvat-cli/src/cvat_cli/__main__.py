@@ -35,12 +35,13 @@ def build_client(parsed_args: SimpleNamespace, logger: logging.Logger) -> Client
 
     url = parsed_args.server_host
     if parsed_args.server_port:
-        url += ':{parsed_args.server_port}'
+        url += f":{parsed_args.server_port}"
 
     return Client(
         url=url,
         logger=logger,
         config=config,
+        check_server_version=False,  # version is checked after auth to support versions < 2.3
     )
 
 

@@ -53,8 +53,13 @@ class Client:
     )
 
     def __init__(
-        self, url: str, *, logger: Optional[logging.Logger] = None, config: Optional[Config] = None
-    ):
+        self,
+        url: str,
+        *,
+        logger: Optional[logging.Logger] = None,
+        config: Optional[Config] = None,
+        check_server_version: bool = True,
+    ) -> None:
         url = self._validate_and_prepare_url(url)
         self.logger = logger or logging.getLogger(__name__)
         self.config = config or Config()
@@ -62,7 +67,9 @@ class Client:
         self.api_client = ApiClient(
             Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
         )
-        self.check_server_version()
+
+        if check_server_version:
+            self.check_server_version()
 
         self._repos: Dict[str, Repo] = {}
 
@@ -99,7 +106,7 @@ class Client:
                     )
 
                     if response.status in [200, 401]:
-                        # Versions prior to 2.3.0 respond with unauthorized
+                        # Server versions prior to 2.3.0 respond with unauthorized
                         # 2.3.0 allows unauthorized access
                         return schema
 
