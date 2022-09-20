@@ -62,7 +62,7 @@
 }
 
 .cvat-item-ping-webhook-button {
-    margin-right: $grid-unit-size*3;
+    margin-right: $grid-unit-size * 3;
 }
 
 .cvat-webhooks-page-actions-button {
@@ -71,7 +71,7 @@
     display: flex;
     align-items: center;
     padding: $grid-unit-size;
-    line-height: $grid-unit-size*2;
+    line-height: $grid-unit-size * 2;
 }
 
 .cvat-webhooks-page {
@@ -132,5 +132,5 @@
 }
 
 .cvat-webhooks-go-back {
-    padding: 0.5*$grid-unit-size 0;
+    padding: 0.5 * $grid-unit-size 0;
 }

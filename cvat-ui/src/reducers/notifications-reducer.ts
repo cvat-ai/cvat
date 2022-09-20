@@ -153,6 +153,9 @@ const defaultState: NotificationsState = {
         },
         webhooks: {
             fetching: null,
+            creating: null,
+            updating: null,
+            deleting: null,
         },
     },
     messages: {
@@ -1631,11 +1634,59 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 errors: {
                     ...state.errors,
                     webhooks: {
-                        ...state.errors.jobs,
+                        ...state.errors.webhooks,
                         fetching: {
                             message: 'Could not fetch a list of webhooks',
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-get-webhooks-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case WebhooksActionsTypes.CREATE_WEBHOOK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    webhooks: {
+                        ...state.errors.webhooks,
+                        creating: {
+                            message: 'Could not create webhook',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-webhook-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case WebhooksActionsTypes.UPDATE_WEBHOOK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    webhooks: {
+                        ...state.errors.webhooks,
+                        updating: {
+                            message: 'Could not update webhook',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-webhook-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case WebhooksActionsTypes.DELETE_WEBHOOK_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    webhooks: {
+                        ...state.errors.webhooks,
+                        deleting: {
+                            message: 'Could not delete webhook',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-webhook-failed',
                         },
                     },
                 },

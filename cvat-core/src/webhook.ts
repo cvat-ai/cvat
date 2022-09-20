@@ -4,10 +4,9 @@
 
 import PluginRegistry from './plugins';
 import User from './user';
+import serverProxy from './server-proxy';
 import { WebhookSourceType, WebhookContentType } from './enums';
 import { isEnum } from './common';
-
-const serverProxy = require('./server-proxy').default;
 
 interface RawWebhookData {
     id?: number;
@@ -24,18 +23,20 @@ interface RawWebhookData {
     owner?: any;
     created_date?: string;
     updated_date?: string;
-    last_delivery?: undefined;
+    last_delivery_date?: string;
     last_status?: number;
 }
 
 export default class Webhook {
-    public readonly id?: number;
+    public readonly id: number;
     public readonly type: WebhookSourceType;
-    public readonly organizationID?: number;
-    public readonly projectID?: number;
-    public readonly owner?: User;
-    public readonly createdDate?: string;
-    public readonly updatedDate?: string;
+    public readonly organizationID: number | null;
+    public readonly projectID: number | null;
+    public readonly owner: User;
+    public readonly lastStatus: number;
+    public readonly lastDeliveryDate?: string;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
 
     public targetURL: string;
     public events: string[];
@@ -45,7 +46,7 @@ export default class Webhook {
     public isActive?: boolean;
     public enableSSL: boolean;
 
-    static async eventList(type: WebhookSourceType): Promise<string[]> {
+    static async availableEvents(type: WebhookSourceType): Promise<string[]> {
         return serverProxy.webhooks.events(type);
     }
 
@@ -56,8 +57,8 @@ export default class Webhook {
             type: WebhookSourceType.ORGANIZATION,
             events: [],
             content_type: WebhookContentType.JSON,
-            organization_id: undefined,
-            project_id: undefined,
+            organization_id: null,
+            project_id: null,
             description: undefined,
             secret: '',
             is_active: undefined,
@@ -65,7 +66,7 @@ export default class Webhook {
             owner: undefined,
             created_date: undefined,
             updated_date: undefined,
-            last_delivery: undefined,
+            last_delivery_date: undefined,
             last_status: 0,
         };
 
@@ -188,8 +189,8 @@ export default class Webhook {
                 updatedDate: {
                     get: () => data.updated_date,
                 },
-                lastDelivery: {
-                    get: () => data.last_delivery,
+                lastDeliveryDate: {
+                    get: () => data.last_delivery_date,
                 },
                 lastStatus: {
                     get: () => data.last_status,
@@ -265,7 +266,6 @@ export class WebhookDelivery {
     public readonly event: string;
     public readonly webhookId: number;
     public readonly statusCode: string;
-    public readonly redelivery: boolean;
     public readonly createdDate?: string;
     public readonly updatedDate?: string;
 
@@ -275,7 +275,6 @@ export class WebhookDelivery {
             event: '',
             webhook_id: undefined,
             status_code: undefined,
-            redelivery: undefined,
             created_date: undefined,
             updated_date: undefined,
         };
@@ -301,9 +300,6 @@ export class WebhookDelivery {
                 statusCode: {
                     get: () => data.status_code,
                 },
-                redelivery: {
-                    get: () => data.redelivery,
-                },
                 createdDate: {
                     get: () => data.created_date,
                 },
@@ -321,13 +317,6 @@ Object.defineProperties(Webhook.prototype.save, {
         enumerable: false,
         value: async function implementation() {
             if (Number.isInteger(this.id)) {
-                const body = this.toJSON();
-                const supportedUpdateFields = ['description', 'targetURL', 'secret', 'contentType', 'isActive', 'enableSSL', 'events'];
-                for (const key in body) {
-                    if (!supportedUpdateFields.includes(key)) {
-                        delete body[key];
-                    }
-                }
                 const result = await serverProxy.webhooks.update(this.id, this.toJSON());
                 return new Webhook(result);
             }

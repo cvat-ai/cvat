@@ -4,6 +4,7 @@
 
 import _cvat from 'cvat-core/src/api';
 import ObjectState from 'cvat-core/src/object-state';
+import Webhook  from 'cvat-core/src/webhook';
 import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
@@ -17,7 +18,7 @@ cvat.config.origin = window.location.origin;
 cvat.config.uploadChunkSize = 100;
 (globalThis as any).cvat = cvat;
 
-export default function getCore(): any {
+function getCore(): any {
     return cvat;
 }
 
@@ -28,6 +29,7 @@ export {
     Attribute,
     ShapeType,
     Storage,
+    Webhook,
 };
 
 export type {

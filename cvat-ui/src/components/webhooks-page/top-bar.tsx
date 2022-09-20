@@ -4,9 +4,7 @@
 
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import {
-    PlusOutlined,
-} from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 

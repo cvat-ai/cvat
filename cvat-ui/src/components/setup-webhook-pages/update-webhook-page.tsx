@@ -4,9 +4,9 @@
 
 import './styles.scss';
 import React, { useEffect } from 'react';
+import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
 import { LeftOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
 import { useHistory, useParams } from 'react-router';
 import { CombinedState } from 'reducers';
 import { useDispatch, useSelector } from 'react-redux';
@@ -42,7 +42,7 @@ function UpdateWebhookPage(): JSX.Element {
             </Row>
             <Row justify='center' align='top' className='cvat-create-webhook-form-wrapper'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
-                    <SetupWebhookContent webhook={webhook} />
+                    <SetupWebhookContent webhook={webhook} defaultProjectId={webhook.projectID || null} />
                 </Col>
             </Row>
         </div>

@@ -14,13 +14,13 @@ import Checkbox from 'antd/lib/checkbox/Checkbox';
 import Input from 'antd/lib/input';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Select from 'antd/lib/select';
+import notification from 'antd/lib/notification';
 
-import getCore from 'cvat-core-wrapper';
-import { notification } from 'antd';
+import { getCore, Webhook } from 'cvat-core-wrapper';
 import ProjectSearchField from 'components/create-task-page/project-search-field';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { useLocation } from 'react-router';
+import { createWebhookAsync, updateWebhookAsync } from 'actions/webhooks-actions';
 
 export enum WebhookContentType {
     APPLICATION_JSON = 'application/json',
@@ -48,6 +48,7 @@ export interface SetupWebhookData {
 
 interface Props {
     webhook?: any;
+    defaultProjectId: number | null;
 }
 
 export function groupEvents(events: string[]): string[] {
@@ -64,21 +65,9 @@ function collectEvents(method: EventsMethod, submittedGroups: Record<string, any
     })();
 }
 
-function throwError(message: string, error: any): void {
-    const stringified = error.toString();
-    const MAX_LENGTH = 300;
-    if (stringified.length > MAX_LENGTH) {
-        console.log(stringified);
-    }
-
-    notification.error({
-        message,
-        description: stringified.length > MAX_LENGTH ? 'Open the browser console to get details' : stringified,
-    });
-}
-
 function SetupWebhookContent(props: Props): JSX.Element {
-    const { webhook } = props;
+    const dispatch = useDispatch();
+    const { webhook, defaultProjectId } = props;
     const [form] = Form.useForm();
     const [rerender, setRerender] = useState(false);
     const [showDetailedEvents, setShowDetailedEvents] = useState(false);
@@ -86,22 +75,16 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
     const organization = useSelector((state: CombinedState) => state.organizations.current);
 
-    const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    let defaultProjectId = null;
-    if (params.get('projectId')?.match(/^[1-9]+[0-9]*$/)) {
-        defaultProjectId = +(params.get('projectId') as string);
-    }
     const [projectId, setProjectId] = useState<number | null>(defaultProjectId);
 
     useEffect(() => {
         const core = getCore();
         if (webhook) {
-            core.classes.Webhook.eventList(webhook.type).then((events: string[]) => {
+            core.classes.Webhook.availableEvents(webhook.type).then((events: string[]) => {
                 setWebhookEvents(events);
             });
         } else {
-            core.classes.Webhook.eventList(projectId ?
+            core.classes.Webhook.availableEvents(projectId ?
                 WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION).then((events: string[]) => {
                 setWebhookEvents(events);
             });
@@ -133,8 +116,10 @@ function SetupWebhookContent(props: Props): JSX.Element {
         }
     }, [webhook, webhookEvents]);
 
-    const handleSubmit = useCallback((): void => {
-        form.validateFields().then((values: Store): void => {
+    const handleSubmit = useCallback(async (): Promise<Webhook | null> => {
+        try {
+            const values: Store = await form.validateFields();
+            let message = 'Webhook has been successfully updated';
             if (webhook) {
                 webhook.description = values.description;
                 webhook.targetURL = values.targetURL;
@@ -144,15 +129,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 webhook.enableSSL = values.enableSSL;
                 webhook.events = collectEvents(values.eventsMethod, values, webhookEvents);
 
-                webhook.save().then(() => {
-                    form.resetFields();
-                    setShowDetailedEvents(false);
-                    notification.info({
-                        message: 'Webhook has been successfully updated',
-                    });
-                }).catch((error: any) => {
-                    throwError('Webhook has not been updated', error);
-                });
+                await dispatch(updateWebhookAsync(webhook));
             } else {
                 const rawWebhookData = {
                     description: values.description,
@@ -166,20 +143,16 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     project_id: projectId,
                     type: projectId ? WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION,
                 };
-                const WebhookClass = getCore().classes.Webhook;
-                const webhookInstance = new WebhookClass(rawWebhookData);
-
-                webhookInstance.save().then(() => {
-                    form.resetFields();
-                    setShowDetailedEvents(false);
-                    notification.info({
-                        message: 'Webhook has been successfully added',
-                    });
-                }).catch((error: any) => {
-                    throwError('Webhook has not been created', error);
-                });
+                message = 'Webhook has been successfully added';
+                await dispatch(createWebhookAsync(rawWebhookData));
             }
-        });
+            form.resetFields();
+            setShowDetailedEvents(false);
+            notification.info({ message });
+            return webhook;
+        } catch (error) {
+            return null;
+        }
     }, [webhook, webhookEvents]);
 
     const onEventsMethodChange = useCallback((event: RadioChangeEvent): void => {

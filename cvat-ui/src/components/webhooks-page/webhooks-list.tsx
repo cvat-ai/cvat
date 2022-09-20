@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Row, Col } from 'antd';
 import React from 'react';
+import { Row, Col } from 'antd/lib/grid';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import WebhookItem from './webhook-item';

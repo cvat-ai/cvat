@@ -12,11 +12,13 @@ import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
+import Modal from 'antd/lib/modal';
 
 import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
-import { Modal } from 'antd';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { deleteWebhookAsync } from 'actions/webhooks-actions';
+import { useDispatch } from 'react-redux';
 
 export interface WebhookItemProps {
     webhookInstance: any;
@@ -50,6 +52,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
     const [isRemoved, setIsRemoved] = useState<boolean>(false);
     const [pingFetching, setPingFetching] = useState<boolean>(false);
     const history = useHistory();
+    const dispatch = useDispatch();
     const { webhookInstance } = props;
     const {
         id, description, updatedDate, createdDate, owner, targetURL, events,
@@ -166,7 +169,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                                             title: 'Are you sure you want to remove the hook?',
                                             content: 'It will stop notificating the specified URL about listed events',
                                             onOk: () => {
-                                                webhookInstance.delete().then(() => {
+                                                dispatch(deleteWebhookAsync(webhookInstance)).then(() => {
                                                     setIsRemoved(true);
                                                 });
                                             },

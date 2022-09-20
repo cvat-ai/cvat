@@ -2127,11 +2127,9 @@ class ServerProxy {
 
             async function waitPingDelivery(deliveryID: number): Promise<any> {
                 return new Promise((resolve) => {
-                    let retries = 0;
                     async function checkStatus(): Promise<any> {
                         const delivery = await getWebhookDelivery(webhookID, deliveryID);
-                        retries += 1;
-                        if (delivery.status_code || retries >= 10) {
+                        if (delivery.status_code) {
                             resolve(delivery);
                         } else {
                             setTimeout(checkStatus, 1000);

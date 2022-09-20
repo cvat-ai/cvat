@@ -14,6 +14,8 @@ import Space from 'antd/lib/space';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
+import Dropdown from 'antd/lib/dropdown';
+import Menu from 'antd/lib/menu';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
 
@@ -28,7 +30,6 @@ import {
     removeOrganizationAsync,
     updateOrganizationAsync,
 } from 'actions/organization-actions';
-import { Dropdown, Menu } from 'antd';
 import { useHistory } from 'react-router-dom';
 
 export interface Props {

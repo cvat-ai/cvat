@@ -6,6 +6,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Webhook } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -512,6 +513,9 @@ export interface NotificationsState {
         };
         webhooks: {
             fetching: null | ErrorState;
+            creating: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
         };
     };
     messages: {
@@ -850,7 +854,7 @@ export interface WebhooksQuery {
 }
 
 export interface WebhooksState {
-    current: any[],
+    current: Webhook[],
     totalCount: number;
     fetching: boolean;
     query: WebhooksQuery;
