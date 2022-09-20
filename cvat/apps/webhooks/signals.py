@@ -13,6 +13,8 @@ from cvat.apps.organizations.models import Organization
 from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 
+WEBHOOK_TIMEOUT = 10
+
 signal_update = Signal()
 signal_create = Signal()
 signal_delete = Signal()
@@ -36,11 +38,14 @@ def send_webhook(webhook, payload, delivery):
             webhook.target_url,
             json=payload,
             verify=webhook.enable_ssl,
-            headers=headers
+            headers=headers,
+            timeout=WEBHOOK_TIMEOUT
         )
         status_code = str(response.status_code)
     except requests.ConnectionError:
         status_code = "Failed to connect to target url"
+    except requests.Timeout:
+        status_code = "Timeout"
 
     setattr(delivery, 'status_code', status_code)
     if response is not None:
