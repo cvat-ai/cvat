@@ -1,5 +1,6 @@
 # CVAT chart manual
 
+#
 - [CVAT chart manual](#cvat-chart-manual)
   - [Prerequisites](#prerequisites)
     - [Installing dependencies](#installing-dependencies)
