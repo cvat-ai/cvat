@@ -105,7 +105,7 @@ class Client:
 
         raise InvalidHostException(
             "Failed to detect host schema automatically, please check "
-            "the server url and try to specify schema explicitly"
+            "the server url and try to specify 'https://' or 'http://' explicitly"
         )
 
     def __enter__(self):
