@@ -64,7 +64,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
     )
 
     last_delivery_date = serializers.DateTimeField(
-        source="deliveries.last.delivered_at", read_only=True
+        source="deliveries.last.updated_date", read_only=True
     )
 
     class Meta:
