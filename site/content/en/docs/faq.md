@@ -1,7 +1,7 @@
 ---
 title: 'Frequently asked questions'
 linkTitle: 'FAQ'
-weight: 20
+weight: 2
 description: 'Answers to frequently asked questions'
 ---
 
@@ -175,3 +175,9 @@ Follow the [backup/restore guide](/docs/administration/advanced/backup_guide/#ho
 ## How to load your own DL model into CVAT
 
 See the information here in the [Serverless tutorial](/docs/manual/advanced/serverless-tutorial/#adding-your-own-dl-models).
+
+## My server uses a custom SSL certificate and I don't want to check it.
+
+You can call control SSL certificate check with the `--insecure` CLI argument.
+For SDK, you can specify `ssl_verify = True/False` in the `cvat_sdk.core.client.Config` object.
+
