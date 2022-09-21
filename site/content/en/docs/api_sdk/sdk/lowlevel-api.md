@@ -103,27 +103,176 @@ with ApiClient(configuration) as api_client:
     assert task.size == 4
 ```
 
-## Available API Endpoints
+## ApiClient and configuration
 
-All URIs are relative to _`http://localhost`_
+The starting point in the low-level API is the `cvat_sdk.api_client.ApiClient` class.
+It encapsulates session and connection logic, and provides simpler access to different APIs.
 
-APIs can be instanted directly like this:
+To create an instance of `ApiClient`, you need to set up a `cvat_sdk.api_client.Configuration`
+object and pass it to the `ApiClient` class constructor. Additional connection-specific
+options, such as extra headers and cookies can be specified in the class constructor.
+`ApiClient` implements the context manager protocol. Typically, you create `ApiClient` this way:
+
+```python
+from cvat_sdk.api_client import ApiClient, Configuration
+
+configuration = Configuration(host="http://localhost")
+with ApiClient(configuration) as api_client:
+    ...
+```
+
+After creating an `ApiClient` instance, you can send requests to different server endpoints
+via `*_api` member properties and directly, using the `rest_client` member.
+[Read more](#api-wrappers) about API wrappers below.
+
+Typically, the first thing you do with `ApiClient` is login.
+[Read more](#authentication) about authentication options below.
+
+## Authentication
+
+CVAT supports 2 authentication options:
+- basic auth, with your username and password
+- token auth, with your API key
+
+Token auth requires a token, which can be obtained after performing the basic auth.
+
+Low-level API supports 2 ways of authorization.
+You can specify authorization in the `Configuration` object:
+
+```python
+configuration = Configuration(
+    username='YOUR_USERNAME',
+    password='YOUR_PASSWORD',
+)
+```
+
+```python
+configuration = Configuration(
+    api_key={
+        "sessionAuth": "<sessionid cookie value>",
+        "csrfAuth": "<csrftoken cookie value>",
+        "tokenAuth": "Token <auth key value>",
+    }
+)
+```
+
+Or you can perform regular login using the `auth_api` member of `ApiClient` and
+set the `Authorization` header using the `Token` prefix.
+
+```python
+from cvat_sdk.api_client import models
+
+(auth, _) = api_client.auth_api.create_login(
+    models.LoginRequest(username=credentials[0], password=credentials[1])
+)
+
+assert "sessionid" in api_client.cookies
+assert "csrftoken" in api_client.cookies
+api_client.set_default_header("Authorization", "Token " + auth.key)
+```
+
+## API wrappers
+
+API endpoints are grouped by tags into separate classes in the `cvat_sdk.api_client.apis` package.
+
+APIs can be accessed as `ApiClient` object members:
+
+```python
+api_client.auth_api.<operation>(...)
+api_client.tasks_api.<operation>(...)
+```
+
+And APIs can be instantiated directly like this:
 
 ```python
 from cvat_sdk.api_client import ApiClient, apis
 
 api_client = ApiClient(...)
+
 auth_api = apis.AuthApi(api_client)
 auth_api.<operation>(...)
+
+tasks_api = apis.TasksApi(api_client)
+tasks_api.<operation>(...)
 ```
 
-Or they can be accessed as `ApiClient` object members:
-```
-from cvat_sdk.api_client import ApiClient
+Each operation provides metainfo in the `<operation>_endpoint` member.
 
-api_client = ApiClient(...)
-api_client.auth_api.<operation>(...)
+## Models
+
+Requests and responses can include parameters. These parameters can be plain python
+objects, or models. In CVAT API, models for requests and responses are separated.
+Request models have the `Request` suffix in the name. Models can be found in the
+`cvat_sdk.api_client.models` package.
+
+Models can be instantiated like this:
+
+```python
+from cvat_sdk.api_client import models
+
+user_model = models.User(...)
 ```
+
+Model parameters can be passed as models, or as plain python objects. This rule applies
+recursively, starting from the method parameters. In particular, this means you can pass
+a plain dict into a method or into a model constructor, and corresponding fields will
+be parsed from this data automatically:
+
+```python
+task_spec = models.TaskWriteRequest(
+    name='example task',
+    labels=[
+        models.PatchedLabelRequest(
+            name="car",
+            color="#ff00ff",
+            attributes=[
+                model.AttributeRequest(
+                    name="a",
+                    mutable=True,
+                    input_type="number",
+                    default_value="5",
+                    values=["4", "5", "6"]
+                )
+            ]
+        )
+    ],
+)
+api_client.tasks_api.create(task_spec)
+```
+
+Is equivalent to:
+
+```python
+api_client.tasks_api.create({
+    'name': 'example task',
+    "labels": [{
+        "name": "car",
+        "color": "#ff00ff",
+        "attributes": [
+            {
+                "name": "a",
+                "mutable": True,
+                "input_type": "number",
+                "default_value": "5",
+                "values": ["4", "5", "6"]
+            }
+        ]
+    }],
+})
+```
+
+You can mix these variants.
+
+Most models provide corresponding interface classes called like `I<model name>`. They can be
+used to implement your own classes or describe APIs. They just provide type annotations
+and descriptions for model fields.
+
+You can export model values to plain python dicts using the `as_dict()` method and
+the `cvat_sdk.api_client.model_utils.to_json()` function.
+
+## Supported API endpoints
+
+All URIs are relative to _`http://localhost`_
 
 <!--lint disable table-cell-padding-->
 
@@ -243,14 +392,6 @@ _UsersApi_ | **users_retrieve_self** | **GET** /api/users/self | Method returns 
 
 
 ## Available Models
-
-Models can be instantiated like this:
-
-```python
-from cvat_sdk.api_client import models
-
-user_model = models.User(...)
-```
 
 - About
 - AnnotationFileRequest
