@@ -17,8 +17,8 @@ import datumaro.components.extractor as datum_extractor
 import rq
 from attr import attrib, attrs
 from datumaro.components.dataset import Dataset
+from datumaro.components.media import ByteImage, Image, PointCloud
 from datumaro.util import cast
-from datumaro.util.image import ByteImage, Image
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -1060,7 +1060,7 @@ class ProjectData(InstanceLabelData):
         self._project_annotation.add_task(task, files, self)
 
 class CVATDataExtractorMixin:
-    def __init__(self):
+    def __init__(self, media_type=Image):
         super().__init__()
 
     def categories(self) -> dict:
@@ -1075,18 +1075,17 @@ class CVATDataExtractorMixin:
         point_categories = datum_annotation.PointsCategories()
 
         for _, label in labels:
-            if label.get('parent') is None:
-                label_id = label_categories.add(label['name'])
-                for _, attr in label['attributes']:
-                    label_categories.attributes.add(attr['name'])
+            label_id = label_categories.add(label['name'], label.get('parent'))
+            for _, attr in label['attributes']:
+                label_categories.attributes.add(attr['name'])
 
-                if label['type'] == str(LabelType.SKELETON):
-                    labels_from = list(map(int, re.findall(r'data-node-from="(\d+)"', label['svg'])))
-                    labels_to = list(map(int, re.findall(r'data-node-to="(\d+)"', label['svg'])))
-                    sublabels = re.findall(r'data-label-name="(\w+)"', label['svg'])
-                    joints = zip(labels_from, labels_to)
+            if label['type'] == str(LabelType.SKELETON):
+                labels_from = list(map(int, re.findall(r'data-node-from="(\d+)"', label['svg'])))
+                labels_to = list(map(int, re.findall(r'data-node-to="(\d+)"', label['svg'])))
+                sublabels = re.findall(r'data-label-name="(\w+)"', label['svg'])
+                joints = zip(labels_from, labels_to)
 
-                    point_categories.add(label_id, sublabels, joints)
+                point_categories.add(label_id, sublabels, joints)
 
         categories[datum_annotation.AnnotationType.label] = label_categories
         categories[datum_annotation.AnnotationType.points] = point_categories
@@ -1115,7 +1114,7 @@ class CVATDataExtractorMixin:
 
 class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMixin):
     def __init__(self, task_data, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
-        super().__init__()
+        super().__init__(media_type=Image if dimension == DimensionType.DIM_2D else PointCloud)
         self._categories = self._load_categories(task_data.meta['task']['labels'])
         self._user = self._load_user_info(task_data.meta['task']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
@@ -1148,7 +1147,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
                     loader = lambda _: frame_provider.get_frame(i,
                         quality=frame_provider.Quality.ORIGINAL,
                         out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-                    return Image(loader=loader, **kwargs)
+                    return Image(data=loader, **kwargs)
             else:
                 # for images use encoded data to avoid recoding
                 def _make_image(i, **kwargs):
@@ -1174,7 +1173,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
             if dimension == DimensionType.DIM_2D:
                 dm_item = datum_extractor.DatasetItem(
                         id=osp.splitext(frame_data.name)[0],
-                        annotations=dm_anno, image=dm_image,
+                        annotations=dm_anno, media=dm_image,
                         attributes={'frame': frame_data.frame
                     })
             elif dimension == DimensionType.DIM_3D:
@@ -1190,7 +1189,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
 
                 dm_item = datum_extractor.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                    annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
                     attributes=attributes
                 )
 
@@ -1201,9 +1200,9 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
     def _read_cvat_anno(self, cvat_frame_anno: TaskData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[datum_annotation.AnnotationType.label]
-        def map_label(name): return label_cat.find(name)[0]
+        def map_label(name, parent=""): return label_cat.find(name, parent)[0]
         label_attrs = {
-            label['name']: label['attributes']
+            label.get("parent", "") + label['name']: label['attributes']
             for _, label in labels
         }
 
@@ -1211,7 +1210,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
 
 class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin):
     def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
-        super().__init__()
+        super().__init__(media_type=Image if dimension == DimensionType.DIM_2D else PointCloud)
         self._categories = self._load_categories(project_data.meta['project']['labels'])
         self._user = self._load_user_info(project_data.meta['project']) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
@@ -1251,7 +1250,7 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
                             loader = lambda _: frame_provider.get_frame(i,
                                 quality=frame_provider.Quality.ORIGINAL,
                                 out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-                            return Image(loader=loader, **kwargs)
+                            return Image(data=loader, **kwargs)
                         return _make_image
                 else:
                     # for images use encoded data to avoid recoding
@@ -1280,7 +1279,7 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
             if self._dimension == DimensionType.DIM_2D:
                 dm_item = datum_extractor.DatasetItem(
                     id=osp.splitext(frame_data.name)[0],
-                    annotations=dm_anno, image=dm_image,
+                    annotations=dm_anno, media=dm_image,
                     subset=frame_data.subset,
                     attributes={'frame': frame_data.frame}
                 )
@@ -1297,7 +1296,7 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
 
                 dm_item = datum_extractor.DatasetItem(
                     id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                    annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                    annotations=dm_anno, media=PointCloud(dm_image[0]), related_images=dm_image[1],
                     attributes=attributes, subset=frame_data.subset
                 )
             dm_items.append(dm_item)
@@ -1450,20 +1449,23 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             else:
                 continue
         elif shape_obj.type == ShapeType.SKELETON:
-            points = []
-            vis = []
+            elements = []
             for element in shape_obj.elements:
-                points.extend(element.points)
+                element_attr = convert_attrs(shape_obj.label + element.label, element.attributes)
+
+                if hasattr(element, 'track_id'):
+                    element_attr['track_id'] = element.track_id
+                    element_attr['keyframe'] = element.keyframe
                 element_vis = datum_annotation.Points.Visibility.visible
                 if element.outside:
                     element_vis = datum_annotation.Points.Visibility.absent
                 elif element.occluded:
                     element_vis = datum_annotation.Points.Visibility.hidden
-                vis.append(element_vis)
+                elements.append(datum_annotation.Points(element.points, [element_vis],
+                    label=map_label(element.label, shape_obj.label), attributes=element_attr))
 
-            anno = datum_annotation.Points(points, vis,
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
+            anno = datum_annotation.Skeleton(elements, label=anno_label,
+                attributes=anno_attr, group=anno_group, z_order=shape_obj.z_order)
         else:
             raise Exception("Unknown shape type '%s'" % shape_obj.type)
 
@@ -1522,11 +1524,11 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
         datum_annotation.AnnotationType.polygon: ShapeType.POLYGON,
         datum_annotation.AnnotationType.polyline: ShapeType.POLYLINE,
         datum_annotation.AnnotationType.points: ShapeType.POINTS,
-        datum_annotation.AnnotationType.cuboid_3d: ShapeType.CUBOID
+        datum_annotation.AnnotationType.cuboid_3d: ShapeType.CUBOID,
+        datum_annotation.AnnotationType.skeleton: ShapeType.SKELETON
     }
 
     label_cat = dm_dataset.categories()[datum_annotation.AnnotationType.label]
-    point_cat = dm_dataset.categories().get(datum_annotation.AnnotationType.points)
 
     root_hint = find_dataset_root(dm_dataset, instance_data)
 
@@ -1563,12 +1565,11 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                 ]
 
                 if ann.type in shapes:
+                    points = []
                     if ann.type == datum_annotation.AnnotationType.cuboid_3d:
-                        try:
-                            ann.points = [*ann.position,*ann.rotation,*ann.scale,0,0,0,0,0,0,0]
-                        except Exception:
-                            ann.points = ann.points
-                        ann.z_order = 0
+                        points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
+                    elif ann.type != datum_annotation.AnnotationType.skeleton:
+                        points = ann.points
 
                     # Use safe casting to bool instead of plain reading
                     # because in some formats return type can be different
@@ -1583,34 +1584,38 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
 
                     shape_type = shapes[ann.type]
-                    elements = []
-                    if point_cat and shape_type == ShapeType.POINTS:
-                        labels = point_cat.items[ann.label].labels
-                        shape_type = ShapeType.SKELETON
-                        for i in range(len(ann.points) // 2):
-                            label = None
-                            if i < len(labels):
-                                label = labels[i]
-                            elements.append(instance_data.LabeledShape(
-                                type=ShapeType.POINTS,
-                                frame=frame_number,
-                                points=ann.points[2 * i : 2 * i + 2],
-                                label=label,
-                                occluded=ann.visibility[i] == datum_annotation.Points.Visibility.hidden,
-                                source=source,
-                                attributes=[],
-                                outside=ann.visibility[i] == datum_annotation.Points.Visibility.absent,
-                            ))
-
-
                     if track_id is None or dm_dataset.format != 'cvat' :
+                        elements = []
+                        if ann.type == datum_annotation.AnnotationType.skeleton:
+                            for element in ann.elements:
+                                element_attributes = [
+                                    instance_data.Attribute(name=n, value=str(v))
+                                    for n, v in element.attributes.items()
+                                ]
+                                element_occluded = element.visibility[0] == datum_annotation.Points.Visibility.hidden
+                                element_outside = element.visibility[0] == datum_annotation.Points.Visibility.absent
+                                element_source = element.attributes.pop('source').lower() \
+                                    if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
+                                elements.append(instance_data.LabeledShape(
+                                    type=shapes[element.type],
+                                    frame=frame_number,
+                                    points=element.points,
+                                    label=label_cat.items[element.label].name,
+                                    occluded=element_occluded,
+                                    z_order=ann.z_order,
+                                    group=group_map.get(ann.group, 0),
+                                    source=element_source,
+                                    attributes=element_attributes,
+                                    elements=[],
+                                    outside=element_outside,
+                                ))
                         instance_data.add_shape(instance_data.LabeledShape(
                             type=shape_type,
                             frame=frame_number,
-                            points=ann.points,
+                            points=points,
                             label=label_cat.items[ann.label].name,
                             occluded=occluded,
-                            z_order=ann.z_order,
+                            z_order=ann.z_order if ann.type != datum_annotation.AnnotationType.cuboid_3d else 0,
                             group=group_map.get(ann.group, 0),
                             source=source,
                             attributes=attributes,
@@ -1619,27 +1624,57 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         continue
 
                     if keyframe or outside:
+                        if track_id not in tracks:
+                            tracks[track_id] = {
+                                'label': label_cat.items[ann.label].name,
+                                'group': group_map.get(ann.group, 0),
+                                'source': source,
+                                'shapes': [],
+                                'elements':{},
+                            }
+
                         track = instance_data.TrackedShape(
                             type=shapes[ann.type],
                             frame=frame_number,
                             occluded=occluded,
                             outside=outside,
                             keyframe=keyframe,
-                            points=ann.points,
-                            z_order=ann.z_order,
+                            points=points,
+                            z_order=ann.z_order if ann.type != datum_annotation.AnnotationType.cuboid_3d else 0,
                             source=source,
                             attributes=attributes,
                         )
 
-                        if track_id not in tracks:
-                            tracks[track_id] = instance_data.Track(
-                                label=label_cat.items[ann.label].name,
-                                group=group_map.get(ann.group, 0),
-                                source=source,
-                                shapes=[],
-                            )
+                        tracks[track_id]['shapes'].append(track)
 
-                        tracks[track_id].shapes.append(track)
+                        if ann.type == datum_annotation.AnnotationType.skeleton:
+                            for element in ann.elements:
+                                if element.label not in tracks[track_id]['elements']:
+                                    tracks[track_id]['elements'][element.label] = instance_data.Track(
+                                        label=label_cat.items[element.label].name,
+                                        group=0,
+                                        source=source,
+                                        shapes=[],
+                                    )
+                                element_attributes = [
+                                    instance_data.Attribute(name=n, value=str(v))
+                                    for n, v in element.attributes.items()
+                                ]
+                                element_occluded = cast(element.attributes.pop('occluded', None), bool) is True
+                                element_outside = cast(element.attributes.pop('outside', None), bool) is True
+                                element_source = element.attributes.pop('source').lower() \
+                                    if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
+                                tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
+                                    type=shapes[element.type],
+                                    frame=frame_number,
+                                    occluded=element_occluded,
+                                    outside=element_outside,
+                                    keyframe=keyframe,
+                                    points=element.points,
+                                    z_order=element.z_order,
+                                    source=element_source,
+                                    attributes=element_attributes,
+                                ))
 
                 elif ann.type == datum_annotation.AnnotationType.label:
                     instance_data.add_tag(instance_data.Tag(
@@ -1654,7 +1689,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
     for track in tracks.values():
-        instance_data.add_track(track)
+        track['elements'] = list(track['elements'].values())
+        instance_data.add_track(instance_data.Track(**track))
 
 
 def import_labels_to_project(project_annotation, dataset: Dataset):

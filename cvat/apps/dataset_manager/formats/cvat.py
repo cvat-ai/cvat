@@ -409,7 +409,7 @@ class CvatExtractor(Extractor):
             di.subset = subset or DEFAULT_SUBSET_NAME
             di.annotations = item_desc.get('annotations')
             di.attributes = {'frame': int(frame_id)}
-            di.image = image if isinstance(image, Image) else di.image
+            di.media = image if isinstance(image, Image) else di.media
             image_items[(subset, osp.splitext(name)[0])] = di
         return image_items
 
