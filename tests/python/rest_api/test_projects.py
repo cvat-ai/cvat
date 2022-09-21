@@ -13,7 +13,7 @@ import pytest
 from copy import deepcopy
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, patch_method, make_api_client
+from shared.utils.config import get_method, patch_method, make_api_client, post_files_method, post_method
 from .utils import export_dataset
 
 
@@ -348,6 +348,52 @@ class TestImportExportDatasetProject:
         }
 
         self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
+
+    def test_can_export_and_import_dataset_with_skeletons(self, admin_user):
+        project_id = 5
+
+        export_formats = ["COCO Keypoints 1.0", "CVAT for images 1.1", "CVAT for video 1.1"]
+        import_formats = ["COCO Keypoints 1.0", "CVAT 1.1", "CVAT 1.1"]
+
+        for export_format, import_format in zip(export_formats, import_formats):
+            response = self._test_export_project(admin_user, project_id, export_format)
+
+            tmp_file = io.BytesIO(response.data)
+            tmp_file.name = 'dataset.zip'
+
+            import_data = {
+                'dataset_file': tmp_file,
+            }
+
+            self._test_import_project(admin_user, project_id, import_format, import_data)
+
+    def _test_can_get_project_backup(self, username, pid, **kwargs):
+        for _ in range(30):
+            response = get_method(username, f"projects/{pid}/backup", **kwargs)
+            response.raise_for_status()
+            if response.status_code == HTTPStatus.CREATED:
+                break
+            sleep(1)
+        response = get_method(username, f"projects/{pid}/backup", action="download", **kwargs)
+        assert response.status_code == HTTPStatus.OK
+        return response
+
+    def test_admin_can_get_project_backup_and_create_project_by_backup(self, admin_user):
+        project_id = 5
+        response = self._test_can_get_project_backup(admin_user, project_id)
+
+        tmp_file = io.BytesIO(response.content)
+        tmp_file.name = 'dataset.zip'
+
+        import_data = {
+            'project_file': tmp_file,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.projects_api.create_backup(
+                backup_write_request=deepcopy(import_data),
+                _content_type="multipart/form-data")
+            assert response.status == HTTPStatus.ACCEPTED
 
 @pytest.mark.usefixtures('changedb')
 class TestPatchProjectLabel:

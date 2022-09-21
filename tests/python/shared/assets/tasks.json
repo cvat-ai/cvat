@@ -1,8 +1,243 @@
 {
-  "count": 9,
+  "count": 10,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2022-09-21T07:30:41.530000Z",
+      "data": 13,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 14,
+      "image_quality": 70,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 26,
+          "name": "4",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "val1",
+              "id": 3,
+              "input_type": "select",
+              "mutable": false,
+              "name": "attr",
+              "values": [
+                "val1",
+                "val2"
+              ]
+            }
+          ],
+          "color": "#59a8fe",
+          "has_parent": true,
+          "id": 25,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4925ec",
+          "has_parent": true,
+          "id": 24,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#d53957",
+          "has_parent": true,
+          "id": 23,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "white",
+              "id": 2,
+              "input_type": "select",
+              "mutable": false,
+              "name": "color",
+              "values": [
+                "white",
+                "black"
+              ]
+            }
+          ],
+          "color": "#0c81b5",
+          "has_parent": false,
+          "id": 22,
+          "name": "s2",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#4a649f",
+              "has_parent": true,
+              "id": 26,
+              "name": "4",
+              "type": "points"
+            },
+            {
+              "attributes": [
+                {
+                  "default_value": "val1",
+                  "id": 3,
+                  "input_type": "select",
+                  "mutable": false,
+                  "name": "attr",
+                  "values": [
+                    "val1",
+                    "val2"
+                  ]
+                }
+              ],
+              "color": "#59a8fe",
+              "has_parent": true,
+              "id": 25,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#4925ec",
+              "has_parent": true,
+              "id": 24,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#d53957",
+              "has_parent": true,
+              "id": 23,
+              "name": "1",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"70.15311431884766\" y1=\"23.4113712310791\" x2=\"36.37385177612305\" y2=\"69.7324447631836\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"81.18990325927734\" y1=\"57.85953140258789\" x2=\"70.15311431884766\" y2=\"23.4113712310791\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"18.81532096862793\" y1=\"31.438127517700195\" x2=\"81.18990325927734\" y2=\"57.85953140258789\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"18.81532096862793\" cy=\"31.438127517700195\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"23\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"69.7324447631836\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"24\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"23.4113712310791\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"25\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"81.18990325927734\" cy=\"57.85953140258789\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"26\"></circle>",
+          "type": "skeleton"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 21,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 20,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 19,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#5c5eba",
+          "has_parent": false,
+          "id": 18,
+          "name": "s1",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#479ffe",
+              "has_parent": true,
+              "id": 21,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#350dea",
+              "has_parent": true,
+              "id": 20,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#d12345",
+              "has_parent": true,
+              "id": 19,
+              "name": "1",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"32.026023864746094\" y1=\"60.70234298706055\" x2=\"69.65144348144531\" y2=\"27.090301513671875\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"6.44074010848999\" y1=\"30.769229888916016\" x2=\"32.026023864746094\" y2=\"60.70234298706055\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"6.44074010848999\" cy=\"30.769229888916016\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"32.026023864746094\" cy=\"60.70234298706055\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"69.65144348144531\" cy=\"27.090301513671875\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>",
+          "type": "skeleton"
+        }
+      ],
+      "mode": "annotation",
+      "name": "task1 in project5",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": 5,
+      "segment_size": 9,
+      "segments": [
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 18,
+              "stage": "annotation",
+              "state": "new",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/18"
+            }
+          ],
+          "start_frame": 0,
+          "stop_frame": 8
+        }
+      ],
+      "size": 9,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 7,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 8,
+        "location": "local"
+      },
+      "updated_date": "2022-09-21T07:30:41.758000Z",
+      "url": "http://localhost:8080/api/tasks/14"
+    },
     {
       "assignee": null,
       "bug_tracker": "",
