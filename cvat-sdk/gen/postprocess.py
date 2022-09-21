@@ -69,15 +69,21 @@ class Processor:
 
         return type_repr
 
+    def make_api_doc_link(self, page: str) -> str:
+        parts = page.split('#', maxsplit=1)
+        parts[0] = parts[0].lower()
+        return '#'.join(parts)
+
     allowed_actions = {
         "make_operation_id",
         "make_api_name",
         "make_type_annotation",
+        "make_api_doc_link",
     }
 
     def _process_file(self, contents: str):
         processor_pattern = re.compile(
-            f"{self.REPLACEMENT_TOKEN}(.*?){self.ARGS_TOKEN}(.*){self.REPLACEMENT_TOKEN}"
+            f"{self.REPLACEMENT_TOKEN}(.*?){self.ARGS_TOKEN}(.*?){self.REPLACEMENT_TOKEN}"
         )
 
         matches = list(processor_pattern.finditer(contents))
@@ -102,8 +108,8 @@ class Processor:
         with open(src_path, "w") as f:
             f.write(contents)
 
-    def process_dir(self, dir_path: str):
-        for filename in glob(dir_path + "/**/*.py", recursive=True):
+    def process_dir(self, dir_path: str, *, file_ext: str = '.py'):
+        for filename in glob(dir_path + f"/**/*{file_ext}", recursive=True):
             try:
                 self.process_file(filename)
             except Exception as e:
@@ -124,7 +130,7 @@ def parse_args(args=None):
 
         Replacement token: '%(repl_token)s'.
         Args separator token: '%(args_token)s'.
-        Replaces the following patterns in python files:
+        Replaces the following patterns in files:
             '%(repl_token)sREPLACER%(args_token)sARG1%(args_token)sARG2...%(repl_token)s'
             ->
             REPLACER(ARG1, ARG2, ...) value
@@ -137,6 +143,7 @@ def parse_args(args=None):
     )
     parser.add_argument("--schema", required=True)
     parser.add_argument("--input-path", required=True)
+    parser.add_argument("--file-ext", default=".py", choices=[".py", ".md"])
 
     return parser.parse_args(args)
 
@@ -148,7 +155,7 @@ def main(args=None):
     processor = Processor(schema=schema)
 
     if osp.isdir(args.input_path):
-        processor.process_dir(args.input_path)
+        processor.process_dir(args.input_path, file_ext=args.file_ext)
     elif osp.isfile(args.input_path):
         processor.process_file(args.input_path)
 
