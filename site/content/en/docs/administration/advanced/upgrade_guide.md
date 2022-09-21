@@ -1,7 +1,7 @@
 ---
 title: 'Upgrade guide'
 linkTitle: 'Upgrade guide'
-weight: 11
+weight: 60
 description: 'Instructions for upgrading CVAT deployed with docker compose'
 ---
 

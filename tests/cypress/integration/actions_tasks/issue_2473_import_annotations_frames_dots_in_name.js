@@ -112,12 +112,12 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
 
         it('Upload annotation with YOLO format to job.', () => {
             cy.interactMenu('Upload annotations');
+            cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             uploadAnnotation(
                 dumpType.split(' ')[0],
                 annotationArchiveName,
                 '.cvat-modal-content-load-job-annotation',
             );
-            cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
