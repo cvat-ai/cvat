@@ -9,7 +9,7 @@ import uuid
 from django.conf import settings
 from django.core.cache import cache
 from distutils.util import strtobool
-from rest_framework import status
+from rest_framework import status, mixins
 from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
@@ -279,6 +279,11 @@ class AnnotationMixin:
             return Response(serializer.data)
 
     def import_annotations(self, request, pk, db_obj, import_func, rq_func, rq_id):
+        is_tus_request = request.headers.get('Upload-Length', None) is not None or \
+            request.method == 'OPTIONS'
+        if is_tus_request:
+            return self.init_tus_upload(request)
+
         use_default_location = request.query_params.get('use_default_location', True)
         use_settings = strtobool(str(use_default_location))
         obj = db_obj if use_settings else request.query_params
@@ -315,3 +320,17 @@ class SerializeMixin:
             file_name = request.query_params.get("filename", "")
             return import_func(request, filename=file_name)
         return self.upload_data(request)
+
+class PartialUpdateModelMixin:
+    """
+    Update fields of a model instance.
+
+    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
+    """
+
+    def perform_update(self, serializer):
+        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return mixins.UpdateModelMixin.update(self, request=request, *args, **kwargs)

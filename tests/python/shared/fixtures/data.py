@@ -280,6 +280,10 @@ def filter_tasks_with_shapes(annotations):
     return find
 
 @pytest.fixture(scope='session')
+def jobs_with_shapes(jobs, filter_jobs_with_shapes):
+    return filter_jobs_with_shapes(jobs)
+
+@pytest.fixture(scope='session')
 def tasks_with_shapes(tasks, filter_tasks_with_shapes):
     return filter_tasks_with_shapes(tasks)
 

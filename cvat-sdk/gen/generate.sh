@@ -8,7 +8,7 @@ set -e
 
 GENERATOR_VERSION="v6.0.1"
 
-VERSION="2.0-alpha"
+VERSION="2.1.0.post1"
 LIB_NAME="cvat_sdk"
 LAYER1_LIB_NAME="${LIB_NAME}/api_client"
 DST_DIR="."

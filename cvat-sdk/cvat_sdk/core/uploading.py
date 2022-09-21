@@ -7,16 +7,15 @@ from __future__ import annotations
 import os
 import os.path as osp
 from contextlib import ExitStack, closing
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
 import urllib3
 
-from cvat_sdk.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.rest import RESTClientObject
-from cvat_sdk.core.helpers import StreamWithProgress
+from cvat_sdk.core.helpers import StreamWithProgress, expect_status
 from cvat_sdk.core.progress import ProgressReporter
-from cvat_sdk.core.utils import assert_status
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
@@ -25,57 +24,12 @@ MAX_REQUEST_SIZE = 100 * 2**20
 
 
 class Uploader:
+    """
+    Implements common uploading protocols
+    """
+
     def __init__(self, client: Client):
-        self.client = client
-
-    def upload_files(
-        self,
-        url: str,
-        resources: List[str],
-        *,
-        pbar: Optional[ProgressReporter] = None,
-        **kwargs,
-    ):
-        bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
-
-        if pbar is not None:
-            pbar.start(total_size, desc="Uploading data")
-
-        self._tus_start_upload(url)
-
-        for group, group_size in bulk_file_groups:
-            with ExitStack() as es:
-                files = {}
-                for i, filename in enumerate(group):
-                    files[f"client_files[{i}]"] = (
-                        filename,
-                        es.enter_context(closing(open(filename, "rb"))).read(),
-                    )
-                response = self.client.api.rest_client.POST(
-                    url,
-                    post_params=dict(**kwargs, **files),
-                    headers={
-                        "Content-Type": "multipart/form-data",
-                        "Upload-Multiple": "",
-                        **self.client.api.get_common_headers(),
-                    },
-                )
-            assert_status(200, response)
-
-            if pbar is not None:
-                pbar.advance(group_size)
-
-        for filename in separate_files:
-            # TODO: check if basename produces invalid paths here, can lead to overwriting
-            self._upload_file_data_with_tus(
-                url,
-                filename,
-                meta={"filename": osp.basename(filename)},
-                pbar=pbar,
-                logger=self.client.logger.debug,
-            )
-
-        self._tus_finish_upload(url, fields=kwargs)
+        self._client = client
 
     def upload_file(
         self,
@@ -120,6 +74,27 @@ class Uploader:
             url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
         )
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
+
+    def _wait_for_completion(
+        self,
+        url: str,
+        *,
+        success_status: int,
+        status_check_period: Optional[int] = None,
+        query_params: Optional[Dict[str, Any]] = None,
+        post_params: Optional[Dict[str, Any]] = None,
+        method: str = "POST",
+        positive_statuses: Optional[Sequence[int]] = None,
+    ) -> urllib3.HTTPResponse:
+        return self._client.wait_for_completion(
+            url,
+            success_status=success_status,
+            status_check_period=status_check_period,
+            query_params=query_params,
+            post_params=post_params,
+            method=method,
+            positive_statuses=positive_statuses,
+        )
 
     def _split_files_by_requests(
         self, filenames: List[str]
@@ -268,7 +243,7 @@ class Uploader:
                 input_file = StreamWithProgress(input_file, pbar, length=file_size)
 
             tus_uploader = self._make_tus_uploader(
-                self.client.api,
+                self._client.api_client,
                 url=url.rstrip("/") + "/",
                 metadata=meta,
                 file_stream=input_file,
@@ -278,26 +253,131 @@ class Uploader:
             tus_uploader.upload()
 
     def _tus_start_upload(self, url, *, query_params=None):
-        response = self.client.api.rest_client.POST(
+        response = self._client.api_client.rest_client.POST(
             url,
             query_params=query_params,
             headers={
                 "Upload-Start": "",
-                **self.client.api.get_common_headers(),
+                **self._client.api_client.get_common_headers(),
             },
         )
-        assert_status(202, response)
+        expect_status(202, response)
         return response
 
     def _tus_finish_upload(self, url, *, query_params=None, fields=None):
-        response = self.client.api.rest_client.POST(
+        response = self._client.api_client.rest_client.POST(
             url,
             headers={
                 "Upload-Finish": "",
-                **self.client.api.get_common_headers(),
+                **self._client.api_client.get_common_headers(),
             },
             query_params=query_params,
             post_params=fields,
         )
-        assert_status(202, response)
+        expect_status(202, response)
         return response
+
+
+class AnnotationUploader(Uploader):
+    def upload_file_and_wait(
+        self,
+        endpoint: Endpoint,
+        filename: str,
+        format_name: str,
+        *,
+        url_params: Optional[Dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
+        params = {"format": format_name, "filename": osp.basename(filename)}
+        self.upload_file(
+            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+        )
+
+        self._wait_for_completion(
+            url,
+            success_status=201,
+            positive_statuses=[202],
+            status_check_period=status_check_period,
+            query_params=params,
+            method="POST",
+        )
+
+
+class DatasetUploader(Uploader):
+    def upload_file_and_wait(
+        self,
+        endpoint: Endpoint,
+        filename: str,
+        format_name: str,
+        *,
+        url_params: Optional[Dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
+        params = {"format": format_name, "filename": osp.basename(filename)}
+        self.upload_file(
+            url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
+        )
+
+        self._wait_for_completion(
+            url,
+            success_status=201,
+            positive_statuses=[202],
+            status_check_period=status_check_period,
+            query_params=params,
+            method="GET",
+        )
+
+
+class DataUploader(Uploader):
+    def upload_files(
+        self,
+        url: str,
+        resources: List[str],
+        *,
+        pbar: Optional[ProgressReporter] = None,
+        **kwargs,
+    ):
+        bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
+
+        if pbar is not None:
+            pbar.start(total_size, desc="Uploading data")
+
+        self._tus_start_upload(url)
+
+        for group, group_size in bulk_file_groups:
+            with ExitStack() as es:
+                files = {}
+                for i, filename in enumerate(group):
+                    files[f"client_files[{i}]"] = (
+                        filename,
+                        es.enter_context(closing(open(filename, "rb"))).read(),
+                    )
+                response = self._client.api_client.rest_client.POST(
+                    url,
+                    post_params=dict(**kwargs, **files),
+                    headers={
+                        "Content-Type": "multipart/form-data",
+                        "Upload-Multiple": "",
+                        **self._client.api_client.get_common_headers(),
+                    },
+                )
+            expect_status(200, response)
+
+            if pbar is not None:
+                pbar.advance(group_size)
+
+        for filename in separate_files:
+            # TODO: check if basename produces invalid paths here, can lead to overwriting
+            self._upload_file_data_with_tus(
+                url,
+                filename,
+                meta={"filename": osp.basename(filename)},
+                pbar=pbar,
+                logger=self._client.logger.debug,
+            )
+
+        self._tus_finish_upload(url, fields=kwargs)

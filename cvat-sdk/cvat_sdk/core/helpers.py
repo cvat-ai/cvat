@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import io
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import tqdm
+import urllib3
 
+from cvat_sdk import exceptions
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.progress import ProgressReporter
-from cvat_sdk.core.utils import assert_status
 
 
 def get_paginated_collection(
@@ -26,7 +27,7 @@ def get_paginated_collection(
     page = 1
     while True:
         (page_contents, response) = endpoint.call_with_http_info(**kwargs, page=page)
-        assert_status(200, response)
+        expect_status(200, response)
 
         if return_json:
             results.extend(json.loads(response.data).get("results", []))
@@ -86,3 +87,18 @@ class StreamWithProgress:
 
     def tell(self):
         return self.stream.tell()
+
+
+def expect_status(codes: Union[int, Iterable[int]], response: urllib3.HTTPResponse) -> None:
+    if not hasattr(codes, "__iter__"):
+        codes = [codes]
+
+    if response.status in codes:
+        return
+
+    if 300 <= response.status <= 500:
+        raise exceptions.ApiException(response.status, reason=response.msg, http_resp=response)
+    else:
+        raise exceptions.ApiException(
+            response.status, reason="Unexpected status code received", http_resp=response
+        )

@@ -35,12 +35,12 @@ context('Dump annotation if cuboid created.', () => {
                 type: 'annotations',
                 format: exportFormat,
             };
-            cy.exportTask(exportAnnotation);
+            cy.exportJob(exportAnnotation);
             cy.waitForDownload();
         });
 
         it('Error notification is not exists.', () => {
-            cy.get('.ant-notification-notice').should('not.exist');
+            cy.get('.ant-notification-notice-error').should('not.exist');
         });
     });
 });

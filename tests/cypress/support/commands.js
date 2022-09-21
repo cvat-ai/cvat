@@ -1,8 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+/* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix } from './utils';
 
@@ -388,6 +391,22 @@ Cypress.Commands.add('createEllipse', (createEllipseParams) => {
     cy.checkObjectParameters(createEllipseParams, 'ELLIPSE');
 });
 
+Cypress.Commands.add('createSkeleton', (skeletonParameters) => {
+    cy.interactControlButton('draw-skeleton');
+    cy.switchLabel(skeletonParameters.labelName, 'draw-skeleton');
+    cy.get('.cvat-draw-skeleton-popover').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
+        });
+        cy.contains('button', skeletonParameters.type).click();
+    });
+    cy.get('.cvat-canvas-container')
+        .click(skeletonParameters.xtl, skeletonParameters.ytl)
+        .click(skeletonParameters.xbr, skeletonParameters.ybr);
+    cy.checkPopoverHidden('draw-skeleton');
+    cy.checkObjectParameters(skeletonParameters, 'SKELETON');
+});
+
 Cypress.Commands.add('changeAppearance', (colorBy) => {
     cy.get('.cvat-appearance-color-by-radio-group').within(() => {
         cy.get('[type="radio"]').check(colorBy, { force: true });
@@ -626,6 +645,41 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.overlapSize) {
         cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
     }
+    if (advancedConfigurationParams.sourceStorage) {
+        const { sourceStorage } = advancedConfigurationParams;
+
+        if (sourceStorage.disableSwitch) {
+            cy.get('.ant-collapse-content-box').find('#useProjectSourceStorage').click();
+        }
+
+        cy.get('.cvat-select-source-storage').within(() => {
+            cy.get('.ant-select-selection-item').click();
+        });
+        cy.contains('.cvat-select-source-storage-location', sourceStorage.location).should('be.visible').click();
+
+        if (sourceStorage.cloudStorageId) {
+            cy.get('.cvat-search-source-storage-cloud-storage-field').click();
+            cy.get('.cvat-cloud-storage-select-provider').click();
+        }
+    }
+
+    if (advancedConfigurationParams.targetStorage) {
+        const { targetStorage } = advancedConfigurationParams;
+
+        if (targetStorage.disableSwitch) {
+            cy.get('.ant-collapse-content-box').find('#useProjectTargetStorage').click();
+        }
+
+        cy.get('.cvat-select-target-storage').within(() => {
+            cy.get('.ant-select-selection-item').click();
+        });
+        cy.contains('.cvat-select-target-storage-location', targetStorage.location).should('be.visible').click();
+
+        if (targetStorage.cloudStorageId) {
+            cy.get('.cvat-search-target-storage-cloud-storage-field').click();
+            cy.get('.cvat-cloud-storage-select-provider').last().click();
+        }
+    }
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
@@ -637,6 +691,57 @@ Cypress.Commands.add('removeAnnotations', () => {
         cy.contains('button', 'Delete').click();
     });
 });
+
+Cypress.Commands.add('confirmUpdate', (modalWindowClassName) => {
+    cy.get(modalWindowClassName).should('be.visible').within(() => {
+        cy.contains('button', 'Update').click();
+    });
+});
+
+Cypress.Commands.add(
+    'uploadAnnotations', (
+        format,
+        file,
+        confirmModalClassName,
+        sourceStorage = null,
+        useDefaultLocation = true,
+    ) => {
+        cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
+        cy.contains('.cvat-modal-import-dataset-option-item', format).click();
+        cy.get('.cvat-modal-import-select').should('contain.text', format);
+
+        if (!useDefaultLocation) {
+            cy.get('.cvat-modal-import-dataset')
+                .find('.cvat-modal-import-switch-use-default-storage')
+                .click();
+            cy.get('.cvat-select-source-storage').within(() => {
+                cy.get('.ant-select-selection-item').click();
+            });
+            cy.contains('.cvat-select-source-storage-location', sourceStorage.location)
+                .should('be.visible')
+                .click();
+            if (sourceStorage.cloudStorageId) {
+                cy.get('.cvat-search-source-storage-cloud-storage-field').click();
+                cy.get('.cvat-cloud-storage-select-provider').click();
+            }
+        }
+        if (sourceStorage && sourceStorage.cloudStorageId) {
+            cy.get('.cvat-modal-import-dataset')
+                .find('.cvat-modal-import-filename-input')
+                .type(file);
+        } else {
+            cy.get('input[type="file"]').attachFile(file, { subjectType: 'drag-n-drop' });
+            cy.get(`[title="${file}"]`).should('be.visible');
+        }
+        cy.contains('button', 'OK').click();
+        cy.confirmUpdate(confirmModalClassName);
+        cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
+        cy.closeNotification('.cvat-notification-notice-import-annotation-start');
+        cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+        cy.contains('Annotations have been loaded').should('be.visible');
+        cy.closeNotification('.ant-notification-notice-info');
+    },
+);
 
 Cypress.Commands.add('goToTaskList', () => {
     cy.get('a[value="tasks"]').click();
@@ -780,9 +885,10 @@ Cypress.Commands.add('interactMenu', (choice) => {
 
 Cypress.Commands.add('setJobState', (choice) => {
     cy.interactMenu('Change job state');
-    cy.get('.cvat-annotation-menu-job-state-submenu').within(() => {
-        cy.contains(choice).click();
-    });
+    cy.get('.cvat-annotation-menu-job-state-submenu')
+        .should('not.have.class', 'ant-zoom-big').within(() => {
+            cy.contains(choice).click();
+        });
     cy.get('.cvat-modal-content-change-job-state')
         .should('be.visible')
         .within(() => {
@@ -845,7 +951,7 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
-        cy.get('.cvat-modal-export-task').find('[type="checkbox"]').should('not.be.checked').check();
+        cy.get('.cvat-modal-export-task').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
     if (archiveCustomeName) {
         cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
@@ -853,6 +959,37 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
+});
+
+Cypress.Commands.add('exportJob', ({
+    type, format, archiveCustomeName,
+    targetStorage = null, useDefaultLocation = true,
+}) => {
+    cy.interactMenu('Export job dataset');
+    cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
+    cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
+    if (type === 'dataset') {
+        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-save-images').should('not.be.checked').click();
+    }
+    if (archiveCustomeName) {
+        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    }
+    if (!useDefaultLocation) {
+        cy.get('.cvat-modal-export-job').find('.cvat-settings-switch').click();
+        cy.get('.cvat-select-target-storage').within(() => {
+            cy.get('.ant-select-selection-item').click();
+        });
+        cy.contains('.cvat-select-target-storage-location', targetStorage.location).should('be.visible').click();
+
+        if (targetStorage.cloudStorageId) {
+            cy.get('.cvat-search-target-storage-cloud-storage-field').click();
+            cy.get('.cvat-cloud-storage-select-provider').click();
+        }
+    }
+    cy.contains('button', 'OK').click();
+    cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
+    cy.closeNotification('.cvat-notification-notice-export-job-start');
 });
 
 Cypress.Commands.add('renameTask', (oldName, newName) => {
@@ -868,36 +1005,31 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         .trigger('mousemove')
         .trigger('mouseover')
         .should('have.class', 'cvat_canvas_shape_activated');
-    cy.get('.svg_select_points_rot').then($el => {
-        let {x, y, width, height} = $el[0].getBoundingClientRect();
+    cy.get('.svg_select_points_rot').then(($el) => {
+        const rect = $el[0].getBoundingClientRect();
+        let { x, y } = rect;
+        const { width, height } = rect;
         x += width / 2;
         y += height / 2;
 
-        cy.window().then((win) => {
-            const [container] = win.document.getElementsByClassName('cvat-canvas-container');
-            const {x: offsetX, y: offsetY} = container.getBoundingClientRect();
-            // x -= offsetX;
-            // y -= offsetY;
-            cy.get('#root')
-                .trigger('mousemove', x, y)
-                .trigger('mouseenter', x, y);
-            cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
-            cy.get('#root').trigger('mousedown', x, y, { button: 0 });
-            if (pressShift) {
-                cy.get('body').type('{shift}', { release: false });
-            }
-            cy.get('#root').trigger('mousemove', x + 20, y);
-            cy.get(shape).should('have.attr', 'transform');
-            cy.document().then((doc) => {
-                const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
-                cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
-                expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
-            });
-            cy.get('#root').trigger('mouseup');
-        })
+        cy.get('#root')
+            .trigger('mousemove', x, y)
+            .trigger('mouseenter', x, y);
+        cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
+        cy.get('#root').trigger('mousedown', x, y, { button: 0 });
+        if (pressShift) {
+            cy.get('body').type('{shift}', { release: false });
+        }
+        cy.get('#root').trigger('mousemove', x + 20, y);
+        cy.get(shape).should('have.attr', 'transform');
+        cy.document().then((doc) => {
+            const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
+            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
+            expect(`${shapeTranformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
+        });
+        cy.get('#root').trigger('mouseup');
     });
-
 });
 
 Cypress.Commands.add('deleteFrame', (action = 'delete') => {
@@ -912,6 +1044,30 @@ Cypress.Commands.add('deleteFrame', (action = 'delete') => {
     }
     cy.saveJob('PATCH', 200);
     cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
+});
+
+Cypress.Commands.add('verifyNotification', () => {
+    cy.get('.ant-notification-notice-info').should('be.visible');
+    cy.closeNotification('.ant-notification-notice-info');
+});
+
+Cypress.Commands.add('goToCloudStoragesPage', () => {
+    cy.get('a[value="cloudstorages"]').click();
+    cy.url().should('include', '/cloudstorages');
+});
+
+Cypress.Commands.add('deleteCloudStorage', (displayName) => {
+    cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove').trigger('mouseover');
+    cy.get('.ant-dropdown')
+        .not('.ant-dropdown-hidden')
+        .within(() => {
+            cy.contains('[role="menuitem"]', 'Delete').click();
+        });
+    cy.get('.cvat-delete-cloud-storage-modal')
+        .should('contain', `You are going to remove the cloudstorage "${displayName}"`)
+        .within(() => {
+            cy.contains('button', 'Delete').click();
+        });
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {

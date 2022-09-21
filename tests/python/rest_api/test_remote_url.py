@@ -32,7 +32,7 @@ def _wait_until_task_is_created(username, task_id):
 
 
 @pytest.mark.usefixtures('changedb')
-class TestGetAnalytics:
+class TestCreateFromRemote:
     task_id = 12
     def _test_can_create(self, user, task_id, resources):
         response = _post_task_remote_data(user, task_id, resources)
@@ -58,6 +58,6 @@ class TestGetAnalytics:
 
     def test_can_create(self, find_users):
         user = find_users(privilege='admin')[0]['username']
-        remote_resources = ['https://cvat-ai.github.io/cvat/favicons/favicon-32x32.png']
+        remote_resources = ['https://opencv.github.io/cvat/favicons/favicon-32x32.png']
 
         self._test_can_create(user, self.task_id, remote_resources)

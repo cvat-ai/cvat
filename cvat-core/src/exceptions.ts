@@ -171,7 +171,7 @@ export class Exception extends Error {
         };
 
         try {
-            const serverProxy = require('./server-proxy');
+            const serverProxy = require('./server-proxy').default;
             await serverProxy.server.exception(exceptionObject);
         } catch (exception) {
             // add event
