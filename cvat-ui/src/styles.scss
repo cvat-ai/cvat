@@ -96,3 +96,13 @@ hr {
 .cvat-divider {
     margin: $grid-unit-size * 0.5 0;
 }
+
+.cvat-advanced-configuration-wrapper {
+    .ant-collapse-header {
+        align-items: center !important;
+    }
+
+    .cvat-title {
+        padding-top: 0;
+    }
+}
