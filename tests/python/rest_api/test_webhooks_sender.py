@@ -36,6 +36,7 @@ def webhook_spec(events, project_id=None, type="organization"):
     }
 
 
+@pytest.mark.usefixtures('changedb')
 class TestWebhookProjectEvents:
     def test_webhook_project_update(self):
         events = ["update:project"]
