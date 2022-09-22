@@ -1,0 +1,102 @@
+name: Helm
+on:
+  pull_request:
+    types: [edited, ready_for_review, opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  check_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      helm_dir_changed: ${{ steps.check_updates.outputs.helm_dir_changed }}
+    steps:
+      - uses: jitterbit/get-changed-files@v1
+        id: files
+        continue-on-error: true
+
+      - name: Run check
+        id: check_updates
+        env:
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
+        run: |
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          for FILE in $PR_FILES; do
+              if [[ $FILE == helm-chart/* ]] ; then
+                echo "::set-output name=helm_dir_changed::true"
+                break
+              fi
+          done
+
+  testing:
+    needs: check_changes
+    if: needs.check_changes.outputs.helm_dir_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Start minikube
+      uses: medyagh/setup-minikube@latest
+
+    - name: Try the cluster!
+      run: kubectl get pods -A
+
+    - name: Pull images
+      run: |
+        export SHELL=/bin/bash
+        eval $(minikube -p minikube docker-env)
+        docker pull cvat/server
+        docker pull cvat/ui
+        echo -n "verifying images:"
+        docker images
+
+    - uses: azure/setup-helm@v3
+      with:
+        version: 'v3.9.4'
+
+    - name: Deploy to minikube
+      run: |
+        printf "traefik:\n  service:\n    externalIPs:\n      - $(minikube ip)\n" > helm-chart/values.override.yaml
+        find cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | tar -czf helm-chart/rules.tar.gz -C cvat/apps/iam/rules/ -T -
+        cd helm-chart
+        helm dependency update
+        cd ..
+        helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml
+
+    - name: Update test config
+      run: |
+        sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
+        find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
+        echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
+
+    - name: Wait for CVAT to be ready
+      run: |
+        max_tries=30
+        while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
+        while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for DB pod" && (( max_tries-- )) && sleep 5; done
+        kubectl get pods
+
+    - name: Generate schema
+      run: |
+        mkdir cvat-sdk/schema
+        kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- /bin/bash -c "python manage.py spectacular --file /tmp/schema.yml"
+        kubectl cp $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/tmp/schema.yml cvat-sdk/schema/schema.yml
+        pip3 install --user -r cvat-sdk/gen/requirements.txt
+        cd cvat-sdk/
+        gen/generate.sh
+        cd ..
+
+    - name: Install test requrements
+      run: |
+        pip3 install --user cvat-sdk/
+        pip3 install --user cvat-cli/
+        pip3 install --user -r tests/python/requirements.txt
+
+    - name: REST API and SDK tests
+      run: |
+        pytest --platform=kube \
+          --ignore=tests/python/rest_api/test_cloud_storages.py \
+          --ignore=tests/python/rest_api/test_analytics.py \
+          --ignore=tests/python/rest_api/test_resource_import_export.py \
+          -k 'not create_task_with_cloud_storage_files' \
+        tests/python
