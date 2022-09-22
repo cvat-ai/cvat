@@ -27,7 +27,11 @@ CONTAINER_NAME_FILES = [
 
 DC_FILES = [
     osp.join(CVAT_ROOT_DIR, dc_file)
-    for dc_file in ("docker-compose.dev.yml", "tests/docker-compose.minio.yml")
+    for dc_file in (
+        "docker-compose.dev.yml",
+        "tests/docker-compose.minio.yml",
+        "tests/docker-compose.webhook.yml"
+    )
 ] + CONTAINER_NAME_FILES
 
 

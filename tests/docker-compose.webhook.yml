@@ -1,0 +1,17 @@
+version: '3.3'
+
+services:
+  webhook_receiver:
+    image: python:3.9-slim
+    restart: always
+    expose:
+      - "2020"
+    ports:
+      - "2020:2020"
+    command: python3 /tmp/server.py
+    volumes:
+      - ./tests/python/webhook_receiver:/tmp
+    networks:
+      cvat:
+        aliases:
+          - webhooks
