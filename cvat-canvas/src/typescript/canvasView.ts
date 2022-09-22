@@ -1036,6 +1036,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private onMouseUp = (event: MouseEvent): void => {
         if (event.button === 0 || event.button === 1) {
             this.controller.disableDrag();
+            this.selectionBoxHandler.cancelBoxSelection();
         }
     };
 
@@ -1203,13 +1204,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousedown', (event): void => {
+            if (event.button === 0 && this.mode === Mode.IDLE && !(event.altKey || event.ctrlKey)) {
+                this.selectionBoxHandler.startBoxSelection(event);
+                return;
+            }
+
             // User clicked on an empty canvas area
             if ([0, 1].includes(event.button)) {
-                if (this.mode === Mode.IDLE) {
-                    this.selectionBoxHandler.startBoxSelection(event);
-                } else if (
-                    [Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
-                        .includes(this.mode) || event.button === 1 || event.altKey
+                if ([Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
+                    .includes(this.mode) || event.button === 1 || event.altKey
                 ) {
                     this.controller.enableDrag(event.clientX, event.clientY);
                 }
@@ -1983,9 +1986,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            // Left-click behavior on a shape
+            // Left/right click behavior on a shape
             this.svgShapes[state.clientID].on('mousedown', (event: PointerEvent): void => {
-                if (this.isHackishlyInvokingShapeDrag) {
+                if (this.isHackishlyInvokingShapeDrag || event.altKey || event.ctrlKey || event.button === 1) {
                     return;
                 }
 
@@ -2196,7 +2199,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any)
                 .draggable()
                 .on('dragstart', (): void => {
-                    console.log('dragstart');
                     this.mode = Mode.DRAG;
                     hideText();
                     (shape as any).on('remove.drag', (): void => {

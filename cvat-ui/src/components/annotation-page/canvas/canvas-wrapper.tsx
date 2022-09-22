@@ -464,6 +464,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const { workspace, activatedStateIDs, onDeactivateObject } = this.props;
 
+        if (e.altKey || e.ctrlKey) {
+            return;
+        }
+
+        // Unselect everything when they click on an empty area of the canvas
         if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
             if (activatedStateIDs.length && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
                 onDeactivateObject(null);
@@ -535,6 +540,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
                 return;
             }
+        }
+
+        // Holding alt or ctrl prevents changing selection
+        if (e.detail.event.altKey || e.detail.event.ctrlKey) {
+            return;
         }
 
         if (e.detail.event.button === 2) {
