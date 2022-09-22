@@ -156,7 +156,7 @@ class CvatExtractor(Extractor):
                     subset = el.attrib.get('subset')
                 elif el.tag in cls._SUPPORTED_SHAPES and (track or image):
                     if shape and shape['type'] == 'skeleton':
-                        attributes = {}
+                        element_attributes = {}
                         shape_element = {
                             'type': 'rectangle' if el.tag == 'box' else el.tag,
                             'attributes': element_attributes,

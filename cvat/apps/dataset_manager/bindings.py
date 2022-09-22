@@ -1085,7 +1085,6 @@ class CVATDataExtractorMixin:
 
                 point_categories.add(label_id, sublabels, joints)
 
-
         categories[datum_annotation.AnnotationType.label] = label_categories
         categories[datum_annotation.AnnotationType.points] = point_categories
 
@@ -1565,6 +1564,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
                 points = []
                 if ann.type in shapes:
+                    points = []
                     if ann.type == datum_annotation.AnnotationType.cuboid_3d:
                         points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
                     elif ann.type != datum_annotation.AnnotationType.skeleton:
