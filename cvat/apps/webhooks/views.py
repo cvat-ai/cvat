@@ -125,7 +125,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def deliveries(self, request, pk):
         self.get_object()
         queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by(
-            "-delivered_at"
+            "-updated_date"
         )
 
         page = self.paginate_queryset(queryset)
