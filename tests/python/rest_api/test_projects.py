@@ -13,7 +13,7 @@ import pytest
 from copy import deepcopy
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, patch_method, make_api_client, post_files_method, post_method
+from shared.utils.config import get_method, patch_method, make_api_client
 from .utils import export_dataset
 
 
