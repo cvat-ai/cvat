@@ -52,7 +52,7 @@ allow {
     utils.is_sandbox
     utils.has_perm(utils.USER)
     is_project_owner
-    input.resource.num_resources < 11
+    input.resource.num_resources < 10
 }
 
 
@@ -126,7 +126,7 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.MAINTAINER)
-    input.resource.num_resources < 11
+    input.resource.num_resources < 10
 }
 
 allow {
@@ -142,6 +142,6 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
-    input.resource.num_resources < 11
+    input.resource.num_resources < 10
     is_project_owner
 }
