@@ -42,7 +42,7 @@ function UpdateWebhookPage(): JSX.Element {
             </Row>
             <Row justify='center' align='top' className='cvat-create-webhook-form-wrapper'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
-                    <SetupWebhookContent webhook={webhook} defaultProjectId={webhook.projectID || null} />
+                    <SetupWebhookContent webhook={webhook} defaultProjectId={webhook?.projectID || null} />
                 </Col>
             </Row>
         </div>
