@@ -1101,9 +1101,9 @@ class CVATDataExtractorMixin:
     def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, TaskData.Frame], labels: list):
         categories = self.categories()
         label_cat = categories[datum_annotation.AnnotationType.label]
-        def map_label(name): return label_cat.find(name)[0]
+        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
         label_attrs = {
-            label['name']: label['attributes']
+            label.get('parent', '') + label['name']: label['attributes']
             for _, label in labels
         }
 
@@ -1198,9 +1198,9 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
     def _read_cvat_anno(self, cvat_frame_anno: TaskData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[datum_annotation.AnnotationType.label]
-        def map_label(name, parent=""): return label_cat.find(name, parent)[0]
+        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
         label_attrs = {
-            label.get("parent", "") + label['name']: label['attributes']
+            label.get('parent', '') + label['name']: label['attributes']
             for _, label in labels
         }
 
