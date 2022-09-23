@@ -349,27 +349,33 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
 
-    @pytest.mark.usefixtures("changedb")
-    @pytest.mark.usefixtures("restore_cvat_data")
-    @pytest.mark.parametrize('export_format', ('COCO Keypoints 1.0', 'CVAT for images 1.1', 'CVAT for video 1.1'))
-    def test_can_export_and_import_dataset_with_skeletons(self, export_format):
+    def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self):
         project_id = 5
-        username = 'admin1'
+        username = 'admin2'
 
-        response = self._test_export_project(username, project_id, export_format)
+        response = self._test_export_project(username, project_id, 'CVAT for images 1.1')
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = 'dataset.zip'
-
         import_data = {
             'dataset_file': tmp_file,
         }
 
-        if export_format == 'COCO Keypoints 1.0':
-            import_format = export_format
-        else:
-            import_format = 'CVAT 1.1'
-        self._test_import_project(username, project_id, import_format, import_data)
+        self._test_import_project(username, project_id, 'CVAT 1.1', import_data)
+
+    def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(self):
+        project_id = 5
+        username = 'admin2'
+
+        response = self._test_export_project(username, project_id, 'CVAT for video 1.1')
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = 'dataset.zip'
+        import_data = {
+            'dataset_file': tmp_file,
+        }
+
+        self._test_import_project(username, project_id, 'CVAT 1.1', import_data)
 
     def _test_can_get_project_backup(self, username, pid, **kwargs):
         for _ in range(30):
