@@ -2214,7 +2214,7 @@
     "assignee": null,
     "bug_tracker": "",
     "created_date": "2022-09-22T14:21:53.791Z",
-    "updated_date": "2022-09-22T14:23:34.559Z",
+    "updated_date": "2022-09-23T11:57:02.088Z",
     "status": "annotation",
     "organization": 2,
     "source_storage": 5,
@@ -2471,7 +2471,7 @@
     "assignee": null,
     "bug_tracker": "",
     "created_date": "2022-09-22T14:22:25.820Z",
-    "updated_date": "2022-09-22T14:22:26.250Z",
+    "updated_date": "2022-09-23T11:57:02.300Z",
     "overlap": 0,
     "segment_size": 8,
     "status": "annotation",
@@ -3500,10 +3500,10 @@
   "fields": {
     "segment": 18,
     "assignee": null,
-    "updated_date": "2022-09-22T14:22:26.216Z",
+    "updated_date": "2022-09-23T11:57:02.302Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "new"
+    "state": "in progress"
   }
 },
 {
@@ -4534,6 +4534,89 @@
   }
 },
 {
+  "model": "engine.jobcommit",
+  "pk": 68,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:30.270Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 69,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:30.533Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 70,
+  "fields": {
+    "scope": "update",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:30.535Z",
+    "data": {
+      "state": "in progress"
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 71,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:45.344Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 72,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:57:02.307Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
   "model": "engine.labeledshape",
   "pk": 1,
   "fields": {
@@ -4747,6 +4830,318 @@
     "points": "[414.29522752496996, 124.8035516093205, 522.2641509433943, 286.75693673695605]",
     "rotation": 0.0,
     "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 36,
+  "fields": {
+    "job": 18,
+    "label": 22,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 37,
+  "fields": {
+    "job": 18,
+    "label": 23,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[135.8260869565238, 118.10276296228554]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 38,
+  "fields": {
+    "job": 18,
+    "label": 24,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[172.10450871201368, 274.6245183225243]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 39,
+  "fields": {
+    "job": 18,
+    "label": 25,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[259.91862203681984, 67.8260869565238]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 40,
+  "fields": {
+    "job": 18,
+    "label": 26,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[283.65217391304554, 276.52173913043686]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 1,
+  "fields": {
+    "spec": 2,
+    "value": "white",
+    "shape": 36
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 2,
+  "fields": {
+    "spec": 3,
+    "value": "val1",
+    "shape": 39
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 1,
+  "fields": {
+    "job": 18,
+    "label": 22,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 2,
+  "fields": {
+    "job": 18,
+    "label": 23,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 3,
+  "fields": {
+    "job": 18,
+    "label": 24,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 4,
+  "fields": {
+    "job": 18,
+    "label": 25,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 5,
+  "fields": {
+    "job": 18,
+    "label": 26,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 3,
+  "fields": {
+    "spec": 2,
+    "value": "white",
+    "track": 1
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 4,
+  "fields": {
+    "spec": 3,
+    "value": "val1",
+    "track": 4
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 1,
+  "fields": {
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "track": 1,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 2,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[381.9130434782637, 355.0592829431864]",
+    "rotation": 0.0,
+    "track": 2,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 3,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[461.9389738212561, 583.320176176868]",
+    "rotation": 0.0,
+    "track": 3,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 4,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[655.6465767436227, 281.7391304347839]",
+    "rotation": 0.0,
+    "track": 4,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 5,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[708.000000000003, 586.0869565217404]",
+    "rotation": 0.0,
+    "track": 5,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 6,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[137.0966796875, 156.11214469590232]",
+    "rotation": 0.0,
+    "track": 2,
+    "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 7,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[217.12261003049207, 384.3730379295848]",
+    "rotation": 0.0,
+    "track": 3,
+    "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 8,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[410.83021295285835, 82.7919921875]",
+    "rotation": 0.0,
+    "track": 4,
+    "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 9,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[463.1836362092399, 387.13981827445605]",
+    "rotation": 0.0,
+    "track": 5,
+    "frame": 3
   }
 },
 {

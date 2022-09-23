@@ -193,11 +193,11 @@
       "project_id": 5,
       "stage": "annotation",
       "start_frame": 0,
-      "state": "new",
+      "state": "in progress",
       "status": "annotation",
       "stop_frame": 7,
       "task_id": 14,
-      "updated_date": "2022-09-22T14:22:26.216000Z",
+      "updated_date": "2022-09-23T11:57:02.302000Z",
       "url": "http://localhost:8080/api/jobs/18"
     },
     {

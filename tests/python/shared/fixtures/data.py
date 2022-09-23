@@ -237,8 +237,10 @@ def is_org_member(memberships):
 
 @pytest.fixture(scope='session')
 def find_job_staff_user(is_job_staff):
-    def find(jobs, users, is_staff):
+    def find(jobs, users, is_staff, wo_jobs=[]):
         for job in jobs:
+            if job['id'] in wo_jobs:
+                continue
             for user in users:
                 if is_staff == is_job_staff(user['id'], job['id']):
                     return user['username'], job['id']

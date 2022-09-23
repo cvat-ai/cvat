@@ -213,7 +213,7 @@
               "assignee": null,
               "id": 18,
               "stage": "annotation",
-              "state": "new",
+              "state": "in progress",
               "status": "annotation",
               "url": "http://localhost:8080/api/jobs/18"
             }
@@ -235,7 +235,7 @@
         "id": 8,
         "location": "local"
       },
-      "updated_date": "2022-09-22T14:22:26.250000Z",
+      "updated_date": "2022-09-23T11:57:02.300000Z",
       "url": "http://localhost:8080/api/tasks/14"
     },
     {
