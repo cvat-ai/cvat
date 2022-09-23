@@ -93,26 +93,53 @@ filter = [] { # Django Q object to filter list of entries
 
 
 allow {
-    { utils.VIEW, utils.UPDATE, utils.DELETE }[input.scope]
+    input.scope == utils.VIEW
+    utils.is_sandbox
+    utils.is_resource_owner
+}
+
+allow {
+    input.scope == utils.VIEW
+    utils.is_sandbox
+    is_project_owner
+}
+
+allow {
+    { utils.UPDATE, utils.DELETE }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
 allow {
-    { utils.VIEW, utils.UPDATE, utils.DELETE }[input.scope]
+    { utils.UPDATE, utils.DELETE }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     is_project_owner
 }
 
 allow {
-    { utils.VIEW, utils.UPDATE, utils.DELETE }[input.scope]
+    input.scope == utils.VIEW
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    utils.is_resource_owner
+}
+
+allow {
+    input.scope == utils.VIEW
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_project_owner
+}
+
+allow {
+    { utils.UPDATE, utils.DELETE }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     utils.is_resource_owner
 }
+
 
 allow {
     { utils.UPDATE, utils.DELETE, utils.VIEW }[input.scope]
@@ -130,7 +157,7 @@ allow {
 }
 
 allow {
-    { utils.UPDATE, utils.DELETE, utils.VIEW }[input.scope]
+    { utils.UPDATE, utils.DELETE }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
