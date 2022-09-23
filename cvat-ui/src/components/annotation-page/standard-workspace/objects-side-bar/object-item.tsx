@@ -12,6 +12,7 @@ import ObjectButtonsContainer from 'containers/annotation-page/standard-workspac
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import { ObjectState } from 'cvat-core-wrapper';
+import { attrValuesAreEqual } from './object-item-details';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
@@ -42,6 +43,24 @@ interface Props {
     changeLabel(label: any): void;
     changeColor(color: string): void;
     resetCuboidPerspective(): void;
+}
+
+function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
+    return (
+        nextProps.activated === prevProps.activated &&
+        nextProps.readonly === prevProps.readonly &&
+        nextProps.locked === prevProps.locked &&
+        nextProps.labelID === prevProps.labelID &&
+        nextProps.color === prevProps.color &&
+        nextProps.clientID === prevProps.clientID &&
+        nextProps.serverID === prevProps.serverID &&
+        nextProps.objectType === prevProps.objectType &&
+        nextProps.shapeType === prevProps.shapeType &&
+        nextProps.attributes === prevProps.attributes &&
+        nextProps.normalizedKeyMap === prevProps.normalizedKeyMap &&
+        nextProps.colorBy === prevProps.colorBy &&
+        attrValuesAreEqual(nextProps.attributes, prevProps.attributes)
+    );
 }
 
 function ObjectItemComponent(props: Props): JSX.Element {
@@ -82,6 +101,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
     const className = !activated ?
         'cvat-objects-sidebar-state-item' :
         'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
+
+    // console.log(`rendering item ${clientID}`);
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
@@ -162,4 +183,4 @@ function ObjectItemComponent(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(ObjectItemComponent);
+export default React.memo(ObjectItemComponent, objectItemsAreEqual);

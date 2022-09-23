@@ -86,10 +86,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
 
-    if (index < 0) {
-        console.log('hello world');
-    }
-
     return {
         objectState: states[index],
         attributes: jobAttributes[states[index].label.id],
