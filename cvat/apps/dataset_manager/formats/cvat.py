@@ -1052,7 +1052,10 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 elements=[],
             ) for element in shape.elements]
         }
-        if isinstance(annotations, ProjectData): track['task_id'] = shape.task_id
+        if isinstance(annotations, ProjectData):
+            track['task_id'] = shape.task_id
+            for element in track['elements']:
+                element.task_id = shape.task_id
         dump_track(counter, annotations.Track(**track))
         counter += 1
 
