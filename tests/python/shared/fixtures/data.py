@@ -247,8 +247,10 @@ def find_job_staff_user(is_job_staff):
 
 @pytest.fixture(scope='session')
 def find_task_staff_user(is_task_staff):
-    def find(tasks, users, is_staff):
+    def find(tasks, users, is_staff, wo_tasks=[]):
         for task in tasks:
+            if task['id'] in wo_tasks:
+                continue
             for user in users:
                 if is_staff == is_task_staff(user['id'], task['id']):
                     return user['username'], task['id']

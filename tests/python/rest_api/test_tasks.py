@@ -288,7 +288,7 @@ class TestPatchTaskAnnotations:
             find_task_staff_user, find_users, tasks_by_org, request_data):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff)
+        username, tid = find_task_staff_user(tasks, users, task_staff, [14])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
