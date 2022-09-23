@@ -1645,34 +1645,38 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         )
                         tracks[track_id]['shapes'].append(track)
 
-                        if ann.type == datum_annotation.AnnotationType.skeleton:
-                            for element in ann.elements:
-                                if element.label not in tracks[track_id]['elements']:
-                                    tracks[track_id]['elements'][element.label] = instance_data.Track(
-                                        label=label_cat.items[element.label].name,
-                                        group=0,
-                                        source=source,
-                                        shapes=[],
-                                    )
-                                element_attributes = [
-                                    instance_data.Attribute(name=n, value=str(v))
-                                    for n, v in element.attributes.items()
-                                ]
-                                element_occluded = cast(element.attributes.pop('occluded', None), bool) is True
-                                element_outside = cast(element.attributes.pop('outside', None), bool) is True
-                                element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
-                                tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
-                                    type=shapes[element.type],
-                                    frame=frame_number,
-                                    occluded=element_occluded,
-                                    outside=element_outside,
-                                    keyframe=keyframe,
-                                    points=element.points,
-                                    z_order=element.z_order,
-                                    source=element_source,
-                                    attributes=element_attributes,
-                                ))
+                    if ann.type == datum_annotation.AnnotationType.skeleton:
+                        for element in ann.elements:
+                            element_keyframe = cast(element.attributes.get('keyframe', None), bool) is True
+                            element_outside = cast(element.attributes.pop('outside', None), bool) is True
+                            if not element_keyframe and not element_outside:
+                                continue
+
+                            if element.label not in tracks[track_id]['elements']:
+                                tracks[track_id]['elements'][element.label] = instance_data.Track(
+                                    label=label_cat.items[element.label].name,
+                                    group=0,
+                                    source=source,
+                                    shapes=[],
+                                )
+                            element_attributes = [
+                                instance_data.Attribute(name=n, value=str(v))
+                                for n, v in element.attributes.items()
+                            ]
+                            element_occluded = cast(element.attributes.pop('occluded', None), bool) is True
+                            element_source = element.attributes.pop('source').lower() \
+                                if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
+                            tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
+                                type=shapes[element.type],
+                                frame=frame_number,
+                                occluded=element_occluded,
+                                outside=element_outside,
+                                keyframe=keyframe,
+                                points=element.points,
+                                z_order=element.z_order,
+                                source=element_source,
+                                attributes=element_attributes,
+                            ))
 
                 elif ann.type == datum_annotation.AnnotationType.label:
                     instance_data.add_tag(instance_data.Tag(
