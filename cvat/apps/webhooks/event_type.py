@@ -1,3 +1,7 @@
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from .models import WebhookTypeChoice
 
 def event_name(action, resource):

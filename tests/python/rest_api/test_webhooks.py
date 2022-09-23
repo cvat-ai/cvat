@@ -1,9 +1,15 @@
-import pytest
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from copy import deepcopy
-from deepdiff import DeepDiff
 from http import HTTPStatus
-from shared.utils.config import get_method, patch_method, post_method, delete_method
 from itertools import product
+
+import pytest
+from deepdiff import DeepDiff
+
+from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 
 @pytest.mark.usefixtures('changedb')

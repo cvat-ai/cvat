@@ -1,3 +1,7 @@
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from rest_framework.routers import DefaultRouter
 from .views import WebhookViewSet
 

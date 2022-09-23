@@ -1,7 +1,12 @@
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from enum import Enum
 
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+
 from cvat.apps.engine.models import Project
 from cvat.apps.organizations.models import Organization
 
