@@ -316,7 +316,7 @@ const config = require('./config');
             }
 
             const webhooksData = await serverProxy.webhooks.get(searchParams);
-            const webhooks = webhooksData.results.map((webhookData) => new Webhook(webhookData));
+            const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
             webhooks.count = webhooksData.count;
             return webhooks;
         };

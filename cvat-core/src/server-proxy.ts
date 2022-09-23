@@ -2061,7 +2061,9 @@ class ServerProxy {
                         'Content-Type': 'application/json',
                     },
                 });
-                return response.data;
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
             } catch (errorData) {
                 throw generateError(errorData);
             }
