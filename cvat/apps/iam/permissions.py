@@ -783,6 +783,10 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 perm = UserPermission.create_scope_view(request, owner)
                 permissions.append(perm)
 
+            if project_id:
+                perm = ProjectPermission.create_scope_view(request, project_id)
+                permissions.append(perm)
+
         return permissions
 
     def __init__(self, **kwargs):
