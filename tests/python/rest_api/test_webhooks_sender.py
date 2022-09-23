@@ -1,19 +1,20 @@
 import json
 from http import HTTPStatus
 
+import pytest
 from deepdiff import DeepDiff
 
 from shared.fixtures.init import _run
 from shared.utils.config import get_method, patch_method, post_method
 from webhook_receiver.server import PAYLOAD_ENDPOINT, TARGET_PORT
 
-# Webhook functionality testing:
+# Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
 #  - cvat save response body for each delivery
 #
 # So idea of this testing system is quite simple:
 #  1) trigger some webhook
-#  2) check that webhook is sent by checking value of response field for the last delivery of this webhook
+#  2) check that webhook is sent by checking value of `response` field for the last delivery of this webhook
 
 
 def webhook_container_id():
@@ -22,7 +23,7 @@ def webhook_container_id():
     )[0].strip()[1:-1]
 
 
-def webhook_spec(events, project_id=None, type="organization"):
+def webhook_spec(events, project_id=None, webhook_type="organization"):
     # Django URL field doesn't allow to use http://webhook:2020/payload (using alias)
     # So we forced to use ip address of webhook receiver container
     return {
@@ -32,7 +33,7 @@ def webhook_spec(events, project_id=None, type="organization"):
         "events": events,
         "is_active": True,
         "project_id": project_id,
-        "type": "project",
+        "type": webhook_type,
     }
 
 
@@ -49,7 +50,7 @@ class TestWebhookProjectEvents:
 
         # create webhook
         response = post_method(
-            "admin1", "webhooks", webhook_spec(events, project["id"], type="project")
+            "admin1", "webhooks", webhook_spec(events, project["id"], webhook_type="project")
         )
         assert response.status_code == HTTPStatus.CREATED
         webhook = response.json()
