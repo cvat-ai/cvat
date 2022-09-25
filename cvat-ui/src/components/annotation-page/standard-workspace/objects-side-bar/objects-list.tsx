@@ -1,14 +1,17 @@
 // Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 
-import React from 'react';
+import React, { useRef } from 'react';
 
 import { StatesOrdering } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { SortedLabelGroup } from 'containers/annotation-page/standard-workspace/objects-side-bar/object-list-sorter';
 import ObjectState from 'cvat-core/src/object-state';
-import { Collapse } from 'antd';
+import AutoSizer from 'react-virtualized-auto-sizer';
+import { VariableSizeList as List } from 'react-window';
+import { Label } from 'cvat-core/src/labels';
 import ObjectListHeader from './objects-list-header';
 import LabelItem from './label-item';
 
@@ -17,9 +20,10 @@ interface Props {
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsedAll: boolean;
+    collapsedStates: Record<number, boolean>;
     collapsedLabelStates: Record<number, boolean>;
     statesOrdering: StatesOrdering;
-    groupedObjects: SortedLabelGroup[];
+    groupedObjects: (Label | ObjectState)[];
     objectStates: any[];
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
@@ -39,6 +43,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesHidden,
         statesLocked,
         statesCollapsedAll,
+        collapsedStates,
         collapsedLabelStates,
         statesOrdering,
         groupedObjects,
@@ -55,9 +60,49 @@ function ObjectListComponent(props: Props): JSX.Element {
         showAllStates,
     } = props;
 
-    const collapse = (labelID: number) => {
-        collapseLabelGroup(labelID, !collapsedLabelStates[labelID]);
+    const getItemSize = (index: number) => {
+        const row: Label | ObjectState = groupedObjects[index];
+        if (row instanceof Label) {
+            return 35;
+        }
+
+        const numAttr = Object.entries(row.attributes).length;
+        if (numAttr === 0) {
+            return 63; // no details at all
+        }
+
+        if (collapsedStates[row.clientID ?? 0] === false) {
+            return 95 + numAttr * 27.5; // with expanded details
+        }
+        return 90; // with collapsed details
     };
+
+    const listRef = useRef();
+
+    if (listRef?.current) {
+        listRef.current.resetAfterIndex(0, false);
+    }
+
+    const renderLabel = (label: Label) => (
+        <div
+            onClick={() => {
+                const labelId = label.id ?? 0;
+                collapseLabelGroup(labelId, !collapsedLabelStates[labelId]);
+                listRef.current.resetAfterIndex(0, false);
+            }}
+        >
+            <LabelItem labelID={label.id ?? 0} />
+        </div>
+    );
+    const renderObject = (object: ObjectState) => (
+        <ObjectItemContainer
+            readonly={readonly}
+            activateOnClick
+            objectStates={objectStates}
+            key={object.clientID}
+            clientID={object.clientID ?? 0}
+        />
+    );
 
     return (
         <>
@@ -77,33 +122,25 @@ function ObjectListComponent(props: Props): JSX.Element {
                 hideAllStates={hideAllStates}
                 showAllStates={showAllStates}
             />
-            <div className='cvat-objects-sidebar-states-list'>
-                {groupedObjects.map(
-                    (group: SortedLabelGroup): JSX.Element => (
-                        <Collapse
-                            className='cvat-objects-sidebar-label-group-collapse'
-                            bordered={false}
-                            key={group.label.id}
-                            activeKey={collapsedLabelStates[group.label.id ?? 0] ? [] : ['details']}
-                            onChange={() => collapse(group.label.id ?? 0)}
-                        >
-                            <Collapse.Panel header={<LabelItem labelID={group.label.id ?? 0} />} key='details'>
-                                {group.objects.map(
-                                    (state: ObjectState): JSX.Element => (
-                                        <ObjectItemContainer
-                                            readonly={readonly}
-                                            activateOnClick
-                                            objectStates={objectStates}
-                                            key={state.clientID}
-                                            clientID={state.clientID ?? 0}
-                                        />
-                                    ),
-                                )}
-                            </Collapse.Panel>
-                        </Collapse>
-                    ),
+            <AutoSizer className='cvat-objects-sidebar-states-list'>
+                {({ height, width }) => (
+                    <List
+                        itemCount={groupedObjects.length}
+                        itemSize={getItemSize}
+                        height={height}
+                        width={width}
+                        ref={listRef}
+                    >
+                        {({ index, style }): JSX.Element => (
+                            <div style={style}>
+                                {groupedObjects[index] instanceof Label ?
+                                    renderLabel(groupedObjects[index] as Label) :
+                                    renderObject(groupedObjects[index] as ObjectState)}
+                            </div>
+                        )}
+                    </List>
                 )}
-            </div>
+            </AutoSizer>
         </>
     );
 }

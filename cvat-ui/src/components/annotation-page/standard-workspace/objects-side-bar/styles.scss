@@ -159,9 +159,7 @@
 }
 
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
-    border-top: 2px solid $object-item-border-color;
-    border-right: 2px solid $object-item-border-color;
-    border-bottom: 2px solid $object-item-border-color;
+    border: 2px solid $object-item-border-color;
     padding: 3px 1px 1px 3px;
 }
 
