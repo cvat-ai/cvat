@@ -19,7 +19,7 @@ function build() {
     const Project = require('./project').default;
     const implementProject = require('./project-implementation').default;
     const { Attribute, Label } = require('./labels');
-    const MLModel = require('./ml-model');
+    const MLModel = require('./ml-model').default;
     const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
     const Organization = require('./organization');
@@ -728,6 +728,12 @@ function build() {
             },
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
+            },
+            get removeUnderlyingMaskPixels(): boolean {
+                return config.removeUnderlyingMaskPixels;
+            },
+            set removeUnderlyingMaskPixels(value: boolean) {
+                config.removeUnderlyingMaskPixels = value;
             },
         },
         /**

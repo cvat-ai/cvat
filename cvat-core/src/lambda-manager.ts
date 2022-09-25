@@ -2,18 +2,21 @@
 //
 // SPDX-License-Identifier: MIT
 
-const serverProxy = require('./server-proxy').default;
-const { ArgumentError } = require('./exceptions');
-const MLModel = require('./ml-model');
-const { RQStatus } = require('./enums');
+import serverProxy from './server-proxy';
+import { ArgumentError } from './exceptions';
+import MLModel from './ml-model';
+import { RQStatus } from './enums';
 
 class LambdaManager {
+    private listening: any;
+    private cachedList: any;
+
     constructor() {
         this.listening = {};
         this.cachedList = null;
     }
 
-    async list() {
+    async list(): Promise<MLModel[]> {
         if (Array.isArray(this.cachedList)) {
             return [...this.cachedList];
         }
@@ -34,7 +37,7 @@ class LambdaManager {
         return models;
     }
 
-    async run(taskID, model, args) {
+    async run(taskID: number, model: MLModel, args: any) {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -78,7 +81,7 @@ class LambdaManager {
         return result.filter((request) => ['queued', 'started'].includes(request.status));
     }
 
-    async cancel(requestID) {
+    async cancel(requestID): Promise<void> {
         if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
         }
@@ -90,8 +93,8 @@ class LambdaManager {
         await serverProxy.lambda.cancel(requestID);
     }
 
-    async listen(requestID, onUpdate) {
-        const timeoutCallback = async () => {
+    async listen(requestID, onUpdate): Promise<void> {
+        const timeoutCallback = async (): Promise<void> => {
             try {
                 this.listening[requestID].timeout = null;
                 const response = await serverProxy.lambda.status(requestID);
@@ -124,4 +127,4 @@ class LambdaManager {
     }
 }
 
-module.exports = new LambdaManager();
+export default new LambdaManager();

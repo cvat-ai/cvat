@@ -17,6 +17,7 @@
     const { Label } = require('./labels');
     const { ArgumentError, ScriptingError } = require('./exceptions');
     const ObjectState = require('./object-state').default;
+    const config = require('./config');
 
     const {
         HistoryActions, ShapeType, ObjectType, colors, Source,
@@ -870,8 +871,8 @@
             const imported = this.import(constructed);
             const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
             for (const object of importedArray) {
-                if (object.shapeType === ShapeType.MASK) {
-                    object.removeUnderlyingPixels(object.points, object.rotation, object.frame);
+                if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels) {
+                    object.removeUnderlyingPixels(object.frame);
                 }
             }
 

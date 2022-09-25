@@ -2334,34 +2334,44 @@ export class MaskShape extends Shape {
         this.shapeType = ShapeType.MASK;
     }
 
-    protected removeUnderlyingPixels(points: number, rotation: number, frame: number): void {
-        const others = this.getMasksOnFrame(frame).filter((mask: MaskShape) => mask.clientID !== this.clientID);
-        const othersBoxes = others.map((state) => {
-            const [left, top, right, bottom] = state.points.slice(-4);
-            return { left, top, right, bottom };
-        });
-        const width = this.right - this.left + 1;
+    protected removeUnderlyingPixels(frame: number): void {
+        if (frame !== this.frame) {
+            throw new ArgumentError(
+                `Wrong "frame" attribute: is not equal to the shape frame (${frame} vs ${this.frame})`,
+            );
+        }
 
-        for (let i = 0; i < this.points.length; i += 4) {
-            let x = i % width + this.left;
-            let y = Math.trunc(i / width) + this.top;
-            for (const other of others) {
-                const box = {
-                    left: other.left,
-                    top: other.top,
-                    right: other.right,
-                    bottom: other.bottom,
-                };
-                const translatedX = x - box.left;
-                const translatedY = y - box.top;
-                const [otherWidth, otherHeight] = [box.right - box.left + 1, box.bottom - box.top + 1];
-                if (translatedX >= 0 && translatedX < otherWidth &&
-                    translatedY >= 0 && translatedY < otherHeight) {
-                    const j = translatedY * otherWidth + translatedX;
-                    other.points[j] = 0;
-                    other.updated = Date.now();
+        const others = this.getMasksOnFrame(frame)
+            .filter((mask: MaskShape) => mask.clientID !== this.clientID && !mask.removed);
+        const width = this.right - this.left + 1;
+        const updatedObjects: Record<number, MaskShape> = {};
+
+        for (let i = 0; i < this.points.length; i++) {
+            if (this.points[i]) {
+                const x = (i % width) + this.left;
+                const y = Math.trunc(i / width) + this.top;
+                for (const other of others) {
+                    const box = {
+                        left: other.left,
+                        top: other.top,
+                        right: other.right,
+                        bottom: other.bottom,
+                    };
+                    const translatedX = x - box.left;
+                    const translatedY = y - box.top;
+                    const [otherWidth, otherHeight] = [box.right - box.left + 1, box.bottom - box.top + 1];
+                    if (translatedX >= 0 && translatedX < otherWidth &&
+                        translatedY >= 0 && translatedY < otherHeight) {
+                        const j = translatedY * otherWidth + translatedX;
+                        other.points[j] = 0;
+                        updatedObjects[other.clientID] = other;
+                    }
                 }
             }
+        }
+
+        for (const object of Object.values(updatedObjects)) {
+            object.updated = Date.now();
         }
     }
 

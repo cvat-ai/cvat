@@ -1898,7 +1898,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     // if masks points were updated, draw from scratch
                     this.deleteObjects([this.drawnStates[+clientID]]);
                     this.addObjects([state]);
-                    return;
+                    continue;
                 }
 
                 const translatedPoints: number[] = this.translateToCanvas(state.points);

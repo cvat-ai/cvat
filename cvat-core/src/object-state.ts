@@ -722,11 +722,11 @@ export default class ObjectState {
      * @memberof module:API.cvat.classes.ObjectState
      * @readonly
      * @param {integer[]} rle
-     * @returns {integer[][]} array of two elements: the first is a mask, the second is two border points
+     * @returns {integer[][]} array of two elements: the first is a mask, the second are two border points
      * @throws {module:API.cvat.exceptions.PluginError}
      * @throws {module:API.cvat.exceptions.ArgumentError}
      */
-     static rle2Mask(rle) {
+    static rle2Mask(rle: number[]): [number[], number[]] {
         const [left, top, right, bottom] = rle.slice(-4);
         const width = right - left + 1;
         const height = bottom - top + 1;
@@ -757,7 +757,7 @@ export default class ObjectState {
      * @throws {module:API.cvat.exceptions.PluginError}
      * @throws {module:API.cvat.exceptions.ArgumentError}
      */
-    static mask2Rle(mask) {
+    static mask2Rle(mask: number[]): number[] {
         return mask.reduce((acc, val, idx, arr) => {
             if (idx > 0) {
                 if (arr[idx - 1] === val) {

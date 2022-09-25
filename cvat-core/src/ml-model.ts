@@ -40,7 +40,7 @@ interface SerializedModel {
     startswith_box?: boolean;
 }
 
-class MLModel {
+export default class MLModel {
     private serialized: SerializedModel;
     private changeToolsBlockerStateCallback?: (event: string) => void;
 
@@ -104,5 +104,3 @@ class MLModel {
         this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
     }
 }
-
-module.exports = MLModel;

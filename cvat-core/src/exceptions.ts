@@ -4,7 +4,6 @@
 
 import Platform from 'platform';
 import ErrorStackParser from 'error-stack-parser';
-// import config from './config';
 
 /**
  * Base exception class
