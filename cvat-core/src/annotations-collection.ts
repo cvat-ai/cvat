@@ -870,8 +870,8 @@
             const imported = this.import(constructed);
             const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
             for (const object of importedArray) {
-                if (object.shapeType === ObjectShape.MASK) {
-                    object._removeUnderlyingPixels(object.points, object.rotation, object.frame);
+                if (object.shapeType === ShapeType.MASK) {
+                    object.removeUnderlyingPixels(object.points, object.rotation, object.frame);
                 }
             }
 

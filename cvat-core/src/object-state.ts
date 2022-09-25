@@ -26,7 +26,7 @@ interface UpdateFlags {
     reset: () => void;
 }
 
-interface SerializedData {
+export interface SerializedData {
     objectType: ObjectType;
     label: Label;
     frame: number;
