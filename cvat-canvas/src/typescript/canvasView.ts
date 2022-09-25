@@ -916,6 +916,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 deepSelect: true,
                 pointSize: (2 * this.configuration.controlPointsSize) / this.geometry.scale,
                 rotationPoint: shape.type === 'rect' || shape.type === 'ellipse',
+                pointsExclude: shape.type === 'image' ? ['lt', 'rt', 'rb', 'lb', 't', 'r', 'b', 'l'] : [],
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
                         .circle(this.options.pointSize)
@@ -2233,10 +2234,28 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     showText();
                     const p1 = e.detail.handler.startPoints.point;
                     const p2 = e.detail.p;
-                    const delta = 1;
                     const dx2 = (p1.x - p2.x) ** 2;
                     const dy2 = (p1.y - p2.y) ** 2;
-                    if (Math.sqrt(dx2 + dy2) >= delta) {
+                    if (Math.sqrt(dx2 + dy2) > 0) {
+                        if (shape.type === 'image') {
+                            const { points } = state;
+                            const x = Math.trunc(shape.x()) - this.geometry.offset;
+                            const y = Math.trunc(shape.y()) - this.geometry.offset;
+                            points.splice(-4);
+                            points.push(x, y, x + shape.width() - 1, y + shape.height() - 1);
+                            this.onEditDone(state, points);
+                            this.canvas.dispatchEvent(
+                                new CustomEvent('canvas.dragshape', {
+                                    bubbles: false,
+                                    cancelable: true,
+                                    detail: {
+                                        id: state.clientID,
+                                    },
+                                }),
+                            );
+
+                            return;
+                        }
                         // these points does not take into account possible transformations, applied on the element
                         // so, if any (like rotation) we need to map them to canvas coordinate space
                         let points = readPointsFromShape(shape);
@@ -2293,68 +2312,68 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.mode = Mode.IDLE;
         };
 
-        (shape as any)
-            .resize({
-                snapToGrid: 0.1,
-                snapToAngle: this.snapToAngleResize,
-            })
-            .on('resizestart', (): void => {
-                this.mode = Mode.RESIZE;
-                resized = false;
-                hideDirection();
-                hideText();
-                if (state.shapeType === 'rectangle' || state.shapeType === 'ellipse') {
-                    shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
-                }
-                (shape as any).on('remove.resize', () => {
-                    // disable internal resize events of SVG.js
-                    window.dispatchEvent(new MouseEvent('mouseup'));
-                    resizeFinally();
-                });
-            })
-            .on('resizing', (): void => {
-                resized = true;
-                if (shapeSizeElement) {
-                    shapeSizeElement.update(shape);
-                }
-            })
-            .on('resizedone', (): void => {
-                (shape as any).off('remove.resize');
-                resizeFinally();
-                showDirection();
-                showText();
-                if (resized) {
-                    let rotation = shape.transform().rotation || 0;
-
-                    // be sure, that rotation in range [0; 360]
-                    while (rotation < 0) rotation += 360;
-                    rotation %= 360;
-
-                    // these points does not take into account possible transformations, applied on the element
-                    // so, if any (like rotation) we need to map them to canvas coordinate space
-                    let points = readPointsFromShape(shape);
-
-                    // let's keep current points, but they could be rewritten in updateObjects
-                    this.drawnStates[clientID].points = this.translateFromCanvas(points);
-                    this.drawnStates[clientID].rotation = rotation;
-                    if (rotation) {
-                        points = this.translatePointsFromRotatedShape(shape, points);
+        if (state.shapeType !== 'mask') {
+            (shape as any)
+                .resize({
+                    snapToGrid: 0.1,
+                    snapToAngle: this.snapToAngleResize,
+                })
+                .on('resizestart', (): void => {
+                    this.mode = Mode.RESIZE;
+                    resized = false;
+                    hideDirection();
+                    hideText();
+                    if (state.shapeType === 'rectangle' || state.shapeType === 'ellipse') {
+                        shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
                     }
+                    (shape as any).on('remove.resize', () => {
+                        // disable internal resize events of SVG.js
+                        window.dispatchEvent(new MouseEvent('mouseup'));
+                        resizeFinally();
+                    });
+                })
+                .on('resizing', (): void => {
+                    resized = true;
+                    if (shapeSizeElement) {
+                        shapeSizeElement.update(shape);
+                    }
+                })
+                .on('resizedone', (): void => {
+                    (shape as any).off('remove.resize');
+                    resizeFinally();
+                    showDirection();
+                    showText();
+                    if (resized) {
+                        let rotation = shape.transform().rotation || 0;
 
-                    this.onEditDone(state, this.translateFromCanvas(points), rotation);
-                    this.canvas.dispatchEvent(
-                        new CustomEvent('canvas.resizeshape', {
-                            bubbles: false,
-                            cancelable: true,
-                            detail: {
-                                id: state.clientID,
-                            },
-                        }),
-                    );
-                }
-            });
+                        // be sure, that rotation in range [0; 360]
+                        while (rotation < 0) rotation += 360;
+                        rotation %= 360;
 
-        if (state.shapeType === 'mask') {
+                        // these points does not take into account possible transformations, applied on the element
+                        // so, if any (like rotation) we need to map them to canvas coordinate space
+                        let points = readPointsFromShape(shape);
+
+                        // let's keep current points, but they could be rewritten in updateObjects
+                        this.drawnStates[clientID].points = this.translateFromCanvas(points);
+                        this.drawnStates[clientID].rotation = rotation;
+                        if (rotation) {
+                            points = this.translatePointsFromRotatedShape(shape, points);
+                        }
+
+                        this.onEditDone(state, this.translateFromCanvas(points), rotation);
+                        this.canvas.dispatchEvent(
+                            new CustomEvent('canvas.resizeshape', {
+                                bubbles: false,
+                                cancelable: true,
+                                detail: {
+                                    id: state.clientID,
+                                },
+                            }),
+                        );
+                    }
+                });
+        } else {
             (shape as any).on('mousedown', (e: MouseEvent) => {
                 if (e.shiftKey) {
                     this.controller.edit({ enabled: true, state });
@@ -2723,10 +2742,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'data-z-order': state.zOrder,
         }).addClass('cvat_canvas_shape');
         image.move(this.geometry.offset + left, this.geometry.offset + top);
-        image.load(dataURL);
         image.loaded(() => {
             URL.revokeObjectURL(dataURL);
         });
+        image.load(dataURL);
 
         return image;
     }

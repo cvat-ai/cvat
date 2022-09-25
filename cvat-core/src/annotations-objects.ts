@@ -2334,6 +2334,15 @@ export class MaskShape extends Shape {
         this.shapeType = ShapeType.MASK;
     }
 
+    protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
+        /* eslint-disable-next-line no-underscore-dangle */
+        Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
+
+        // TODO: cut mask if necessary
+
+        return data.points;
+    }
+
     protected removeUnderlyingPixels(frame: number): void {
         if (frame !== this.frame) {
             throw new ArgumentError(
@@ -2383,8 +2392,8 @@ export class MaskShape extends Shape {
         const undoBottom = this.bottom;
         const undoSource = this.source;
 
-        const redoPoints = points.slice(0, -4);
-        const [redoLeft, redoTop, redoRight, redoBottom] = points.slice(-4);
+        const [redoLeft, redoTop, redoRight, redoBottom] = points.splice(-4);
+        const redoPoints = points;
         const redoSource = Source.MANUAL;
 
         const undo = (): void => {
