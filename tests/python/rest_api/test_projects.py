@@ -349,6 +349,20 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
 
+    def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(self):
+        project_id = 5
+        username = 'admin2'
+
+        response = self._test_export_project(username, project_id, 'COCO Keypoints 1.0')
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = 'dataset.zip'
+        import_data = {
+            'dataset_file': tmp_file,
+        }
+
+        self._test_import_project(username, project_id, 'COCO Keypoints 1.0', import_data)
+
     def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self):
         project_id = 5
         username = 'admin2'
