@@ -2,14 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import Menu from 'antd/lib/menu';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 import Text from 'antd/lib/typography/Text';
 
-import ObjectItemElementComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-element';
+import AutoSizer from 'react-virtualized-auto-sizer';
+import { VariableSizeList as List } from 'react-window';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
@@ -17,6 +18,8 @@ import consts from 'consts';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Row, Col } from 'antd';
+import { getRowSize } from 'containers/annotation-page/standard-workspace/objects-side-bar/object-list-sorter';
+import ObjectState from 'cvat-core/src/object-state';
 
 interface Props {
     readonly: boolean;
@@ -24,6 +27,7 @@ interface Props {
     contextMenuParentID: number | null;
     contextMenuClientIDs: number[];
     objectStates: any[];
+    collapsedStates: Record<number, boolean>;
     labels: any[];
     visible: boolean;
     left: number;
@@ -87,7 +91,7 @@ function ReviewContextMenu({
 export default function CanvasContextMenu(props: Props): JSX.Element | null {
     const {
         contextMenuClientIDs,
-        contextMenuParentID,
+        collapsedStates,
         objectStates,
         labels,
         visible,
@@ -172,6 +176,19 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         );
     }
 
+    const listRef = useRef();
+    if (listRef?.current) {
+        listRef.current.resetAfterIndex(0, false);
+    }
+
+    const displayedObjects: ObjectState[] = [];
+    for (const id of contextMenuClientIDs) {
+        const obj = objectStates.find((o) => o.clientID === id);
+        if (obj) {
+            displayedObjects.push(obj);
+        }
+    }
+
     return ReactDOM.createPortal(
         <div className='cvat-canvas-context-menu' style={{ top, left }}>
 
@@ -201,18 +218,29 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 </div>
             )}
 
-            {contextMenuClientIDs.map(
-                (id: number): JSX.Element => (
-                    <ObjectItemContainer
-                        readonly={readonly}
-                        activateOnClick={false}
-                        key={id}
-                        clientID={id}
-                        objectStates={objectStates}
-                        initialCollapsed
-                    />
-                ),
-            )}
+            <AutoSizer>
+                {({ height, width }) => (
+                    <List
+                        itemCount={displayedObjects.length}
+                        itemSize={(index: number) => getRowSize(displayedObjects, collapsedStates, index)}
+                        height={height}
+                        width={width}
+                        ref={listRef}
+                    >
+                        {({ index, style }): JSX.Element => (
+                            <div style={style}>
+                                <ObjectItemContainer
+                                    readonly={readonly}
+                                    activateOnClick={false}
+                                    key={displayedObjects[index].clientID}
+                                    objectState={displayedObjects[index]}
+                                    initialCollapsed
+                                />
+                            </div>
+                        )}
+                    </List>
+                )}
+            </AutoSizer>
         </div>,
         window.document.body,
     );

@@ -289,8 +289,8 @@ button.cvat-predictor-button {
     position: fixed;
     width: 300px;
     z-index: 10;
-    max-height: 50%;
-    overflow-y: auto;
+    height: 50%;
+    overflow: visible;
 
     .change-all-labels-container {
         padding: 3px 3px 3px 7px;

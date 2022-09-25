@@ -12,6 +12,7 @@ import ObjectState from 'cvat-core/src/object-state';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List } from 'react-window';
 import { Label } from 'cvat-core/src/labels';
+import { getRowSize } from 'containers/annotation-page/standard-workspace/objects-side-bar/object-list-sorter';
 import ObjectListHeader from './objects-list-header';
 import LabelItem from './label-item';
 
@@ -47,7 +48,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         collapsedLabelStates,
         statesOrdering,
         groupedObjects,
-        objectStates,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
         changeStatesOrdering,
@@ -59,23 +59,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         hideAllStates,
         showAllStates,
     } = props;
-
-    const getItemSize = (index: number) => {
-        const row: Label | ObjectState = groupedObjects[index];
-        if (row instanceof Label) {
-            return 35;
-        }
-
-        const numAttr = Object.entries(row.attributes).length;
-        if (numAttr === 0) {
-            return 63; // no details at all
-        }
-
-        if (collapsedStates[row.clientID ?? 0] === false) {
-            return 95 + numAttr * 27.5; // with expanded details
-        }
-        return 90; // with collapsed details
-    };
 
     const listRef = useRef();
 
@@ -98,9 +81,8 @@ function ObjectListComponent(props: Props): JSX.Element {
         <ObjectItemContainer
             readonly={readonly}
             activateOnClick
-            objectStates={objectStates}
+            objectState={object}
             key={object.clientID}
-            clientID={object.clientID ?? 0}
         />
     );
 
@@ -126,7 +108,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                 {({ height, width }) => (
                     <List
                         itemCount={groupedObjects.length}
-                        itemSize={getItemSize}
+                        itemSize={(index: number) => getRowSize(groupedObjects, collapsedStates, index)}
                         height={height}
                         width={width}
                         ref={listRef}

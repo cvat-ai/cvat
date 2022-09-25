@@ -22,20 +22,19 @@ import {
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
-import { Label } from 'cvat-core-wrapper';
+import { Label, ObjectState } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface OwnProps {
     readonly: boolean;
-    clientID: number;
-    objectStates: any[];
+    objectState: ObjectState;
     activateOnClick: boolean;
 }
 
 interface StateToProps {
-    objectState: any;
-    labels: any[];
+    objectState: ObjectState;
+    labels: Label[];
     attributes: any[];
     jobInstance: any;
     frameNumber: number;
@@ -80,23 +79,17 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const {
-        objectStates: states, clientID, activateOnClick,
-    } = own;
-    const stateIDs = states.map((_state: any): number => _state.clientID);
-    const index = stateIDs.indexOf(clientID);
-
     return {
-        objectState: states[index],
-        attributes: jobAttributes[states[index].label.id],
+        objectState: own.objectState,
+        attributes: jobAttributes[own.objectState.label.id ?? 0],
         labels,
         ready,
         activeControl,
         colorBy,
         jobInstance,
         frameNumber,
-        activated: activatedStateIDs.includes(clientID),
-        activateOnClick,
+        activated: activatedStateIDs.includes(own.objectState.clientID ?? 0),
+        activateOnClick: own.activateOnClick,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
@@ -268,7 +261,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
         const { objectState, readonly } = this.props;
 
-        if (!readonly) {
+        if (!readonly && objectState.points) {
             const { points } = objectState;
             const minD = {
                 x: (points[6] - points[2]) * 0.001,

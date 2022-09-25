@@ -22,6 +22,7 @@ interface StateToProps {
     contextMenuParentID: number | null;
     contextMenuClientIDs: number[];
     objectStates: any[];
+    collapsedStates: Record<number, boolean>;
     visible: boolean;
     top: number;
     left: number;
@@ -66,6 +67,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contextMenuClientIDs: clientIDs,
         contextMenuParentID: parentID,
         collapsed: clientIDs.length === 1 ? collapsed[clientIDs[0]] : undefined,
+        collapsedStates: state.annotation.annotations.collapsed,
         objectStates,
         labels,
         visible:
@@ -233,6 +235,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             contextMenuClientIDs,
             contextMenuParentID,
             objectStates,
+            collapsedStates,
             labels,
             type,
             readonly,
@@ -250,6 +253,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                         contextMenuClientIDs={contextMenuClientIDs}
                         contextMenuParentID={contextMenuParentID}
                         readonly={readonly}
+                        collapsedStates={collapsedStates}
                         left={left}
                         top={top}
                         visible={visible}

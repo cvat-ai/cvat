@@ -47,3 +47,20 @@ export function groupAndSort(
 
     return result;
 }
+
+export function getRowSize(groupedObjects: (Label | ObjectState)[], collapsedStates: Record<number, boolean>, index: number) {
+    const row: Label | ObjectState = groupedObjects[index];
+    if (row instanceof Label) {
+        return 35;
+    }
+
+    const numAttr = Object.entries(row.attributes).length;
+    if (numAttr === 0) {
+        return 63; // no details at all
+    }
+
+    if (collapsedStates[row.clientID ?? 0] === false) {
+        return 95 + numAttr * 27.5; // with expanded details
+    }
+    return 90; // with collapsed details
+}
