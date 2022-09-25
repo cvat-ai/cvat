@@ -237,9 +237,9 @@ def is_org_member(memberships):
 
 @pytest.fixture(scope='session')
 def find_job_staff_user(is_job_staff):
-    def find(jobs, users, is_staff, wo_jobs=[]):
+    def find(jobs, users, is_staff, wo_jobs=None):
         for job in jobs:
-            if job['id'] in wo_jobs:
+            if wo_jobs is not None and job['id'] in wo_jobs:
                 continue
             for user in users:
                 if is_staff == is_job_staff(user['id'], job['id']):
@@ -249,9 +249,9 @@ def find_job_staff_user(is_job_staff):
 
 @pytest.fixture(scope='session')
 def find_task_staff_user(is_task_staff):
-    def find(tasks, users, is_staff, wo_tasks=[]):
+    def find(tasks, users, is_staff, wo_tasks=None):
         for task in tasks:
-            if task['id'] in wo_tasks:
+            if wo_tasks is not None and task['id'] in wo_tasks:
                 continue
             for user in users:
                 if is_staff == is_task_staff(user['id'], task['id']):
