@@ -244,10 +244,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.activatedStateID !== null && prevProps.activatedStateID !== activatedStateID) {
             canvasInstance.activate(null);
-            const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
-            if (el) {
-                (el as any).instance.fill({ opacity });
-            }
         }
 
         if (gridSize !== prevProps.gridSize) {
@@ -660,10 +656,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
             if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
-            }
-            const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
-            if (el) {
-                ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
             }
         }
     }

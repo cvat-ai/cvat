@@ -5,15 +5,15 @@
 import { fabric } from 'fabric';
 
 import {
-    Configuration, DrawData, MasksEditData, Geometry,
+    DrawData, MasksEditData, Geometry, Configuration,
 } from './canvasModel';
 import consts from './consts';
 import { PropType, computeWrappingBox } from './shared';
 
 export interface MasksHandler {
-    configurate(configuration: Configuration): void;
     draw(drawData: DrawData): void;
     edit(state: MasksEditData): void;
+    configurate(configuration: Configuration): void;
     transform(geometry: Geometry): void;
     cancel(): void;
     enabled: boolean;
@@ -43,6 +43,7 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private editData: MasksEditData | null;
 
+    private colorBy: 'Instance' | 'Group' | 'Label';
     private latestMousePos: { x: number; y: number; };
     private startTimestamp: number;
     private geometry: Geometry;
@@ -106,6 +107,18 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onEditDone(null, null);
     }
 
+    private getStateColor(state: any): string {
+        if (this.colorBy === 'Instance') {
+            return state.color;
+        }
+
+        if (this.colorBy === 'Label') {
+            return state.label.color;
+        }
+
+        return state.group.color;
+    }
+
     public constructor(
         onDrawDone: (
             data: object | null,
@@ -125,6 +138,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.drawnObjects = [];
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
+        this.colorBy = 'Instance';
         this.onDrawDone = onDrawDone;
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
@@ -278,6 +292,10 @@ export class MasksHandlerImpl implements MasksHandler {
         });
     }
 
+    public configurate(configuration: Configuration) {
+        this.colorBy = configuration.colorBy;
+    }
+
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
         const {
@@ -295,19 +313,6 @@ export class MasksHandlerImpl implements MasksHandler {
         if (this.drawablePolygon) {
             this.drawablePolygon.set('strokeWidth', consts.BASE_STROKE_WIDTH / scale);
             this.canvas.renderAll();
-        }
-    }
-
-    public configurate(configuration: Configuration): void {
-        if (typeof configuration.creationOpacity === 'number') {
-            this.drawingOpacity = Math.max(0, Math.min(1, configuration.creationOpacity));
-
-            if (this.drawablePolygon) {
-                this.drawablePolygon.set('opacity', this.drawingOpacity);
-                this.canvas.renderAll();
-            }
-
-            // TODO: can we change opacity for all drawn objects?
         }
     }
 
@@ -454,7 +459,7 @@ export class MasksHandlerImpl implements MasksHandler {
         if (editData.enabled && editData.state.shapeType === 'mask') {
             if (editData.brushTool) {
                 this.tool = { ...editData.brushTool };
-                this.tool.color = editData.state.color;
+                this.tool.color = this.getStateColor(this.editData.state);
 
                 this.removeBrushMarker();
                 if (['brush', 'eraser'].includes(this.tool.type)) {
@@ -483,7 +488,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.canvas.getElement().parentElement.style.display = 'block';
 
                 const { points } = editData.state;
-                const color = fabric.Color.fromHex(editData.state.color).getSource();
+                const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = [];
                 for (let i = 0; i < points.length - 4; i++) {

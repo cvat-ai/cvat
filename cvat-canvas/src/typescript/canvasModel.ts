@@ -65,7 +65,7 @@ export interface Configuration {
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
     CSSImageFilter?: string;
-    colorBy?: string;
+    colorBy?: 'Instance' | 'Group' | 'Label';
     selectedShapeOpacity?: number;
     shapeOpacity?: number;
     controlPointsSize?: number;

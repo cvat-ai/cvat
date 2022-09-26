@@ -1292,13 +1292,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const { configuration } = model;
 
             const updateShapeViews = (states: DrawnState[], parentState?: DrawnState): void => {
-                for (const state of states) {
-                    const { fill, stroke, 'fill-opacity': fillOpacity } = this.getShapeColorization(state, { configuration, parentState });
-                    const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
+                for (const drawnState of states) {
+                    const {
+                        fill, stroke, 'fill-opacity': fillOpacity,
+                    } = this.getShapeColorization(drawnState, { parentState });
+                    const shapeView = window.document.getElementById(`cvat_canvas_shape_${drawnState.clientID}`);
+                    const [objectState] = this.controller.objects
+                        .filter((_state: any) => _state.clientID === drawnState.clientID);
                     if (shapeView) {
                         const handler = (shapeView as any).instance.remember('_selectHandler');
                         if (handler && handler.nested) {
                             handler.nested.fill({ color: fill });
+                        }
+
+                        if (drawnState.shapeType === 'mask') {
+                            // if there are masks, we need to redraw them
+                            this.deleteObjects([drawnState]);
+                            this.addObjects([objectState]);
+                            continue;
                         }
 
                         (shapeView as any).instance
@@ -1306,18 +1317,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             .stroke({ color: stroke });
                     }
 
-                    if (state.elements) {
-                        updateShapeViews(state.elements, state);
+                    if (drawnState.elements) {
+                        updateShapeViews(drawnState.elements, drawnState);
                     }
                 }
             };
 
-            if (configuration.shapeOpacity !== this.configuration.shapeOpacity ||
+            const withUpdatingShapeViews = configuration.shapeOpacity !== this.configuration.shapeOpacity ||
                 configuration.selectedShapeOpacity !== this.configuration.selectedShapeOpacity ||
                 configuration.outlinedBorders !== this.configuration.outlinedBorders ||
-                configuration.colorBy !== this.configuration.colorBy) {
-                updateShapeViews(Object.values(this.drawnStates));
-            }
+                configuration.colorBy !== this.configuration.colorBy;
 
             if (configuration.displayAllText && !this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
@@ -1346,6 +1355,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             this.configuration = configuration;
+            if (withUpdatingShapeViews) {
+                updateShapeViews(Object.values(this.drawnStates));
+            }
+
             if (recreateText) {
                 const states = this.controller.objects;
                 for (const key of Object.keys(this.drawnStates)) {
@@ -1821,12 +1834,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private getShapeColorization(state: any, opts: {
-        configuration?: Configuration,
         parentState?: any,
     } = {}): { fill: string; stroke: string, 'fill-opacity': number } {
         const { shapeType } = state;
         const parentShapeType = opts.parentState?.shapeType;
-        const configuration = opts.configuration || this.configuration;
+        const { configuration } = this;
         const { colorBy, shapeOpacity, outlinedBorders } = configuration;
         let shapeColor = '';
 
@@ -2115,6 +2127,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             shape.removeClass('cvat_canvas_shape_activated');
             shape.removeClass('cvat_canvas_shape_draggable');
+            if (drawnState.shapeType === 'mask') {
+                shape.attr('opacity', `${this.configuration.shapeOpacity}`);
+            } else {
+                shape.attr('fill-opacity', `${this.configuration.shapeOpacity}`);
+            }
 
             if (!drawnState.pinned) {
                 (shape as any).off('dragstart');
@@ -2200,6 +2217,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         shape.addClass('cvat_canvas_shape_activated');
+        if (state.shapeType === 'mask') {
+            shape.attr('opacity', `${this.configuration.selectedShapeOpacity}`);
+        } else {
+            shape.attr('fill-opacity', `${this.configuration.selectedShapeOpacity}`);
+        }
+
         if (state.shapeType === 'points') {
             this.content.append(this.svgShapes[clientID].remember('_selectHandler').nested.node);
         } else {
@@ -2387,6 +2410,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).on('dblclick', (e: MouseEvent) => {
                 if (e.shiftKey) {
                     this.controller.edit({ enabled: true, state });
+                    e.stopPropagation();
                 }
             });
         }
@@ -2723,7 +2747,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addMask(points: number[], state: any): SVG.Image {
-        const color = fabric.Color.fromHex(state.color).getSource();
+        const colorization = this.getShapeColorization(state);
+        const color = fabric.Color.fromHex(colorization.fill).getSource();
         const [left, top, right, bottom] = points.slice(-4);
         const imageBitmap = [];
         for (let i = 0; i < points.length - 4; i++) {
@@ -2747,9 +2772,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             id: `cvat_canvas_shape_${state.clientID}`,
-            fill: state.color,
             'shape-rendering': 'geometricprecision',
             'data-z-order': state.zOrder,
+            opacity: colorization['fill-opacity'],
+            stroke: colorization.stroke,
         }).addClass('cvat_canvas_shape');
         image.move(this.geometry.offset + left, this.geometry.offset + top);
         image.loaded(() => {
