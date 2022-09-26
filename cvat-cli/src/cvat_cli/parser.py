@@ -10,7 +10,7 @@ import logging
 import os
 from distutils.util import strtobool
 
-from cvat_sdk.core.types import ResourceType
+from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .version import VERSION
 
@@ -47,6 +47,11 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         description="Perform common operations related to CVAT tasks.\n\n"
     )
     parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Allows to disable SSL certificate check",
+    )
 
     task_subparser = parser.add_subparsers(dest="action")
 
@@ -66,13 +71,10 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         "--server-host", type=str, default="localhost", help="host (default: %(default)s)"
     )
     parser.add_argument(
-        "--server-port", type=int, default="8080", help="port (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--https",
-        default=False,
-        action="store_true",
-        help="using https connection (default: %(default)s)",
+        "--server-port",
+        type=int,
+        default=None,
+        help="port (default: 80 for http and 443 for https connections)",
     )
     parser.add_argument(
         "--debug",

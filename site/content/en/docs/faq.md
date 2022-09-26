@@ -1,7 +1,7 @@
 ---
 title: 'Frequently asked questions'
 linkTitle: 'FAQ'
-weight: 20
+weight: 2
 description: 'Answers to frequently asked questions'
 ---
 
@@ -24,26 +24,12 @@ Please be patient.
   https://user-images.githubusercontent.com/40690625/180879954-44afcd95-1e94-451a-9a60-2f3bd6482cbf.gif)
 
 
-## How to update CVAT
+## How to upgrade CVAT
 
-Before updating, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
+Before upgrading, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
 and backup all CVAT volumes.
 
-To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
-
-```bash
-docker-compose build
-```
-
-and run containers:
-
-```bash
-docker-compose up -d
-```
-
-Sometimes the update process takes a lot of time due to changes in the database schema and data.
-You can check the current status with `docker logs cvat`.
-Please do not terminate the migration and wait till the process is complete.
+Follow the [upgrade guide](/docs/administration/advanced/upgrade_guide/).
 
 ## Kibana app works, but no logs are displayed
 
@@ -185,3 +171,13 @@ section.
 ## How to transfer CVAT to another machine
 
 Follow the [backup/restore guide](/docs/administration/advanced/backup_guide/#how-to-backup-all-cvat-data).
+
+## How to load your own DL model into CVAT
+
+See the information here in the [Serverless tutorial](/docs/manual/advanced/serverless-tutorial/#adding-your-own-dl-models).
+
+## My server uses a custom SSL certificate and I don't want to check it.
+
+You can call control SSL certificate check with the `--insecure` CLI argument.
+For SDK, you can specify `ssl_verify = True/False` in the `cvat_sdk.core.client.Config` object.
+

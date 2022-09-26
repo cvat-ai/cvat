@@ -6,7 +6,7 @@ const config = require('./config');
 
 (() => {
     const PluginRegistry = require('./plugins').default;
-    const serverProxy = require('./server-proxy');
+    const serverProxy = require('./server-proxy').default;
     const lambdaManager = require('./lambda-manager');
     const {
         isBoolean,
@@ -21,7 +21,7 @@ const config = require('./config');
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task, Job } = require('./session');
-    const { Project } = require('./project');
+    const Project = require('./project').default;
     const { CloudStorage } = require('./cloud-storage');
     const Organization = require('./organization');
 
@@ -230,7 +230,7 @@ const config = require('./config');
             checkExclusiveFields(filter, ['id'], ['page']);
             const searchParams = {};
             for (const key of Object.keys(filter)) {
-                if (['id', 'page', 'search', 'sort', 'page'].includes(key)) {
+                if (['id', 'page', 'search', 'sort', 'page', 'filter'].includes(key)) {
                     searchParams[key] = filter[key];
                 }
             }

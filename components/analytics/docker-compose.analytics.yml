@@ -29,7 +29,7 @@ services:
 
   cvat_kibana_setup:
     container_name: cvat_kibana_setup
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat_server']
     working_dir: '/home/django'

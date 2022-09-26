@@ -1,7 +1,7 @@
 ---
 title: 'Mounting cloud storage'
 linkTitle: 'Mounting cloud storage'
-weight: 10
+weight: 30
 description: 'Instructions on how to mount AWS S3 bucket, Microsoft Azure container or Google Drive as a filesystem.'
 ---
 

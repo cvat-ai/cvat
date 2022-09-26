@@ -272,6 +272,11 @@ ingress:
           service:
             name: backend-service
             port: 8080
+        - path: /static/admin
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
         - path: /django-rq
           pathType: "Prefix"
           service:

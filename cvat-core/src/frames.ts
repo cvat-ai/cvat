@@ -5,7 +5,7 @@
 (() => {
     const cvatData = require('cvat-data');
     const PluginRegistry = require('./plugins').default;
-    const serverProxy = require('./server-proxy');
+    const serverProxy = require('./server-proxy').default;
     const { isBrowser, isNode } = require('browser-or-node');
     const { Exception, ArgumentError, DataError } = require('./exceptions');
 

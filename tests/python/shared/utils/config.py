@@ -48,5 +48,6 @@ def post_files_method(username, endpoint, data, files, **kwargs):
 def server_get(username, endpoint, **kwargs):
     return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
-def make_api_client(user: str) -> ApiClient:
-    return ApiClient(configuration=Configuration(host=BASE_URL, username=user, password=USER_PASS))
+def make_api_client(user: str, *, password: str = None) -> ApiClient:
+    return ApiClient(configuration=Configuration(host=BASE_URL,
+        username=user, password=password or USER_PASS))
