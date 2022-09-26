@@ -28,7 +28,7 @@ context('Webhooks pipeline.', () => {
         enableSSL: true,
         isActive: true,
     };
-    const newProjectWebhookParams = {
+    const newOrganizationWebhookParams = {
         targetURL: 'https://localhost:3001/edited',
         description: 'Edited description',
         secret: 'Super secret',
@@ -62,8 +62,17 @@ context('Webhooks pipeline.', () => {
         );
     });
 
+    after(() => {
+        cy.logout();
+        cy.getAuthKey().then((authKey) => {
+            console.log(authKey);
+            cy.deleteProjects(authKey, [project.name]);
+            cy.deleteOrganizations(authKey, [organizationParams.shortName]);
+        });
+    });
+
     describe('Test organization webhook', () => {
-        it('Open the organization. Create webhook.', () => {
+        it('Open the organization. Create/update/delete webhook.', () => {
             cy.openOrganization(organizationParams.shortName);
             cy.openOrganizationWebhooks();
             cy.createWebhook(orgWebhookParams);
@@ -71,18 +80,14 @@ context('Webhooks pipeline.', () => {
                 cy.contains(orgWebhookParams.description).should('exist');
                 cy.contains(orgWebhookParams.targetURL).should('exist');
             });
-        });
 
-        it('Edit webhook', () => {
-            cy.editWebhook(orgWebhookParams.description, newProjectWebhookParams);
+            cy.editWebhook(orgWebhookParams.description, newOrganizationWebhookParams);
             cy.get('.cvat-webhooks-list').within(() => {
-                cy.contains(newProjectWebhookParams.description).should('exist');
-                cy.contains(newProjectWebhookParams.targetURL).should('exist');
+                cy.contains(newOrganizationWebhookParams.description).should('exist');
+                cy.contains(newOrganizationWebhookParams.targetURL).should('exist');
             });
-        });
 
-        it('Delete webhook', () => {
-            cy.deleteWebhook(newProjectWebhookParams.description);
+            cy.deleteWebhook(newOrganizationWebhookParams.description);
         });
     });
 

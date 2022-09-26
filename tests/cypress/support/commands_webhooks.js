@@ -10,14 +10,14 @@ Cypress.Commands.add('createWebhook', (webhookData) => {
     cy.get('.cvat-webhooks-go-back').click();
 });
 
-Cypress.Commands.add('webhookActions', (description) => {
+Cypress.Commands.add('openWebhookActions', (description) => {
     cy.contains(description).parents('.cvat-webhooks-list-item').within(() => {
         cy.get('.cvat-webhooks-page-actions-button').trigger('mouseover');
     });
 });
 
 Cypress.Commands.add('editWebhook', (description, webhookData) => {
-    cy.webhookActions(description);
+    cy.openWebhookActions(description);
     cy.contains('[role="menuitem"]', 'Edit').click();
     cy.get('.cvat-setup-webhook-content').should('exist');
     cy.setUpWebhook(webhookData);
@@ -26,7 +26,7 @@ Cypress.Commands.add('editWebhook', (description, webhookData) => {
 });
 
 Cypress.Commands.add('deleteWebhook', (description) => {
-    cy.webhookActions(description);
+    cy.openWebhookActions(description);
     cy.contains('[role="menuitem"]', 'Delete').click();
     cy.get('.cvat-modal-confirm-remove-webhook')
         .should('contain', 'Are you sure you want to remove the hook?')
