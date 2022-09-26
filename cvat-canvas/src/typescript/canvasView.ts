@@ -1781,6 +1781,35 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     ctx.fill();
                 }
 
+                if (state.shapeType === 'mask') {
+                    const { points } = state;
+                    const [left, top, right, bottom] = points.splice(-4);
+                    const imageBitmap = [];
+                    for (let i = 0; i < points.length; i++) {
+                        const alpha = points[i];
+                        imageBitmap.push(alpha * 255, alpha * 255, alpha * 255, alpha * 255);
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = right - left + 1;
+                    canvas.height = bottom - top + 1;
+                    canvas.getContext('2d').putImageData(
+                        new ImageData(
+                            new Uint8ClampedArray(imageBitmap),
+                            canvas.width,
+                            canvas.height,
+                        ), 0, 0,
+                    );
+                    const dataURL = canvas.toDataURL('image/png');
+                    const img = document.createElement('img');
+                    img.addEventListener('load', () => {
+                        ctx.drawImage(img, left, top);
+                        URL.revokeObjectURL(dataURL);
+                    });
+
+                    img.src = dataURL;
+                }
+
                 if (state.shapeType === 'cuboid') {
                     for (let i = 0; i < 5; i++) {
                         const points = [
