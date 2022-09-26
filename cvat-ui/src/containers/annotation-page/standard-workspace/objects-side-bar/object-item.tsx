@@ -142,6 +142,14 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     };
 
+    private edit = (): void => {
+        const { objectState, readonly, canvasInstance } = this.props;
+
+        if (!readonly && canvasInstance instanceof Canvas) {
+            canvasInstance.edit({ enabled: true, state: objectState });
+        }
+    }
+
     private remove = (): void => {
         const {
             objectState, readonly, removeObject,
@@ -342,6 +350,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 toForeground={this.toForeground}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
+                edit={this.edit}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );

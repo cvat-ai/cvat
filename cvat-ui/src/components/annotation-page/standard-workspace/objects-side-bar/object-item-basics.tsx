@@ -43,6 +43,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
+    edit(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -75,6 +76,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        edit,
         jobInstance,
     } = props;
 
@@ -150,6 +152,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         toForeground,
                         resetCuboidPerspective,
                         changeColorPickerVisible,
+                        edit,
                     })}
                 >
                     <MoreOutlined />

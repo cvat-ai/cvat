@@ -366,7 +366,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         for (const clientID of Object.keys(this.innerObjectsFlags.editHidden)) {
-            this.setupInnerFlags(+clientID, 'drawHidden', false);
+            this.setupInnerFlags(+clientID, 'editHidden', false);
         }
         this.mode = Mode.IDLE;
     };
@@ -2384,7 +2384,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 });
         } else {
-            (shape as any).on('mousedown', (e: MouseEvent) => {
+            (shape as any).on('dblclick', (e: MouseEvent) => {
                 if (e.shiftKey) {
                     this.controller.edit({ enabled: true, state });
                 }
