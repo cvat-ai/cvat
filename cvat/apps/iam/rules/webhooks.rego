@@ -25,7 +25,6 @@ import data.organizations
 #         "owner": { "id": <num> },
 #         "organization": { "id": <num> } or null,
 #         "project": {
-#             "id": <num>,
 #             "owner": { "id": num },
 #         } or null,
 #         "num_resources": <num>
