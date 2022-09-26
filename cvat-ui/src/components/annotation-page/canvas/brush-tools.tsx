@@ -166,17 +166,22 @@ function BrushTools(): React.ReactPortal {
                 className='cvat-brush-tools-finish'
                 icon={<CheckOutlined />}
                 onClick={() => {
-                    if (canvasInstance) {
-                        canvasInstance.draw({ enabled: false });
+                    if (canvasInstance instanceof Canvas) {
+                        if (editableState) {
+                            canvasInstance.edit({ enabled: false });
+                        } else {
+                            canvasInstance.draw({ enabled: false });
+                        }
                     }
                 }}
             />
             <Button
                 type='text'
+                disabled={!!editableState}
                 className='cvat-brush-tools-continue'
                 icon={<PlusOutlined />}
                 onClick={() => {
-                    if (canvasInstance) {
+                    if (canvasInstance instanceof Canvas) {
                         canvasInstance.draw({ enabled: false, continue: true });
 
                         dispatch(

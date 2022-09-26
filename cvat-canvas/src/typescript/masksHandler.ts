@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,7 +35,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private isMouseDown: boolean;
     private brushMarker: fabric.Rect | fabric.Circle | null;
     private drawablePolygon: null | fabric.Polygon;
-    private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line)[];
+    private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
 
     private tool: DrawData['brushTool'] | null;
     private drawData: DrawData | null;
@@ -151,7 +151,7 @@ export class MasksHandlerImpl implements MasksHandler {
         });
 
         this.canvas.on('mouse:down', (options: fabric.IEvent<MouseEvent>) => {
-            const { tool, isDrawing } = this;
+            const { tool, isDrawing, isEditing } = this;
             const point = new fabric.Point(options.pointer.x, options.pointer.y);
             this.isMouseDown = true;
 
@@ -177,7 +177,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
 
                 this.canvas.renderAll();
-            } else if (isDrawing && tool.type.startsWith('polygon-')) {
+            } else if ((isDrawing || isEditing) && tool.type.startsWith('polygon-')) {
                 // create a new polygon
                 this.drawablePolygon = new fabric.Polygon([point, fabric.util.object.clone(point)], {
                     opacity: this.drawingOpacity,
@@ -244,7 +244,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 if (this.latestMousePos.x !== -1 && this.latestMousePos.y !== -1) {
                     const dx = position.x - this.latestMousePos.x;
                     const dy = position.y - this.latestMousePos.y;
-                    if (Math.sqrt(dx ** 2 + dy ** 2) > this.drawData.brushTool?.size / 2) {
+                    if (Math.sqrt(dx ** 2 + dy ** 2) > tool.size / 2) {
                         const line = new fabric.Line([
                             this.latestMousePos.x - tool.size / 2,
                             this.latestMousePos.y - tool.size / 2,
@@ -451,68 +451,135 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public edit(editData: MasksEditData): void {
-        // todo: disable some controls from brush toolbar
-        // todo: during drawing add other parts using xor global operator
-
         if (editData.enabled && editData.state.shapeType === 'mask') {
-            if (!this.isEditing) {
-                this.isEditing = true;
-                this.canvas.isDrawingMode = true;
-                this.canvas.getElement().parentElement.style.display = 'block';
-                this.onEditStart(editData.state);
+            if (editData.brushTool) {
+                this.tool = { ...editData.brushTool };
+                this.tool.color = editData.state.color;
 
-                const color = fabric.Color.fromHex(editData.state.color).getSource();
+                this.removeBrushMarker();
+                if (['brush', 'eraser'].includes(this.tool.type)) {
+                    const common = {
+                        evented: false,
+                        selectable: false,
+                        opacity: 0.75,
+                        left: this.latestMousePos.x - this.tool.size / 2,
+                        top: this.latestMousePos.y - this.tool.size / 2,
+                    };
+                    this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
+                        ...common,
+                        radius: this.tool.size / 2,
+                    }) : new fabric.Rect({
+                        ...common,
+                        width: this.tool.size,
+                        height: this.tool.size,
+                    });
+
+                    this.canvas.add(this.brushMarker);
+                }
+            }
+
+            if (!this.isEditing) {
+                // if editing not started, let's initialize new process
+                this.canvas.getElement().parentElement.style.display = 'block';
+
                 const { points } = editData.state;
+                const color = fabric.Color.fromHex(editData.state.color).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = [];
                 for (let i = 0; i < points.length - 4; i++) {
                     const alpha = points[i];
                     imageBitmap.push(color[0], color[1], color[2], alpha * 255);
                 }
-
                 const canvas = document.createElement('canvas');
-                canvas.width = right - left;
-                canvas.height = bottom - top;
+                canvas.width = right - left + 1;
+                canvas.height = bottom - top + 1;
                 canvas.getContext('2d').putImageData(
                     new ImageData(
                         new Uint8ClampedArray(imageBitmap),
-                        right - left,
-                        bottom - top,
+                        canvas.width,
+                        canvas.height,
                     ), 0, 0,
                 );
                 const dataURL = canvas.toDataURL('image/png');
 
                 fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
+                    image.selectable = false;
+                    image.evented = false;
+                    image.globalCompositeOperation = 'xor';
                     this.canvas.add(image);
+                    this.drawnObjects.push(image);
                     this.canvas.renderAll();
                     URL.revokeObjectURL(dataURL);
                 }, { left, top });
-            } else if (['polygon-plus', 'polygon-minus'].includes(editData.brushTool?.type)) {
-                if (!this.isPolygonInteraction) {
-                    this.isPolygonInteraction = true;
-                    this.canvas.isDrawingMode = false;
-                }
-            } else if (this.isPolygonInteraction && this.drawablePolygon) {
-                this.keepDrawnPolygon();
-                this.isPolygonInteraction = false;
-            }
 
-            if (editData.brushTool) {
-                this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-                this.canvas.freeDrawingBrush.width = editData.brushTool.size || 10;
-                this.canvas.freeDrawingBrush.strokeLineCap = editData.brushTool.form === 'circle' ? 'round' : 'square';
-                let color = fabric.Color.fromHex(editData.brushTool.color);
-                if (editData.brushTool.type === 'eraser') {
-                    color = fabric.Color.fromHex('#ffffff');
-                }
-                color.setAlpha(this.drawingOpacity);
-                this.canvas.freeDrawingBrush.color = color.toRgba();
+                this.isEditing = true;
+                this.startTimestamp = Date.now();
+                this.onEditStart(editData.state);
+            } else if (this.drawablePolygon && !this.tool.type.startsWith('polygon-')) {
+                // tool was switched from polygon to brush for example
+                this.keepDrawnPolygon();
             }
         } else if (!editData.enabled) {
-            // todo: compute new shape
-            const points = [];
-            this.onEditDone(this.editData.state, points);
-            this.releaseDraw();
+            try {
+                // editing has been finished
+                if (this.drawablePolygon) {
+                    this.keepDrawnPolygon();
+                }
+
+                // TODO: reduce code dublication
+                if (this.drawnObjects.length) {
+                    type BoundingRect = ReturnType<PropType<fabric.Polygon, 'getBoundingRect'>>;
+                    type TwoCornerBox = Pick<BoundingRect, 'top' | 'left'> & { right: number; bottom: number };
+                    const { width, height } = this.geometry.image;
+                    const wrappingBbox = this.drawnObjects
+                        .map((obj) => {
+                            if (obj instanceof fabric.Polygon) {
+                                const bbox = computeWrappingBox(obj.points
+                                    .reduce(((acc, val) => {
+                                        acc.push(val.x, val.y);
+                                        return acc;
+                                    }), []));
+
+                                return {
+                                    left: bbox.xtl,
+                                    top: bbox.ytl,
+                                    width: bbox.width,
+                                    height: bbox.height,
+                                };
+                            }
+
+                            return obj.getBoundingRect();
+                        })
+                        .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
+                            acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
+                            acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
+                            acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
+                            acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
+                            return acc;
+                        }, {
+                            left: Number.MAX_SAFE_INTEGER,
+                            top: Number.MAX_SAFE_INTEGER,
+                            right: Number.MIN_SAFE_INTEGER,
+                            bottom: Number.MIN_SAFE_INTEGER,
+                        });
+
+                    const imageData = this.canvas.toCanvasElement()
+                        .getContext('2d').getImageData(
+                            wrappingBbox.left, wrappingBbox.top,
+                            wrappingBbox.right - wrappingBbox.left + 1, wrappingBbox.bottom - wrappingBbox.top + 1,
+                        ).data;
+
+                    const alpha = [];
+                    for (let i = 3; i < imageData.length; i += 4) {
+                        alpha.push(imageData[i] > 0 ? 1 : 0);
+                    }
+
+                    alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
+                    this.onEditDone(this.editData.state, alpha);
+                }
+            } finally {
+                this.releaseEdit();
+            }
         }
         this.editData = editData;
     }

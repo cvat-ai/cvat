@@ -80,6 +80,12 @@ function checkShapeArea(shapeType: ShapeType, points: number[]): boolean {
         return true;
     }
 
+    if (shapeType === ShapeType.MASK) {
+        const [left, top, right, bottom] = points.slice(-4);
+        const area = (right - left) * (bottom - top);
+        return area >= MIN_SHAPE_AREA;
+    }
+
     if (shapeType === ShapeType.ELLIPSE) {
         const [cx, cy, rightX, topY] = points;
         const [rx, ry] = [rightX - cx, cy - topY];
@@ -606,7 +612,6 @@ class Drawn extends Annotation {
     }
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
-        /* eslint-disable-next-line no-underscore-dangle */
         Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
 
         let fittedPoints = [];
@@ -2335,12 +2340,67 @@ export class MaskShape extends Shape {
     }
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
-        /* eslint-disable-next-line no-underscore-dangle */
         Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
+        if (updated.points) {
+            const { points } = data;
+            const { width, height } = this.frameMeta[frame];
+            const [currentLeft, currentTop, currentRight, currentBottom] = points.slice(-4);
+            const [currentWidth, currentHeight] = [currentRight - currentLeft + 1, currentBottom - currentTop + 1];
 
-        // TODO: cut mask if necessary
+            let left = width;
+            let right = 0;
+            let top = height;
+            let bottom = 0;
+            let atLeastOnePixel = false;
+            const truncatedPoints = [];
 
-        return data.points;
+            for (let y = 0; y < currentHeight; y++) {
+                const absY = y + currentTop;
+
+                for (let x = 0; x < currentWidth; x++) {
+                    const absX = x + currentLeft;
+                    const offset = y * currentWidth + x;
+
+                    if (absX > width || absY > height || absX < 0 || absY < 0) {
+                        points[offset] = 0;
+                    }
+
+                    if (points[offset]) {
+                        atLeastOnePixel = true;
+                        left = Math.min(left, absX);
+                        top = Math.min(top, absY);
+                        right = Math.max(right, absX);
+                        bottom = Math.max(bottom, absY);
+                    }
+                }
+            }
+
+            if (!atLeastOnePixel) {
+                // if mask is empty, set its size as 0
+                left = 0;
+                top = 0;
+            }
+
+            // TODO: check corner case when right = left = 0
+            const [newWidth, newHeight] = [right - left + 1, bottom - top + 1];
+            for (let y = 0; y < newHeight; y++) {
+                for (let x = 0; x < newWidth; x++) {
+                    const leftDiff = left - currentLeft;
+                    const topDiff = top - currentTop;
+                    const offset = (y + topDiff) * currentWidth + (x + leftDiff);
+                    truncatedPoints.push(points[offset]);
+                }
+            }
+
+            truncatedPoints.push(left, top, right, bottom);
+            if (!checkShapeArea(this.shapeType, truncatedPoints)) {
+                return [];
+            }
+
+            return truncatedPoints;
+        }
+
+        return [];
     }
 
     protected removeUnderlyingPixels(frame: number): void {

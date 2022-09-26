@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -99,6 +99,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private snapToAngleResize: number;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
+        editHidden: Record<number, boolean>;
     };
 
     private set mode(value: Mode) {
@@ -184,7 +185,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.innerObjectsFlags.drawHidden[clientID] || false;
     }
 
-    private setupInnerFlags(clientID: number, path: 'drawHidden', value: boolean): void {
+    private setupInnerFlags(clientID: number, path: 'drawHidden' | 'editHidden', value: boolean): void {
         this.innerObjectsFlags[path][clientID] = value;
         const shape = this.svgShapes[clientID];
         const text = this.svgTexts[clientID];
@@ -334,6 +335,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }),
         );
 
+        if (state) {
+            this.setupInnerFlags(state.clientID, 'editHidden', true);
+        }
+
         this.mode = Mode.EDIT;
     };
 
@@ -360,6 +365,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
+        for (const clientID of Object.keys(this.innerObjectsFlags.editHidden)) {
+            this.setupInnerFlags(+clientID, 'drawHidden', false);
+        }
         this.mode = Mode.IDLE;
     };
 
@@ -1065,6 +1073,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
         this.innerObjectsFlags = {
             drawHidden: {},
+            editHidden: {},
         };
 
         // Create HTML elements
@@ -2243,6 +2252,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             const y = Math.trunc(shape.y()) - this.geometry.offset;
                             points.splice(-4);
                             points.push(x, y, x + shape.width() - 1, y + shape.height() - 1);
+                            this.drawnStates[state.clientID].points = points;
                             this.onEditDone(state, points);
                             this.canvas.dispatchEvent(
                                 new CustomEvent('canvas.dragshape', {
