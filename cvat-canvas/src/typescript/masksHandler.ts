@@ -292,7 +292,7 @@ export class MasksHandlerImpl implements MasksHandler {
         });
     }
 
-    public configurate(configuration: Configuration) {
+    public configurate(configuration: Configuration): void {
         this.colorBy = configuration.colorBy;
     }
 
@@ -303,9 +303,12 @@ export class MasksHandlerImpl implements MasksHandler {
         } = geometry;
 
         const topCanvas = this.canvas.getElement().parentElement as HTMLDivElement;
-        this.canvas.setHeight(height);
-        this.canvas.setWidth(width);
-        this.canvas.setDimensions({ width, height });
+        if (this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.setHeight(height);
+            this.canvas.setWidth(width);
+            this.canvas.setDimensions({ width, height });
+        }
+
         topCanvas.style.top = `${top}px`;
         topCanvas.style.left = `${left}px`;
         topCanvas.style.transform = `scale(${scale}) rotate(${angle}deg)`;
