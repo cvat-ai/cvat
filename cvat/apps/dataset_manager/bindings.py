@@ -1641,6 +1641,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[TaskData,
                             source=source,
                             attributes=attributes,
                         )
+
                         tracks[track_id]['shapes'].append(track)
 
                         if ann.type == dm.AnnotationType.skeleton:
