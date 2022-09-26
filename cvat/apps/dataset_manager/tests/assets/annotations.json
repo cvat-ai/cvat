@@ -533,15 +533,7 @@
   },
   "Market-1501 1.0": {
     "version": 0,
-    "tags": [
-      {
-        "frame": 1,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
+    "tags": [],
     "shapes": [],
     "tracks": []
   },
