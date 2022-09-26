@@ -678,11 +678,9 @@ class Issue(models.Model):
     updated_date = models.DateTimeField(null=True, blank=True)
     resolved = models.BooleanField(default=False)
 
-    @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
         return self.job.get_project_id()
 
-    @extend_schema_field(OpenApiTypes.INT)
     def get_organization_id(self):
         return self.job.get_organization_id()
 
@@ -693,11 +691,9 @@ class Comment(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
-    @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
         return self.issue.get_project_id()
 
-    @extend_schema_field(OpenApiTypes.INT)
     def get_organization_id(self):
         return self.issue.get_organization_id()
 
