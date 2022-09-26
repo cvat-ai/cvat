@@ -1707,6 +1707,9 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
                 dataset_files['media'] += \
                     list(map(lambda ri: ri.path, dataset_item.related_images))
 
-        dataset_files['data_root'] = osp.commonpath(dataset_files['media']) + osp.sep
+        if len(dataset_files['media']) == 1:
+            dataset_files['data_root'] = osp.dirname(dataset_files['media'][0])
+        elif len(dataset_files['media']):
+            dataset_files['data_root'] = osp.commonpath(dataset_files['media']) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
