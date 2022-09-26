@@ -48,6 +48,3 @@ urlpatterns = [
     path('api/', include('cvat.apps.organizations.urls')),
     path('api/', include(router.urls)),
 ]
-
-if apps.is_installed('cvat.apps.webhooks'):
-    urlpatterns.append(path('api/', include('cvat.apps.webhooks.urls')))
