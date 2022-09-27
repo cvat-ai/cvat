@@ -835,8 +835,8 @@ class WebhookPermission(OpenPolicyAgentPermission):
             if self.project_id:
                 try:
                     project = Project.objects.get(id=self.project_id)
-                except Project.DoesNotExist as ex:
-                    raise ValidationError(str(ex))
+                except Project.DoesNotExist:
+                    raise ValidationError(f"Could not find project with provided id: {self.project_id}")
 
             num_resources = Webhook.objects.filter(project=self.project_id).count() if project \
                 else Webhook.objects.filter(organization=self.org_id, project=None).count()
