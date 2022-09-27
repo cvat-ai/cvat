@@ -430,6 +430,7 @@ class JobAnnotation:
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.labeledshapeattributeval_set,
                 self.db_attributes[db_shape.label_id]["all"].values())
+            db_shape.elements = []
 
             if db_shape.parent is None:
                 shapes[db_shape.id] = db_shape
