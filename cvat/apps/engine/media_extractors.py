@@ -605,12 +605,22 @@ class IChunkWriter(ABC):
             im_data = np.array(image)
             im_data = im_data * (2**8 / im_data.max())
             image = Image.fromarray(im_data.astype(np.int32))
+
+        # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
+        # Summary:
+        # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
+        # Simple Conversion from I;16 to I/RGB/L doesn't work as well.
+        #   Including any Intermediate Conversions doesn't work either. (eg. I;16 to I to L)
+        # Seems like an internal Bug of PIL
+        #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
+        #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
         if image.mode == "I;16":
             image = np.array(image, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
             image = image / image.max() * 255        # Downscale into real numbers of range [0, 255]
             image = image.astype(np.uint8)           # Floor to integers of range [0, 255]
             image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
             image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
+
         converted_image = image.convert('RGB')
         image.close()
         buf = io.BytesIO()
