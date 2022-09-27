@@ -18,6 +18,7 @@ from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 
 WEBHOOK_TIMEOUT = 10
+RESPONSE_SIZE_LIMIT = 10 * 1024 * 1024
 
 signal_update = Signal()
 signal_create = Signal()
@@ -36,24 +37,26 @@ def send_webhook(webhook, payload, delivery):
                 digestmod=hashlib.sha256
             ).hexdigest()
 
-    response = None
+    response_body = None
     try:
         response = requests.post(
             webhook.target_url,
             json=payload,
             verify=webhook.enable_ssl,
             headers=headers,
-            timeout=WEBHOOK_TIMEOUT
+            timeout=WEBHOOK_TIMEOUT,
+            stream=True
         )
         status_code = str(response.status_code)
+        response_body = response.raw.read(RESPONSE_SIZE_LIMIT + 1, decode_content=True)
     except requests.ConnectionError:
         status_code = "Failed to connect to target url"
     except requests.Timeout:
         status_code = "Timeout"
 
     setattr(delivery, 'status_code', status_code)
-    if response is not None:
-        setattr(delivery, 'response', response.text)
+    if response_body is not None and len(response_body) < RESPONSE_SIZE_LIMIT + 1:
+        setattr(delivery, 'response', response_body)
 
     delivery.save()
 
