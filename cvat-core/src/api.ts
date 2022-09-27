@@ -13,7 +13,7 @@ function build() {
     const loggerStorage = require('./logger-storage');
     const Log = require('./log');
     const ObjectState = require('./object-state').default;
-    const Statistics = require('./statistics');
+    const Statistics = require('./statistics').default;
     const Comment = require('./comment');
     const Issue = require('./issue');
     const { Job, Task } = require('./session');

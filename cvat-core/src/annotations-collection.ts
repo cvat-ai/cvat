@@ -13,7 +13,7 @@
     } = require('./annotations-objects');
     const AnnotationsFilter = require('./annotations-filter').default;
     const { checkObjectType } = require('./common');
-    const Statistics = require('./statistics');
+    const Statistics = require('./statistics').default;
     const { Label } = require('./labels');
     const { ArgumentError, ScriptingError } = require('./exceptions');
     const ObjectState = require('./object-state').default;
@@ -598,7 +598,7 @@
 
         statistics() {
             const labels = {};
-            const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton', 'mask'];
+            const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
             const body = {
                 ...(shapes.reduce((acc, val) => ({
                     ...acc,
