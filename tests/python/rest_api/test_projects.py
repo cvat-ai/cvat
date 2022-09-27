@@ -426,6 +426,14 @@ class TestPatchProjectLabel:
         assert response.status_code == HTTPStatus.OK
         assert len(response.json()['labels']) == len(project['labels']) - 1
 
+    def test_admin_can_delete_skeleton_label(self, projects):
+        project = deepcopy(list(projects)[0])
+        labels = project['labels'][0]
+        labels.update({'deleted': True})
+        response = patch_method('admin1', f'/projects/{project["id"]}', {'labels': [labels]})
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.json()['labels']) == len(project['labels']) - 4
+
     def test_admin_can_rename_label(self, projects):
         project = deepcopy(list(projects)[0])
         labels = project['labels'][0]
