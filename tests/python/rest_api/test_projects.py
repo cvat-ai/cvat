@@ -419,7 +419,7 @@ class TestImportExportDatasetProject:
 @pytest.mark.usefixtures('changedb')
 class TestPatchProjectLabel:
     def test_admin_can_delete_label(self, projects):
-        project = deepcopy(list(projects)[0])
+        project = deepcopy(list(projects)[1])
         labels = project['labels'][0]
         labels.update({'deleted': True})
         response = patch_method('admin1', f'/projects/{project["id"]}', {'labels': [labels]})
