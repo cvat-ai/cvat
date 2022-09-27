@@ -8,6 +8,7 @@ const fs = require('fs');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
 const { imageGenerator } = require('./imageGenerator/addPlugin');
+const { videoGenerator } = require('./videoGenerator/addPlugin');
 const { createZipArchive } = require('./createZipArchive/addPlugin');
 const { compareImages } = require('./compareImages/addPlugin');
 const { unpackZipArchive } = require('./unpackZipArchive/addPlugin');
@@ -16,6 +17,7 @@ module.exports = (on, config) => {
     // eslint-disable-next-line import/no-extraneous-dependencies
     require('@cypress/code-coverage/task')(on, config);
     on('task', { imageGenerator });
+    on('task', { videoGenerator });
     on('task', { createZipArchive });
     on('task', { compareImages });
     on('task', { unpackZipArchive });

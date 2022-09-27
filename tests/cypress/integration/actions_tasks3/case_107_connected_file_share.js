@@ -9,7 +9,9 @@ context('Connected file share.', () => {
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
     let stdoutToList;
-    const assetLocalPath = `cypress/integration/actions_tasks3/assets/case_${caseId}`;
+    const assetLocalPath = 'cypress/integration/share';
+    const imageNamePattern = `image_case_${caseId}_*.png`;
+    const sharePath = '~/share';
 
     function createOpenTaskWithShare() {
         cy.get('.cvat-create-task-dropdown').click();
@@ -21,18 +23,19 @@ context('Connected file share.', () => {
             .should('be.visible')
             .within(() => {
                 cy.get('[aria-label="plus-square"]').click();
-                cy.exec('docker exec -i cvat_server /bin/bash -c "ls ~/share"').then((command) => {
-                    stdoutToList = command.stdout.split('\n');
-                    // [image_case_107_1.png, image_case_107_2.png, image_case_107_3.png]
-                    expect(stdoutToList.length).to.be.eq(3);
-                    // Number of images to select + selection of all images.
-                    cy.get('[title]').should('have.length', stdoutToList.length + 1);
-                    stdoutToList.forEach((el) => {
-                        cy.get(`[title="${el}"]`).should('exist');
-                        // Click on the checkboxes
-                        cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
+                cy.exec(`docker exec -i cvat_server /bin/bash -c "find ${sharePath} -name ${imageNamePattern} -type f"`)
+                    .then((command) => {
+                        stdoutToList = command.stdout.split('\n').map((path) => path.split('/').pop());
+                        // [image_case_107_1.png, image_case_107_2.png, image_case_107_3.png]
+                        expect(stdoutToList.length).to.be.eq(3);
+                        cy.get(`[title^=image_case_${caseId}]`).should('have.length', stdoutToList.length);
+                        cy.get('[title=root]').should('have.length', 1);
+                        stdoutToList.forEach((el) => {
+                            cy.get(`[title="${el}"]`).should('exist');
+                            // Click on the checkboxes
+                            cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
+                        });
                     });
-                });
             });
         cy.contains('button', 'Submit & Open').click();
         cy.get('.cvat-task-details').should('exist');
@@ -75,7 +78,8 @@ context('Connected file share.', () => {
                     expect(fileRenameCommand.code).to.be.eq(0);
                 },
             );
-            cy.exec('docker exec -i cvat_server /bin/bash -c "find ~/share -name *.png -type f"').then(
+            cy.exec(`docker exec -i cvat_server /bin/bash -c \
+                "find ${sharePath} -name ${imageNamePattern} -not -name *.bk -type f"`).then(
                 (findFilesCommand) => {
                     // [image_case_107_2.png, image_case_107_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);

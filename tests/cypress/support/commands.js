@@ -11,6 +11,7 @@ import { decomposeMatrix } from './utils';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
+require('../plugins/videoGenerator/videoGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
 require('../plugins/compareImages/compareImagesCommand');
