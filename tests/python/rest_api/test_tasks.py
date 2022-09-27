@@ -355,7 +355,7 @@ class TestPostTaskData:
         response = get_method('admin1', f"tasks/{task_id}")
         label_ids = {}
         for label in response.json()["labels"]:
-            label_ids.setdefault(label["type"], set()).add(label["id"])
+            label_ids.setdefault(label["type"], []).append(label["id"])
 
         job_id = response.json()["segments"][0]["jobs"][0]["id"]
         patch_data = {
