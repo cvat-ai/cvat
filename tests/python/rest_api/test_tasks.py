@@ -13,7 +13,7 @@ from cvat_sdk.core.helpers import get_paginated_collection
 import pytest
 from deepdiff import DeepDiff
 
-from shared.utils.config import make_api_client
+from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 from .utils import export_dataset
 
@@ -308,6 +308,140 @@ class TestPostTaskData:
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
+
+    def test_can_get_annotations_from_new_task_with_skeletons(self):
+        spec = {
+            "name": f'test admin1 to create a task with skeleton',
+            "labels": [
+                {
+                    "name": "s1",
+                    "color": "#5c5eba",
+                    "attributes": [],
+                    "type": "skeleton",
+                    "sublabels": [
+                        {
+                            "name": "1",
+                            "color": "#d53957",
+                            "attributes": [],
+                            "type": "points"
+                        },
+                        {
+                            "name": "2",
+                            "color": "#4925ec",
+                            "attributes": [],
+                            "type": "points"
+                        },
+                        {
+                            "name": "3",
+                            "color": "#59a8fe",
+                            "attributes": [],
+                            "type": "points"
+                        }
+                    ],
+                    "svg": "<line x1=\"36.329429626464844\" y1=\"45.98662185668945\" x2=\"59.07190704345703\" y2=\"23.076923370361328\" " \
+                            "stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line>" \
+                            "<line x1=\"22.61705780029297\" y1=\"25.75250816345215\" x2=\"36.329429626464844\" y2=\"45.98662185668945\" " \
+                            "stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line>" \
+                            "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.61705780029297\" cy=\"25.75250816345215\" " \
+                            "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-name=\"1\">" \
+                            "</circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.329429626464844\" cy=\"45.98662185668945\" " \
+                            "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-name=\"2\"></circle>" \
+                            "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"59.07190704345703\" cy=\"23.076923370361328\" " \
+                            "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-name=\"3\"></circle>"
+                    }
+            ]
+        }
+
+        task_data = {
+            'image_quality': 75,
+            'start_frame': 2,
+            'stop_frame': 5,
+            'client_files': generate_image_files(7),
+        }
+
+        task_id = self._test_create_task(self._USERNAME, spec, task_data,
+            content_type="multipart/form-data")
+
+        response = get_method('admin1', f"tasks/{task_id}")
+        label_ids = {}
+        for label in response.json()["labels"]:
+            label_ids.setdefault(label["type"], set()).add(label["id"])
+
+        job_id = response.json()["segments"][0]["jobs"][0]["id"]
+        patch_data = {
+            "shapes": [{
+                    "type": "skeleton",
+                    "occluded": False,
+                    "outside": False,
+                    "z_order": 0,
+                    "rotation": 0,
+                    "attributes": [],
+                    "frame": 0,
+                    "label_id": label_ids["skeleton"].pop(),
+                    "group": 0,
+                    "source": "manual",
+                    "elements": [
+                        {
+                            "type": "points",
+                            "occluded": False,
+                            "z_order": 0,
+                            "points": [
+                                24.49860262386028,
+                                22.5703125
+                            ],
+                            "rotation": 0,
+                            "attributes": [],
+                            "elements": [],
+                            "frame": 0,
+                            "label_id": label_ids["points"].pop(),
+                            "group": 0,
+                            "source": "manual",
+                            "outside": False
+                        },
+                        {
+                            "type": "points",
+                            "occluded": False,
+                            "z_order": 0,
+                            "points": [
+                                22.5439453125,
+                                28.300195312500364
+                            ],
+                            "rotation": 0,
+                            "attributes": [],
+                            "elements": [],
+                            "frame": 0,
+                            "label_id": label_ids["points"].pop(),
+                            "group": 0,
+                            "source": "manual",
+                            "outside": False
+                        },
+                        {
+                            "type": "points",
+                            "occluded": False,
+                            "z_order": 0,
+                            "points": [
+                                27.19879793636028,
+                                25.5
+                            ],
+                            "rotation": 0,
+                            "attributes": [],
+                            "elements": [],
+                            "frame": 0,
+                            "label_id": label_ids["points"].pop(),
+                            "group": 0,
+                            "source": "manual",
+                            "outside": False
+                        }
+                    ]
+            }],
+            "tracks": [],
+            "tags": [],
+            "version": 0
+        }
+
+        response = patch_method("admin1", f"jobs/{job_id}/annotations", patch_data, action="create")
+        response = get_method("admin1", f"jobs/{job_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('cloud_storage_id, manifest, use_bucket_content, org', [
         (1, 'manifest.jsonl',     False,  ''), # public bucket
