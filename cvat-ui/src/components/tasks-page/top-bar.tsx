@@ -16,10 +16,10 @@ import { importActions } from 'actions/import-actions';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
+import { MutliPlusIcon } from 'icons';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
-import { MutliPlusIcon } from '../../icons';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,

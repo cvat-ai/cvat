@@ -13,6 +13,7 @@ import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
+import { MutliPlusIcon } from 'icons';
 import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
@@ -225,13 +226,19 @@ export default function ProjectPageComponent(): JSX.Element {
                                     }}
                                 />
                             </div>
+                            <Button
+                                type='primary'
+                                icon={<MutliPlusIcon />}
+                                className='cvat-create-multi-tasks-button'
+                                onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
+                            />
+                            <Button
+                                type='primary'
+                                icon={<PlusOutlined />}
+                                className='cvat-create-task-button'
+                                onClick={() => history.push(`/tasks/create?projectId=${id}`)}
+                            />
                         </div>
-                        <Button
-                            type='primary'
-                            icon={<PlusOutlined />}
-                            className='cvat-create-task-button'
-                            onClick={() => history.push(`/tasks/create?projectId=${id}`)}
-                        />
                     </Col>
                 </Row>
                 { tasksFetching ? (
