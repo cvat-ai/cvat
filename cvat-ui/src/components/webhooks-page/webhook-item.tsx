@@ -168,6 +168,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                                         Modal.confirm({
                                             title: 'Are you sure you want to remove the hook?',
                                             content: 'It will stop notificating the specified URL about listed events',
+                                            className: 'cvat-modal-confirm-remove-webhook',
                                             onOk: () => {
                                                 dispatch(deleteWebhookAsync(webhookInstance)).then(() => {
                                                     setIsRemoved(true);

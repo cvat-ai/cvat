@@ -119,7 +119,10 @@ function SetupWebhookContent(props: Props): JSX.Element {
     const handleSubmit = useCallback(async (): Promise<Webhook | null> => {
         try {
             const values: Store = await form.validateFields();
-            let message = 'Webhook has been successfully updated';
+            let notificationConfig = {
+                message: 'Webhook has been successfully updated',
+                className: 'cvat-notification-update-webhook-success',
+            };
             if (webhook) {
                 webhook.description = values.description;
                 webhook.targetURL = values.targetURL;
@@ -143,12 +146,15 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     project_id: projectId,
                     type: projectId ? WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION,
                 };
-                message = 'Webhook has been successfully added';
+                notificationConfig = {
+                    message: 'Webhook has been successfully added',
+                    className: 'cvat-notification-create-webhook-success',
+                };
                 await dispatch(createWebhookAsync(rawWebhookData));
             }
             form.resetFields();
             setShowDetailedEvents(false);
-            notification.info({ message });
+            notification.info(notificationConfig);
             return webhook;
         } catch (error) {
             return null;
@@ -162,7 +168,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
     }, [rerender]);
 
     return (
-        <Row justify='start' align='middle' className='cvat-create-webhook-content'>
+        <Row justify='start' align='middle' className='cvat-setup-webhook-content'>
             <Col span={24}>
                 <Text className='cvat-title'>Setup a webhook</Text>
             </Col>
@@ -270,7 +276,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     </Form.Item>
                     {
                         showDetailedEvents && (
-                            <Row>
+                            <Row className='cvat-webhook-detailed-events'>
                                 {groupEvents(webhookEvents).map((event: string, idx: number) => (
                                     <Col span={8} key={idx}>
                                         <Form.Item

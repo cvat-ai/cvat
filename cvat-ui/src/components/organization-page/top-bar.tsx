@@ -87,7 +87,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                             </Col>
                             <Col>
                                 <Dropdown overlay={() => (
-                                    <Menu>
+                                    <Menu className='cvat-organization-actions-menu'>
                                         <Menu.Item key={MenuActions.SET_WEBHOOKS}>
                                             <a
                                                 href='/organization/webhooks'
