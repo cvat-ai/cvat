@@ -77,7 +77,6 @@ jobs:
           file: Dockerfile
           tags: cvat/server:dev
           load: true
-          outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
         uses: docker/build-push-action@v3
@@ -87,7 +86,6 @@ jobs:
           file: Dockerfile.ui
           tags: cvat/ui:dev
           load: true
-          outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
       - name: Tag Docker images
         run: |
