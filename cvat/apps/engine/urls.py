@@ -7,7 +7,6 @@ from django.urls import path, include
 from . import views
 from rest_framework import routers
 
-from django.apps import apps
 from django.views.generic import RedirectView
 from django.conf import settings
 from cvat.apps.restrictions.views import RestrictionsViewSet
