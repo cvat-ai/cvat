@@ -19,7 +19,7 @@ from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 
 WEBHOOK_TIMEOUT = 10
-RESPONSE_SIZE_LIMIT = 10 * 1024 * 1024
+RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 
 signal_update = Signal()
 signal_create = Signal()
