@@ -349,11 +349,10 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
 
-    def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(self):
+    def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(self, admin_user):
         project_id = 5
-        username = 'admin2'
 
-        response = self._test_export_project(username, project_id, 'COCO Keypoints 1.0')
+        response = self._test_export_project(admin_user, project_id, 'COCO Keypoints 1.0')
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = 'dataset.zip'
@@ -361,13 +360,12 @@ class TestImportExportDatasetProject:
             'dataset_file': tmp_file,
         }
 
-        self._test_import_project(username, project_id, 'COCO Keypoints 1.0', import_data)
+        self._test_import_project(admin_user, project_id, 'COCO Keypoints 1.0', import_data)
 
-    def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self):
+    def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self, admin_user):
         project_id = 5
-        username = 'admin2'
 
-        response = self._test_export_project(username, project_id, 'CVAT for images 1.1')
+        response = self._test_export_project(admin_user, project_id, 'CVAT for images 1.1')
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = 'dataset.zip'
@@ -375,13 +373,12 @@ class TestImportExportDatasetProject:
             'dataset_file': tmp_file,
         }
 
-        self._test_import_project(username, project_id, 'CVAT 1.1', import_data)
+        self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
 
-    def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(self):
+    def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(self, admin_user):
         project_id = 5
-        username = 'admin2'
 
-        response = self._test_export_project(username, project_id, 'CVAT for video 1.1')
+        response = self._test_export_project(admin_user, project_id, 'CVAT for video 1.1')
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = 'dataset.zip'
@@ -389,7 +386,7 @@ class TestImportExportDatasetProject:
             'dataset_file': tmp_file,
         }
 
-        self._test_import_project(username, project_id, 'CVAT 1.1', import_data)
+        self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
 
     def _test_can_get_project_backup(self, username, pid, **kwargs):
         for _ in range(30):
@@ -422,7 +419,7 @@ class TestImportExportDatasetProject:
 @pytest.mark.usefixtures('changedb')
 class TestPatchProjectLabel:
     def test_admin_can_delete_label(self, projects):
-        project = deepcopy(list(projects)[1])
+        project = deepcopy(list(projects)[0])
         labels = project['labels'][0]
         labels.update({'deleted': True})
         response = patch_method('admin1', f'/projects/{project["id"]}', {'labels': [labels]})
