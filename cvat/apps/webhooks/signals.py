@@ -31,12 +31,14 @@ signal_ping = Signal()
 def send_webhook(webhook, payload, delivery):
     headers = {}
     if webhook.secret:
-        headers["X-Signature-256"] = "sha256=" + \
-            hmac.new(
+        headers["X-Signature-256"] = (
+            "sha256="
+            + hmac.new(
                 webhook.secret.encode("utf-8"),
                 (json.dumps(payload) + "\n").encode("utf-8"),
-                digestmod=hashlib.sha256
+                digestmod=hashlib.sha256,
             ).hexdigest()
+        )
 
     response_body = None
     try:
@@ -46,7 +48,7 @@ def send_webhook(webhook, payload, delivery):
             verify=webhook.enable_ssl,
             headers=headers,
             timeout=WEBHOOK_TIMEOUT,
-            stream=True
+            stream=True,
         )
         status_code = response.status_code
         response_body = response.raw.read(RESPONSE_SIZE_LIMIT + 1, decode_content=True)
@@ -55,11 +57,12 @@ def send_webhook(webhook, payload, delivery):
     except requests.Timeout:
         status_code = HTTPStatus.GATEWAY_TIMEOUT
 
-    setattr(delivery, 'status_code', status_code)
+    setattr(delivery, "status_code", status_code)
     if response_body is not None and len(response_body) < RESPONSE_SIZE_LIMIT + 1:
-        setattr(delivery, 'response', response_body.decode("utf-8"))
+        setattr(delivery, "response", response_body.decode("utf-8"))
 
     delivery.save()
+
 
 def add_to_queue(webhook, payload, redelivery=False):
     delivery = WebhookDelivery.objects.create(
@@ -77,19 +80,30 @@ def add_to_queue(webhook, payload, redelivery=False):
 
     return delivery
 
+
 def select_webhooks(project_id, org_id, event):
     selected_webhooks = []
     if org_id is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event,
-            type=WebhookTypeChoice.ORGANIZATION, organization=org_id)
+        webhooks = Webhook.objects.filter(
+            is_active=True,
+            events__contains=event,
+            type=WebhookTypeChoice.ORGANIZATION,
+            organization=org_id,
+        )
         selected_webhooks += list(webhooks)
 
     if project_id is not None:
-        webhooks = Webhook.objects.filter(is_active=True, events__contains=event,
-            type=WebhookTypeChoice.PROJECT, organization=org_id, project=project_id)
+        webhooks = Webhook.objects.filter(
+            is_active=True,
+            events__contains=event,
+            type=WebhookTypeChoice.PROJECT,
+            organization=org_id,
+            project=project_id,
+        )
         selected_webhooks += list(webhooks)
 
     return selected_webhooks
+
 
 def payload(data, request):
     return {
@@ -97,29 +111,32 @@ def payload(data, request):
         "sender": BasicUserSerializer(request.user, context={"request": request}).data,
     }
 
+
 def project_id(instance):
     if isinstance(instance, Project):
         return instance.id
 
     try:
-        pid = getattr(instance, 'project_id', None)
+        pid = getattr(instance, "project_id", None)
         if pid is None:
             return instance.get_project_id()
         return pid
     except Exception:
         return None
 
+
 def organization_id(instance):
     if isinstance(instance, Organization):
         return instance.id
 
     try:
-        oid = getattr(instance, 'organization_id', None)
+        oid = getattr(instance, "organization_id", None)
         if oid is None:
             return instance.get_organization_id()
         return oid
     except Exception:
         return None
+
 
 @receiver(signal_update)
 def update(sender, instance=None, old_values=None, **kwargs):
@@ -128,8 +145,7 @@ def update(sender, instance=None, old_values=None, **kwargs):
         return
 
     serializer = sender.get_serializer_class()(
-        instance=instance,
-        context={"request": sender.request}
+        instance=instance, context={"request": sender.request}
     )
 
     pid = project_id(instance)
@@ -148,6 +164,7 @@ def update(sender, instance=None, old_values=None, **kwargs):
         data.update({"webhook_id": webhook.id})
         add_to_queue(webhook, payload(data, sender.request))
 
+
 @receiver(signal_create)
 def resource_created(sender, instance=None, **kwargs):
     event = event_name("create", sender.basename)
@@ -160,14 +177,10 @@ def resource_created(sender, instance=None, **kwargs):
         return
 
     serializer = sender.get_serializer_class()(
-        instance=instance,
-        context={"request": sender.request}
+        instance=instance, context={"request": sender.request}
     )
 
-    data = {
-        "event": event,
-        sender.basename: serializer.data
-    }
+    data = {"event": event, sender.basename: serializer.data}
 
     for webhook in select_webhooks(pid, oid, event):
         data.update({"webhook_id": webhook.id})
@@ -186,14 +199,10 @@ def resource_deleted(sender, instance=None, **kwargs):
         return
 
     serializer = sender.get_serializer_class()(
-        instance=instance,
-        context={"request": sender.request}
+        instance=instance, context={"request": sender.request}
     )
 
-    data = {
-        "event": event,
-        sender.basename: serializer.data
-    }
+    data = {"event": event, sender.basename: serializer.data}
 
     for webhook in select_webhooks(pid, oid, event):
         data.update({"webhook_id": webhook.id})

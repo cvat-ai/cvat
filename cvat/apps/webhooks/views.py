@@ -59,8 +59,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "delete", "patch", "put"]
 
     search_fields = ("target_url", "owner", "type", "description")
-    filter_fields = list(search_fields) \
-        + ["id", "project_id", "updated_date"]
+    filter_fields = list(search_fields) + ["id", "project_id", "updated_date"]
     ordering_fields = filter_fields
     lookup_fields = {"owner": "owner__username"}
     iam_organization_field = "organization"
@@ -78,15 +77,17 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action == 'list':
+        if self.action == "list":
             perm = WebhookPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user,
-            organization=self.request.iam_context["organization"])
+        serializer.save(
+            owner=self.request.user,
+            organization=self.request.iam_context["organization"],
+        )
 
     @extend_schema(
         summary="Method return a list of available webhook events",
@@ -178,9 +179,11 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Method send ping webhook",
-        responses={"200": WebhookDeliveryReadSerializer}
+        responses={"200": WebhookDeliveryReadSerializer},
     )
-    @action(detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer)
+    @action(
+        detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer
+    )
     def ping(self, request, pk):
         instance = self.get_object()
         serializer = WebhookReadSerializer(instance, context={"request": request})

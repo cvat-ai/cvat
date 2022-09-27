@@ -4,26 +4,31 @@
 
 from .models import WebhookTypeChoice
 
+
 def event_name(action, resource):
     return f"{action}:{resource}"
 
+
 class Events:
     RESOURCES = {
-        "project":      ["create", "update", "delete"],
-        "task":         ["create", "update", "delete"],
-        "issue":        ["create", "update", "delete"],
-        "comment":      ["create", "update", "delete"],
-        "invitation":   ["create", "delete"], # TO-DO: implement invitation_updated,
-        "membership":   ["update", "delete"],
-        "job":          ["update"],
-        "organization": ["update"]
+        "project": ["create", "update", "delete"],
+        "task": ["create", "update", "delete"],
+        "issue": ["create", "update", "delete"],
+        "comment": ["create", "update", "delete"],
+        "invitation": ["create", "delete"],  # TO-DO: implement invitation_updated,
+        "membership": ["update", "delete"],
+        "job": ["update"],
+        "organization": ["update"],
     }
 
     @classmethod
     def select(cls, resources):
         ret = set()
         for resource in resources:
-            ret |= set(f"{event_name(action, resource)}" for action in cls.RESOURCES.get(resource, []))
+            ret |= set(
+                f"{event_name(action, resource)}"
+                for action in cls.RESOURCES.get(resource, [])
+            )
         return ret
 
 
@@ -47,7 +52,8 @@ class AllEvents:
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events = list(
-        set((event_name("update", "project"),)) | Events.select(["job", "task", "issue", "comment"])
+        set((event_name("update", "project"),))
+        | Events.select(["job", "task", "issue", "comment"])
     )
 
 
