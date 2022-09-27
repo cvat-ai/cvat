@@ -499,6 +499,7 @@ class JobAnnotation:
         )
 
         tracks = {}
+        elements = {}
         for db_track in db_tracks:
             db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
                 'trackedshapeattributeval_set': [
@@ -524,11 +525,15 @@ class JobAnnotation:
                 self._extend_attributes(db_shape["trackedshapeattributeval_set"], default_attribute_values)
                 default_attribute_values = db_shape["trackedshapeattributeval_set"]
 
-            db_track.elements = []
             if db_track.parent is None:
                 tracks[db_track.id] = db_track
             else:
-                tracks[db_track.parent].elements.append(db_track)
+                if db_track.parent not in elements:
+                    elements[db_track.parent] = []
+                elements[db_track.parent].append(db_track)
+
+        for track_id, track_elements in elements.items():
+            tracks[track_id].elements = track_elements
 
         serializer = serializers.LabeledTrackSerializer(list(tracks.values()), many=True)
         self.ir_data.tracks = serializer.data
