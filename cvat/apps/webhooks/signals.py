@@ -4,6 +4,7 @@
 
 import hashlib
 import hmac
+from http import HTTPStatus
 import json
 
 import django_rq
@@ -47,16 +48,16 @@ def send_webhook(webhook, payload, delivery):
             timeout=WEBHOOK_TIMEOUT,
             stream=True
         )
-        status_code = str(response.status_code)
+        status_code = response.status_code
         response_body = response.raw.read(RESPONSE_SIZE_LIMIT + 1, decode_content=True)
     except requests.ConnectionError:
-        status_code = "Failed to connect to target url"
+        status_code = HTTPStatus.BAD_GATEWAY
     except requests.Timeout:
-        status_code = "Timeout"
+        status_code = HTTPStatus.GATEWAY_TIMEOUT
 
     setattr(delivery, 'status_code', status_code)
     if response_body is not None and len(response_body) < RESPONSE_SIZE_LIMIT + 1:
-        setattr(delivery, 'response', response_body)
+        setattr(delivery, 'response', response_body.decode("utf-8"))
 
     delivery.save()
 

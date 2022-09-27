@@ -63,7 +63,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
 
-    last_status = serializers.CharField(
+    last_status = serializers.IntegerField(
         source="deliveries.last.status_code", read_only=True
     )
 
