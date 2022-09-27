@@ -271,8 +271,8 @@ def services(request):
 
         yield
 
-        docker_restore_db()
-        docker_exec_cvat_db("dropdb test_db")
+        # docker_restore_db()
+        # docker_exec_cvat_db("dropdb test_db")
 
     elif platform == 'kube':
         kube_restore_data_volumes()
