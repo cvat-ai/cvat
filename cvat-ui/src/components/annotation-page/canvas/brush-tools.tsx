@@ -9,7 +9,7 @@ import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
 import Icon, {
-    BgColorsOutlined, CheckOutlined, DragOutlined, PlusOutlined, VerticalAlignBottomOutlined,
+    CheckOutlined, DragOutlined, PlusOutlined, VerticalAlignBottomOutlined,
 } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
@@ -41,11 +41,10 @@ function BrushTools(): React.ReactPortal {
 
     const [activeLabelID, setActiveLabelID] = useState<number | null>(null);
     const [editableState, setEditableState] = useState<any | null>(null);
-    const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'fill' | 'polygon-plus' | 'polygon-minus'>('brush');
+    const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'polygon-plus' | 'polygon-minus'>('brush');
     const [brushForm, setBrushForm] = useState<'circle' | 'square'>('circle');
     const [[top, left], setTopLeft] = useState([0, 0]);
     const [brushSize, setBrushSize] = useState(10);
-    const [fillThreshold, setFillThreshild] = useState(10);
 
     const [removeUnderlyingPixels, setRemoveUnderlyingPixels] = useState(false);
     const dragBar = useDraggable(
@@ -80,7 +79,6 @@ function BrushTools(): React.ReactPortal {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
-                        fillThreshold,
                         removeUnderlyingPixels,
                     },
                 });
@@ -93,7 +91,6 @@ function BrushTools(): React.ReactPortal {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
-                        fillThreshold,
                         removeUnderlyingPixels,
                     },
                 });
@@ -157,8 +154,6 @@ function BrushTools(): React.ReactPortal {
     }, [visible]);
 
     const MIN_BRUSH_SIZE = 1;
-    const MIN_FILL_THRESHOLD = 1;
-    const MAX_FILL_THRESHOLD = 255;
     return ReactDOM.createPortal((
         <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
             <Button
@@ -219,12 +214,6 @@ function BrushTools(): React.ReactPortal {
                 icon={<Icon component={PolygonMinusIcon} />}
                 onClick={() => setCurrentTool('polygon-minus')}
             />
-            <Button
-                type='text'
-                className={['cvat-brush-tools-fill', ...(currentTool === 'fill' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
-                icon={<BgColorsOutlined />}
-                onClick={() => setCurrentTool('fill')}
-            />
             { ['brush', 'eraser'].includes(currentTool) ? (
                 <CVATTooltip title='Brush size'>
                     <InputNumber
@@ -240,31 +229,8 @@ function BrushTools(): React.ReactPortal {
                             return 0;
                         }}
                         onChange={(value: number) => {
-                            if (Number.isInteger(value) && value >= MIN_FILL_THRESHOLD) {
+                            if (Number.isInteger(value) && value >= MIN_BRUSH_SIZE) {
                                 setBrushSize(value);
-                            }
-                        }}
-                    />
-                </CVATTooltip>
-            ) : null}
-            { currentTool === 'fill' ? (
-                <CVATTooltip title='Tolerance'>
-                    <InputNumber
-                        className='cvat-brush-tools-fill-tolerance'
-                        value={brushSize}
-                        min={MIN_FILL_THRESHOLD}
-                        max={MAX_FILL_THRESHOLD}
-                        formatter={(val: number | undefined) => {
-                            if (val) return `${val}px`;
-                            return '';
-                        }}
-                        parser={(val: string | undefined): number => {
-                            if (val) return +val.replace('px', '');
-                            return 0;
-                        }}
-                        onChange={(value: number) => {
-                            if (Number.isInteger(value) && value >= MIN_FILL_THRESHOLD && value <= MAX_FILL_THRESHOLD) {
-                                setFillThreshild(value);
                             }
                         }}
                     />
