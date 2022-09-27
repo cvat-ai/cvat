@@ -426,15 +426,20 @@ class JobAnnotation:
         )
 
         shapes = {}
+        elements = {}
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.labeledshapeattributeval_set,
                 self.db_attributes[db_shape.label_id]["all"].values())
 
-            db_shape.elements = []
             if db_shape.parent is None:
                 shapes[db_shape.id] = db_shape
             else:
-                shapes[db_shape.parent].elements.append(db_shape)
+                if db_shape.parent not in elements:
+                    elements[db_shape.parent] = []
+                elements[db_shape.parent].append(db_shape)
+
+        for shape_id, shape_elements in elements.items():
+            shapes[shape_id].elements = shape_elements
 
         serializer = serializers.LabeledShapeSerializer(list(shapes.values()), many=True)
         self.ir_data.shapes = serializer.data
