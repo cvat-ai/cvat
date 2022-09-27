@@ -11,6 +11,7 @@ import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
 import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
+import Dropdown from 'antd/lib/dropdown';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
 import { MutliPlusIcon } from 'icons';
@@ -27,6 +28,7 @@ import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
+import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -226,18 +228,35 @@ export default function ProjectPageComponent(): JSX.Element {
                                     }}
                                 />
                             </div>
-                            <Button
-                                type='primary'
-                                icon={<MutliPlusIcon />}
-                                className='cvat-create-multi-tasks-button'
-                                onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
-                            />
-                            <Button
-                                type='primary'
-                                icon={<PlusOutlined />}
-                                className='cvat-create-task-button'
-                                onClick={() => history.push(`/tasks/create?projectId=${id}`)}
-                            />
+                            <Dropdown
+                                trigger={['click']}
+                                overlay={(
+                                    <CvatDropdownMenuPaper>
+                                        <Button
+                                            type='primary'
+                                            icon={<PlusOutlined />}
+                                            className='cvat-create-task-button'
+                                            onClick={() => history.push(`/tasks/create?projectId=${id}`)}
+                                        >
+                                            Create a new task
+                                        </Button>
+                                        <Button
+                                            type='primary'
+                                            icon={<span className='anticon'><MutliPlusIcon /></span>}
+                                            className='cvat-create-multi-tasks-button'
+                                            onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
+                                        >
+                                            Create multi tasks
+                                        </Button>
+                                    </CvatDropdownMenuPaper>
+                                )}
+                            >
+                                <Button
+                                    type='primary'
+                                    className='cvat-create-task-dropdown'
+                                    icon={<PlusOutlined />}
+                                />
+                            </Dropdown>
                         </div>
                     </Col>
                 </Row>

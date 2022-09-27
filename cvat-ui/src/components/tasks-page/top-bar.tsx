@@ -17,6 +17,7 @@ import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'componen
 import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import { MutliPlusIcon } from 'icons';
+import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
@@ -93,7 +94,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                     <Dropdown
                         trigger={['click']}
                         overlay={(
-                            <div className='cvat-tasks-page-control-buttons-wrapper'>
+                            <CvatDropdownMenuPaper>
                                 <Button
                                     className='cvat-create-task-button'
                                     type='primary'
@@ -120,7 +121,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     Create from backup
                                     {importing && <LoadingOutlined />}
                                 </Button>
-                            </div>
+                            </CvatDropdownMenuPaper>
                         )}
                     >
                         <Button type='primary' className='cvat-create-task-dropdown' icon={<PlusOutlined />} />
