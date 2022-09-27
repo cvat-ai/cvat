@@ -89,8 +89,8 @@ jobs:
 
       - name: Tag Docker images
         run: |
-          docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/server:dev cvat/server:latest
+          docker tag cvat/ui:dev cvat/ui:latest
           docker image ls -a
 
       - name: Running REST API tests
