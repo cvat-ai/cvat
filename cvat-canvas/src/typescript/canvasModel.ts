@@ -628,7 +628,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public edit(editData: MasksEditData): void {
         // TODO: update API in readme
-        // todo: add edit icon to the right sidebar and call this method from there
 
         if (![Mode.IDLE, Mode.EDIT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);

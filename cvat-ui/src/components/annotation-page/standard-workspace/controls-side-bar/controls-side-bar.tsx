@@ -10,7 +10,7 @@ import {
     ActiveControl, ObjectType, Rotation, ShapeType,
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { LabelOptColor } from 'components/labels-editor/common';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
@@ -161,11 +161,20 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     ActiveControl.DRAW_CUBOID,
                     ActiveControl.DRAW_ELLIPSE,
                     ActiveControl.DRAW_SKELETON,
+                    ActiveControl.DRAW_MASK,
                     ActiveControl.AI_TOOLS,
                     ActiveControl.OPENCV_TOOLS,
                 ].includes(activeControl);
+                const editing = canvasInstance.mode() === CanvasMode.EDIT;
 
                 if (!drawing) {
+                    if (editing) {
+                        // users probably will press N as they are used to do when they want to finish editing
+                        // in this case, if a mask is being edited we probably want to finish editing first
+                        canvasInstance.edit({ enabled: false });
+                        return;
+                    }
+
                     canvasInstance.cancel();
                     // repeateDrawShapes gets all the latest parameters
                     // and calls canvasInstance.draw() with them

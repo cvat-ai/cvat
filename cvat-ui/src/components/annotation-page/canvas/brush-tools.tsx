@@ -259,5 +259,3 @@ function BrushTools(): React.ReactPortal {
 }
 
 export default React.memo(BrushTools);
-
-// TODO: do we need top, left here?

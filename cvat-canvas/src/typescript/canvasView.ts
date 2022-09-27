@@ -574,6 +574,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         for (const element of [
             ...window.document.getElementsByClassName('svg_select_points'),
             ...window.document.getElementsByClassName('svg_select_points_rot'),
+            ...window.document.getElementsByClassName('svg_select_boundingRect'),
         ]) {
             element.setAttribute('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.geometry.scale}`);
             element.setAttribute('r', `${this.configuration.controlPointsSize / this.geometry.scale}`);
@@ -1558,6 +1559,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (data.enabled && [Mode.IDLE, Mode.DRAW].includes(this.mode)) {
+                if (data.shapeType !== 'mask') {
+                    this.drawHandler.draw(data, this.geometry);
+                } else {
+                    this.masksHandler.draw(data);
+                }
+
                 if (this.mode === Mode.IDLE) {
                     this.canvas.style.cursor = 'crosshair';
                     this.mode = Mode.DRAW;
@@ -1574,12 +1581,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     if (typeof data.redraw === 'number') {
                         this.setupInnerFlags(data.redraw, 'drawHidden', true);
                     }
-                }
-
-                if (data.shapeType !== 'mask') {
-                    this.drawHandler.draw(data, this.geometry);
-                } else {
-                    this.masksHandler.draw(data);
                 }
             } else if (this.mode !== Mode.IDLE) {
                 this.canvas.style.cursor = '';

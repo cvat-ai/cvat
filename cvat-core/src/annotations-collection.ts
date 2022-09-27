@@ -792,7 +792,13 @@
                             group: 0,
                             label_id: state.label.id,
                             occluded: state.occluded || false,
-                            points: [...state.points],
+                            points: state.shapeType === 'mask' ? (() => {
+                                const { points } = state;
+                                const [left, top, right, bottom] = points.splice(-4);
+                                const rlePoints = ObjectState.mask2Rle(points);
+                                rlePoints.push(left, top, right, bottom);
+                                return rlePoints;
+                            })() : state.points,
                             rotation: state.rotation || 0,
                             type: state.shapeType,
                             z_order: state.zOrder,

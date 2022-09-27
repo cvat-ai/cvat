@@ -139,7 +139,7 @@ export class Attribute {
     }
 }
 
-type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | 'any';
+type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | 'mask' | 'tag' | 'any';
 export interface RawLabel {
     id?: number;
     name: string;

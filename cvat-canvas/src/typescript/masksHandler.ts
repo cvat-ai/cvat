@@ -10,6 +10,21 @@ import {
 import consts from './consts';
 import { PropType, computeWrappingBox } from './shared';
 
+interface WrappingBBox {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
+function alphaChannelOnly(imageData: Uint8ClampedArray): number[] {
+    const alpha = [];
+    for (let i = 3; i < imageData.length; i += 4) {
+        alpha.push(imageData[i] > 0 ? 1 : 0);
+    }
+    return alpha;
+}
+
 export interface MasksHandler {
     draw(drawData: DrawData): void;
     edit(state: MasksEditData): void;
@@ -30,6 +45,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private onEditStart: (state: any) => void;
     private onEditDone: (state: any, points: number[]) => void;
 
+    private redraw: number | null;
     private isDrawing: boolean;
     private isEditing: boolean;
     private isMouseDown: boolean;
@@ -90,6 +106,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.renderAll();
         this.canvas.getElement().parentElement.style.display = '';
         this.isDrawing = false;
+        this.redraw = null;
         this.drawnObjects = [];
         this.onDrawDone(null);
         if (this.drawablePolygon) {
@@ -119,6 +136,54 @@ export class MasksHandlerImpl implements MasksHandler {
         return state.group.color;
     }
 
+    private getDrawnObjectsWrappingBox(): WrappingBBox {
+        type BoundingRect = ReturnType<PropType<fabric.Polygon, 'getBoundingRect'>>;
+        type TwoCornerBox = Pick<BoundingRect, 'top' | 'left'> & { right: number; bottom: number };
+        const { width, height } = this.geometry.image;
+        const wrappingBbox = this.drawnObjects
+            .map((obj) => {
+                if (obj instanceof fabric.Polygon) {
+                    const bbox = computeWrappingBox(obj.points
+                        .reduce(((acc, val) => {
+                            acc.push(val.x, val.y);
+                            return acc;
+                        }), []));
+
+                    return {
+                        left: bbox.xtl,
+                        top: bbox.ytl,
+                        width: bbox.width,
+                        height: bbox.height,
+                    };
+                }
+
+                return obj.getBoundingRect();
+            })
+            .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
+                acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
+                acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
+                acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
+                acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
+                return acc;
+            }, {
+                left: Number.MAX_SAFE_INTEGER,
+                top: Number.MAX_SAFE_INTEGER,
+                right: Number.MIN_SAFE_INTEGER,
+                bottom: Number.MIN_SAFE_INTEGER,
+            });
+
+        return wrappingBbox;
+    }
+
+    private imageDataFromCanvas(wrappingBBox: WrappingBBox): Uint8ClampedArray {
+        const imageData = this.canvas.toCanvasElement()
+            .getContext('2d').getImageData(
+                wrappingBBox.left, wrappingBBox.top,
+                wrappingBBox.right - wrappingBBox.left + 1, wrappingBBox.bottom - wrappingBBox.top + 1,
+            ).data;
+        return imageData;
+    }
+
     public constructor(
         onDrawDone: (
             data: object | null,
@@ -131,6 +196,7 @@ export class MasksHandlerImpl implements MasksHandler {
         onEditDone: (state: any, points: number[]) => void,
         canvas: HTMLCanvasElement,
     ) {
+        this.redraw = null;
         this.isDrawing = false;
         this.isEditing = false;
         this.drawData = null;
@@ -320,12 +386,12 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public draw(drawData: DrawData): void {
-        if (drawData.enabled && drawData.shapeType === 'mask' && drawData.brushTool) {
+        if (drawData.brushTool) {
             this.tool = { ...drawData.brushTool };
 
             // setup new brush marker
             this.removeBrushMarker();
-            if (['brush', 'eraser'].includes(this.tool.type)) {
+            if (this.isDrawing && ['brush', 'eraser'].includes(this.tool.type)) {
                 const common = {
                     evented: false,
                     selectable: false,
@@ -344,12 +410,15 @@ export class MasksHandlerImpl implements MasksHandler {
 
                 this.canvas.add(this.brushMarker);
             }
+        }
 
+        if (drawData.enabled && drawData.shapeType === 'mask') {
             if (!this.isDrawing) {
                 // if drawing not started, let's initialize new process
                 this.canvas.getElement().parentElement.style.display = 'block';
                 this.isDrawing = true;
                 this.startTimestamp = Date.now();
+                this.redraw = drawData.redraw || null;
             } else if (this.drawablePolygon && !this.tool.type.startsWith('polygon-')) {
                 // tool was switched from polygon to brush for example
                 this.keepDrawnPolygon();
@@ -363,79 +432,14 @@ export class MasksHandlerImpl implements MasksHandler {
 
                 // TODO: make a smarter validation
                 if (this.drawnObjects.length) {
-                    type BoundingRect = ReturnType<PropType<fabric.Polygon, 'getBoundingRect'>>;
-                    type TwoCornerBox = Pick<BoundingRect, 'top' | 'left'> & { right: number; bottom: number };
-                    const { width, height } = this.geometry.image;
-                    const wrappingBbox = this.drawnObjects
-                        .map((obj) => {
-                            if (obj instanceof fabric.Polygon) {
-                                const bbox = computeWrappingBox(obj.points
-                                    .reduce(((acc, val) => {
-                                        acc.push(val.x, val.y);
-                                        return acc;
-                                    }), []));
-
-                                return {
-                                    left: bbox.xtl,
-                                    top: bbox.ytl,
-                                    width: bbox.width,
-                                    height: bbox.height,
-                                };
-                            }
-
-                            return obj.getBoundingRect();
-                        })
-                        .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
-                            acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
-                            acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
-                            acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
-                            acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
-                            return acc;
-                        }, {
-                            left: Number.MAX_SAFE_INTEGER,
-                            top: Number.MAX_SAFE_INTEGER,
-                            right: Number.MIN_SAFE_INTEGER,
-                            bottom: Number.MIN_SAFE_INTEGER,
-                        });
-
-                    const imageData = this.canvas.toCanvasElement()
-                        .getContext('2d').getImageData(
-                            wrappingBbox.left, wrappingBbox.top,
-                            wrappingBbox.right - wrappingBbox.left + 1, wrappingBbox.bottom - wrappingBbox.top + 1,
-                        ).data;
-
-                    let alpha = [];
-                    for (let i = 3; i < imageData.length; i += 4) {
-                        alpha.push(imageData[i] > 0 ? 1 : 0);
-                    }
-
-                    alpha = alpha.reduce<number[]>((acc, val, idx, arr) => {
-                        if (idx > 0) {
-                            if (arr[idx - 1] === val) {
-                                acc[acc.length - 1] += 1;
-                            } else {
-                                acc.push(1);
-                            }
-
-                            return acc;
-                        }
-
-                        if (val > 0) {
-                            // 0, 0, 0, 1 => [3, 1]
-                            // 1, 1, 0, 0 => [0, 2, 2]
-                            acc.push(0, 1);
-                        } else {
-                            acc.push(1);
-                        }
-
-                        return acc;
-                    }, []);
-
+                    const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    const imageData = this.imageDataFromCanvas(wrappingBbox);
+                    const alpha = alphaChannelOnly(imageData);
                     alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
-
                     this.onDrawDone({
                         shapeType: this.drawData.shapeType,
                         points: alpha,
+                        ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
                     }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
                 }
             } finally {
@@ -534,54 +538,10 @@ export class MasksHandlerImpl implements MasksHandler {
                     this.keepDrawnPolygon();
                 }
 
-                // TODO: reduce code dublication
                 if (this.drawnObjects.length) {
-                    type BoundingRect = ReturnType<PropType<fabric.Polygon, 'getBoundingRect'>>;
-                    type TwoCornerBox = Pick<BoundingRect, 'top' | 'left'> & { right: number; bottom: number };
-                    const { width, height } = this.geometry.image;
-                    const wrappingBbox = this.drawnObjects
-                        .map((obj) => {
-                            if (obj instanceof fabric.Polygon) {
-                                const bbox = computeWrappingBox(obj.points
-                                    .reduce(((acc, val) => {
-                                        acc.push(val.x, val.y);
-                                        return acc;
-                                    }), []));
-
-                                return {
-                                    left: bbox.xtl,
-                                    top: bbox.ytl,
-                                    width: bbox.width,
-                                    height: bbox.height,
-                                };
-                            }
-
-                            return obj.getBoundingRect();
-                        })
-                        .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
-                            acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
-                            acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
-                            acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
-                            acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
-                            return acc;
-                        }, {
-                            left: Number.MAX_SAFE_INTEGER,
-                            top: Number.MAX_SAFE_INTEGER,
-                            right: Number.MIN_SAFE_INTEGER,
-                            bottom: Number.MIN_SAFE_INTEGER,
-                        });
-
-                    const imageData = this.canvas.toCanvasElement()
-                        .getContext('2d').getImageData(
-                            wrappingBbox.left, wrappingBbox.top,
-                            wrappingBbox.right - wrappingBbox.left + 1, wrappingBbox.bottom - wrappingBbox.top + 1,
-                        ).data;
-
-                    const alpha = [];
-                    for (let i = 3; i < imageData.length; i += 4) {
-                        alpha.push(imageData[i] > 0 ? 1 : 0);
-                    }
-
+                    const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    const imageData = this.imageDataFromCanvas(wrappingBbox);
+                    const alpha = alphaChannelOnly(imageData);
                     alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
                     this.onEditDone(this.editData.state, alpha);
                 }
