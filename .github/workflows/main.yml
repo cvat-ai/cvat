@@ -145,7 +145,7 @@ jobs:
 
           pip3 install --user cvat-sdk/
           pip3 install --user -r tests/python/requirements.txt
-          pytest tests/python/rest_api -k 'GET' -s
+          pytest tests/python/rest_api/test_tasks.py -k -k test_can_create_task_with_skeleton -s
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -164,6 +164,7 @@ jobs:
           path: "${{ github.workspace }}/rest_api"
 
   unit_testing:
+    if: github.ref == 'refs/heads/develop'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -224,6 +225,7 @@ jobs:
 
 
   e2e_testing:
+    if: github.ref == 'refs/heads/develop'
     needs: build
     runs-on: ubuntu-latest
     strategy:
