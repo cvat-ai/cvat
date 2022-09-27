@@ -4,7 +4,7 @@
 
 title: 'Semi-automatic and Automatic Annotation'
 linkTitle: 'Installation Auto Annotation'
-weight: 5
+weight: 10
 description: 'Information about the installation of components needed for semi-automatic and automatic annotation.'
 
 ---

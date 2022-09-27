@@ -283,7 +283,7 @@ export default function CreateProjectContent(): JSX.Element {
                 />
             </Col>
             <Col span={24}>
-                <Collapse>
+                <Collapse className='cvat-advanced-configuration-wrapper'>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
                             formRef={advancedFormRef}
