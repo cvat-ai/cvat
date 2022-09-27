@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os.path as osp
 from http import HTTPStatus
 
 import pytest
 from deepdiff import DeepDiff
 
-from shared.fixtures.init import _run
+from shared.fixtures.init import CVAT_ROOT_DIR, _run
 from shared.utils.config import get_method, patch_method, post_method
-from webhook_receiver.server import PAYLOAD_ENDPOINT, TARGET_PORT
 
 # Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
@@ -21,17 +21,25 @@ from webhook_receiver.server import PAYLOAD_ENDPOINT, TARGET_PORT
 #  2) check that webhook is sent by checking value of `response` field for the last delivery of this webhook
 
 
-def webhook_container_id():
-    return _run(
+def target_url():
+    env_data = {}
+    with open(osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env"), "r") as f:
+        for line in f:
+            name, value = tuple(line.strip().split("="))
+            env_data[name] = value
+
+    container_id = _run(
         "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' test_webhook_receiver_1"
     )[0].strip()[1:-1]
 
+    return f'http://{container_id}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
+
 
 def webhook_spec(events, project_id=None, webhook_type="organization"):
-    # Django URL field doesn't allow to use http://webhook:2020/payload (using alias)
+    # Django URL field doesn't allow to use http://webhooks:2020/payload (using alias)
     # So we forced to use ip address of webhook receiver container
     return {
-        "target_url": f"http://{webhook_container_id()}:{TARGET_PORT}/{PAYLOAD_ENDPOINT}",
+        "target_url": target_url(),
         "content_type": "application/json",
         "enable_ssl": False,
         "events": events,
@@ -41,7 +49,7 @@ def webhook_spec(events, project_id=None, webhook_type="organization"):
     }
 
 
-@pytest.mark.usefixtures('changedb')
+@pytest.mark.usefixtures("changedb")
 class TestWebhookProjectEvents:
     def test_webhook_project_update(self):
         events = ["update:project"]
