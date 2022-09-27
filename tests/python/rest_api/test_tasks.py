@@ -7,13 +7,14 @@ import json
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
+
 from cvat_sdk.api_client import models, apis
 from cvat_sdk.core.helpers import get_paginated_collection
 
 import pytest
 from deepdiff import DeepDiff
 
-from shared.utils.config import make_api_client
+from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 from .utils import export_dataset
 
@@ -107,7 +108,7 @@ class TestGetTasks:
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org['slug'])
 
 
-@pytest.mark.usefixtures('changedb')
+@pytest.mark.usefixtures('dontchangedb')
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
@@ -119,6 +120,15 @@ class TestPostTasks:
             (_, response) = api_client.tasks_api.create(spec, **kwargs,
                 _parse_response=False, _check_status=False)
             assert response.status == HTTPStatus.FORBIDDEN
+
+    @staticmethod
+    def _wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
+        for _ in range(100):
+            (status, _) = api.retrieve_status(task_id)
+            if status.state.value in ['Finished', 'Failed']:
+                return status
+            sleep(1)
+        raise Exception('Cannot create task')
 
     def _test_users_to_create_task_in_project(self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs):
         if is_staff:
@@ -164,68 +174,151 @@ class TestPostTasks:
             "name": f'test admin1 to create a task with skeleton',
             "labels": [
                 {
-                "name": "s1",
-                "color": "#5c5eba",
-                "attributes": [
-                    {
-                    "name": "color",
-                    "mutable": False,
-                    "input_type": "select",
-                    "default_value": "white",
-                    "values": [
-                        "white",
-                        "black"
-                    ]
-                    }
-                ],
-                "type": "skeleton",
-                "sublabels": [
-                    {
-                    "name": "1",
-                    "color": "#d53957",
-                    "attributes": [
+                    "name": "s1",
+                    "color": "#5c5eba",
+                    "attributes": [],
+                    "type": "skeleton",
+                    "sublabels": [
                         {
-                        "id": 23,
-                        "name": "attr",
-                        "mutable": False,
-                        "input_type": "select",
-                        "default_value": "val1",
-                        "values": [
-                            "val1",
-                            "val2"
-                        ]
+                            "name": "1",
+                            "color": "#d53957",
+                            "attributes": [],
+                            "type": "points"
+                        },
+                        {
+                            "name": "2",
+                            "color": "#4925ec",
+                            "attributes": [],
+                            "type": "points"
+                        },
+                        {
+                            "name": "3",
+                            "color": "#59a8fe",
+                            "attributes": [],
+                            "type": "points"
                         }
                     ],
-                    "type": "points"
-                    },
-                    {
-                    "name": "2",
-                    "color": "#4925ec",
-                    "attributes": [],
-                    "type": "points"
-                    },
-                    {
-                    "name": "3",
-                    "color": "#59a8fe",
-                    "attributes": [],
-                    "type": "points"
+                    "svg": "<line x1=\"36.329429626464844\" y1=\"45.98662185668945\" x2=\"59.07190704345703\" y2=\"23.076923370361328\" " \
+                            "stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line>" \
+                            "<line x1=\"22.61705780029297\" y1=\"25.75250816345215\" x2=\"36.329429626464844\" y2=\"45.98662185668945\" " \
+                            "stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line>" \
+                            "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.61705780029297\" cy=\"25.75250816345215\" " \
+                            "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-name=\"1\">" \
+                            "</circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.329429626464844\" cy=\"45.98662185668945\" " \
+                            "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-name=\"2\"></circle>" \
+                            "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"59.07190704345703\" cy=\"23.076923370361328\" " \
+                            "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-name=\"3\"></circle>"
                     }
-                ],
-                "svg": "<line x1=\"36.329429626464844\" y1=\"45.98662185668945\" x2=\"59.07190704345703\" y2=\"23.076923370361328\" " \
-                        "stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line>" \
-                        "<line x1=\"22.61705780029297\" y1=\"25.75250816345215\" x2=\"36.329429626464844\" y2=\"45.98662185668945\" " \
-                        "stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line>" \
-                        "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.61705780029297\" cy=\"25.75250816345215\" " \
-                        "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-name=\"1\">" \
-                        "</circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.329429626464844\" cy=\"45.98662185668945\" " \
-                        "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-name=\"2\"></circle>" \
-                        "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"59.07190704345703\" cy=\"23.076923370361328\" " \
-                        "stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-name=\"3\"></circle>"
-                }
             ]
         }
 
-        self._test_create_task_201(username, spec)
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.create(spec)
+            assert response.status == HTTPStatus.CREATED
+
+            task = json.loads(response.data)
+            task_id = task["id"]
+            label_ids = {}
+            for label in task["labels"]:
+                label_ids.setdefault(label["type"], set()).add(label["id"])
+
+            task_data = {
+                'image_quality': 75,
+                'start_frame': 2,
+                'stop_frame': 5,
+                'client_files': generate_image_files(7),
+            }
+
+            (_, response) = api_client.tasks_api.create_data(task_id, data_request=deepcopy(task_data),
+                _content_type="multipart/form-data")
+            assert response.status == HTTPStatus.ACCEPTED
+
+            status = self._wait_until_task_is_created(api_client.tasks_api, task_id)
+            assert status.state.value == 'Finished'
+
+            response = get_method('admin1', f"tasks/{task_id}")
+            job_id = response.json()["segments"][0]["jobs"][0]["id"]
+
+            response = get_method("admin1", f"jobs/{job_id}/annotations")
+
+            patch_data = {
+                "shapes": [{
+                        "type": "skeleton",
+                        "occluded": False,
+                        "outside": False,
+                        "z_order": 0,
+                        "rotation": 0,
+                        "attributes": [],
+                        "frame": 0,
+                        "label_id": label_ids["skeleton"].pop(),
+                        "group": 0,
+                        "source": "manual",
+                        "elements": [
+                            {
+                                "type": "points",
+                                "occluded": False,
+                                "z_order": 0,
+                                "points": [
+                                    24.49860262386028,
+                                    22.5703125
+                                ],
+                                "rotation": 0,
+                                "attributes": [],
+                                "elements": [],
+                                "frame": 0,
+                                "label_id": label_ids["points"].pop(),
+                                "group": 0,
+                                "source": "manual",
+                                "outside": False
+                            },
+                            {
+                                "type": "points",
+                                "occluded": False,
+                                "z_order": 0,
+                                "points": [
+                                    22.5439453125,
+                                    28.300195312500364
+                                ],
+                                "rotation": 0,
+                                "attributes": [],
+                                "elements": [],
+                                "frame": 0,
+                                "label_id": label_ids["points"].pop(),
+                                "group": 0,
+                                "source": "manual",
+                                "outside": False
+                            },
+                            {
+                                "type": "points",
+                                "occluded": False,
+                                "z_order": 0,
+                                "points": [
+                                    27.19879793636028,
+                                    25.5
+                                ],
+                                "rotation": 0,
+                                "attributes": [],
+                                "elements": [],
+                                "frame": 0,
+                                "label_id": label_ids["points"].pop(),
+                                "group": 0,
+                                "source": "manual",
+                                "outside": False
+                            }
+                        ]
+                }],
+                "tracks": [],
+                "tags": [],
+                "version": 0
+            }
+
+            response = patch_method("admin1", f"jobs/{job_id}/annotations", patch_data, action="create")
+
+            response = get_method("admin1", f"jobs/{job_id}/annotations")
+
+            assert response.status_code == HTTPStatus.OK
+
+
 
 
 @pytest.mark.usefixtures('dontchangedb')
