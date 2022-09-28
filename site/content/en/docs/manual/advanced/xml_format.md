@@ -42,7 +42,6 @@ In annotation mode each image tag has `width` and `height` attributes for the sa
           <attributes>
             <attribute>
               <name>String: attribute name</name>
-              <type>String: any, bbox, cuboid, cuboid_3d, ellipse, polygon, polyline, points, skeleton, tag</type>
               <mutable>Boolean: mutable (allow different values between frames)</mutable>
               <input_type>String: select, checkbox, radio, number, text</input_type>
               <default_value>String: default value</default_value>
