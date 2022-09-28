@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +8,7 @@ from rest_framework import serializers
 from django.conf import settings
 
 from cvat.apps.iam.serializers import RegisterSerializerEx
+from cvat.apps.restrictions.signals import user_registered
 
 class UserAgreementSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=256)
@@ -41,3 +43,13 @@ class RestrictedRegisterSerializer(RegisterSerializerEx):
                     )
 
         return validated_data
+
+    def save(self, request):
+        user = super().save(request)
+        confirmations = {item['name']: item['value'] for item in self.validated_data['confirmations']}
+        user_registered.send(
+            sender=self.__class__,
+            user=user.id,
+            **confirmations,
+        )
+        return user
