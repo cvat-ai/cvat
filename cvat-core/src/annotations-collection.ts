@@ -17,6 +17,7 @@
     const { Label } = require('./labels');
     const { ArgumentError, ScriptingError } = require('./exceptions');
     const ObjectState = require('./object-state').default;
+    const { mask2Rle, truncateMask } = require('./object-utils');
     const config = require('./config');
 
     const {
@@ -793,9 +794,10 @@
                             label_id: state.label.id,
                             occluded: state.occluded || false,
                             points: state.shapeType === 'mask' ? (() => {
-                                const { points } = state;
+                                const { width, height } = this.frameMeta[state.frame];
+                                const points = truncateMask(state.points, 0, width, height);
                                 const [left, top, right, bottom] = points.splice(-4);
-                                const rlePoints = ObjectState.mask2Rle(points);
+                                const rlePoints = mask2Rle(points);
                                 rlePoints.push(left, top, right, bottom);
                                 return rlePoints;
                             })() : state.points,

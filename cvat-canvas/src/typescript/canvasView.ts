@@ -2280,7 +2280,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (!state.pinned) {
             shape.addClass('cvat_canvas_shape_draggable');
             (shape as any)
-                .draggable()
+                .draggable({
+                    ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
+                })
                 .on('dragstart', (): void => {
                     this.mode = Mode.DRAG;
                     hideText();

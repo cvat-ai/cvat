@@ -203,8 +203,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interaction: {
         id: string | null;
         isAborted: boolean;
-        latestResponse: number[][];
-        latestResult: number[][];
+        latestResponse: {
+            mask: number[][],
+            points: number[][],
+        };
+        lastestApproximatedPoints: number[][];
         latestRequest: null | {
             interactor: Model;
             data: {
@@ -233,8 +236,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction = {
             id: null,
             isAborted: false,
-            latestResponse: [],
-            latestResult: [],
+            latestResponse: {
+                mask: [],
+                points: [],
+            },
+            lastestApproximatedPoints: [],
             latestRequest: null,
             hideMessage: null,
         };
@@ -277,8 +283,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction = {
                 id: null,
                 isAborted: false,
-                latestResponse: [],
-                latestResult: [],
+                latestResponse: { mask: [], points: [] },
+                lastestApproximatedPoints: [],
                 latestRequest: null,
                 hideMessage: null,
             };
@@ -291,18 +297,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
 
         if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
-            if (isActivated && mode === 'interaction' && this.interaction.latestResponse.length) {
-                this.approximateResponsePoints(this.interaction.latestResponse).then((points: number[][]) => {
-                    this.interaction.latestResult = points;
-                    canvasInstance.interact({
-                        enabled: true,
-                        intermediateShape: {
-                            shapeType: ShapeType.POLYGON,
-                            points: this.interaction.latestResult.flat(),
-                        },
-                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+            if (isActivated && mode === 'interaction' && this.interaction.latestResponse.points.length) {
+                this.approximateResponsePoints(this.interaction.latestResponse.points)
+                    .then((points: number[][]) => {
+                        this.interaction.lastestApproximatedPoints = points;
+                        canvasInstance.interact({
+                            enabled: true,
+                            intermediateShape: {
+                                shapeType: ShapeType.POLYGON,
+                                points: this.interaction.lastestApproximatedPoints.flat(),
+                            },
+                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+                        });
                     });
-                });
             }
         }
 
@@ -361,17 +368,20 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.setState({ fetching: true });
                 const response = await core.lambda.call(jobInstance.taskId, interactor, data);
                 // approximation with cv.approxPolyDP
-                const approximated = await this.approximateResponsePoints(response);
+                const approximated = await this.approximateResponsePoints(response.points);
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
                     // new interaction session or the session is aborted
                     return;
                 }
 
-                this.interaction.latestResponse = response;
-                this.interaction.latestResult = approximated;
+                this.interaction.latestResponse = {
+                    mask: response.mask,
+                    points: response.points,
+                };
+                this.interaction.lastestApproximatedPoints = approximated;
 
-                this.setState({ pointsRecieved: !!response.length });
+                this.setState({ pointsRecieved: !!response.points.length });
             } finally {
                 if (this.interaction.id === interactionId && this.interaction.hideMessage) {
                     this.interaction.hideMessage();
@@ -381,12 +391,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.setState({ fetching: false });
             }
 
-            if (this.interaction.latestResult.length) {
+            if (this.interaction.lastestApproximatedPoints.length) {
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
                         shapeType: ShapeType.POLYGON,
-                        points: this.interaction.latestResult.flat(),
+                        points: this.interaction.lastestApproximatedPoints.flat(),
                     },
                     onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
@@ -420,8 +430,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             // prevent future requests if possible
             this.interaction.isAborted = true;
             this.interaction.latestRequest = null;
-            if (this.interaction.latestResult.length) {
-                this.constructFromPoints(this.interaction.latestResult);
+            if (this.interaction.lastestApproximatedPoints.length) {
+                this.constructFromPoints(this.interaction.lastestApproximatedPoints);
             }
         } else if (shapesUpdated) {
             const interactor = activeInteractor as Model;
@@ -756,7 +766,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         });
                         // eslint-disable-next-line no-await-in-loop
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
-                            frame: frame ,
+                            frame,
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
                         });
@@ -811,7 +821,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             zOrder: curZOrder,
         });
 
-        createAnnotations(jobInstance, frame, [object]);
+        const height = this.interaction.latestResponse.mask.length;
+        const width = this.interaction.latestResponse.mask[0].length;
+        const maskPoints = this.interaction.latestResponse.mask.flat();
+        maskPoints.push(0, 0, width - 1, height - 1);
+        const object2 = new core.classes.ObjectState({
+            frame,
+            objectType: ObjectType.SHAPE,
+            label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
+            shapeType: ShapeType.MASK,
+            points: maskPoints,
+            occluded: false,
+            zOrder: curZOrder,
+        });
+
+        createAnnotations(jobInstance, frame, [object2]);
     }
 
     private async approximateResponsePoints(points: number[][]): Promise<number[][]> {

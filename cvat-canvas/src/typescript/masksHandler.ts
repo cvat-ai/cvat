@@ -186,8 +186,8 @@ export class MasksHandlerImpl implements MasksHandler {
             .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
                 acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
                 acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
-                acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
-                acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
+                acc.bottom = Math.floor(Math.min(height, Math.max(rect.top + rect.height, acc.bottom)));
+                acc.right = Math.floor(Math.min(width, Math.max(rect.left + rect.width, acc.right)));
                 return acc;
             }, {
                 left: Number.MAX_SAFE_INTEGER,
@@ -526,9 +526,9 @@ export class MasksHandlerImpl implements MasksHandler {
 
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
-                const [left, top, right, bottom] = points.slice(-4);
+                const [left, top, right, bottom] = points.splice(-4);
                 const imageBitmap = [];
-                for (let i = 0; i < points.length - 4; i++) {
+                for (let i = 0; i < points.length; i++) {
                     const alpha = points[i];
                     imageBitmap.push(color[0], color[1], color[2], alpha * 255);
                 }
