@@ -215,7 +215,7 @@ def redelivery(sender, data=None, **kwargs):
 
 
 @receiver(signal_ping)
-def ping(sender, serializer=None, **kwargs):
+def ping(sender, serializer, **kwargs):
     data = {"event": "ping", "webhook": serializer.data}
     delivery = add_to_queue(serializer.instance, payload(data, sender.request))
     return delivery
