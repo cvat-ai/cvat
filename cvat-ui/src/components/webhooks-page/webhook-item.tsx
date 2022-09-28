@@ -29,14 +29,14 @@ interface WebhookStatus {
     className: string;
 }
 
-function setUpWebhookStatus(status: string): WebhookStatus {
-    if (status && status.startsWith('2')) {
+function setUpWebhookStatus(status: number): WebhookStatus {
+    if (status && status.toString().startsWith('2')) {
         return {
             message: `Last delivery was succesful. Response: ${status}`,
             className: 'cvat-webhook-status-available',
         };
     }
-    if (status && status.startsWith('5')) {
+    if (status && status.toString().startsWith('5')) {
         return {
             message: `Last delivery was not succesful. Response: ${status}`,
             className: 'cvat-webhook-status-failed',
