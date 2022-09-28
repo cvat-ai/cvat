@@ -1,5 +1,6 @@
 
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -617,6 +618,14 @@ class TaskAnnotationsImportTest(_DbTestBase):
         images["image_quality"] = 75
         return images
 
+    def _generate_task_images_by_names(self, names, **image_params):
+        images = {
+            f"client_files[{i}]": generate_image_file(f"{name}.jpg", **image_params)
+            for i, name in enumerate(names)
+        }
+        images["image_quality"] = 75
+        return images
+
     def _generate_task(self, images, annotation_format, **overrides):
         labels = []
         if annotation_format in ["ICDAR Recognition 1.0",
@@ -911,7 +920,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
         for f in dm.views.get_import_formats():
             format_name = f.DISPLAY_NAME
 
-            images = self._generate_task_images(3, "img0.0.0")
+            if format_name == "Market-1501 1.0":
+                images = self._generate_task_images_by_names(["img0.0.0_0", "1.0_c3s1_000000_00", "img0.0.0_1"])
+            else:
+                images = self._generate_task_images(3, "img0.0.0")
             task = self._generate_task(images, format_name)
             self._generate_annotations(task, format_name)
 

@@ -44,6 +44,7 @@ context('Create more than one task per time when create from project.', () => {
 
     describe(`Testing "Issue ${issueID}"`, () => {
         it('Create more than one task per time from project.', () => {
+            cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').click();
             createTask(taskName.firstTask);
             createTask(taskName.secondTask);

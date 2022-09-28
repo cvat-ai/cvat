@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-07-19T14:27:42.006Z",
+    "last_login": "2022-09-22T14:21:28.429Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -485,6 +485,14 @@
   "fields": {
     "session_data": ".eJxVjEEOwiAQRe_C2hAZ6BRcuvcMZGagtmogKe3KeHfbpAvd_vfef6tI6zLGteU5TkldlFGn341JnrnsID2o3KuWWpZ5Yr0r-qBN32rKr-vh_h2M1MatZtfjAJ6DdIQZhsw-gO2tSCc-9WiyBxc4kMdBMLnOIhMyuPMmWTDq8wXrITeF:1nyr78:_kk9OqBNFufSHoqDmlrR801u639WewL9v6cDAf-qtsY",
     "expire_date": "2022-06-22T08:32:30.157Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "g7a60a11wtv3gyf63z38yo9dynrriy2o",
+  "fields": {
+    "session_data": ".eJxVjMEOwiAQRP-FsyG7oSB49O43kF22SNVAUtqT8d9tkx70Mod5b-atIq1LiWsf5ziJuihUp9-OKT3HugN5UL03nVpd5on1ruiDdn1rMr6uh_t3UKiXbZ1BbEggBBCyMwSC6PEsgBzYoM0pgHUAnvwQjOFsrDM-DVsIA7H6fAHNgTcq:1obN4y:bkeYqNAs8mjLT_JEXhoEQ5K5wMW1KiEr72ahxoqc1SA",
+    "expire_date": "2022-10-06T14:21:28.474Z"
   }
 },
 {
@@ -1055,6 +1063,25 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 4,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 13,
+  "fields": {
+    "chunk_size": 72,
+    "size": 8,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 7,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -2011,6 +2038,94 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 433,
+  "fields": {
+    "data": 13,
+    "path": "1.png",
+    "frame": 0,
+    "width": 783,
+    "height": 760
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 434,
+  "fields": {
+    "data": 13,
+    "path": "2.png",
+    "frame": 1,
+    "width": 528,
+    "height": 458
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 435,
+  "fields": {
+    "data": 13,
+    "path": "3.png",
+    "frame": 2,
+    "width": 520,
+    "height": 350
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 436,
+  "fields": {
+    "data": 13,
+    "path": "4.png",
+    "frame": 3,
+    "width": 569,
+    "height": 483
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 437,
+  "fields": {
+    "data": 13,
+    "path": "5.png",
+    "frame": 4,
+    "width": 514,
+    "height": 935
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 438,
+  "fields": {
+    "data": 13,
+    "path": "6.png",
+    "frame": 5,
+    "width": 502,
+    "height": 705
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 439,
+  "fields": {
+    "data": 13,
+    "path": "7.png",
+    "frame": 6,
+    "width": 541,
+    "height": 825
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 440,
+  "fields": {
+    "data": 13,
+    "path": "8.png",
+    "frame": 7,
+    "width": 883,
+    "height": 208
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -2086,6 +2201,24 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 5,
+  "fields": {
+    "name": "project5",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-09-22T14:21:53.791Z",
+    "updated_date": "2022-09-23T11:57:02.088Z",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 5,
+    "target_storage": 6
   }
 },
 {
@@ -2323,6 +2456,31 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 14,
+  "fields": {
+    "project": 5,
+    "name": "task1 in project5",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-09-22T14:22:25.820Z",
+    "updated_date": "2022-09-23T11:57:02.300Z",
+    "overlap": 0,
+    "segment_size": 8,
+    "status": "annotation",
+    "data": 13,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 7,
+    "target_storage": 8
   }
 },
 {
@@ -3014,6 +3172,70 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 434,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/6.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 435,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/4.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 436,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/7.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 437,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 438,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/3.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 439,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/8.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 440,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/5.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 441,
+  "fields": {
+    "data": 13,
+    "file": "/home/django/data/data/13/raw/2.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -3119,6 +3341,15 @@
     "task": 13,
     "start_frame": 0,
     "stop_frame": 4
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 18,
+  "fields": {
+    "task": 14,
+    "start_frame": 0,
+    "stop_frame": 7
   }
 },
 {
@@ -3264,13 +3495,27 @@
   }
 },
 {
+  "model": "engine.job",
+  "pk": 18,
+  "fields": {
+    "segment": 18,
+    "assignee": null,
+    "updated_date": "2022-09-23T11:57:02.302Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
   "model": "engine.label",
   "pk": 3,
   "fields": {
     "task": 2,
     "project": null,
     "name": "car",
-    "color": "#2080c0"
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3280,7 +3525,9 @@
     "task": 2,
     "project": null,
     "name": "person",
-    "color": "#c06060"
+    "color": "#c06060",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3290,7 +3537,9 @@
     "task": null,
     "project": 1,
     "name": "car",
-    "color": "#2080c0"
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3300,7 +3549,9 @@
     "task": null,
     "project": 1,
     "name": "person",
-    "color": "#c06060"
+    "color": "#c06060",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3310,7 +3561,9 @@
     "task": null,
     "project": 2,
     "name": "cat",
-    "color": "#6080c0"
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3320,7 +3573,9 @@
     "task": null,
     "project": 2,
     "name": "dog",
-    "color": "#406040"
+    "color": "#406040",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3330,7 +3585,9 @@
     "task": 5,
     "project": null,
     "name": "car",
-    "color": "#2080c0"
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3340,7 +3597,9 @@
     "task": 6,
     "project": null,
     "name": "car",
-    "color": "#2080c0"
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3350,7 +3609,9 @@
     "task": 7,
     "project": null,
     "name": "cat",
-    "color": "#6080c0"
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3360,7 +3621,9 @@
     "task": 7,
     "project": null,
     "name": "dog",
-    "color": "#406040"
+    "color": "#406040",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3370,7 +3633,9 @@
     "task": 8,
     "project": null,
     "name": "cat",
-    "color": "#6080c0"
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3380,7 +3645,9 @@
     "task": 8,
     "project": null,
     "name": "dog",
-    "color": "#406040"
+    "color": "#406040",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3390,7 +3657,9 @@
     "task": 12,
     "project": null,
     "name": "Car",
-    "color": "#2080c0"
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3400,7 +3669,9 @@
     "task": null,
     "project": 4,
     "name": "cat",
-    "color": "#6080c0"
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
   }
 },
 {
@@ -3410,7 +3681,133 @@
     "task": null,
     "project": 4,
     "name": "dog",
-    "color": "#406040"
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 18,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "s1",
+    "color": "#5c5eba",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 19,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "1",
+    "color": "#d12345",
+    "type": "points",
+    "parent": 18
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 20,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "2",
+    "color": "#350dea",
+    "type": "points",
+    "parent": 18
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 21,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "3",
+    "color": "#479ffe",
+    "type": "points",
+    "parent": 18
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 22,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "s2",
+    "color": "#0c81b5",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 23,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "1",
+    "color": "#d53957",
+    "type": "points",
+    "parent": 22
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 24,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "2",
+    "color": "#4925ec",
+    "type": "points",
+    "parent": 22
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 25,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "3",
+    "color": "#59a8fe",
+    "type": "points",
+    "parent": 22
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 26,
+  "fields": {
+    "task": null,
+    "project": 5,
+    "name": "4",
+    "color": "#4a649f",
+    "type": "points",
+    "parent": 22
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 1,
+  "fields": {
+    "root": 18,
+    "svg": "<line x1=\"36.37385177612305\" y1=\"50.334449768066406\" x2=\"70.15311431884766\" y2=\"21.237457275390625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"29.517663955688477\" y1=\"15.050167083740234\" x2=\"36.37385177612305\" y2=\"50.334449768066406\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"29.517663955688477\" cy=\"15.050167083740234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"50.334449768066406\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"21.237457275390625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>"
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 2,
+  "fields": {
+    "root": 22,
+    "svg": "<line x1=\"65.6380615234375\" y1=\"18.394649505615234\" x2=\"22.327028274536133\" y2=\"54.8494987487793\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"77.34375\" y1=\"55.18394470214844\" x2=\"65.6380615234375\" y2=\"18.394649505615234\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"4.434051036834717\" y1=\"27.257524490356445\" x2=\"77.34375\" y2=\"55.18394470214844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"4.434051036834717\" cy=\"27.257524490356445\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"23\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.327028274536133\" cy=\"54.8494987487793\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"24\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"65.6380615234375\" cy=\"18.394649505615234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"25\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"77.34375\" cy=\"55.18394470214844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"26\"></circle>"
   }
 },
 {
@@ -3423,6 +3820,30 @@
     "input_type": "select",
     "default_value": "mazda",
     "values": "mazda\nvolvo\nbmw"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 2,
+  "fields": {
+    "label": 22,
+    "name": "color",
+    "mutable": false,
+    "input_type": "select",
+    "default_value": "white",
+    "values": "white\nblack"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 3,
+  "fields": {
+    "label": 25,
+    "name": "attr",
+    "mutable": false,
+    "input_type": "select",
+    "default_value": "val1",
+    "values": "val1\nval2"
   }
 },
 {
@@ -4096,6 +4517,106 @@
   }
 },
 {
+  "model": "engine.jobcommit",
+  "pk": 67,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-22T14:22:26.222Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 68,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:30.270Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 69,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:30.533Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 70,
+  "fields": {
+    "scope": "update",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:30.535Z",
+    "data": {
+      "state": "in progress"
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 71,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:56:45.344Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 72,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-09-23T11:57:02.307Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 18
+  }
+},
+{
   "model": "engine.labeledshape",
   "pk": 1,
   "fields": {
@@ -4106,9 +4627,11 @@
     "source": "manual",
     "type": "rectangle",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[223.39453125, 226.0751953125, 513.7663269042969, 377.9619903564453]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4122,9 +4645,11 @@
     "source": "manual",
     "type": "polygon",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[63.0791015625, 139.75390625, 132.19337349397574, 112.3867469879533, 189.71144578313397, 159.23614457831354, 191.1030120481937, 246.9048192771097, 86.73554216867524, 335.5012048192784, 32.00060240964012, 250.15180722891637]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4138,9 +4663,11 @@
     "source": "manual",
     "type": "polygon",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[83.0244140625, 216.75390625, 112.24759036144678, 162.48313253012202, 167.44638554216908, 183.35662650602535, 149.35602409638705, 252.0072289156633, 84.41626506024113, 292.8265060240974, 72.81987951807241, 258.9650602409638]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4154,9 +4681,11 @@
     "source": "manual",
     "type": "polyline",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[24.443359375, 107.2275390625, 84.91109877913368, 61.125083240844106, 169.4316315205324, 75.1561598224198, 226.5581576026634, 113.90865704772477, 240.5892341842391, 205.77880133185317, 210.52264150943483, 270.9230854605994]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4170,9 +4699,11 @@
     "source": "manual",
     "type": "points",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[148.94921875, 285.6865234375, 313.515094339622, 400.32830188679145, 217.36415094339463, 585.2339622641503, 64.81698113207494, 499.25283018867776]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4186,9 +4717,11 @@
     "source": "manual",
     "type": "polygon",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[448.3779296875, 356.4892578125, 438.2558352402775, 761.3861556064112, 744.1780320366161, 319.37356979405195, 446.1288329519466, 163.03832951945333]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4202,9 +4735,11 @@
     "source": "manual",
     "type": "polygon",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[364.0361328125, 528.87890625, 609.5286041189956, 586.544622425632, 835.2494279176244, 360.0000000000018, 543.6247139588122, 175.4691075514893, 326.9656750572103, 192.76887871853796, 244.58581235698148, 319.63386727689067]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4218,9 +4753,11 @@
     "source": "manual",
     "type": "polygon",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[440.0439453125, 84.0791015625, 71.83311938382576, 249.81514762516053, 380.4441591784325, 526.585365853658, 677.6251604621302, 260.42875481386363, 629.4557124518615, 127.35044929396645]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4234,9 +4771,11 @@
     "source": "manual",
     "type": "rectangle",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[65.6189987163034, 100.96585365853753, 142.12734274711147, 362.6243902439037]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4250,9 +4789,11 @@
     "source": "manual",
     "type": "polyline",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[100.14453125, 246.03515625, 408.8692551505537, 327.5483359746413, 588.5839936608554, 289.0380348652925, 623.8851030110927, 183.77654516640177, 329.2812995245622, 71.45483359746322]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4266,9 +4807,11 @@
     "source": "manual",
     "type": "rectangle",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[106.36066411239153, 85.1515964240134, 240.08352490421748, 241.26526181354166]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
   }
 },
 {
@@ -4282,9 +4825,323 @@
     "source": "manual",
     "type": "rectangle",
     "occluded": false,
+    "outside": false,
     "z_order": 0,
     "points": "[414.29522752496996, 124.8035516093205, 522.2641509433943, 286.75693673695605]",
-    "rotation": 0.0
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 36,
+  "fields": {
+    "job": 18,
+    "label": 22,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 37,
+  "fields": {
+    "job": 18,
+    "label": 23,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[135.8260869565238, 118.10276296228554]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 38,
+  "fields": {
+    "job": 18,
+    "label": 24,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[172.10450871201368, 274.6245183225243]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 39,
+  "fields": {
+    "job": 18,
+    "label": 25,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[259.91862203681984, 67.8260869565238]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 40,
+  "fields": {
+    "job": 18,
+    "label": 26,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[283.65217391304554, 276.52173913043686]",
+    "rotation": 0.0,
+    "parent": 36
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 1,
+  "fields": {
+    "spec": 2,
+    "value": "white",
+    "shape": 36
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 2,
+  "fields": {
+    "spec": 3,
+    "value": "val1",
+    "shape": 39
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 1,
+  "fields": {
+    "job": 18,
+    "label": 22,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 2,
+  "fields": {
+    "job": 18,
+    "label": 23,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 3,
+  "fields": {
+    "job": 18,
+    "label": 24,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 4,
+  "fields": {
+    "job": 18,
+    "label": 25,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 5,
+  "fields": {
+    "job": 18,
+    "label": 26,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 3,
+  "fields": {
+    "spec": 2,
+    "value": "white",
+    "track": 1
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 4,
+  "fields": {
+    "spec": 3,
+    "value": "val1",
+    "track": 4
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 1,
+  "fields": {
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "track": 1,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 2,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[381.9130434782637, 355.0592829431864]",
+    "rotation": 0.0,
+    "track": 2,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 3,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[461.9389738212561, 583.320176176868]",
+    "rotation": 0.0,
+    "track": 3,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 4,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[655.6465767436227, 281.7391304347839]",
+    "rotation": 0.0,
+    "track": 4,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 5,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[708.000000000003, 586.0869565217404]",
+    "rotation": 0.0,
+    "track": 5,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 6,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[137.0966796875, 156.11214469590232]",
+    "rotation": 0.0,
+    "track": 2,
+    "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 7,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[217.12261003049207, 384.3730379295848]",
+    "rotation": 0.0,
+    "track": 3,
+    "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 8,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[410.83021295285835, 82.7919921875]",
+    "rotation": 0.0,
+    "track": 4,
+    "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 9,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[463.1836362092399, 387.13981827445605]",
+    "rotation": 0.0,
+    "track": 5,
+    "frame": 3
   }
 },
 {
@@ -4756,6 +5613,38 @@
   "fields": {
     "location": "cloud_storage",
     "cloud_storage_id": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 5,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 6,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 7,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 8,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
   }
 },
 {
