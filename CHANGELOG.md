@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
 - An env variable to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
+- REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
@@ -25,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Removed unnecessary volumes defined in docker-compose.serverless.yml
 (<https://github.com/openvinotoolkit/cvat/pull/4659>)
-- Project import with skeletons (<https://github.com/opencv/cvat/pull/4867>,
+- Project import/export with skeletons (<https://github.com/opencv/cvat/pull/4867>,
   <https://github.com/opencv/cvat/pull/5004>)
 
 ### Security
