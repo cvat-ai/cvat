@@ -23,13 +23,11 @@ class Events:
 
     @classmethod
     def select(cls, resources):
-        ret = set()
-        for resource in resources:
-            ret |= set(
-                f"{event_name(action, resource)}"
-                for action in cls.RESOURCES.get(resource, [])
-            )
-        return ret
+        return [
+            f"{event_name(action, resource)}"
+            for resource in resources
+            for action in cls.RESOURCES.get(resource, [])
+        ]
 
 
 class EventTypeChoice:
@@ -41,26 +39,20 @@ class EventTypeChoice:
 class AllEvents:
     webhook_type = "all"
     events = list(
-        set(
-            event_name(action, resource)
-            for resource, actions in Events.RESOURCES.items()
-            for action in actions
-        )
+        event_name(action, resource)
+        for resource, actions in Events.RESOURCES.items()
+        for action in actions
     )
 
 
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
-    events = list(
-        set((event_name("update", "project"),))
-        | Events.select(["job", "task", "issue", "comment"])
-    )
+    events = [event_name("update", "project")] \
+        + Events.select(["job", "task", "issue", "comment"])
 
 
 class OrganizationEvents:
     webhook_type = WebhookTypeChoice.ORGANIZATION
-    events = list(
-        set((event_name("update", "organization"),))
-        | Events.select(["membership", "invitation", "project"])
-        | set(ProjectEvents.events)
-    )
+    events = [event_name("update", "organization")] \
+        + Events.select(["membership", "invitation", "project"]) \
+        + ProjectEvents.events
