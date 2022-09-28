@@ -70,9 +70,9 @@ class Processor:
         return type_repr
 
     def make_api_doc_link(self, page: str) -> str:
-        parts = page.split('#', maxsplit=1)
+        parts = page.split("#", maxsplit=1)
         parts[0] = parts[0].lower()
-        return '#'.join(parts)
+        return "#".join(parts)
 
     allowed_actions = {
         "make_operation_id",
@@ -108,7 +108,7 @@ class Processor:
         with open(src_path, "w") as f:
             f.write(contents)
 
-    def process_dir(self, dir_path: str, *, file_ext: str = '.py'):
+    def process_dir(self, dir_path: str, *, file_ext: str = ".py"):
         for filename in glob(dir_path + f"/**/*{file_ext}", recursive=True):
             try:
                 self.process_file(filename)

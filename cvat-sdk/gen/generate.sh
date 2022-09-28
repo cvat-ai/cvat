@@ -39,6 +39,7 @@ mv "${DST_DIR}/requirements.txt" "${DST_DIR}/requirements/api_client.txt"
 
 # Do custom postprocessing for docs files
 "${PYTHON_POST_PROCESS_FILE}" --schema "schema/schema.yml" --input-path "${DST_DIR}/docs" --file-ext '.md'
+"${PYTHON_POST_PROCESS_FILE}" --schema "schema/schema.yml" --input-path "${DST_DIR}/README.md"
 
 API_DOCS_DIR="${DST_DIR}/docs/apis/"
 MODEL_DOCS_DIR="${DST_DIR}/docs/models/"
@@ -46,3 +47,4 @@ mkdir "${API_DOCS_DIR}"
 mkdir "${MODEL_DOCS_DIR}"
 mv "${DST_DIR}/docs/"*Api.md "${API_DOCS_DIR}"
 mv "${DST_DIR}/docs/"*.md "${MODEL_DOCS_DIR}"
+mv "${DST_DIR}/README.md" "${API_DOCS_DIR}/_index.md.sub"
