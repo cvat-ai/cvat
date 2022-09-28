@@ -28,6 +28,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 (<https://github.com/openvinotoolkit/cvat/pull/4659>)
 - Project import/export with skeletons (<https://github.com/opencv/cvat/pull/4867>,
   <https://github.com/opencv/cvat/pull/5004>)
+- Unstable e2e restore tests (<https://github.com/opencv/cvat/pull/5010>)
 
 ### Security
 - TDB
