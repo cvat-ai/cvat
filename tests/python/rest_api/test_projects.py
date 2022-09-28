@@ -429,7 +429,7 @@ class TestPatchProjectLabel:
         assert len(response.json()['labels']) == len(project['labels']) - 1
 
     def test_admin_can_delete_skeleton_label(self, projects):
-        project = deepcopy(list(projects)[0])
+        project = deepcopy(projects[5])
         labels = project['labels'][0]
         labels.update({'deleted': True})
         response = patch_method('admin1', f'/projects/{project["id"]}', {'labels': [labels]})
