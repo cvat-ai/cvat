@@ -351,15 +351,90 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
 
+    def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(self, admin_user):
+        project_id = 5
+
+        response = self._test_export_project(admin_user, project_id, 'COCO Keypoints 1.0')
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = 'dataset.zip'
+        import_data = {
+            'dataset_file': tmp_file,
+        }
+
+        self._test_import_project(admin_user, project_id, 'COCO Keypoints 1.0', import_data)
+
+    def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self, admin_user):
+        project_id = 5
+
+        response = self._test_export_project(admin_user, project_id, 'CVAT for images 1.1')
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = 'dataset.zip'
+        import_data = {
+            'dataset_file': tmp_file,
+        }
+
+        self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
+
+    def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(self, admin_user):
+        project_id = 5
+
+        response = self._test_export_project(admin_user, project_id, 'CVAT for video 1.1')
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = 'dataset.zip'
+        import_data = {
+            'dataset_file': tmp_file,
+        }
+
+        self._test_import_project(admin_user, project_id, 'CVAT 1.1', import_data)
+
+    def _test_can_get_project_backup(self, username, pid, **kwargs):
+        for _ in range(30):
+            response = get_method(username, f"projects/{pid}/backup", **kwargs)
+            response.raise_for_status()
+            if response.status_code == HTTPStatus.CREATED:
+                break
+            sleep(1)
+        response = get_method(username, f"projects/{pid}/backup", action="download", **kwargs)
+        assert response.status_code == HTTPStatus.OK
+        return response
+
+    def test_admin_can_get_project_backup_and_create_project_by_backup(self, admin_user):
+        project_id = 5
+        response = self._test_can_get_project_backup(admin_user, project_id)
+
+        tmp_file = io.BytesIO(response.content)
+        tmp_file.name = 'dataset.zip'
+
+        import_data = {
+            'project_file': tmp_file,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.projects_api.create_backup(
+                backup_write_request=deepcopy(import_data),
+                _content_type="multipart/form-data")
+            assert response.status == HTTPStatus.ACCEPTED
+
 @pytest.mark.usefixtures('changedb')
 class TestPatchProjectLabel:
     def test_admin_can_delete_label(self, projects):
-        project = deepcopy(list(projects)[0])
+        project = deepcopy(list(projects)[1])
         labels = project['labels'][0]
         labels.update({'deleted': True})
         response = patch_method('admin1', f'/projects/{project["id"]}', {'labels': [labels]})
         assert response.status_code == HTTPStatus.OK
         assert len(response.json()['labels']) == len(project['labels']) - 1
+
+    def test_admin_can_delete_skeleton_label(self, projects):
+        project = deepcopy(list(projects)[0])
+        labels = project['labels'][0]
+        labels.update({'deleted': True})
+        response = patch_method('admin1', f'/projects/{project["id"]}', {'labels': [labels]})
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.json()['labels']) == len(project['labels']) - 4
 
     def test_admin_can_rename_label(self, projects):
         project = deepcopy(list(projects)[0])
