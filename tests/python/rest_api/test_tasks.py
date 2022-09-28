@@ -344,15 +344,13 @@ class TestPostTaskData:
 
         task_data = {
             'image_quality': 75,
-            'start_frame': 2,
-            'stop_frame': 5,
-            'client_files': generate_image_files(7),
+            'client_files': generate_image_files(3),
         }
 
         task_id = self._test_create_task(self._USERNAME, spec, task_data,
             content_type="multipart/form-data")
 
-        response = get_method('admin1', f"tasks/{task_id}")
+        response = get_method(self._USERNAME, f"tasks/{task_id}")
         label_ids = {}
         for label in response.json()["labels"]:
             label_ids.setdefault(label["type"], []).append(label["id"])
@@ -475,8 +473,8 @@ class TestPostTaskData:
             "version": 0
         }
 
-        response = patch_method("admin1", f"jobs/{job_id}/annotations", patch_data, action="create")
-        response = get_method("admin1", f"jobs/{job_id}/annotations")
+        response = patch_method(self._USERNAME, f"jobs/{job_id}/annotations", patch_data, action="create")
+        response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
         assert response.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('cloud_storage_id, manifest, use_bucket_content, org', [
