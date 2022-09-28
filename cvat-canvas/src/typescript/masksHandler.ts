@@ -49,6 +49,8 @@ export class MasksHandlerImpl implements MasksHandler {
     private isDrawing: boolean;
     private isEditing: boolean;
     private isMouseDown: boolean;
+    private isBrushSizeChanging: boolean;
+    private resizeBrushToolLatestX: number;
     private brushMarker: fabric.Rect | fabric.Circle | null;
     private drawablePolygon: null | fabric.Polygon;
     private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
@@ -97,6 +99,28 @@ export class MasksHandlerImpl implements MasksHandler {
             this.canvas.remove(this.brushMarker);
             this.brushMarker = null;
             this.canvas.renderAll();
+        }
+    }
+
+    private setupBrushMarker(): void {
+        if (['brush', 'eraser'].includes(this.tool.type)) {
+            const common = {
+                evented: false,
+                selectable: false,
+                opacity: 0.75,
+                left: this.latestMousePos.x - this.tool.size / 2,
+                top: this.latestMousePos.y - this.tool.size / 2,
+            };
+            this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
+                ...common,
+                radius: this.tool.size / 2,
+            }) : new fabric.Rect({
+                ...common,
+                width: this.tool.size,
+                height: this.tool.size,
+            });
+
+            this.canvas.add(this.brushMarker);
         }
     }
 
@@ -199,6 +223,8 @@ export class MasksHandlerImpl implements MasksHandler {
         this.redraw = null;
         this.isDrawing = false;
         this.isEditing = false;
+        this.isMouseDown = false;
+        this.isBrushSizeChanging = false;
         this.drawData = null;
         this.editData = null;
         this.drawnObjects = [];
@@ -215,8 +241,8 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
         this.latestMousePos = { x: -1, y: -1 };
         window.document.addEventListener('mouseup', () => {
-            // todo: clear the callback when element is removed
             this.isMouseDown = false;
+            this.isBrushSizeChanging = false;
         });
 
         this.canvas.on('mouse:dblclick', (e: fabric.IEvent<MouseEvent>) => {
@@ -233,7 +259,8 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.on('mouse:down', (options: fabric.IEvent<MouseEvent>) => {
             const { tool, isDrawing, isEditing } = this;
             const point = new fabric.Point(options.pointer.x, options.pointer.y);
-            this.isMouseDown = true;
+            this.isMouseDown = options.e.button === 0 && !options.e.altKey;
+            this.isBrushSizeChanging = options.e.button === 2 && options.e.altKey;
 
             if (this.drawablePolygon) {
                 // update polygon if drawing has been started
@@ -276,7 +303,23 @@ export class MasksHandlerImpl implements MasksHandler {
 
         this.canvas.on('mouse:move', (e: fabric.IEvent<MouseEvent>) => {
             const position = { x: e.pointer.x, y: e.pointer.y };
-            const { tool, isMouseDown } = this;
+            const { tool, isMouseDown, isBrushSizeChanging } = this;
+
+            if (isBrushSizeChanging && ['brush', 'eraser'].includes(this.tool?.type)) {
+                const xDiff = position.x - this.resizeBrushToolLatestX;
+                if (this.drawData.onUpdateConfiguration) {
+                    this.drawData.onUpdateConfiguration({
+                        brushTool: {
+                            size: Math.trunc(Math.max(1, this.tool.size + xDiff)),
+                        },
+                    });
+                }
+
+                this.resizeBrushToolLatestX = position.x;
+                e.e.stopPropagation();
+                return;
+            }
+
             if (this.brushMarker) {
                 this.brushMarker.left = position.x - tool.size / 2;
                 this.brushMarker.top = position.y - tool.size / 2;
@@ -284,7 +327,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.canvas.renderAll();
             }
 
-            if (isMouseDown && ['brush', 'eraser'].includes(tool.type)) {
+            if (isMouseDown && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool.type)) {
                 const color = fabric.Color.fromHex(tool.color);
                 color.setAlpha(tool.type === 'eraser' ? 1 : 0.5);
 
@@ -353,8 +396,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
                 this.canvas.renderAll();
             }
+
             this.latestMousePos.x = position.x;
             this.latestMousePos.y = position.y;
+            this.resizeBrushToolLatestX = position.x;
         });
     }
 
@@ -391,24 +436,8 @@ export class MasksHandlerImpl implements MasksHandler {
 
             // setup new brush marker
             this.removeBrushMarker();
-            if (this.isDrawing && ['brush', 'eraser'].includes(this.tool.type)) {
-                const common = {
-                    evented: false,
-                    selectable: false,
-                    opacity: 0.75,
-                    left: this.latestMousePos.x - this.tool.size / 2,
-                    top: this.latestMousePos.y - this.tool.size / 2,
-                };
-                this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
-                    ...common,
-                    radius: this.tool.size / 2,
-                }) : new fabric.Rect({
-                    ...common,
-                    width: this.tool.size,
-                    height: this.tool.size,
-                });
-
-                this.canvas.add(this.brushMarker);
+            if (this.isDrawing) {
+                this.setupBrushMarker();
             }
         }
 
@@ -426,6 +455,7 @@ export class MasksHandlerImpl implements MasksHandler {
         } else if (this.isDrawing) {
             try {
                 // drawing has been finished
+                this.removeBrushMarker();
                 if (this.drawablePolygon) {
                     this.keepDrawnPolygon();
                 }
@@ -534,6 +564,7 @@ export class MasksHandlerImpl implements MasksHandler {
         } else if (!editData.enabled) {
             try {
                 // editing has been finished
+                this.removeBrushMarker();
                 if (this.drawablePolygon) {
                     this.keepDrawnPolygon();
                 }

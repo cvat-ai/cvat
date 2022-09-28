@@ -93,6 +93,7 @@ export interface DrawData {
     crosshair?: boolean;
     brushTool?: BrushTool;
     redraw?: number;
+    onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }
 
 export interface InteractionData {
@@ -128,6 +129,7 @@ export interface MasksEditData {
     enabled: boolean;
     state?: any;
     brushTool?: BrushTool;
+    onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }
 
 export interface GroupData {

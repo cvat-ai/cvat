@@ -31,6 +31,7 @@ const DraggableArea = (
     </div>
 );
 
+const MIN_BRUSH_SIZE = 1;
 function BrushTools(): React.ReactPortal {
     const dispatch = useDispatch();
     const defaultLabelID = useSelector((state: CombinedState) => state.annotation.drawing.activeLabelID);
@@ -69,6 +70,12 @@ function BrushTools(): React.ReactPortal {
         const label = labels.find((_label: any) => _label.id === activeLabelID);
         getCore().config.removeUnderlyingMaskPixels = removeUnderlyingPixels;
         if (visible && label && canvasInstance instanceof Canvas) {
+            const onUpdateConfiguration = ({ brushTool }: any): void => {
+                if (brushTool?.size) {
+                    setBrushSize(Math.max(MIN_BRUSH_SIZE, brushTool.size));
+                }
+            };
+
             if (canvasInstance.mode() === CanvasMode.DRAW) {
                 canvasInstance.draw({
                     enabled: true,
@@ -81,6 +88,7 @@ function BrushTools(): React.ReactPortal {
                         color: label.color,
                         removeUnderlyingPixels,
                     },
+                    onUpdateConfiguration,
                 });
             } else if (canvasInstance.mode() === CanvasMode.EDIT && editableState) {
                 canvasInstance.edit({
@@ -93,6 +101,7 @@ function BrushTools(): React.ReactPortal {
                         color: label.color,
                         removeUnderlyingPixels,
                     },
+                    onUpdateConfiguration,
                 });
             }
         }
@@ -153,7 +162,6 @@ function BrushTools(): React.ReactPortal {
         };
     }, [visible]);
 
-    const MIN_BRUSH_SIZE = 1;
     return ReactDOM.createPortal((
         <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
             <Button
@@ -215,7 +223,7 @@ function BrushTools(): React.ReactPortal {
                 onClick={() => setCurrentTool('polygon-minus')}
             />
             { ['brush', 'eraser'].includes(currentTool) ? (
-                <CVATTooltip title='Brush size'>
+                <CVATTooltip title='Brush size [Hold Alt + Right Mouse Click + Drag Left/Right]'>
                     <InputNumber
                         className='cvat-brush-tools-brush-size'
                         value={brushSize}
