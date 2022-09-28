@@ -40,6 +40,8 @@ import {
     readPointsFromShape,
     setupSkeletonEdges,
     makeSVGFromTemplate,
+    imageDataToDataURL,
+    expandChannels,
 } from './shared';
 import {
     CanvasModel,
@@ -2782,23 +2784,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const colorization = this.getShapeColorization(state);
         const color = fabric.Color.fromHex(colorization.fill).getSource();
         const [left, top, right, bottom] = points.slice(-4);
-        const imageBitmap = [];
-        for (let i = 0; i < points.length - 4; i++) {
-            const alpha = points[i];
-            imageBitmap.push(color[0], color[1], color[2], alpha * 255);
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = right - left + 1;
-        canvas.height = bottom - top + 1;
-        canvas.getContext('2d').putImageData(
-            new ImageData(
-                new Uint8ClampedArray(imageBitmap),
-                canvas.width,
-                canvas.height,
-            ), 0, 0,
-        );
-        const dataURL = canvas.toDataURL('image/png');
+        const imageBitmap = expandChannels(color[0], color[1], color[2], points, 4);
 
         const image = this.adoptedContent.image().attr({
             clientID: state.clientID,
@@ -2810,10 +2796,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
             stroke: colorization.stroke,
         }).addClass('cvat_canvas_shape');
         image.move(this.geometry.offset + left, this.geometry.offset + top);
-        image.loaded(() => {
-            URL.revokeObjectURL(dataURL);
-        });
-        image.load(dataURL);
+
+        imageDataToDataURL(
+            imageBitmap,
+            right - left + 1,
+            bottom - top + 1,
+            (dataURL: string) => new Promise((resolve, reject) => {
+                image.loaded(() => {
+                    resolve();
+                });
+                image.error(() => {
+                    reject();
+                });
+                image.load(dataURL);
+            }),
+        );
 
         return image;
     }

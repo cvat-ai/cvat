@@ -192,12 +192,20 @@
 .cvat-tools-track-button,
 .cvat-tools-interact-button {
     width: 100%;
-    margin-top: 10px;
+    margin-top: $grid-unit-size;
 }
 
 .cvat-interactors-tips-icon-container {
     text-align: center;
     font-size: 20px;
+}
+
+.cvat-interactors-setups-container {
+    margin-top: $grid-unit-size;
+
+    > button {
+        margin-right: $grid-unit-size;
+    }
 }
 
 .cvat-interactor-tip-container {

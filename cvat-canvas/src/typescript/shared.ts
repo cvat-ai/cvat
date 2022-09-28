@@ -361,4 +361,43 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
     }
 }
 
+export function imageDataToDataURL(
+    imageBitmap: number[],
+    width: number,
+    height: number,
+    handleResult: (dataURL: string) => Promise<void>,
+): void {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').putImageData(
+        new ImageData(
+            new Uint8ClampedArray(imageBitmap),
+            width, height,
+        ), 0, 0,
+    );
+
+    const dataURL = canvas.toDataURL('image/png');
+    handleResult(dataURL).finally(() => {
+        URL.revokeObjectURL(dataURL);
+    });
+}
+
+export function alphaChannelOnly(imageData: Uint8ClampedArray): number[] {
+    const alpha = [];
+    for (let i = 3; i < imageData.length; i += 4) {
+        alpha.push(imageData[i] > 0 ? 1 : 0);
+    }
+    return alpha;
+}
+
+export function expandChannels(r: number, g: number, b: number, alpha: number[], endOffset = 0): number[] {
+    const imageBitmap = [];
+    for (let i = 0; i < alpha.length - endOffset; i++) {
+        const val = alpha[i];
+        imageBitmap.push(r, g, b, val * 255);
+    }
+    return imageBitmap;
+}
+
 export type PropType<T, Prop extends keyof T> = T[Prop];
