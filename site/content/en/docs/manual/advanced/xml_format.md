@@ -38,6 +38,7 @@ In annotation mode each image tag has `width` and `height` attributes for the sa
       <labels>
         <label>
           <name>String: name of the label (e.g. car, person)</name>
+          <type>String: any, bbox, cuboid, cuboid_3d, ellipse, polygon, polyline, points, skeleton, tag</type>
           <attributes>
             <attribute>
               <name>String: attribute name</name>
