@@ -75,7 +75,8 @@ Here you can do the following:
 1. Change issue tracker or open issue tracker if it is specified.
 1. Change labels and skeleton.
    You can add new labels or add attributes for the existing labels in the `Raw` mode or the `Constructor` mode.
-   You can also change the color for different labels. By clicking `Setup skeleton` you can create a skeleton for this project.
+   You can also change the color for different labels.
+   By clicking `Setup skeleton` you can create a skeleton for this project.
 
 1. Assigned to — is used to assign a project to a person.
    Start typing an assignee's name and/or choose the right person out of the dropdown list.
