@@ -13,6 +13,7 @@ import Icon, {
 } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
+import message from 'antd/lib/message';
 
 import { getCore } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
@@ -32,6 +33,7 @@ const DraggableArea = (
 );
 
 const MIN_BRUSH_SIZE = 1;
+let polygonFinishingTipShown = false;
 function BrushTools(): React.ReactPortal {
     const dispatch = useDispatch();
     const defaultLabelID = useSelector((state: CombinedState) => state.annotation.drawing.activeLabelID);
@@ -104,6 +106,12 @@ function BrushTools(): React.ReactPortal {
                     onUpdateConfiguration,
                 });
             }
+        }
+
+        if (currentTool.startsWith('polygon-') && !polygonFinishingTipShown) {
+            message.info('Double click the canvas to finish a polygon', 5, () => {
+                polygonFinishingTipShown = true;
+            });
         }
     }, [currentTool, brushSize, brushForm, removeUnderlyingPixels, visible, activeLabelID, editableState]);
 
