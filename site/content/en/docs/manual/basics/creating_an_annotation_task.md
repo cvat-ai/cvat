@@ -243,7 +243,7 @@ Specify full issue tracker's URL if it's necessary.
 
 ### Source storage
 
-Specify source storage for import resources like annotation, backups. It can be a local or a cloud storage.
+Specify source storage for import resources like annotations and backups. It can be a local or a cloud storage. If the task is created in the project, then the `Use project source storage` switch will determine whether to use the default values ​​or specify new ones.
 
 ### Target storage
 
