@@ -299,8 +299,14 @@ export class MasksHandlerImpl implements MasksHandler {
 
             if (isBrushSizeChanging && ['brush', 'eraser'].includes(this.tool?.type)) {
                 const xDiff = position.x - this.resizeBrushToolLatestX;
-                if (this.drawData.onUpdateConfiguration) {
-                    this.drawData.onUpdateConfiguration({
+                let onUpdateConfiguration = null;
+                if (this.isDrawing) {
+                    onUpdateConfiguration = this.drawData.onUpdateConfiguration;
+                } else if (this.isEditing) {
+                    onUpdateConfiguration = this.editData.onUpdateConfiguration;
+                }
+                if (onUpdateConfiguration) {
+                    onUpdateConfiguration({
                         brushTool: {
                             size: Math.trunc(Math.max(1, this.tool.size + xDiff)),
                         },
