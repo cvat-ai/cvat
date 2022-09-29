@@ -869,6 +869,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         return points;
     }
 
+    private renderMasksConvertingBlock(): JSX.Element {
+        const { convertMasksToPolygons } = this.state;
+        return (
+            <Row className='cvat-detector-setups-container'>
+                <Switch
+                    checked={convertMasksToPolygons}
+                    onChange={(checked: boolean) => {
+                        this.setState({ convertMasksToPolygons: checked });
+                    }}
+                />
+                <Text>Convert masks to polygons</Text>
+            </Row>
+        );
+    }
+
     private renderLabelBlock(): JSX.Element {
         const { labels } = this.props;
         const { activeLabelID } = this.state;
@@ -1027,15 +1042,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Dropdown>
                     </Col>
                 </Row>
-                <Row className='cvat-interactors-setups-container'>
-                    <Switch
-                        checked={convertMasksToPolygons}
-                        onChange={(checked: boolean) => {
-                            this.setState({ convertMasksToPolygons: checked });
-                        }}
-                    />
-                    <Text>Convert masks to polygons</Text>
-                </Row>
                 <Row align='middle' justify='end'>
                     <Col>
                         <Button
@@ -1067,6 +1073,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderDetectorBlock(): JSX.Element {
+        const { convertMasksToPolygons } = this.state;
         const {
             jobInstance, detectors, curZOrder, frame, createAnnotations,
         } = this.props;
@@ -1152,10 +1159,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                                 if (!jobLabel || !modelLabel) return null;
 
-                                return new core.classes.ObjectState({
-                                    shapeType: data.type,
+                                const objectData = {
+                                    // shapeType: 'mask',
                                     label: jobLabel,
-                                    points: data.points,
+                                    // points: data.mask,
                                     objectType: ObjectType.SHAPE,
                                     frame,
                                     occluded: false,
@@ -1165,7 +1172,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             const [modelAttr] = Object.entries(body.mapping[modelLabel].attributes)
                                                 .find((value: string[]) => value[1] === attr.name) || [];
                                             const areCompatible = checkAttributesCompatibility(
-                                                model.attributes[modelLabel].find((mAttr) => mAttr.name === modelAttr),
+                                                model.attributes[modelLabel]
+                                                    .find((mAttr) => mAttr.name === modelAttr),
                                                 jobLabel.attributes.find((jobAttr: Attribute) => (
                                                     jobAttr.name === attr.name
                                                 )),
@@ -1179,6 +1187,28 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             return acc;
                                         }, {} as Record<number, string>),
                                     zOrder: curZOrder,
+                                };
+
+                                if (data.type === 'mask' && data.points && convertMasksToPolygons) {
+                                    return new core.classes.ObjectState({
+                                        ...objectData,
+                                        shapeType: 'polygon',
+                                        points: data.points,
+                                    });
+                                }
+
+                                if (data.type === 'mask') {
+                                    return new core.classes.ObjectState({
+                                        ...objectData,
+                                        shapeType: data.type,
+                                        points: data.mask,
+                                    });
+                                }
+
+                                return new core.classes.ObjectState({
+                                    ...objectData,
+                                    shapeType: data.type,
+                                    points: data.points,
                                 });
                             },
                         ).filter((state: any) => state);
@@ -1211,10 +1241,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 </Row>
                 <Tabs type='card' tabBarGutter={8}>
                     <Tabs.TabPane key='interactors' tab='Interactors'>
+                        {this.renderMasksConvertingBlock()}
                         {this.renderLabelBlock()}
                         {this.renderInteractorBlock()}
                     </Tabs.TabPane>
                     <Tabs.TabPane key='detectors' tab='Detectors'>
+                        {this.renderMasksConvertingBlock()}
                         {this.renderDetectorBlock()}
                     </Tabs.TabPane>
                     <Tabs.TabPane key='trackers' tab='Trackers'>

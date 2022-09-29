@@ -200,8 +200,10 @@
     font-size: 20px;
 }
 
+.cvat-detector-setups-container,
 .cvat-interactors-setups-container {
     margin-top: $grid-unit-size;
+    margin-bottom: $grid-unit-size;
 
     > button {
         margin-right: $grid-unit-size;
