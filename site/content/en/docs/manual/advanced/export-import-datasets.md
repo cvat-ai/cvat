@@ -61,7 +61,8 @@ To import a dataset, do the following on the `Project` page:
 ![](/images/image250.jpg)
 
 - You can also import a dataset from an attached cloud storage.
-  Here you should select the annotation format, then select a cloud storage from the list
+  Here you should select the annotation format, then select a cloud storage from the list or use default settings
+  if you have already specified required cloud storage for task or project.
   and specify a zip archive to the text field `File name`.
 
 During the import process, you will be able to track the progress of the import.
