@@ -13,6 +13,8 @@ const {
     jobAnnotationsDummyData,
     frameMetaDummyData,
     cloudStoragesDummyData,
+    webhooksDummyData,
+    webhooksEventsDummyData,
 } = require('./dummy-data.mock');
 
 function QueryStringToJSON(query, ignoreList = []) {
@@ -412,6 +414,71 @@ class ServerProxy {
             }
         }
 
+        async function getWebhooks(filter = '') {
+            const queries = QueryStringToJSON(filter);
+            const result = webhooksDummyData.results.filter((item) => {
+                for (const key in queries) {
+                    if (Object.prototype.hasOwnProperty.call(queries, key)) {
+                        if (queries[key] !== item[key]) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            });
+            return result;
+        }
+
+        async function createWebhook(webhookData) {
+            const id = Math.max(...webhooksDummyData.results.map((item) => item.id)) + 1;
+            webhooksDummyData.results.push({
+                id,
+                description: webhookData.description,
+                target_url: webhookData.target_url,
+                content_type: webhookData.content_type,
+                secret: webhookData.secret,
+                enable_ssl: webhookData.enable_ssl,
+                is_active: webhookData.is_active,
+                events: webhookData.events,
+                organization_id: webhookData.organization_id ? webhookData.organization_id : null,
+                project_id: webhookData.project_id ? webhookData.project_id : null,
+                type: webhookData.type,
+                owner: { id: 1 },
+                created_date: '2022-09-23T06:29:12.337276Z',
+                updated_date: '2022-09-23T06:29:12.337276Z',
+            });
+
+            const result = await getWebhooks(`?id=${id}`);
+            return result[0];
+        }
+
+        async function updateWebhook(webhookID, webhookData) {
+            const webhook = webhooksDummyData.results.find((item) => item.id === webhookID);
+            if (webhook) {
+                for (const prop in webhookData) {
+                    if (
+                        Object.prototype.hasOwnProperty.call(webhookData, prop) &&
+                            Object.prototype.hasOwnProperty.call(webhook, prop)
+                    ) {
+                        webhook[prop] = webhookData[prop];
+                    }
+                }
+            }
+            return webhook;
+        }
+
+        async function receiveWebhookEvents(type) {
+            return webhooksEventsDummyData[type]?.events;
+        }
+
+        async function deleteWebhook(webhookID) {
+            const webhooks = webhooksDummyData.results;
+            const webhookIdx = webhooks.findIndex((item) => item.id === webhookID);
+            if (webhookIdx !== -1) {
+                webhooks.splice(webhookIdx);
+            }
+        }
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -486,6 +553,17 @@ class ServerProxy {
                         update: updateCloudStorage,
                         create: createCloudStorage,
                         delete: deleteCloudStorage,
+                    }),
+                    writable: false,
+                },
+
+                webhooks: {
+                    value: Object.freeze({
+                        get: getWebhooks,
+                        create: createWebhook,
+                        update: updateWebhook,
+                        delete: deleteWebhook,
+                        events: receiveWebhookEvents,
                     }),
                     writable: false,
                 },

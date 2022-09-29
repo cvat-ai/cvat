@@ -438,3 +438,29 @@ export enum StorageLocation {
     LOCAL = 'local',
     CLOUD_STORAGE = 'cloud_storage',
 }
+
+/**
+ * Webhook source types
+ * @enum {string}
+ * @name WebhookSourceType
+ * @memberof module:API.cvat.enums
+ * @property {string} ORGANIZATION 'organization'
+ * @property {string} PROJECT 'project'
+ * @readonly
+*/
+export enum WebhookSourceType {
+    ORGANIZATION = 'organization',
+    PROJECT = 'project',
+}
+
+/**
+ * Webhook content types
+ * @enum {string}
+ * @name WebhookContentType
+ * @memberof module:API.cvat.enums
+ * @property {string} JSON 'json'
+ * @readonly
+*/
+export enum WebhookContentType {
+    JSON = 'application/json',
+}

@@ -27,7 +27,11 @@ CONTAINER_NAME_FILES = [
 
 DC_FILES = [
     osp.join(CVAT_ROOT_DIR, dc_file)
-    for dc_file in ("docker-compose.dev.yml", "tests/docker-compose.minio.yml")
+    for dc_file in (
+        "docker-compose.dev.yml",
+        "tests/docker-compose.minio.yml",
+        "tests/docker-compose.webhook.yml"
+    )
 ] + CONTAINER_NAME_FILES
 
 
@@ -208,7 +212,9 @@ def start_services(rebuild=False):
         )
 
     _run(
-        f"docker-compose -p {PREFIX} -f {' -f '.join(DC_FILES)} up -d "
+        f"docker-compose -p {PREFIX} "
+        + "--env-file " + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
+        + f" -f {' -f '.join(DC_FILES)} up -d "
         + "--build" * rebuild,
         capture_output=False,
     )
@@ -251,7 +257,9 @@ def services(request):
 
         if stop:
             _run(
-                f"docker-compose -p {PREFIX} -f {' -f '.join(DC_FILES)} down -v",
+                f"docker-compose -p {PREFIX} "
+                + "--env-file " + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
+                + f" -f {' -f '.join(DC_FILES)} down -v",
                 capture_output=False,
             )
             pytest.exit("All testing containers are stopped", returncode=0)
