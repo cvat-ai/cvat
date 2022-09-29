@@ -524,9 +524,7 @@ class TaskData(InstanceLabelData):
             ]
             shape['attributes'] = [self._import_attribute(label_id, attrib, mutable=True)
                 for attrib in shape['attributes']
-                if self._get_mutable_attribute_id(label_id, attrib.name) or (
-                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
-                )
+                if self._get_mutable_attribute_id(label_id, attrib.name)
             ]
             shape['points'] = list(map(float, shape['points']))
 
@@ -1101,9 +1099,9 @@ class CVATDataExtractorMixin:
     def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, TaskData.Frame], labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
-        def map_label(name): return label_cat.find(name)[0]
+        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
         label_attrs = {
-            label['name']: label['attributes']
+            label.get('parent', '') + label['name']: label['attributes']
             for _, label in labels
         }
 
@@ -1198,9 +1196,9 @@ class CvatTaskDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
     def _read_cvat_anno(self, cvat_frame_anno: TaskData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
-        def map_label(name, parent=""): return label_cat.find(name, parent)[0]
+        def map_label(name, parent=''): return label_cat.find(name, parent)[0]
         label_attrs = {
-            label.get("parent", "") + label['name']: label['attributes']
+            label.get('parent', '') + label['name']: label['attributes']
             for _, label in labels
         }
 
@@ -1571,6 +1569,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[TaskData,
                     for n, v in ann.attributes.items()
                 ]
 
+                points = []
                 if ann.type in shapes:
                     points = []
                     if ann.type == dm.AnnotationType.cuboid_3d:
@@ -1656,6 +1655,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[TaskData,
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
+                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool) is True
+                                element_outside = dm.util.cast(element.attributes.pop('outside', None), bool) is True
+                                if not element_keyframe and not element_outside:
+                                    continue
+
                                 if element.label not in tracks[track_id]['elements']:
                                     tracks[track_id]['elements'][element.label] = instance_data.Track(
                                         label=label_cat.items[element.label].name,
@@ -1668,7 +1672,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[TaskData,
                                     for n, v in element.attributes.items()
                                 ]
                                 element_occluded = dm.util.cast(element.attributes.pop('occluded', None), bool) is True
-                                element_outside = dm.util.cast(element.attributes.pop('outside', None), bool) is True
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(

@@ -181,11 +181,8 @@ Cypress.Commands.add(
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
     ) => {
-        cy.url().then(($url) => {
-            if (!$url.includes('projects')) {
-                cy.get('.cvat-create-task-dropdown').click();
-            }
-
+        cy.url().then(() => {
+            cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').click({ force: true });
             cy.url().should('include', '/tasks/create');
             cy.get('[id="name"]').type(taskName);

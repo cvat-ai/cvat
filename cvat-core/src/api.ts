@@ -24,6 +24,7 @@ function build() {
     const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
     const Organization = require('./organization');
+    const Webhook = require('./webhook').default;
 
     const enums = require('./enums');
 
@@ -31,7 +32,7 @@ function build() {
         Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
     } = require('./exceptions');
 
-    const User = require('./user');
+    const User = require('./user').default;
     const pjson = require('../package.json');
     const config = require('./config');
 
@@ -854,6 +855,26 @@ function build() {
             },
         },
         /**
+         * This namespace could be used to get webhooks list from the server
+         * @namespace webhooks
+         * @memberof module:API.cvat
+         */
+        webhooks: {
+            /**
+            * Method returns a list of organizations
+            * @method get
+            * @async
+            * @memberof module:API.cvat.webhooks
+            * @returns {module:API.cvat.classes.Webhook[]}
+            * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async get(filter: any) {
+                const result = await PluginRegistry.apiWrapper(cvat.webhooks.get, filter);
+                return result;
+            },
+        },
+        /**
          * Namespace is used for access to classes
          * @namespace classes
          * @memberof module:API.cvat
@@ -874,6 +895,7 @@ function build() {
             FrameData,
             CloudStorage,
             Organization,
+            Webhook,
         },
     };
 

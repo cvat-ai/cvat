@@ -213,13 +213,15 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 204);
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
-        cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-        cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
     } else {
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
-        cy.wait('@restoreProject', { timeout: 3000 }).its('response.statusCode').should('equal', 202);
-        cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
     }
+    cy.wait('@restoreProject').then((interception) => {
+        cy.wrap(interception).its('response.statusCode').should('be.oneOf', [201, 202]);
+        if (interception.response.statusCode === 202) {
+            cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
+        }
+    });
 
     cy.contains('The project has been restored succesfully. Click here to open')
         .should('exist')
