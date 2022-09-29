@@ -21,9 +21,7 @@ You can backup a project or a task locally on your PC or using an [attached clou
 
 ![](/images/image253.jpg)
 
-To use an [attached cloud storage](/docs/manual/basics/attach-cloud-storage/) as a backup,
-you should additionally select the `Cloud storage` value in the `Target storage` string
-and name of the attached cloud storage from `Select cloud storage`.
+If you want to save a backup to a specific [attached cloud storage](/docs/manual/basics/attach-cloud-storage/), you should additionally turn off the switch `Use default settings`, select the `Cloud storage` value in the `Target storage` and select this storage in the list of the attached cloud storages.
 
 ## Create backup APIs
 
