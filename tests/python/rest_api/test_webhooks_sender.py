@@ -130,7 +130,7 @@ class TestWebhookProjectEvents:
         assert payload["project"]["labels"][0]["name"] == patch_data["labels"][0]["name"]
         assert payload["project"]["labels"][0]["color"] == patch_data["labels"][0]["color"]
 
-    def test_create_and_delete_project_event(self, organizations):
+    def test_webhook_create_and_delete_project(self, organizations):
         org_id = list(organizations)[0]["id"]
         events = ["create:project", "delete:project"]
 
@@ -175,6 +175,7 @@ class TestWebhookProjectEvents:
         )
 
 
+@pytest.mark.usefixtures("changedb")
 class TestWebhookIntersection:
     # Test case description:
     #     few webhooks are triggered by the same event
@@ -283,6 +284,82 @@ class TestWebhookIntersection:
             )
             == {}
         )
+
+
+@pytest.mark.usefixtures("changedb")
+class TestWebhookTaskEvents:
+    def test_webhook_update_task_assignee(self, users, tasks):
+        task_id, project_id = next(
+            (
+                (task["id"], task["project_id"])
+                for task in tasks
+                if task["project_id"] is not None
+                and task["organization"] is None
+                and task["assignee"] is not None
+            )
+        )
+
+        assignee_id = next(
+            (user["id"] for user in users if user["id"] != tasks[task_id]["assignee"]["id"])
+        )
+
+        webhook_id = create_webhook(["update:task"], "project", project_id=project_id)["id"]
+
+        patch_data = {"assignee_id": assignee_id}
+        response = patch_method("admin1", f"tasks/{task_id}", patch_data)
+        assert response.status_code == HTTPStatus.OK
+        print("real assignee id", response.json()["assignee"]["id"])
+
+        deliveries, payload = get_deliveries(webhook_id=webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
+        assert payload["task"]["assignee"]["id"] == assignee_id
+
+    def test_webhook_update_task_label(self, tasks):
+        task_id, org_id = next(
+            (
+                (task["id"], task["organization"])
+                for task in tasks
+                if task["project_id"] is None and task["organization"] is not None
+            )
+        )
+
+        webhook_id = create_webhook(["update:task"], "organization", org_id=org_id)["id"]
+
+        patch_data = {"labels": [{"name": "new_label"}]}
+        response = patch_method("admin1", f"tasks/{task_id}", patch_data, org_id=org_id)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_deliveries(webhook_id=webhook_id)
+
+        assert deliveries["count"] == 1
+        assert (
+            len(payload["before_update"]["labels"])
+            == len(tasks[task_id]["labels"])
+            == len(payload["task"]["labels"]) - 1
+        )
+
+    def test_webhook_create_and_delete_task(self):
+        pass
+
+
+@pytest.mark.usefixtures("changedb")
+class TestWebhookJobEvents:
+    def test_webhook_update_job_assignee(self):
+        pass
+
+    def test_webhook_update_job_stage(self):
+        pass
+
+    def test_webhook_update_job_state(self):
+        pass
+
+
+@pytest.mark.usefixtures("changedb")
+class TestWebhookIssueEvents:
+    def test_webhook_create_and_delete_issue(self):
+        pass
 
 
 @pytest.mark.usefixtures("changedb")
