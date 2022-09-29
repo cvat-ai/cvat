@@ -8,7 +8,7 @@ import {
     DrawData, MasksEditData, Geometry, Configuration,
 } from './canvasModel';
 import consts from './consts';
-import { PropType, computeWrappingBox, alphaChannelOnly } from './shared';
+import { PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL } from './shared';
 
 interface WrappingBBox {
     left: number;
@@ -525,32 +525,23 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.splice(-4);
-                const imageBitmap = [];
-                for (let i = 0; i < points.length; i++) {
-                    const alpha = points[i];
-                    imageBitmap.push(color[0], color[1], color[2], alpha * 255);
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = right - left + 1;
-                canvas.height = bottom - top + 1;
-                canvas.getContext('2d').putImageData(
-                    new ImageData(
-                        new Uint8ClampedArray(imageBitmap),
-                        canvas.width,
-                        canvas.height,
-                    ), 0, 0,
-                );
-                const dataURL = canvas.toDataURL('image/png');
-
-                fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
-                    image.selectable = false;
-                    image.evented = false;
-                    image.globalCompositeOperation = 'xor';
-                    this.canvas.add(image);
-                    this.drawnObjects.push(image);
-                    this.canvas.renderAll();
-                    URL.revokeObjectURL(dataURL);
-                }, { left, top });
+                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                    (dataURL: string) => new Promise((resolve) => {
+                        fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
+                            try {
+                                image.selectable = false;
+                                image.evented = false;
+                                image.globalCompositeOperation = 'xor';
+                                image.opacity = 0.5;
+                                this.canvas.add(image);
+                                this.drawnObjects.push(image);
+                                this.canvas.renderAll();
+                            } finally {
+                                resolve();
+                            }
+                        }, { left, top });
+                    }));
 
                 this.isEditing = true;
                 this.startTimestamp = Date.now();
