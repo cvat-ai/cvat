@@ -41,7 +41,7 @@ You can export a dataset to a project, task or job.
 1. You can choose a storage for dataset export by selecting a target storage `Local` or `Cloud storage`.
    The default settings are the settings which had been selected when the project was created
    (for example, if you specified a local storage when you created the project,
-   then by default you will be prompted to export the dataset to your PC).
+   then by default, you will be prompted to export the dataset to your PC).
    You can find out the default value by hovering the mouse over the `?`.
    Learn more about [attach cloud storage](/docs/manual/basics/attach-cloud-storage/).
 
