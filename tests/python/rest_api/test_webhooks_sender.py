@@ -14,7 +14,7 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 
 # Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
-#  - cvat save response body for each delivery
+#  - CVAT save response body for each delivery
 #
 # So idea of this testing system is quite simple:
 #  1) trigger some webhook
@@ -48,8 +48,11 @@ def webhook_spec(events, project_id=None, webhook_type="organization"):
         "type": webhook_type,
     }
 
-def create_webhook(events, webhook_type, project_id=None, org_id=''):
-    assert (webhook_type == "project" and project_id is not None) or (webhook_type == "organization" and org_id)
+
+def create_webhook(events, webhook_type, project_id=None, org_id=""):
+    assert (webhook_type == "project" and project_id is not None) or (
+        webhook_type == "organization" and org_id
+    )
 
     response = post_method(
         "admin1", "webhooks", webhook_spec(events, project_id, webhook_type), org_id=org_id
@@ -57,6 +60,7 @@ def create_webhook(events, webhook_type, project_id=None, org_id=''):
     assert response.status_code == HTTPStatus.CREATED
 
     return response.json()
+
 
 def get_deliveries(webhook_id):
     response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
@@ -69,7 +73,7 @@ def get_deliveries(webhook_id):
 
 
 @pytest.mark.usefixtures("changedb")
-class TestWebhookUpdateProject:
+class TestWebhookProjectEvents:
     def test_webhook_update_project_name(self):
         response = post_method("admin1", "projects", {"name": "project"})
         assert response.status_code == HTTPStatus.CREATED
@@ -85,7 +89,7 @@ class TestWebhookUpdateProject:
         response = get_method("admin1", f"webhooks/{webhook['id']}/deliveries")
         assert response.status_code == HTTPStatus.OK
 
-        deliveries, payload = get_deliveries(webhook['id'])
+        deliveries, payload = get_deliveries(webhook["id"])
 
         assert deliveries["count"] == 1
 
@@ -116,7 +120,7 @@ class TestWebhookUpdateProject:
         response = patch_method("admin1", f"projects/{project['id']}", patch_data)
         assert response.status_code == HTTPStatus.OK
 
-        deliveries, payload = get_deliveries(webhook['id'])
+        deliveries, payload = get_deliveries(webhook["id"])
 
         assert deliveries["count"] == 1
 
@@ -126,7 +130,6 @@ class TestWebhookUpdateProject:
         assert payload["project"]["labels"][0]["name"] == patch_data["labels"][0]["name"]
         assert payload["project"]["labels"][0]["color"] == patch_data["labels"][0]["color"]
 
-class TestWebhookCreateDeleteProject:
     def test_create_and_delete_project_event(self, organizations):
         org_id = list(organizations)[0]["id"]
         events = ["create:project", "delete:project"]
@@ -170,6 +173,117 @@ class TestWebhookCreateDeleteProject:
             )
             == {}
         )
+
+
+class TestWebhookIntersection:
+    # Test case description:
+    #     few webhooks are triggered by the same event
+    # In this case we need to check that CVAT will sent
+    # the right number of payloads to the target url
+
+    def test_project_and_organization_webhooks_intersection(self, organizations):
+        org_id = list(organizations)[0]["id"]
+        post_data = {"name": "project_name"}
+
+        response = post_method("admin1", "projects", post_data, org_id=org_id)
+        assert response.status_code == HTTPStatus.CREATED
+
+        events = ["update:project"]
+        project_id = response.json()["id"]
+        webhook_id_1 = create_webhook(events, "organization", org_id=org_id)["id"]
+        webhook_id_2 = create_webhook(events, "project", project_id=project_id, org_id=org_id)["id"]
+
+        patch_data = {"name": "new_project_name"}
+        response = patch_method("admin1", f"projects/{project_id}", patch_data)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries_1, payload_1 = get_deliveries(webhook_id_1)
+        deliveries_2, payload_2 = get_deliveries(webhook_id_2)
+
+        assert deliveries_1["count"] == deliveries_2["count"] == 1
+
+        assert payload_1["project"]["name"] == payload_2["project"]["name"] == patch_data["name"]
+
+        assert (
+            payload_1["before_update"]["name"]
+            == payload_2["before_update"]["name"]
+            == post_data["name"]
+        )
+
+        assert payload_1["webhook_id"] == webhook_id_1
+        assert payload_2["webhook_id"] == webhook_id_2
+
+        assert deliveries_1["results"][0]["webhook_id"] == webhook_id_1
+        assert deliveries_2["results"][0]["webhook_id"] == webhook_id_2
+
+    def test_two_project_webhooks_intersection(self):
+        post_data = {"name": "project_name"}
+        response = post_method("admin1", "projects", post_data)
+        assert response.status_code == HTTPStatus.CREATED
+
+        project_id = response.json()["id"]
+        events_1 = ["create:task", "update:project"]
+        events_2 = ["create:task", "create:issue"]
+        webhook_id_1 = create_webhook(events_1, "project", project_id=project_id)["id"]
+        webhook_id_2 = create_webhook(events_2, "project", project_id=project_id)["id"]
+
+        post_data = {"name": "project_name", "project_id": project_id}
+        response = post_method("admin1", "tasks", post_data)
+        assert response.status_code == HTTPStatus.CREATED
+
+        deliveries_1, payload_1 = get_deliveries(webhook_id_1)
+        deliveries_2, payload_2 = get_deliveries(webhook_id_2)
+
+        assert deliveries_1["count"] == deliveries_2["count"] == 1
+
+        assert payload_1["event"] == payload_2["event"] == "create:task"
+        assert payload_1["task"]["name"] == payload_2["task"]["name"] == post_data["name"]
+
+        assert payload_1["webhook_id"] == webhook_id_1
+        assert payload_2["webhook_id"] == webhook_id_2
+
+    def test_two_organization_webhook_intersection(self, organizations):
+        org_id = list(organizations)[0]["id"]
+
+        events_1 = ["create:project", "update:membership"]
+        events_2 = ["create:project", "update:job"]
+
+        webhook_id_1 = create_webhook(events_1, "organization", org_id=org_id)["id"]
+        webhook_id_2 = create_webhook(events_2, "organization", org_id=org_id)["id"]
+
+        post_data = {"name": "project_name"}
+        response = post_method("admin1", "projects", post_data, org_id=org_id)
+        assert response.status_code == HTTPStatus.CREATED
+
+        project = response.json()
+
+        deliveries_1, payload_1 = get_deliveries(webhook_id_1)
+        deliveries_2, payload_2 = get_deliveries(webhook_id_2)
+
+        assert deliveries_1["count"] == deliveries_2["count"] == 1
+
+        assert payload_1["webhook_id"] == webhook_id_1
+        assert payload_2["webhook_id"] == webhook_id_2
+
+        assert (
+            DeepDiff(
+                payload_1["project"],
+                project,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
+        assert (
+            DeepDiff(
+                payload_2["project"],
+                project,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
+
 
 @pytest.mark.usefixtures("changedb")
 class TestPingWebhook:
