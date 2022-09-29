@@ -8,21 +8,13 @@ import {
     DrawData, MasksEditData, Geometry, Configuration,
 } from './canvasModel';
 import consts from './consts';
-import { PropType, computeWrappingBox } from './shared';
+import { PropType, computeWrappingBox, alphaChannelOnly } from './shared';
 
 interface WrappingBBox {
     left: number;
     top: number;
     right: number;
     bottom: number;
-}
-
-function alphaChannelOnly(imageData: Uint8ClampedArray): number[] {
-    const alpha = [];
-    for (let i = 3; i < imageData.length; i += 4) {
-        alpha.push(imageData[i] > 0 ? 1 : 0);
-    }
-    return alpha;
 }
 
 export interface MasksHandler {

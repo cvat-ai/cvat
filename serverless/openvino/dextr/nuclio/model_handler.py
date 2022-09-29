@@ -19,7 +19,7 @@ class ModelHandler:
     #   points: [[x1,y1], [x2,y2], [x3,y3], [x4,y4], ...]
     # Output:
     #   polygon: [[x1,y1], [x2,y2], [x3,y3], [x4,y4], ...]
-    #   mask:
+    #   mask: [[a, a, a, a, a, ...], [a, a, a, a, ...], ...]
     def handle(self, image, points):
         DEXTR_PADDING = 50
         DEXTR_TRESHOLD = 0.8
