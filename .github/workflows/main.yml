@@ -381,9 +381,8 @@ jobs:
 
       - name: Build docs
         run: |
-          cp -r /tmp/cvat_sdk/docs/models/* site/content/en/docs/api_sdk/sdk/models
-          cp -r /tmp/cvat_sdk/docs/apis/* site/content/en/docs/api_sdk/sdk/apis
           pip install -r site/requirements.txt
+          python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
           python site/build_docs.py
 
       - name: Deploy
