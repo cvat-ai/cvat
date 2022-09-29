@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import argparse
 import os.path as osp
 import re
 import sys
-from argparse import ArgumentParser
 from glob import glob
 
 from inflection import underscore
@@ -29,7 +29,7 @@ def collect_operations(schema):
     return operations
 
 
-class Processor:
+class Replacer:
     REPLACEMENT_TOKEN = r"%%%"
     ARGS_TOKEN = r"!!!"
 
@@ -123,27 +123,37 @@ def parse_schema(path):
 
 
 def parse_args(args=None):
-    parser = ArgumentParser(
+    parser = argparse.ArgumentParser(
         add_help=True,
-        description="""
-        Processes generator output files in a custom way, saves results inplace.
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="""\
+Processes generator output files in a custom way, saves results inplace.
 
-        Replacement token: '%(repl_token)s'.
-        Args separator token: '%(args_token)s'.
-        Replaces the following patterns in files:
-            '%(repl_token)sREPLACER%(args_token)sARG1%(args_token)sARG2...%(repl_token)s'
-            ->
-            REPLACER(ARG1, ARG2, ...) value
+Replacement token: '%(repl_token)s'.
+Arg separator token: '%(args_token)s'.
+Replaces the following patterns in files:
+    '%(repl_token)sREPLACER%(args_token)sARG1%(args_token)sARG2...%(repl_token)s'
+    ->
+    REPLACER(ARG1, ARG2, ...) value
 
+Available REPLACERs:
+    %(replacers)s
         """
         % {
-            "repl_token": Processor.REPLACEMENT_TOKEN,
-            "args_token": Processor.ARGS_TOKEN,
+            "repl_token": Replacer.REPLACEMENT_TOKEN,
+            "args_token": Replacer.ARGS_TOKEN,
+            "replacers": "\n    ".join(Replacer.allowed_actions),
         },
     )
-    parser.add_argument("--schema", required=True)
-    parser.add_argument("--input-path", required=True)
-    parser.add_argument("--file-ext", default=".py", choices=[".py", ".md"])
+    parser.add_argument("--schema", required=True, help="Path to server schema yaml")
+    parser.add_argument("--input-path", required=True, help="Path to target file or directory")
+    parser.add_argument(
+        "--file-ext",
+        default=".py",
+        choices=[".py", ".md"],
+        help="If working on a directory, look for "
+        "files with the specified extension (default: %(default)s)",
+    )
 
     return parser.parse_args(args)
 
@@ -152,7 +162,7 @@ def main(args=None):
     args = parse_args(args)
 
     schema = parse_schema(args.schema)
-    processor = Processor(schema=schema)
+    processor = Replacer(schema=schema)
 
     if osp.isdir(args.input_path):
         processor.process_dir(args.input_path, file_ext=args.file_ext)
