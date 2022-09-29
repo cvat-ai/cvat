@@ -1,18 +1,13 @@
----
-title: '{{classname}} reference'
-linkTitle: '{{classname}}'
-weight: 10
-description: ''
----
+# {{classname}}
 
 {{#description}}{{.}}
 {{/description}}
 
-All URIs are relative to *{{basePath}}*
+All URIs are relative to _{{basePath}}_
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-{{#operations}}{{#operation}}[**{{>operation_name}}**](%%%make_api_doc_link!!!../{{classname}}%%%#{{>operation_name}}) | **{{httpMethod}}** {{path}} | {{summary}}
+{{#operations}}{{#operation}}[**{{>operation_name}}**]({{classname}}#{{>operation_name}}) | **{{httpMethod}}** {{path}} | {{summary}}
 {{/operation}}{{/operations}}
 
 {{#operations}}
@@ -51,14 +46,14 @@ Method | HTTP request | Description
 {{^allParams}}This endpoint does not need any parameter.{{/allParams}}{{#allParams}}{{#-last}}
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------{{/-last}}{{/allParams}}
-{{#requiredParams}}{{^defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](%%%make_api_doc_link!!!../../models/{{baseType}}%%%){{/baseType}}| {{description}} |
-{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](%%%make_api_doc_link!!!../../models/{{baseType}}%%%){{/baseType}}| {{description}} | defaults to {{{.}}}
-{{/defaultValue}}{{/requiredParams}}{{#optionalParams}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](%%%make_api_doc_link!!!../../models/{{baseType}}%%%){{/baseType}}| {{description}} | [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
+{{#requiredParams}}{{^defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} |
+{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} | defaults to {{{.}}}
+{{/defaultValue}}{{/requiredParams}}{{#optionalParams}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} | [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
 {{/optionalParams}}
 
 ### Return type
 
-{{#returnType}}{{#returnTypeIsPrimitive}}**{{{returnType}}}**{{/returnTypeIsPrimitive}}{{^returnTypeIsPrimitive}}[**{{{returnType}}}**](%%%make_api_doc_link!!!../../models/{{returnBaseType}}%%%){{/returnTypeIsPrimitive}}{{/returnType}}{{^returnType}}void (empty response body){{/returnType}}
+{{#returnType}}{{#returnTypeIsPrimitive}}**{{{returnType}}}**{{/returnTypeIsPrimitive}}{{^returnTypeIsPrimitive}}[**{{{returnType}}}**](../models/{{returnBaseType}}){{/returnTypeIsPrimitive}}{{/returnType}}{{^returnType}}void (empty response body){{/returnType}}
 
 ### Authorization
 

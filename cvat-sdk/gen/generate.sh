@@ -13,7 +13,7 @@ LIB_NAME="cvat_sdk"
 LAYER1_LIB_NAME="${LIB_NAME}/api_client"
 DST_DIR="."
 TEMPLATE_DIR="gen"
-PYTHON_POST_PROCESS_FILE="${TEMPLATE_DIR}/postprocess.py"
+POST_PROCESS_SCRIPT="${TEMPLATE_DIR}/postprocess.py"
 
 mkdir -p "${DST_DIR}/"
 rm -f -r "${DST_DIR}/docs" "${DST_DIR}/${LAYER1_LIB_NAME}" "requirements/"
@@ -35,11 +35,11 @@ cp -r "${TEMPLATE_DIR}/templates/MANIFEST.in" "${DST_DIR}/"
 mv "${DST_DIR}/requirements.txt" "${DST_DIR}/requirements/api_client.txt"
 
 # Do custom postprocessing for code files
-"${PYTHON_POST_PROCESS_FILE}" --schema "schema/schema.yml" --input-path "${DST_DIR}/${LIB_NAME}"
+"${POST_PROCESS_SCRIPT}" --schema "schema/schema.yml" --input-path "${DST_DIR}/${LIB_NAME}"
 
 # Do custom postprocessing for docs files
-"${PYTHON_POST_PROCESS_FILE}" --schema "schema/schema.yml" --input-path "${DST_DIR}/docs" --file-ext '.md'
-"${PYTHON_POST_PROCESS_FILE}" --schema "schema/schema.yml" --input-path "${DST_DIR}/README.md"
+"${POST_PROCESS_SCRIPT}" --schema "schema/schema.yml" --input-path "${DST_DIR}/docs" --file-ext '.md'
+"${POST_PROCESS_SCRIPT}" --schema "schema/schema.yml" --input-path "${DST_DIR}/README.md"
 
 API_DOCS_DIR="${DST_DIR}/docs/apis/"
 MODEL_DOCS_DIR="${DST_DIR}/docs/models/"
@@ -47,4 +47,4 @@ mkdir "${API_DOCS_DIR}"
 mkdir "${MODEL_DOCS_DIR}"
 mv "${DST_DIR}/docs/"*Api.md "${API_DOCS_DIR}"
 mv "${DST_DIR}/docs/"*.md "${MODEL_DOCS_DIR}"
-mv "${DST_DIR}/README.md" "${API_DOCS_DIR}/_index.md.sub"
+mv "${DST_DIR}/README.md" "${DST_DIR}/docs/"

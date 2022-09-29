@@ -69,16 +69,10 @@ class Replacer:
 
         return type_repr
 
-    def make_api_doc_link(self, page: str) -> str:
-        parts = page.split("#", maxsplit=1)
-        parts[0] = parts[0].lower()
-        return "#".join(parts)
-
     allowed_actions = {
         "make_operation_id",
         "make_api_name",
         "make_type_annotation",
-        "make_api_doc_link",
     }
 
     def _process_file(self, contents: str):
@@ -150,7 +144,6 @@ Available REPLACERs:
     parser.add_argument(
         "--file-ext",
         default=".py",
-        choices=[".py", ".md"],
         help="If working on a directory, look for "
         "files with the specified extension (default: %(default)s)",
     )
