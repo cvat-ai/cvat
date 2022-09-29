@@ -600,8 +600,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleOkMultiTasks = (): void => {
-        const { history } = this.props;
-        history.push('/tasks/');
+        const { history, projectId } = this.props;
+        if (projectId) {
+            history.push(`/projects/${projectId}`);
+        } else {
+            history.push('/tasks/');
+        }
     };
 
     private handleRetryCancelledMultiTasks = (): void => {
@@ -803,7 +807,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         } = this.state;
         return (
             <Col span={24}>
-                <Collapse>
+                <Collapse className='cvat-advanced-configuration-wrapper'>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
                             dumpers={dumpers}

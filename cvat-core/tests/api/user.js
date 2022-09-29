@@ -14,7 +14,7 @@ jest.mock('../../src/server-proxy', () => {
 // Initialize api
 window.cvat = require('../../src/api');
 
-const User = require('../../src/user');
+const User = require('../../src/user').default;
 
 // Test cases
 describe('Feature: get a list of users', () => {

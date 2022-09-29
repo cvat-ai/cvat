@@ -816,12 +816,13 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 sublabels = label.pop('sublabels', [])
                 svg = label.pop('svg', '')
                 db_label = LabelSerializer.update_instance(label, instance, parent_label)
-                update_labels(sublabels, parent_label=db_label)
+                if not label.get('deleted'):
+                    update_labels(sublabels, parent_label=db_label)
 
-                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
-                    for db_sublabel in list(db_label.sublabels.all()):
-                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    models.Skeleton.objects.create(root=db_label, svg=svg)
+                    if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
+                        for db_sublabel in list(db_label.sublabels.all()):
+                            svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                        models.Skeleton.objects.create(root=db_label, svg=svg)
 
         update_labels(labels)
 
