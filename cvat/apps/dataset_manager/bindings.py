@@ -1735,17 +1735,20 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
             'data_root': dataset.data_path + osp.sep,
         }
 
+        item_name = ''
         for dataset_item in subset_dataset:
             if dataset_item.image and dataset_item.image.has_data:
                 dataset_files['media'].append(dataset_item.image.path)
+                item_name = dataset_item.id
             elif dataset_item.point_cloud:
                 dataset_files['media'].append(dataset_item.point_cloud)
+                item_name = dataset_item.id
             if isinstance(dataset_item.related_images, list):
                 dataset_files['media'] += \
                     list(map(lambda ri: ri.path, dataset_item.related_images))
 
         if len(dataset_files['media']) == 1:
-            dataset_files['data_root'] = osp.dirname(dataset_files['media'][0])
+            dataset_files['data_root'] = osp.splitext(dataset_files['media'][0])[0].replace(item_name, '')
         elif len(dataset_files['media']):
             dataset_files['data_root'] = osp.commonpath(dataset_files['media']) + osp.sep
 
