@@ -15,7 +15,6 @@ from glob import iglob
 from typing import List
 
 from inflection import underscore
-from matplotlib.pyplot import flag
 
 
 class Processor:
@@ -96,7 +95,7 @@ class Processor:
         return apis_summary
 
     def _move_api_summary(self):
-        SUMMARY_REPLACE_TOKEN = "{{REPLACEME:apis_summary}}"
+        SUMMARY_REPLACE_TOKEN = "{{REPLACEME:apis_summary}}"  # nosec
 
         apis_summary = self._extract_apis_summary(
             osp.join(self._input_dir, "README.md")
