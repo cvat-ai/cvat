@@ -24,7 +24,7 @@ import ObjectStateItemComponent from 'components/annotation-page/standard-worksp
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
 import { Label } from 'cvat-core-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface OwnProps {
@@ -147,6 +147,10 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const { objectState, readonly, canvasInstance } = this.props;
 
         if (!readonly && canvasInstance instanceof Canvas) {
+            if (canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
+            }
+
             canvasInstance.edit({ enabled: true, state: objectState });
         }
     }

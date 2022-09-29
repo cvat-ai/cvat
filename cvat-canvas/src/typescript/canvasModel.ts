@@ -248,6 +248,27 @@ export interface CanvasModel {
     destroy(): void;
 }
 
+const defaultData = {
+    drawData: {
+        enabled: false,
+    },
+    editData: {
+        enabled: false,
+    },
+    interactionData: {
+        enabled: false,
+    },
+    mergeData: {
+        enabled: false,
+    },
+    groupData: {
+        enabled: false,
+    },
+    splitData: {
+        enabled: false,
+    },
+};
+
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
         activeElement: ActiveElement;
@@ -334,28 +355,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             scale: 1,
             top: 0,
             zLayer: null,
-            drawData: {
-                enabled: false,
-                initialState: null,
-            },
-            editData: {
-                enabled: false,
-            },
-            interactionData: {
-                enabled: false,
-            },
-            mergeData: {
-                enabled: false,
-            },
-            groupData: {
-                enabled: false,
-            },
-            splitData: {
-                enabled: false,
-            },
             selected: null,
             mode: Mode.IDLE,
             exception: null,
+            ...defaultData,
         };
     }
 
@@ -629,8 +632,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public edit(editData: MasksEditData): void {
-        // TODO: update API in readme
-
         if (![Mode.IDLE, Mode.EDIT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
@@ -804,6 +805,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public cancel(): void {
+        this.data = {
+            ...this.data,
+            ...defaultData,
+        };
         this.notify(UpdateReasons.CANCEL);
     }
 
