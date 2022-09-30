@@ -6,6 +6,8 @@ import json
 import os.path as osp
 from http import HTTPStatus
 
+from requests import patch
+
 import pytest
 from deepdiff import DeepDiff
 
@@ -593,6 +595,23 @@ class TestWebhookMembershipEvents:
             )
             == {}
         )
+
+
+@pytest.mark.usefixtures("changedb")
+class TestWebhookOrganizationEvents:
+    def test_webhook_update_organization_name(self, organizations):
+        org_id = list(organizations)[0]["id"]
+
+        webhook_id = create_webhook(["update:organization"], "organization", org_id=org_id)["id"]
+
+        patch_data = {"name": "new_org_name"}
+        patch_method("admin1", f"organizations/{org_id}", patch_data, org_id=org_id)
+
+        deliveries, payload = get_deliveries(webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["before_update"]["name"] == organizations[org_id]["name"]
+        assert payload["organization"]["name"] == patch_data["name"]
 
 
 @pytest.mark.usefixtures("changedb")
