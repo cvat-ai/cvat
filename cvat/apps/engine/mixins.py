@@ -338,9 +338,9 @@ class PartialUpdateModelMixin:
 
     def perform_update(self, serializer):
         instance = serializer.instance
-        repr = serializer.to_representation(instance)
+        data = serializer.to_representation(instance)
         old_values = {
-            attr: repr[attr] if attr in repr else getattr(instance, attr, None)
+            attr: data[attr] if attr in data else getattr(instance, attr, None)
             for attr in self.request.data.keys()
         }
 
