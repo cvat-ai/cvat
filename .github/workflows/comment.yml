@@ -37,8 +37,8 @@ jobs:
       - name: Get branch name
         id: get-ref
         run: |
-          BRANCH=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }} | jq -r '.head.ref')
-          echo ::set-output name=ref::${BRANCH}
+          SHA=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }} | jq -r '.head.sha')
+          echo ::set-output name=ref::${SHA}
 
       - name: Send comment. Test are executing
         id: send-status
