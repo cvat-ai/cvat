@@ -306,7 +306,6 @@ class TestWebhookTaskEvents:
         patch_data = {"assignee_id": assignee_id}
         response = patch_method("admin1", f"tasks/{task_id}", patch_data)
         assert response.status_code == HTTPStatus.OK
-        print("real assignee id", response.json()["assignee"]["id"])
 
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
