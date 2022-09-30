@@ -12,7 +12,7 @@ import shutil
 import sys
 import textwrap
 from glob import iglob
-from typing import List
+from typing import Callable, List
 
 from inflection import underscore
 
@@ -50,6 +50,10 @@ class Processor:
         )
 
     def _add_page_headers(self):
+        """
+        Adds headers required by hugo to docs pages
+        """
+
         HEADER_SEPARATOR = "---"
 
         for p in self._reference_files:
@@ -66,7 +70,7 @@ class Processor:
             header = textwrap.dedent(
                 """\
                 %(header_separator)s
-                title: '%(classname)s reference'
+                title: '%(classname)s class reference'
                 linkTitle: '%(classname)s'
                 weight: 10
                 description: ''
@@ -95,6 +99,10 @@ class Processor:
         return apis_summary
 
     def _move_api_summary(self):
+        """
+        Moves API summary section from README to apis/_index
+        """
+
         SUMMARY_REPLACE_TOKEN = "{{REPLACEME:apis_summary}}"  # nosec
 
         apis_summary = self._extract_apis_summary(
@@ -153,45 +161,96 @@ class Processor:
             with open(p, "w") as f:
                 f.write(contents)
 
-    def _fix_parsing_problems(self):
+    def _process_non_code_blocks(
+        self, text: str, handlers: List[Callable[[str], str]]
+    ) -> str:
         """
-        Adds angle brackets to freestanding links, as the linter requires. Such links can appear
-        from the generated model and api descriptions.
-        Adds escapes to freestanding square brackets to make persing correct.
+        Allows to process Markdown documents with passed callbacks. Callbacks are only
+        executed outside code blocks.
         """
 
-        # Borrowed from https://stackoverflow.com/a/31952097
+        used_quotes = ""
+        block_start_pos = 0
+        inside_code_block = False
+        while block_start_pos < len(text):
+            pattern = re.compile(used_quotes or "```|`")
+            next_code_block_quote = pattern.search(text, pos=block_start_pos)
+            if next_code_block_quote is not None:
+                if not used_quotes:
+                    inside_code_block = False
+                    block_end_pos = next_code_block_quote.start(0)
+                    used_quotes = next_code_block_quote.group(0)
+                else:
+                    inside_code_block = True
+                    block_end_pos = next_code_block_quote.end(0)
+                    used_quotes = None
+            else:
+                block_end_pos = len(text)
+
+            if not inside_code_block:
+                block = text[block_start_pos:block_end_pos]
+
+                for handler in handlers:
+                    block = handler(block)
+
+                text = text[:block_start_pos] + block + text[block_end_pos:]
+                block_end_pos = block_start_pos + len(block) + len(used_quotes)
+
+            block_start_pos = block_end_pos
+
+        return text
+
+    def _escape_free_square_brackets(self, text: str) -> str:
+        return re.sub(r"\[([^\[\]]*?)\]([^\(])", r"\[\1\]\2", text)
+
+    def _add_angle_brackets_to_free_links(self, text: str) -> str:
+        # Adapted from https://stackoverflow.com/a/31952097
         URL_REGEX = (
             # Scheme (HTTP, HTTPS):
-            r"(?:(https?):\/\/)?"
+            r"(?:https?:\/\/)"
+            r"(?:"
             # www:
             r"(?:www\.)?"
-            r"("
             # Host and domain (including ccSLD):
-            r"(?:(?:[A-Z0-9][A-Z0-9-]{0,61}[A-Z0-9]\.)+)"
+            r"(?:(?:[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.)+)"
             # TLD:
-            r"([A-Z]{2,6})"
+            r"(?:[a-zA-Z]{2,6})"
             # IP Address:
             r"|(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
             r")"
             # Port:
-            r"(?::(\d{1,5}))?"
+            r"(?::\d{1,5})?"
             # Query path:
-            r"(?:(\/\S+)*)"
+            r"(?:(?:\/\S+)*|\/)"
         )
 
-        for p in self._reference_files:
+        text = re.sub(
+            r"(\A|[\.\s])(" + URL_REGEX + r")([\.\s]|\Z)",
+            r"\1<\2>\3",
+            text,
+            flags=re.MULTILINE,
+        )
+
+        return text
+
+    def _fix_parsing_problems(self):
+        """
+        Adds angle brackets to freestanding links, as the linter requires. Such links can appear
+        from the generated model and api descriptions.
+        Adds escapes to freestanding square brackets to make parsing correct.
+        """
+
+        for p in iglob(self._sdk_reference_dir + "/**/*.md", recursive=True):
             with open(p) as f:
                 contents = f.read()
 
-            contents = re.sub(
-                r"(?:\A|[\.\s])(" + URL_REGEX + r")(?:[\.\s]|\Z)",
-                r"<\1>",
+            contents = self._process_non_code_blocks(
                 contents,
-                flags=re.MULTILINE,
+                [
+                    self._add_angle_brackets_to_free_links,
+                    self._escape_free_square_brackets,
+                ],
             )
-
-            contents = re.sub(r"\[([^\[\]]*?)\]([^\(])", r"\[\1\]\2", contents)
 
             with open(p, "w") as f:
                 f.write(contents)

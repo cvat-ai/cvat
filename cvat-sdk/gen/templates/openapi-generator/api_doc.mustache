@@ -20,26 +20,6 @@ Method | HTTP request | Description
 {{{.}}}{{/notes}}
 
 ### Example
-
-{{#hasAuthMethods}}
-{{#authMethods}}
-{{#isBasic}}
-{{#isBasicBasic}}
-* Basic Authentication ({{name}}):
-{{/isBasicBasic}}
-{{#isBasicBearer}}
-* Bearer{{#bearerFormat}} ({{{.}}}){{/bearerFormat}} Authentication ({{name}}):
-{{/isBasicBearer}}
-{{/isBasic}}
-{{#isApiKey}}
-* Api Key Authentication ({{name}}):
-{{/isApiKey }}
-{{#isOAuth}}
-* OAuth Authentication ({{name}}):
-{{/isOAuth }}
-{{/authMethods}}
-{{/hasAuthMethods}}
-
 {{> api_doc_example }}
 
 ### Parameters
@@ -53,7 +33,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-{{#returnType}}{{#returnTypeIsPrimitive}}**{{{returnType}}}**{{/returnTypeIsPrimitive}}{{^returnTypeIsPrimitive}}[**{{{returnType}}}**](../models/{{returnBaseType}}){{/returnTypeIsPrimitive}}{{/returnType}}{{^returnType}}void (empty response body){{/returnType}}
+{{#returnType}}{{#returnTypeIsPrimitive}}**{{{returnType}}}**{{/returnTypeIsPrimitive}}{{^returnTypeIsPrimitive}}[**{{{returnType}}}**](../models/{{returnBaseType}}){{/returnTypeIsPrimitive}}{{/returnType}}{{^returnType}}None (empty response body){{/returnType}}
 
 ### Authorization
 
