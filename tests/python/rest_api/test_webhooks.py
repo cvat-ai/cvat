@@ -285,7 +285,7 @@ class TestPostWebhooks:
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     def test_cannot_create_non_unique_webhook(self):
-        pytest.skip('Not implemeted yet')
+        pytest.skip('Not implemented yet')
         response = post_method('admin2', 'webhooks', self.proj_webhook)
 
         response = post_method('admin2', 'webhooks', self.proj_webhook)
@@ -983,7 +983,6 @@ class TestDeleteWebhooks:
     def test_member_can_delete_org_webhook(self, role, allow, find_users, organizations,
             webhooks):
         org_webhooks = [w for w in webhooks if w['type'] == 'organization']
-        print(org_webhooks)
         username, org_id, webhook_id = next((
             (user['username'], org['id'], webhook['id'])
             for org in organizations
