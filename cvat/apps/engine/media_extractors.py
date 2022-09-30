@@ -139,6 +139,7 @@ class IMediaReader(ABC):
         mode: str = preview.mode
         if mode == "I;16":
             preview = np.array(preview, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
+            image = image - image.min()                  # In case the used range lies in [a, 2^16] with a > 0
             preview = preview / preview.max() * 255      # Downscale into real numbers of range [0, 255]
             preview = preview.astype(np.uint8)           # Floor to integers of range [0, 255]
             preview = Image.fromarray(preview, mode="L") # 'L' := Unsigned Integer 8, Grayscale
@@ -616,6 +617,7 @@ class IChunkWriter(ABC):
         #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
         if image.mode == "I;16":
             image = np.array(image, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
+            image = image - image.min()              # In case the used range lies in [a, 2^16] with a > 0
             image = image / image.max() * 255        # Downscale into real numbers of range [0, 255]
             image = image.astype(np.uint8)           # Floor to integers of range [0, 255]
             image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
