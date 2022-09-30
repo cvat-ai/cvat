@@ -48,3 +48,5 @@ mkdir "${MODEL_DOCS_DIR}"
 mv "${DST_DIR}/docs/"*Api.md "${API_DOCS_DIR}"
 mv "${DST_DIR}/docs/"*.md "${MODEL_DOCS_DIR}"
 mv "${DST_DIR}/README.md" "${DST_DIR}/docs/"
+
+cp "${TEMPLATE_DIR}/templates/README.md.template" "${DST_DIR}/README.md"
