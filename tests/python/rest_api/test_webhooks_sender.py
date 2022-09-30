@@ -6,8 +6,6 @@ import json
 import os.path as osp
 from http import HTTPStatus
 
-from requests import patch
-
 import pytest
 from deepdiff import DeepDiff
 
