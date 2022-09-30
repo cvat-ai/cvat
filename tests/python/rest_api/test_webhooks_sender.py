@@ -450,6 +450,7 @@ class TestWebhookJobEvents:
         assert payload["job"]["state"] == patch_data["state"]
 
 
+@pytest.mark.usefixtures("changedb")
 class TestWebhookIssueEvents:
     def test_webhook_update_issue_resolved(self, issues, jobs, tasks):
         issue = next(
@@ -538,6 +539,55 @@ class TestWebhookIssueEvents:
             DeepDiff(
                 delete_payload["issue"],
                 issue,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
+
+
+@pytest.mark.usefixtures("changedb")
+class TestWebhookMembershipEvents:
+    def test_webhook_update_membership_role(self, memberships):
+        roles = {"worker", "supervisor", "maintainer"}
+
+        membership = next(
+            (membership for membership in memberships if membership["role"] != "owner")
+        )
+        org_id = membership["organization"]
+
+        webhook_id = create_webhook(["update:membership"], "organization", org_id=org_id)["id"]
+
+        patch_data = {"role": (roles - {membership["role"]}).pop()}
+        response = patch_method(
+            "admin1", f"memberships/{membership['id']}", patch_data, org_id=org_id
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_deliveries(webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["before_update"]["role"] == membership["role"]
+        assert payload["membership"]["role"] == patch_data["role"]
+
+    def test_webhook_delete_membership(self, memberships):
+        membership = next(
+            (membership for membership in memberships if membership["role"] != "owner")
+        )
+        org_id = membership["organization"]
+
+        webhook_id = create_webhook(["delete:membership"], "organization", org_id=org_id)["id"]
+
+        response = delete_method("admin1", f"memberships/{membership['id']}", org_id=org_id)
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        deliveries, payload = get_deliveries(webhook_id)
+
+        assert deliveries["count"] == 1
+        assert (
+            DeepDiff(
+                payload["membership"],
+                membership,
                 ignore_order=True,
                 exclude_paths=["root['updated_date']"],
             )
