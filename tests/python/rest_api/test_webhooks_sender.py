@@ -136,9 +136,7 @@ class TestWebhookProjectEvents:
 
         webhook = create_webhook(events, "organization", org_id=org_id)
 
-        response = post_method(
-            "admin1", "projects", {"name": "test_create_project_webhook"}, org_id=org_id
-        )
+        response = post_method("admin1", "projects", {"name": "project_name"}, org_id=org_id)
         assert response.status_code == HTTPStatus.CREATED
         project = response.json()
 
@@ -340,20 +338,116 @@ class TestWebhookTaskEvents:
             == len(payload["task"]["labels"]) - 1
         )
 
-    def test_webhook_create_and_delete_task(self):
-        pass
+    def test_webhook_create_and_delete_task(self, organizations):
+        org_id = list(organizations)[0]["id"]
+        events = ["create:task", "delete:task"]
+
+        webhook = create_webhook(events, "organization", org_id=org_id)
+
+        post_data = {"name": "task_name", "labels": [{"name": "label_0"}]}
+        response = post_method("admin1", "tasks", post_data, org_id=org_id)
+        assert response.status_code == HTTPStatus.CREATED
+
+        task = response.json()
+
+        deliveries, create_payload = get_deliveries(webhook["id"])
+
+        assert deliveries["count"] == 1
+
+        response = delete_method("admin1", f"tasks/{task['id']}", org_id=org_id)
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        deliveries, delete_payload = get_deliveries(webhook["id"])
+
+        assert deliveries["count"] == 2
+
+        assert create_payload["event"] == "create:task"
+        assert delete_payload["event"] == "delete:task"
+        assert (
+            DeepDiff(
+                create_payload["task"],
+                task,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
+        assert (
+            DeepDiff(
+                delete_payload["task"],
+                task,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
 
 
 @pytest.mark.usefixtures("changedb")
 class TestWebhookJobEvents:
-    def test_webhook_update_job_assignee(self):
-        pass
+    def test_webhook_update_job_assignee(self, jobs, tasks, users):
+        job = next(
+            (
+                job
+                for job in jobs
+                if job["assignee"] is None and tasks[job["task_id"]]["organization"] is not None
+            )
+        )
 
-    def test_webhook_update_job_stage(self):
-        pass
+        org_id = tasks[job["task_id"]]["organization"]
 
-    def test_webhook_update_job_state(self):
-        pass
+        webhook_id = create_webhook(["update:job"], "organization", org_id=org_id)["id"]
+
+        patch_data = {"assignee": list(users)[0]["id"]}
+        response = patch_method("admin1", f"jobs/{job['id']}", patch_data, org_id=org_id)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_deliveries(webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["before_update"]["assignee"] is None
+        assert payload["job"]["assignee"]["id"] == patch_data["assignee"]
+
+    def test_webhook_update_job_stage(self, jobs, tasks):
+        stages = {"annotation", "validation", "acceptance"}
+        job = next((job for job in jobs if tasks[job["task_id"]]["organization"] is not None))
+
+        org_id = tasks[job["task_id"]]["organization"]
+
+        webhook_id = create_webhook(["update:job"], "organization", org_id=org_id)["id"]
+
+        patch_data = {"stage": (stages - {job["stage"]}).pop()}
+        response = patch_method("admin1", f"jobs/{job['id']}", patch_data, org_id=org_id)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_deliveries(webhook_id)
+        assert deliveries["count"] == 1
+        assert payload["before_update"]["stage"] == job["stage"]
+        assert payload["job"]["stage"] == patch_data["stage"]
+
+    def test_webhook_update_job_state(self, jobs, tasks):
+        states = {"new", "in progress", "rejected", "completed"}
+        job = next(
+            (
+                job
+                for job in jobs
+                if tasks[job["task_id"]]["organization"] is not None
+                and job["state"] == "in progress"
+            )
+        )
+
+        org_id = tasks[job["task_id"]]["organization"]
+
+        webhook_id = create_webhook(["update:job"], "organization", org_id=org_id)["id"]
+
+        patch_data = {"state": (states - {job["state"]}).pop()}
+        response = patch_method("admin1", f"jobs/{job['id']}", patch_data, org_id=org_id)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_deliveries(webhook_id)
+        assert deliveries["count"] == 1
+        assert payload["before_update"]["state"] == job["state"]
+        assert payload["job"]["state"] == patch_data["state"]
 
 
 @pytest.mark.usefixtures("changedb")
