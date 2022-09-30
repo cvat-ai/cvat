@@ -98,7 +98,7 @@ jobs:
           gen/generate.sh
           cd ..
 
-          cp cvat-sdk/* /tmp/cvat_sdk/
+          cp -r cvat-sdk/* /tmp/cvat_sdk/
 
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v3
