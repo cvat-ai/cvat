@@ -186,7 +186,7 @@ modified can be different from what is available for reading.
 job.update({'stage': 'validation'})
 ```
 
-The sever object will be updated and the local object will reflect the latest object state
+The server object will be updated and the local object will reflect the latest object state
 after calling this operation.
 
 Note that local objects may fall out of sync with their server counterparts for different reasons.
