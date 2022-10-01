@@ -43,7 +43,8 @@ class Config:
 
 class Client:
     """
-    Manages session and configuration, provides resource location.
+    Provides session management, implements authentication operations
+    and simplifies access to server APIs.
     """
 
     def __init__(
@@ -63,10 +64,10 @@ class Client:
         self.api_client = ApiClient(
             Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
         )
-        """Provides low-level access to CVAT server"""
+        """Provides low-level access to the CVAT server"""
 
         self._repos: Dict[str, Repo] = {}
-        """Cache for created Repository instances"""
+        """A cache for created Repository instances"""
 
     ALLOWED_SCHEMAS = ("https", "http")
 
