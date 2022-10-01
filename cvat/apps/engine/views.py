@@ -41,6 +41,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django_sendfile import sendfile
 
+from cvat.apps.webhooks.signals import signal_create, signal_update
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
@@ -72,7 +73,7 @@ from cvat.apps.engine.serializers import (
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
@@ -97,7 +98,9 @@ class ServerViewSet(viewsets.ViewSet):
         responses={
             '200': AboutSerializer,
         })
-    @action(detail=False, methods=['GET'], serializer_class=AboutSerializer)
+    @action(detail=False, methods=['GET'], serializer_class=AboutSerializer,
+        permission_classes=[] # This endpoint is available for everyone
+    )
     def about(request):
         from cvat import __version__ as cvat_version
         about = {
@@ -270,7 +273,7 @@ class ServerViewSet(viewsets.ViewSet):
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
@@ -307,6 +310,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user,
             organization=self.request.iam_context['organization'])
+        signal_create.send(self, instance=serializer.instance)
 
     @extend_schema(
         summary='Method returns information of the tasks of the project with the selected id',
@@ -710,7 +714,7 @@ class DataChunkGetter:
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = Task.objects.prefetch_related(
@@ -798,11 +802,24 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_update(self, serializer):
         instance = serializer.instance
+
+        old_values = {}
+        old_repr = serializer.to_representation(instance)
+        for attr in self.request.data.keys():
+            old_values[attr] = old_repr[attr] if attr in old_repr \
+                else getattr(instance, attr, None)
+
         updated_instance = serializer.save()
+
         if instance.project:
             instance.project.save()
         if updated_instance.project:
             updated_instance.project.save()
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        signal_update.send(self, instance=serializer.instance, old_values=old_values)
 
     def perform_create(self, serializer):
         instance = serializer.save(owner=self.request.user,
@@ -811,6 +828,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project = instance.project
             db_project.save()
             assert instance.organization == db_project.organization
+        signal_create.send(self, instance=serializer.instance)
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_dirname()
@@ -822,6 +840,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if instance.project:
             db_project = instance.project
             db_project.save()
+
 
     @extend_schema(summary='Method returns a list of jobs for a specific task',
         responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -1472,6 +1491,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+
     @extend_schema(methods=['PATCH'],
         operation_id='jobs_partial_update_annotations_file',
         summary="Allows to upload an annotation file chunk. "
@@ -1486,6 +1506,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
+
 
     @extend_schema(summary='Export job as a dataset in a specific format',
         parameters=[
@@ -1539,6 +1560,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return Response(serializer.data)
 
+
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
@@ -1565,6 +1587,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data, db_job)
+
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
         responses={
@@ -1685,7 +1708,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Issue.objects.all().order_by('-id')
@@ -1717,6 +1740,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        signal_create.send(self, instance=serializer.instance)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
         responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -1765,7 +1789,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Comment.objects.all().order_by('-id')
@@ -1792,6 +1816,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        signal_create.send(self, instance=serializer.instance)
 
 @extend_schema(tags=['users'])
 @extend_schema_view(

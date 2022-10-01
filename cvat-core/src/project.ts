@@ -9,7 +9,7 @@ import { Storage } from './storage';
 const PluginRegistry = require('./plugins').default;
 const { ArgumentError } = require('./exceptions');
 const { Label } = require('./labels');
-const User = require('./user');
+const User = require('./user').default;
 const { FieldUpdateTrigger } = require('./common');
 
 /**
