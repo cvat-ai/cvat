@@ -9,16 +9,17 @@ import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 import {
-    removeObject as removeObjectAction,
+    removeObjects as removeObjectsAction,
 } from 'actions/annotation-actions';
 import { CombinedState, ObjectType } from 'reducers';
+import ObjectState from 'cvat-core/src/object-state';
 
 interface StateToProps {
     states: any[];
 }
 
 interface DispatchToProps {
-    removeObject(objectState: any): void;
+    removeObjects(objectStates: ObjectState[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -33,10 +34,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, Record<string, never>, Action>): DispatchToProps {
     return {
-        removeObject(objectState: any): void {
-            dispatch(removeObjectAction(objectState, false));
+        removeObjects(objectStates: ObjectState[]): void {
+            dispatch(removeObjectsAction(objectStates, false));
         },
     };
 }
@@ -44,13 +45,13 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
 function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         states,
-        removeObject,
+        removeObjects,
     } = props;
 
     const [frameTags, setFrameTags] = useState([] as any[]);
 
     const onRemoveState = (objectState: any): void => {
-        removeObject(objectState);
+        removeObjects([objectState]);
     };
 
     useEffect(() => {

@@ -14,7 +14,7 @@ import {
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
     activateObjects as activateObjectsAction,
-    removeObject as removeObjectAction,
+    removeObjects as removeObjectsAction,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
@@ -54,7 +54,7 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
     activateObjects: (activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean) => void;
-    removeObject: (objectState: any, force: boolean) => void;
+    removeObjects: (objectStates: ObjectState[], force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeGroupColor(group: number, color: string): void;
@@ -108,8 +108,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         activateObjects(activatedStateIDs: number[], activatedElementID: number | null, multiSelect: boolean): void {
             dispatch(activateObjectsAction(activatedStateIDs, activatedElementID, null, multiSelect));
         },
-        removeObject(objectState: any): void {
-            dispatch(removeObjectAction(objectState, false));
+        removeObjects(objectStates: ObjectState[]): void {
+            dispatch(removeObjectsAction(objectStates, false));
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
@@ -142,11 +142,11 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private remove = (): void => {
         const {
-            objectState, readonly, removeObject,
+            objectState, readonly, removeObjects,
         } = this.props;
 
         if (!readonly) {
-            removeObject(objectState, false);
+            removeObjects([objectState], false);
         }
     };
 

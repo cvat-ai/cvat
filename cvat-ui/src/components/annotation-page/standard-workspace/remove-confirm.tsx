@@ -8,31 +8,40 @@ import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 
 import Modal from 'antd/lib/modal';
-import { removeObjectAsync, removeObject as removeObjectAction } from 'actions/annotation-actions';
+import { removeObjectsAsync, removeObjects as removeObjectsAction } from 'actions/annotation-actions';
 
 export default function RemoveConfirmComponent(): JSX.Element | null {
     const [visible, setVisible] = useState(false);
     const [title, setTitle] = useState('');
-    const objectState = useSelector((state: CombinedState) => state.annotation.remove.objectState);
+    const objectStates = useSelector((state: CombinedState) => state.annotation.remove.objectStates);
     const force = useSelector((state: CombinedState) => state.annotation.remove.force);
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance);
     const dispatch = useDispatch();
 
     const onOk = useCallback(() => {
-        dispatch(removeObjectAsync(jobInstance, objectState, true));
-    }, [jobInstance, objectState]);
+        dispatch(removeObjectsAsync(jobInstance, objectStates, true));
+    }, [jobInstance, objectStates]);
     const onCancel = useCallback(() => {
-        dispatch(removeObjectAction(null, false));
+        dispatch(removeObjectsAction([], false));
     }, []);
 
     useEffect(() => {
-        const newVisible = !!objectState && !force && objectState.lock;
-        setTitle(objectState?.lock ? 'Object is locked' : 'Remove object');
-        setVisible(newVisible);
-        if (!newVisible && objectState) {
-            dispatch(removeObjectAsync(jobInstance, objectState, true));
+        if (objectStates.length === 0) {
+            // No pending objects to delete
+            setVisible(false);
+            return;
         }
-    }, [objectState, force]);
+        const anyLocked = !!objectStates.find((os) => os.lock);
+        const newVisible = !force && anyLocked;
+        setTitle(anyLocked ? 'Object is locked' : 'Remove object');
+        setVisible(newVisible);
+
+        // If none of the objects are locked then the dialog doesn't show, but the object removal still flows
+        // through here!!!
+        if (!newVisible) {
+            dispatch(removeObjectsAsync(jobInstance, objectStates, true));
+        }
+    }, [objectStates, force]);
 
     return (
         <Modal

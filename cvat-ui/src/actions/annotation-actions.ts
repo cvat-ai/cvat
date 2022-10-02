@@ -11,7 +11,7 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, ObjectState } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -531,20 +531,23 @@ export function changePropagateFrames(frames: number): AnyAction {
     };
 }
 
-export function removeObjectAsync(sessionInstance: any, objectState: any, force: boolean): ThunkAction {
+export function removeObjectsAsync(sessionInstance: any, objectStates: ObjectState[], force: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             await sessionInstance.logger.log(LogType.deleteObject, { count: 1 });
             const { frame } = receiveAnnotationsParameters();
 
-            const removed = await objectState.delete(frame, force);
+            let removed = true;
+            for (const objectState of objectStates) {
+                removed = removed && await objectState.delete(frame, force);
+            }
             const history = await sessionInstance.actions.get();
 
             if (removed) {
                 dispatch({
                     type: AnnotationActionTypes.REMOVE_OBJECT_SUCCESS,
                     payload: {
-                        objectState,
+                        objectStates,
                         history,
                     },
                 });
@@ -562,11 +565,11 @@ export function removeObjectAsync(sessionInstance: any, objectState: any, force:
     };
 }
 
-export function removeObject(objectState: any, force: boolean): AnyAction {
+export function removeObjects(objectStates: ObjectState[], force: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.REMOVE_OBJECT,
         payload: {
-            objectState,
+            objectStates,
             force,
         },
     };

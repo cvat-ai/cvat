@@ -10,6 +10,7 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 import { Label } from 'cvat-core/src/labels';
+import ObjectState from 'cvat-core/src/object-state';
 import {
     ActiveControl,
     AnnotationState,
@@ -108,7 +109,7 @@ const defaultState: AnnotationState = {
         frames: 50,
     },
     remove: {
-        objectState: null,
+        objectStates: [],
         force: false,
     },
     statistics: {
@@ -809,19 +810,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.REMOVE_OBJECT: {
-            const { objectState, force } = action.payload;
+            const { objectStates, force } = action.payload;
             return {
                 ...state,
                 remove: {
                     ...state.remove,
-                    objectState,
+                    objectStates,
                     force,
                 },
             };
         }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
-            const { objectState, history } = action.payload;
-            const newContextMenuIds = state.canvas.contextMenu.clientIDs.filter((id) => id !== objectState.clientID);
+            const { objectStates, history } = action.payload;
+            const newContextMenuIds = state.canvas.contextMenu.clientIDs.filter((id) => !objectStates.find((os: ObjectState) => os.clientID === id));
 
             return {
                 ...state,
@@ -830,7 +831,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     history,
                     activatedStateIDs: newContextMenuIds,
                     states: state.annotations.states.filter(
-                        (_objectState: any) => _objectState.clientID !== objectState.clientID,
+                        (_objectState: any) => !objectStates.find((os: ObjectState) => os.clientID === _objectState.clientID),
                     ),
                 },
                 canvas: {
@@ -842,7 +843,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     },
                 },
                 remove: {
-                    objectState: null,
+                    objectStates: [],
                     force: false,
                 },
             };
@@ -851,7 +852,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             return {
                 ...state,
                 remove: {
-                    objectState: null,
+                    objectStates: [],
                     force: false,
                 },
             };

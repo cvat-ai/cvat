@@ -7,6 +7,7 @@ import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrap
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
+import ObjectState from 'cvat-core/src/object-state';
 
 export type StringObject = {
     [index: string]: string;
@@ -638,7 +639,7 @@ export interface AnnotationState {
         frames: number;
     };
     remove: {
-        objectState: any;
+        objectStates: ObjectState[];
         force: boolean;
     }
     statistics: {

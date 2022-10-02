@@ -17,7 +17,7 @@ import Text from 'antd/lib/typography/Text';
 
 import {
     createAnnotationsAsync,
-    removeObject as removeObjectAction,
+    removeObjects as removeObjectsAction,
     changeFrameAsync,
     rememberObject,
 } from 'actions/annotation-actions';
@@ -26,7 +26,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, ObjectState } from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ShortcutsSelect from './shortcuts-select';
@@ -45,7 +45,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    removeObject(objectState: any): void;
+    removeObjects(objectStates: ObjectState[]): void;
     createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void;
     changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onRememberObject(labelID: number): void;
@@ -76,7 +76,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, Record<string, never>, Action>): DispatchToProps {
     return {
         changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void {
             dispatch(changeFrameAsync(frame, fillBuffer, frameStep));
@@ -84,8 +84,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
         createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void {
             dispatch(createAnnotationsAsync(jobInstance, frame, objectStates));
         },
-        removeObject(objectState: any): void {
-            dispatch(removeObjectAction(objectState, false));
+        removeObjects(objectStates: ObjectState[]): void {
+            dispatch(removeObjectsAction(objectStates, false));
         },
         onRememberObject(labelID: number): void {
             dispatch(rememberObject({ activeObjectType: ObjectType.TAG, activeLabelID: labelID }));
@@ -97,7 +97,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     const {
         states,
         labels,
-        removeObject,
+        removeObjects,
         jobInstance,
         changeFrame,
         canvasInstance,
@@ -170,7 +170,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
 
     const onRemoveState = (labelID: number): void => {
         const objectState = frameTags.find((tag: any): boolean => tag.label.id === labelID);
-        if (objectState) removeObject(objectState);
+        if (objectState) removeObjects([objectState]);
     };
 
     const onChangeFrame = (): void => {

@@ -109,7 +109,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                     <List
                         itemCount={groupedObjects.length}
                         itemSize={(index: number) => getRowSize(groupedObjects, collapsedStates, index)}
-                        height={height}
+                        height={height - 50}
                         width={width}
                         ref={listRef}
                     >

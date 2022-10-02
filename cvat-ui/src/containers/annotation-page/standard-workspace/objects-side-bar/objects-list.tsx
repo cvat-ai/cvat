@@ -15,7 +15,7 @@ import {
     changeGroupColorAsync,
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
-    removeObject as removeObjectAction,
+    removeObjects as removeObjectsAction,
     collapseAll,
     collapseLabelGroups,
 } from 'actions/annotation-actions';
@@ -54,7 +54,7 @@ interface DispatchToProps {
     updateAnnotations(states: any[]): void;
     collapseAll(value: boolean): void;
     collapseLabelGroups(labelIDs: number[], value: boolean): void;
-    removeObject: (objectState: any, force: boolean) => void;
+    removeObjects: (objectStates: ObjectState[], force: boolean) => void;
     copyShape: (objectState: any) => void;
     propagateObject: (objectState: any) => void;
     changeFrame(frame: number): void;
@@ -137,8 +137,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         collapseLabelGroups(labelIDs: number[], value: boolean): void {
             dispatch(collapseLabelGroups(labelIDs, value));
         },
-        removeObject(objectState: ObjectState, force: boolean): void {
-            dispatch(removeObjectAction(objectState, force));
+        removeObjects(objectStates: ObjectState[], force: boolean): void {
+            dispatch(removeObjectsAction(objectStates, force));
         },
         copyShape(objectState: ObjectState): void {
             dispatch(copyShapeAction(objectState));
@@ -277,7 +277,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             collapsedLabelStates,
             updateAnnotations,
             changeGroupColor,
-            removeObject,
+            removeObjects,
             copyShape,
             propagateObject,
             changeFrame,
@@ -406,10 +406,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const states = getActivatedStates();
                 if (!readonly && states.length) {
-                    // ROBTODO: look into doing as single atomic change
-                    for (const state of states) {
-                        removeObject(state, event ? event.shiftKey : false);
-                    }
+                    removeObjects(states, event ? event.shiftKey : false);
                 }
             },
             CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {
