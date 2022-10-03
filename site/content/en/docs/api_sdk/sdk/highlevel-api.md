@@ -28,9 +28,9 @@ with make_client(host="localhost", credentials=('user', 'password')) as client:
     # Let's create a new task.
 
     # Fill in task parameters first.
-    # Models are used the same way as in the layer 1
+    # Models are used the same way as in the layer 1.
     task_spec = {
-        "name": "example task,
+        "name": "example task",
         "labels": [
             {
                 "name": "car",
@@ -57,9 +57,9 @@ with make_client(host="localhost", credentials=('user', 'password')) as client:
         resources=['image1.jpg', 'image2.png'],
     )
 
-    # The returned task object is already up-to-date with its server counterpart
+    # The returned task object is already up-to-date with its server counterpart.
     # Now we can access task fields. The fields are read-only and can be optional.
-    # Let's check that we have 2 images in the task data
+    # Let's check that we have 2 images in the task data.
     assert task.size == 2
 
     # If an object is modified on the server, the local object is not updated automatically.
@@ -134,7 +134,7 @@ it will be deduced automatically.
 
 > The checks are performed in the following
 order: `https` (with the default port 8080), `http` (with the default port 80).
-In some cases it may lead to incorrect results - eg. you have 2 servers running on the
+In some cases it may lead to incorrect results - e.g. you have 2 servers running on the
 same host at default ports. In such cases just specify the schema manually: `https://localhost`.
 
 When the server is located, its version is checked. If an unsupported version is found,
@@ -152,7 +152,7 @@ _Entities_ represent objects on the server. They provide read access to object f
 and implement additional relevant operations, including both the general Read-Update-Delete and
 object-specific ones. The set of available general operations depends on the object type.
 
-_Repositories_ provide management operations for corresponding Entities. Typically, you don't
+_Repositories_ provide management operations for corresponding Entities. You don't
 need to create Repository objects manually. To obtain a Repository object, use the
 corresponding `Client` instance member:
 
