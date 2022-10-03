@@ -9,7 +9,7 @@ import {
 } from './canvasModel';
 import consts from './consts';
 import {
-    PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL,
+    PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL, rotate2DPoints,
 } from './shared';
 
 interface WrappingBBox {
@@ -350,7 +350,19 @@ export class MasksHandlerImpl implements MasksHandler {
         });
 
         this.canvas.on('mouse:move', (e: fabric.IEvent<MouseEvent>) => {
-            const position = { x: e.pointer.x, y: e.pointer.y };
+            let { image: { width: imageWidth, height: imageHeight } } = this.geometry;
+            const { angle } = this.geometry;
+            let [x, y] = [e.pointer.x, e.pointer.y];
+            if (angle === 180) {
+                [x, y] = rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
+            } else if (angle) {
+                // TODO: find a solution
+                // [x, y] = [(x / this.canvas.width) * imageWidth, (y / this.canvas.height) * imageHeight];
+                // [x, y] = [y, x];
+                // [x, y] = rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
+            }
+
+            const position = { x, y };
             const {
                 tool, isMouseDown, isInsertion, isBrushSizeChanging,
             } = this;
@@ -358,8 +370,8 @@ export class MasksHandlerImpl implements MasksHandler {
             if (isInsertion) {
                 const [object] = this.drawnObjects;
                 if (object && object instanceof fabric.Image) {
-                    object.left = e.pointer.x - object.width / 2;
-                    object.top = e.pointer.y - object.height / 2;
+                    object.left = position.x - object.width / 2;
+                    object.top = position.y - object.height / 2;
                     this.canvas.renderAll();
                 }
             }
@@ -475,7 +487,7 @@ export class MasksHandlerImpl implements MasksHandler {
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
         const {
-            image: { width, height }, scale, angle, top, left,
+            scale, angle, image: { width, height }, top, left,
         } = geometry;
 
         const topCanvas = this.canvas.getElement().parentElement as HTMLDivElement;

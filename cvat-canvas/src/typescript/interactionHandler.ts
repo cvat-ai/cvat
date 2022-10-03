@@ -311,6 +311,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             const image = this.canvas.image().attr({
                 'color-rendering': 'optimizeQuality',
                 'shape-rendering': 'geometricprecision',
+                'pointer-events': 'none',
                 opacity: 0.5,
             }).addClass('cvat_canvas_interact_intermediate_shape');
             image.move(this.geometry.offset, this.geometry.offset);
