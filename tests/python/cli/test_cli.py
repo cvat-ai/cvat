@@ -7,9 +7,10 @@ import json
 import os
 from pathlib import Path
 
+import packaging.version as pv
 import pytest
 from cvat_cli.cli import CLI
-from cvat_sdk import make_client
+from cvat_sdk import Client, make_client
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
@@ -189,6 +190,17 @@ class TestCLI:
         assert task_id
         assert task_id != fxt_new_task.id
         assert self.client.tasks.retrieve(task_id).size == fxt_new_task.size
+
+    def test_can_warn_on_mismatching_server_version(self, monkeypatch, caplog):
+        def mocked_version(_):
+            return pv.Version("0")
+
+        # We don't actually run a separate process in the tests here, so it works
+        monkeypatch.setattr(Client, "get_server_version", mocked_version)
+
+        self.run_cli("ls")
+
+        assert "Server version '0' is not compatible with SDK version" in caplog.text
 
     @pytest.mark.parametrize("verify", [True, False])
     def test_can_control_ssl_verification_with_arg(self, monkeypatch, verify: bool):
