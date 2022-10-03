@@ -14,7 +14,7 @@ import Webhook from './webhook';
 import Comment from './comment';
 import Issue from './issue';
 import Organization from './organization';
-
+import CloudStorage from './cloud-storage';
 /**
  * External API which should be used by for development
  * @module API
@@ -26,7 +26,6 @@ const MLModel = require('./ml-model');
 const { Job, Task } = require('./session');
 const { Attribute, Label } = require('./labels');
 const { FrameData } = require('./frames');
-const { CloudStorage } = require('./cloud-storage');
 
 const enums = require('./enums');
 
