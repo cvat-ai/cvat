@@ -40,13 +40,14 @@ class CVATRleToCOCORle(ItemTransform):
     @staticmethod
     def convert_mask(mask, img_h, img_w):
         rle = mask.points[:-4]
-        left, top, right = list(int(v) for v in mask.points[-4:-1])
+        left, top, right = list(math.trunc(v) for v in mask.points[-4:-1])
         mat = np.zeros((img_h, img_w), dtype=np.uint8)
-        width = right - left
+        width = right - left + 1
         value = 0
         offset = 0
         for rleCount in rle:
-            while (rleCount):
+            rleCount = math.trunc(rleCount)
+            while (rleCount > 0):
                 x, y = offset % width, offset // width
                 mat[y + top][x + left] = value
                 rleCount -= 1
@@ -54,7 +55,7 @@ class CVATRleToCOCORle(ItemTransform):
             value = abs(value - 1)
 
         rle = mask_utils.encode(np.asfortranarray(mat))
-        return datum_annotation.RleMask(rle=rle, label=mask.label, z_order=mask.z_order,
+        return dm.RleMask(rle=rle, label=mask.label, z_order=mask.z_order,
             attributes=mask.attributes, group=mask.group)
 
 class EllipsesToMasks:
