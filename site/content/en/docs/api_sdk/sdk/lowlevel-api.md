@@ -203,8 +203,6 @@ _ProjectsApi_ | **projects_retrieve** | **GET** /api/projects/{id} | Method retu
 _ProjectsApi_ | **projects_retrieve_annotations** | **GET** /api/projects/{id}/annotations | Method allows to download project annotations
 _ProjectsApi_ | **projects_retrieve_backup** | **GET** /api/projects/{id}/backup | Methods creates a backup copy of a project
 _ProjectsApi_ | **projects_retrieve_dataset** | **GET** /api/projects/{id}/dataset/ | Export project as a dataset in a specific format
-_RestrictionsApi_ | **restrictions_retrieve_terms_of_use** | **GET** /api/restrictions/terms-of-use | Method provides CVAT terms of use
-_RestrictionsApi_ | **restrictions_retrieve_user_agreements** | **GET** /api/restrictions/user-agreements | Method provides user agreements that the user must accept to register
 _SchemaApi_ | **schema_retrieve** | **GET** /api/schema/ |
 _ServerApi_ | **server_create_exception** | **POST** /api/server/exception | Method saves an exception from a client on the server
 _ServerApi_ | **server_create_logs** | **POST** /api/server/logs | Method saves logs from a client on the server

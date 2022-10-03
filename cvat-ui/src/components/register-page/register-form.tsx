@@ -89,7 +89,7 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
         const [agreement] = userAgreements
             .filter((userAgreement: UserAgreement): boolean => userAgreement.name === name);
         if (agreement.required && !value) {
-            return Promise.reject(new Error(`You must accept ${agreement.displayText} to continue!`));
+            return Promise.reject(new Error(`You must accept ${agreement.urlDisplayText} to continue!`));
         }
 
         return Promise.resolve();
@@ -242,10 +242,12 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     ]}
                 >
                     <Checkbox>
-                        I read and accept the
-                        <a rel='noopener noreferrer' target='_blank' href={userAgreement.url}>
-                            {` ${userAgreement.displayText}`}
-                        </a>
+                        {userAgreement.textPrefix}
+                        {!!userAgreement.url &&
+                            <a rel='noopener noreferrer' target='_blank' href={userAgreement.url}>
+                                {` ${userAgreement.urlDisplayText}`}
+                            </a>
+                        }
                     </Checkbox>
                 </Form.Item>
             ))}
