@@ -612,7 +612,7 @@ class TestWebhookOrganizationEvents:
 
 
 @pytest.mark.usefixtures("changedb")
-class TestPingWebhook:
+class TestWebhookPint:
     def test_ping_webhook(self, projects):
         project_id = list(projects)[0]["id"]
 
@@ -629,6 +629,54 @@ class TestPingWebhook:
             DeepDiff(
                 payload["webhook"],
                 webhook,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
+
+
+@pytest.mark.usefixtures("changedb")
+class TestWebhookRedelivery:
+    def test_webhook_redelivery(self, projects):
+        project = list(projects)[0]
+
+        webhook_id = create_webhook(["update:project"], "project", project_id=project["id"])["id"]
+
+        patch_data = {"name": "new_project_name"}
+        response = patch_method("admin1", f"projects/{project['id']}", patch_data)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries_1, payload_1 = get_deliveries(webhook_id)
+        delivery_id = deliveries_1["results"][0]["id"]
+
+        response = post_method(
+            "admin1", f"webhooks/{webhook_id}/deliveries/{delivery_id}/redelivery", {}
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries_2, payload_2 = get_deliveries(webhook_id)
+
+        assert deliveries_1["count"] == 1
+        assert deliveries_2["count"] == 2
+
+        assert deliveries_1["results"][0]["redelivery"] is False
+        assert deliveries_2["results"][0]["redelivery"] is True
+
+        project.update(patch_data)
+        assert (
+            DeepDiff(
+                payload_1["project"],
+                project,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
+        assert (
+            DeepDiff(
+                payload_2["project"],
+                project,
                 ignore_order=True,
                 exclude_paths=["root['updated_date']"],
             )
