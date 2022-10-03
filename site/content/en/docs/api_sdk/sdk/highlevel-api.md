@@ -8,8 +8,8 @@ description: ''
 ## Overview
 
 This layer provides high-level APIs, allowing easier access to server operations.
-API includes _Repositories_ and _Entities_. _Repositories_ provide management
-operations for _Entities_. _Entities_ represent objects on the server
+API includes _Repositories_ and _Entities_. Repositories provide management
+operations for Entities. Entities represent objects on the server
 (e.g. projects, tasks, jobs etc) and simplify interaction with them. The key difference
 from the low-level API is that operations on this layer are not limited by a single
 server request per operation and encapsulate low-level request machinery behind a high-level
@@ -91,7 +91,7 @@ A `Client` instance allows you to:
 - check server API compatibility with the current SDK version
 - deduce server connection scheme (`https` or `http`) automatically
 - manage user session with the `login()`, `logout()` and other methods
-- obtain _Repository_ objects with the `users`, `tasks`, `jobs` and other members
+- obtain Repository objects with the `users`, `tasks`, `jobs` and other members
 - reach to lower-level APIs with the corresponding members
 
 An instance of `Client` can be created directly by calling the class constructor
@@ -152,8 +152,8 @@ _Entities_ represent objects on the server. They provide read access to object f
 and implement additional relevant operations, including both the general Read-Update-Delete and
 object-specific ones. The set of available general operations depends on the object type.
 
-_Repositories_ provide management operations for corresponding _Entities_. Typically, you don't
-need to create _Repository_ objects manually. To obtain a _Repository_ object, use the
+_Repositories_ provide management operations for corresponding Entities. Typically, you don't
+need to create Repository objects manually. To obtain a Repository object, use the
 corresponding `Client` instance member:
 
 ```python
@@ -164,7 +164,7 @@ client.users
 ...
 ```
 
-An _Entity_ can be created on the server with the corresponding _Repository_ method `create()`:
+An Entity can be created on the server with the corresponding Repository method `create()`:
 
 ```python
 task = client.tasks.create(<task config>)
