@@ -5,10 +5,12 @@
 import { fabric } from 'fabric';
 
 import {
-    DrawData, MasksEditData, Geometry, Configuration,
+    DrawData, MasksEditData, Geometry, Configuration, BrushTool,
 } from './canvasModel';
 import consts from './consts';
-import { PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL } from './shared';
+import {
+    PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL,
+} from './shared';
 
 interface WrappingBBox {
     left: number;
@@ -40,6 +42,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private redraw: number | null;
     private isDrawing: boolean;
     private isEditing: boolean;
+    private isInsertion: boolean;
     private isMouseDown: boolean;
     private isBrushSizeChanging: boolean;
     private resizeBrushToolLatestX: number;
@@ -116,6 +119,15 @@ export class MasksHandlerImpl implements MasksHandler {
         }
     }
 
+    private releasePaste(): void {
+        this.canvas.clear();
+        this.canvas.renderAll();
+        this.canvas.getElement().parentElement.style.display = '';
+        this.isInsertion = false;
+        this.drawnObjects = [];
+        this.onDrawDone(null);
+    }
+
     private releaseDraw(): void {
         this.removeBrushMarker();
         this.canvas.clear();
@@ -173,6 +185,15 @@ export class MasksHandlerImpl implements MasksHandler {
                     };
                 }
 
+                if (obj instanceof fabric.Image) {
+                    return {
+                        left: obj.left,
+                        top: obj.top,
+                        width: obj.width,
+                        height: obj.height,
+                    };
+                }
+
                 return obj.getBoundingRect();
             })
             .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
@@ -198,6 +219,21 @@ export class MasksHandlerImpl implements MasksHandler {
                 wrappingBBox.right - wrappingBBox.left + 1, wrappingBBox.bottom - wrappingBBox.top + 1,
             ).data;
         return imageData;
+    }
+
+    private updateBrushTools(brushTool: BrushTool, opts: Partial<BrushTool> = {}): void {
+        if (this.tool?.type.startsWith('polygon-') && this.drawablePolygon && brushTool.type !== this.tool.type) {
+            // tool was switched from polygon to brush for example
+            this.keepDrawnPolygon();
+        }
+
+        this.tool = { ...brushTool, ...opts };
+
+        // setup new brush marker
+        this.removeBrushMarker();
+        if (this.isDrawing || this.isEditing) {
+            this.setupBrushMarker();
+        }
     }
 
     public constructor(
@@ -249,10 +285,30 @@ export class MasksHandlerImpl implements MasksHandler {
         });
 
         this.canvas.on('mouse:down', (options: fabric.IEvent<MouseEvent>) => {
-            const { tool, isDrawing, isEditing } = this;
+            const {
+                tool, isDrawing, isEditing, isInsertion,
+            } = this;
             const point = new fabric.Point(options.pointer.x, options.pointer.y);
-            this.isMouseDown = options.e.button === 0 && !options.e.altKey;
-            this.isBrushSizeChanging = options.e.button === 2 && options.e.altKey;
+            this.isMouseDown = (isDrawing || isEditing) && options.e.button === 0 && !options.e.altKey;
+            this.isBrushSizeChanging = (isDrawing || isEditing) && options.e.button === 2 && options.e.altKey;
+
+            if (isInsertion) {
+                const continueInserting = options.e.ctrlKey;
+                const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                const imageData = this.imageDataFromCanvas(wrappingBbox);
+                const alpha = alphaChannelOnly(imageData);
+                alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
+
+                this.onDrawDone({
+                    shapeType: this.drawData.shapeType,
+                    points: alpha,
+                }, Date.now() - this.startTimestamp, continueInserting, this.drawData);
+
+                if (!continueInserting) {
+                    this.releasePaste();
+                }
+                return;
+            }
 
             if (this.drawablePolygon) {
                 // update polygon if drawing has been started
@@ -295,7 +351,18 @@ export class MasksHandlerImpl implements MasksHandler {
 
         this.canvas.on('mouse:move', (e: fabric.IEvent<MouseEvent>) => {
             const position = { x: e.pointer.x, y: e.pointer.y };
-            const { tool, isMouseDown, isBrushSizeChanging } = this;
+            const {
+                tool, isMouseDown, isInsertion, isBrushSizeChanging,
+            } = this;
+
+            if (isInsertion) {
+                const [object] = this.drawnObjects;
+                if (object && object instanceof fabric.Image) {
+                    object.left = e.pointer.x - object.width / 2;
+                    object.top = e.pointer.y - object.height / 2;
+                    this.canvas.renderAll();
+                }
+            }
 
             if (isBrushSizeChanging && ['brush', 'eraser'].includes(this.tool?.type)) {
                 const xDiff = position.x - this.resizeBrushToolLatestX;
@@ -430,26 +497,44 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public draw(drawData: DrawData): void {
         if (drawData.brushTool) {
-            this.tool = { ...drawData.brushTool };
-
-            // setup new brush marker
-            this.removeBrushMarker();
-            if (this.isDrawing) {
-                this.setupBrushMarker();
-            }
+            this.updateBrushTools(drawData.brushTool);
         }
 
         if (drawData.enabled && drawData.shapeType === 'mask') {
-            if (!this.isDrawing) {
-                // if drawing not started, let's initialize new process
-                this.canvas.getElement().parentElement.style.display = 'block';
+            if (!this.isInsertion && drawData.initialState?.shapeType === 'mask') {
+                // initialize inserting pipeline if not started
+                const { points } = drawData.initialState;
+                const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
+                const [left, top, right, bottom] = points.splice(-4);
+                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                    (dataURL: string) => new Promise((resolve) => {
+                        fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
+                            try {
+                                image.selectable = false;
+                                image.evented = false;
+                                image.globalCompositeOperation = 'xor';
+                                image.opacity = 0.5;
+                                // image.left = this.latestMousePos.x - image.width / 2;
+                                // image.top = this.latestMousePos.y - image.height / 2;
+                                this.canvas.add(image);
+                                this.drawnObjects.push(image);
+                                this.canvas.renderAll();
+                            } finally {
+                                resolve();
+                            }
+                        }, { left, top });
+                    }));
+
+                this.isInsertion = true;
+            } else if (!this.isDrawing) {
+                // initialize drawing pipeline if not started
                 this.isDrawing = true;
-                this.startTimestamp = Date.now();
                 this.redraw = drawData.redraw || null;
-            } else if (this.drawablePolygon && !this.tool.type.startsWith('polygon-')) {
-                // tool was switched from polygon to brush for example
-                this.keepDrawnPolygon();
             }
+
+            this.canvas.getElement().parentElement.style.display = 'block';
+            this.startTimestamp = Date.now();
         } else if (this.isDrawing) {
             try {
                 // drawing has been finished
@@ -491,37 +576,17 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public edit(editData: MasksEditData): void {
+        if (editData.brushTool && editData.state) {
+            this.updateBrushTools(
+                editData.brushTool,
+                { color: this.getStateColor(this.editData.state) },
+            );
+        }
+
         if (editData.enabled && editData.state.shapeType === 'mask') {
-            if (editData.brushTool) {
-                this.tool = { ...editData.brushTool };
-                this.tool.color = this.getStateColor(this.editData.state);
-
-                this.removeBrushMarker();
-                if (['brush', 'eraser'].includes(this.tool.type)) {
-                    const common = {
-                        evented: false,
-                        selectable: false,
-                        opacity: 0.75,
-                        left: this.latestMousePos.x - this.tool.size / 2,
-                        top: this.latestMousePos.y - this.tool.size / 2,
-                    };
-                    this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
-                        ...common,
-                        radius: this.tool.size / 2,
-                    }) : new fabric.Rect({
-                        ...common,
-                        width: this.tool.size,
-                        height: this.tool.size,
-                    });
-
-                    this.canvas.add(this.brushMarker);
-                }
-            }
-
             if (!this.isEditing) {
-                // if editing not started, let's initialize new process
+                // start editing pipeline if not started yet
                 this.canvas.getElement().parentElement.style.display = 'block';
-
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.splice(-4);
@@ -546,9 +611,6 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.isEditing = true;
                 this.startTimestamp = Date.now();
                 this.onEditStart(editData.state);
-            } else if (this.drawablePolygon && !this.tool.type.startsWith('polygon-')) {
-                // tool was switched from polygon to brush for example
-                this.keepDrawnPolygon();
             }
         } else if (!editData.enabled) {
             try {
@@ -573,7 +635,7 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     get enabled(): boolean {
-        return this.isDrawing || this.isEditing;
+        return this.isDrawing || this.isEditing || this.isInsertion;
     }
 
     public cancel(): void {

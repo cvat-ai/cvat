@@ -639,7 +639,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateID,
             activatedAttributeID,
-            selectedOpacity,
             aamZoomMargin,
             workspace,
             annotations,
