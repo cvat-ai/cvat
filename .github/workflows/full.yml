@@ -314,7 +314,7 @@ jobs:
         run: |
           max_tries=60
           status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-          while [[  $status_code != "401" && max_tries -gt 0 ]]
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
           do
             echo Number of attempts left: $max_tries
             echo Status code of response: $status_code

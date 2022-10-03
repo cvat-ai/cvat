@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { StorageLocation } from './enums';
+import { StorageLocation, WebhookSourceType } from './enums';
 import { Storage } from './storage';
 
 type Params = {
@@ -18,12 +18,11 @@ type Params = {
 
 const FormData = require('form-data');
 const store = require('store');
+const Axios = require('axios');
+const tus = require('tus-js-client');
 const config = require('./config');
 const DownloadWorker = require('./download.worker');
 const { ServerError } = require('./exceptions');
-const Axios = require('axios');
-const tus = require('tus-js-client');
-
 
 function enableOrganization() {
     return { org: config.organizationID || '' };
@@ -921,8 +920,8 @@ class ServerProxy {
                     }
 
                     setTimeout(request);
-                })
-            };
+                });
+            }
 
             const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
 
@@ -2022,11 +2021,160 @@ class ServerProxy {
                 response = await Axios.get(`${backendAPI}/invitations/${id}`, {
                     proxy: config.proxy,
                 });
+                return response.data;
             } catch (errorData) {
                 throw generateError(errorData);
             }
+        }
 
-            return response.data;
+        async function getWebhookDelivery(webhookID: number, deliveryID: number): Promise<any> {
+            const params = enableOrganization();
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.get(`${backendAPI}/webhooks/${webhookID}/deliveries/${deliveryID}`, {
+                    proxy: config.proxy,
+                    params,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function getWebhooks(filter, pageSize = 10): Promise<any> {
+            const params = enableOrganization();
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.get(`${backendAPI}/webhooks`, {
+                    proxy: config.proxy,
+                    params: {
+                        ...params,
+                        ...filter,
+                        page_size: pageSize,
+                    },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                response.data.results.count = response.data.count;
+                return response.data.results;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function createWebhook(webhookData: any): Promise<any> {
+            const params = enableOrganization();
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.post(`${backendAPI}/webhooks`, JSON.stringify(webhookData), {
+                    proxy: config.proxy,
+                    params,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function updateWebhook(webhookID: number, webhookData: any): Promise<any> {
+            const params = enableOrganization();
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios
+                    .patch(`${backendAPI}/webhooks/${webhookID}`, JSON.stringify(webhookData), {
+                        proxy: config.proxy,
+                        params,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function deleteWebhook(webhookID: number): Promise<void> {
+            const params = enableOrganization();
+            const { backendAPI } = config;
+
+            try {
+                await Axios.delete(`${backendAPI}/webhooks/${webhookID}`, {
+                    proxy: config.proxy,
+                    params,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function pingWebhook(webhookID: number): Promise<any> {
+            const params = enableOrganization();
+            const { backendAPI } = config;
+
+            async function waitPingDelivery(deliveryID: number): Promise<any> {
+                return new Promise((resolve) => {
+                    async function checkStatus(): Promise<any> {
+                        const delivery = await getWebhookDelivery(webhookID, deliveryID);
+                        if (delivery.status_code) {
+                            resolve(delivery);
+                        } else {
+                            setTimeout(checkStatus, 1000);
+                        }
+                    }
+                    setTimeout(checkStatus, 1000);
+                });
+            }
+
+            try {
+                const response = await Axios.post(`${backendAPI}/webhooks/${webhookID}/ping`, {
+                    proxy: config.proxy,
+                    params,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const deliveryID = response.data.id;
+                const delivery = await waitPingDelivery(deliveryID);
+                return delivery;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> {
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.get(`${backendAPI}/webhooks/events`, {
+                    proxy: config.proxy,
+                    params: {
+                        type,
+                    },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                return response.data.events;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
         }
 
         Object.defineProperties(
@@ -2186,6 +2334,18 @@ class ServerProxy {
                         invite: inviteOrganizationMembers,
                         updateMembership: updateOrganizationMembership,
                         deleteMembership: deleteOrganizationMembership,
+                    }),
+                    writable: false,
+                },
+
+                webhooks: {
+                    value: Object.freeze({
+                        get: getWebhooks,
+                        create: createWebhook,
+                        update: updateWebhook,
+                        delete: deleteWebhook,
+                        ping: pingWebhook,
+                        events: receiveWebhookEvents,
                     }),
                     writable: false,
                 },
