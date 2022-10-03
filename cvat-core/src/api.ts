@@ -3,53 +3,54 @@
 //
 // SPDX-License-Identifier: MIT
 
+import PluginRegistry from './plugins';
+import User from './user';
+import loggerStorage from './logger-storage';
+import { Log } from './log';
+import ObjectState from './object-state';
+import Project from './project';
+import implementProject from './project-implementation';
+import Webhook from './webhook';
+import Comment from './comment';
+import Issue from './issue';
+import Organization from './organization';
+
 /**
  * External API which should be used by for development
  * @module API
  */
+// done by boris
+const Statistics = require('./statistics');
+const MLModel = require('./ml-model');
 
-function build() {
-    const PluginRegistry = require('./plugins').default;
-    const loggerStorage = require('./logger-storage');
-    const Log = require('./log');
-    const ObjectState = require('./object-state').default;
-    const Statistics = require('./statistics');
-    const Comment = require('./comment');
-    const Issue = require('./issue');
-    const { Job, Task } = require('./session');
-    const Project = require('./project').default;
-    const implementProject = require('./project-implementation').default;
-    const { Attribute, Label } = require('./labels');
-    const MLModel = require('./ml-model');
-    const { FrameData } = require('./frames');
-    const { CloudStorage } = require('./cloud-storage');
-    const Organization = require('./organization');
-    const Webhook = require('./webhook').default;
+const { Job, Task } = require('./session');
+const { Attribute, Label } = require('./labels');
+const { FrameData } = require('./frames');
+const { CloudStorage } = require('./cloud-storage');
 
-    const enums = require('./enums');
+const enums = require('./enums');
 
-    const {
-        Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
-    } = require('./exceptions');
+const {
+    Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
+} = require('./exceptions');
 
-    const User = require('./user').default;
-    const pjson = require('../package.json');
-    const config = require('./config');
+const pjson = require('../package.json');
+const config = require('./config');
 
-    /**
+/**
      * API entrypoint
      * @namespace cvat
      * @memberof module:API
      */
-    const cvat = {
-        /**
+const cvat = {
+    /**
          * Namespace is used for an interaction with a server
          * @namespace server
          * @package
          * @memberof module:API.cvat
          */
-        server: {
-            /**
+    server: {
+        /**
              * @typedef {Object} ServerInfo
              * @property {string} name A name of the tool
              * @property {string} description A description of the tool
@@ -57,7 +58,7 @@ function build() {
              * @global
              */
 
-            /**
+        /**
              * Method returns some information about the annotation tool
              * @method about
              * @async
@@ -66,11 +67,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async about() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.about);
-                return result;
-            },
-            /**
+        async about() {
+            const result = await PluginRegistry.apiWrapper(cvat.server.about);
+            return result;
+        },
+        /**
              * @typedef {Object} FileInfo
              * @property {string} name A name of a file
              * @property {module:API.cvat.enums.ShareFileType} type
@@ -78,7 +79,7 @@ function build() {
              * @global
              */
 
-            /**
+        /**
              * Method returns a list of files in a specified directory on a share
              * @method share
              * @async
@@ -88,11 +89,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async share(directory = '/') {
-                const result = await PluginRegistry.apiWrapper(cvat.server.share, directory);
-                return result;
-            },
-            /**
+        async share(directory = '/') {
+            const result = await PluginRegistry.apiWrapper(cvat.server.share, directory);
+            return result;
+        },
+        /**
              * Method returns available annotation formats
              * @method formats
              * @async
@@ -101,11 +102,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async formats() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.formats);
-                return result;
-            },
-            /**
+        async formats() {
+            const result = await PluginRegistry.apiWrapper(cvat.server.formats);
+            return result;
+        },
+        /**
              * Method returns user agreements that the user must accept
              * @method userAgreements
              * @async
@@ -114,11 +115,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async userAgreements() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.userAgreements);
-                return result;
-            },
-            /**
+        async userAgreements() {
+            const result = await PluginRegistry.apiWrapper(cvat.server.userAgreements);
+            return result;
+        },
+        /**
              * Method allows to register on a server
              * @method register
              * @async
@@ -134,20 +135,20 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async register(username, firstName, lastName, email, password1, password2, userConfirmations) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.server.register,
-                    username,
-                    firstName,
-                    lastName,
-                    email,
-                    password1,
-                    password2,
-                    userConfirmations,
-                );
-                return result;
-            },
-            /**
+        async register(username, firstName, lastName, email, password1, password2, userConfirmations) {
+            const result = await PluginRegistry.apiWrapper(
+                cvat.server.register,
+                username,
+                firstName,
+                lastName,
+                email,
+                password1,
+                password2,
+                userConfirmations,
+            );
+            return result;
+        },
+        /**
              * Method allows to login on a server
              * @method login
              * @async
@@ -157,11 +158,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async login(username, password) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.login, username, password);
-                return result;
-            },
-            /**
+        async login(username, password) {
+            const result = await PluginRegistry.apiWrapper(cvat.server.login, username, password);
+            return result;
+        },
+        /**
              * Method allows to logout from the server
              * @method logout
              * @async
@@ -169,11 +170,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async logout() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.logout);
-                return result;
-            },
-            /**
+        async logout() {
+            const result = await PluginRegistry.apiWrapper(cvat.server.logout);
+            return result;
+        },
+        /**
              * Method allows to change user password
              * @method changePassword
              * @async
@@ -184,16 +185,16 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async changePassword(oldPassword, newPassword1, newPassword2) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.server.changePassword,
-                    oldPassword,
-                    newPassword1,
-                    newPassword2,
-                );
-                return result;
-            },
-            /**
+        async changePassword(oldPassword, newPassword1, newPassword2) {
+            const result = await PluginRegistry.apiWrapper(
+                cvat.server.changePassword,
+                oldPassword,
+                newPassword1,
+                newPassword2,
+            );
+            return result;
+        },
+        /**
              * Method allows to reset user password
              * @method requestPasswordReset
              * @async
@@ -202,11 +203,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async requestPasswordReset(email) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.requestPasswordReset, email);
-                return result;
-            },
-            /**
+        async requestPasswordReset(email) {
+            const result = await PluginRegistry.apiWrapper(cvat.server.requestPasswordReset, email);
+            return result;
+        },
+        /**
              * Method allows to confirm reset user password
              * @method resetPassword
              * @async
@@ -218,17 +219,17 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async resetPassword(newPassword1, newPassword2, uid, token) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.server.resetPassword,
-                    newPassword1,
-                    newPassword2,
-                    uid,
-                    token,
-                );
-                return result;
-            },
-            /**
+        async resetPassword(newPassword1, newPassword2, uid, token) {
+            const result = await PluginRegistry.apiWrapper(
+                cvat.server.resetPassword,
+                newPassword1,
+                newPassword2,
+                uid,
+                token,
+            );
+            return result;
+        },
+        /**
              * Method allows to know whether you are authorized on the server
              * @method authorized
              * @async
@@ -237,11 +238,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async authorized() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.authorized);
-                return result;
-            },
-            /**
+        async authorized() {
+            const result = await PluginRegistry.apiWrapper(cvat.server.authorized);
+            return result;
+        },
+        /**
              * Method allows to do requests via cvat-core with authorization headers
              * @method request
              * @async
@@ -252,12 +253,12 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async request(url, data) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
-                return result;
-            },
+        async request(url, data) {
+            const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
+            return result;
+        },
 
-            /**
+        /**
              * Method returns apps that are installed on the server
              * @method installedApps
              * @async
@@ -266,18 +267,18 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async installedApps() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
-                return result;
-            },
+        async installedApps() {
+            const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
+            return result;
         },
-        /**
+    },
+    /**
          * Namespace is used for getting projects
          * @namespace projects
          * @memberof module:API.cvat
          */
-        projects: {
-            /**
+    projects: {
+        /**
              * @typedef {Object} ProjectFilter
              * @property {string} name Check if name contains this value
              * @property {module:API.cvat.enums.ProjectStatus} status
@@ -291,7 +292,7 @@ function build() {
              * @global
              */
 
-            /**
+        /**
              * Method returns list of projects corresponding to a filter
              * @method get
              * @async
@@ -301,12 +302,12 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.projects.get, filter);
-                return result;
-            },
+        async get(filter = {}) {
+            const result = await PluginRegistry.apiWrapper(cvat.projects.get, filter);
+            return result;
+        },
 
-            /**
+        /**
              * Method returns list of project names with project ids
              * corresponding to a search phrase
              * used for autocomplete field
@@ -320,18 +321,18 @@ function build() {
              * @throws {module:API.cvat.exceptions.ServerError}
              *
              */
-            async searchNames(search = '', limit = 10) {
-                const result = await PluginRegistry.apiWrapper(cvat.projects.searchNames, search, limit);
-                return result;
-            },
+        async searchNames(search = '', limit = 10) {
+            const result = await PluginRegistry.apiWrapper(cvat.projects.searchNames, search, limit);
+            return result;
         },
-        /**
+    },
+    /**
          * Namespace is used for getting tasks
          * @namespace tasks
          * @memberof module:API.cvat
          */
-        tasks: {
-            /**
+    tasks: {
+        /**
              * @typedef {Object} TaskFilter
              * @property {string} name Check if name contains this value
              * @property {module:API.cvat.enums.TaskStatus} status
@@ -349,7 +350,7 @@ function build() {
              * @global
              */
 
-            /**
+        /**
              * Method returns list of tasks corresponding to a filter
              * @method get
              * @async
@@ -359,18 +360,18 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter);
-                return result;
-            },
+        async get(filter = {}) {
+            const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter);
+            return result;
         },
-        /**
+    },
+    /**
          * Namespace is used for getting jobs
          * @namespace jobs
          * @memberof module:API.cvat
          */
-        jobs: {
-            /**
+    jobs: {
+        /**
              * @typedef {Object} JobFilter
              * Only one of fields is allowed simultaneously
              * @property {number} taskID filter all jobs of specific task
@@ -378,7 +379,7 @@ function build() {
              * @global
              */
 
-            /**
+        /**
              * Method returns list of jobs corresponding to a filter
              * @method get
              * @async
@@ -388,24 +389,24 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
-                return result;
-            },
+        async get(filter = {}) {
+            const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
+            return result;
         },
-        /**
+    },
+    /**
          * Namespace is used for getting users
          * @namespace users
          * @memberof module:API.cvat
          */
-        users: {
-            /**
+    users: {
+        /**
              * @typedef {Object} UserFilter
              * @property {boolean} self get only self
              * @global
              */
 
-            /**
+        /**
              * Method returns list of users corresponding to a filter
              * @method get
              * @async
@@ -415,18 +416,18 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.users.get, filter);
-                return result;
-            },
+        async get(filter = {}) {
+            const result = await PluginRegistry.apiWrapper(cvat.users.get, filter);
+            return result;
         },
-        /**
+    },
+    /**
          * Namespace is used for plugin management
          * @namespace plugins
          * @memberof module:API.cvat
          */
-        plugins: {
-            /**
+    plugins: {
+        /**
              * @typedef {Object} Plugin
              * A plugin is a Javascript object. It must have properties are listed below. <br>
              * It also mustn't have property 'functions' which is used internally. <br>
@@ -506,7 +507,7 @@ function build() {
              * @global
              */
 
-            /**
+        /**
              * Method returns list of installed plugins
              * @method list
              * @async
@@ -514,11 +515,11 @@ function build() {
              * @returns {Plugin[]}
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async list() {
-                const result = await PluginRegistry.apiWrapper(cvat.plugins.list);
-                return result;
-            },
-            /**
+        async list() {
+            const result = await PluginRegistry.apiWrapper(cvat.plugins.list);
+            return result;
+        },
+        /**
              * Install plugin to CVAT
              * @method register
              * @async
@@ -526,19 +527,19 @@ function build() {
              * @param {Plugin} [plugin] plugin for registration
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async register(plugin) {
-                const result = await PluginRegistry.apiWrapper(cvat.plugins.register, plugin);
-                return result;
-            },
+        async register(plugin) {
+            const result = await PluginRegistry.apiWrapper(cvat.plugins.register, plugin);
+            return result;
         },
+    },
 
-        /**
+    /**
          * Namespace is used for serverless functions management (mainly related with DL models)
          * @namespace lambda
          * @memberof module:API.cvat
          */
-        lambda: {
-            /**
+    lambda: {
+        /**
              * Method returns list of available serverless models
              * @method list
              * @async
@@ -547,12 +548,12 @@ function build() {
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async list() {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
-                return result;
-            },
+        async list() {
+            const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
+            return result;
+        },
 
-            /**
+        /**
              * Run long-time request for a function on a specific task
              * @method run
              * @async
@@ -565,12 +566,12 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
              */
-            async run(task, model, args) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.run, task, model, args);
-                return result;
-            },
+        async run(task, model, args) {
+            const result = await PluginRegistry.apiWrapper(cvat.lambda.run, task, model, args);
+            return result;
+        },
 
-            /**
+        /**
              * Run short-time request for a function on a specific task
              * @method call
              * @async
@@ -583,12 +584,12 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
              */
-            async call(task, model, args) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.call, task, model, args);
-                return result;
-            },
+        async call(task, model, args) {
+            const result = await PluginRegistry.apiWrapper(cvat.lambda.call, task, model, args);
+            return result;
+        },
 
-            /**
+        /**
              * Cancel running of a serverless function for a specific task
              * @method cancel
              * @async
@@ -598,19 +599,19 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
              */
-            async cancel(requestID) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID);
-                return result;
-            },
+        async cancel(requestID) {
+            const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID);
+            return result;
+        },
 
-            /**
+        /**
              * @callback onRequestStatusChange
              * @param {string} status
              * @param {number} progress
              * @param {string} [message]
              * @global
              */
-            /**
+        /**
              * Listen for a specific request
              * @method listen
              * @async
@@ -621,12 +622,12 @@ function build() {
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async listen(requestID, onChange) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, onChange);
-                return result;
-            },
+        async listen(requestID, onChange) {
+            const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, onChange);
+            return result;
+        },
 
-            /**
+        /**
              * Get active lambda requests
              * @method requests
              * @async
@@ -634,17 +635,17 @@ function build() {
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async requests() {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
-                return result;
-            },
+        async requests() {
+            const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
+            return result;
         },
-        /**
+    },
+    /**
          * Namespace to working with logs
          * @namespace logger
          * @memberof module:API.cvat
          */
-        /**
+    /**
          * Method to logger configuration
          * @method configure
          * @memberof module:API.cvat.logger
@@ -659,7 +660,7 @@ function build() {
          * @throws {module:API.cvat.exceptions.ArgumentError}
          */
 
-        /**
+    /**
          * Append log to a log collection <br>
          * Durable logs will have been added after "close" method is called for them <br>
          * Ignore rules exist for some logs (e.g. zoomImage, changeAttribute) <br>
@@ -676,7 +677,7 @@ function build() {
          * @throws {module:API.cvat.exceptions.ArgumentError}
          */
 
-        /**
+    /**
          * Save accumulated logs on a server
          * @method save
          * @memberof module:API.cvat.logger
@@ -685,14 +686,14 @@ function build() {
          * @instance
          * @async
          */
-        logger: loggerStorage,
-        /**
+    logger: loggerStorage,
+    /**
          * Namespace contains some changeable configurations
          * @namespace config
          * @memberof module:API.cvat
          */
-        config: {
-            /**
+    config: {
+        /**
              * @memberof module:API.cvat.config
              * @property {string} backendAPI host with a backend api
              * @memberof module:API.cvat.config
@@ -704,38 +705,38 @@ function build() {
              * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
              */
-            get backendAPI() {
-                return config.backendAPI;
-            },
-            set backendAPI(value) {
-                config.backendAPI = value;
-            },
-            get proxy() {
-                return config.proxy;
-            },
-            set proxy(value) {
-                config.proxy = value;
-            },
-            get origin() {
-                return config.origin;
-            },
-            set origin(value) {
-                config.origin = value;
-            },
-            get uploadChunkSize() {
-                return config.uploadChunkSize;
-            },
-            set uploadChunkSize(value) {
-                config.uploadChunkSize = value;
-            },
+        get backendAPI() {
+            return config.backendAPI;
         },
-        /**
+        set backendAPI(value) {
+            config.backendAPI = value;
+        },
+        get proxy() {
+            return config.proxy;
+        },
+        set proxy(value) {
+            config.proxy = value;
+        },
+        get origin() {
+            return config.origin;
+        },
+        set origin(value) {
+            config.origin = value;
+        },
+        get uploadChunkSize() {
+            return config.uploadChunkSize;
+        },
+        set uploadChunkSize(value) {
+            config.uploadChunkSize = value;
+        },
+    },
+    /**
          * Namespace contains some library information e.g. api version
          * @namespace client
          * @memberof module:API.cvat
          */
-        client: {
-            /**
+    client: {
+        /**
              * @property {string} version Client version.
              * Format: <b>{major}.{minor}.{patch}</b>
              * <li style="margin-left: 10px;"> A major number is changed after an API becomes
@@ -745,34 +746,34 @@ function build() {
              * @memberof module:API.cvat.client
              * @readonly
              */
-            version: `${pjson.version}`,
-        },
-        /**
+        version: `${pjson.version}`,
+    },
+    /**
          * Namespace is used for access to enums
          * @namespace enums
          * @memberof module:API.cvat
          */
-        enums,
-        /**
+    enums,
+    /**
          * Namespace is used for access to exceptions
          * @namespace exceptions
          * @memberof module:API.cvat
          */
-        exceptions: {
-            Exception,
-            ArgumentError,
-            DataError,
-            ScriptingError,
-            PluginError,
-            ServerError,
-        },
-        /**
+    exceptions: {
+        Exception,
+        ArgumentError,
+        DataError,
+        ScriptingError,
+        PluginError,
+        ServerError,
+    },
+    /**
          * Namespace is used for getting cloud storages
          * @namespace cloudStorages
          * @memberof module:API.cvat
          */
-        cloudStorages: {
-            /**
+    cloudStorages: {
+        /**
              * @typedef {Object} CloudStorageFilter
              * @property {string} displayName Check if displayName contains this value
              * @property {string} resource Check if resource name contains this value
@@ -786,7 +787,7 @@ function build() {
              * @global
              */
 
-            /**
+        /**
              * Method returns a list of cloud storages corresponding to a filter
              * @method get
              * @async
@@ -796,18 +797,18 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.cloudStorages.get, filter);
-                return result;
-            },
+        async get(filter = {}) {
+            const result = await PluginRegistry.apiWrapper(cvat.cloudStorages.get, filter);
+            return result;
         },
-        /**
+    },
+    /**
          * This namespace could be used to get organizations list from the server
          * @namespace organizations
          * @memberof module:API.cvat
          */
-        organizations: {
-            /**
+    organizations: {
+        /**
              * Method returns a list of organizations
              * @method get
              * @async
@@ -816,11 +817,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async get() {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
-                return result;
-            },
-            /**
+        async get() {
+            const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
+            return result;
+        },
+        /**
              * Method activates organization context
              * @method activate
              * @async
@@ -829,29 +830,29 @@ function build() {
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async activate(organization) {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.activate, organization);
-                return result;
-            },
-            /**
+        async activate(organization) {
+            const result = await PluginRegistry.apiWrapper(cvat.organizations.activate, organization);
+            return result;
+        },
+        /**
              * Method deactivates organization context
              * @method deactivate
              * @async
              * @memberof module:API.cvat.organizations
              * @throws {module:API.cvat.exceptions.PluginError}
              */
-            async deactivate() {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
-                return result;
-            },
+        async deactivate() {
+            const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
+            return result;
         },
-        /**
+    },
+    /**
          * This namespace could be used to get webhooks list from the server
          * @namespace webhooks
          * @memberof module:API.cvat
          */
-        webhooks: {
-            /**
+    webhooks: {
+        /**
             * Method returns a list of organizations
             * @method get
             * @async
@@ -860,51 +861,50 @@ function build() {
             * @throws {module:API.cvat.exceptions.PluginError}
             * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async get(filter: any) {
-                const result = await PluginRegistry.apiWrapper(cvat.webhooks.get, filter);
-                return result;
-            },
+        async get(filter: any) {
+            const result = await PluginRegistry.apiWrapper(cvat.webhooks.get, filter);
+            return result;
         },
-        /**
+    },
+    /**
          * Namespace is used for access to classes
          * @namespace classes
          * @memberof module:API.cvat
          */
-        classes: {
-            User,
-            Project: implementProject(Project),
-            Task,
-            Job,
-            Log,
-            Attribute,
-            Label,
-            Statistics,
-            ObjectState,
-            MLModel,
-            Comment,
-            Issue,
-            FrameData,
-            CloudStorage,
-            Organization,
-            Webhook,
-        },
-    };
+    classes: {
+        User,
+        Project: implementProject(Project),
+        Task,
+        Job,
+        Log,
+        Attribute,
+        Label,
+        Statistics,
+        ObjectState,
+        MLModel,
+        Comment,
+        Issue,
+        FrameData,
+        CloudStorage,
+        Organization,
+        Webhook,
+    },
+};
 
-    cvat.server = Object.freeze(cvat.server);
-    cvat.projects = Object.freeze(cvat.projects);
-    cvat.tasks = Object.freeze(cvat.tasks);
-    cvat.jobs = Object.freeze(cvat.jobs);
-    cvat.users = Object.freeze(cvat.users);
-    cvat.plugins = Object.freeze(cvat.plugins);
-    cvat.lambda = Object.freeze(cvat.lambda);
-    cvat.client = Object.freeze(cvat.client);
-    cvat.enums = Object.freeze(cvat.enums);
-    cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
-    cvat.organizations = Object.freeze(cvat.organizations);
+cvat.server = Object.freeze(cvat.server);
+cvat.projects = Object.freeze(cvat.projects);
+cvat.tasks = Object.freeze(cvat.tasks);
+cvat.jobs = Object.freeze(cvat.jobs);
+cvat.users = Object.freeze(cvat.users);
+cvat.plugins = Object.freeze(cvat.plugins);
+cvat.lambda = Object.freeze(cvat.lambda);
+cvat.client = Object.freeze(cvat.client);
+cvat.enums = Object.freeze(cvat.enums);
+cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
+cvat.organizations = Object.freeze(cvat.organizations);
 
-    const implementAPI = require('./api-implementation');
-    const implemented = Object.freeze(implementAPI(cvat));
-    return implemented;
-}
+const implementAPI = require('./api-implementation');
 
-module.exports = build();
+const implemented = Object.freeze(implementAPI(cvat));
+
+export default implemented;

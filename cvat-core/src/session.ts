@@ -7,7 +7,7 @@ import { StorageLocation } from './enums';
 import { Storage } from './storage';
 
 const PluginRegistry = require('./plugins').default;
-const loggerStorage = require('./logger-storage');
+const loggerStorage = require('./logger-storage').default;
 const serverProxy = require('./server-proxy').default;
 const {
     getFrame,
