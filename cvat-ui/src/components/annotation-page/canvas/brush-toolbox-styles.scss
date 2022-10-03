@@ -33,17 +33,20 @@
         }
     }
 
-    .cvat-brush-tools-draggable-area {
-        font-size: 20px;
-    }
-
     .cvat-brush-tools-brush,
     .cvat-brush-tools-eraser {
-        > .anticon {
-            svg {
-                width: 1em;
-                height: 1em;
-            }
+        svg {
+            width: 24px;
+            height: 25px;
+        }
+    }
+
+    .cvat-brush-tools-draggable-area {
+        display: flex;
+        font-size: 20px;
+        svg {
+            width: 24px;
+            height: 25px;
         }
     }
 

@@ -8,9 +8,7 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
-import Icon, {
-    CheckOutlined, DragOutlined, PlusOutlined, VerticalAlignBottomOutlined,
-} from '@ant-design/icons';
+import Icon, { VerticalAlignBottomOutlined } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import message from 'antd/lib/message';
@@ -19,6 +17,7 @@ import { getCore } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
+    PlusIcon, CheckIcon, MoveIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, ObjectType, ShapeType } from 'reducers';
@@ -28,7 +27,7 @@ import useDraggable from './draggable-hoc';
 
 const DraggableArea = (
     <div className='cvat-brush-tools-draggable-area'>
-        <DragOutlined />
+        <Icon component={MoveIcon} />
     </div>
 );
 
@@ -109,9 +108,8 @@ function BrushTools(): React.ReactPortal {
         }
 
         if (currentTool.startsWith('polygon-') && !polygonFinishingTipShown) {
-            message.info('Double click the canvas to finish a polygon', 5, () => {
-                polygonFinishingTipShown = true;
-            });
+            polygonFinishingTipShown = true;
+            message.info('Double click the canvas to finish a polygon', 5);
         }
     }, [currentTool, brushSize, brushForm, removeUnderlyingPixels, visible, activeLabelID, editableState]);
 
@@ -175,7 +173,7 @@ function BrushTools(): React.ReactPortal {
             <Button
                 type='text'
                 className='cvat-brush-tools-finish'
-                icon={<CheckOutlined />}
+                icon={<Icon component={CheckIcon} />}
                 onClick={() => {
                     if (canvasInstance instanceof Canvas) {
                         if (editableState) {
@@ -190,7 +188,7 @@ function BrushTools(): React.ReactPortal {
                 type='text'
                 disabled={!!editableState}
                 className='cvat-brush-tools-continue'
-                icon={<PlusOutlined />}
+                icon={<Icon component={PlusIcon} />}
                 onClick={() => {
                     if (canvasInstance instanceof Canvas) {
                         canvasInstance.draw({ enabled: false, continue: true });

@@ -359,7 +359,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 // TODO: find a solution
                 // [x, y] = [(x / this.canvas.width) * imageWidth, (y / this.canvas.height) * imageHeight];
                 // [x, y] = [y, x];
-                // [x, y] = rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
+                // [x, y+] = rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
             }
 
             const position = { x, y };
