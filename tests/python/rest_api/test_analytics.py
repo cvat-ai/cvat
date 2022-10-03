@@ -3,13 +3,17 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 from http import HTTPStatus
+
+import pytest
+
 from shared.utils.config import server_get
 
-@pytest.mark.usefixtures('dontchangedb')
+
+@pytest.mark.usefixtures("dontchangedb")
 class TestGetAnalytics:
-    endpoint = 'analytics/app/kibana'
+    endpoint = "analytics/app/kibana"
+
     def _test_can_see(self, user):
         response = server_get(user, self.endpoint)
 
@@ -20,12 +24,12 @@ class TestGetAnalytics:
 
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.parametrize('privilege, is_allow', [
-        ('admin', True), ('business', True),
-        ('worker', False), ('user', False)
-    ])
+    @pytest.mark.parametrize(
+        "privilege, is_allow",
+        [("admin", True), ("business", True), ("worker", False), ("user", False)],
+    )
     def test_can_see(self, privilege, is_allow, find_users):
-        user = find_users(privilege=privilege)[0]['username']
+        user = find_users(privilege=privilege)[0]["username"]
 
         if is_allow:
             self._test_can_see(user)

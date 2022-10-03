@@ -17,7 +17,7 @@ jobs:
           # If different modules use different isort configs,
           # we need to run isort for each python component group separately.
           # Otherwise, they all will use the same config.
-          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python/sdk" "tests/python/cli")
+          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python")
 
           isValueIn () {
             # Checks if a value is in an array
