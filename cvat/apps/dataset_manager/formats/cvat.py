@@ -1288,7 +1288,23 @@ def load_anno(file_object, annotations):
                     track.elements.append(track_element)
                     track_element = None
                 else:
-                    annotations.add_track(track)
+                    if track.shapes[0].type == 'mask':
+                        # convert mask tracks to shapes
+                        # because mask track are not supported
+                        annotations.add_shape(annotations.LabeledShape(**{
+                            'attributes': track.shapes[0].attributes,
+                            'points': track.shapes[0].points,
+                            'type': track.shapes[0].type,
+                            'occluded': track.shapes[0].occluded,
+                            'frame': track.shapes[0].frame,
+                            'source': track.shapes[0].source,
+                            'rotation': track.shapes[0].rotation,
+                            'z_order': track.shapes[0].z_order,
+                            'group': track.shapes[0].group,
+                            'label': track.label,
+                        }))
+                    else:
+                        annotations.add_track(track)
                     track = None
             elif el.tag == 'image':
                 image_is_opened = False
