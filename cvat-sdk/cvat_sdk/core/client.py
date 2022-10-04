@@ -7,13 +7,16 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from contextlib import suppress
 from time import sleep
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 import attrs
 import urllib3
+import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.core.exceptions import InvalidHostException
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.proxies.cloudstorages import CloudStoragesRepo
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
@@ -35,49 +38,89 @@ class Client:
     Manages session and configuration.
     """
 
-    # TODO: Locates resources and APIs.
-
     def __init__(
         self, url: str, *, logger: Optional[logging.Logger] = None, config: Optional[Config] = None
     ):
-        # TODO: use requests instead of urllib3 in ApiClient
-        # TODO: try to autodetect schema
+        url = self._validate_and_prepare_url(url)
         self.api_map = CVAT_API_V2(url)
-        self.api = ApiClient(Configuration(host=url))
+        self.api_client = ApiClient(Configuration(host=self.api_map.host))
         self.logger = logger or logging.getLogger(__name__)
         self.config = config or Config()
 
         self._repos: Dict[str, Repo] = {}
 
+    ALLOWED_SCHEMAS = ("https", "http")
+
+    @classmethod
+    def _validate_and_prepare_url(cls, url: str) -> str:
+        url_parts = url.split("://", maxsplit=1)
+        if len(url_parts) == 2:
+            schema, base_url = url_parts
+        else:
+            schema = ""
+            base_url = url
+
+        if schema and schema not in cls.ALLOWED_SCHEMAS:
+            raise InvalidHostException(
+                f"Invalid url schema '{schema}', expected "
+                f"one of <none>, {', '.join(cls.ALLOWED_SCHEMAS)}"
+            )
+
+        if not schema:
+            schema = cls._detect_schema(base_url)
+            url = f"{schema}://{base_url}"
+
+        return url
+
+    @classmethod
+    def _detect_schema(cls, base_url: str) -> str:
+        for schema in cls.ALLOWED_SCHEMAS:
+            with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
+                with suppress(urllib3.exceptions.RequestError):
+                    (_, response) = api_client.schema_api.retrieve(
+                        _request_timeout=5, _parse_response=False, _check_status=False
+                    )
+
+                    if response.status == 401:
+                        return schema
+
+        raise InvalidHostException(
+            "Failed to detect host schema automatically, please check "
+            "the server url and try to specify schema explicitly"
+        )
+
     def __enter__(self):
-        self.api.__enter__()
+        self.api_client.__enter__()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        return self.api.__exit__(exc_type, exc_value, traceback)
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        return self.api_client.__exit__(exc_type, exc_value, traceback)
 
-    def close(self):
+    def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: Tuple[str, str]):
-        (auth, _) = self.api.auth_api.create_login(
+    def login(self, credentials: Tuple[str, str]) -> None:
+        (auth, _) = self.api_client.auth_api.create_login(
             models.LoginRequest(username=credentials[0], password=credentials[1])
         )
 
-        assert "sessionid" in self.api.cookies
-        assert "csrftoken" in self.api.cookies
-        self.api.set_default_header("Authorization", "Token " + auth.key)
+        assert "sessionid" in self.api_client.cookies
+        assert "csrftoken" in self.api_client.cookies
+        self.api_client.set_default_header("Authorization", "Token " + auth.key)
 
-    def _has_credentials(self):
+    def has_credentials(self) -> bool:
         return (
-            ("sessionid" in self.api.cookies)
-            or ("csrftoken" in self.api.cookies)
-            or (self.api.get_common_headers().get("Authorization", ""))
+            ("sessionid" in self.api_client.cookies)
+            or ("csrftoken" in self.api_client.cookies)
+            or bool(self.api_client.get_common_headers().get("Authorization", ""))
         )
 
-    def logout(self):
-        if self._has_credentials():
-            self.api.auth_api.create_logout()
+    def logout(self) -> None:
+        if self.has_credentials():
+            self.api_client.auth_api.create_logout()
+            self.api_client.cookies.pop("sessionid", None)
+            self.api_client.cookies.pop("csrftoken", None)
+            self.api_client.default_headers.pop("Authorization", None)
 
     def wait_for_completion(
         self: Client,
@@ -89,19 +132,21 @@ class Client:
         post_params: Optional[Dict[str, Any]] = None,
         method: str = "POST",
         positive_statuses: Optional[Sequence[int]] = None,
+        max_checks: int = 0,
     ) -> urllib3.HTTPResponse:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
         positive_statuses = set(positive_statuses) | {success_status}
 
-        while True:
+        attempt = 0
+        while not max_checks or attempt < max_checks:
             sleep(status_check_period)
 
-            response = self.api.rest_client.request(
+            response = self.api_client.rest_client.request(
                 method=method,
                 url=url,
-                headers=self.api.get_common_headers(),
+                headers=self.api_client.get_common_headers(),
                 query_params=query_params,
                 post_params=post_params,
             )
@@ -110,6 +155,8 @@ class Client:
             expect_status(positive_statuses, response)
             if response.status == success_status:
                 break
+
+            attempt += 1
 
         return response
 
@@ -162,21 +209,15 @@ class Client:
 class CVAT_API_V2:
     """Build parameterized API URLs"""
 
-    def __init__(self, host, https=False):
-        if host.startswith("https://"):
-            https = True
-        if host.startswith("http://") or host.startswith("https://"):
-            host = host.replace("http://", "")
-            host = host.replace("https://", "")
-        scheme = "https" if https else "http"
-        self.host = "{}://{}".format(scheme, host)
+    def __init__(self, host: str):
+        self.host = host
         self.base = self.host + "/api/"
-        self.git = f"{scheme}://{host}/git/repository/"
+        self.git = self.host + "/git/repository/"
 
-    def git_create(self, task_id):
+    def git_create(self, task_id: int) -> str:
         return self.git + f"create/{task_id}"
 
-    def git_check(self, rq_id):
+    def git_check(self, rq_id: int) -> str:
         return self.git + f"check/{rq_id}"
 
     def make_endpoint_url(
@@ -196,9 +237,13 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: int = 8080, credentials: Optional[Tuple[int, int]] = None
+    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[int, int]] = None
 ) -> Client:
-    client = Client(url=f"{host}:{port}")
+    url = host
+    if port:
+        url = f"{url}:{port}"
+
+    client = Client(url=url)
     if credentials is not None:
         client.login(credentials)
     return client

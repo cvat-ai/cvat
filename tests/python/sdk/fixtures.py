@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
-import zipfile
+from zipfile import ZipFile
 
 import pytest
 from cvat_sdk import Client
@@ -20,7 +20,7 @@ def fxt_client(fxt_logger):
     logger, _ = fxt_logger
 
     client = Client(BASE_URL, logger=logger)
-    api_client = client.api
+    api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
     client.config.status_check_period = 0.01
@@ -47,12 +47,12 @@ def fxt_coco_file(tmp_path: Path, fxt_image_file: Path):
 
     yield ann_filename
 
+
 @pytest.fixture
 def fxt_coco_dataset(tmp_path: Path, fxt_image_file: Path, fxt_coco_file: Path):
-    dataset_file = tmp_path / 'coco_dataset.zip'
+    dataset_path = tmp_path / "coco_dataset.zip"
+    with ZipFile(str(dataset_path), "x") as f:
+        f.write(str(fxt_image_file), arcname="images/" + fxt_image_file.name)
+        f.write(str(fxt_coco_file), arcname="annotations/instances_default.json")
 
-    with zipfile.ZipFile(str(dataset_file), 'x') as f:
-        f.write(str(fxt_coco_file), arcname='annotation/instances_default.json')
-        f.write(str(fxt_image_file), arcname='images/' + fxt_image_file.name)
-
-    return dataset_file
+    yield dataset_path

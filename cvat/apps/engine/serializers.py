@@ -602,7 +602,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
-                        new_label = project.label_set.filter(name=old_label.name).first()
+                        if old_label.parent:
+                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                        else:
+                            new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
                     old_label.attributespec_set.all().delete()
@@ -617,7 +620,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     if len(new_label_for_name):
                         old_label.name = new_label_for_name[0].get('name', old_label.name)
                     try:
-                        new_label = project.label_set.filter(name=old_label.name).first()
+                        if old_label.parent:
+                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                        else:
+                            new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
                     for (model, attr, attr_name) in (
@@ -652,18 +658,42 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
+            new_sublabel_names = {}
             for old_label in old_labels:
                 new_labels = tuple(filter(lambda x: x.get('id') == old_label.id, attrs.get('label_set', [])))
                 if len(new_labels):
-                    new_label_names.add(new_labels[0].get('name', old_label.name))
+                    parent = new_labels[0].get('parent', old_label.parent)
+                    if parent:
+                        if parent.name not in new_sublabel_names:
+                            new_sublabel_names[parent.name] = set()
+                        new_sublabel_names[parent.name].add(new_labels[0].get('name', old_label.name))
+                    else:
+                        new_label_names.add(new_labels[0].get('name', old_label.name))
                 else:
-                    new_label_names.add(old_label.name)
+                    parent = old_label.parent
+                    if parent:
+                        if parent.name not in new_sublabel_names:
+                            new_sublabel_names[parent.name] = set()
+                        new_sublabel_names[parent.name].add(old_label.name)
+                    else:
+                        new_label_names.add(old_label.name)
             target_project = models.Project.objects.get(id=project_id)
             target_project_label_names = set()
+            target_project_sublabel_names = {}
             for label in target_project.label_set.all():
-                target_project_label_names.add(label.name)
+                parent = label.parent
+                if parent:
+                    if parent.name not in target_project_sublabel_names:
+                        target_project_sublabel_names[parent.name] = set()
+                    target_project_sublabel_names[parent.name].add(label.name)
+                else:
+                    target_project_label_names.add(label.name)
             if not new_label_names.issubset(target_project_label_names):
                 raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+
+            for label, sublabels in new_sublabel_names.items():
+                if sublabels != target_project_sublabel_names.get(label):
+                    raise serializers.ValidationError('All task or project label names must be mapped to the target project')
         else:
             if 'label_set' in attrs.keys():
                 label_names = [label['name'] for label in attrs.get('label_set')]
@@ -1122,8 +1152,8 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
 class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
-    key = serializers.CharField(max_length=20, allow_blank=True, required=False)
-    secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=44, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])

@@ -45,10 +45,10 @@ class Downloader:
         if osp.exists(tmp_path):
             raise FileExistsError(f"Can't write temporary file '{tmp_path}' - file exists")
 
-        response = self._client.api.rest_client.GET(
+        response = self._client.api_client.rest_client.GET(
             url,
             _request_timeout=timeout,
-            headers=self._client.api.get_common_headers(),
+            headers=self._client.api_client.get_common_headers(),
             _parse_response=False,
         )
         with closing(response):

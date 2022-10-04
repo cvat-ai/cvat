@@ -810,7 +810,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project = instance.project
             db_project.save()
 
-    @extend_schema(summary='Method returns a list of jobs for a specific task')
+    @extend_schema(summary='Method returns a list of jobs for a specific task',
+        responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
     @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer(many=True),
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
@@ -1500,7 +1501,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             callback=dm.views.export_job_as_dataset
         )
 
-    @extend_schema(summary='Method returns list of issues for the job')
+    @extend_schema(summary='Method returns list of issues for the job',
+        responses=IssueReadSerializer(many=True)) # Duplicate to still get 'list' op. name
     @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer(many=True),
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
@@ -1692,7 +1694,8 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-    @extend_schema(summary='The action returns all comments of a specific issue')
+    @extend_schema(summary='The action returns all comments of a specific issue',
+        responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
     @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer(many=True),
         # Remove regular list() parameters from swagger schema
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want

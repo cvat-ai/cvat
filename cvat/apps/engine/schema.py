@@ -72,7 +72,7 @@ class _FieldReplacerExtension(OpenApiSerializerExtension):
             direction, bypass_extensions=False)
 
 class DataSerializerExtension(_FieldReplacerExtension):
-    # *FileSerializer mimics a FileField
+# *FileSerializer mimics a FileField
     # but it is mapped as an object with a file field, which
     # is different from what we have for a regular file
     # field - a string of binary format.
