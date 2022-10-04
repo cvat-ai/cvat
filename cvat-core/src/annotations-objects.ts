@@ -2269,7 +2269,7 @@ export class MaskShape extends Shape {
 
     static distance(points: number[], x: number, y: number): null | number {
         const [left, top, right, bottom] = points.slice(-4);
-        const [width, height] = [right - left, bottom - top];
+        const [width, height] = [right - left + 1, bottom - top + 1];
         const [translatedX, translatedY] = [x - left, y - top];
         if (translatedX < 0 || translatedX >= width || translatedY < 0 || translatedY >= height) {
             return null;

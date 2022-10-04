@@ -383,6 +383,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             const { states } = action.payload;
             if (states.some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK)) {

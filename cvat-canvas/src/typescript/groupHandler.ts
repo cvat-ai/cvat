@@ -4,7 +4,6 @@
 
 import * as SVG from 'svg.js';
 import { GroupData } from './canvasModel';
-
 import { translateToSVG } from './shared';
 
 export interface GroupHandler {
