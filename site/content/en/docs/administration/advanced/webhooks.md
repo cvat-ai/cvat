@@ -59,13 +59,13 @@ Here is example of payload for `create:task` event:
 {
     "event": "create:task",
     "task": {
-        "url": "http://localhost:8080/api/tasks/15",
+        "url": "<http://localhost:8080/api/tasks/15>",
         "id": 15,
         "name": "task",
         "project_id": 7,
         "mode": "",
         "owner": {
-            "url": "http://localhost:8080/api/users/1",
+            "url": "<http://localhost:8080/api/users/1>",
             "id": 1,
             "username": "admin1",
             "first_name": "Admin",
@@ -78,7 +78,7 @@ Here is example of payload for `create:task` event:
         "overlap": null,
         "segment_size": 0,
         "status": "annotation",
-        "labels": [
+        "labels": \[
             {
                 "id": 28,
                 "name": "label_0",
@@ -88,7 +88,7 @@ Here is example of payload for `create:task` event:
                 "sublabels": [],
                 "has_parent": false
             }
-        ],
+        \],
         "segments": [],
         "dimension": "2d",
         "subset": "",
@@ -106,7 +106,7 @@ Here is example of payload for `create:task` event:
     },
     "webhook_id": 7,
     "sender": {
-        "url": "http://localhost:8080/api/users/1",
+        "url": "<http://localhost:8080/api/users/1>",
         "id": 1,
         "username": "admin1",
         "first_name": "Admin",
@@ -150,7 +150,7 @@ Webhook payload object for `update:<resource>` events:
         "overlap": 0,
         "segment_size": 1,
         "status": "annotation",
-        "labels": [
+        "labels": \[
             {
                 "id": 28,
                 "name": "label_0",
@@ -160,12 +160,12 @@ Webhook payload object for `update:<resource>` events:
                 "sublabels": [],
                 "has_parent": false
             }
-        ],
-        "segments": [
+        \],
+        "segments": \[
             {
                 "start_frame": 0,
                 "stop_frame": 0,
-                "jobs": [
+                "jobs": \[
                     {
                         "url": "<http://localhost:8080/api/jobs/19>",
                         "id": 19,
@@ -174,9 +174,9 @@ Webhook payload object for `update:<resource>` events:
                         "stage": "annotation",
                         "state": "new"
                     }
-                ]
+                \]
             }
-        ],
+        \],
         "data_chunk_size": 14,
         "data_compressed_chunk_type": "imageset",
         "data_original_chunk_type": "imageset",
@@ -244,7 +244,7 @@ Here is example of payload for `delete:task` event:
         "overlap": null,
         "segment_size": 0,
         "status": "annotation",
-        "labels": [
+        "labels": \[
             {
                 "id": 28,
                 "name": "label_0",
@@ -254,7 +254,7 @@ Here is example of payload for `delete:task` event:
                 "sublabels": [],
                 "has_parent": false
             }
-        ],
+        \],
         "segments": [],
         "dimension": "2d",
         "subset": "",
@@ -310,8 +310,8 @@ Ping webhook payload:
     "event": "ping",
     "webhook": {
         "id": 7,
-        "url": "http://localhost:8080/api/webhooks/7",
-        "target_url": "https://webhook.site/9697f55e-f587-4772-8151-97d64b9bda6f",
+        "url": "<http://localhost:8080/api/webhooks/7>",
+        "target_url": "<https://example.com>",
         "description": "",
         "type": "project",
         "content_type": "application/json",
@@ -320,7 +320,7 @@ Ping webhook payload:
         "created_date": "2022-10-04T08:05:23.007381Z",
         "updated_date": "2022-10-04T08:05:23.007395Z",
         "owner": {
-            "url": "http://localhost:8080/api/users/1",
+            "url": "<http://localhost:8080/api/users/1>",
             "id": 1,
             "username": "admin1",
             "first_name": "Admin",
@@ -328,7 +328,7 @@ Ping webhook payload:
         },
         "project": 7,
         "organization": null,
-        "events": [
+        "events": \[
             "create:comment",
             "create:issue",
             "create:task",
@@ -340,12 +340,12 @@ Ping webhook payload:
             "update:job",
             "update:project",
             "update:task"
-        ],
+        \],
         "last_status": 200,
         "last_delivery_date": "2022-10-04T11:04:52.538638Z"
     },
     "sender": {
-        "url": "http://localhost:8080/api/users/1",
+        "url": "<http://localhost:8080/api/users/1>",
         "id": 1,
         "username": "admin1",
         "first_name": "Admin",
