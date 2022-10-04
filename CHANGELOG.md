@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
 - Datumaro version (<https://github.com/opencv/cvat/pull/4984>)
-- Enabled authentication via email (<https://github.com/opencv/cvat/pull/5036>)
+- Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
 
 ### Deprecated
 - TDB
