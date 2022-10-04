@@ -241,6 +241,18 @@ If the annotation file is large, you can create a repository with
 
 Specify full issue tracker's URL if it's necessary.
 
+### Source storage
+
+Specify source storage for import resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the `Use project source storage` switch will determine whether
+to use the default values ​​or specify new ones.
+
+### Target storage
+
+Specify target storage for export resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the `Use project target storage` switch will determine whether
+to use the default values ​​or specify new ones.
+
 To save and open task click on `Submit & Open` button. Also you
 can click on `Submit & Continue` button for creating several tasks in sequence.
 Then, the created tasks will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).

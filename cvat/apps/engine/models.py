@@ -468,6 +468,9 @@ class Job(models.Model):
         project = self.segment.task.project
         return project.id if project else None
 
+    def get_organization_id(self):
+        return self.segment.task.organization
+
     def get_bug_tracker(self):
         task = self.segment.task
         project = task.project
@@ -498,7 +501,7 @@ class Label(models.Model):
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
     type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=LabelType.ANY)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sublabels')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sublabels')
 
     def __str__(self):
         return self.name
@@ -675,12 +678,24 @@ class Issue(models.Model):
     updated_date = models.DateTimeField(null=True, blank=True)
     resolved = models.BooleanField(default=False)
 
+    def get_project_id(self):
+        return self.job.get_project_id()
+
+    def get_organization_id(self):
+        return self.job.get_organization_id()
+
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     message = models.TextField(default='')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+
+    def get_project_id(self):
+        return self.issue.get_project_id()
+
+    def get_organization_id(self):
+        return self.issue.get_organization_id()
 
 class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'

@@ -4,7 +4,7 @@
 
 (() => {
     const PluginRegistry = require('./plugins').default;
-    const serverProxy = require('./server-proxy');
+    const serverProxy = require('./server-proxy').default;
     const { isBrowser, isNode } = require('browser-or-node');
     const { ArgumentError } = require('./exceptions');
     const { CloudStorageCredentialsType, CloudStorageProviderType } = require('./enums');

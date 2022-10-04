@@ -3,15 +3,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, List
-import pytest
 from http import HTTPStatus
-from deepdiff import DeepDiff
+from typing import Any, Dict, List
 
+import pytest
+from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import (MINIO_KEY, MINIO_SECRET_KEY,
-    get_method, make_api_client, patch_method, post_method)
+from shared.utils.config import (
+    MINIO_KEY,
+    MINIO_SECRET_KEY,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 
 
 @pytest.mark.usefixtures('dontchangedb')

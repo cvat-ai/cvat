@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import boto3
-
 from botocore.exceptions import ClientError
 
-from shared.utils.config import MINIO_KEY, MINIO_SECRET_KEY, MINIO_ENDPOINT_URL
+from shared.utils.config import MINIO_ENDPOINT_URL, MINIO_KEY, MINIO_SECRET_KEY
 
 
 class S3Client:
