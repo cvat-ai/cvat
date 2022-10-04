@@ -70,10 +70,10 @@ schema/
 .openapi-generator/
 
 # Generated code
-cvat_sdk/api_client/
-cvat_sdk/version.py
-requirements/
-docs/
-setup.py
-README.md
-MANIFEST.in
+/cvat_sdk/api_client/
+/cvat_sdk/version.py
+/requirements/
+/docs/
+/setup.py
+/README.md
+/MANIFEST.in

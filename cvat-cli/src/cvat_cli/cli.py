@@ -23,6 +23,8 @@ class CLI:
 
         self.client.login(credentials)
 
+        self.client.check_server_version(fail_if_unsupported=False)
+
     def tasks_list(self, *, use_json_output: bool = False, **kwargs):
         """List all tasks in either basic or JSON format."""
         results = self.client.tasks.list(return_json=use_json_output, **kwargs)

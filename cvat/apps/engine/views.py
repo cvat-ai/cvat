@@ -97,7 +97,9 @@ class ServerViewSet(viewsets.ViewSet):
         responses={
             '200': AboutSerializer,
         })
-    @action(detail=False, methods=['GET'], serializer_class=AboutSerializer)
+    @action(detail=False, methods=['GET'], serializer_class=AboutSerializer,
+        permission_classes=[] # This endpoint is available for everyone
+    )
     def about(request):
         from cvat import __version__ as cvat_version
         about = {
