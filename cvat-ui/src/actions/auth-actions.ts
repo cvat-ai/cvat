@@ -100,11 +100,11 @@ export const registerAsync = (
     }
 };
 
-export const loginAsync = (username: string, password: string): ThunkAction => async (dispatch) => {
+export const loginAsync = (credential: string, password: string): ThunkAction => async (dispatch) => {
     dispatch(authActions.login());
 
     try {
-        await cvat.server.login(username, password);
+        await cvat.server.login(credential, password);
         const users = await cvat.users.get({ self: true });
         dispatch(authActions.loginSuccess(users[0]));
     } catch (error) {

@@ -12,6 +12,10 @@ export function isInteger(value): boolean {
     return typeof value === 'number' && Number.isInteger(value);
 }
 
+export function isEmail(value): boolean {
+    return typeof value === 'string' && RegExp(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).test(value);
+}
+
 // Called with specific Enum context
 export function isEnum(value): boolean {
     for (const key in this) {

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { UserAddOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
 import Form, { RuleRender, RuleObject } from 'antd/lib/form';
 import Button from 'antd/lib/button';
@@ -98,8 +98,11 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 
 function RegisterFormComponent(props: Props): JSX.Element {
     const { fetching, userAgreements, onSubmit } = props;
+    const [form] = Form.useForm();
+    const [usernameEdited, setUsernameEdited] = useState(false);
     return (
         <Form
+            form={form}
             onFinish={(values: Record<string, string | boolean>) => {
                 const agreements = Object.keys(values)
                     .filter((key: string):boolean => key.startsWith('agreement:'));
@@ -155,25 +158,6 @@ function RegisterFormComponent(props: Props): JSX.Element {
             </Row>
             <Form.Item
                 hasFeedback
-                name='username'
-                rules={[
-                    {
-                        required: true,
-                        message: 'Please specify a username',
-                    },
-                    {
-                        validator: validateUsername,
-                    },
-                ]}
-            >
-                <Input
-                    prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='Username'
-                />
-            </Form.Item>
-
-            <Form.Item
-                hasFeedback
                 name='email'
                 rules={[
                     {
@@ -190,9 +174,34 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     autoComplete='email'
                     prefix={<MailOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Email address'
+                    onChange={(event) => {
+                        const { value } = event.target;
+                        if (!usernameEdited) {
+                            const [username] = value.split('@');
+                            form.setFieldsValue({ username });
+                        }
+                    }}
                 />
             </Form.Item>
-
+            <Form.Item
+                hasFeedback
+                name='username'
+                rules={[
+                    {
+                        required: true,
+                        message: 'Please specify a username',
+                    },
+                    {
+                        validator: validateUsername,
+                    },
+                ]}
+            >
+                <Input
+                    prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    placeholder='Username'
+                    onChange={() => setUsernameEdited(true)}
+                />
+            </Form.Item>
             <Form.Item
                 hasFeedback
                 name='password1'

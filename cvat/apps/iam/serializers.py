@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import PasswordResetSerializer
+from dj_rest_auth.serializers import PasswordResetSerializer, LoginSerializer, UserModel
+from django.forms import ValidationError
 from rest_framework import serializers
 
 from django.conf import settings
@@ -38,3 +39,26 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
         return {
             'domain_override': domain
         }
+
+class LoginSerializerEx(LoginSerializer):
+    def get_auth_user_using_allauth(self, username, email, password):
+        from allauth.account import app_settings
+
+        # Authentication through email
+        if app_settings.AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.EMAIL:
+            return self._validate_email(email, password)
+
+        # Authentication through username
+        if app_settings.AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.USERNAME:
+            return self._validate_username(username, password)
+
+        # Authentication through either username or email
+        if email:
+            try:
+                username = UserModel.objects.get(email__iexact=email).get_username()
+            except UserModel.MultipleObjectsReturned:
+                raise ValidationError('Unable to login with provided credentials')
+            except UserModel.DoesNotExist:
+                pass
+
+        return self._validate_username_email(username, email, password)

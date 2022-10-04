@@ -9,7 +9,7 @@ import Input from 'antd/lib/input';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 
 export interface LoginData {
-    username: string;
+    credential: string;
     password: string;
 }
 
@@ -24,18 +24,18 @@ function LoginFormComponent(props: Props): JSX.Element {
         <Form onFinish={onSubmit} className='login-form'>
             <Form.Item
                 hasFeedback
-                name='username'
+                name='credential'
                 rules={[
                     {
                         required: true,
-                        message: 'Please specify a username',
+                        message: 'Please specify a email or username',
                     },
                 ]}
             >
                 <Input
-                    autoComplete='username'
+                    autoComplete='credential'
                     prefix={<UserOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='Username'
+                    placeholder='Email or Username'
                 />
             </Form.Item>
 
