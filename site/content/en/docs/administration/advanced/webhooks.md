@@ -295,15 +295,16 @@ Webhook receiver can check that request came from CVAT by comparison received va
 ## Ping Webhook
 To check that webhook configured well and CVAT can connect with target URL you can use `ping` webhook.
 
-After pressing `Ping` bottom on UI (or sending `POST /webhooks/{id}/ping request`) CVAT will sent webhook to the target url with general information about webhook.
+After pressing `Ping` bottom on UI (or sending `POST /webhooks/{id}/ping request`) CVAT will sent webhook
+to the target url with general information about webhook.
 
 Ping webhook payload:
 
-| Key       | Type     | Description
-| :---:     | :----:   | :----
-| `event`   | `string` | Name of event that triggered webhook
-| `webhook` | `object` | Full information about webhook. See the full description of webhook`s fields in swagger docs
-| `sender`  | `object` | Information about user that called `ping` webhook
+| Key       | Type     | Description |
+| :---:     | :----:   | :---- |
+| `event`   | `string` | Name of event that triggered webhook |
+| `webhook` | `object` | Full information about webhook. See the full description of webhook`s fields in swagger docs |
+| `sender`  | `object` | Information about user that called `ping` webhook |
 
 {{< scroll-code lang="json" >}}
 {
