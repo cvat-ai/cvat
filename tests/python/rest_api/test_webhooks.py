@@ -305,8 +305,8 @@ class TestPostWebhooks:
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
     def test_cannot_create_non_unique_webhook(self):
-        pytest.skip('Not implemented yet')
-        response = post_method('admin2', 'webhooks', self.proj_webhook)
+        pytest.skip("Not implemented yet")
+        response = post_method("admin2", "webhooks", self.proj_webhook)
 
         response = post_method("admin2", "webhooks", self.proj_webhook)
 
@@ -769,9 +769,7 @@ class TestPatchWebhooks:
         )
 
     def test_cannot_update_with_nonexistent_contenttype(self):
-        patch_data = {
-            "content_type": "application/x-www-form-urlencoded",
-        }
+        patch_data = {"content_type": "application/x-www-form-urlencoded"}
 
         response = patch_method("admin2", f"webhooks/{self.WID}", patch_data)
         assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -1096,7 +1094,6 @@ class TestDeleteWebhooks:
 
         response = get_method(username, f"webhooks/{webhook_id}")
         assert response.status_code == HTTPStatus.NOT_FOUND
-
 
     @pytest.mark.parametrize(
         "role, allow",
