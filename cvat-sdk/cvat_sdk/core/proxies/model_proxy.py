@@ -183,8 +183,6 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
     def fetch(self: Entity) -> Self:
         """
         Updates the current object from the server
-
-        Any local changes in the object are discarded.
         """
 
         # TODO: implement revision checking

@@ -64,7 +64,6 @@ with make_client(host="localhost", credentials=('user', 'password')) as client:
 
     # If an object is modified on the server, the local object is not updated automatically.
     # To reflect the latest changes, the local object needs to be fetch()-ed.
-    # Any local changes in the object will be discarded.
     task.fetch()
 
     # Let's obtain another task. Again, it can be done via the task repository.
@@ -204,8 +203,6 @@ job_ref1.update(...)
 job_ref2.fetch()
 # job_ref2 is synced
 ```
-
-Any local changes in the object will be discarded.
 
 Finally, if you need to remove the object from the server, you can use the `remove()` method.
 The server object will be removed, but the local copy of the object will remain untouched.
