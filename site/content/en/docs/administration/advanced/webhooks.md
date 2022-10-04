@@ -131,13 +131,13 @@ Webhook payload object for `update:<resource>` events:
 {
     "event": "update:task",
     "task": {
-        "url": "http://localhost:8080/api/tasks/15",
+        "url": "<http://localhost:8080/api/tasks/15>",
         "id": 15,
         "name": "new task name",
         "project_id": 7,
         "mode": "annotation",
         "owner": {
-            "url": "http://localhost:8080/api/users/1",
+            "url": "<http://localhost:8080/api/users/1>",
             "id": 1,
             "username": "admin1",
             "first_name": "Admin",
@@ -167,7 +167,7 @@ Webhook payload object for `update:<resource>` events:
                 "stop_frame": 0,
                 "jobs": [
                     {
-                        "url": "http://localhost:8080/api/jobs/19",
+                        "url": "<http://localhost:8080/api/jobs/19>",
                         "id": 19,
                         "assignee": null,
                         "status": "annotation",
@@ -202,7 +202,7 @@ Webhook payload object for `update:<resource>` events:
     },
     "webhook_id": 7,
     "sender": {
-        "url": "http://localhost:8080/api/users/1",
+        "url": "<http://localhost:8080/api/users/1>",
         "id": 1,
         "username": "admin1",
         "first_name": "Admin",
@@ -225,13 +225,13 @@ Here is example of payload for `delete:task` event:
 {
     "event": "delete:task",
     "task": {
-        "url": "http://localhost:8080/api/tasks/15",
+        "url": "<http://localhost:8080/api/tasks/15>",
         "id": 15,
         "name": "task",
         "project_id": 7,
         "mode": "",
         "owner": {
-            "url": "http://localhost:8080/api/users/1",
+            "url": "<http://localhost:8080/api/users/1>",
             "id": 1,
             "username": "admin1",
             "first_name": "Admin",
@@ -272,7 +272,7 @@ Here is example of payload for `delete:task` event:
     },
     "webhook_id": 7,
     "sender": {
-        "url": "http://localhost:8080/api/users/1",
+        "url": "<http://localhost:8080/api/users/1>",
         "id": 1,
         "username": "admin1",
         "first_name": "Admin",
@@ -299,11 +299,11 @@ After pressing `Ping` bottom on UI (or sending `POST /webhooks/{id}/ping request
 
 Ping webhook payload:
 
-Key       | Type      | Description
-:---:     | :----:    | :----
-`event`   | `string`  | Name of event that triggered webhook
-`webhook` | `object`  | Full information about webhook. See the full description of webhook`s fields in swagger docs
-`sender`  | `object`  | Information about user that called `ping` webhook
+| Key       | Type     | Description
+| :---:     | :----:   | :----
+| `event`   | `string` | Name of event that triggered webhook
+| `webhook` | `object` | Full information about webhook. See the full description of webhook`s fields in swagger docs
+| `sender`  | `object` | Information about user that called `ping` webhook
 
 {{< scroll-code lang="json" >}}
 {
