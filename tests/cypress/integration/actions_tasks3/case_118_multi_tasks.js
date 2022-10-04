@@ -25,7 +25,7 @@ context('Create mutli tasks.', () => {
     const posY = 10;
     const color = 'gray';
     const imagesFolder = `${fixturesPath}/${imageFileName}`;
-    const videoFolder = `${fixturesPath}/${videoFileName}`;
+    // const videoFolder = `${fixturesPath}/${videoFileName}`;
     const imageListToAttach = [];
     const imageListToVideo = [];
     const videoListToAttach = [];
@@ -44,12 +44,12 @@ context('Create mutli tasks.', () => {
         cy.visit('auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-        cy.videoGenerator(imageListToVideo, {
-            directory: videoFolder,
-            fileName: videoFileName,
-            count: videoCount,
-            extension: videoExtention,
-        });
+        // cy.videoGenerator(imageListToVideo, {
+        //     directory: videoFolder,
+        //     fileName: videoFileName,
+        //     count: videoCount,
+        //     extension: videoExtention,
+        // });
     });
 
     beforeEach(() => {
@@ -59,15 +59,15 @@ context('Create mutli tasks.', () => {
     });
 
     afterEach(() => {
-        cy.goToTaskList();
+        // cy.goToTaskList();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Default form should fill default name.', () => {
+        it.skip('Default form should fill default name.', () => {
             cy.get('#name').should('have.attr', 'value', filePartOfTemplateTaskName);
         });
 
-        describe('Try to create tasks with images. The error information should appear, button should be disabled.', () => {
+        describe.skip('Try to create tasks with images. The error information should appear, button should be disabled.', () => {
             it('With attached images', () => {
                 cy.get('input[type="file"]').attachFile(imageListToAttach, { subjectType: 'drag-n-drop' });
                 cy.get('.cvat-create-task-content-alert').should('be.visible');
@@ -112,7 +112,7 @@ context('Create mutli tasks.', () => {
         });
 
         describe('Try to create tasks with vidoes.', () => {
-            it('With videos from "Connected file share"', () => {
+            it.skip('With videos from "Connected file share"', () => {
                 let stdoutToList = [];
 
                 cy.contains('[role="tab"]', 'Connected file share').click();
@@ -141,7 +141,7 @@ context('Create mutli tasks.', () => {
                     });
             });
 
-            it('With attached videos', () => {
+            it.skip('With attached videos', () => {
                 cy.get('input[type="file"]').attachFile(videoListToAttach, { subjectType: 'drag-n-drop' });
                 cy.get('.cvat-create-task-content-footer [type="submit"]')
                     .should('not.be.disabled')
@@ -149,15 +149,36 @@ context('Create mutli tasks.', () => {
                 cy.get('.cvat-create-task-content-alert').should('not.be.exist');
             });
 
-            it.skip('With image from "Remote source".', () => {
-                const imageUrls =
-                    'https://raw.githubusercontent.com/cvat-ai/cvat/v1.2.0/cvat/apps/documentation/static/documentation/images/cvatt.jpg';
+            it('With video from "Remote source".', () => {
+                const baseUrl = 'https://raw.githubusercontent.com/cvat-ai/cvat';
+                const branch = 'aa/creating-multiple-tasks-uploading-videos/tests';
+                const folder = 'tests/cypress/integration/share';
+                const imageUrls = `${baseUrl}/${branch}/${folder}/${videoFileName}_1.mp4
+${baseUrl}/${branch}/${folder}/${videoFileName}_2.mp4`;
+
+                const tasksName = [`${videoFileName}_1.mp4`, `${videoFileName}_2.mp4`];
 
                 cy.contains('[role="tab"]', 'Remote sources').click();
                 cy.get('.cvat-file-selector-remote').clear().type(imageUrls);
 
-                cy.get('.cvat-create-task-content-alert').should('be.visible');
-                cy.get('[type="submit"]').should('be.disabled');
+                cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+                cy.get('.cvat-create-task-content-footer [type="submit"]')
+                    .should('not.be.disabled')
+                    .contains(`Submit ${videoCount} tasks`)
+                    .click();
+                cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
+                    .contains('Total: 2')
+                    .click();
+                cy.contains('button', 'Cancel');
+                cy.get('.cvat-create-multi-tasks-state').should('be.exist')
+                    .contains('Finished');
+                cy.contains('button', 'Retry failed tasks').should('be.disabled');
+                cy.contains('button', 'Ok').click();
+
+                cy.contains('strong', tasksName[0]).should('be.exist');
+                cy.contains('strong', tasksName[1]).should('be.exist');
+                cy.deleteTask(tasksName[0]);
+                cy.deleteTask(tasksName[1]);
             });
         });
     });

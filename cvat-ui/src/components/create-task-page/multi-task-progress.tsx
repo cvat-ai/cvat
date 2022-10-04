@@ -64,13 +64,13 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
             message={(
                 <div>
                     {percent === 100 ? (
-                        <Row>
+                        <Row className='cvat-create-multi-tasks-state'>
                             <Col>
                                 Finished
                             </Col>
                         </Row>
                     ) : null}
-                    <Row>
+                    <Row className='cvat-create-multi-tasks-progress'>
                         <Col>
                             {`Pending: ${countPending} `}
                         </Col>
