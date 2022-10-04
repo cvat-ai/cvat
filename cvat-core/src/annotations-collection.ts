@@ -361,6 +361,12 @@
                         'The object is not in collection yet. Call ObjectState.put([state]) before you can merge it',
                     );
                 }
+
+                if (state.shapeType === ShapeType.MASK) {
+                    throw new ArgumentError(
+                        'Merging for masks is not supported',
+                    );
+                }
                 return object;
             });
 
