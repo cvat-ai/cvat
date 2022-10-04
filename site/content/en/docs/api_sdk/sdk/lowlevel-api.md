@@ -327,7 +327,7 @@ response data can't be parsed automatically due to the incorrect schema. In this
 simplest workaround is to disable response parsing using the `_parse_response=False`
 method argument.
 
-You can find many examples of API client usage in REST API tests [here](https://github.com/opencv/cvat/tests/python/rest_api).
+You can find many examples of API client usage in REST API tests [here](https://github.com/opencv/cvat/tree/develop/tests/python).
 
 ### Organizations
 
@@ -339,8 +339,11 @@ To call an operation in the context of an organization, use one of these method 
 ```python
 ...
 (updated_annotations, response) = api_client.tasks_api.partial_update_annotations(
-  id=task_id, org_id=org_id, action='update',
-  patched_labeled_data_request=data)
+    id=task_id,
+    org_id=org_id,
+    action='update',
+    patched_labeled_data_request=data
+)
 ```
 
 ### Paginated responses
@@ -358,6 +361,8 @@ Example:
 from cvat_sdk.core.helpers import get_paginated_collection
 
 ...
-project_tasks = get_paginated_collection(api_client.projects_api.list_tasks_endpoint,
-  id=project_id)
+project_tasks = get_paginated_collection(
+    api_client.projects_api.list_tasks_endpoint,
+    id=project_id,
+)
 ```

@@ -3,7 +3,7 @@
 This package provides a Python client library for CVAT server. It can be useful for
 workflow automation and writing custom CVAT server clients.
 
-API includes 2 layers:
+The SDK API includes 2 layers:
 - Server API wrappers (`ApiClient`). Located in at `cvat_sdk.api_client`
 - High-level tools (`Core`). Located at `cvat_sdk.core`
 
