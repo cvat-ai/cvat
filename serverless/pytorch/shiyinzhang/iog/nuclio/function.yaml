@@ -42,7 +42,7 @@ spec:
         - kind: RUN
           value: conda install -y -c conda-forge pycocotools scipy
         - kind: RUN
-          value: pip install opencv-python==4.5.5.64
+          value: pip install opencv-python
         - kind: RUN
           value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
         - kind: WORKDIR

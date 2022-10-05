@@ -1,11 +1,11 @@
 ---
 title: 'Command line interface (CLI)'
 linkTitle: 'CLI'
-weight: 29
-description: 'Guide to working with CVAT tasks in the command line interface. This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/cvat-cli).'
+weight: 4
+description: ''
 ---
 
-## Description
+## Overview
 
 A simple command line interface for working with CVAT tasks. At the moment it
 implements a basic feature set but may serve as the starting point for a more
@@ -22,21 +22,24 @@ Overview of functionality:
 - Export and download a whole task
 - Import a task
 
-## Usage
+## Installation
 
-To access the CLI, you need to have python in environment,
-as well as a clone of the CVAT repository and the necessary modules:
+To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/), use this command:
 
 ```bash
 pip install cvat-cli
 ```
 
+We support Python versions 3.7 - 3.9.
+
+## Usage
+
 You can get help with `cvat-cli --help`.
 
 ```
-usage: cvat-cli [-h] [--auth USER:[PASS]] [--server-host SERVER_HOST]
-              [--server-port SERVER_PORT] [--debug]
-              {create,delete,ls,frames,dump,upload,export,import} ...
+usage: cvat-cli [-h] [--auth USER:[PASS]]
+  [--server-host SERVER_HOST] [--server-port SERVER_PORT] [--debug]
+  {create,delete,ls,frames,dump,upload,export,import} ...
 
 Perform common operations related to CVAT tasks.
 

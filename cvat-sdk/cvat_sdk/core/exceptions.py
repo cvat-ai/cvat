@@ -9,3 +9,7 @@ class CvatSdkException(Exception):
 
 class InvalidHostException(CvatSdkException):
     """Indicates an invalid hostname error"""
+
+
+class IncompatibleVersionException(CvatSdkException):
+    """Indicates server and SDK version mismatch"""

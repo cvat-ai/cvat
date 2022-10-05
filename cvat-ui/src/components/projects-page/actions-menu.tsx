@@ -12,6 +12,7 @@ import { CombinedState } from 'reducers';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { useHistory } from 'react-router';
 
 interface Props {
     projectInstance: any;
@@ -20,6 +21,7 @@ interface Props {
 export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     const { projectInstance } = props;
 
+    const history = useHistory();
     const dispatch = useDispatch();
     const exportBackupIsActive = useSelector((state: CombinedState) => (
         state.export.projects.backup.current[projectInstance.id]
@@ -55,6 +57,20 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 icon={exportBackupIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
             >
                 Backup Project
+            </Menu.Item>
+            <Menu.Item key='set-webhooks'>
+                <a
+                    href={`/projects/${projectInstance.id}/webhooks`}
+                    onClick={(e: React.MouseEvent) => {
+                        e.preventDefault();
+                        history.push({
+                            pathname: `/projects/${projectInstance.id}/webhooks`,
+                        });
+                        return false;
+                    }}
+                >
+                    Setup webhooks
+                </a>
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item key='delete' onClick={onDeleteProject}>

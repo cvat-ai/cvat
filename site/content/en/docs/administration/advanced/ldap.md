@@ -4,7 +4,7 @@
 
 title: 'LDAP Backed Authentication'
 linkTitle: 'LDAP Login'
-weight: 5
+weight: 40
 description: 'Allow users to login with credentials from a central source'
 
 ---

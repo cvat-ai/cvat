@@ -117,6 +117,27 @@ services:
     networks:
       - cvat
 
+  cvat_worker_webhooks:
+    container_name: cvat_worker_webhooks
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/worker.webhooks.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
   cvat_ui:
     container_name: cvat_ui
     image: cvat/ui:${CVAT_VERSION:-dev}
