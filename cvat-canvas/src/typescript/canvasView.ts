@@ -1999,7 +1999,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 drawnStateDescriptions.length !== stateDescriptions.length ||
                 drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
             ) {
-                // need to remove created text and create it again
+                // remove created text and create it again
                 if (text) {
                     text.remove();
                     this.svgTexts[state.clientID] = this.addText(state);
@@ -2016,6 +2016,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }
                         }
                     }
+                }
+            }
+
+            if (drawnState.label.id !== state.label.id || drawnState.color !== state.color) {
+                // update shape color if necessary
+                if (shape) {
+                    shape.attr({
+                        ...this.getShapeColorization(state),
+                    });
                 }
             }
 

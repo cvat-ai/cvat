@@ -97,11 +97,6 @@ class WebhookReadSerializer(serializers.ModelSerializer):
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     events = EventTypesSerializer(write_only=True)
 
-    # Q: should be owner_id required or not?
-    owner_id = serializers.IntegerField(
-        write_only=True, allow_null=True, required=False
-    )
-
     project_id = serializers.IntegerField(
         write_only=True, allow_null=True, required=False
     )
@@ -120,11 +115,10 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "secret",
             "is_active",
             "enable_ssl",
-            "owner_id",
             "project_id",
             "events",
         )
-        write_once_fields = ("type", "owner_id", "project_id")
+        write_once_fields = ("type", "project_id")
         validators = [EventTypeValidator()]
 
     def create(self, validated_data):

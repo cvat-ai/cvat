@@ -1,0 +1,59 @@
+# {{classname}}
+
+{{#description}}{{.}}
+{{/description}}
+
+All URIs are relative to _{{basePath}}_
+
+Method | HTTP request | Description
+------------- | ------------- | -------------
+{{#operations}}{{#operation}}[**{{>operation_name}}**]({{classname}}#{{>operation_name}}) | **{{httpMethod}}** {{path}} | {{summary}}
+{{/operation}}{{/operations}}
+
+{{#operations}}
+{{#operation}}
+## **{{>operation_name}}**
+> {{#returnType}}{{{.}}} {{/returnType}}{{>operation_name}}({{#requiredParams}}{{^defaultValue}}{{paramName}}{{^-last}}, {{/-last}}{{/defaultValue}}{{/requiredParams}})
+
+{{{summary}}}{{#notes}}
+
+{{{.}}}{{/notes}}
+
+### Example
+{{> api_doc_example }}
+
+### Parameters
+{{^allParams}}This endpoint does not need any parameter.{{/allParams}}{{#allParams}}{{#-last}}
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------{{/-last}}{{/allParams}}
+{{#requiredParams}}{{^defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} |
+{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} | defaults to {{{.}}}
+{{/defaultValue}}{{/requiredParams}}{{#optionalParams}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} | [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
+{{/optionalParams}}
+
+### Return type
+
+{{#returnType}}{{#returnTypeIsPrimitive}}**{{{returnType}}}**{{/returnTypeIsPrimitive}}{{^returnTypeIsPrimitive}}[**{{{returnType}}}**](../models/{{returnBaseType}}){{/returnTypeIsPrimitive}}{{/returnType}}{{^returnType}}None (empty response body){{/returnType}}
+
+### Authorization
+
+{{^authMethods}}No authorization required{{/authMethods}}{{#authMethods}}{{{name}}}{{^-last}}, {{/-last}}{{/authMethods}}
+
+### HTTP request headers
+
+ - **Content-Type**: {{#consumes}}{{{mediaType}}}{{^-last}}, {{/-last}}{{/consumes}}{{^consumes}}Not defined{{/consumes}}
+ - **Accept**: {{#produces}}{{{mediaType}}}{{^-last}}, {{/-last}}{{/produces}}{{^produces}}Not defined{{/produces}}
+
+{{#responses.0}}
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+{{#responses}}
+**{{code}}** | {{message}} | {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} |
+{{/responses}}
+{{/responses.0}}
+
+{{/operation}}
+{{/operations}}
