@@ -23,9 +23,7 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 
 def target_url():
     env_data = {}
-    with open(
-        osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env"), "r"
-    ) as f:
+    with open(osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env"), "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
@@ -57,10 +55,7 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
     )
 
     response = post_method(
-        "admin1",
-        "webhooks",
-        webhook_spec(events, project_id, webhook_type),
-        org_id=org_id,
+        "admin1", "webhooks", webhook_spec(events, project_id, webhook_type), org_id=org_id
     )
     assert response.status_code == HTTPStatus.CREATED
 
@@ -132,12 +127,8 @@ class TestWebhookProjectEvents:
         assert payload["event"] == events[0]
         assert len(payload["before_update"]["labels"]) == 0
         assert len(payload["project"]["labels"]) == 1
-        assert (
-            payload["project"]["labels"][0]["name"] == patch_data["labels"][0]["name"]
-        )
-        assert (
-            payload["project"]["labels"][0]["color"] == patch_data["labels"][0]["color"]
-        )
+        assert payload["project"]["labels"][0]["name"] == patch_data["labels"][0]["name"]
+        assert payload["project"]["labels"][0]["color"] == patch_data["labels"][0]["color"]
 
     def test_webhook_create_and_delete_project(self, organizations):
         org_id = list(organizations)[0]["id"]
@@ -145,9 +136,7 @@ class TestWebhookProjectEvents:
 
         webhook = create_webhook(events, "organization", org_id=org_id)
 
-        response = post_method(
-            "admin1", "projects", {"name": "project_name"}, org_id=org_id
-        )
+        response = post_method("admin1", "projects", {"name": "project_name"}, org_id=org_id)
         assert response.status_code == HTTPStatus.CREATED
         project = response.json()
 
@@ -201,9 +190,7 @@ class TestWebhookIntersection:
         events = ["update:project"]
         project_id = response.json()["id"]
         webhook_id_1 = create_webhook(events, "organization", org_id=org_id)["id"]
-        webhook_id_2 = create_webhook(
-            events, "project", project_id=project_id, org_id=org_id
-        )["id"]
+        webhook_id_2 = create_webhook(events, "project", project_id=project_id, org_id=org_id)["id"]
 
         patch_data = {"name": "new_project_name"}
         response = patch_method("admin1", f"projects/{project_id}", patch_data)
@@ -214,11 +201,7 @@ class TestWebhookIntersection:
 
         assert deliveries_1["count"] == deliveries_2["count"] == 1
 
-        assert (
-            payload_1["project"]["name"]
-            == payload_2["project"]["name"]
-            == patch_data["name"]
-        )
+        assert payload_1["project"]["name"] == payload_2["project"]["name"] == patch_data["name"]
 
         assert (
             payload_1["before_update"]["name"]
@@ -253,9 +236,7 @@ class TestWebhookIntersection:
         assert deliveries_1["count"] == deliveries_2["count"] == 1
 
         assert payload_1["event"] == payload_2["event"] == "create:task"
-        assert (
-            payload_1["task"]["name"] == payload_2["task"]["name"] == post_data["name"]
-        )
+        assert payload_1["task"]["name"] == payload_2["task"]["name"] == post_data["name"]
 
         assert payload_1["webhook_id"] == webhook_id_1
         assert payload_2["webhook_id"] == webhook_id_2
@@ -317,16 +298,10 @@ class TestWebhookTaskEvents:
         )
 
         assignee_id = next(
-            (
-                user["id"]
-                for user in users
-                if user["id"] != tasks[task_id]["assignee"]["id"]
-            )
+            (user["id"] for user in users if user["id"] != tasks[task_id]["assignee"]["id"])
         )
 
-        webhook_id = create_webhook(["update:task"], "project", project_id=project_id)[
-            "id"
-        ]
+        webhook_id = create_webhook(["update:task"], "project", project_id=project_id)["id"]
 
         patch_data = {"assignee_id": assignee_id}
         response = patch_method("admin1", f"tasks/{task_id}", patch_data)
@@ -335,9 +310,7 @@ class TestWebhookTaskEvents:
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        assert (
-            payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
-        )
+        assert payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
         assert payload["task"]["assignee"]["id"] == assignee_id
 
     def test_webhook_update_task_label(self, tasks):
@@ -349,9 +322,7 @@ class TestWebhookTaskEvents:
             )
         )
 
-        webhook_id = create_webhook(["update:task"], "organization", org_id=org_id)[
-            "id"
-        ]
+        webhook_id = create_webhook(["update:task"], "organization", org_id=org_id)["id"]
 
         patch_data = {"labels": [{"name": "new_label"}]}
         response = patch_method("admin1", f"tasks/{task_id}", patch_data, org_id=org_id)
@@ -418,8 +389,7 @@ class TestWebhookJobEvents:
             (
                 job
                 for job in jobs
-                if job["assignee"] is None
-                and tasks[job["task_id"]]["organization"] is not None
+                if job["assignee"] is None and tasks[job["task_id"]]["organization"] is not None
             )
         )
 
@@ -428,9 +398,7 @@ class TestWebhookJobEvents:
         webhook_id = create_webhook(["update:job"], "organization", org_id=org_id)["id"]
 
         patch_data = {"assignee": list(users)[0]["id"]}
-        response = patch_method(
-            "admin1", f"jobs/{job['id']}", patch_data, org_id=org_id
-        )
+        response = patch_method("admin1", f"jobs/{job['id']}", patch_data, org_id=org_id)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook_id)
@@ -441,18 +409,14 @@ class TestWebhookJobEvents:
 
     def test_webhook_update_job_stage(self, jobs, tasks):
         stages = {"annotation", "validation", "acceptance"}
-        job = next(
-            (job for job in jobs if tasks[job["task_id"]]["organization"] is not None)
-        )
+        job = next((job for job in jobs if tasks[job["task_id"]]["organization"] is not None))
 
         org_id = tasks[job["task_id"]]["organization"]
 
         webhook_id = create_webhook(["update:job"], "organization", org_id=org_id)["id"]
 
         patch_data = {"stage": (stages - {job["stage"]}).pop()}
-        response = patch_method(
-            "admin1", f"jobs/{job['id']}", patch_data, org_id=org_id
-        )
+        response = patch_method("admin1", f"jobs/{job['id']}", patch_data, org_id=org_id)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook_id)
@@ -476,9 +440,7 @@ class TestWebhookJobEvents:
         webhook_id = create_webhook(["update:job"], "organization", org_id=org_id)["id"]
 
         patch_data = {"state": (states - {job["state"]}).pop()}
-        response = patch_method(
-            "admin1", f"jobs/{job['id']}", patch_data, org_id=org_id
-        )
+        response = patch_method("admin1", f"jobs/{job['id']}", patch_data, org_id=org_id)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook_id)
@@ -500,14 +462,10 @@ class TestWebhookIssueEvents:
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]
 
-        webhook_id = create_webhook(["update:issue"], "organization", org_id=org_id)[
-            "id"
-        ]
+        webhook_id = create_webhook(["update:issue"], "organization", org_id=org_id)["id"]
 
         patch_data = {"resolved": not issue["resolved"]}
-        response = patch_method(
-            "admin1", f"issues/{issue['id']}", patch_data, org_id=org_id
-        )
+        response = patch_method("admin1", f"issues/{issue['id']}", patch_data, org_id=org_id)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook_id)
@@ -527,14 +485,10 @@ class TestWebhookIssueEvents:
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]
 
-        webhook_id = create_webhook(["update:issue"], "organization", org_id=org_id)[
-            "id"
-        ]
+        webhook_id = create_webhook(["update:issue"], "organization", org_id=org_id)["id"]
 
         patch_data = {"position": [0, 1, 2, 3]}
-        response = patch_method(
-            "admin1", f"issues/{issue['id']}", patch_data, org_id=org_id
-        )
+        response = patch_method("admin1", f"issues/{issue['id']}", patch_data, org_id=org_id)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook_id)
@@ -546,22 +500,13 @@ class TestWebhookIssueEvents:
     def test_webhook_create_and_delete_issue(self, organizations, jobs, tasks):
         org_id = list(organizations)[0]["id"]
         job_id = next(
-            (
-                job["id"]
-                for job in jobs
-                if tasks[job["task_id"]]["organization"] == org_id
-            )
+            (job["id"] for job in jobs if tasks[job["task_id"]]["organization"] == org_id)
         )
         events = ["create:issue", "delete:issue"]
 
         webhook = create_webhook(events, "organization", org_id=org_id)
 
-        post_data = {
-            "frame": 0,
-            "position": [0, 1, 2, 3],
-            "job": job_id,
-            "message": "issue_msg",
-        }
+        post_data = {"frame": 0, "position": [0, 1, 2, 3], "job": job_id, "message": "issue_msg"}
         response = post_method("admin1", "issues", post_data, org_id=org_id)
         assert response.status_code == HTTPStatus.CREATED
 
@@ -610,9 +555,7 @@ class TestWebhookMembershipEvents:
         )
         org_id = membership["organization"]
 
-        webhook_id = create_webhook(
-            ["update:membership"], "organization", org_id=org_id
-        )["id"]
+        webhook_id = create_webhook(["update:membership"], "organization", org_id=org_id)["id"]
 
         patch_data = {"role": (roles - {membership["role"]}).pop()}
         response = patch_method(
@@ -632,13 +575,9 @@ class TestWebhookMembershipEvents:
         )
         org_id = membership["organization"]
 
-        webhook_id = create_webhook(
-            ["delete:membership"], "organization", org_id=org_id
-        )["id"]
+        webhook_id = create_webhook(["delete:membership"], "organization", org_id=org_id)["id"]
 
-        response = delete_method(
-            "admin1", f"memberships/{membership['id']}", org_id=org_id
-        )
+        response = delete_method("admin1", f"memberships/{membership['id']}", org_id=org_id)
         assert response.status_code == HTTPStatus.NO_CONTENT
 
         deliveries, payload = get_deliveries(webhook_id)
@@ -660,9 +599,7 @@ class TestWebhookOrganizationEvents:
     def test_webhook_update_organization_name(self, organizations):
         org_id = list(organizations)[0]["id"]
 
-        webhook_id = create_webhook(
-            ["update:organization"], "organization", org_id=org_id
-        )["id"]
+        webhook_id = create_webhook(["update:organization"], "organization", org_id=org_id)["id"]
 
         patch_data = {"name": "new_org_name"}
         patch_method("admin1", f"organizations/{org_id}", patch_data, org_id=org_id)
@@ -678,29 +615,18 @@ class TestWebhookOrganizationEvents:
 class TestWebhookCommentEvents:
     def test_webhook_update_comment_message(self, comments, issues, jobs, tasks):
         org_comments = list(
-            (
-                comment,
-                tasks[jobs[issues[comment["issue"]]["job"]]["task_id"]]["organization"],
-            )
+            (comment, tasks[jobs[issues[comment["issue"]]["job"]]["task_id"]]["organization"])
             for comment in comments
         )
 
         comment, org_id = next(
-            (
-                (comment, org_id)
-                for comment, org_id in org_comments
-                if org_id is not None
-            )
+            ((comment, org_id) for comment, org_id in org_comments if org_id is not None)
         )
 
-        webhook_id = create_webhook(["update:comment"], "organization", org_id=org_id)[
-            "id"
-        ]
+        webhook_id = create_webhook(["update:comment"], "organization", org_id=org_id)["id"]
 
         patch_data = {"message": "new comment message"}
-        response = patch_method(
-            "admin1", f"comments/{comment['id']}", patch_data, org_id=org_id
-        )
+        response = patch_method("admin1", f"comments/{comment['id']}", patch_data, org_id=org_id)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook_id)
@@ -788,9 +714,7 @@ class TestWebhookRedelivery:
     def test_webhook_redelivery(self, projects):
         project = list(projects)[0]
 
-        webhook_id = create_webhook(
-            ["update:project"], "project", project_id=project["id"]
-        )["id"]
+        webhook_id = create_webhook(["update:project"], "project", project_id=project["id"])["id"]
 
         patch_data = {"name": "new_project_name"}
         response = patch_method("admin1", f"projects/{project['id']}", patch_data)

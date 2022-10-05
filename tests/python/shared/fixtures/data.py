@@ -145,9 +145,7 @@ def tasks_by_org(tasks):
 def issues_by_org(tasks, jobs, issues):
     data = {}
     for issue in issues:
-        data.setdefault(
-            tasks[jobs[issue["job"]]["task_id"]]["organization"], []
-        ).append(issue)
+        data.setdefault(tasks[jobs[issue["job"]]["task_id"]]["organization"], []).append(issue)
     data[""] = data.pop(None, [])
     return data
 
@@ -174,9 +172,7 @@ def ownership(func):
 def is_project_staff(projects, assignee_id):
     @ownership
     def check(user_id, pid):
-        return user_id == projects[pid]["owner"]["id"] or user_id == assignee_id(
-            projects[pid]
-        )
+        return user_id == projects[pid]["owner"]["id"] or user_id == assignee_id(projects[pid])
 
     return check
 
@@ -198,9 +194,7 @@ def is_task_staff(tasks, is_project_staff, assignee_id):
 def is_job_staff(jobs, is_task_staff, assignee_id):
     @ownership
     def check(user_id, jid):
-        return user_id == assignee_id(jobs[jid]) or is_task_staff(
-            user_id, jobs[jid]["task_id"]
-        )
+        return user_id == assignee_id(jobs[jid]) or is_task_staff(user_id, jobs[jid]["task_id"])
 
     return check
 
@@ -238,9 +232,7 @@ def find_users(test_db):
         for field, value in kwargs.items():
             if field.startswith("exclude_"):
                 field = field.split("_", maxsplit=1)[1]
-                exclude_rows = set(
-                    v["id"] for v in filter(lambda a: a[field] == value, test_db)
-                )
+                exclude_rows = set(v["id"] for v in filter(lambda a: a[field] == value, test_db))
                 data = list(filter(lambda a: a["id"] not in exclude_rows, data))
             else:
                 data = list(filter(lambda a: a[field] == value, data))
@@ -366,9 +358,7 @@ def filter_jobs_with_shapes(annotations):
 @pytest.fixture(scope="session")
 def filter_tasks_with_shapes(annotations):
     def find(tasks):
-        return list(
-            filter(lambda t: annotations["task"][str(t["id"])]["shapes"], tasks)
-        )
+        return list(filter(lambda t: annotations["task"][str(t["id"])]["shapes"], tasks))
 
     return find
 
