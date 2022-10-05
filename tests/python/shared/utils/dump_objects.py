@@ -18,6 +18,7 @@ if __name__ == "__main__":
         "membership",
         "invitation",
         "cloudstorage",
+        "comment",
         "issue",
         "webhook",
     ]:
