@@ -759,7 +759,7 @@ class TestWebhookCommentEvents:
 
 
 @pytest.mark.usefixtures("changedb")
-class TestWebhookPint:
+class TestWebhookPing:
     def test_ping_webhook(self, projects):
         project_id = list(projects)[0]["id"]
 
