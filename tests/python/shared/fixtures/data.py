@@ -98,6 +98,12 @@ def issues():
 
 
 @pytest.fixture(scope="session")
+def comments():
+    with open(osp.join(ASSETS_DIR, "comments.json")) as f:
+        return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
 def webhooks():
     with open(osp.join(ASSETS_DIR, "webhooks.json")) as f:
         return Container(json.load(f)["results"])
@@ -139,7 +145,9 @@ def tasks_by_org(tasks):
 def issues_by_org(tasks, jobs, issues):
     data = {}
     for issue in issues:
-        data.setdefault(tasks[jobs[issue["job"]]["task_id"]]["organization"], []).append(issue)
+        data.setdefault(
+            tasks[jobs[issue["job"]]["task_id"]]["organization"], []
+        ).append(issue)
     data[""] = data.pop(None, [])
     return data
 
@@ -166,7 +174,9 @@ def ownership(func):
 def is_project_staff(projects, assignee_id):
     @ownership
     def check(user_id, pid):
-        return user_id == projects[pid]["owner"]["id"] or user_id == assignee_id(projects[pid])
+        return user_id == projects[pid]["owner"]["id"] or user_id == assignee_id(
+            projects[pid]
+        )
 
     return check
 
@@ -188,7 +198,9 @@ def is_task_staff(tasks, is_project_staff, assignee_id):
 def is_job_staff(jobs, is_task_staff, assignee_id):
     @ownership
     def check(user_id, jid):
-        return user_id == assignee_id(jobs[jid]) or is_task_staff(user_id, jobs[jid]["task_id"])
+        return user_id == assignee_id(jobs[jid]) or is_task_staff(
+            user_id, jobs[jid]["task_id"]
+        )
 
     return check
 
@@ -226,7 +238,9 @@ def find_users(test_db):
         for field, value in kwargs.items():
             if field.startswith("exclude_"):
                 field = field.split("_", maxsplit=1)[1]
-                exclude_rows = set(v["id"] for v in filter(lambda a: a[field] == value, test_db))
+                exclude_rows = set(
+                    v["id"] for v in filter(lambda a: a[field] == value, test_db)
+                )
                 data = list(filter(lambda a: a["id"] not in exclude_rows, data))
             else:
                 data = list(filter(lambda a: a[field] == value, data))
@@ -328,8 +342,9 @@ def find_issue_staff_user(is_issue_staff, is_issue_admin):
     def find(issues, users, is_staff, is_admin):
         for issue in issues:
             for user in users:
-                i_admin, i_staff = is_issue_admin(user["id"], issue["id"]), is_issue_staff(
-                    user["id"], issue["id"]
+                i_admin, i_staff = (
+                    is_issue_admin(user["id"], issue["id"]),
+                    is_issue_staff(user["id"], issue["id"]),
                 )
                 if (is_admin is None and (i_staff or i_admin) == is_staff) or (
                     is_admin == i_admin and is_staff == i_staff
@@ -351,7 +366,9 @@ def filter_jobs_with_shapes(annotations):
 @pytest.fixture(scope="session")
 def filter_tasks_with_shapes(annotations):
     def find(tasks):
-        return list(filter(lambda t: annotations["task"][str(t["id"])]["shapes"], tasks))
+        return list(
+            filter(lambda t: annotations["task"][str(t["id"])]["shapes"], tasks)
+        )
 
     return find
 
