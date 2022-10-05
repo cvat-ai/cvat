@@ -88,12 +88,11 @@ class Processor:
         with open(readme_path) as f:
             readme_contents = f.read()
 
-        apis_summary = re.findall(
+        apis_summary = re.search(
             r"## Available API Endpoints(.*)## Available Models",
             readme_contents,
             flags=re.DOTALL,
-        )
-        apis_summary = apis_summary[0].strip()
+        )[1]
         assert len(apis_summary) > 0
 
         return apis_summary
