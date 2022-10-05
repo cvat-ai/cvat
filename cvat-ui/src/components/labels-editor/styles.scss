@@ -45,15 +45,14 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin: 2px;
     margin-left: $grid-unit-size * 2;
     user-select: none;
-    border: 1px solid $transparent-color;
+    border: 1px solid $border-color-2;
     opacity: 0.6;
 
     > span {
         margin-left: 5px;
-        color: white;
 
         > span[role='img']:hover {
-            filter: invert(1);
+            filter: invert(0.2);
         }
     }
 
