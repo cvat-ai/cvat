@@ -2,7 +2,7 @@ version: '3.3'
 
 services:
   minio:
-    image: quay.io/minio/minio
+    image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
     hostname: minio
     restart: always
     command: server /data --console-address ":9001"
@@ -25,7 +25,7 @@ services:
         aliases:
           - minio
   mc:
-    image: minio/mc
+    image: minio/mc:RELEASE.2022-09-16T09-16-47Z
     depends_on:
       - minio
     environment:
