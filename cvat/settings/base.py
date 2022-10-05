@@ -20,6 +20,7 @@ import re
 import mimetypes
 from corsheaders.defaults import default_headers
 from distutils.util import strtobool
+from cvat import __version__
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -100,6 +101,7 @@ INSTALLED_APPS = [
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
+    'cvat.apps.webhooks',
 ]
 
 SITE_ID = 1
@@ -252,7 +254,10 @@ if REDIS_URL:
         },
         'low': {
             'URL': REDIS_URL,
-        }
+        },
+        'webhooks': {
+            'URL': REDIS_URL,
+        },
     }
 else:
     RQ_QUEUES = {
@@ -265,10 +270,16 @@ else:
             'HOST': os.getenv('CVAT_REDIS_HOST', 'cvat_redis'),
             'PORT': int(os.getenv('CVAT_REDIS_PORT', 6379)),
             'DB': int(os.getenv('CVAT_REDIS_DB', 0)),
-        }
+        },
+        'webhooks': {
+            'HOST': os.getenv('CVAT_REDIS_HOST', 'cvat_redis'),
+            'PORT': int(os.getenv('CVAT_REDIS_PORT', 6379)),
+            'DB': int(os.getenv('CVAT_REDIS_DB', 0)),
+        },
     }
 RQ_QUEUES['default']['DEFAULT_TIMEOUT'] = '4h'
-RQ_QUEUES['default']['DEFAULT_TIMEOUT'] = '24h'
+RQ_QUEUES['low']['DEFAULT_TIMEOUT'] = '24h'
+RQ_QUEUES['webhooks']['DEFAULT_TIMEOUT'] = '4h'
 
 
 NUCLIO = {
@@ -531,7 +542,7 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    'VERSION': '2.1.0',
+    'VERSION': __version__,
     'CONTACT': {
         'name': 'CVAT.ai team',
         'url': 'https://github.com/cvat-ai/cvat',

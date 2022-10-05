@@ -215,6 +215,8 @@ jobs:
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
           docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:latest
+          docker tag cvat/ui:latest cvat/ui:dev
 
       - name: OPA tests
         run: |
@@ -319,6 +321,7 @@ jobs:
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f tests/docker-compose.file_share.yml \
+            -f tests/docker-compose.minio.yml \
             -f components/serverless/docker-compose.serverless.yml up -d
 
       - name: Waiting for server
@@ -328,7 +331,7 @@ jobs:
         run: |
           max_tries=60
           status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-          while [[  $status_code != "401" && max_tries -gt 0 ]]
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
           do
             echo Number of attempts left: $max_tries
             echo Status code of response: $status_code
@@ -338,14 +341,14 @@ jobs:
             (( max_tries-- ))
           done
 
-          if [[ $status_code != "401" ]]; then
+          if [[ $status_code != "200" ]]; then
              echo Response from server is incorrect, output:
              cat /tmp/server_response
           fi
           echo ::set-output name=status_code::${status_code}
 
       - name: Fail on bad response from server
-        if: steps.wait-server.outputs.status_code != '401'
+        if: steps.wait-server.outputs.status_code != '200'
         uses: actions/github-script@v3
         with:
           script: |

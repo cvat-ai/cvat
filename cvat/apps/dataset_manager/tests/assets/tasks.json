@@ -336,7 +336,14 @@
         "name": "skeleton",
         "color": "#2080c0",
         "type": "skeleton",
-        "attributes": [],
+        "attributes": [
+          {
+            "name": "attr",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1", "2"]
+          }
+        ],
         "sublabels": [
           {
             "name": "1",
@@ -353,14 +360,7 @@
           {
             "name": "3",
             "color": "#479ffe",
-            "attributes": [
-              {
-                "name": "attr",
-                "mutable": false,
-                "input_type": "select",
-                "values": ["0", "1", "2"]
-              }
-            ],
+            "attributes": [],
             "type": "points"
           }
         ],

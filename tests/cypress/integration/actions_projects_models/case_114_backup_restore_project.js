@@ -92,6 +92,7 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
                 projectBackupArchiveFullName = file;
                 cy.verifyDownload(projectBackupArchiveFullName);
             });
+            cy.verifyNotification();
         });
 
         it('Remove and restore the project from backup.', () => {
@@ -156,6 +157,7 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
                 projectBackupArchiveFullName = file;
                 cy.verifyDownload(projectBackupArchiveFullName);
             });
+            cy.verifyNotification();
         });
 
         it('Remove and restore the project from backup.', () => {

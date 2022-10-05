@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -31,7 +32,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
@@ -39,7 +40,7 @@ from cvat.apps.engine.task import _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, validate_bucket_status
+    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage
 )
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
@@ -172,34 +173,35 @@ class _TaskBackupBase(_BackupBase):
                 source, dest = attribute.pop('spec_id'), 'name'
             attribute[dest] = label_mapping[label]['attributes'][source]
 
-        def _update_label(shape):
+        def _update_label(shape, parent_label=''):
             if 'label_id' in shape:
-                source, dest = shape.pop('label_id'), 'label'
+                source = shape.pop('label_id')
+                shape['label'] = label_mapping[source]['value']
             elif 'label' in shape:
-                source, dest = shape.pop('label'), 'label_id'
-            shape[dest] = label_mapping[source]['value']
+                source = parent_label + shape.pop('label')
+                shape['label_id'] = label_mapping[source]['value']
 
             return source
 
-        def _prepare_shapes(shapes):
+        def _prepare_shapes(shapes, parent_label=''):
             for shape in shapes:
-                label = _update_label(shape)
+                label = _update_label(shape, parent_label)
                 for attr in shape['attributes']:
                     _update_attribute(attr, label)
 
-                _prepare_shapes(shape.get('elements', []))
+                _prepare_shapes(shape.get('elements', []), label)
 
                 self._prepare_meta(allowed_fields, shape)
 
-        def _prepare_tracks(tracks):
+        def _prepare_tracks(tracks, parent_label=''):
             for track in tracks:
-                label = _update_label(track)
+                label = _update_label(track, parent_label)
                 for shape in track['shapes']:
                     for attr in shape['attributes']:
                         _update_attribute(attr, label)
                     self._prepare_meta(allowed_fields, shape)
 
-                _prepare_tracks(track.get('elements', []))
+                _prepare_tracks(track.get('elements', []), label)
 
                 for attr in track['attributes']:
                     _update_attribute(attr, label)
@@ -426,7 +428,7 @@ class _ImporterBase():
             sublabels  = label.pop('sublabels', [])
 
             db_label = models.Label.objects.create(**label_relation, parent=parent_label, **label)
-            label_mapping[label_name] = {
+            label_mapping[(parent_label.name if parent_label else '') + label_name] = {
                 'value': db_label.id,
                 'attributes': {},
             }
@@ -443,7 +445,7 @@ class _ImporterBase():
                 attribute_serializer = AttributeSerializer(data=attribute)
                 attribute_serializer.is_valid(raise_exception=True)
                 db_attribute = attribute_serializer.save(label=db_label)
-                label_mapping[label_name]['attributes'][attribute_name] = db_attribute.id
+                label_mapping[(parent_label.name if parent_label else '') + label_name]['attributes'][attribute_name] = db_attribute.id
 
         return label_mapping
 
@@ -787,11 +789,6 @@ def export(db_instance, request):
                         return sendfile(request, file_path, attachment=True,
                             attachment_filename=filename)
                     elif location == Location.CLOUD_STORAGE:
-
-                        @validate_bucket_status
-                        def _export_to_cloud_storage(storage, file_path, file_name):
-                            storage.upload_file(file_path, file_name)
-
                         try:
                             storage_id = location_conf['storage_id']
                         except KeyError:
@@ -801,7 +798,7 @@ def export(db_instance, request):
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                         storage = db_storage_to_storage_instance(db_storage)
 
-                        _export_to_cloud_storage(storage, file_path, filename)
+                        export_to_cloud_storage(storage, file_path, filename)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()
@@ -825,6 +822,14 @@ def export(db_instance, request):
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
+
+def _download_file_from_bucket(db_storage, filename, key):
+    storage = db_storage_to_storage_instance(db_storage)
+
+    data = import_from_cloud_storage(storage, key)
+    with open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
+
 def _import(importer, request, rq_id, Serializer, file_field_name, location_conf, filename=None):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
@@ -832,6 +837,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
         fd = None
+        dependent_job = None
 
         location = location_conf.get('location')
         if location == Location.LOCAL:
@@ -844,14 +850,8 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                     for chunk in payload_file.chunks():
                         f.write(chunk)
         else:
-            @validate_bucket_status
-            def _import_from_cloud_storage(storage, file_name):
-                return storage.download_fileobj(file_name)
-
             file_name = request.query_params.get('filename')
-            assert file_name
-
-            # download file from cloud storage
+            assert file_name, "The filename wasn't specified"
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
@@ -859,13 +859,11 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                     'Cloud storage location was selected for destination'
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
-            storage = db_storage_to_storage_instance(db_storage)
-
-            data = _import_from_cloud_storage(storage, file_name)
-
+            key = filename
             fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
-            with open(filename, 'wb+') as f:
-                f.write(data.getbuffer())
+            dependent_job = configure_dependent_job(
+                queue, rq_id, _download_file_from_bucket,
+                db_storage, filename, key)
 
         rq_job = queue.enqueue_call(
             func=importer,
@@ -875,6 +873,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
                 'tmp_file': filename,
                 'tmp_file_descriptor': fd,
             },
+            depends_on=dependent_job
         )
     else:
         if rq_job.is_finished:
@@ -883,12 +882,9 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
-            exc_info = str(rq_job.exc_info)
-            rq_job.delete()
-
+        elif rq_job.is_failed or \
+                rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+            exc_info = process_failed_job(rq_job)
             # RQ adds a prefix with exception class name
             import_error_prefix = '{}.{}'.format(
                 CvatImportError.__module__, CvatImportError.__name__)
