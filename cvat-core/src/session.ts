@@ -27,7 +27,7 @@ const {
 } = require('./enums');
 const { Label } = require('./labels');
 const User = require('./user').default;
-const Issue = require('./issue');
+const Issue = require('./issue').default;
 const { FieldUpdateTrigger, checkObjectType } = require('./common');
 
 function buildDuplicatedAPI(prototype) {

@@ -8,11 +8,6 @@ import PluginRegistry from './plugins';
 import { LogType } from './enums';
 import { ArgumentError } from './exceptions';
 
-/**
- * Class representing a single log
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class Log {
     public readonly id: number;
     public readonly type: LogType;
@@ -34,7 +29,7 @@ export class Log {
         this.onCloseCallback = callback;
     }
 
-    protected validatePayload(): void {
+    public validatePayload(): void {
         if (typeof this.payload !== 'object') {
             throw new ArgumentError('Payload must be an object');
         }
@@ -92,7 +87,7 @@ Object.defineProperties(Log.prototype.close, {
 });
 
 class LogWithCount extends Log {
-    protected validatePayload(): void {
+    public validatePayload(): void {
         super.validatePayload.call(this);
         if (!Number.isInteger(this.payload.count) || this.payload.count < 1) {
             const message = `The field "count" is required for "${this.type}" log. It must be a positive integer`;
@@ -102,7 +97,7 @@ class LogWithCount extends Log {
 }
 
 class LogWithObjectsInfo extends Log {
-    protected validatePayload(): void {
+    public validatePayload(): void {
         const generateError = (name: string, range: string): void => {
             const message = `The field "${name}" is required for "${this.type}" log. ${range}`;
             throw new ArgumentError(message);
@@ -143,7 +138,7 @@ class LogWithObjectsInfo extends Log {
 }
 
 class LogWithWorkingTime extends Log {
-    protected validatePayload(): void {
+    public validatePayload(): void {
         super.validatePayload.call(this);
 
         if (
@@ -160,7 +155,7 @@ class LogWithWorkingTime extends Log {
 }
 
 class LogWithExceptionInfo extends Log {
-    protected validatePayload(): void {
+    public validatePayload(): void {
         super.validatePayload.call(this);
 
         if (typeof this.payload.message !== 'string') {
