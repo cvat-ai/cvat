@@ -681,8 +681,32 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, canvasInstance,
+            curZLayer, annotations, frameData, canvasInstance, colorBy,
         } = this.props;
+
+        for (const state of annotations) {
+            let shapeColor = '';
+
+            if (colorBy === ColorBy.INSTANCE) {
+                shapeColor = state.color;
+            } else if (colorBy === ColorBy.GROUP) {
+                shapeColor = state.group.color;
+            } else if (colorBy === ColorBy.LABEL) {
+                shapeColor = state.label.color;
+            }
+
+            const shapeView = window.document.getElementById(`cvat_canvas_shape_${state.clientID}`);
+            if (shapeView) {
+                const handler = (shapeView as any).instance.remember('_selectHandler');
+                if (handler && handler.nested) {
+                    handler.nested.fill({ color: shapeColor });
+                }
+
+                (shapeView as any).instance
+                    .fill({ color: shapeColor })
+                    .stroke({ color: shapeColor });
+            }
+        }
 
         if (frameData !== null && canvasInstance) {
             canvasInstance.setup(
