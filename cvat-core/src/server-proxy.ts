@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { isEmail } from 'common';
+import { isEmail } from './common';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { Storage } from './storage';
 
