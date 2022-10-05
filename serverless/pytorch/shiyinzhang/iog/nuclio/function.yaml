@@ -38,7 +38,11 @@ spec:
         - kind: RUN
           value: conda install -y pytorch=0.4 torchvision=0.2 -c pytorch
         - kind: RUN
-          value: conda install -y -c conda-forge pycocotools opencv scipy
+          value: apt update && apt install -y libgl1-mesa-glx
+        - kind: RUN
+          value: conda install -y -c conda-forge pycocotools scipy
+        - kind: RUN
+          value: pip install opencv-python
         - kind: RUN
           value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
         - kind: WORKDIR
@@ -48,11 +52,7 @@ spec:
         - kind: ENV
           value: filename=IOG_PASCAL_SBD.pth
         - kind: RUN
-          value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
-        - kind: RUN
-          value: echo "/download/ {print \$NF}" > confirm_code.awk
-        - kind: RUN
-          value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk -f confirm_code.awk ./cookie`&id=${fileid}" -o ${filename}
+          value: curl -L "https://drive.google.com/uc?export=download&confirm=t&id=${fileid}" -o ${filename}
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: ENTRYPOINT
