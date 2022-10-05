@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,8 +8,8 @@ const config = require('./config');
 const { MembershipRole } = require('./enums');
 const { ArgumentError, ServerError } = require('./exceptions');
 const PluginRegistry = require('./plugins').default;
-const serverProxy = require('./server-proxy');
-const User = require('./user');
+const serverProxy = require('./server-proxy').default;
+const User = require('./user').default;
 
 /**
  * Class representing an organization

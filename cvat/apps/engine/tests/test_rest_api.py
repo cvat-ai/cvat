@@ -504,7 +504,7 @@ class ServerAboutAPITestCase(APITestCase):
 
     def test_api_v2_server_about_no_auth(self):
         response = self._run_api_v2_server_about(None)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_api_server_about_versions_admin(self):
         for version in settings.REST_FRAMEWORK['ALLOWED_VERSIONS']:

@@ -1,0 +1,136 @@
+// Copyright (C) 2022 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../styles.scss';
+
+.cvat-webhooks-list {
+    height: 100%;
+    overflow-y: auto;
+    margin-top: $grid-unit-size * 3;
+}
+
+.cvat-webhooks-list-item {
+    width: 100%;
+    height: $grid-unit-size * 16;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    margin-bottom: $grid-unit-size * 2;
+    padding: $grid-unit-size * 2 0 $grid-unit-size * 0.5 0;
+    background: $background-color-1;
+
+    @media screen and (min-width: 1080px) {
+        height: $grid-unit-size * 15;
+    }
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+
+    .ant-typography-ellipsis {
+        margin-bottom: 0;
+    }
+}
+
+.cvat-webhook-status {
+    margin-left: $grid-unit-size;
+}
+
+.cvat-webhook-status-available {
+    @extend .cvat-webhook-status;
+
+    color: green;
+    fill: green;
+}
+
+.cvat-webhook-status-failed {
+    @extend .cvat-webhook-status;
+
+    color: red;
+    fill: red;
+}
+
+.cvat-webhook-status-unavailable {
+    @extend .cvat-webhook-status;
+
+    color: gray;
+    fill: gray;
+}
+
+.cvat-webhook-info-text {
+    margin-right: $grid-unit-size;
+}
+
+.cvat-item-ping-webhook-button {
+    margin-right: $grid-unit-size * 3;
+}
+
+.cvat-webhooks-page-actions-button {
+    margin-right: $grid-unit-size;
+    margin-top: $grid-unit-size;
+    display: flex;
+    align-items: center;
+    padding: $grid-unit-size;
+    line-height: $grid-unit-size * 2;
+}
+
+.cvat-webhooks-page {
+    width: 100%;
+    height: 100%;
+    padding-top: $grid-unit-size * 3;
+
+    > div:nth-child(1) {
+        padding-bottom: $grid-unit-size;
+    }
+
+    > div:nth-child(3) {
+        height: 83%;
+        margin-bottom: $grid-unit-size * 4;
+    }
+}
+
+.cvat-empty-webhooks-list .ant-empty {
+    top: 50%;
+    left: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
+.cvat-webhooks-page-top-bar {
+    > button {
+        margin-right: $grid-unit-size;
+    }
+
+    > div {
+        display: flex;
+        justify-content: space-between;
+    }
+}
+
+.cvat-webhooks-page-search-bar {
+    width: $grid-unit-size * 32;
+}
+
+.cvat-webhooks-page-filters-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    > div {
+        display: flex;
+        margin-right: $grid-unit-size * 4;
+
+        > button {
+            margin-right: $grid-unit-size;
+        }
+    }
+}
+
+.cvat-webhooks-add-wrapper {
+    display: inline-block;
+}
+
+.cvat-webhooks-go-back {
+    padding: 0.5 * $grid-unit-size 0;
+}

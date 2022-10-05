@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,9 +7,9 @@ const quickhull = require('quickhull');
 
 const PluginRegistry = require('./plugins').default;
 const Comment = require('./comment');
-const User = require('./user');
+const User = require('./user').default;
 const { ArgumentError } = require('./exceptions');
-const serverProxy = require('./server-proxy');
+const serverProxy = require('./server-proxy').default;
 
 /**
  * Class representing a single issue
