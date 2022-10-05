@@ -38,8 +38,6 @@ context('Create mutli tasks.', () => {
         // videoListToAttach.push(`${videoFileName}/${videoFileName}_${i}.${videoExtention}`);
     }
 
-    console.log(videoListToAttach);
-
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -59,15 +57,15 @@ context('Create mutli tasks.', () => {
     });
 
     afterEach(() => {
-        // cy.goToTaskList();
+        cy.goToTaskList();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it.skip('Default form should fill default name.', () => {
+        it('Default form should fill default name.', () => {
             cy.get('#name').should('have.attr', 'value', filePartOfTemplateTaskName);
         });
 
-        describe.skip('Try to create tasks with images. The error information should appear, button should be disabled.', () => {
+        describe('Try to create tasks with images. The error information should appear, button should be disabled.', () => {
             it('With attached images', () => {
                 cy.get('input[type="file"]').attachFile(imageListToAttach, { subjectType: 'drag-n-drop' });
                 cy.get('.cvat-create-task-content-alert').should('be.visible');
@@ -111,8 +109,16 @@ context('Create mutli tasks.', () => {
             });
         });
 
-        describe('Try to create tasks with vidoes.', () => {
-            it.skip('With videos from "Connected file share"', () => {
+        describe('Try to create tasks with vidoes. Should be success creating.', () => {
+            it.skip('With attached videos', () => {
+                cy.get('input[type="file"]').attachFile(videoListToAttach, { subjectType: 'drag-n-drop' });
+                cy.get('.cvat-create-task-content-footer [type="submit"]')
+                    .should('not.be.disabled')
+                    .contains(`Submit ${videoCount} tasks`);
+                cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+            });
+
+            it('With videos from "Connected file share"', () => {
                 let stdoutToList = [];
 
                 cy.contains('[role="tab"]', 'Connected file share').click();
@@ -134,19 +140,26 @@ context('Create mutli tasks.', () => {
                                 });
                             });
 
+                        cy.get('.cvat-create-task-content-alert').should('not.be.exist');
                         cy.get('.cvat-create-task-content-footer [type="submit"]')
                             .should('not.be.disabled')
-                            .contains(`Submit ${stdoutToList.length} tasks`);
-                        cy.get('.cvat-create-task-content-alert').should('not.be.exist');
-                    });
-            });
+                            .contains(`Submit ${stdoutToList.length} tasks`)
+                            .click();
 
-            it.skip('With attached videos', () => {
-                cy.get('input[type="file"]').attachFile(videoListToAttach, { subjectType: 'drag-n-drop' });
-                cy.get('.cvat-create-task-content-footer [type="submit"]')
-                    .should('not.be.disabled')
-                    .contains(`Submit ${videoCount} tasks`);
-                cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+                        cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
+                            .contains('Total: 2')
+                            .click();
+                        cy.contains('button', 'Cancel');
+                        cy.get('.cvat-create-multi-tasks-state').should('be.exist')
+                            .contains('Finished');
+                        cy.contains('button', 'Retry failed tasks').should('be.disabled');
+                        cy.contains('button', 'Ok').click();
+
+                        cy.contains('strong', stdoutToList[0]).should('be.exist');
+                        cy.contains('strong', stdoutToList[1]).should('be.exist');
+                        cy.deleteTask(stdoutToList[0]);
+                        cy.deleteTask(stdoutToList[1]);
+                    });
             });
 
             it('With video from "Remote source".', () => {

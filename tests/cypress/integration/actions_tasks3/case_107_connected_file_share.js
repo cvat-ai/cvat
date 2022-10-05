@@ -19,26 +19,31 @@ context('Connected file share.', () => {
         cy.get('#name').type(taskName);
         cy.addNewLabel(labelName);
         cy.contains('[role="tab"]', 'Connected file share').click();
-        cy.get('.cvat-share-tree')
-            .should('be.visible')
-            .within(() => {
-                cy.get('[aria-label="plus-square"]').click();
-                cy.exec(`docker exec -i cvat_server /bin/bash -c "find ${sharePath} -name ${imageNamePattern} -type f"`)
-                    .then((command) => {
-                        stdoutToList = command.stdout.split('\n').map((path) => path.split('/').pop());
-                        // [image_case_107_1.png, image_case_107_2.png, image_case_107_3.png]
-                        expect(stdoutToList.length).to.be.eq(3);
+
+        cy.exec(`docker exec -i cvat_server /bin/bash -c \
+                            "find ${sharePath} -name ${imageNamePattern} -type f"`)
+            .then((command) => {
+                stdoutToList = command.stdout.split('\n').map((filePath) => filePath.split('/').pop());
+                expect(stdoutToList.length).to.be.eq(3);
+                cy.get('.cvat-share-tree')
+                    .should('be.visible')
+                    .within(() => {
+                        cy.get('[aria-label="plus-square"]').click();
                         cy.get(`[title^=image_case_${caseId}]`).should('have.length', stdoutToList.length);
                         cy.get('[title=root]').should('have.length', 1);
                         stdoutToList.forEach((el) => {
                             cy.get(`[title="${el}"]`).should('exist');
+                            cy.get(`[title="${el}"]`).prev().should('exist');
                             // Click on the checkboxes
+                            // eslint-disable-next-line cypress/no-unnecessary-waiting
+                            cy.wait(1); // TODO
                             cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
                         });
                     });
+
+                cy.contains('button', 'Submit & Open').click();
+                cy.get('.cvat-task-details').should('exist');
             });
-        cy.contains('button', 'Submit & Open').click();
-        cy.get('.cvat-task-details').should('exist');
     }
 
     before(() => {
