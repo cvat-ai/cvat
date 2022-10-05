@@ -5,7 +5,7 @@
   "results": [
     {
       "content_type": "application/json",
-      "created_date": "2022-09-28T12:51:06.703000Z",
+      "created_date": "2022-09-29T08:00:48.440000Z",
       "description": "",
       "enable_ssl": true,
       "events": [
@@ -28,10 +28,8 @@
         "update:project",
         "update:task"
       ],
-      "id": 5,
+      "id": 6,
       "is_active": true,
-      "last_delivery_date": "2022-09-28T13:11:38.311000Z",
-      "last_status": 200,
       "organization": 1,
       "owner": {
         "first_name": "Admin",
@@ -41,10 +39,10 @@
         "username": "admin1"
       },
       "project": null,
-      "target_url": "http://example.com",
+      "target_url": "http://example.com/",
       "type": "organization",
-      "updated_date": "2022-09-28T12:51:06.703000Z",
-      "url": "http://localhost:8080/api/webhooks/5"
+      "updated_date": "2022-09-29T08:00:48.441000Z",
+      "url": "http://localhost:8080/api/webhooks/6"
     },
     {
       "content_type": "application/json",
