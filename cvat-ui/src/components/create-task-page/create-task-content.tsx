@@ -317,7 +317,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 },
             });
         }
-    }, 300);
+    }, 100);
 
     private handleUploadShareFiles = (shareFiles: {
         key: string;
