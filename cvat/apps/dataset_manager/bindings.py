@@ -4,9 +4,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from functools import reduce
 import os.path as osp
 import re
 import sys
+import numpy as np
 from collections import namedtuple
 from pathlib import Path
 from types import SimpleNamespace
@@ -1530,7 +1532,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[TaskData,
         dm.AnnotationType.polyline: ShapeType.POLYLINE,
         dm.AnnotationType.points: ShapeType.POINTS,
         dm.AnnotationType.cuboid_3d: ShapeType.CUBOID,
-        dm.AnnotationType.skeleton: ShapeType.SKELETON
+        dm.AnnotationType.skeleton: ShapeType.SKELETON,
+        dm.AnnotationType.mask: ShapeType.MASK
     }
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
@@ -1574,6 +1577,23 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[TaskData,
                     points = []
                     if ann.type == dm.AnnotationType.cuboid_3d:
                         points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
+                    elif ann.type == dm.AnnotationType.mask:
+                        istrue = np.argwhere(ann.image == True).transpose()
+                        top = int(istrue[0].min())
+                        left = int(istrue[1].min())
+                        bottom = int(istrue[0].max())
+                        right = int(istrue[1].max())
+                        points = ann.image[top:bottom + 1, left:right + 1]
+
+                        def reduce_fn(acc, v):
+                            if v == acc['val']:
+                                acc['res'][-1] += 1
+                            else:
+                                acc['val'] = v
+                                acc['res'].append(1)
+                            return acc
+                        points = reduce(reduce_fn, points.reshape(np.prod(points.shape)), { 'res': [0], 'val': False })['res']
+                        points.extend([int(left), int(top), int(right), int(bottom)])
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = ann.points
 

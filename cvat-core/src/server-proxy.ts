@@ -1445,7 +1445,7 @@ class ServerProxy {
                 filename: typeof file === 'string' ? file : file.name,
             };
 
-            const url = `${backendAPI}/${session}s/${id}/annotations`;
+            const url = `${backendAPI}/${session}s/${id}/annotations?conv_mask_to_poly=false`;
 
             async function wait() {
                 return new Promise<void>((resolve, reject) => {
