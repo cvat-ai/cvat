@@ -30,6 +30,10 @@ from cvat_sdk.version import VERSION
 
 @attrs.define
 class Config:
+    """
+    Allows to tweak behavior of Client instances.
+    """
+
     status_check_period: float = 5
     """Operation status check period, in seconds"""
 
@@ -42,7 +46,8 @@ class Config:
 
 class Client:
     """
-    Manages session and configuration.
+    Provides session management, implements authentication operations
+    and simplifies access to server APIs.
     """
 
     SUPPORTED_SERVER_VERSIONS = (
@@ -61,17 +66,26 @@ class Client:
         check_server_version: bool = True,
     ) -> None:
         url = self._validate_and_prepare_url(url)
+
         self.logger = logger or logging.getLogger(__name__)
+        """The root logger"""
+
         self.config = config or Config()
+        """Configuration for this object"""
+
         self.api_map = CVAT_API_V2(url)
+        """Handles server API URL interaction logic"""
+
         self.api_client = ApiClient(
             Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
         )
+        """Provides low-level access to the CVAT server"""
 
         if check_server_version:
             self.check_server_version()
 
         self._repos: Dict[str, Repo] = {}
+        """A cache for created Repository instances"""
 
     ALLOWED_SCHEMAS = ("https", "http")
 

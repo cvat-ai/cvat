@@ -98,6 +98,12 @@ def issues():
 
 
 @pytest.fixture(scope="session")
+def comments():
+    with open(osp.join(ASSETS_DIR, "comments.json")) as f:
+        return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
 def webhooks():
     with open(osp.join(ASSETS_DIR, "webhooks.json")) as f:
         return Container(json.load(f)["results"])
@@ -328,8 +334,9 @@ def find_issue_staff_user(is_issue_staff, is_issue_admin):
     def find(issues, users, is_staff, is_admin):
         for issue in issues:
             for user in users:
-                i_admin, i_staff = is_issue_admin(user["id"], issue["id"]), is_issue_staff(
-                    user["id"], issue["id"]
+                i_admin, i_staff = (
+                    is_issue_admin(user["id"], issue["id"]),
+                    is_issue_staff(user["id"], issue["id"]),
                 )
                 if (is_admin is None and (i_staff or i_admin) == is_staff) or (
                     is_admin == i_admin and is_staff == i_staff
