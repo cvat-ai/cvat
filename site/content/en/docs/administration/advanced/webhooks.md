@@ -31,16 +31,16 @@ To create webhook for CVAT organization, follow the steps:
 
 ## List of available events
 
-| Resource     | Create | Update | Delete |
-| :---:        | :----: | :----: | :----: |
-| Organization |        |   X    |        |
-| Membership   |        |   X    |   X    |
-| Invitation   |   X    |        |   X    |
-| Project      |   X    |   X    |   X    |
-| Task         |   X    |   X    |   X    |
-| Job          |        |   X    |        |
-| Issue        |   X    |   X    |   X    |
-| Comment      |   X    |   X    |   X    |
+| Resource     | Create  | Update | Delete |
+| :---:        | :----:  | :----: | :----: |
+| Organization |         |   ✅   |        |
+| Membership   |         |   ✅   |   ✅   |
+| Invitation   |   ✅    |        |   ✅   |
+| Project      |   ✅    |   ✅   |   ✅   |
+| Task         |   ✅    |   ✅   |   ✅   |
+| Job          |         |   ✅   |        |
+| Issue        |   ✅    |   ✅   |   ✅   |
+| Comment      |   ✅    |   ✅   |   ✅   |
 
 ## Payloads
 
