@@ -389,7 +389,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object() # force to call check_object_permissions
 
         if request.method in {'POST', 'OPTIONS'}:
-
             return self.import_annotations(
                 request=request,
                 pk=pk,
@@ -460,6 +459,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'dataset':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
+            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = self._object.get_tmp_dirname()
             uploaded_file = None
             if os.path.isfile(os.path.join(tmp_dir, filename)):
@@ -471,6 +471,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,
+                conv_mask_to_poly=conv_mask_to_poly
             )
         elif self.action == 'import_backup':
             filename = request.query_params.get("filename", "")
@@ -2339,7 +2340,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, location_conf=None):
+def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2380,7 +2381,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
 
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(pk, filename, format_name),
+            args=(pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
