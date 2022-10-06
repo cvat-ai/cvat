@@ -30,6 +30,7 @@ import { getCore } from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ShortcutsSelect from './shortcuts-select';
+import chooseColor from '../../standard-workspace/controls-side-bar/chooseColor';
 
 const cvat = getCore();
 
@@ -206,12 +207,32 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
 
     const subKeyMap = {
         SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
+        CHOOSE_COLOR_R: keyMap.CHOOSE_COLOR_R,
+        CHOOSE_COLOR_G: keyMap.CHOOSE_COLOR_G,
+        CHOOSE_COLOR_B: keyMap.CHOOSE_COLOR_B,
+        CHOOSE_FULL_RGB: keyMap.CHOOSE_FULL_RGB,
     };
 
     const handlers = {
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             onShortcutPress(event, selectedLabelID);
+        },
+        CHOOSE_COLOR_R: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            chooseColor('R');
+        },
+        CHOOSE_COLOR_G: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            chooseColor('G');
+        },
+        CHOOSE_COLOR_B: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            chooseColor('B');
+        },
+        CHOOSE_FULL_RGB: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            chooseColor('');
         },
     };
 

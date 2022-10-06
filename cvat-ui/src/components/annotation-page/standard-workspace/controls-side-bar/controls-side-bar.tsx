@@ -10,9 +10,10 @@ import {
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { Label } from 'components/labels-editor/common';
+import { LabelOptColor } from 'components/labels-editor/common';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
+import ColorControl, { Props as ColorControlProps } from './color-control';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
 import MoveControl, { Props as MoveControlProps } from './move-control';
@@ -31,6 +32,7 @@ import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-cont
 import MergeControl, { Props as MergeControlProps } from './merge-control';
 import GroupControl, { Props as GroupControlProps } from './group-control';
 import SplitControl, { Props as SplitControlProps } from './split-control';
+import chooseColor from './chooseColor';
 
 interface Props {
     canvasInstance: Canvas;
@@ -57,8 +59,7 @@ const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveCont
 const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl);
 const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl);
 const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl);
-const ObservedToolsControl = ControlVisibilityObserver(ToolsControl);
-const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl);
+const ObservedColorControl = ControlVisibilityObserver<ColorControlProps>(ColorControl);
 const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl);
 const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl);
 const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl);
@@ -98,15 +99,15 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     let ellipseControlVisible = withUnspecifiedType;
     let cuboidControlVisible = withUnspecifiedType;
     let tagControlVisible = withUnspecifiedType;
-    const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
-    labels.forEach((label: Label) => {
+    const skeletonControlVisible = labels.some((label: LabelOptColor) => label.type === 'skeleton');
+    labels.forEach((label: LabelOptColor) => {
         rectangleControlVisible = rectangleControlVisible || label.type === ShapeType.RECTANGLE;
         polygonControlVisible = polygonControlVisible || label.type === ShapeType.POLYGON;
         polylineControlVisible = polylineControlVisible || label.type === ShapeType.POLYLINE;
         pointsControlVisible = pointsControlVisible || label.type === ShapeType.POINTS;
         ellipseControlVisible = ellipseControlVisible || label.type === ShapeType.ELLIPSE;
         cuboidControlVisible = cuboidControlVisible || label.type === ShapeType.CUBOID;
-        tagControlVisible = tagControlVisible || label.type === ObjectType.TAG;
+        tagControlVisible = tagControlVisible || label.type.toString() === ObjectType.TAG.toString();
     });
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -119,6 +120,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         CANCEL: keyMap.CANCEL,
         CLOCKWISE_ROTATION: keyMap.CLOCKWISE_ROTATION,
         ANTICLOCKWISE_ROTATION: keyMap.ANTICLOCKWISE_ROTATION,
+        CHOOSE_COLOR_R: keyMap.CHOOSE_COLOR_R,
+        CHOOSE_COLOR_G: keyMap.CHOOSE_COLOR_G,
+        CHOOSE_COLOR_B: keyMap.CHOOSE_COLOR_B,
+        CHOOSE_FULL_RGB: keyMap.CHOOSE_FULL_RGB,
     };
 
     let handlers: any = {
@@ -217,6 +222,22 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance.group({ enabled: false });
                 groupObjects(false);
             },
+            CHOOSE_COLOR_R: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                chooseColor('R');
+            },
+            CHOOSE_COLOR_G: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                chooseColor('G');
+            },
+            CHOOSE_COLOR_B: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                chooseColor('B');
+            },
+            CHOOSE_FULL_RGB: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                chooseColor('');
+            },
         };
         subKeyMap = {
             ...subKeyMap,
@@ -250,8 +271,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <ObservedResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <hr />
-            <ObservedToolsControl />
-            <ObservedOpenCVControl />
+            <ToolsControl />
+            <OpenCVControl />
             {
                 rectangleControlVisible && (
                     <ObservedDrawRectangleControl
@@ -298,19 +319,19 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 )
             }
             {
-                cuboidControlVisible && (
-                    <ObservedDrawCuboidControl
+                skeletonControlVisible && (
+                    <ObservedDrawSkeletonControl
                         canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
+                        isDrawing={activeControl === ActiveControl.DRAW_SKELETON}
                         disabled={controlsDisabled}
                     />
                 )
             }
             {
-                skeletonControlVisible && (
-                    <ObservedDrawSkeletonControl
+                cuboidControlVisible && (
+                    <ObservedDrawCuboidControl
                         canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_SKELETON}
+                        isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
                         disabled={controlsDisabled}
                     />
                 )
@@ -323,8 +344,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     />
                 )
             }
-            <hr />
-
             <ObservedMergeControl
                 switchMergeShortcut={normalizedKeyMap.SWITCH_MERGE_MODE}
                 canvasInstance={canvasInstance}
@@ -347,6 +366,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 splitTrack={splitTrack}
                 disabled={controlsDisabled}
             />
+            <ObservedColorControl
+                redShortcut={normalizedKeyMap.CHOOSE_COLOR_R}
+                greenShortcut={normalizedKeyMap.CHOOSE_COLOR_G}
+                blueShortcut={normalizedKeyMap.CHOOSE_COLOR_B}
+                colorChannel='RGB'
+                chooseColor={chooseColor}
+            />
+            <hr />
 
             <ExtraControlsControl />
         </Layout.Sider>

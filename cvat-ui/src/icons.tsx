@@ -55,6 +55,8 @@ import SVGCVATGoogleCloudProvider from './assets/google-cloud.svg';
 import SVGRestoreIcon from './assets/restore-icon.svg';
 import SVGMultiPlusIcon from './assets/multi-plus-icon.svg';
 
+import SVGRgbIcon from './assets/rgb-icon.svg';
+
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
@@ -96,6 +98,7 @@ export const SkeletonIcon = React.memo((): JSX.Element => <SVGSkeletonIcon />);
 export const ResetPerspectiveIcon = React.memo((): JSX.Element => <SVGResetPerspectiveIcon />);
 export const AIToolsIcon = React.memo((): JSX.Element => <SVGAITools />);
 export const ColorizeIcon = React.memo((): JSX.Element => <SVGColorizeIcon />);
+export const RgbIcon = React.memo((): JSX.Element => <SVGRgbIcon />);
 export const BrainIcon = React.memo((): JSX.Element => <SVGBrain />);
 export const OpenCVIcon = React.memo((): JSX.Element => <SVGOpenCV />);
 export const FilterIcon = React.memo((): JSX.Element => <SVGFilterIcon />);
