@@ -12,7 +12,7 @@ def register_groups(sender, **kwargs):
     for role in settings.IAM_ROLES:
         Group.objects.get_or_create(name=role)
 
-if settings.IAM_TYPE == 'BASIC':
+if settings.IAM_TYPE == 'BASIC' or settings.IAM_TYPE == 'COGNITO':
     def create_user(sender, instance, created, **kwargs):
         from allauth.account import app_settings as allauth_settings
         from allauth.account.models import EmailAddress

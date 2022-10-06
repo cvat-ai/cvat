@@ -12,7 +12,7 @@ from dj_rest_auth.views import (
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
 from allauth.account import app_settings as allauth_settings
 
-from cvat.apps.iam.views import SigningView, RegisterViewEx
+from cvat.apps.iam.views import SigningView, CognitoView, RegisterViewEx
 
 urlpatterns = [
     path('login', LoginView.as_view(), name='rest_login'),
@@ -20,7 +20,7 @@ urlpatterns = [
     path('signing', SigningView.as_view(), name='signing')
 ]
 
-if settings.IAM_TYPE == 'BASIC':
+if settings.IAM_TYPE == 'BASIC' or settings.IAM_TYPE == 'COGNITO':
     urlpatterns += [
         path('register', RegisterViewEx.as_view(), name='rest_register'),
         path('password/reset', PasswordResetView.as_view(),
@@ -38,5 +38,10 @@ if settings.IAM_TYPE == 'BASIC':
             path('register/account-email-verification-sent', EmailVerificationSentView.as_view(),
                 name='account_email_verification_sent'),
         ]
+
+if settings.IAM_TYPE == 'COGNITO':
+    urlpatterns += [
+        path('cognito', CognitoView.as_view(), name='cognito_login')]
+
 
 urlpatterns = [path('auth/', include(urlpatterns))]

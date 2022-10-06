@@ -3,14 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from rest_framework.response import Response
-from dj_rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
+from cvat.apps.iam.adapters import AmazonCognitoOAuth2AdapterEx
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView, RegisterView
 from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
@@ -105,6 +109,11 @@ class SigningView(views.APIView):
         url = furl(url).add({Signer.QUERY_PARAM: sign}).url
         return Response(url)
 
+
+class CognitoView(SocialLoginView):
+    adapter_class = AmazonCognitoOAuth2AdapterEx
+    callback_url = os.environ.get("COGNITO_REDIRECT_URI", "https://www.cvat.ai/")
+    client_class = OAuth2Client
 
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):

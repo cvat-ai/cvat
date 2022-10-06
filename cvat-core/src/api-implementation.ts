@@ -9,6 +9,7 @@ const config = require('./config');
     const PluginRegistry = require('./plugins').default;
     const serverProxy = require('./server-proxy').default;
     const lambdaManager = require('./lambda-manager');
+    const ssoManager = require('./sso-manager');
     const {
         isBoolean,
         isInteger,
@@ -30,6 +31,11 @@ const config = require('./config');
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
+
+        cvat.sso.validate.implementation = async (code) => {
+            const result = await ssoManager.validate(code);
+            return result;
+        };
 
         cvat.lambda.list.implementation = lambdaManager.list.bind(lambdaManager);
         cvat.lambda.run.implementation = lambdaManager.run.bind(lambdaManager);

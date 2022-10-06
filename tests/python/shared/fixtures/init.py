@@ -32,6 +32,7 @@ DC_FILES = [
         "docker-compose.dev.yml",
         "tests/docker-compose.minio.yml",
         "tests/docker-compose.webhook.yml",
+        "tests/docker-compose.mock-oauth2.yml"
     )
 ] + CONTAINER_NAME_FILES
 

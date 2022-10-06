@@ -8,7 +8,7 @@ from http import HTTPStatus
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
 
-from shared.utils.config import BASE_URL, USER_PASS, make_api_client
+from shared.utils.config import BASE_URL, USER_PASS, COGNITO_SETTING, make_api_client
 
 
 @pytest.mark.usefixtures("dontchangedb")
@@ -21,6 +21,19 @@ class TestBasicAuth:
             assert response.status == HTTPStatus.OK
             assert user.username == username
 
+    def test_can_do_basic_cognito_token_auth(self, admin_user: str):
+        if COGNITO_SETTING != 'disabled':
+            username = admin_user
+            config = Configuration(host=BASE_URL, username=username, password=USER_PASS)
+            with ApiClient(config) as client:
+                social_login_request = models.SocialLoginRequest()
+                social_login_request.code = 'test-code'
+                (auth, _) = client.auth_api.create_cognito(social_login_request=social_login_request)
+                assert "sessionid" in client.cookies
+                assert "csrftoken" in client.cookies
+                assert auth.key
+        else:
+            assert COGNITO_SETTING == 'disabled'
 
 @pytest.mark.usefixtures("changedb")
 class TestTokenAuth:

@@ -533,6 +533,26 @@ function build() {
         },
 
         /**
+         * Namespace for SSO (expect Azure AD SAML via AWS Cognito by default)
+         * @namespace sso
+         * @memberof module:API.cvat
+         */
+        sso: {
+            /**
+             * Method sets ssoToken and expireAt for SSO session
+             * @method validate
+             * @async
+             * @memberof module:API.cvat.sso
+             * @param {string} code code from Cognito
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async validate(code) {
+                const result = await PluginRegistry.apiWrapper(cvat.sso.validate, code);
+                return result;
+            },
+        },
+
+        /**
          * Namespace is used for serverless functions management (mainly related with DL models)
          * @namespace lambda
          * @memberof module:API.cvat
@@ -897,6 +917,7 @@ function build() {
     cvat.users = Object.freeze(cvat.users);
     cvat.plugins = Object.freeze(cvat.plugins);
     cvat.lambda = Object.freeze(cvat.lambda);
+    cvat.sso = Object.freeze(cvat.sso);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);

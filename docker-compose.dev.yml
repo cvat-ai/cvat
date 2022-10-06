@@ -15,6 +15,9 @@ services:
         socks_proxy:
         CLAM_AV:
         INSTALL_SOURCES:
+        COGNITO_USER_POOL_APP: ${COGNITO_USER_POOL_APP}
+        COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID}
+        COGNITO_REDIRECT_URI: ${COGNITO_REDIRECT_URI}
 
   cvat_ui:
     build:

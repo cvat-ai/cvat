@@ -110,17 +110,18 @@ INSTALLED_APPS = [
     'django_rq',
     'compressor',
     'django_sendfile',
+    "dj_rest_auth",
+    'dj_rest_auth.registration',
     'dj_pagination',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    'dj_rest_auth.registration',
+    'allauth.socialaccount.providers.amazon_cognito',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.organizations',
@@ -230,6 +231,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.i18n',
+
             ],
         },
     },
@@ -258,11 +261,29 @@ AUTHENTICATION_BACKENDS = [
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+# Maintain unique email https://medium.com/geekculture/getting-started-with-django-social-authentication-80ee7dc26fe0
+SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
 
 OLD_PASSWORD_FIELD_ENABLED = True
+
+# Django socialaccount providers
+#https://django-allauth.readthedocs.io/en/latest/providers.html
+
+SOCIALACCOUNT_PROVIDERS = {
+    'amazon_cognito': {
+        'DOMAIN': os.getenv('COGNITO_USER_POOL_APP', 'http://mock_oauth2:9999'),
+        'APP': {'client_id': os.getenv('COGNITO_CLIENT_ID', 'test-client')},
+        'SCOPE': ["aws.cognito.signin.user.admin", "email", "openid"],
+    }
+}
 
 # Django-RQ
 # https://github.com/rq/django-rq
@@ -461,11 +482,12 @@ RESTRICTIONS = {
     'user_agreements': [],
 
     # this setting reduces task visibility to owner and assignee only
-    'reduce_task_visibility': False,
+    'reduce_task_visibility': True,
 
-    # allow access to analytics component to users with business role
-    # otherwise, only the administrator has access
-    'analytics_visibility': True,
+    # allow access to analytics component to users with the following roles
+    'analytics_access': (
+        'engine.role.admin',
+        ),
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache

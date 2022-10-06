@@ -39,6 +39,9 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      COGNITO_USER_POOL_APP: ${COGNITO_USER_POOL_APP}
+      COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID}
+      COGNITO_REDIRECT_URI: ${COGNITO_REDIRECT_URI}
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
     command: -c supervisord/server.conf
