@@ -2,6 +2,7 @@
 title: 'Webhooks'
 linkTitle: 'Webhooks'
 description: 'Instructions for working with CVAT Webhooks'
+weight: 80
 ---
 
 ## Create Webhook
@@ -43,13 +44,13 @@ To create webhook for CVAT organization, follow the steps:
 
 ## Payloads
 
-### Create payload
+### Create event
 
 Webhook payload object for `create:<resource>` events:
 
 | Key          | Type      | Description                                                                              |
 | :---:        | :----:    | :----                                                                                    |
-| `event`      | `string`  | Name of event that triggered webhook                                                     |
+| `event`      | `string`  | Name of event that triggered webhook with pattern `create:<resource>` |
 | `<resource>` | `object`  | Full information about created resource. See the swagger docs for each separate resource |
 | `webhook_id` | `integer` | Identifier of webhook that sent payload                                                  |
 | `sender`     | `object`  | Information about user that triggered webhook                                            |
@@ -116,12 +117,13 @@ Here is example of payload for `create:task` event:
 {{< /scroll-code >}}
 
 
-### Update payload
+### Update event
+
 Webhook payload object for `update:<resource>` events:
 
 | Key             | Type      | Description                                                                              |
 | :---:           | :----:    | :----                                                                                    |
-| `event`         | `string`  | Name of event that triggered webhook                                                     |
+| `event`         | `string`  | Name of event that triggered webhook with pattern `update:<resource>` |
 | `<resource>`    | `object`  | Full information about deleted resource. See the swagger docs for each separate resource |
 | `before_update` | `object`  | Keys of `<resource>` that was updated with theirs old values                             |
 | `webhook_id`    | `integer` | Identifier of webhook that sent payload                                                  |
@@ -210,12 +212,13 @@ Webhook payload object for `update:<resource>` events:
     }
 }
 {{< /scroll-code >}}
-### Delete payload
+### Delete event
+
 Webhook payload object for `delete:<resource>` events:
 
-| Key          | Type      | Description                                                          |
-| :---:        | :----:    | :----                                                               |
-| `event`      | `string`  | Name of event that triggered webhook.   |
+| Key          | Type      | Description |
+| :---:        | :----:    | :---- |
+| `event`      | `string`  | Name of event that triggered webhook with pattern `delete:<resource>` |
 | `<resource>` | `object`  | Full information about deleted resource. See the swagger docs for each separate resource |
 | `webhook_id` | `integer` | Identifier of webhook that sent payload |
 | `sender`     | `object`  | Information about user that triggered webhook   |
@@ -292,7 +295,14 @@ CVAT encode request body for webhook using SHA256 hash function and put the resu
 
 Webhook receiver can check that request came from CVAT by comparison received value of `X-Signature-256` with expected.
 
+Example of header value for empty request body and `secret = mykey`:
+
+```
+X-Signature-256: e1b24265bf2e0b20c81837993b4f1415f7b68c503114d100a40601eca6a2745f
+```
+
 ## Ping Webhook
+
 To check that webhook configured well and CVAT can connect with target URL you can use `ping` webhook.
 
 After pressing `Ping` bottom on UI (or sending `POST /webhooks/{id}/ping` request) CVAT will sent webhook
@@ -302,7 +312,7 @@ Ping webhook payload:
 
 | Key       | Type     | Description |
 | :---:     | :----:   | :---- |
-| `event`   | `string` | Name of event that triggered webhook |
+| `event`   | `string` | Value always equals `ping` |
 | `webhook` | `object` | Full information about webhook. See the full description of webhook`s fields in swagger docs |
 | `sender`  | `object` | Information about user that called `ping` webhook |
 
