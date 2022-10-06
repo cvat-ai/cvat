@@ -295,7 +295,7 @@ Webhook receiver can check that request came from CVAT by comparison received va
 ## Ping Webhook
 To check that webhook configured well and CVAT can connect with target URL you can use `ping` webhook.
 
-After pressing `Ping` bottom on UI (or sending `POST /webhooks/{id}/ping request`) CVAT will sent webhook
+After pressing `Ping` bottom on UI (or sending `POST /webhooks/{id}/ping` request) CVAT will sent webhook
 to the target url with general information about webhook.
 
 Ping webhook payload:
