@@ -656,14 +656,18 @@ class ServerProxy {
             useDefaultLocation: boolean,
             sourceStorage: Storage,
             file: File | string,
-            onUpdate,
-        ) {
+            options: {
+                convMaskToPoly: boolean,
+                updateStatusCallback: (s: string, n: number) => void,
+            },
+        ): Promise<void> {
             const { backendAPI, origin } = config;
-            const params: Params = {
+            const params: Params & { conv_mask_to_poly: boolean } = {
                 ...enableOrganization(),
                 ...configureStorage(sourceStorage, useDefaultLocation),
                 format,
                 filename: typeof file === 'string' ? file : file.name,
+                conv_mask_to_poly: options.convMaskToPoly,
             };
 
             const url = `${backendAPI}/projects/${id}/dataset`;
@@ -1436,16 +1440,18 @@ class ServerProxy {
             useDefaultLocation: boolean,
             sourceStorage: Storage,
             file: File | string,
-        ) {
+            options: { convMaskToPoly: boolean },
+        ): Promise<void> {
             const { backendAPI, origin } = config;
-            const params: Params = {
+            const params: Params & { conv_mask_to_poly: boolean } = {
                 ...enableOrganization(),
                 ...configureStorage(sourceStorage, useDefaultLocation),
                 format,
                 filename: typeof file === 'string' ? file : file.name,
+                conv_mask_to_poly: options.convMaskToPoly,
             };
 
-            const url = `${backendAPI}/${session}s/${id}/annotations?conv_mask_to_poly=false`;
+            const url = `${backendAPI}/${session}s/${id}/annotations`;
 
             async function wait() {
                 return new Promise<void>((resolve, reject) => {

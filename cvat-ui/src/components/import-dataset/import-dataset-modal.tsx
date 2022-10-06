@@ -35,6 +35,7 @@ type FormValues = {
     fileName?: string | undefined;
     sourceStorage: StorageData;
     useDefaultSettings: boolean;
+    convMaskToPoly: boolean;
 };
 
 const initialValues: FormValues = {
@@ -44,11 +45,13 @@ const initialValues: FormValues = {
         location: StorageLocation.LOCAL,
         cloudStorageId: undefined,
     },
+    convMaskToPoly: true,
     useDefaultSettings: true,
 };
 
 interface UploadParams {
     resource: 'annotation' | 'dataset';
+    convMaskToPoly: boolean;
     useDefaultSettings: boolean;
     sourceStorage: Storage;
     selectedFormat: string | null;
@@ -75,6 +78,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     const [helpMessage, setHelpMessage] = useState('');
     const [selectedSourceStorageLocation, setSelectedSourceStorageLocation] = useState(StorageLocation.LOCAL);
     const [uploadParams, setUploadParams] = useState<UploadParams>({
+        convMaskToPoly: true,
         useDefaultSettings: true,
     } as UploadParams);
     const [resource, setResource] = useState('');
@@ -242,7 +246,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 instance, uploadParams.selectedFormat as string,
                 uploadParams.useDefaultSettings, uploadParams.sourceStorage,
                 uploadParams.file || uploadParams.fileName as string,
-            ));
+                uploadParams.convMaskToPoly,
+            ) as any);
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
                 message: `${resToPrint} import started`,
@@ -371,7 +376,24 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                 )}
                         </Select>
                     </Form.Item>
-                    <Space>
+                    <Space className='cvat-modal-import-switch-conv-mask-to-poly-container'>
+                        <Form.Item
+                            name='convMaskToPoly'
+                            valuePropName='checked'
+                            className='cvat-modal-import-switch-conv-mask-to-poly'
+                        >
+                            <Switch
+                                onChange={(value: boolean) => {
+                                    setUploadParams({
+                                        ...uploadParams,
+                                        convMaskToPoly: value,
+                                    } as UploadParams);
+                                }}
+                            />
+                        </Form.Item>
+                        <Text strong>Convert masks to polygons</Text>
+                    </Space>
+                    <Space className='cvat-modal-import-switch-use-default-storage-container'>
                         <Form.Item
                             name='useDefaultSettings'
                             valuePropName='checked'

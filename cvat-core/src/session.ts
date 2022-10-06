@@ -34,7 +34,13 @@ function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
         annotations: Object.freeze({
             value: {
-                async upload(format: string, useDefaultLocation: boolean, sourceStorage: Storage, file: File | string) {
+                async upload(
+                    format: string,
+                    useDefaultLocation: boolean,
+                    sourceStorage: Storage,
+                    file: File | string,
+                    options?: { convMaskToPoly?: boolean },
+                ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.upload,
@@ -42,6 +48,7 @@ function buildDuplicatedAPI(prototype) {
                         useDefaultLocation,
                         sourceStorage,
                         file,
+                        options,
                     );
                     return result;
                 },
@@ -2218,8 +2225,9 @@ buildDuplicatedAPI(Task.prototype);
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
+        options?: { convMaskToPoly?: boolean },
     ) {
-        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file);
+        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
         return result;
     };
 
@@ -2655,8 +2663,9 @@ buildDuplicatedAPI(Task.prototype);
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
+        options?: { convMaskToPoly?: boolean },
     ) {
-        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file);
+        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
         return result;
     };
 
