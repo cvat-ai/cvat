@@ -9,9 +9,8 @@ from http import HTTPStatus
 
 import pytest
 from cvat_sdk import models
-from deepdiff import DeepDiff
-
 from cvat_sdk.api_client import exceptions
+from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
 
@@ -227,11 +226,13 @@ class TestPatchIssues:
         data = request_data(issue_id)
         self._test_check_response(username, issue_id, data, is_allow, org_id=org)
 
-    @pytest.mark.xfail(raises=exceptions.ServiceException,
-        reason="server bug, https://github.com/cvat-ai/cvat/issues/122")
+    @pytest.mark.xfail(
+        raises=exceptions.ServiceException,
+        reason="server bug, https://github.com/cvat-ai/cvat/issues/122",
+    )
     def test_cant_update_message(self, admin_user: str, issues_by_org):
         org = 2
-        issue_id = issues_by_org[org][0]['id']
+        issue_id = issues_by_org[org][0]["id"]
 
         with make_api_client(admin_user) as client:
             client.issues_api.partial_update(
