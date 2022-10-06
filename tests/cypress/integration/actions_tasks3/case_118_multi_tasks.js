@@ -86,8 +86,6 @@ context('Create mutli tasks.', () => {
                                 stdoutToList.forEach((el) => {
                                     cy.get(`[title="${el}"]`).should('exist');
                                     cy.get(`[title="${el}"]`).prev().should('exist');
-                                    // eslint-disable-next-line cypress/no-unnecessary-waiting
-                                    cy.wait(1); // TODO
                                     cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
                                 });
                             });
@@ -134,8 +132,6 @@ context('Create mutli tasks.', () => {
                                 cy.get(`[title^=video_case_${caseId}]`).should('have.length', stdoutToList.length);
                                 stdoutToList.forEach((el) => {
                                     cy.get(`[title="${el}"]`).should('exist');
-                                    // eslint-disable-next-line cypress/no-unnecessary-waiting
-                                    cy.wait(1); // TODO
                                     cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
                                 });
                             });

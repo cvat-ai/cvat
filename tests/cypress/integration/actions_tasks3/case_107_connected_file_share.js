@@ -21,7 +21,7 @@ context('Connected file share.', () => {
         cy.contains('[role="tab"]', 'Connected file share').click();
 
         cy.exec(`docker exec -i cvat_server /bin/bash -c \
-                            "find ${sharePath} -name ${imageNamePattern} -type f"`)
+                            "find ${sharePath} -name ${imageNamePattern} -type f | sort"`)
             .then((command) => {
                 stdoutToList = command.stdout.split('\n').map((filePath) => filePath.split('/').pop());
                 expect(stdoutToList.length).to.be.eq(3);
@@ -35,8 +35,6 @@ context('Connected file share.', () => {
                             cy.get(`[title="${el}"]`).should('exist');
                             cy.get(`[title="${el}"]`).prev().should('exist');
                             // Click on the checkboxes
-                            // eslint-disable-next-line cypress/no-unnecessary-waiting
-                            cy.wait(1); // TODO
                             cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
                         });
                     });
@@ -84,7 +82,7 @@ context('Connected file share.', () => {
                 },
             );
             cy.exec(`docker exec -i cvat_server /bin/bash -c \
-                "find ${sharePath} -name ${imageNamePattern} -not -name *.bk -type f"`).then(
+                "find ${sharePath} -name ${imageNamePattern} -type f | sort"`).then(
                 (findFilesCommand) => {
                     // [image_case_107_2.png, image_case_107_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
