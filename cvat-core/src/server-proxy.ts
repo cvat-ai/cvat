@@ -681,8 +681,8 @@ class ServerProxy {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
-                                if (onUpdate && response.data.message) {
-                                    onUpdate(response.data.message, response.data.progress || 0);
+                                if (response.data.message) {
+                                    options.updateStatusCallback(response.data.message, response.data.progress || 0);
                                 }
                                 setTimeout(requestStatus, 3000);
                             } else if (response.status === 201) {
@@ -716,7 +716,7 @@ class ServerProxy {
                     totalSentSize: 0,
                     totalSize: (file as File).size,
                     onUpdate: (percentage) => {
-                        onUpdate('The dataset is being uploaded to the server', percentage);
+                        options.updateStatusCallback('The dataset is being uploaded to the server', percentage);
                     },
                 };
 

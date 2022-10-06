@@ -35,7 +35,6 @@ type FormValues = {
     fileName?: string | undefined;
     sourceStorage: StorageData;
     useDefaultSettings: boolean;
-    convMaskToPoly: boolean;
 };
 
 const initialValues: FormValues = {
@@ -45,7 +44,6 @@ const initialValues: FormValues = {
         location: StorageLocation.LOCAL,
         cloudStorageId: undefined,
     },
-    convMaskToPoly: true,
     useDefaultSettings: true,
 };
 
@@ -319,11 +317,15 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 onCancel={closeModal}
                 onOk={() => form.submit()}
                 className='cvat-modal-import-dataset'
+                destroyOnClose
             >
                 <Form
                     name={`Import ${resource}`}
                     form={form}
-                    initialValues={initialValues}
+                    initialValues={{
+                        ...initialValues,
+                        convMaskToPoly: uploadParams.convMaskToPoly,
+                    }}
                     onFinish={handleImport}
                     layout='vertical'
                 >
