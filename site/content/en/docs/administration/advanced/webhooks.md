@@ -10,8 +10,8 @@ weight: 80
 In CVAT you can create webhook for project or for organization.
 For creation, you can use our user interface or direct API calls.
 
-In order to create webhook via an API call, see the swagger documentation. (TO-DO: ADD LINK HERE)
-And also see examples of creating webhooks in our REST API tests. (TO-DO: ADD LINK HERE)
+In order to create webhook via an API call, see the [swagger documentation](https://app.cvat.ai/api/docs).
+And also see examples of creating webhooks in our [REST API tests](https://github.com/opencv/cvat/blob/develop/tests/python/rest_api/test_webhooks.py).
 
 ### Create Webhook for project
 
@@ -31,16 +31,16 @@ To create webhook for CVAT organization, follow the steps:
 
 ## List of available events
 
-| Resource     | Create  | Update | Delete |
-| :---:        | :----:  | :----: | :----: |
-| Organization |         |   ✅   |        |
-| Membership   |         |   ✅   |   ✅   |
-| Invitation   |   ✅    |        |   ✅   |
-| Project      |   ✅    |   ✅   |   ✅   |
-| Task         |   ✅    |   ✅   |   ✅   |
-| Job          |         |   ✅   |        |
-| Issue        |   ✅    |   ✅   |   ✅   |
-| Comment      |   ✅    |   ✅   |   ✅   |
+| Resource     | Create | Update | Delete |
+| :---:        | :----: | :----: | :----: |
+| Organization |        |   ✅   |        |
+| Membership   |        |   ✅   |   ✅   |
+| Invitation   |   ✅   |        |   ✅   |
+| Project      |   ✅   |   ✅   |   ✅   |
+| Task         |   ✅   |   ✅   |   ✅   |
+| Job          |        |   ✅   |        |
+| Issue        |   ✅   |   ✅   |   ✅   |
+| Comment      |   ✅   |   ✅   |   ✅   |
 
 ## Payloads
 
