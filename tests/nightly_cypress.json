@@ -7,7 +7,7 @@
   "env": {
     "user": "admin",
     "email": "admin@localhost.company",
-    "password": "B12qwaszx"
+    "password": "12qwaszx"
   },
   "testFiles": [
     "auth_page.js",
