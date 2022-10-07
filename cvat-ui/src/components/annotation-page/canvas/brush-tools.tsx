@@ -131,7 +131,7 @@ function BrushTools(): React.ReactPortal {
         const showToolset = (e: Event): void => {
             const evt = e as CustomEvent;
             if (evt.detail?.state?.shapeType === ShapeType.MASK ||
-                (evt.detail.drawData.shapeType === ShapeType.MASK && !evt.detail.drawData.initialState)) {
+                (evt.detail?.drawData?.shapeType === ShapeType.MASK && !evt.detail?.drawData?.initialState)) {
                 dispatch(updateCanvasBrushTools({ visible: true }));
             }
         };

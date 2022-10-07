@@ -338,7 +338,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }),
         );
 
-        if (state) {
+        if (state && state.shapeType === 'mask') {
             this.setupInnerFlags(state.clientID, 'editHidden', true);
         }
 
@@ -866,7 +866,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         const { points } = state;
                         this.onEditDone(state, points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)));
                     } else if (e.shiftKey) {
-                        this.onEditStart(state.shapeType);
+                        this.onEditStart(state);
                         this.editHandler.edit({
                             enabled: true,
                             state,
