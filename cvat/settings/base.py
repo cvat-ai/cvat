@@ -457,9 +457,6 @@ LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
 RESTRICTIONS = {
-    # this setting reduces task visibility to owner and assignee only
-    'reduce_task_visibility': False,
-
     # allow access to analytics component to users with business role
     # otherwise, only the administrator has access
     'analytics_visibility': True,

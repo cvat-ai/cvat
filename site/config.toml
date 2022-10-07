@@ -87,8 +87,8 @@ weight = 1
 section = ["HTML", "print"]
 
 [params]
-cvat_ai_terms_of_use = "https://www.cvat.ai/terms"
-cvat_privacy_notice = "https://www.cvat.ai/legals"
+cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"
+cvat_privacy_notice = "https://www.cvat.ai/privacy"
 
 # First one is picked as the Twitter card image if not set on page.
 # images = ["images/project-illustration.png"]

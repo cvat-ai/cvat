@@ -5,7 +5,6 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
 import { UserAgreement } from 'reducers';
-import isReachable from 'utils/url-checker';
 
 const core = getCore();
 
@@ -31,13 +30,8 @@ export const getUserAgreementsAsync = (): ThunkAction => async (dispatch): Promi
     dispatch(userAgreementsActions.getUserAgreements());
 
     try {
-        const isExists = await isReachable(`${core.config.backendAPI}/user-agreements`, 'OPTIONS');
-        if (!isExists) {
-            dispatch(userAgreementsActions.getUserAgreementsSuccess([]));
-        } else {
-            const userAgreements = await core.server.userAgreements();
-            dispatch(userAgreementsActions.getUserAgreementsSuccess(userAgreements));
-        }
+        const userAgreements = await core.server.userAgreements();
+        dispatch(userAgreementsActions.getUserAgreementsSuccess(userAgreements));
     } catch (error) {
         dispatch(userAgreementsActions.getUserAgreementsFailed(error));
     }
