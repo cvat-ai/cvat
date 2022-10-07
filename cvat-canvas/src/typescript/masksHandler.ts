@@ -134,6 +134,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.renderAll();
         this.canvas.getElement().parentElement.style.display = '';
         this.isDrawing = false;
+        this.isInsertion = false;
         this.redraw = null;
         this.drawnObjects = [];
         this.onDrawDone(null);
@@ -376,7 +377,14 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
             }
 
-            if (isBrushSizeChanging && ['brush', 'eraser'].includes(this.tool?.type)) {
+            if (this.brushMarker) {
+                this.brushMarker.left = position.x - tool.size / 2;
+                this.brushMarker.top = position.y - tool.size / 2;
+                this.canvas.bringToFront(this.brushMarker);
+                this.canvas.renderAll();
+            }
+
+            if (isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
                 const xDiff = position.x - this.resizeBrushToolLatestX;
                 let onUpdateConfiguration = null;
                 if (this.isDrawing) {
@@ -397,14 +405,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 return;
             }
 
-            if (this.brushMarker) {
-                this.brushMarker.left = position.x - tool.size / 2;
-                this.brushMarker.top = position.y - tool.size / 2;
-                this.canvas.bringToFront(this.brushMarker);
-                this.canvas.renderAll();
-            }
-
-            if (isMouseDown && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool.type)) {
+            if (isMouseDown && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
                 const color = fabric.Color.fromHex(tool.color);
                 color.setAlpha(tool.type === 'eraser' ? 1 : 0.5);
 
@@ -464,7 +465,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     }
                 }
                 this.canvas.renderAll();
-            } else if (this.tool.type.startsWith('polygon-') && this.drawablePolygon) {
+            } else if (tool?.type.startsWith('polygon-') && this.drawablePolygon) {
                 // update the polygon position
                 const points = this.drawablePolygon.get('points');
                 if (points.length) {
@@ -651,7 +652,7 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public cancel(): void {
-        if (this.isDrawing) {
+        if (this.isDrawing || this.isInsertion) {
             this.releaseDraw();
         }
 
