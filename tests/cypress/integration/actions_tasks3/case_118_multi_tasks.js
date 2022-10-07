@@ -12,12 +12,12 @@ context('Create mutli tasks.', () => {
     const imageNamePattern = `image_case_${caseId}_*.png`;
     const videoNamePattern = `video_case_${caseId}_*.mp4`;
     const sharePath = '~/share';
-    const fixturesPath = 'cypress/fixtures/';
+    const fixturesPath = 'cypress/fixtures';
 
     const imagesCount = 5;
     const videoCount = 2;
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const videoFileName = `video_${labelName.replace(' ', '_').toLowerCase()}`;
+    const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
+    const videoFileName = `video_${taskName.replace(' ', '_').toLowerCase()}`;
     const videoExtention = 'mp4';
     const width = 800;
     const height = 800;
@@ -25,29 +25,29 @@ context('Create mutli tasks.', () => {
     const posY = 10;
     const color = 'gray';
     const imagesFolder = `${fixturesPath}/${imageFileName}`;
-    // const videoFolder = `${fixturesPath}/${videoFileName}`;
+    const videoFolder = `${fixturesPath}`; // fluent-ffmpeg not work with ${fixturesPath}/...
     const imageListToAttach = [];
     const imageListToVideo = [];
-    const videoListToAttach = [];
+    const videoFilesToAttach = [];
+    const videoTasksName = [`${videoFileName}_1.mp4`, `${videoFileName}_2.mp4`];
     for (let i = 1; i <= imagesCount; i++) {
         imageListToAttach.push(`${imageFileName}/${imageFileName}_${i}.png`);
         imageListToVideo.push(`${imagesFolder}/${imageFileName}_${i}.png`);
     }
     for (let i = 1; i <= videoCount; i++) {
-        videoListToAttach.push(`${videoFileName}/${videoFileName}${i}.${videoExtention}`);
-        // videoListToAttach.push(`${videoFileName}/${videoFileName}_${i}.${videoExtention}`);
+        videoFilesToAttach.push(`${fixturesPath}/${videoFileName}_${i}.${videoExtention}`);
     }
 
     before(() => {
         cy.visit('auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-        // cy.videoGenerator(imageListToVideo, {
-        //     directory: videoFolder,
-        //     fileName: videoFileName,
-        //     count: videoCount,
-        //     extension: videoExtention,
-        // });
+        cy.videoGenerator(imageListToVideo, {
+            directory: videoFolder,
+            fileName: videoFileName,
+            count: videoCount,
+            extension: videoExtention,
+        });
     });
 
     beforeEach(() => {
@@ -108,12 +108,29 @@ context('Create mutli tasks.', () => {
         });
 
         describe('Try to create tasks with vidoes. Should be success creating.', () => {
-            it.skip('With attached videos', () => {
-                cy.get('input[type="file"]').attachFile(videoListToAttach, { subjectType: 'drag-n-drop' });
+            it('With attached videos', () => {
+                cy.get('input[type="file"]')
+                    // selectFile not work with no visible elements
+                    .invoke('attr', 'style', 'display: inline')
+                    // attachFile not work with video
+                    .selectFile(videoFilesToAttach, { subjectType: 'drag-n-drop' });
+                cy.get('.cvat-create-task-content-alert').should('not.be.exist');
                 cy.get('.cvat-create-task-content-footer [type="submit"]')
                     .should('not.be.disabled')
-                    .contains(`Submit ${videoCount} tasks`);
-                cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+                    .contains(`Submit ${videoCount} tasks`)
+                    .click();
+                cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
+                    .contains(`Total: ${videoCount}`);
+                cy.contains('button', 'Cancel');
+                cy.get('.cvat-create-multi-tasks-state').should('be.exist')
+                    .contains('Finished');
+                cy.contains('button', 'Retry failed tasks').should('be.disabled');
+                cy.contains('button', 'Ok').click();
+
+                videoTasksName.forEach((videoTaskName) => {
+                    cy.contains('strong', videoTaskName).should('be.exist');
+                    cy.deleteTask(videoTaskName);
+                });
             });
 
             it('With videos from "Connected file share"', () => {
@@ -143,18 +160,17 @@ context('Create mutli tasks.', () => {
                             .click();
 
                         cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
-                            .contains('Total: 2')
-                            .click();
+                            .contains(`Total: ${stdoutToList.length}`);
                         cy.contains('button', 'Cancel');
                         cy.get('.cvat-create-multi-tasks-state').should('be.exist')
                             .contains('Finished');
                         cy.contains('button', 'Retry failed tasks').should('be.disabled');
                         cy.contains('button', 'Ok').click();
 
-                        cy.contains('strong', stdoutToList[0]).should('be.exist');
-                        cy.contains('strong', stdoutToList[1]).should('be.exist');
-                        cy.deleteTask(stdoutToList[0]);
-                        cy.deleteTask(stdoutToList[1]);
+                        stdoutToList.forEach((it) => {
+                            cy.contains('strong', it).should('be.exist');
+                            cy.deleteTask(it);
+                        });
                     });
             });
 
@@ -162,32 +178,29 @@ context('Create mutli tasks.', () => {
                 const baseUrl = 'https://raw.githubusercontent.com/cvat-ai/cvat';
                 const branch = 'aa/creating-multiple-tasks-uploading-videos/tests';
                 const folder = 'tests/cypress/integration/share';
-                const imageUrls = `${baseUrl}/${branch}/${folder}/${videoFileName}_1.mp4
+                const videoUrls = `${baseUrl}/${branch}/${folder}/${videoFileName}_1.mp4
 ${baseUrl}/${branch}/${folder}/${videoFileName}_2.mp4`;
 
-                const tasksName = [`${videoFileName}_1.mp4`, `${videoFileName}_2.mp4`];
-
                 cy.contains('[role="tab"]', 'Remote sources').click();
-                cy.get('.cvat-file-selector-remote').clear().type(imageUrls);
+                cy.get('.cvat-file-selector-remote').clear().type(videoUrls);
 
                 cy.get('.cvat-create-task-content-alert').should('not.be.exist');
                 cy.get('.cvat-create-task-content-footer [type="submit"]')
                     .should('not.be.disabled')
-                    .contains(`Submit ${videoCount} tasks`)
+                    .contains('Submit 2 tasks')
                     .click();
                 cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
-                    .contains('Total: 2')
-                    .click();
+                    .contains('Total: 2');
                 cy.contains('button', 'Cancel');
                 cy.get('.cvat-create-multi-tasks-state').should('be.exist')
                     .contains('Finished');
                 cy.contains('button', 'Retry failed tasks').should('be.disabled');
                 cy.contains('button', 'Ok').click();
 
-                cy.contains('strong', tasksName[0]).should('be.exist');
-                cy.contains('strong', tasksName[1]).should('be.exist');
-                cy.deleteTask(tasksName[0]);
-                cy.deleteTask(tasksName[1]);
+                videoTasksName.forEach((it) => {
+                    cy.contains('strong', it).should('be.exist');
+                    cy.deleteTask(it);
+                });
             });
         });
     });

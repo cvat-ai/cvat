@@ -22,18 +22,20 @@ const defaultVideoOptions = {
     pixelFormat: 'yuv420p',
 };
 
+// videoshow (fluent-ffmpeg) maybe not work with some directories.
+// correct work with 'cypress/fixtures' without subdir
 async function videoGenerator({ images, options, videoOptions = defaultVideoOptions }) {
     const {
         directory, fileName, count, extension = 'mp4',
     } = options;
-    console.log(images);
     const file = path.join(directory, fileName);
     const promises = Array(count).fill(undefined).map((_, index) => new Promise((resolve, reject) => {
         videoshow(images, videoOptions)
-            .save(`${file}_${index}.${extension}`)
+            // +1 - consistent with imageGenerator
+            .save(`${file}_${index + 1}.${extension}`)
             .on('error', reject)
             .on('end', resolve);
     }));
-    Promise.all(promises);
+    await Promise.all(promises);
     return null;
 }
