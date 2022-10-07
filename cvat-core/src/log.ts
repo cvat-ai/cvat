@@ -1,19 +1,23 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-const { detect } = require('detect-browser');
-const PluginRegistry = require('./plugins').default;
-const { ArgumentError } = require('./exceptions');
-const { LogType } = require('./enums');
+import { detect } from 'detect-browser';
+import PluginRegistry from './plugins';
+import { LogType } from './enums';
+import { ArgumentError } from './exceptions';
 
-/**
- * Class representing a single log
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
-class Log {
-    constructor(logType, payload) {
+export class Log {
+    public readonly id: number;
+    public readonly type: LogType;
+    public readonly time: Date;
+
+    public payload: any;
+
+    protected onCloseCallback: (() => void) | null;
+
+    constructor(logType: LogType, payload: any) {
         this.onCloseCallback = null;
 
         this.type = logType;
@@ -21,11 +25,11 @@ class Log {
         this.time = new Date();
     }
 
-    onClose(callback) {
+    public onClose(callback: () => void): void {
         this.onCloseCallback = callback;
     }
 
-    validatePayload() {
+    public validatePayload(): void {
         if (typeof this.payload !== 'object') {
             throw new ArgumentError('Payload must be an object');
         }
@@ -38,7 +42,7 @@ class Log {
         }
     }
 
-    dump() {
+    public dump(): any {
         const payload = { ...this.payload };
         const body = {
             name: this.type,
@@ -58,38 +62,33 @@ class Log {
         };
     }
 
-    /**
-     * Method saves a durable log in a storage <br>
-     * Note then you can call close() multiple times <br>
-     * Log duration will be computed based on the latest call <br>
-     * All payloads will be shallowly combined (all top level properties will exist)
-     * @method close
-     * @memberof module:API.cvat.classes.Log
-     * @param {object} [payload] part of payload can be added when close a log
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
-    async close(payload = {}) {
+    // Method saves a durable log in a storage
+    // Note then you can call close() multiple times
+    // Log duration will be computed based on the latest call
+    // All payloads will be shallowly combined (all top level properties will exist)
+    public async close(payload = {}): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Log.prototype.close, payload);
         return result;
     }
 }
 
-Log.prototype.close.implementation = function (payload) {
-    this.payload.duration = Date.now() - this.time.getTime();
-    this.payload = { ...this.payload, ...payload };
-
-    if (this.onCloseCallback) {
-        this.onCloseCallback();
-    }
-};
+Object.defineProperties(Log.prototype.close, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(payload: any) {
+            this.payload.duration = Date.now() - this.time.getTime();
+            this.payload = { ...this.payload, ...payload };
+            if (this.onCloseCallback) {
+                this.onCloseCallback();
+            }
+        },
+    },
+});
 
 class LogWithCount extends Log {
-    validatePayload() {
-        Log.prototype.validatePayload.call(this);
+    public validatePayload(): void {
+        super.validatePayload.call(this);
         if (!Number.isInteger(this.payload.count) || this.payload.count < 1) {
             const message = `The field "count" is required for "${this.type}" log. It must be a positive integer`;
             throw new ArgumentError(message);
@@ -98,8 +97,8 @@ class LogWithCount extends Log {
 }
 
 class LogWithObjectsInfo extends Log {
-    validatePayload() {
-        const generateError = (name, range) => {
+    public validatePayload(): void {
+        const generateError = (name: string, range: string): void => {
             const message = `The field "${name}" is required for "${this.type}" log. ${range}`;
             throw new ArgumentError(message);
         };
@@ -139,14 +138,13 @@ class LogWithObjectsInfo extends Log {
 }
 
 class LogWithWorkingTime extends Log {
-    validatePayload() {
-        Log.prototype.validatePayload.call(this);
+    public validatePayload(): void {
+        super.validatePayload.call(this);
 
         if (
-            !(
-                'working_time' in this.payload) ||
-                !typeof this.payload.working_time === 'number' ||
-                this.payload.working_time < 0
+            !('working_time' in this.payload) ||
+            !(typeof this.payload.working_time === 'number') ||
+            this.payload.working_time < 0
         ) {
             const message = `
                 The field "working_time" is required for ${this.type} log. It must be a number not less than 0
@@ -157,8 +155,8 @@ class LogWithWorkingTime extends Log {
 }
 
 class LogWithExceptionInfo extends Log {
-    validatePayload() {
-        Log.prototype.validatePayload.call(this);
+    public validatePayload(): void {
+        super.validatePayload.call(this);
 
         if (typeof this.payload.message !== 'string') {
             const message = `The field "message" is required for ${this.type} log. It must be a string`;
@@ -186,7 +184,7 @@ class LogWithExceptionInfo extends Log {
         }
     }
 
-    dump() {
+    public dump(): any {
         let body = super.dump();
         const { payload } = body;
         const client = detect();
@@ -212,7 +210,7 @@ class LogWithExceptionInfo extends Log {
     }
 }
 
-function logFactory(logType, payload) {
+export default function logFactory(logType: LogType, payload: any): Log {
     const logsWithCount = [
         LogType.deleteObject,
         LogType.mergeObjects,
@@ -238,5 +236,3 @@ function logFactory(logType, payload) {
 
     return new Log(logType, payload);
 }
-
-module.exports = logFactory;

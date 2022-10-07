@@ -77,9 +77,9 @@ class Task(
         if resource_type is ResourceType.LOCAL:
             pass  # handled later
         elif resource_type is ResourceType.REMOTE:
-            data = {f"remote_files[{i}]": f for i, f in enumerate(resources)}
+            data["remote_files"] = resources
         elif resource_type is ResourceType.SHARE:
-            data = {f"server_files[{i}]": f for i, f in enumerate(resources)}
+            data["server_files"] = resources
 
         data["image_quality"] = 70
         data.update(
@@ -104,7 +104,6 @@ class Task(
             self.api.create_data(
                 self.id,
                 data_request=models.DataRequest(**data),
-                _content_type="multipart/form-data",
             )
         elif resource_type == ResourceType.LOCAL:
             url = self._client.api_map.make_endpoint_url(

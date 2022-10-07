@@ -10,20 +10,20 @@
 
 function build() {
     const PluginRegistry = require('./plugins').default;
-    const loggerStorage = require('./logger-storage');
-    const Log = require('./log');
+    const loggerStorage = require('./logger-storage').default;
+    const { Log } = require('./log');
     const ObjectState = require('./object-state').default;
     const Statistics = require('./statistics');
-    const Comment = require('./comment');
-    const Issue = require('./issue');
+    const Comment = require('./comment').default;
+    const Issue = require('./issue').default;
     const { Job, Task } = require('./session');
     const Project = require('./project').default;
     const implementProject = require('./project-implementation').default;
     const { Attribute, Label } = require('./labels');
     const MLModel = require('./ml-model');
     const { FrameData } = require('./frames');
-    const { CloudStorage } = require('./cloud-storage');
-    const Organization = require('./organization');
+    const CloudStorage = require('./cloud-storage').default;
+    const Organization = require('./organization').default;
     const Webhook = require('./webhook').default;
 
     const enums = require('./enums');
