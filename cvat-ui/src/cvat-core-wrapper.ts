@@ -4,7 +4,7 @@
 
 import _cvat from 'cvat-core/src/api';
 import ObjectState from 'cvat-core/src/object-state';
-import Webhook  from 'cvat-core/src/webhook';
+import Webhook from 'cvat-core/src/webhook';
 import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
