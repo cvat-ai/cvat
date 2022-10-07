@@ -119,6 +119,39 @@ jobs:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
 
+  docker_images_scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
+
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker image ls -a
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: cvat/server:latest
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          skip-dirs: /etc/ssh,/opt/venv/lib/python3.8/site-packages/slapdtest
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
