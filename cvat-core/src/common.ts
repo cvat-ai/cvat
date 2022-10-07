@@ -60,7 +60,7 @@ export function checkExclusiveFields(obj, exclusive, ignore): void {
     }
 }
 
-export function checkObjectType(name, value, type, instance): boolean {
+export function checkObjectType(name, value, type, instance?): boolean {
     if (type) {
         if (typeof value !== type) {
             // specific case for integers which aren't native type in JS

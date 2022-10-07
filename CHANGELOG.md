@@ -33,6 +33,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - IOG and f-BRS serverless function (<https://github.com/opencv/cvat/pulls>)
 - Invisible label item in label constructor when label color background is white,
  or close to it (<https://github.com/opencv/cvat/pull/5041>)
+- Fixed cvat-core ESlint problems (<https://github.com/opencv/cvat/pull/5027>)
 - A trailing slash in hostname does't allow SDK to send some requests
   (<https://github.com/opencv/cvat/pull/5057>)
 
