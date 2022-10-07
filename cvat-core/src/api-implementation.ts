@@ -3,12 +3,17 @@
 //
 // SPDX-License-Identifier: MIT
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const config = require('./config');
 
 (() => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const PluginRegistry = require('./plugins').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const serverProxy = require('./server-proxy').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const lambdaManager = require('./lambda-manager');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const ssoManager = require('./sso-manager');
     const {
         isBoolean,
@@ -17,15 +22,24 @@ const config = require('./config');
         checkFilter,
         checkExclusiveFields,
         checkObjectType,
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     } = require('./common');
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const User = require('./user').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { AnnotationFormats } = require('./annotation-formats');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { ArgumentError } = require('./exceptions');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { Task, Job } = require('./session');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Project = require('./project').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const CloudStorage = require('./cloud-storage').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Organization = require('./organization').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Webhook = require('./webhook').default;
 
     function implementAPI(cvat) {

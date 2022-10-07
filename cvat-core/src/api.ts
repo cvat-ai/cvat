@@ -9,31 +9,52 @@
  */
 
 function build() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const PluginRegistry = require('./plugins').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const loggerStorage = require('./logger-storage').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { Log } = require('./log');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const ObjectState = require('./object-state').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Statistics = require('./statistics');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Comment = require('./comment').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Issue = require('./issue').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { Job, Task } = require('./session');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Project = require('./project').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const implementProject = require('./project-implementation').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { Attribute, Label } = require('./labels');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const MLModel = require('./ml-model');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { FrameData } = require('./frames');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const CloudStorage = require('./cloud-storage').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Organization = require('./organization').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Webhook = require('./webhook').default;
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const enums = require('./enums');
 
     const {
         Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     } = require('./exceptions');
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const User = require('./user').default;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const pjson = require('../package.json');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const config = require('./config');
 
     /**
@@ -923,6 +944,7 @@ function build() {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const implementAPI = require('./api-implementation');
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
