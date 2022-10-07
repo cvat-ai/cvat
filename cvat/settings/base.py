@@ -482,12 +482,11 @@ RESTRICTIONS = {
     'user_agreements': [],
 
     # this setting reduces task visibility to owner and assignee only
-    'reduce_task_visibility': True,
+    'reduce_task_visibility': False,
 
-    # allow access to analytics component to users with the following roles
-    'analytics_access': (
-        'engine.role.admin',
-        ),
+    # allow access to analytics component to users with business role
+    # otherwise, only the administrator has access
+    'analytics_visibility': True,
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache

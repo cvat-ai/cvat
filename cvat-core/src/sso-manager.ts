@@ -14,20 +14,20 @@ const { ServerError } = require('./exceptions');
 class SSOManager {
     async validate(accessCode: string) {
         let response = null;
-        const ssoURL = `${config.backendAPI}`;
+        const ssoBase = `${config.backendAPI}`;
 
         try {
             const data = JSON.stringify({
                 code: accessCode,
             });
             const postConfig = {
-                baseURL: ssoURL,
+                baseURL: ssoBase,
                 headers: {
                     'Content-Type': 'application/json',
                 },
             };
 
-            response = await Axios.post('/auth/cognito', data, postConfig);
+            response = await Axios.post(`/auth/${config.socialSSO}`, data, postConfig);
         } catch (errorData) {
             if (errorData.response) {
                 const message = `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
