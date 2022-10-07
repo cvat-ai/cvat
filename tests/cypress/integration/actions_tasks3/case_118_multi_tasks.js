@@ -177,9 +177,9 @@ context('Create mutli tasks.', () => {
             it('With video from "Remote source".', () => {
                 const baseUrl = 'https://raw.githubusercontent.com/cvat-ai/cvat';
                 const branch = 'aa/creating-multiple-tasks-uploading-videos/tests';
-                const folder = 'tests/cypress/integration/share';
-                const videoUrls = `${baseUrl}/${branch}/${folder}/${videoFileName}_1.mp4
-${baseUrl}/${branch}/${folder}/${videoFileName}_2.mp4`;
+                const folder = 'tests/mounted_file_share';
+                const videoUrls = `${baseUrl}/${branch}/${folder}/video_case_118_1.mp4
+${baseUrl}/${branch}/${folder}/video_case_118_2.mp4`;
 
                 cy.contains('[role="tab"]', 'Remote sources').click();
                 cy.get('.cvat-file-selector-remote').clear().type(videoUrls);
