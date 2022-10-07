@@ -12,10 +12,10 @@ on:
 
 jobs:
   search_cache:
-    if: |
-      github.event.pull_request.draft == false &&
-      !startsWith(github.event.pull_request.title, '[WIP]') &&
-      !startsWith(github.event.pull_request.title, '[Dependent]')
+    # if: |
+    #   github.event.pull_request.draft == false &&
+    #   !startsWith(github.event.pull_request.title, '[WIP]') &&
+    #   !startsWith(github.event.pull_request.title, '[Dependent]')
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.get-sha.outputs.sha}}
