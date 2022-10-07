@@ -3,34 +3,54 @@
 //
 // SPDX-License-Identifier: MIT
 
-const { checkObjectType, isEnum } = require('./common');
-const config = require('./config');
-const { MembershipRole } = require('./enums');
-const { ArgumentError, ServerError } = require('./exceptions');
-const PluginRegistry = require('./plugins').default;
-const serverProxy = require('./server-proxy').default;
-const User = require('./user').default;
+import { checkObjectType, isEnum } from './common';
+import config from './config';
+import { MembershipRole } from './enums';
+import { ArgumentError, ServerError } from './exceptions';
+import PluginRegistry from './plugins';
+import serverProxy from './server-proxy';
+import User from './user';
 
-/**
- * Class representing an organization
- * @memberof module:API.cvat.classes
- */
-class Organization {
-    /**
-     * @param {object} initialData - Object which is used for initialization
-     * <br> It must contains keys:
-     * <br> <li style="margin-left: 10px;"> slug
+interface RawOrganizationData {
+    id?: number,
+    slug?: string,
+    name?: string,
+    description?: string,
+    created_date?: string,
+    updated_date?: string,
+    owner?: any,
+    contact?: OrganizationContact,
+}
 
-     * <br> It can contains keys:
-     * <br> <li style="margin-left: 10px;"> name
-     * <br> <li style="margin-left: 10px;"> description
-     * <br> <li style="margin-left: 10px;"> owner
-     * <br> <li style="margin-left: 10px;"> created_date
-     * <br> <li style="margin-left: 10px;"> updated_date
-     * <br> <li style="margin-left: 10px;"> contact
-     */
-    constructor(initialData) {
-        const data = {
+interface OrganizationContact {
+    email?: string;
+    location?: string;
+    phoneNumber?: string
+}
+
+interface Membership {
+    user: User;
+    is_active: boolean;
+    joined_date: string;
+    role: MembershipRole;
+    invitation: {
+        created_date: string;
+        owner: User;
+    } | null;
+}
+
+export default class Organization {
+    public readonly id: number;
+    public readonly slug: string;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
+    public readonly owner: User;
+    public contact: OrganizationContact;
+    public name: string;
+    public description: string;
+
+    constructor(initialData: RawOrganizationData) {
+        const data: RawOrganizationData = {
             id: undefined,
             slug: undefined,
             name: undefined,
@@ -66,7 +86,9 @@ class Organization {
             checkObjectType('contact', data.contact, 'object');
             for (const prop in data.contact) {
                 if (typeof data.contact[prop] !== 'string') {
-                    throw ArgumentError(`Contact fields must be strings, tried to set ${typeof data.contact[prop]}`);
+                    throw new ArgumentError(
+                        `Contact fields must be strings,tried to set ${typeof data.contact[prop]}`,
+                    );
                 }
             }
         }
@@ -86,7 +108,7 @@ class Organization {
                 get: () => data.name,
                 set: (name) => {
                     if (typeof name !== 'string') {
-                        throw ArgumentError(`Name property must be a string, tried to set ${typeof description}`);
+                        throw new ArgumentError(`Name property must be a string, tried to set ${typeof name}`);
                     }
                     data.name = name;
                 },
@@ -95,7 +117,7 @@ class Organization {
                 get: () => data.description,
                 set: (description) => {
                     if (typeof description !== 'string') {
-                        throw ArgumentError(
+                        throw new ArgumentError(
                             `Description property must be a string, tried to set ${typeof description}`,
                         );
                     }
@@ -106,11 +128,13 @@ class Organization {
                 get: () => ({ ...data.contact }),
                 set: (contact) => {
                     if (typeof contact !== 'object') {
-                        throw ArgumentError(`Contact property must be an object, tried to set ${typeof contact}`);
+                        throw new ArgumentError(`Contact property must be an object, tried to set ${typeof contact}`);
                     }
                     for (const prop in contact) {
                         if (typeof contact[prop] !== 'string') {
-                            throw ArgumentError(`Contact fields must be strings, tried to set ${typeof contact[prop]}`);
+                            throw new ArgumentError(
+                                `Contact fields must be strings, tried to set ${typeof contact[prop]}`,
+                            );
                         }
                     }
                     data.contact = { ...contact };
@@ -128,37 +152,14 @@ class Organization {
         });
     }
 
-    /**
-     * Method updates organization data if it was created before, or creates a new organization
-     * @method save
-     * @returns {module:API.cvat.classes.Organization}
-     * @memberof module:API.cvat.classes.Organization
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
-    async save() {
+    // Method updates organization data if it was created before, or creates a new organization
+    public async save(): Promise<Organization> {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save);
         return result;
     }
 
-    /**
-     * Method returns paginatable list of organization members
-     * @method save
-     * @returns {module:API.cvat.classes.Organization}
-     * @param page page number
-     * @param page_size number of results per page
-     * @memberof module:API.cvat.classes.Organization
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
-    async members(page = 1, page_size = 10) {
+    // Method returns paginatable list of organization members
+    public async members(page = 1, page_size = 10): Promise<Membership[]> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Organization.prototype.members,
@@ -169,75 +170,27 @@ class Organization {
         return result;
     }
 
-    /**
-     * Method removes the organization
-     * @method remove
-     * @returns {module:API.cvat.classes.Organization}
-     * @memberof module:API.cvat.classes.Organization
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
-    async remove() {
+    // Method removes the organization
+    public async remove(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.remove);
         return result;
     }
 
-    /**
-     * Method invites new members by email
-     * @method invite
-     * @returns {module:API.cvat.classes.Organization}
-     * @param {string} email
-     * @param {string} role
-     * @memberof module:API.cvat.classes.Organization
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
-    async invite(email, role) {
+    // Method invites new members by email
+    public async invite(email: string, role: MembershipRole): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.invite, email, role);
         return result;
     }
 
-    /**
-     * Method allows a user to get out from an organization
-     * The difference between deleteMembership is that membershipId is unknown in this case
-     * @method leave
-     * @returns {module:API.cvat.classes.Organization}
-     * @memberof module:API.cvat.classes.Organization
-     * @param {module:API.cvat.classes.User} user
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
-    async leave(user) {
+    // Method allows a user to get out from an organization
+    // The difference between deleteMembership is that membershipId is unknown in this case
+    public async leave(user: User): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.leave, user);
         return result;
     }
 
-    /**
-     * Method allows to change a membership role
-     * @method updateMembership
-     * @returns {module:API.cvat.classes.Organization}
-     * @param {number} membershipId
-     * @param {string} role
-     * @memberof module:API.cvat.classes.Organization
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
-    async updateMembership(membershipId, role) {
+    // Method allows to change a membership role
+    public async updateMembership(membershipId: number, role: MembershipRole): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Organization.prototype.updateMembership,
@@ -247,20 +200,8 @@ class Organization {
         return result;
     }
 
-    /**
-     * Method allows to kick a user from an organization
-     * @method deleteMembership
-     * @returns {module:API.cvat.classes.Organization}
-     * @param {number} membershipId
-     * @memberof module:API.cvat.classes.Organization
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
-    async deleteMembership(membershipId) {
+    // Method allows to kick a user from an organization
+    public async deleteMembership(membershipId: number): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Organization.prototype.deleteMembership,
@@ -270,110 +211,152 @@ class Organization {
     }
 }
 
-Organization.prototype.save.implementation = async function () {
-    if (typeof this.id === 'number') {
-        const organizationData = {
-            name: this.name || this.slug,
-            description: this.description,
-            contact: this.contact,
-        };
+Object.defineProperties(Organization.prototype.save, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation() {
+            if (typeof this.id === 'number') {
+                const organizationData = {
+                    name: this.name || this.slug,
+                    description: this.description,
+                    contact: this.contact,
+                };
 
-        const result = await serverProxy.organizations.update(this.id, organizationData);
-        return new Organization(result);
-    }
-
-    const organizationData = {
-        slug: this.slug,
-        name: this.name || this.slug,
-        description: this.description,
-        contact: this.contact,
-    };
-
-    const result = await serverProxy.organizations.create(organizationData);
-    return new Organization(result);
-};
-
-Organization.prototype.members.implementation = async function (orgSlug, page, pageSize) {
-    checkObjectType('orgSlug', orgSlug, 'string');
-    checkObjectType('page', page, 'number');
-    checkObjectType('pageSize', pageSize, 'number');
-
-    const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
-    await Promise.all(
-        result.results.map((membership) => {
-            const { invitation } = membership;
-            membership.user = new User(membership.user);
-            if (invitation) {
-                return serverProxy.organizations
-                    .invitation(invitation)
-                    .then((invitationData) => {
-                        membership.invitation = invitationData;
-                    })
-                    .catch(() => {
-                        membership.invitation = null;
-                    });
+                const result = await serverProxy.organizations.update(this.id, organizationData);
+                return new Organization(result);
             }
 
-            return Promise.resolve();
-        }),
-    );
+            const organizationData = {
+                slug: this.slug,
+                name: this.name || this.slug,
+                description: this.description,
+                contact: this.contact,
+            };
 
-    result.results.count = result.count;
-    return result.results;
-};
+            const result = await serverProxy.organizations.create(organizationData);
+            return new Organization(result);
+        },
+    },
+});
 
-Organization.prototype.remove.implementation = async function () {
-    if (typeof this.id === 'number') {
-        await serverProxy.organizations.delete(this.id);
-        config.organizationID = null;
-    }
-};
+Object.defineProperties(Organization.prototype.members, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(orgSlug: string, page: number, pageSize: number) {
+            checkObjectType('orgSlug', orgSlug, 'string');
+            checkObjectType('page', page, 'number');
+            checkObjectType('pageSize', pageSize, 'number');
 
-Organization.prototype.invite.implementation = async function (email, role) {
-    checkObjectType('email', email, 'string');
-    if (!isEnum.bind(MembershipRole)(role)) {
-        throw new ArgumentError(`Role must be one of: ${Object.values(MembershipRole).toString()}`);
-    }
+            const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
+            await Promise.all(
+                result.results.map((membership) => {
+                    const { invitation } = membership;
+                    membership.user = new User(membership.user);
+                    if (invitation) {
+                        return serverProxy.organizations
+                            .invitation(invitation)
+                            .then((invitationData) => {
+                                membership.invitation = invitationData;
+                            })
+                            .catch(() => {
+                                membership.invitation = null;
+                            });
+                    }
 
-    if (typeof this.id === 'number') {
-        await serverProxy.organizations.invite(this.id, { email, role });
-    }
-};
+                    return Promise.resolve();
+                }),
+            );
 
-Organization.prototype.updateMembership.implementation = async function (membershipId, role) {
-    checkObjectType('membershipId', membershipId, 'number');
-    if (!isEnum.bind(MembershipRole)(role)) {
-        throw new ArgumentError(`Role must be one of: ${Object.values(MembershipRole).toString()}`);
-    }
+            result.results.count = result.count;
+            return result.results;
+        },
+    },
+});
 
-    if (typeof this.id === 'number') {
-        await serverProxy.organizations.updateMembership(membershipId, { role });
-    }
-};
+Object.defineProperties(Organization.prototype.remove, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation() {
+            if (typeof this.id === 'number') {
+                await serverProxy.organizations.delete(this.id);
+                config.organizationID = null;
+            }
+        },
+    },
+});
 
-Organization.prototype.deleteMembership.implementation = async function (membershipId) {
-    checkObjectType('membershipId', membershipId, 'number');
-    if (typeof this.id === 'number') {
-        await serverProxy.organizations.deleteMembership(membershipId);
-    }
-};
+Object.defineProperties(Organization.prototype.invite, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(email: string, role: MembershipRole) {
+            checkObjectType('email', email, 'string');
+            if (!isEnum.bind(MembershipRole)(role)) {
+                throw new ArgumentError(`Role must be one of: ${Object.values(MembershipRole).toString()}`);
+            }
 
-Organization.prototype.leave.implementation = async function (user) {
-    checkObjectType('user', user, null, User);
-    if (typeof this.id === 'number') {
-        const result = await serverProxy.organizations.members(this.slug, 1, 10, {
-            filter: JSON.stringify({
-                and: [{
-                    '==': [{ var: 'user' }, user.id],
-                }],
-            }),
-        });
-        const [membership] = result.results;
-        if (!membership) {
-            throw new ServerError(`Could not find membership for user ${user.username} in organization ${this.slug}`);
-        }
-        await serverProxy.organizations.deleteMembership(membership.id);
-    }
-};
+            if (typeof this.id === 'number') {
+                await serverProxy.organizations.invite(this.id, { email, role });
+            }
+        },
+    },
+});
 
-module.exports = Organization;
+Object.defineProperties(Organization.prototype.updateMembership, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(membershipId: number, role: MembershipRole) {
+            checkObjectType('membershipId', membershipId, 'number');
+            if (!isEnum.bind(MembershipRole)(role)) {
+                throw new ArgumentError(`Role must be one of: ${Object.values(MembershipRole).toString()}`);
+            }
+
+            if (typeof this.id === 'number') {
+                await serverProxy.organizations.updateMembership(membershipId, { role });
+            }
+        },
+    },
+});
+
+Object.defineProperties(Organization.prototype.deleteMembership, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(membershipId: number) {
+            checkObjectType('membershipId', membershipId, 'number');
+            if (typeof this.id === 'number') {
+                await serverProxy.organizations.deleteMembership(membershipId);
+            }
+        },
+    },
+});
+
+Object.defineProperties(Organization.prototype.leave, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(user: User) {
+            checkObjectType('user', user, null, User);
+            if (typeof this.id === 'number') {
+                const result = await serverProxy.organizations.members(this.slug, 1, 10, {
+                    filter: JSON.stringify({
+                        and: [{
+                            '==': [{ var: 'user' }, user.id],
+                        }],
+                    }),
+                });
+                const [membership] = result.results;
+                if (!membership) {
+                    throw new ServerError(
+                        `Could not find membership for user ${user.username} in organization ${this.slug}`,
+                    );
+                }
+                await serverProxy.organizations.deleteMembership(membership.id);
+            }
+        },
+    },
+});

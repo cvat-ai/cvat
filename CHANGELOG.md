@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
 - Datumaro version (<https://github.com/opencv/cvat/pull/4984>)
+- Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
 
 ### Deprecated
 - TDB
@@ -33,6 +34,9 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - IOG and f-BRS serverless function (<https://github.com/opencv/cvat/pull/5039>)
 - Invisible label item in label constructor when label color background is white,
  or close to it (<https://github.com/opencv/cvat/pull/5041>)
+- Fixed cvat-core ESlint problems (<https://github.com/opencv/cvat/pull/5027>)
+- Fixed task creation with non-local files via the SDK/CLI
+  (<https://github.com/opencv/cvat/issues/4962>)
 - HRNET serverless function (<https://github.com/opencv/cvat/pull/4944>)
 
 ### Security

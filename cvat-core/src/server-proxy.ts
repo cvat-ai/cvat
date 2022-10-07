@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { isEmail } from './common';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { Storage } from './storage';
 
@@ -325,9 +326,9 @@ class ServerProxy {
             return response.data;
         }
 
-        async function login(username, password) {
+        async function login(credential, password) {
             const authenticationData = [
-                `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
+                `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
                 `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
             ]
                 .join('&')
