@@ -189,6 +189,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 
 REST_AUTH_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
@@ -267,6 +268,7 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 
 # Maintain unique email https://medium.com/geekculture/getting-started-with-django-social-authentication-80ee7dc26fe0
 SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+
 
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
