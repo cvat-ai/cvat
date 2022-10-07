@@ -57,6 +57,5 @@ class LoginSerializerEx(LoginSerializer):
             users = filter_users_by_email(email)
             if not users or len(users) > 1:
                 raise ValidationError('Unable to login with provided credentials')
-            username = users[0].username
 
         return self._validate_username_email(username, email, password)
