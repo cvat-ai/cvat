@@ -64,7 +64,7 @@ function WebhooksPage(): JSX.Element | null {
     }
 
     useEffect(() => {
-        if (projectsMatch) {
+        if (projectsMatch && projectsMatch.params.id) {
             const { id } = projectsMatch.params;
             setOnCreateParams(`projectId=${id}`);
             dispatch(getWebhooksAsync({ ...updatedQuery, projectId: +id }));

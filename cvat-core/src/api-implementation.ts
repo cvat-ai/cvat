@@ -23,8 +23,8 @@ const config = require('./config');
     const { ArgumentError } = require('./exceptions');
     const { Task, Job } = require('./session');
     const Project = require('./project').default;
-    const { CloudStorage } = require('./cloud-storage');
-    const Organization = require('./organization');
+    const CloudStorage = require('./cloud-storage').default;
+    const Organization = require('./organization').default;
     const Webhook = require('./webhook').default;
 
     function implementAPI(cvat) {
