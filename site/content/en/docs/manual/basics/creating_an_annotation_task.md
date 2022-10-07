@@ -6,6 +6,7 @@ description: 'Instructions on how to create and configure an annotation task.'
 ---
 
 Create an annotation task pressing `+` button and select `Create new task` on the tasks page or on the project page.
+
 ![](/images/image004.jpg)
 
 > Notice that the task will be created in the organization that you selected at the time of creation.
@@ -32,6 +33,7 @@ The project that this task will be related with.
 There are two ways of working with labels (available only if the task is not related to the project):
 
 - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
+
   ![](/images/image123.jpg)
 
   You can set a name of the label in the `Label name` field and choose a color for each label.

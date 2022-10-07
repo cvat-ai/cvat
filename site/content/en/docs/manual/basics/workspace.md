@@ -1,7 +1,7 @@
 ---
 title: 'Workspace'
 linkTitle: 'Workspace'
-weight: 10
+weight: 12
 description: 'Overview of available functions on the workspace of the annotation tool.'
 ---
 
