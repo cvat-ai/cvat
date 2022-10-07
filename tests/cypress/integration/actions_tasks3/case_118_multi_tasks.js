@@ -18,14 +18,14 @@ context('Create mutli tasks.', () => {
     const videoCount = 2;
     const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
     const videoFileName = `video_${taskName.replace(' ', '_').toLowerCase()}`;
-    const videoExtention = 'mp4';
+    // const videoExtention = 'mp4';
     const width = 800;
     const height = 800;
     const posX = 10;
     const posY = 10;
     const color = 'gray';
     const imagesFolder = `${fixturesPath}/${imageFileName}`;
-    const videoFolder = `${fixturesPath}`; // fluent-ffmpeg not work with ${fixturesPath}/...
+    // const videoFolder = `${fixturesPath}`; // fluent-ffmpeg not work with ${fixturesPath}/...
     const imageListToAttach = [];
     const imageListToVideo = [];
     const videoFilesToAttach = [];
@@ -34,20 +34,20 @@ context('Create mutli tasks.', () => {
         imageListToAttach.push(`${imageFileName}/${imageFileName}_${i}.png`);
         imageListToVideo.push(`${imagesFolder}/${imageFileName}_${i}.png`);
     }
-    for (let i = 1; i <= videoCount; i++) {
-        videoFilesToAttach.push(`${fixturesPath}/${videoFileName}_${i}.${videoExtention}`);
-    }
+    // for (let i = 1; i <= videoCount; i++) {
+    //     videoFilesToAttach.push(`${fixturesPath}/${videoFileName}_${i}.${videoExtention}`);
+    // }
 
     before(() => {
         cy.visit('auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-        cy.videoGenerator(imageListToVideo, {
-            directory: videoFolder,
-            fileName: videoFileName,
-            count: videoCount,
-            extension: videoExtention,
-        });
+        // cy.videoGenerator(imageListToVideo, {
+        //     directory: videoFolder,
+        //     fileName: videoFileName,
+        //     count: videoCount,
+        //     extension: videoExtention,
+        // });
     });
 
     beforeEach(() => {
@@ -108,7 +108,7 @@ context('Create mutli tasks.', () => {
         });
 
         describe('Try to create tasks with vidoes. Should be success creating.', () => {
-            it('With attached videos', () => {
+            it.skip('With attached videos', () => {
                 cy.get('input[type="file"]')
                     // selectFile not work with no visible elements
                     .invoke('attr', 'style', 'display: inline')
