@@ -985,12 +985,10 @@ def dump_as_cvat_interpolation(dumper, annotations):
 
     for shape in annotations.shapes:
         frame_step = annotations.frame_step if isinstance(annotations, (TaskData, JobData)) else annotations.frame_step[shape.task_id]
-        if isinstance(annotations, TaskData):
-            stop_frame = int(annotations.meta['task']['stop_frame'])
-        elif isinstance(annotations, JobData):
-            stop_frame = int(annotations.meta['stop_frame'])
+        if isinstance(annotations, (TaskData, JobData)):
+            stop_frame = int(annotations.meta[annotations.META_FIELD]['stop_frame'])
         else:
-            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta['project']['tasks']))[0][1]
+            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta[annotations.META_FIELD]['tasks']))[0][1]
             stop_frame = int(task_meta['stop_frame'])
         track = {
             'label': shape.label,
@@ -1104,7 +1102,7 @@ def load_anno(file_object, annotations):
                         attributes={'frame': el.attrib['id']},
                         image=el.attrib['name']
                     ),
-                    task_data=annotations
+                    instance_data=annotations
                 ))
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
                 if shape and shape['type'] == 'skeleton':
@@ -1274,8 +1272,7 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
 
 def dump_media_files(instance_data: Union[TaskData, JobData], img_dir: str, project_data: ProjectData = None):
     ext = ''
-    meta = instance_data.meta['task'] if isinstance(instance_data, TaskData) else instance_data.meta
-    if meta['mode'] == 'interpolation':
+    if instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation':
         ext = FrameProvider.VIDEO_FRAME_EXT
 
     frame_provider = FrameProvider(instance_data.db_data)

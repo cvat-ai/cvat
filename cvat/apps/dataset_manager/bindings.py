@@ -192,17 +192,22 @@ class CommonData(InstanceLabelData):
         self._init_frame_info()
         self._init_meta()
 
-    def abs_frame_id(self, relative_id):
-        # frame index in the task
-        raise NotImplementedError()
-
-    def rel_frame_id(self, absolute_id):
-        # frame index like 0, 1, 2, ....
-        raise NotImplementedError()
-
     @property
     def range(self):
         raise NotImplementedError()
+
+    def abs_frame_id(self, relative_id):
+        # relative_id is frame index in segment for job, so it can start with more than just zero
+        if relative_id not in self.rel_range:
+            raise ValueError("Unknown internal frame id %s" % relative_id)
+        return relative_id * self._frame_step + self._db_data.start_frame
+
+    def rel_frame_id(self, absolute_id):
+        d, m = divmod(
+            absolute_id - self._db_data.start_frame, self._frame_step)
+        if m or d not in self.rel_range:
+            raise ValueError("Unknown frame %s" % absolute_id)
+        return d
 
     def _init_frame_info(self):
         self._deleted_frames = { k: True for k in self._db_data.deleted_frames }
@@ -566,60 +571,50 @@ class CommonData(InstanceLabelData):
         return None
 
 class JobData(CommonData):
+    META_FIELD = "job"
     def __init__(self, annotation_ir, db_job, host='', create_callback=None):
         self._db_job = db_job
         self._db_task = db_job.segment.task
 
         super().__init__(annotation_ir, host, create_callback)
 
-    def abs_frame_id(self, relative_id):
-        # relative_id is frame index in segment, so it can start with more than just zero
-        if relative_id not in self.rel_range:
-            raise ValueError("Unknown internal frame id %s" % relative_id)
-        return relative_id * self._frame_step + self._db_data.start_frame
-
-    def rel_frame_id(self, absolute_id):
-        d, m = divmod(
-            absolute_id - self._db_data.start_frame, self._frame_step)
-        if m or d not in self.rel_range:
-            raise ValueError("Unknown frame %s" % absolute_id)
-        return d
-
     def _init_meta(self):
         db_segment = self._db_job.segment
         self._meta = OrderedDict([
-            ("id", str(self._db_job.id)),
-            ("size", str(len(self))),
-            ("mode", self._db_task.mode),
-            ("overlap", str(self._db_task.overlap)),
-            ("bugtracker", self._db_task.bug_tracker),
-            ("created", str(timezone.localtime(self._db_task.created_date))),
-            ("updated", str(timezone.localtime(self._db_job.updated_date))),
-            ("subset", self._db_task.subset or dm.DEFAULT_SUBSET_NAME),
-            ("start_frame", str(db_segment.start_frame)),
-            ("stop_frame", str(db_segment.stop_frame)),
-            ("frame_filter", self._db_task.data.frame_filter),
-            ("segment", OrderedDict([
-                ("id", str(db_segment.id)),
-                ("start", str(db_segment.start_frame)),
-                ("stop", str(db_segment.stop_frame)),
-                ("url", "{}/?id={}".format(
-                    self._host, self._db_job.id))]
-            )),
-            ("owner", OrderedDict([
-                ("username", self._db_task.owner.username),
-                ("email", self._db_task.owner.email)
-            ]) if self._db_task.owner else ""),
+            (JobData.META_FIELD, OrderedDict([
+                ("id", str(self._db_job.id)),
+                ("size", str(len(self))),
+                ("mode", self._db_task.mode),
+                ("overlap", str(self._db_task.overlap)),
+                ("bugtracker", self._db_task.bug_tracker),
+                ("created", str(timezone.localtime(self._db_task.created_date))),
+                ("updated", str(timezone.localtime(self._db_job.updated_date))),
+                ("subset", self._db_task.subset or dm.DEFAULT_SUBSET_NAME),
+                ("start_frame", str(self._db_data.start_frame)),
+                ("stop_frame", str(self._db_data.stop_frame)),
+                ("frame_filter", self._db_data.frame_filter),
+                ("segment", OrderedDict([
+                    ("id", str(db_segment.id)),
+                    ("start", str(db_segment.start_frame)),
+                    ("stop", str(db_segment.stop_frame)),
+                    ("url", "{}/?id={}".format(
+                        self._host, self._db_job.id))]
+                )),
+                ("owner", OrderedDict([
+                    ("username", self._db_task.owner.username),
+                    ("email", self._db_task.owner.email)
+                ]) if self._db_task.owner else ""),
 
-            ("assignee", OrderedDict([
-                ("username", self._db_job.assignee.username),
-                ("email", self._db_job.assignee.email)
-            ]) if self._db_job.assignee else ""),
+                ("assignee", OrderedDict([
+                    ("username", self._db_job.assignee.username),
+                    ("email", self._db_job.assignee.email)
+                ]) if self._db_job.assignee else ""),
+            ])),
             ("dumped", str(timezone.localtime(timezone.now()))),
         ])
 
         if self._label_mapping is not None:
-            self._meta["labels"] = CommonData._convert_db_labels(self._label_mapping.values())
+            self._meta[JobData.META_FIELD]["labels"] = CommonData._convert_db_labels(self._label_mapping.values())
 
         if hasattr(self._db_data, "video"):
             self._meta["original_size"] = OrderedDict([
@@ -664,21 +659,10 @@ class JobData(CommonData):
         return self._db_job
 
 class TaskData(CommonData):
+    META_FIELD = "task"
     def __init__(self, annotation_ir, db_task, host='', create_callback=None):
         self._db_task = db_task
         super().__init__(annotation_ir, host, create_callback)
-
-    def abs_frame_id(self, relative_id):
-        if relative_id not in range(0, self._db_task.data.size):
-            raise ValueError("Unknown internal frame id %s" % relative_id)
-        return relative_id * self._frame_step + self._db_task.data.start_frame
-
-    def rel_frame_id(self, absolute_id):
-        d, m = divmod(
-            absolute_id - self._db_task.data.start_frame, self._frame_step)
-        if m or d not in range(0, self._db_task.data.size):
-            raise ValueError("Unknown frame %s" % absolute_id)
-        return d
 
     @staticmethod
     def meta_for_task(db_task, host, label_mapping=None):
@@ -732,7 +716,7 @@ class TaskData(CommonData):
 
     def _init_meta(self):
         self._meta = OrderedDict([
-            ("task", self.meta_for_task(self._db_task, self._host, self._label_mapping)),
+            (TaskData.META_FIELD, self.meta_for_task(self._db_task, self._host, self._label_mapping)),
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
 
@@ -742,17 +726,22 @@ class TaskData(CommonData):
                 osp.basename(self._db_task.data.video.path))
 
     def __len__(self):
-        return self._db_task.data.size
+        return self._db_data.size
 
     @property
     def range(self):
         return range(len(self))
 
     @property
+    def rel_range(self):
+        return self.range
+
+    @property
     def db_instance(self):
         return self._db_task
 
 class ProjectData(InstanceLabelData):
+    META_FIELD = 'project'
     @attrs
     class LabeledShape:
         type: str = attrib()
@@ -912,7 +901,7 @@ class ProjectData(InstanceLabelData):
 
     def _init_meta(self):
         self._meta = OrderedDict([
-            ('project', OrderedDict([
+            (ProjectData.META_FIELD, OrderedDict([
                 ('id', str(self._db_project.id)),
                 ('name', self._db_project.name),
                 ("bugtracker", self._db_project.bug_tracker),
@@ -966,7 +955,7 @@ class ProjectData(InstanceLabelData):
 
                 labels.append(('label', label))
 
-            self._meta['project']['labels'] = labels
+            self._meta[ProjectData.META_FIELD]['labels'] = labels
 
     def _export_tracked_shape(self, shape: dict, task_id: int):
         return ProjectData.TrackedShape(
@@ -1258,8 +1247,7 @@ class CVATDataExtractorMixin:
 class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
     def __init__(self, instance_data: Union[TaskData, JobData], include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
         super().__init__(media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud)
-        instance_meta = instance_data.meta['task'] if isinstance(instance_data, TaskData) else \
-            instance_data.meta
+        instance_meta = instance_data.meta[instance_data.META_FIELD]
         self._categories = self._load_categories(instance_meta['labels'])
         self._user = self._load_user_info(instance_meta) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
@@ -1356,8 +1344,8 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
 class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
     def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
         super().__init__(media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud)
-        self._categories = self._load_categories(project_data.meta['project']['labels'])
-        self._user = self._load_user_info(project_data.meta['project']) if dimension == DimensionType.DIM_3D else {}
+        self._categories = self._load_categories(project_data.meta[project_data.META_FIELD]['labels'])
+        self._user = self._load_user_info(project_data.meta[project_data.META_FIELD]) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
         self._format_type = format_type
 
@@ -1420,7 +1408,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                 dm_image = image_maker_per_task[frame_data.task_id](frame_data.idx, **image_args)
             else:
                 dm_image = dm.Image(**image_args)
-            dm_anno = self._read_cvat_anno(frame_data, project_data.meta['project']['labels'])
+            dm_anno = self._read_cvat_anno(frame_data, project_data.meta[project_data.META_FIELD]['labels'])
             if self._dimension == DimensionType.DIM_2D:
                 dm_item = dm.DatasetItem(
                     id=osp.splitext(frame_data.name)[0],
@@ -1435,7 +1423,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                     attributes["createdAt"] = self._user["createdAt"]
                     attributes["updatedAt"] = self._user["updatedAt"]
                     attributes["labels"] = []
-                    for (idx, (_, label)) in enumerate(project_data.meta['project']['labels']):
+                    for (idx, (_, label)) in enumerate(project_data.meta[project_data.META_FIELD]['labels']):
                         attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"], "type": label["type"]})
                         attributes["track_id"] = -1
 
@@ -1623,20 +1611,20 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
 
     return item_anno
 
-def match_dm_item(item, task_data, root_hint=None):
-    is_video = task_data.meta['task']['mode'] == 'interpolation'
+def match_dm_item(item, instance_data, root_hint=None):
+    is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
     frame_number = None
     if frame_number is None and item.has_image:
-        frame_number = task_data.match_frame(item.id + item.image.ext, root_hint)
+        frame_number = instance_data.match_frame(item.id + item.image.ext, root_hint)
     if frame_number is None:
-        frame_number = task_data.match_frame(item.id, root_hint, path_has_ext=False)
+        frame_number = instance_data.match_frame(item.id, root_hint, path_has_ext=False)
     if frame_number is None:
         frame_number = dm.util.cast(item.attributes.get('frame', item.id), int)
     if frame_number is None and is_video:
         frame_number = dm.util.cast(osp.basename(item.id)[len('frame_'):], int)
 
-    if not frame_number in task_data.frame_info:
+    if not frame_number in instance_data.frame_info:
         raise CvatImportError("Could not match item id: "
             "'%s' with any task frame" % item.id)
     return frame_number
@@ -1657,7 +1645,6 @@ def find_dataset_root(dm_dataset, instance_data: Union[ProjectData, TaskData, Jo
         prefix = prefix[:-1]
     return prefix
 
-# TODO check import
 def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, TaskData, JobData]):
     if len(dm_dataset) == 0:
         return

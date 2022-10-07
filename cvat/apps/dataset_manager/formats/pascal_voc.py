@@ -36,8 +36,7 @@ def _import(src_file, instance_data, load_data_callback=None):
         # put label map from the task if not present
         labelmap_file = osp.join(tmp_dir, 'labelmap.txt')
         if not osp.isfile(labelmap_file):
-            labels_meta = instance_data.meta['project']['labels'] \
-                if isinstance(instance_data, ProjectData) else instance_data.meta['task']['labels']
+            labels_meta = instance_data.meta[instance_data.META_FIELD]['labels']
             labels = (label['name'] + ':::' for _, label in labels_meta)
             with open(labelmap_file, 'w') as f:
                 f.write('\n'.join(labels))

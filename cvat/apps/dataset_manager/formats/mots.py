@@ -87,7 +87,7 @@ def _import_task(dataset, task_data):
         # Append a shape with outside=True to finish the track
         last_shape = track.shapes[-1]
         if last_shape.frame + task_data.frame_step <= \
-                int(task_data.meta['task']['stop_frame']):
+                int(task_data.meta[task_data.META_FIELD]['stop_frame']):
             track.shapes.append(last_shape._replace(outside=True,
                 frame=last_shape.frame + task_data.frame_step)
             )
