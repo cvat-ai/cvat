@@ -9,7 +9,7 @@ context('Connected file share.', () => {
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
     let stdoutToList;
-    const assetLocalPath = 'cypress/integration/share';
+    const assetLocalPath = 'mounted_file_share';
     const imageNamePattern = `image_case_${caseId}_*.png`;
     const sharePath = '~/share';
 

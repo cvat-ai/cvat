@@ -21,7 +21,7 @@ require('cy-verify-downloads').addCustomCommand();
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
-    cy.get('[placeholder="Username"]').type(username);
+    cy.get('[placeholder="Email or Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
     cy.url().should('contain', `/${page}`);
