@@ -273,15 +273,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const { clientID, elements } = data as any;
             const points = data.points || elements.map((el: any) => el.points).flat();
             if (typeof clientID === 'number') {
+                const [state] = this.controller.objects
+                    .filter((_state: any): boolean => _state.clientID === clientID);
+                this.onEditDone(state, points);
+
                 const event: CustomEvent = new CustomEvent('canvas.canceled', {
                     bubbles: false,
                     cancelable: true,
                 });
 
                 this.canvas.dispatchEvent(event);
-                const [state] = this.controller.objects
-                    .filter((_state: any): boolean => _state.clientID === clientID);
-                this.onEditDone(state, points);
                 return;
             }
 

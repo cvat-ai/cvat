@@ -77,7 +77,12 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
 
 export class DrawHandlerImpl implements DrawHandler {
     // callback is used to notify about creating new shape
-    private onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void;
+    private onDrawDone: (
+        data: object | null,
+        duration?: number,
+        continueDraw?: boolean,
+        prevDrawData?: DrawData,
+    ) => void;
     private startTimestamp: number;
     private canvas: SVG.Container;
     private text: SVG.Container;
@@ -838,10 +843,6 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.getFinalCuboidCoordinates(targetPoints) :
                 this.getFinalPolyshapeCoordinates(targetPoints, true);
 
-            if (!e.detail.originalEvent.ctrlKey) {
-                this.release();
-            }
-
             if (checkConstraint(shapeType, points, box)) {
                 this.onDrawDone(
                     {
@@ -855,7 +856,12 @@ export class DrawHandlerImpl implements DrawHandler {
                     },
                     Date.now() - this.startTimestamp,
                     e.detail.originalEvent.ctrlKey,
+                    this.drawData,
                 );
+            }
+
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
             }
         });
     }
@@ -893,10 +899,6 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('done', (e: CustomEvent): void => {
             const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
             const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, !this.drawData.initialState.rotation);
-            if (!e.detail.originalEvent.ctrlKey) {
-                this.release();
-            }
-
             if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
                 this.onDrawDone(
                     {
@@ -911,7 +913,12 @@ export class DrawHandlerImpl implements DrawHandler {
                     },
                     Date.now() - this.startTimestamp,
                     e.detail.originalEvent.ctrlKey,
+                    this.drawData,
                 );
+            }
+
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
             }
         });
     }
@@ -932,11 +939,6 @@ export class DrawHandlerImpl implements DrawHandler {
             const points = this.getFinalEllipseCoordinates(
                 readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), false,
             );
-
-            if (!e.detail.originalEvent.ctrlKey) {
-                this.release();
-            }
-
             if (checkConstraint('ellipse', points)) {
                 this.onDrawDone(
                     {
@@ -951,7 +953,12 @@ export class DrawHandlerImpl implements DrawHandler {
                     },
                     Date.now() - this.startTimestamp,
                     e.detail.originalEvent.ctrlKey,
+                    this.drawData,
                 );
+            }
+
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
             }
         });
     }
@@ -1044,15 +1051,16 @@ export class DrawHandlerImpl implements DrawHandler {
                 rotation: this.drawData.initialState.rotation,
             };
 
-            if (!e.detail.originalEvent.ctrlKey) {
-                this.release();
-            }
-
             this.onDrawDone(
                 result,
                 Date.now() - this.startTimestamp,
                 e.detail.originalEvent.ctrlKey,
+                this.drawData,
             );
+
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
         });
 
         this.canvas.on('mousemove.draw', (): void => {
@@ -1213,7 +1221,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public constructor(
-        onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void,
+        onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean, prevDrawData?: DrawData) => void,
         canvas: SVG.Container,
         text: SVG.Container,
         autoborderHandler: AutoborderHandler,
