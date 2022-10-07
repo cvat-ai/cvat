@@ -5,7 +5,6 @@
 
 import { StorageLocation, WebhookSourceType } from './enums';
 import { Storage } from './storage';
-import { constants as httpConstants } from 'http2';
 
 type Params = {
     org: number | string,
@@ -293,13 +292,10 @@ class ServerProxy {
             try {
                 response = await Axios.get(`${backendAPI}/user-agreements`, {
                     proxy: config.proxy,
-                    validateStatus: (status) => {
-                        status === httpConstants.HTTP_STATUS_OK ||
-                        status === httpConstants.HTTP_STATUS_NOT_FOUND
-                    },
+                    validateStatus: (status) => status === 200 || status === 404,
                 });
 
-                if (response.status === httpConstants.HTTP_STATUS_OK) {
+                if (response.status === 200) {
                     return response.data;
                 }
 
