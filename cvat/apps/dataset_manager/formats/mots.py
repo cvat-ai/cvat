@@ -108,12 +108,12 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='MOTS PNG', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, conv_mask_to_poly=True, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'mots', env=dm_env)
-        if conv_mask_to_poly:
+        if kwargs.get('conv_mask_to_poly', True):
             dataset.transform('masks_to_polygons')
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)

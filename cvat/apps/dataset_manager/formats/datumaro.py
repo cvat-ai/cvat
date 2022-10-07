@@ -36,7 +36,7 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(tmp_dir, dst_file)
 
 @importer(name="Datumaro", ext="ZIP", version="1.0")
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 

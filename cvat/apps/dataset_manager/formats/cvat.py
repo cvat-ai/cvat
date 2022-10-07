@@ -1388,7 +1388,7 @@ def _export_images(dst_file, instance_data, save_images=False):
             anno_callback=dump_as_cvat_annotation, save_images=save_images)
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     is_zip = zipfile.is_zipfile(src_file)
     src_file.seek(0)
     if is_zip:

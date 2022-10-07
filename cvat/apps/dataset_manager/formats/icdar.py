@@ -130,12 +130,12 @@ def _export_segmentation(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Segmentation', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, conv_mask_to_poly=True, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         dataset = Dataset.import_from(tmp_dir, 'icdar_text_segmentation', env=dm_env)
         dataset.transform(AddLabelToAnns, label='icdar')
-        if conv_mask_to_poly:
+        if kwargs.get('conv_mask_to_poly', True):
             dataset.transform('masks_to_polygons')
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
