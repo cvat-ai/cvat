@@ -33,7 +33,7 @@ const DraggableArea = (
 
 const MIN_BRUSH_SIZE = 1;
 let polygonFinishingTipShown = false;
-function BrushTools(): React.ReactPortal {
+function BrushTools(): React.ReactPortal | null {
     const dispatch = useDispatch();
     const defaultLabelID = useSelector((state: CombinedState) => state.annotation.drawing.activeLabelID);
     const config = useSelector((state: CombinedState) => state.annotation.canvas.brushTools);
@@ -167,6 +167,10 @@ function BrushTools(): React.ReactPortal {
             }
         };
     }, [visible]);
+
+    if (!labels.length) {
+        return null;
+    }
 
     return ReactDOM.createPortal((
         <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
