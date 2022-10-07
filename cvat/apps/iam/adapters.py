@@ -1,9 +1,7 @@
-import os
 import requests
 from django.contrib.auth import get_user_model
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.providers.amazon_cognito.views import AmazonCognitoOAuth2Adapter
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 
 
 class AmazonCognitoOAuth2AdapterEx(AmazonCognitoOAuth2Adapter):

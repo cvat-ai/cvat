@@ -27,9 +27,8 @@ def generate_coco_json(filename: str, img_info: Tuple[str, int, int]):
 
 
 def generate_coco_anno(image_path: str, image_width: int, image_height: int) -> str:
-    return (
-        textwrap.dedent(
-            """
+    return textwrap.dedent(
+        """
     {
         "categories": [
             {
@@ -75,10 +74,8 @@ def generate_coco_anno(image_path: str, image_width: int, image_height: int) -> 
         ]
     }
     """
-        )
-        % {
-            "image_path": image_path,
-            "image_height": image_height,
-            "image_width": image_width,
-        }
-    )
+    ) % {
+        "image_path": image_path,
+        "image_height": image_height,
+        "image_width": image_width,
+    }
