@@ -124,7 +124,7 @@ Webhook payload object for `update:<resource>` events:
 | Key             | Type      | Description                                                                              |
 | :---:           | :----:    | :----                                                                                    |
 | `event`         | `string`  | Name of event that triggered webhook with pattern `update:<resource>` |
-| `<resource>`    | `object`  | Full information about deleted resource. See the swagger docs for each separate resource |
+| `<resource>`    | `object`  | Full information about updated resource. See the swagger docs for each separate resource |
 | `before_update` | `object`  | Keys of `<resource>` that was updated with theirs old values                             |
 | `webhook_id`    | `integer` | Identifier of webhook that sent payload                                                  |
 | `sender`        | `object`  | Information about user that triggered webhook                                            |
