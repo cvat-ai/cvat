@@ -1,10 +1,12 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import ast
 import cv2 as cv
 from collections import namedtuple
+from enum import Enum, unique
 import hashlib
 import importlib
 import sys
@@ -133,3 +135,54 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
             job_id=rq_job_id_download_file
         )
     return rq_job_download_file
+
+class StrEnum(str, Enum):
+    """
+    A enum with string items.
+    """
+
+    def __str__(self):
+        """
+        Implements item conversion to string so that there is only item value in the result.
+        """
+        return self.value
+
+@unique
+class DjangoEnum(Enum):
+    """
+    A enum that implements operations required by DRF. The main application is in Django models,
+    serializers, and OpenAPI schema where choices are supposed. Items are expected to be unique
+    and have human-readable names.
+
+    This class must be inherited this way:
+      class <EnumName>(DjangoEnum, [mixin_type, ...] [data_type,] enum_type):
+        ...
+
+    Example:
+      class MyEnum(DjangoEnum, StrEnum):
+        foo = "foo"
+        bar = "bar"
+
+    Django docs: https://docs.djangoproject.com/en/3.0/ref/models/fields/#choices
+    """
+    # https://stackoverflow.com/a/58051918
+
+    @classmethod
+    def choices(cls):
+        """
+        Returns a tuple of (value, label) pairs.
+        """
+        return tuple((v, k) for k, v in cls.__members__.items())
+
+    @classmethod
+    def values(cls):
+        return tuple(cls.__members__.values())
+
+    @classmethod
+    def names(cls):
+        return tuple(cls.__members__.keys())
+
+    @classmethod
+    def labels(cls):
+        # This class supposes labels to be equal to names
+        return cls.names()

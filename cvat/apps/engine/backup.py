@@ -5,7 +5,6 @@
 
 import io
 import os
-from enum import Enum
 import re
 import shutil
 import tempfile
@@ -32,7 +31,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
+from cvat.apps.engine.utils import DjangoEnum, StrEnum, av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
@@ -45,7 +44,7 @@ from cvat.apps.engine.cloud_provider import (
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
 
-class Version(Enum):
+class Version(DjangoEnum, StrEnum):
     V1 = '1.0'
 
 

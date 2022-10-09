@@ -1,13 +1,13 @@
-from enum import Enum
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 
 from cvat.apps.engine.models import Location
+from cvat.apps.engine.utils import DjangoEnum, StrEnum
 
-class StorageType(str, Enum):
+class StorageType(DjangoEnum, StrEnum):
     TARGET = 'target_storage'
     SOURCE = 'source_storage'
-
-    def __str__(self):
-        return self.value
 
 def get_location_configuration(obj, field_name, use_settings=False):
     location_conf = dict()
