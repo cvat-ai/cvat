@@ -1258,10 +1258,10 @@ def load_anno(file_object, annotations):
                 tag = None
             el.clear()
 
-def dump_task_or_job_anno(dst_file, task_data, callback):
+def dump_task_or_job_anno(dst_file, instance_data, callback):
     dumper = create_xml_dumper(dst_file)
     dumper.open_document()
-    callback(dumper, task_data)
+    callback(dumper, instance_data)
     dumper.close_document()
 
 def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callback: Callable):
@@ -1282,9 +1282,7 @@ def dump_media_files(instance_data: Union[TaskData, JobData], img_dir: str, proj
         frame_provider.Quality.ORIGINAL,
         frame_provider.Type.BUFFER,
         start_frame, stop_frame)
-    sequence = enumerate(frames) if isinstance(instance_data, TaskData) \
-        else zip(instance_data.range, frames)
-    for frame_id, (frame_data, _) in sequence:
+    for frame_id, (frame_data, _) in zip(instance_data.rel_range, frames):
         if (project_data is not None and (instance_data.db_instance.id, frame_id) in project_data.deleted_frames) \
             or frame_id in instance_data.deleted_frames:
             continue

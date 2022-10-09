@@ -193,7 +193,10 @@ class CommonData(InstanceLabelData):
         self._init_meta()
 
     @property
-    def range(self):
+    def rel_range(self):
+        raise NotImplementedError()
+
+    def _get_queryset(self):
         raise NotImplementedError()
 
     def abs_frame_id(self, relative_id):
@@ -217,11 +220,10 @@ class CommonData(InstanceLabelData):
                     "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
                     "width": self._db_data.video.width,
                     "height": self._db_data.video.height,
-                } for frame in self.range
+                } for frame in self.rel_range
             }
         else:
-            queryset = self._db_data.images.filter(frame__in=self.abs_range) \
-                if isinstance(self, JobData) else self._db_task.data.images.all()
+            queryset = self._get_queryset()
             self._frame_info = {
                 self.rel_frame_id(db_image.frame): {
                     "id": db_image.id,
@@ -590,16 +592,16 @@ class JobData(CommonData):
                 ("created", str(timezone.localtime(self._db_task.created_date))),
                 ("updated", str(timezone.localtime(self._db_job.updated_date))),
                 ("subset", self._db_task.subset or dm.DEFAULT_SUBSET_NAME),
-                ("start_frame", str(self._db_data.start_frame)),
-                ("stop_frame", str(self._db_data.stop_frame)),
+                ("start_frame", str(self._db_data.start_frame + db_segment.start_frame * self._frame_step)),
+                ("stop_frame", str(self._db_data.start_frame + db_segment.stop_frame * self._frame_step)),
                 ("frame_filter", self._db_data.frame_filter),
-                ("segment", OrderedDict([
-                    ("id", str(db_segment.id)),
-                    ("start", str(db_segment.start_frame)),
-                    ("stop", str(db_segment.stop_frame)),
-                    ("url", "{}/?id={}".format(
-                        self._host, self._db_job.id))]
-                )),
+                ("segments", [
+                    ("segment", OrderedDict([
+                        ("id", str(db_segment.id)),
+                        ("start", str(db_segment.start_frame)),
+                        ("stop", str(db_segment.stop_frame)),
+                        ("url", "{}/api/jobs/{}".format(self._host, self._db_job.id))])),
+                ]),
                 ("owner", OrderedDict([
                     ("username", self._db_task.owner.username),
                     ("email", self._db_task.owner.email)
@@ -626,6 +628,9 @@ class JobData(CommonData):
         segment = self._db_job.segment
         return segment.stop_frame - segment.start_frame + 1
 
+    def _get_queryset(self):
+        return self._db_data.images.filter(frame__in=self.abs_range)
+
     @property
     def abs_range(self):
         segment = self._db_job.segment
@@ -639,10 +644,6 @@ class JobData(CommonData):
     def rel_range(self):
         segment = self._db_job.segment
         return range(segment.start_frame, segment.stop_frame + 1)
-
-    @property
-    def range(self):
-        return self.rel_range
 
     @property
     def start(self):
@@ -687,7 +688,7 @@ class TaskData(CommonData):
                     ("id", str(db_segment.id)),
                     ("start", str(db_segment.start_frame)),
                     ("stop", str(db_segment.stop_frame)),
-                    ("url", "{}/?id={}".format(
+                    ("url", "{}/api/jobs/{}".format(
                         host, db_segment.job_set.all()[0].id))]
                 )) for db_segment in db_segments
             ]),
@@ -729,16 +730,15 @@ class TaskData(CommonData):
         return self._db_data.size
 
     @property
-    def range(self):
-        return range(len(self))
-
-    @property
     def rel_range(self):
-        return self.range
+        return range(len(self))
 
     @property
     def db_instance(self):
         return self._db_task
+
+    def _get_queryset(self):
+        return self._db_data.images.all()
 
 class ProjectData(InstanceLabelData):
     META_FIELD = 'project'
@@ -1232,7 +1232,7 @@ class CVATDataExtractorMixin:
             "updatedAt": meta['updated']
         }
 
-    def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, TaskData.Frame, JobData.Frame], labels: list):
+    def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, CommonData.Frame], labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
         def map_label(name, parent=''): return label_cat.find(name, parent)[0]
@@ -1330,7 +1330,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
 
         self._items = dm_items
 
-    def _read_cvat_anno(self, cvat_frame_anno: Union[TaskData.Frame, JobData.Frame], labels: list):
+    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
         def map_label(name, parent=''): return label_cat.find(name, parent)[0]
