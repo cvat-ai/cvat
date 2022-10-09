@@ -37,6 +37,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Fixed cvat-core ESlint problems (<https://github.com/opencv/cvat/pull/5027>)
 - Fixed task creation with non-local files via the SDK/CLI
   (<https://github.com/opencv/cvat/issues/4962>)
+- A trailing slash in hostname does't allow SDK to send some requests
+  (<https://github.com/opencv/cvat/pull/5057>)
 
 ### Security
 - TDB
