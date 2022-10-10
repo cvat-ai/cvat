@@ -1022,7 +1022,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
-                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                if (shape && shape?.remember('_selectHandler')?.options?.rotationPoint) {
                     if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
                         const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
                         if (wrappingRect) {
@@ -1041,7 +1041,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
-                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                if (shape && shape?.remember('_selectHandler')?.options?.rotationPoint) {
                     if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
                         const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
                         if (wrappingRect) {
@@ -2167,7 +2167,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[clientID];
 
-            shape.removeClass('cvat_canvas_shape_activated');
+            if (drawnState.shapeType === 'points') {
+                this.svgShapes[clientID]
+                    .remember('_selectHandler').nested
+                    .removeClass('cvat_canvas_shape_activated');
+            } else {
+                shape.removeClass('cvat_canvas_shape_activated');
+            }
             shape.removeClass('cvat_canvas_shape_draggable');
             if (drawnState.shapeType === 'mask') {
                 shape.attr('opacity', `${this.configuration.shapeOpacity}`);
@@ -2258,7 +2264,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        shape.addClass('cvat_canvas_shape_activated');
+        if (state.shapeType === 'points') {
+            this.svgShapes[clientID]
+                .remember('_selectHandler').nested
+                .addClass('cvat_canvas_shape_activated');
+        } else {
+            shape.addClass('cvat_canvas_shape_activated');
+        }
+
         if (state.shapeType === 'mask') {
             shape.attr('opacity', `${this.configuration.selectedShapeOpacity}`);
         } else {
