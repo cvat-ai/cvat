@@ -87,7 +87,7 @@ def _export_recognition(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Recognition', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         dataset = Dataset.import_from(tmp_dir, 'icdar_word_recognition', env=dm_env)
@@ -106,7 +106,7 @@ def _export_localization(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Localization', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
