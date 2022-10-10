@@ -44,9 +44,9 @@ context('Drawing with predefined number of points.', () => {
     });
 
     function tryDrawObjectPredefinedNumberPoints(object, pointsCount) {
-        cy.get(`.cvat-draw-${object}-control`).click().wait(500);
-        cy.get('.cvat-draw-shape-popover')
-            .not('.ant-popover-hidden')
+        cy.get(`.cvat-draw-${object}-control`).click();
+        cy.get(`.cvat-draw-${object}-popover`)
+            .should('be.visible')
             .within(() => {
                 cy.get('.cvat-draw-shape-popover-points-selector')
                     .type(`${pointsCount - 1}`)

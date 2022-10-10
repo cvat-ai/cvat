@@ -266,7 +266,7 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFa
     if (expectedFail) {
         cy.get('.cvat-canvas-container').should('not.exist');
     } else {
-        cy.get('.cvat-canvas-container').should('exist');
+        cy.get('.cvat-canvas-container').should('exist').and('be.visible');
     }
     if (removeAnnotations) {
         cy.document().then((doc) => {
