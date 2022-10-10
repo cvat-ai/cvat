@@ -12,10 +12,10 @@ on:
 
 jobs:
   search_cache:
-    if: |
-      github.event.pull_request.draft == false &&
-      !startsWith(github.event.pull_request.title, '[WIP]') &&
-      !startsWith(github.event.pull_request.title, '[Dependent]')
+    # if: |
+    #   github.event.pull_request.draft == false &&
+    #   !startsWith(github.event.pull_request.title, '[WIP]') &&
+    #   !startsWith(github.event.pull_request.title, '[Dependent]')
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.get-sha.outputs.sha}}
@@ -78,6 +78,7 @@ jobs:
           context: .
           file: Dockerfile
           tags: cvat/server
+          load: true
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
@@ -87,10 +88,13 @@ jobs:
           context: .
           file: Dockerfile.ui
           tags: cvat/ui
+          load: true
           outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
       - name: CVAT SDK. Build
         run: |
+          docker images
+
           docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
