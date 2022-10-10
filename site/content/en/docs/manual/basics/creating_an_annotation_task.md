@@ -2,90 +2,70 @@
 title: 'Creating an annotation task'
 linkTitle: 'Creating an annotation task'
 weight: 2
-description: 'Instructions on how to create and configure an annotation task.'
+description: 'Create and configure an annotation task.'
 ---
 
-Create an annotation task pressing `+` button and select `Create new task` on the tasks page or on the project page.
-![](/images/image004.jpg)
+## Before you start
 
-> Notice that the task will be created in the organization that you selected at the time of creation.
-> Read more about [organizations](/docs/manual/advanced/organization/).
+1. Click **+** on the tasks page or on the project page.
+1. Select **Create new task**.
 
-Specify parameters of the task:
+    The task will be created in the [organization](../../manual/advanced/organization.md) that you selected at the time of creation.
 
-## Basic configuration
-
-### Name
-
-The name of the task to be created.
-
-![](/images/image005.jpg)
-
-### Projects
-
-The project that this task will be related with.
-
-![](/images/image193.jpg)
+1. Specify parameters of the task:
+* **Name** — the name of the task to be created.
+* **Project** — which is related with the task.
+* [**Labels**](../basics/creating_an_annotation_task.md#labels) — available only if the task is not related to the project.
+* [**Select files**](../basics/creating_an_annotation_task.md#select-files) — selecting the source for uploading the files.
+* [**Data formats for a 3D task**](../basics/creating_an_annotation_task.md#data-formats-for-a-3d-task) — formats a 3D task.
 
 ### Labels
 
-There are two ways of working with labels (available only if the task is not related to the project):
+There are two ways of working with labels:
 
-- The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
-  ![](/images/image123.jpg)
+**Constructor**
+1. Сlick **Add label**.
+1. Set a name of the label in the **Label name** field
+1. Choose a color for each label.
+1. (optional) Add an attribute and set its properties by clicking **Add an attribute**:
+    
+    1.1. Set the attribute’s name.
+    
+    1.1. Choose the way to display the attribute:
+      - _Select_ — the drop down list of values;
+      - _Radio_ — one option out of few suggested;
+      - _Checkbox_ — any number of options out of suggested;
+      - _Text_ — an attribute is entered as a text;
+      - _Number_ — an attribute is entered as a number.
+    
+    1.1. Set the values for the attribute. Press _Enter_ to separate the values.
+     Press _Backspace_ or click the (x) button to delete the entered value.
+     If the specified way of displaying the attribute is _Text_ or _Number_,
+     the entered value displays as text by default (e.g. you can specify the text format).
+    
+    1.1. Click the close button (x) to delete the attribute.
+1. Choose **Mutable** checkbox if the attribute changes from frame to frame.
+1. Click **Continue** to add more labels.
+1. After all the necessary labels are added, click **Done**. The added labels are displayed as separate elements of different colours.
 
-  You can set a name of the label in the `Label name` field and choose a color for each label.
+  To update the labels click **Update attributes**.
 
-  ![](/images/image124.jpg)
-
-  If necessary you can add an attribute and set its properties by clicking `Add an attribute`:
-
-  ![](/images/image125.jpg)
-
-  The following actions are available here:
-
-  1. Set the attribute’s name.
-  1. Choose the way to display the attribute:
-     - Select — drop down list of value
-     - Radio — is used when it is necessary to choose just one option out of few suggested.
-     - Checkbox — is used when it is necessary to choose any number of options out of suggested.
-     - Text — is used when an attribute is entered as a text.
-     - Number — is used when an attribute is entered as a number.
-  1. Set values for the attribute. The values could be separated by pressing `Enter`.
-     The entered value is displayed as a separate element which could be deleted
-     by pressing `Backspace` or clicking the close button (x).
-     If the specified way of displaying the attribute is Text or Number,
-     the entered value will be displayed as text by default (e.g. you can specify the text format).
-  1. Checkbox `Mutable` determines if an attribute would be changed frame to frame.
-  1. You can delete the attribute by clicking the close button (x).
-
-  Click the `Continue` button to add more labels.
-  If you need to cancel adding a label - press the `Cancel` button.
-  After all the necessary labels are added click the `Done` button.
-  After clicking `Done` the added labels would be displayed as separate elements of different colour.
-  You can edit or delete labels by clicking `Update attributes` or `Delete label`.
-
-- The `Raw` is a way of working with labels for an advanced user.
+**Raw** is a way of working with labels for an advanced user.
   Raw presents label data in _json_ format with an option of editing and copying labels as a text.
   The `Done` button applies the changes and the `Reset` button cancels the changes.
-  ![](/images/image126.jpg)
 
 ### Select files
 
-Press tab `My computer` to choose some files for annotation from your PC.
-If you select tab `Connected file share` you can choose files for annotation from your network.
-If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
-If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
-You can find how to prepare it [here](/docs/manual/advanced/dataset_manifest/).
-If you select the `Cloud Storage` tab, you can select a cloud storage (for this type the cloud storage name),
-after that choose the manifest file and select the required files.
-For more information on how to attach cloud storage, see [attach cloud storage](/docs/manual/basics/attach-cloud-storage/)
-
-![](/images/image127.jpg)
-
+To select the files, click the tab:
+* **My computer** — to choose the files for annotation from your PC.
+* **Connected file share** — choose the files for annotation from your network.
+* **Remote source** — enter a list of URLs (one URL per line).
+If you upload a video or dataset with images and select **Use cache** option, you can attach a [`manifest.jsonl` file](../advanced/dataset_manifest.md)
+* **Cloud Storage** — select a cloud storage (for this type the cloud storage name), choose the manifest file and select the required files.
+For more information on how to attach a cloud storage, see [Attach a cloud storage](../basics/attach-cloud-storage.md).
 ### Data formats for a 3D task
 
-To create a 3D task, you must prepare an archive with one of the following directory structures:
+To create a 3D task, prepare an archive with one of the following directory structures:
 {{< tabpane >}}
   {{< tab header="Velodyne" >}}
     VELODYNE FORMAT
@@ -125,19 +105,17 @@ To create a 3D task, you must prepare an archive with one of the following direc
   {{< /tab >}}
 {{< /tabpane >}}
 
-> You can't mix 2D and 3D data in the same task.
+> Do not mix 2D and 3D data in the same task.
 
 ## Advanced configuration
 
-![](/images/image128.jpg)
-
 ### Sorting method
 
-Option to sort the data. It is not relevant for videos.
-For example, the sequence `2.jpeg, 10.jpeg, 1.jpeg` after sorting will be:
-- `lexicographical`: 1.jpeg, 10.jpeg, 2.jpeg
-- `natural`: 1.jpeg, 2.jpeg, 10.jpeg
-- `predefined`: 2.jpeg, 10.jpeg, 1.jpeg
+Sorts the data. It is not relevant for videos.
+For example, the sequence _2.jpeg, 10.jpeg, 1.jpeg_ after sorting will be:
+- lexicographical: 1.jpeg, 10.jpeg, 2.jpeg
+- natural: 1.jpeg, 2.jpeg, 10.jpeg
+- predefined: 2.jpeg, 10.jpeg, 1.jpeg
 
 ### Use zip/video chunks
 
@@ -145,20 +123,18 @@ Force to use zip chunks as compressed data. Cut out content for videos only.
 
 ### Use cache
 
-Defines how to work with data. Select the checkbox to switch to the "on-the-fly data processing",
-which will reduce the task creation time (by preparing chunks when requests are received)
-and store data in a cache of limited size with a policy of evicting less popular items.
-See more [here](/docs/manual/advanced/data_on_fly/).
+Defines how to work with data.
+To reduce the task creation time switch the checkbox to the **on-the-fly data processing**. [On the-fly-data processing](../advanced/data_on_fly.md) prepares the chunks when requests are received, and store data in a cache of limited size, evicting less popular items.
 
 ### Image Quality
 
-Use this option to specify quality of uploaded images.
+Defines the quality of uploaded images.
 The option helps to load high resolution datasets faster.
 Use the value from `5` (almost completely compressed images) to `100` (not compressed images).
 
 ### Overlap Size
 
-Use this option to make overlapped segments.
+Makes overlapped segments.
 The option makes tracks continuous from one segment into another.
 Use it for interpolation mode. There are several options for using the parameter:
 
@@ -177,32 +153,32 @@ Use it for interpolation mode. There are several options for using the parameter
   If annotations on different segments (on overlapped frames)
   are very different, you will have two shapes for the same object.
   This functionality works only for bounding boxes.
-  Polygons, polylines, points don't support automatic merge on overlapped segments
-  even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
+  Polygons, polylines, points don't support automatic merge on the overlapped segments
+  even if the overlap parameter isn't zero and the match between corresponding shapes on adjacent segments is perfect.
 
 ### Segment size
 
-Use this option to divide a huge dataset into a few smaller segments.
+Divides a big dataset into a few smaller segments.
 For example, one job cannot be annotated by several labelers (it isn't supported).
-Thus using "segment size" you can create several jobs for the same annotation task.
-It will help you to parallel data annotation process.
+Thus using **Segment size** you can create several jobs for the same annotation task.
+It helps you to parallel data annotation process.
 
 ### Start frame
 
-Frame from which video in task begins.
+Frame from which video in the task begins.
 
 ### Stop frame
 
-Frame on which video in task ends.
+Frame on which video in the task ends.
 
 ### Frame Step
 
-Use this option to filter video frames.
+Use this option to filter the video frames.
 For example, enter `25` to leave every twenty fifth frame in the video or every twenty fifth image.
 
 ### Chunk size
 
-Defines a number of frames to be packed in a chunk when send from client to server.
+Defines a number of frames to be packed in a chunk sent from client to server.
 Server defines automatically if empty.
 
 Recommended values:
@@ -214,10 +190,11 @@ Recommended values:
 
 ### Dataset Repository
 
-URL link of the repository optionally specifies the path to the repository for storage
-(`default: annotation / <dump_file_name> .zip`).
+URL link of the repository optionally specifies the path to the repository for storage (`default: annotation / <dump_file_name> .zip`).
 The .zip and .xml file extension of annotation are supported.
-Field format: `URL [PATH]` example: `https://github.com/project/repos.git [1/2/3/4/annotation.xml]`
+
+Field format: `URL [PATH]`
+Example: `https://github.com/project/repos.git [1/2/3/4/annotation.xml]`
 
 Supported URL formats :
 
@@ -228,31 +205,32 @@ Supported URL formats :
 After the task is created, the synchronization status is displayed on the task page.
 
 If you specify a dataset repository, when you create a task, you will see a message
-about the need to grant access with the ssh key.
+about the need to grant access with the SSH key.
 This is the key you need to [add to your github account](https://github.com/settings/keys).
-For other git systems, you can learn about adding an ssh key in their documentation.
+For other git systems, you can learn about adding an SSH key in their documentation.
 
 ### Use LFS
 
-If the annotation file is large, you can create a repository with
-[LFS](https://git-lfs.github.com/) support.
+If the annotation file is large, you can create a repository with [LFS](https://git-lfs.github.com/) support.
 
 ### Issue tracker
 
-Specify full issue tracker's URL if it's necessary.
+Specify full issue tracker's URL if it is necessary.
 
 ### Source storage
 
 Specify source storage for import resources like annotations and backups. It can be a local or a cloud storage.
-If the task is created in the project, then the `Use project source storage` switch will determine whether
+If the task is created in the project, then the **Use project source storage** switch will determine whether
 to use the default values ​​or specify new ones.
 
 ### Target storage
 
 Specify target storage for export resources like annotations and backups. It can be a local or a cloud storage.
-If the task is created in the project, then the `Use project target storage` switch will determine whether
+If the task is created in the project, then the **Use project target storage** switch will determine whether
 to use the default values ​​or specify new ones.
 
-To save and open task click on `Submit & Open` button. Also you
-can click on `Submit & Continue` button for creating several tasks in sequence.
-Then, the created tasks will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).
+Click:
+* **Submit & Open** — to save and open the task;
+* **Submit & Continue** — to create several tasks in sequence.
+
+The created tasks are displayed on a [tasks page](../basics/tasks-page.md).
