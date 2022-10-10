@@ -32,9 +32,13 @@ def handler(context, event):
         obj_bbox = [np.min(x), np.min(y), np.max(x), np.max(y)]
         neg_points = []
 
-    polygon = context.user_data.model.handle(image, obj_bbox,
+    mask, polygon = context.user_data.model.handle(image, obj_bbox,
         pos_points, neg_points, threshold)
-    return context.Response(body=json.dumps(polygon),
-                            headers={},
-                            content_type='application/json',
-                            status_code=200)
+    return context.Response(body=json.dumps({
+            'points': polygon,
+            'mask': mask.tolist(),
+        }),
+        headers={},
+        content_type='application/json',
+        status_code=200
+    )

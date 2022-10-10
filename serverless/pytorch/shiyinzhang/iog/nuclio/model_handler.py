@@ -119,5 +119,4 @@ class ModelHandler:
 
             polygon = translate_points_to_image(polygon)
 
-            return polygon
-
+            return pred, polygon

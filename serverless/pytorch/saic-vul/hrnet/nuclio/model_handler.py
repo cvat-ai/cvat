@@ -65,4 +65,4 @@ class ModelHandler:
         object_mask = object_prob > threshold
         polygon = convert_mask_to_polygon(object_mask)
 
-        return polygon
+        return object_mask, polygon
