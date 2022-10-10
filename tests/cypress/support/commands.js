@@ -279,6 +279,24 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFa
     }
 });
 
+Cypress.Commands.add('pressSplitControl', () => {
+    cy.document().then((doc) => {
+        const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
+        if (el) {
+            el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+        }
+    });
+
+    cy.get('.cvat-split-track-control').click();
+
+    cy.document().then((doc) => {
+        const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
+        if (el) {
+            el.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+        }
+    });
+});
+
 Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.openTask(taskName);
     cy.openJob(jobID, removeAnnotations, expectedFail);
