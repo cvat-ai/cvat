@@ -40,6 +40,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - HRNET serverless function (<https://github.com/opencv/cvat/pull/4944>)
 - A trailing slash in hostname does't allow SDK to send some requests
   (<https://github.com/opencv/cvat/pull/5057>)
+- Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
 
 ### Security
 - TDB
