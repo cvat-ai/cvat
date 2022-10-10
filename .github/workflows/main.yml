@@ -353,7 +353,7 @@ jobs:
           name: cvat_server
           path: /tmp/cvat_server/
 
-      - name: Download CVAT server images
+      - name: Download CVAT SDK package
         uses: actions/download-artifact@v3
         with:
           name: cvat_sdk
