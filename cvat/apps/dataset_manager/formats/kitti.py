@@ -35,7 +35,7 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(tmp_dir, dst_file)
 
 @importer(name='KITTI', ext='ZIP', version='1.0')
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
@@ -50,6 +50,7 @@ def _import(src_file, instance_data):
         if 'background' not in [label['name'] for _, label in labels_meta]:
             dataset.filter('/item/annotation[label != "background"]',
                 filter_annotations=True)
-        dataset.transform('masks_to_polygons')
+        if kwargs.get('conv_mask_to_poly', True):
+            dataset.transform('masks_to_polygons')
 
         import_dm_annotations(dataset, instance_data)

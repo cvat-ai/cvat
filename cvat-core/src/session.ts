@@ -7,7 +7,7 @@ import { StorageLocation } from './enums';
 import { Storage } from './storage';
 
 const PluginRegistry = require('./plugins').default;
-const loggerStorage = require('./logger-storage');
+const loggerStorage = require('./logger-storage').default;
 const serverProxy = require('./server-proxy').default;
 const {
     getFrame,
@@ -27,14 +27,20 @@ const {
 } = require('./enums');
 const { Label } = require('./labels');
 const User = require('./user').default;
-const Issue = require('./issue');
+const Issue = require('./issue').default;
 const { FieldUpdateTrigger, checkObjectType } = require('./common');
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
         annotations: Object.freeze({
             value: {
-                async upload(format: string, useDefaultLocation: boolean, sourceStorage: Storage, file: File | string) {
+                async upload(
+                    format: string,
+                    useDefaultLocation: boolean,
+                    sourceStorage: Storage,
+                    file: File | string,
+                    options?: { convMaskToPoly?: boolean },
+                ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.upload,
@@ -42,6 +48,7 @@ function buildDuplicatedAPI(prototype) {
                         useDefaultLocation,
                         sourceStorage,
                         file,
+                        options,
                     );
                     return result;
                 },
@@ -2218,8 +2225,9 @@ buildDuplicatedAPI(Task.prototype);
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
+        options?: { convMaskToPoly?: boolean },
     ) {
-        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file);
+        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
         return result;
     };
 
@@ -2655,8 +2663,9 @@ buildDuplicatedAPI(Task.prototype);
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
+        options?: { convMaskToPoly?: boolean },
     ) {
-        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file);
+        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
         return result;
     };
 

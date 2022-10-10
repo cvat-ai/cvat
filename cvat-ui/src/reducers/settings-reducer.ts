@@ -383,6 +383,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             const { states } = action.payload;

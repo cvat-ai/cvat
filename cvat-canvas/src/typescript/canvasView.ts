@@ -273,15 +273,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const { clientID, elements } = data as any;
             const points = data.points || elements.map((el: any) => el.points).flat();
             if (typeof clientID === 'number') {
+                const [state] = this.controller.objects
+                    .filter((_state: any): boolean => _state.clientID === clientID);
+                this.onEditDone(state, points);
+
                 const event: CustomEvent = new CustomEvent('canvas.canceled', {
                     bubbles: false,
                     cancelable: true,
                 });
 
                 this.canvas.dispatchEvent(event);
-                const [state] = this.controller.objects
-                    .filter((_state: any): boolean => _state.clientID === clientID);
-                this.onEditDone(state, points);
                 return;
             }
 
@@ -337,7 +338,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }),
         );
 
-        if (state) {
+        if (state && state.shapeType === 'mask') {
             this.setupInnerFlags(state.clientID, 'editHidden', true);
         }
 
@@ -865,7 +866,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         const { points } = state;
                         this.onEditDone(state, points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)));
                     } else if (e.shiftKey) {
-                        this.onEditStart(state.shapeType);
+                        this.onEditStart(state);
                         this.editHandler.edit({
                             enabled: true,
                             state,
@@ -1999,7 +2000,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 drawnStateDescriptions.length !== stateDescriptions.length ||
                 drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
             ) {
-                // need to remove created text and create it again
+                // remove created text and create it again
                 if (text) {
                     text.remove();
                     this.svgTexts[state.clientID] = this.addText(state);
@@ -2016,6 +2017,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }
                         }
                     }
+                }
+            }
+
+            if (drawnState.label.id !== state.label.id || drawnState.color !== state.color) {
+                // update shape color if necessary
+                if (shape) {
+                    shape.attr({
+                        ...this.getShapeColorization(state),
+                    });
                 }
             }
 

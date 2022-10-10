@@ -8,8 +8,7 @@ from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin
-from cvat.apps.webhooks.signals import signal_create
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -177,8 +176,8 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
 class InvitationViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
-                   mixins.CreateModelMixin,
                    mixins.UpdateModelMixin,
+                   CreateModelMixin,
                    DestroyModelMixin,
     ):
     queryset = Invitation.objects.all()
@@ -208,8 +207,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
             'key': get_random_string(length=64),
             'organization': self.request.iam_context['organization']
         }
-        serializer.save(**extra_kwargs)
-        signal_create.send(self, instance=serializer.instance)
+        super().perform_create(serializer, **extra_kwargs)
 
     def perform_update(self, serializer):
         if 'accepted' in self.request.query_params:
