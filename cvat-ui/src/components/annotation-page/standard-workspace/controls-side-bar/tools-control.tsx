@@ -984,7 +984,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private renderInteractorBlock(): JSX.Element {
         const { interactors, canvasInstance, onInteractionStart } = this.props;
         const {
-            activeInteractor, activeLabelID, fetching, convertMasksToPolygons,
+            activeInteractor, activeLabelID, fetching,
         } = this.state;
 
         if (!interactors.length) {

@@ -2922,7 +2922,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 };
 
-                const mousemove = (e: MouseEvent) => {
+                const mousemove = (e: MouseEvent): void => {
                     if (this.mode === Mode.IDLE) {
                         // stop propagation to canvas where it calls another canvas.moved
                         // and does not allow to activate an element

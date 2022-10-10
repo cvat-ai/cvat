@@ -351,7 +351,7 @@ export class MasksHandlerImpl implements MasksHandler {
         });
 
         this.canvas.on('mouse:move', (e: fabric.IEvent<MouseEvent>) => {
-            let { image: { width: imageWidth, height: imageHeight } } = this.geometry;
+            const { image: { width: imageWidth, height: imageHeight } } = this.geometry;
             const { angle } = this.geometry;
             let [x, y] = [e.pointer.x, e.pointer.y];
             if (angle === 180) {
