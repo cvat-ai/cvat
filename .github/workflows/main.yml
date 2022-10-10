@@ -243,7 +243,6 @@ jobs:
           name: container_logs
           path: "${{ github.workspace }}/unit_testing"
 
-
   e2e_testing:
     needs: build
     runs-on: ubuntu-latest
