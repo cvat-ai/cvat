@@ -139,6 +139,7 @@ class LambdaFunction:
         self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
         self.animated_gif = meta_anno.get('animated_gif', '')
+        self.version = int(meta_anno.get('version', '1'))
         self.help_message = meta_anno.get('help_message', '')
         self.gateway = gateway
 
@@ -149,7 +150,8 @@ class LambdaFunction:
             'labels': self.labels,
             'description': self.description,
             'framework': self.framework,
-            'name': self.name
+            'name': self.name,
+            'version': self.version
         }
 
         if self.kind is LambdaType.INTERACTOR:

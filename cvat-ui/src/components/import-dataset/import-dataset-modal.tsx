@@ -394,6 +394,9 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             />
                         </Form.Item>
                         <Text strong>Convert masks to polygons</Text>
+                        <CVATTooltip title='The option is relevant for formats that work with masks only'>
+                            <QuestionCircleOutlined />
+                        </CVATTooltip>
                     </Space>
                     <Space className='cvat-modal-import-switch-use-default-storage-container'>
                         <Form.Item

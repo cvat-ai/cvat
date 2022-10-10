@@ -316,6 +316,7 @@ export interface Model {
     id: string;
     name: string;
     labels: string[];
+    version: number;
     attributes: Record<string, ModelAttribute[]>;
     framework: string;
     description: string;
