@@ -1578,7 +1578,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[TaskData,
                     if ann.type == dm.AnnotationType.cuboid_3d:
                         points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
                     elif ann.type == dm.AnnotationType.mask:
-                        istrue = np.argwhere(ann.image == True).transpose()
+                        istrue = np.argwhere(ann.image == 1).transpose()
                         top = int(istrue[0].min())
                         left = int(istrue[1].min())
                         bottom = int(istrue[0].max())
