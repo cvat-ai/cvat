@@ -77,6 +77,7 @@ jobs:
           context: .
           file: Dockerfile
           tags: cvat/server
+          load: true
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
@@ -86,6 +87,7 @@ jobs:
           context: .
           file: Dockerfile.ui
           tags: cvat/ui
+          load: true
           outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
       - name: CVAT SDK. Build
@@ -211,7 +213,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: container_logs
+          name: logs_rest_api_tests
           path: "${{ github.workspace }}/rest_api"
 
   unit_testing:
@@ -271,7 +273,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: container_logs
+          name: logs_unit_tests
           path: "${{ github.workspace }}/unit_testing"
 
   e2e_testing:
