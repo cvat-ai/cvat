@@ -9,7 +9,7 @@ Create an annotation task pressing `+` button and select `Create new task` on th
 
 ![](/images/image004.jpg)
 
-> Notice that the task will be created in the organization that you selected at the time of creation.
+> Notice that the task will be created inside the organization that you had selected at the time of creation.
 > Read more about [organizations](/docs/manual/advanced/organization/).
 
 Specify parameters of the task:
