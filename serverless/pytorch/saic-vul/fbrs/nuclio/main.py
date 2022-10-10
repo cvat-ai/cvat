@@ -25,9 +25,12 @@ def handler(context, event):
     buf = io.BytesIO(base64.b64decode(data["image"]))
     image = Image.open(buf)
 
-    polygon = context.user_data.model.handle(image, pos_points,
+    mask, polygon = context.user_data.model.handle(image, pos_points,
         neg_points, threshold)
-    return context.Response(body=json.dumps(polygon),
-                            headers={},
-                            content_type='application/json',
-                            status_code=200)
+    return context.Response(body=json.dumps({
+            'points': polygon,
+            'mask': mask.tolist(),
+        }),
+        headers={},
+        content_type='application/json',
+        status_code=200)

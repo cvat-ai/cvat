@@ -189,6 +189,20 @@ class PixelLinkDecoder():
         self._get_all()
         self._mask_to_bboxes()
 
+def segm_postprocess(box: list, raw_cls_mask, im_h, im_w):
+    xmin, ymin, xmax, ymax = box
+
+    width = xmax - xmin + 1
+    height = ymax - ymin + 1
+
+    result = np.zeros((im_h, im_w), dtype=np.uint8)
+    resized_mask = cv2.resize(raw_cls_mask, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
+
+    # extract the ROI of the image
+    result[ymin:ymax + 1, xmin:xmax + 1] = (resized_mask > 0.8).astype(np.uint8) * 255
+
+    return result
+
 class ModelHandler:
     def __init__(self, labels):
         base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
@@ -206,12 +220,26 @@ class ModelHandler:
         pcd = PixelLinkDecoder(pixel_threshold, link_threshold)
 
         pcd.decode(image.height, image.width, output_layer)
+        c = 0
         for box in pcd.bboxes:
+            if c == 2:
+                break
+            box = box.ravel().tolist()
+            mask = np.transpose(pcd.mask)
+            cvat_mask = mask[box[0]:box[4] + 1, box[1]:box[5] + 1].flat[:].tolist()
+            cvat_mask.extend([box[0], box[1], box[4], box[5]])
+            # cvat_mask = pcd.mask[1:1001, 1:401].flat[:].tolist()
+            # cvat_mask.extend([1, 1, 400, 1000])
+            # cvat_mask[0] = 1
+            # b = [1, 1, 400, 1, 400, 1000, 1, 1000]
+
             results.append({
                 "confidence": None,
                 "label": self.labels.get(obj_class, "unknown"),
-                "points": box.ravel().tolist(),
-                "type": "polygon",
+                "points": box,
+                "mask": cvat_mask,
+                "type": "mask",
             })
+            c += 1
 
         return results

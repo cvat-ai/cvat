@@ -8,6 +8,14 @@ import numpy as np
 from skimage.measure import approximate_polygon, find_contours
 from model_loader import ModelLoader
 
+
+def to_cvat_mask(box: list, mask):
+    xtl, ytl, xbr, ybr = box
+    flattened = mask[ytl:ybr + 1, xtl:xbr + 1].flat[:].tolist()
+    flattened.extend([xtl, ytl, xbr, ybr])
+    return flattened
+
+
 class ModelHandler:
     def __init__(self, labels):
         base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
@@ -27,7 +35,7 @@ class ModelHandler:
         for i in range(len(self.labels)):
             mask_by_label = np.zeros((width, height), dtype=np.uint8)
 
-            mask_by_label = ((mask == float(i)) * 255).astype(np.float32)
+            mask_by_label = ((mask == float(i)) * 255).astype(np.uint8)
             mask_by_label = cv2.resize(mask_by_label,
                 dsize=(image.width, image.height),
                 interpolation=cv2.INTER_CUBIC)
@@ -39,12 +47,19 @@ class ModelHandler:
                 contour = approximate_polygon(contour, tolerance=2.5)
                 if len(contour) < 3:
                     continue
+                Xmin = int(np.min(contour[:,0]))
+                Xmax = int(np.max(contour[:,0]))
+                Ymin = int(np.min(contour[:,1]))
+                Ymax = int(np.max(contour[:,1]))
+                mask_by_label = np.transpose(mask_by_label)
+                cvat_mask = to_cvat_mask((Xmin, Ymin, Xmax, Ymax), mask_by_label)
 
                 results.append({
                     "confidence": None,
                     "label": self.labels.get(i, "unknown"),
                     "points": contour.ravel().tolist(),
-                    "type": "polygon",
+                    "mask": cvat_mask,
+                    "type": "mask",
                 })
 
         return results
