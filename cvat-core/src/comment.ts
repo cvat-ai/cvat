@@ -1,18 +1,33 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-const User = require('./user');
-const { ArgumentError } = require('./exceptions');
+import User from './user';
+import { ArgumentError } from './exceptions';
 
-/**
- * Class representing a single comment
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
-class Comment {
-    constructor(initialData) {
-        const data = {
+export interface RawCommentData {
+    id?: number;
+    message?: string;
+    created_date?: string;
+    updated_date?: string;
+    owner?: any;
+}
+
+interface SerializedCommentData extends RawCommentData{
+    owner_id?: number;
+    issue?: number;
+}
+
+export default class Comment {
+    public readonly id: number;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
+    public readonly owner: User;
+    public message: string;
+
+    constructor(initialData: RawCommentData) {
+        const data: RawCommentData = {
             id: undefined,
             message: undefined,
             created_date: undefined,
@@ -34,23 +49,9 @@ class Comment {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Comment
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * @name message
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Comment
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 message: {
                     get: () => data.message,
                     set: (value) => {
@@ -60,34 +61,12 @@ class Comment {
                         data.message = value;
                     },
                 },
-                /**
-                 * @name createdDate
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Comment
-                 * @readonly
-                 * @instance
-                 */
                 createdDate: {
                     get: () => data.created_date,
                 },
-                /**
-                 * @name updatedDate
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Comment
-                 * @readonly
-                 * @instance
-                 */
                 updatedDate: {
                     get: () => data.updated_date,
                 },
-                /**
-                 * Instance of a user who has created the comment
-                 * @name owner
-                 * @type {module:API.cvat.classes.User}
-                 * @memberof module:API.cvat.classes.Comment
-                 * @readonly
-                 * @instance
-                 */
                 owner: {
                     get: () => data.owner,
                 },
@@ -98,8 +77,8 @@ class Comment {
         );
     }
 
-    serialize() {
-        const data = {
+    public serialize(): SerializedCommentData {
+        const data: SerializedCommentData = {
             message: this.message,
         };
 
@@ -119,5 +98,3 @@ class Comment {
         return data;
     }
 }
-
-module.exports = Comment;

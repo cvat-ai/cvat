@@ -113,8 +113,12 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.wait('@importTask').its('response.statusCode').should('equal', 201);
             cy.wait('@importTask').its('response.statusCode').should('equal', 204);
             cy.wait('@importTask').its('response.statusCode').should('equal', 202);
-            cy.wait('@importTask', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-            cy.wait('@importTask').its('response.statusCode').should('equal', 201);
+            cy.wait('@importTask').then((interception) => {
+                cy.wrap(interception).its('response.statusCode').should('be.oneOf', [201, 202]);
+                if (interception.response.statusCode === 202) {
+                    cy.wait('@importTask').its('response.statusCode').should('equal', 201);
+                }
+            });
             cy.contains('The task has been restored succesfully. Click here to open').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
             cy.openTask(taskName);

@@ -48,6 +48,10 @@ import OrganizationPage from 'components/organization-page/organization-page';
 import CreateOrganizationComponent from 'components/create-organization-page/create-organization-page';
 import { ShortcutsContextProvider } from 'components/shortcuts.context';
 
+import WebhooksPage from 'components/webhooks-page/webhooks-page';
+import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
+import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -370,6 +374,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/projects' component={ProjectsPageComponent} />
                                             <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                             <Route exact path='/projects/:id' component={ProjectPageComponent} />
+                                            <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                             <Route exact path='/tasks' component={TasksPageContainer} />
                                             <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                             <Route exact path='/tasks/:id' component={TaskPageContainer} />
@@ -391,6 +396,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                                 path='/organizations/create'
                                                 component={CreateOrganizationComponent}
                                             />
+                                            <Route exact path='/organization/webhooks' component={WebhooksPage} />
+                                            <Route exact path='/webhooks/create' component={CreateWebhookPage} />
+                                            <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
                                                 <Route exact path='/models' component={ModelsPageContainer} />

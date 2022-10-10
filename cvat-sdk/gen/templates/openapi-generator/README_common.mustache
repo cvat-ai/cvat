@@ -155,16 +155,16 @@ with make_client(host="{{{basePath}}}") as client:
     task.remove()
 ```
 
-## Documentation for API Endpoints
+## Available API Endpoints
 
-All URIs are relative to *{{basePath}}*
+All URIs are relative to _{{basePath}}_
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-{{#apiInfo}}{{#apis}}{{#operations}}{{#operation}}*{{classname}}* | **{{operationId}}** | **{{httpMethod}}** {{path}} | {{summary}}
+{{#apiInfo}}{{#apis}}{{#operations}}{{#operation}}_{{classname}}_ | [**{{>operation_name}}**](apis/{{classname}}#{{>operation_name}}) | **{{httpMethod}}** {{path}} | {{summary}}
 {{/operation}}{{/operations}}{{/apis}}{{/apiInfo}}
 
-## Documentation For Models
+## Available Models
 
 {{#models}}{{#model}} - {{{classname}}}
 {{/model}}{{/models}}

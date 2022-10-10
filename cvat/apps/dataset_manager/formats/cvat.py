@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,7 +14,7 @@ from typing import Callable
 
 from datumaro.components.annotation import (AnnotationType, Bbox, Label,
                                             LabelCategories, Points, Polygon,
-                                            PolyLine)
+                                            PolyLine, Skeleton)
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
                                            Importer)
@@ -118,23 +119,34 @@ class CvatExtractor(Extractor):
         items = OrderedDict()
 
         track = None
+        track_element = None
+        track_shapes = None
         shape = None
+        shape_element = None
         tag = None
         attributes = None
+        element_attributes = None
         image = None
         subset = None
         for ev, el in context:
             if ev == 'start':
                 if el.tag == 'track':
-                    frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
-                    track = {
-                        'id': el.attrib['id'],
-                        'label': el.attrib.get('label'),
-                        'group': int(el.attrib.get('group_id', 0)),
-                        'height': frame_size[0],
-                        'width': frame_size[1],
-                    }
-                    subset = el.attrib.get('subset')
+                    if track:
+                        track_element = {
+                            'id': el.attrib['id'],
+                            'label': el.attrib.get('label'),
+                        }
+                    else:
+                        frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
+                        track = {
+                            'id': el.attrib['id'],
+                            'label': el.attrib.get('label'),
+                            'group': int(el.attrib.get('group_id', 0)),
+                            'height': frame_size[0],
+                            'width': frame_size[1],
+                        }
+                        subset = el.attrib.get('subset')
+                        track_shapes = {}
                 elif el.tag == 'image':
                     image = {
                         'name': el.attrib.get('name'),
@@ -144,16 +156,28 @@ class CvatExtractor(Extractor):
                     }
                     subset = el.attrib.get('subset')
                 elif el.tag in cls._SUPPORTED_SHAPES and (track or image):
-                    attributes = {}
-                    shape = {
-                        'type': None,
-                        'attributes': attributes,
-                    }
-                    if track:
-                        shape.update(track)
-                        shape['track_id'] = int(track['id'])
-                    if image:
-                        shape.update(image)
+                    if shape and shape['type'] == 'skeleton':
+                        element_attributes = {}
+                        shape_element = {
+                            'type': 'rectangle' if el.tag == 'box' else el.tag,
+                            'attributes': element_attributes,
+                        }
+                        shape_element.update(image)
+                    else:
+                        attributes = {}
+                        shape = {
+                            'type': 'rectangle' if el.tag == 'box' else el.tag,
+                            'attributes': attributes,
+                        }
+                        shape['elements'] = []
+                        if track_element:
+                            shape.update(track_element)
+                            shape['track_id'] = int(track_element['id'])
+                        elif track:
+                            shape.update(track)
+                            shape['track_id'] = int(track['id'])
+                        if image:
+                            shape.update(image)
                 elif el.tag == 'tag' and image:
                     attributes = {}
                     tag = {
@@ -164,7 +188,19 @@ class CvatExtractor(Extractor):
                     }
                     subset = el.attrib.get('subset')
             elif ev == 'end':
-                if el.tag == 'attribute' and attributes is not None:
+                if el.tag == 'attribute' and element_attributes is not None and shape_element is not None:
+                    attr_value = el.text or ''
+                    attr_type = attribute_types.get(el.attrib['name'])
+                    if el.text in ['true', 'false']:
+                        attr_value = attr_value == 'true'
+                    elif attr_type is not None and attr_type != 'text':
+                        try:
+                            attr_value = float(attr_value)
+                        except ValueError:
+                            pass
+                    element_attributes[el.attrib['name']] = attr_value
+
+                if el.tag == 'attribute' and attributes is not None and shape_element is None:
                     attr_value = el.text or ''
                     attr_type = attribute_types.get(el.attrib['name'])
                     if el.text in ['true', 'false']:
@@ -175,6 +211,37 @@ class CvatExtractor(Extractor):
                         except ValueError:
                             pass
                     attributes[el.attrib['name']] = attr_value
+
+                elif el.tag in cls._SUPPORTED_SHAPES and shape["type"] == "skeleton" and el.tag != "skeleton":
+                    shape_element['label'] = el.attrib.get('label')
+                    shape_element['group'] = int(el.attrib.get('group_id', 0))
+
+                    shape_element['type'] = el.tag
+                    shape_element['z_order'] = int(el.attrib.get('z_order', 0))
+
+                    if el.tag == 'box':
+                        shape_element['points'] = list(map(float, [
+                            el.attrib['xtl'], el.attrib['ytl'],
+                            el.attrib['xbr'], el.attrib['ybr'],
+                        ]))
+                    else:
+                        shape_element['points'] = []
+                        for pair in el.attrib['points'].split(';'):
+                            shape_element['points'].extend(map(float, pair.split(',')))
+
+                    if el.tag == 'points' and el.attrib.get('occluded') == '1':
+                        shape_element['visibility'] = [Points.Visibility.hidden] * (len(shape_element['points']) // 2)
+                    else:
+                        shape_element['occluded'] = (el.attrib.get('occluded') == '1')
+
+                    if el.tag == 'points' and el.attrib.get('outside') == '1':
+                        shape_element['visibility'] = [Points.Visibility.absent] * (len(shape_element['points']) // 2)
+                    else:
+                        shape_element['outside'] = (el.attrib.get('outside') == '1')
+
+                    shape['elements'].append(shape_element)
+                    shape_element = None
+
                 elif el.tag in cls._SUPPORTED_SHAPES:
                     if track is not None:
                         shape['frame'] = el.attrib['frame']
@@ -193,15 +260,22 @@ class CvatExtractor(Extractor):
                             el.attrib['xtl'], el.attrib['ytl'],
                             el.attrib['xbr'], el.attrib['ybr'],
                         ]))
+                    elif el.tag == 'skeleton':
+                        shape['points'] = []
                     else:
                         shape['points'] = []
                         for pair in el.attrib['points'].split(';'):
                             shape['points'].extend(map(float, pair.split(',')))
+                    if track_element:
+                        track_shapes[shape['frame']]['elements'].append(shape)
+                    elif track:
+                        track_shapes[shape['frame']] = shape
+                    else:
+                        frame_desc = items.get((subset, shape['frame']), {'annotations': []})
+                        frame_desc['annotations'].append(
+                            cls._parse_shape_ann(shape, categories))
+                        items[(subset, shape['frame'])] = frame_desc
 
-                    frame_desc = items.get((subset, shape['frame']), {'annotations': []})
-                    frame_desc['annotations'].append(
-                        cls._parse_shape_ann(shape, categories))
-                    items[(subset, shape['frame'])] = frame_desc
                     shape = None
 
                 elif el.tag == 'tag':
@@ -211,7 +285,15 @@ class CvatExtractor(Extractor):
                     items[(subset, tag['frame'])] = frame_desc
                     tag = None
                 elif el.tag == 'track':
-                    track = None
+                    if track_element:
+                        track_element = None
+                    else:
+                        for track_shape in track_shapes.values():
+                            frame_desc = items.get((subset, track_shape['frame']), {'annotations': []})
+                            frame_desc['annotations'].append(
+                                cls._parse_shape_ann(track_shape, categories))
+                            items[(subset, track_shape['frame'])] = frame_desc
+                        track = None
                 elif el.tag == 'image':
                     frame_desc = items.get((subset, image['frame']), {'annotations': []})
                     frame_desc.update({
@@ -376,13 +458,22 @@ class CvatExtractor(Extractor):
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'points':
-            return Points(points, label=label_id, z_order=z_order,
+            visibility = ann.get('visibility', None)
+            return Points(points, visibility, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         elif ann_type == 'box':
             x, y = points[0], points[1]
             w, h = points[2] - x, points[3] - y
             return Bbox(x, y, w, h, label=label_id, z_order=z_order,
+                id=ann_id, attributes=attributes, group=group)
+
+        elif ann_type == 'skeleton':
+            elements = []
+            for element in ann.get('elements', []):
+                elements.append(cls._parse_shape_ann(element, categories))
+
+            return Skeleton(elements, label=label_id, z_order=z_order,
                 id=ann_id, attributes=attributes, group=group)
 
         else:
@@ -409,7 +500,7 @@ class CvatExtractor(Extractor):
             di.subset = subset or DEFAULT_SUBSET_NAME
             di.annotations = item_desc.get('annotations')
             di.attributes = {'frame': int(frame_id)}
-            di.image = image if isinstance(image, Image) else di.image
+            di.media = image if isinstance(image, Image) else di.media
             image_items[(subset, osp.splitext(name)[0])] = di
         return image_items
 
@@ -962,7 +1053,10 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 elements=[],
             ) for element in shape.elements]
         }
-        if isinstance(annotations, ProjectData): track['task_id'] = shape.task_id
+        if isinstance(annotations, ProjectData):
+            track['task_id'] = shape.task_id
+            for element in track['elements']:
+                element.task_id = shape.task_id
         dump_track(counter, annotations.Track(**track))
         counter += 1
 

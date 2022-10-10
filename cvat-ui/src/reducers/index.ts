@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Webhook } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -510,6 +510,12 @@ export interface NotificationsState {
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
         };
+        webhooks: {
+            fetching: null | ErrorState;
+            creating: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -837,6 +843,22 @@ export interface OrganizationState {
     updatingMember: boolean;
 }
 
+export interface WebhooksQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+    projectId: number | null;
+}
+
+export interface WebhooksState {
+    current: Webhook[],
+    totalCount: number;
+    fetching: boolean;
+    query: WebhooksQuery;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -857,6 +879,7 @@ export interface CombinedState {
     import: ImportState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
+    webhooks: WebhooksState;
 }
 
 export enum DimensionType {
