@@ -4,43 +4,56 @@ linkTitle: 'Getting started'
 weight: 1
 ---
 
-This section contains basic information and links to sections necessary for a quick start.
+To install and set up CVAT:
 
-## Installation
+1. Install CVAT
+1. Create a superuser
+1. Creat a task
+1. Create an annotation
+1. Export dataset
+1. See also
 
-First step is to install CVAT on your system:
+## Install CVAT
 
-- [Installation on Ubuntu](/docs/administration/basics/installation/#ubuntu-1804-x86_64amd64)
-- [Installation on Windows 10](/docs/administration/basics/installation/#windows-10)
-- [Installation on Mac OS](/docs/administration/basics/installation/#mac-os-mojave)
+{{< tabpane >}}
+  {{< tab header="Ubuntu" >}}
+   {% include [Ubuntu](../docs/administration/basics/installation.md#ubuntu-1804-x8664amd64) %}
+  {{< /tab >}}
+  {{< tab header="Windows" >}}
+   {% include [Windows](../docs/administration/basics/installation.md#windows-10) %}
+  {{< /tab >}}
+  {{< tab header="Mac OS" >}}
+    {% include [MacOS](../docs/administration/basics/installation.md#mac-os-mojave) %}
+  {{< /tab >}}
+{{< /tabpane >}}
 
-To learn how to create a superuser and log in to CVAT,
-go to the [authorization](/docs/manual/basics/authorization/) section.
+## Create a superuser {#superuser}
 
-## Getting started in CVAT
+{% include notitle [authorization](../docs/manual/basics/authorization.md) %}
 
-To create a task, go to `Tasks` section. Click `Create new task` to go to the task creation page.
+## Create a task {#create-task}
 
-Set the name of the future task.
-
-Set the label using the constructor: first click `Add label`, then enter the name of the label and choose the color.
+1. Open the **Tasks** section.
+1. Click **Create new task**.
+1. Set the name of the task.
+1. Set the label:
+    1.1 Click **Add label**;
+    1.1 Enter the name;
+    1.1 Choose the color.
 
 ![](/images/create_a_new_task.gif)
+When the task is created, you see a corresponding message in the top right corner.
 
-You need to upload images or videos for your future annotation. To do so, simply drag and drop the files.
+1. Drag and drop images or videos for the annotation.
 
-To learn more, go to [creating an annotation task](/docs/manual/basics/creating_an_annotation_task/)
-
-## Annotation
+## Annotation {#create-annotation}
 
 ### Basic
 
-When the task is created, you will see a corresponding message in the top right corner.
-Click the `Open task` button to go to the task page.
-
-Once on the task page, open a link to the job in the jobs list.
-
-Choose a correct section for your type of the task and start annotation.
+1. Click `Open task`.
+1. Choose a job in the jobs list.
+1. Choose a correct section for the type of the task.
+1. Start annotation.
 
 | Shape     | Annotation                                                                                 | Interpolation                                                                                                          |
 | --------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
@@ -53,8 +66,7 @@ Choose a correct section for your type of the task and start annotation.
 
 ### Advanced
 
-In CVAT there is the possibility of using automatic and semi-automatic annotation what gives
-you the opportunity to speed up the execution of the annotation:
+In CVAT there is the possibility of using automatic and semi-automatic annotation what gives you the opportunity to speed up the execution of the annotation:
 
 - [OpenCV tools](/docs/manual/advanced/opencv-tools/) - tools included in CVAT by default.
 - [AI tools](/docs/manual/advanced/ai-tools/) - tools requiring installation.
@@ -64,14 +76,12 @@ you the opportunity to speed up the execution of the annotation:
 
 ![](/images/image028.jpg)
 
-1. To download the annotations, first you have to save all changes.
-   Click the `Save` button or press `Ctrl+S`to save annotations quickly.
+1. Click **Save** or press _Ctrl+S_.
+1. Click **Menu**.
+1. Click **Export dataset**.
+1. Choose a format of the dataset from the [list of supported formats](/docs/manual/advanced/formats/).
 
-1. After you saved the changes, click the `Menu` button.
 
-1. Then click the `Export dataset` button.
-
-1. Lastly choose a format of the dataset.
-   Exporting is available in formats from the [list of supported formats](/docs/manual/advanced/formats/).
-
-To learn more, go to [export/import datasets](/docs/manual/advanced/export-import-datasets/) section.
+## See also:
+  *  [Export and import datasets](../docs/manual/advanced/export-import-datasets.md)
+  *  [Creating an annotation task](../docs/manual/basics/creating_an_annotation_task.md)
