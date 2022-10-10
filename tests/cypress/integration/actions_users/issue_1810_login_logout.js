@@ -10,8 +10,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
     const issueId = '1810';
     let taskId;
 
-    function login(userName, password) {
-        cy.get('[placeholder="Username"]').clear().type(userName);
+    function login(credential, password) {
+        cy.get('[placeholder="Email or Username"]').clear().type(credential);
         cy.get('[placeholder="Password"]').clear().type(password);
         cy.get('[type="submit"]').click();
     }
@@ -71,6 +71,12 @@ context('When clicking on the Logout button, get the user session closed.', () =
                 cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });
+        });
+
+        it('Login via email', () => {
+            cy.logout();
+            login(Cypress.env('email'), Cypress.env('password'));
+            cy.url().should('contain', '/tasks');
         });
 
         it('Incorrect user and correct password', () => {
