@@ -20,9 +20,9 @@ Specify the task parameters:
   ![](/images/image255.jpg)
 
   In the template you can manage the following:
-    - some_text - any text that will be entered into the template will be the same for all created tasks.
-    - {{index}} - index file in set (sets a number of a task starting from 0).
-    - {{file_name}} - name of file (sets a task name from a filename).
+  - some_text - any text that will be entered into the template will be the same for all created tasks.
+  - {{index}} - index file in set (sets a number of a task starting from 0).
+  - {{file_name}} - name of file (sets a task name from a filename).
 
   You can find out a prompt by hovering the mouse over the text `When forming the name, a template is used`.
 
@@ -67,7 +67,7 @@ You can face with the following errors during multi tasks creation:
 
 - If during tasks creation there was not possible to process with some videos,
   the names of such videos will be displayed in the `Failed files` list. In this case, you can try
-  to create tasks for these videos one more time by clicking on the `Retry failed tasks` button, or you can click on the `Ok` button
-  to skip these videos.
+  to create tasks for these videos one more time by clicking on the `Retry failed tasks` button,
+  or you can click on the `Ok` button to skip these videos.
 
   ![](/images/image263.jpg)
