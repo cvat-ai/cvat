@@ -377,13 +377,6 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
             }
 
-            if (this.brushMarker) {
-                this.brushMarker.left = position.x - tool.size / 2;
-                this.brushMarker.top = position.y - tool.size / 2;
-                this.canvas.bringToFront(this.brushMarker);
-                this.canvas.renderAll();
-            }
-
             if (isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
                 const xDiff = position.x - this.resizeBrushToolLatestX;
                 let onUpdateConfiguration = null;
@@ -403,6 +396,13 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.resizeBrushToolLatestX = position.x;
                 e.e.stopPropagation();
                 return;
+            }
+
+            if (this.brushMarker) {
+                this.brushMarker.left = position.x - tool.size / 2;
+                this.brushMarker.top = position.y - tool.size / 2;
+                this.canvas.bringToFront(this.brushMarker);
+                this.canvas.renderAll();
             }
 
             if (isMouseDown && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
