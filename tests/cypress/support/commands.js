@@ -20,7 +20,7 @@ require('cy-verify-downloads').addCustomCommand();
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
-    cy.get('[placeholder="Username"]').type(username);
+    cy.get('[placeholder="Email or Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
     cy.url().should('contain', `/${page}`);
@@ -181,11 +181,8 @@ Cypress.Commands.add(
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
     ) => {
-        cy.url().then(($url) => {
-            if (!$url.includes('projects')) {
-                cy.get('.cvat-create-task-dropdown').click();
-            }
-
+        cy.url().then(() => {
+            cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').click({ force: true });
             cy.url().should('include', '/tasks/create');
             cy.get('[id="name"]').type(taskName);

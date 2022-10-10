@@ -600,8 +600,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleOkMultiTasks = (): void => {
-        const { history } = this.props;
-        history.push('/tasks/');
+        const { history, projectId } = this.props;
+        if (projectId) {
+            history.push(`/projects/${projectId}`);
+        } else {
+            history.push('/tasks/');
+        }
     };
 
     private handleRetryCancelledMultiTasks = (): void => {

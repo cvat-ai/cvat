@@ -7,7 +7,7 @@ import { StorageLocation } from './enums';
 import { Storage } from './storage';
 
 const PluginRegistry = require('./plugins').default;
-const loggerStorage = require('./logger-storage');
+const loggerStorage = require('./logger-storage').default;
 const serverProxy = require('./server-proxy').default;
 const {
     getFrame,
@@ -26,8 +26,8 @@ const {
     JobStage, JobState, HistoryActions,
 } = require('./enums');
 const { Label } = require('./labels');
-const User = require('./user');
-const Issue = require('./issue');
+const User = require('./user').default;
+const Issue = require('./issue').default;
 const { FieldUpdateTrigger, checkObjectType } = require('./common');
 
 function buildDuplicatedAPI(prototype) {

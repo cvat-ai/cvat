@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "src/api.ts",
   "scripts": {
@@ -29,7 +29,7 @@
   "dependencies": {
     "axios": "^0.27.2",
     "browser-or-node": "^2.0.0",
-    "cvat-data": "file:../cvat-data",
+    "cvat-data": "link:./../cvat-data",
     "detect-browser": "^5.2.1",
     "error-stack-parser": "^2.0.2",
     "form-data": "^4.0.0",
