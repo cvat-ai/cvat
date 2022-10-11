@@ -8,20 +8,7 @@ context('Create mutli tasks.', () => {
     const caseId = '118';
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
-    const fixturesPath = 'cypress/fixtures';
-    const imagesCount = 5;
-    const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
-    // const videoFileName = `video_${taskName.replace(' ', '_').toLowerCase()}`;
-    const width = 800;
-    const height = 800;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
-    const imagesFolder = `${fixturesPath}/${imageFileName}`;
-    const imageListToAttach = [];
-    // const imageListToVideo = [];
-    // const videoFilesToAttach = [];
-    // const videoTasksName = [`${videoFileName}_1.mp4`, `${videoFileName}_2.mp4`];
+    const sharePath = 'mounted_file_share';
 
     const expectedTopLevel = [
         { name: 'images', type: 'DIR', mime_type: 'DIR' },
@@ -40,18 +27,9 @@ context('Create mutli tasks.', () => {
         { name: 'video_3.mp4', type: 'REG', mime_type: 'video' },
     ];
 
-    for (let i = 1; i <= imagesCount; i++) {
-        imageListToAttach.push(`${imageFileName}/${imageFileName}_${i}.png`);
-        // imageListToVideo.push(`${imagesFolder}/${imageFileName}_${i}.png`);
-    }
-    // for (let i = 1; i <= videoCount; i++) {
-    //     videoFilesToAttach.push(`${fixturesPath}/${videoFileName}_${i}.${videoExtention}`);
-    // }
-
     before(() => {
         cy.visit('auth/login');
         cy.login();
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
     });
 
     beforeEach(() => {
@@ -71,7 +49,13 @@ context('Create mutli tasks.', () => {
 
         it('Trying to create a tasks with local images', () => {
             cy.contains('[role="tab"]', 'My computer').click();
-            cy.get('input[type="file"]').attachFile(imageListToAttach, { subjectType: 'drag-n-drop' });
+
+            const imageNames = expectedImagesList.map((image) => image.name);
+            const imagePaths = imageNames.map((name) => `${sharePath}/images/${name}`);
+
+            cy.get('input[type="file"]')
+                .selectFile(imagePaths, { action: 'drag-drop', force: true });
+
             cy.get('.cvat-create-task-content-alert').should('be.visible');
             cy.get('[type="submit"]').should('be.disabled');
 
@@ -119,29 +103,31 @@ context('Create mutli tasks.', () => {
             cy.get('[type="submit"]').should('be.disabled');
         });
 
-        // it.skip('Trying to create a tasks with local videos', () => {
-        //     cy.get('input[type="file"]')
-        //         // selectFile not work with no visible elements
-        //         .invoke('attr', 'style', 'display: inline')
-        //         // attachFile not work with video
-        //         .selectFile(videoFilesToAttach, { subjectType: 'drag-n-drop' });
-        //     cy.get('.cvat-create-task-content-alert').should('not.be.exist');
-        //     cy.get('.cvat-create-task-content-footer [type="submit"]')
-        //         .should('not.be.disabled')
-        //         .contains(`Submit ${videoCount} tasks`)
-        //         .click();
-        //     cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
-        //         .contains(`Total: ${videoCount}`);
-        //     cy.contains('button', 'Cancel');
-        //     cy.get('.cvat-create-multi-tasks-state').should('be.exist')
-        //         .contains('Finished');
-        //     cy.contains('button', 'Retry failed tasks').should('be.disabled');
-        //     cy.contains('button', 'Ok').click();
+        it('Trying to create a tasks with local videos', () => {
+            cy.contains('[role="tab"]', 'My computer').click();
 
-        //     videoTasksName.forEach((videoTaskName) => {
-        //         cy.contains('strong', videoTaskName).should('be.exist');
-        //     });
-        // });
+            const videoNames = expectedVideosList.map((video) => video.name);
+            const videoPaths = videoNames.map((name) => `${sharePath}/videos/${name}`);
+
+            cy.get('input[type="file"]')
+                .selectFile(videoPaths, { action: 'drag-drop', force: true });
+            cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+            cy.get('.cvat-create-task-content-footer [type="submit"]')
+                .should('not.be.disabled')
+                .contains(`Submit ${videoPaths.length} tasks`)
+                .click();
+            cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
+                .contains(`Total: ${videoPaths.length}`);
+            cy.contains('button', 'Cancel');
+            cy.get('.cvat-create-multi-tasks-state').should('be.exist')
+                .contains('Finished');
+            cy.contains('button', 'Retry failed tasks').should('be.disabled');
+            cy.contains('button', 'Ok').click();
+
+            videoNames.forEach((videoTaskName) => {
+                cy.contains('strong', videoTaskName).should('be.exist');
+            });
+        });
 
         it('Trying to create a tasks with videos from the shared storage', () => {
             cy.contains('[role="tab"]', 'Connected file share').click();
