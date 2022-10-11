@@ -390,6 +390,22 @@ export enum CloudStorageCredentialsType {
 }
 
 /**
+ * Types of cloud storage statuses
+ * @enum {string}
+ * @name CloudStorageStatus
+ * @memberof module:API.cvat.enums
+ * @property {string} AVAILABLE 'AVAILABLE'
+ * @property {string} NOT_FOUND 'NOT_FOUND'
+ * @property {string} FORBIDDEN 'FORBIDDEN'
+ * @readonly
+ */
+export enum CloudStorageStatus {
+    AVAILABLE = 'AVAILABLE',
+    NOT_FOUND = 'NOT_FOUND',
+    FORBIDDEN = 'FORBIDDEN',
+}
+
+/**
  * Membership roles
  * @enum {string}
  * @name MembershipRole
