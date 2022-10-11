@@ -56,11 +56,9 @@ context('Create mutli tasks.', () => {
             cy.get('input[type="file"]')
                 .selectFile(imagePaths, { action: 'drag-drop', force: true });
 
+            cy.get('.ant-upload-list-item').should('exist').and('be.visible');
             cy.get('.cvat-create-task-content-alert').should('be.visible');
-            cy.get('[type="submit"]').should('be.disabled');
-
-            cy.get('.cvat-create-task-content-alert').should('be.visible');
-            cy.get('[type="submit"]').should('be.disabled');
+            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with images from the shared storage', () => {
@@ -90,6 +88,9 @@ context('Create mutli tasks.', () => {
                         });
                     });
                 });
+
+            cy.get('.cvat-create-task-content-alert').should('be.visible');
+            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with remote images', () => {
@@ -100,7 +101,7 @@ context('Create mutli tasks.', () => {
             cy.get('.cvat-file-selector-remote').clear().type(imageUrls);
 
             cy.get('.cvat-create-task-content-alert').should('be.visible');
-            cy.get('[type="submit"]').should('be.disabled');
+            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with local videos', () => {
@@ -111,21 +112,23 @@ context('Create mutli tasks.', () => {
 
             cy.get('input[type="file"]')
                 .selectFile(videoPaths, { action: 'drag-drop', force: true });
-            cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+
+            cy.get('.ant-upload-list-item').should('exist').and('be.visible');
+            cy.get('.cvat-create-task-content-alert').should('not.exist');
             cy.get('.cvat-create-task-content-footer [type="submit"]')
                 .should('not.be.disabled')
                 .contains(`Submit ${videoPaths.length} tasks`)
                 .click();
-            cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
+            cy.get('.cvat-create-multi-tasks-progress').should('exist')
                 .contains(`Total: ${videoPaths.length}`);
             cy.contains('button', 'Cancel');
-            cy.get('.cvat-create-multi-tasks-state').should('be.exist')
+            cy.get('.cvat-create-multi-tasks-state').should('exist')
                 .contains('Finished');
             cy.contains('button', 'Retry failed tasks').should('be.disabled');
             cy.contains('button', 'Ok').click();
 
             videoNames.forEach((videoTaskName) => {
-                cy.contains('strong', videoTaskName).should('be.exist');
+                cy.contains('strong', videoTaskName).should('exist');
             });
         });
 
@@ -157,22 +160,22 @@ context('Create mutli tasks.', () => {
                     });
                 });
 
-            cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+            cy.get('.cvat-create-task-content-alert').should('not.exist');
             cy.get('.cvat-create-task-content-footer [type="submit"]')
                 .should('not.be.disabled')
                 .contains(`Submit ${expectedVideosList.length} tasks`)
                 .click();
 
-            cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
+            cy.get('.cvat-create-multi-tasks-progress').should('exist')
                 .contains(`Total: ${expectedVideosList.length}`);
             cy.contains('button', 'Cancel');
-            cy.get('.cvat-create-multi-tasks-state').should('be.exist')
+            cy.get('.cvat-create-multi-tasks-state').should('exist')
                 .contains('Finished');
             cy.contains('button', 'Retry failed tasks').should('be.disabled');
             cy.contains('button', 'Ok').click();
 
             expectedVideosList.forEach((video) => {
-                cy.contains('strong', video.name).should('be.exist');
+                cy.contains('strong', video.name).should('exist');
             });
         });
 
@@ -187,21 +190,21 @@ context('Create mutli tasks.', () => {
                 cy.get('.cvat-file-selector-remote').type(URL).type('{enter}');
             });
 
-            cy.get('.cvat-create-task-content-alert').should('not.be.exist');
+            cy.get('.cvat-create-task-content-alert').should('not.exist');
             cy.get('.cvat-create-task-content-footer [type="submit"]')
                 .should('not.be.disabled')
                 .contains(`Submit ${expectedVideosList.length} tasks`)
                 .click();
-            cy.get('.cvat-create-multi-tasks-progress').should('be.exist')
+            cy.get('.cvat-create-multi-tasks-progress').should('exist')
                 .contains(`Total: ${expectedVideosList.length}`);
             cy.contains('button', 'Cancel');
-            cy.get('.cvat-create-multi-tasks-state').should('be.exist')
+            cy.get('.cvat-create-multi-tasks-state').should('exist')
                 .contains('Finished');
             cy.contains('button', 'Retry failed tasks').should('be.disabled');
             cy.contains('button', 'Ok').click();
 
             expectedVideosList.forEach((video) => {
-                cy.contains('strong', video.name).should('be.exist');
+                cy.contains('strong', video.name).should('exist');
             });
         });
     });
