@@ -7,6 +7,8 @@ import errno
 import io
 import os
 import os.path as osp
+import textwrap
+from typing import List
 import pytz
 import shutil
 import traceback
@@ -64,7 +66,7 @@ from cvat.apps.engine.serializers import (
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UploadingMetaSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
     ProjectFileSerializer, TaskFileSerializer)
@@ -447,7 +449,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_tus_chunk(request, file_id)
+        return self.append_file_chunk(request, file_id)
 
     def get_upload_dir(self):
         if 'dataset' in self.action:
@@ -588,7 +590,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
         serializer_class=None)
     def append_backup_chunk(self, request, file_id):
-        return self.append_tus_chunk(request, file_id)
+        return self.append_file_chunk(request, file_id)
 
     @staticmethod
     def _get_rq_response(queue, job_id):
@@ -774,7 +776,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     )
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
     def append_backup_chunk(self, request, file_id):
-        return self.append_tus_chunk(request, file_id)
+        return self.append_file_chunk(request, file_id)
 
     @extend_schema(summary='Method backup a specified task',
         parameters=[
@@ -860,6 +862,30 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.get_backup_dirname()
         return ""
 
+    def _restore_uploaded_file_order(self,
+        upload_meta_file: str, uploaded_files: List[str]
+    ) -> List[str]:
+        """
+        Restores file ordering for the "predefined" file sorting method of the task creation.
+
+        Without this, the file order is defined by os.listdir(), which returns files unordered.
+        Read more: https://github.com/opencv/cvat/issues/5061
+        """
+
+        existing_files = set(uploaded_files)
+
+        with open(upload_meta_file, 'rb') as f:
+            upload_meta = self.read_tus_upload_meta_file(f)
+
+        for expected_filename in upload_meta:
+            if not expected_filename in existing_files:
+                raise FileNotFoundError(
+                    f"Can't find '{expected_filename}' in the uploaded files. "
+                    "Please check the upload metainfo and the list of uploaded files."
+                )
+
+        return upload_meta
+
     # UploadMixin method
     def upload_finished(self, request):
         if self.action == 'annotations':
@@ -883,9 +909,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
-            data = dict(serializer.validated_data.items())
+            data = serializer.validated_data
+
             uploaded_files = task_data.get_uploaded_files()
             uploaded_files.extend(data.get('client_files'))
+            upload_meta_file = osp.join(self.get_upload_dir(), self.get_tus_meta_file_name())
+            if osp.exists(upload_meta_file):
+                try:
+                    uploaded_files = self._restore_uploaded_file_order(
+                        upload_meta_file, uploaded_files)
+                except FileNotFoundError as e:
+                    return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
             serializer.validated_data.update({'client_files': uploaded_files})
 
             db_data = serializer.save()
@@ -925,11 +959,37 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['POST'],
-        summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
-        request=DataSerializer,
+        summary="Method permanently attaches data (images, video etc.) to a task",
+        description=textwrap.dedent("""\
+            Allows to upload data to a task.
+            Supports the TUS open file uploading protocol (https://tus.io/).
+
+            Implements the following protocols:
+            a. A single Data request (legacy)
+            b.1. An Upload-Start request
+            b.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
+            b.2.b. Upload-Multiple requests
+            b.3. An Upload-Finished request
+
+            Requests:
+            - Data - POST, no extra headers (legacy) or 'Upload-Start' + 'Upload-Finish' headers.
+              Contains Data in the body.
+            - Upload-Start - POST, has an 'Upload-Start' header.
+              Can contain upload metainfo in the body. This metadata must be present if the
+              "predefined" sorting method is specified.
+            - Upload-Length - HEAD, has an 'Upload-Length' header (read the TUS protocol)
+            - Chunk - PATCH (read the TUS protocol).
+            - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain Data in the body.
+            - Upload-Multiple - POST, has a 'Upload-Multiple' header. Contains Data in the body.
+
+            After all data is sent, the operation status can be retrieved in the /status endpoint.
+        """),
+        request=PolymorphicProxySerializer('TaskData',
+            serializers=[DataSerializer, UploadingMetaSerializer],
+            resource_type_field_name=None),
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
-                description='Initializes data upload. No data should be sent with this header'),
+                description='Initializes data upload. Optionally, can include upload metadata in the request body.'),
             OpenApiParameter('Upload-Multiple', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
                 description='Indicates that data with this request are single or multiple files that should be attached to a task'),
             OpenApiParameter('Upload-Finish', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
@@ -938,7 +998,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '202': OpenApiResponse(description=''),
         })
-    @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
+    @extend_schema(methods=['GET'],
+        summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'preview', 'context_image'],
@@ -991,7 +1052,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_tus_chunk(request, file_id)
+        return self.append_file_chunk(request, file_id)
 
     @extend_schema(methods=['GET'], summary='Method allows to download task annotations',
         parameters=[
@@ -1146,7 +1207,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_tus_chunk(request, file_id)
+        return self.append_file_chunk(request, file_id)
 
     @extend_schema(
         summary='When task is being created the method returns information about a status of the creation process',
@@ -1499,7 +1560,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_tus_chunk(request, file_id)
+        return self.append_file_chunk(request, file_id)
 
 
     @extend_schema(summary='Export job as a dataset in a specific format',

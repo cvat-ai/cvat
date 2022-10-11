@@ -4,8 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import os.path as osp
 import base64
+from typing import IO
 import uuid
+import zipfile
 
 from django.conf import settings
 from django.core.cache import cache
@@ -15,7 +18,7 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
+from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer, UploadingMetaSerializer
 from cvat.apps.webhooks.signals import signal_update, signal_create, signal_delete
 
 class TusFile:
@@ -23,7 +26,7 @@ class TusFile:
     def __init__(self, file_id, upload_dir):
         self.file_id = file_id
         self.upload_dir = upload_dir
-        self.file_path = os.path.join(self.upload_dir, self.file_id)
+        self.file_path = osp.join(self.upload_dir, self.file_id)
         self.filename = cache.get("tus-uploads/{}/filename".format(file_id))
         self.file_size = int(cache.get("tus-uploads/{}/file_size".format(file_id)))
         self.metadata = cache.get("tus-uploads/{}/metadata".format(file_id))
@@ -31,7 +34,7 @@ class TusFile:
 
     def init_file(self):
         os.makedirs(self.upload_dir, exist_ok=True)
-        file_path = os.path.join(self.upload_dir, self.file_id)
+        file_path = osp.join(self.upload_dir, self.file_id)
         with open(file_path, 'wb') as file:
             file.seek(self.file_size - 1)
             file.write(b'\0')
@@ -46,15 +49,15 @@ class TusFile:
         return self.offset == self.file_size
 
     def rename(self):
-        file_id_path = os.path.join(self.upload_dir, self.file_id)
-        file_path = os.path.join(self.upload_dir, self.filename)
-        file_exists = os.path.lexists(os.path.join(self.upload_dir, self.filename))
+        file_id_path = osp.join(self.upload_dir, self.file_id)
+        file_path = osp.join(self.upload_dir, self.filename)
+        file_exists = osp.lexists(osp.join(self.upload_dir, self.filename))
         if file_exists:
-            original_file_name, extension = os.path.splitext(self.filename)
+            original_file_name, extension = osp.splitext(self.filename)
             file_amount = 1
-            while os.path.lexists(os.path.join(self.upload_dir, self.filename)):
+            while osp.lexists(osp.join(self.upload_dir, self.filename)):
                 self.filename = "{}_{}{}".format(original_file_name, file_amount, extension)
-                file_path = os.path.join(self.upload_dir, self.filename)
+                file_path = osp.join(self.upload_dir, self.filename)
                 file_amount += 1
         os.rename(file_id_path, file_path)
 
@@ -93,9 +96,27 @@ class TusChunk:
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
         self.content = request.body
 
-# This upload mixin is implemented using tus
-# tus is open protocol for file uploads (see more https://tus.io/)
 class UploadMixin:
+    """
+    Implements file uploads to the server. Allows to upload single and multiple files, suspend
+    and resume uploading. Uses the TUS open file uploading protocol (https://tus.io/).
+
+    Implements the following protocols:
+    a. A single Data request
+    b.1. An Upload-Start request
+    b.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
+    b.2.b. Upload-Multiple requests
+    b.3. An Upload-Finished request
+
+    Requests:
+    - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers
+    - Upload-Start - POST, has an 'Upload-Start' header
+    - Upload-Length - HEAD, has an 'Upload-Length' header (read the TUS protocol)
+    - Chunk - PATCH (read the TUS protocol)
+    - Upload-Finish - POST, has an 'Upload-Finish' header
+    - Upload-Multiple - POST, has a 'Upload-Multiple' header
+    """
+
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
@@ -146,21 +167,21 @@ class UploadMixin:
         if one_request_upload or finish_upload:
             return self.upload_finished(request)
         elif start_upload:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return self.upload_started(request)
         elif tus_request:
-            return self.init_tus_upload(request)
+            return self.init_file_upload(request)
         elif bulk_file_upload:
-            return self.append(request)
+            return self.append_files(request)
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
-    def init_tus_upload(self, request):
+    def init_file_upload(self, request):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204)
         else:
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
-            if not self.validate_filename(filename):
+            if not self.validate_uploaded_file_name(filename):
                 return self._tus_response(status=status.HTTP_400_BAD_REQUEST,
                     data="File name {} is not allowed".format(filename))
 
@@ -169,7 +190,7 @@ class UploadMixin:
             if message_id:
                 metadata["message_id"] = base64.b64decode(message_id)
 
-            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
+            file_exists = osp.lexists(osp.join(self.get_upload_dir(), filename))
             if file_exists:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,
                     data="File with same name already exists")
@@ -189,7 +210,7 @@ class UploadMixin:
                 extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
-    def append_tus_chunk(self, request, file_id):
+    def append_file_chunk(self, request, file_id):
         if request.method == 'HEAD':
             tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
             if tus_file:
@@ -217,32 +238,85 @@ class UploadMixin:
                                       extra_headers={'Upload-Offset': tus_file.offset,
                                                      'Upload-Filename': tus_file.filename})
 
-    def validate_filename(self, filename):
-        upload_dir = self.get_upload_dir()
-        file_path = os.path.join(upload_dir, filename)
-        return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
+    def validate_uploaded_file_name(self, filename: str) -> bool:
+        """
+        Checks the file name to be valid.
+        Returns True if the filename is valid, otherwise returns False.
+        """
 
-    def get_upload_dir(self):
+        upload_dir = self.get_upload_dir()
+        file_path = osp.join(upload_dir, filename)
+        return (
+            (osp.commonprefix((osp.realpath(file_path), upload_dir)) == upload_dir) and
+            (osp.basename(filename) != self.get_tus_meta_file_name())
+        )
+
+    def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
+
+    def get_tus_meta_file_name(self) -> str:
+        return "__tus_meta__"
 
     def get_request_client_files(self, request):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = {k: v for k, v in serializer.validated_data.items()}
-        return data.get('client_files', None)
+        return serializer.validated_data.get('client_files')
 
-    def append(self, request):
+    def append_files(self, request):
+        """
+        Processes files sent in a single request inside a file uploading session.
+        """
+
         client_files = self.get_request_client_files(request)
         if client_files:
             upload_dir = self.get_upload_dir()
             for client_file in client_files:
-                with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
+                filename = client_file['file'].name
+                if not self.validate_uploaded_file_name(filename):
+                    return Response(status=status.HTTP_400_BAD_REQUEST,
+                        data=f"File name {filename} is not allowed")
+
+                with open(osp.join(upload_dir, filename), 'ab+') as destination:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    # override this to do stuff after upload
+    def read_tus_upload_meta_file(self, f: IO) -> str:
+        """
+        Reads the input file and returns its contents. The input file can be a zip file or
+        a text file. In case of a zip file, the contents are retrieved from the file internal
+        file defined by get_tus_meta_file_name().
+        """
+
+        if zipfile.is_zipfile(f):
+            contents = zipfile.ZipFile(f).read(self.get_tus_meta_file_name())
+        else:
+            contents = f.read()
+            if isinstance(contents, bytes):
+                contents = contents.decode()
+
+        return contents
+
+    def upload_started(self, request):
+        """
+        Obtains TUS upload metainfo for the upcoming uploading.
+        Must be used if the initial file order needs to be preserved.
+        """
+
+        if request.data:
+            serializer = UploadingMetaSerializer(self._object, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            upload_dir = self.get_upload_dir()
+            with open(osp.join(upload_dir, self.get_tus_meta_file_name()), 'wb') as f:
+                meta_contents = self.read_tus_upload_meta_file(serializer.contents_file['file'])
+                f.write(meta_contents)
+        return Response(status=status.HTTP_202_ACCEPTED)
+
     def upload_finished(self, request):
-        raise NotImplementedError('You need to implement upload_finished in UploadMixin')
+        """
+        Allows to process uploaded files.
+        """
+
+        raise NotImplementedError('Must be implemented in the derived class')
 
 class AnnotationMixin:
     def export_annotations(self, request, pk, db_obj, export_func, callback, get_data=None):
