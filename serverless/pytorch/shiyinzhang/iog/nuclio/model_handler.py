@@ -10,8 +10,6 @@ from networks.mainnetwork import Network
 from dataloaders import helpers
 
 def convert_mask_to_polygon(mask):
-    mask = np.array(mask, dtype=np.uint8)
-    cv2.normalize(mask, mask, 0, 255, cv2.NORM_MINMAX)
     contours = None
     if int(cv2.__version__.split('.')[0]) > 3:
         contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[0]
@@ -108,6 +106,8 @@ class ModelHandler:
             pred = np.squeeze(pred)
 
             # Convert a mask to a polygon
+            pred = np.array(pred, dtype=np.uint8)
+            cv2.normalize(pred, pred, 0, 255, cv2.NORM_MINMAX)
             polygon = convert_mask_to_polygon(pred)
             def translate_points_to_image(points):
                 points = [
