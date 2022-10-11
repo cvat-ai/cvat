@@ -8,18 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.3.0] - Unreleased
 ### Added
 - SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
-- An env variable to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
+- An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
 - REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
+- Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
+- Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
 
 ### Changed
-- `api/docs`, `api/swagger`, `api/schema` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
-- Datumaro version (<https://github.com/opencv/cvat/pull/4984>)
+- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
+- Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
+- Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 
 ### Deprecated
 - TDB
 
 ### Removed
-- TDB
+- The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
 
 ### Fixed
 - Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
@@ -33,6 +36,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - IOG and f-BRS serverless function (<https://github.com/opencv/cvat/pulls>)
 - Invisible label item in label constructor when label color background is white,
  or close to it (<https://github.com/opencv/cvat/pull/5041>)
+- Invalid export of segmentation masks when the `background` label gets nonzero is (<https://github.com/opencv/cvat/pull/5056>)
 
 ### Security
 - TDB
