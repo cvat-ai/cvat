@@ -7,6 +7,12 @@ import cv2
 import numpy as np
 from model_loader import ModelLoader
 
+def to_cvat_mask(box: list, mask):
+    xtl, ytl, xbr, ybr = box
+    flattened = mask[ytl:ybr, xtl:xbr].flat[:].tolist()
+    flattened.extend([xtl, ytl, xbr, ybr])
+    return flattened
+
 class PixelLinkDecoder():
     def __init__(self, pixel_threshold, link_threshold):
         four_neighbours = False
@@ -220,18 +226,13 @@ class ModelHandler:
         pcd = PixelLinkDecoder(pixel_threshold, link_threshold)
 
         pcd.decode(image.height, image.width, output_layer)
-        c = 0
         for box in pcd.bboxes:
-            if c == 2:
-                break
             box = box.ravel().tolist()
-            mask = np.transpose(pcd.mask)
-            cvat_mask = mask[box[0]:box[4] + 1, box[1]:box[5] + 1].flat[:].tolist()
-            cvat_mask.extend([box[0], box[1], box[4], box[5]])
-            # cvat_mask = pcd.mask[1:1001, 1:401].flat[:].tolist()
-            # cvat_mask.extend([1, 1, 400, 1000])
-            # cvat_mask[0] = 1
-            # b = [1, 1, 400, 1, 400, 1000, 1, 1000]
+            mask = pcd.pixel_mask
+            mask = np.array(mask, dtype=np.uint8)
+            mask = cv2.resize(mask, dsize=(image.width, image.height), interpolation=cv2.INTER_CUBIC)
+            cv2.normalize(mask, mask, 0, 255, cv2.NORM_MINMAX)
+            cvat_mask = to_cvat_mask((box[0], box[1], box[4], box[5]), mask)
 
             results.append({
                 "confidence": None,
@@ -240,6 +241,5 @@ class ModelHandler:
                 "mask": cvat_mask,
                 "type": "mask",
             })
-            c += 1
 
         return results
