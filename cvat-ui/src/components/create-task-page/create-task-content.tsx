@@ -26,8 +26,6 @@ import {
     getFileNameFromPath,
 } from 'utils/files';
 
-import { debounce } from 'lodash';
-
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
@@ -140,7 +138,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     }
 
-    // eslint-disable-next-line react/sort-comp
     private resetState = (): void => {
         this.basicConfigurationComponent.current?.resetFields();
         this.advancedConfigurationComponent.current?.resetFields();
@@ -271,7 +268,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private handleUploadRemoteFiles = debounce(async (urls: string[]): Promise<void> => {
+    private handleUploadRemoteFiles = async (urls: string[]): Promise<void> => {
         const { many } = this.props;
 
         const { files } = this.state;
@@ -317,7 +314,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 },
             });
         }
-    }, 100);
+    };
 
     private handleUploadShareFiles = (shareFiles: {
         key: string;
@@ -887,12 +884,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Row justify='end' gutter={5}>
                 <Col>
-                    <Button
-                        htmlType='submit'
-                        type='primary'
-                        onClick={this.handleSubmitMutliTasks}
-                        disabled={!!uploadFileErrorMessage}
-                    >
+                    <Button type='primary' onClick={this.handleSubmitMutliTasks} disabled={!!uploadFileErrorMessage}>
                         Submit&nbsp;
                         {currentFiles.length}
                         &nbsp;tasks
