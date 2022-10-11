@@ -45,6 +45,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   sudo apt-get --no-install-recommends install -y docker-ce docker-ce-cli containerd.io
   ```
 More instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
+
 3. Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/) to run docker without root permissions.
 
   ```shell
