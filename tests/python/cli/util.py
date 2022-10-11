@@ -6,7 +6,7 @@
 import os
 import os.path as osp
 import unittest
-from typing import Any, Union
+from typing import Any, List, Union
 
 from shared.utils.helpers import generate_image_file
 
@@ -22,7 +22,7 @@ def run_cli(test: Union[unittest.TestCase, Any], *args: str, expected_code: int 
         assert expected_code == main(args)
 
 
-def generate_images(dst_dir: str, count: int):
+def generate_images(dst_dir: str, count: int) -> List[str]:
     filenames = []
     os.makedirs(dst_dir, exist_ok=True)
     for i in range(count):

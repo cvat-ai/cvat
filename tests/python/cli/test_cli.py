@@ -5,6 +5,7 @@
 import io
 import json
 import os
+import os.path as osp
 from pathlib import Path
 
 import packaging.version as pv
@@ -33,9 +34,9 @@ class TestCLI:
     ):
         self.tmp_path = tmp_path
         self.stdout = fxt_stdout
-        self.host, self.port = BASE_URL.rsplit(":", maxsplit=1)
-        self.user = admin_user
-        self.password = USER_PASS
+        self.host, self.port = "localhost", "7000" #BASE_URL.rsplit(":", maxsplit=1)
+        self.user = "admin" #admin_user
+        self.password = "password" #USER_PASS
         self.client = make_client(
             host=self.host, port=self.port, credentials=(self.user, self.password)
         )
@@ -115,6 +116,28 @@ class TestCLI:
 
         task_id = int(stdout.split()[-1])
         assert self.client.tasks.retrieve(task_id).size == 5
+
+    def test_can_create_task_from_local_images_with_parameters(self):
+        files = generate_images(str(self.tmp_path), 5)
+        files.sort(reverse=True)
+
+        stdout = self.run_cli(
+            "create",
+            "test_task",
+            ResourceType.LOCAL.name,
+            *files,
+            "--labels",
+            json.dumps([{"name": "car"}, {"name": "person"}]),
+            "--completion_verification_period",
+            "0.01",
+            "--sorting-method",
+            "predefined"
+        )
+
+        task_id = int(stdout.split()[-1])
+        task = self.client.tasks.retrieve(task_id)
+        frames = task.get_frames_info()
+        assert [f.name for f in frames] == [osp.basename(f) for f in files]
 
     def test_can_list_tasks_in_simple_format(self, fxt_new_task: Task):
         output = self.run_cli("ls")
