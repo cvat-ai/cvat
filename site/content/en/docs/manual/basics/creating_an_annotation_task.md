@@ -23,13 +23,14 @@ The name of the task to be created.
 
 ### Projects
 
-The project that this task will be related with.
+The project that this task will be related to.
 
 ![](/images/image193.jpg)
 
 ### Labels
 
-There are two ways of working with labels (available only if the task is not related to the project):
+If the task is related to a project, project labels will be used.
+If the task is not related to any project, there are two ways of working with labels:
 
 - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
   ![](/images/image123.jpg)
@@ -51,18 +52,19 @@ There are two ways of working with labels (available only if the task is not rel
      - Checkbox — is used when it is necessary to choose any number of options out of suggested.
      - Text — is used when an attribute is entered as a text.
      - Number — is used when an attribute is entered as a number.
-  1. Set values for the attribute. The values could be separated by pressing `Enter`.
-     The entered value is displayed as a separate element which could be deleted
-     by pressing `Backspace` or clicking the close button (x).
-     If the specified way of displaying the attribute is Text or Number,
-     the entered value will be displayed as text by default (e.g. you can specify the text format).
-  1. Checkbox `Mutable` determines if an attribute would be changed frame to frame.
-  1. You can delete the attribute by clicking the close button (x).
+  1. Set values for the attribute:
+     - Multiple values (for attributes represented as Select, Radio or Checkbox) are separated by pressing `Enter`.
+     The entered value is displayed as a separate element which can be removed by pressing `Backspace` or clicking the close button (x).
+     - If an attribute is represented as Text, its default value is a string.
+     - If Number is chosen as the way attribute is shown as, value is required to contain 3 numbers, separated by semicolons:
+     minimum value, maximum value and icrement.
+  1. Checkbox `Mutable` determines if an attribute would be changeable frame to frame.
+
 
   Click the `Continue` button to add more labels.
-  If you need to cancel adding a label - press the `Cancel` button.
+  If you need to cancel an adding of a label - use the `Cancel` button.
   After all the necessary labels are added click the `Done` button.
-  After clicking `Done` the added labels would be displayed as separate elements of different colour.
+  After clicking `Done` the added labels will be displayed as separate elements of different colour.
   You can edit or delete labels by clicking `Update attributes` or `Delete label`.
 
 - The `Raw` is a way of working with labels for an advanced user.
@@ -74,10 +76,10 @@ There are two ways of working with labels (available only if the task is not rel
 
 Press tab `My computer` to choose some files for annotation from your PC.
 If you select tab `Connected file share` you can choose files for annotation from your network.
-If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
+If you select ` Remote source` , you will see a field where you can enter a list of URLs (one URL per line).
 If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
-You can find how to prepare it [here](/docs/manual/advanced/dataset_manifest/).
-If you select the `Cloud Storage` tab, you can select a cloud storage (for this type the cloud storage name),
+You can find how to make one [here](/docs/manual/advanced/dataset_manifest/).
+If you select the `Cloud Storage` tab, you will be able to select a cloud storage by typing the cloud storage name,
 after that choose the manifest file and select the required files.
 For more information on how to attach cloud storage, see [attach cloud storage](/docs/manual/basics/attach-cloud-storage/)
 
@@ -154,19 +156,19 @@ See more [here](/docs/manual/advanced/data_on_fly/).
 
 Use this option to specify quality of uploaded images.
 The option helps to load high resolution datasets faster.
-Use the value from `5` (almost completely compressed images) to `100` (not compressed images).
+Uses the value from `5` (almost completely compressed images) to `100` (not compressed images).
 
 ### Overlap Size
 
 Use this option to make overlapped segments.
 The option makes tracks continuous from one segment into another.
-Use it for interpolation mode. There are several options for using the parameter:
+Use it for interpolation mode. There are several ways of using this option:
 
-- For an interpolation task (video sequence).
-  If you annotate a bounding box on two adjacent segments they will be merged into one bounding box.
-  If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
+- For an interpolation task (video sequence):
+  If you annotate a bounding box on two adjacent segments, they will be merged into one bounding box.
+  If overlap equals zero or annotation is poor on adjacent segments inside a dumped annotation file,
   you will have several tracks, one for each segment, which corresponds to the object.
-- For an annotation task (independent images).
+- For an annotation task (independent images):
   If an object exists on overlapped segments, the overlap is greater than zero
   and the annotation is good enough on adjacent segments, it will be automatically merged into one object.
   If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
@@ -177,23 +179,23 @@ Use it for interpolation mode. There are several options for using the parameter
   If annotations on different segments (on overlapped frames)
   are very different, you will have two shapes for the same object.
   This functionality works only for bounding boxes.
-  Polygons, polylines, points don't support automatic merge on overlapped segments
-  even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
+  Polygons, polylines, points do not support automatic merge on overlapped segments
+  even if the overlap parameter does not equal zero and the match between corresponding shapes on adjacent segments is perfect.
 
 ### Segment size
 
 Use this option to divide a huge dataset into a few smaller segments.
-For example, one job cannot be annotated by several labelers (it isn't supported).
+For example, one job cannot be annotated by several labelers (not supported).
 Thus using "segment size" you can create several jobs for the same annotation task.
 It will help you to parallel data annotation process.
 
 ### Start frame
 
-Frame from which video in task begins.
+Sets a frame in the video file as a starting point for annotation.
 
 ### Stop frame
 
-Frame on which video in task ends.
+Sets a frame in the video file as an ending point for annotation.
 
 ### Frame Step
 
@@ -202,8 +204,8 @@ For example, enter `25` to leave every twenty fifth frame in the video or every 
 
 ### Chunk size
 
-Defines a number of frames to be packed in a chunk when send from client to server.
-Server defines automatically if empty.
+Defines a number of frames to be packed in a chunk when sent from client to server.
+Server sets this parameter automatically if this is left empty.
 
 Recommended values:
 
@@ -214,9 +216,9 @@ Recommended values:
 
 ### Dataset Repository
 
-URL link of the repository optionally specifies the path to the repository for storage
+URL link of the repository optionally specifies the path to the storage repository
 (`default: annotation / <dump_file_name> .zip`).
-The .zip and .xml file extension of annotation are supported.
+The .zip and .xml file extensions of annotation are supported.
 Field format: `URL [PATH]` example: `https://github.com/project/repos.git [1/2/3/4/annotation.xml]`
 
 Supported URL formats :
@@ -228,18 +230,18 @@ Supported URL formats :
 After the task is created, the synchronization status is displayed on the task page.
 
 If you specify a dataset repository, when you create a task, you will see a message
-about the need to grant access with the ssh key.
+about the necessity to grant access with the ssh key.
 This is the key you need to [add to your github account](https://github.com/settings/keys).
-For other git systems, you can learn about adding an ssh key in their documentation.
+For other git systems, you can learn how to add an ssh key in corresponding documentation.
 
 ### Use LFS
 
-If the annotation file is large, you can create a repository with
+If the annotation file is too large, you can create a repository with
 [LFS](https://git-lfs.github.com/) support.
 
 ### Issue tracker
 
-Specify full issue tracker's URL if it's necessary.
+Specify full issue tracker's URL if necessary.
 
 ### Source storage
 
@@ -254,5 +256,5 @@ If the task is created in the project, then the `Use project target storage` swi
 to use the default values ​​or specify new ones.
 
 To save and open task click on `Submit & Open` button. Also you
-can click on `Submit & Continue` button for creating several tasks in sequence.
-Then, the created tasks will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).
+can click on `Submit & Continue` button to create next tasks in sequence to this one.
+Then the created tasks will be displayed on the [tasks page](/docs/manual/basics/tasks-page/).
