@@ -143,7 +143,7 @@ class Client:
 
     def login(self, credentials: Tuple[str, str]) -> None:
         (auth, _) = self.api_client.auth_api.create_login(
-            models.LoginRequest(username=credentials[0], password=credentials[1])
+            models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
 
         assert "sessionid" in self.api_client.cookies
