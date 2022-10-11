@@ -27,7 +27,7 @@ class TestTokenAuth:
     @staticmethod
     def login(client: ApiClient, username: str) -> models.Token:
         (auth, _) = client.auth_api.create_login(
-            models.LoginRequest(username=username, password=USER_PASS)
+            models.LoginSerializerExRequest(username=username, password=USER_PASS)
         )
         client.set_default_header("Authorization", "Token " + auth.key)
         return auth
