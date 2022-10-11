@@ -51,7 +51,6 @@ class ModelHandler:
                 Xmax = int(np.max(contour[:,0]))
                 Ymin = int(np.min(contour[:,1]))
                 Ymax = int(np.max(contour[:,1]))
-                mask_by_label = np.transpose(mask_by_label)
                 cvat_mask = to_cvat_mask((Xmin, Ymin, Xmax, Ymax), mask_by_label)
 
                 results.append({

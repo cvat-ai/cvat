@@ -69,10 +69,12 @@ spec:
           value: apt update && DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y python3-skimage
         - kind: RUN
           value: pip3 install "numpy<1.16.0" # workaround for skimage
+        - kind: RUN
+          value: pip3 install debugpy
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      maxWorkers: 1
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

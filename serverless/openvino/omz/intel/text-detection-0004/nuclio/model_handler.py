@@ -195,20 +195,6 @@ class PixelLinkDecoder():
         self._get_all()
         self._mask_to_bboxes()
 
-def segm_postprocess(box: list, raw_cls_mask, im_h, im_w):
-    xmin, ymin, xmax, ymax = box
-
-    width = xmax - xmin + 1
-    height = ymax - ymin + 1
-
-    result = np.zeros((im_h, im_w), dtype=np.uint8)
-    resized_mask = cv2.resize(raw_cls_mask, dsize=(width, height), interpolation=cv2.INTER_CUBIC)
-
-    # extract the ROI of the image
-    result[ymin:ymax + 1, xmin:xmax + 1] = (resized_mask > 0.8).astype(np.uint8) * 255
-
-    return result
-
 class ModelHandler:
     def __init__(self, labels):
         base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
