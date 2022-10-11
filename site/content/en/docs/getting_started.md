@@ -4,7 +4,7 @@ linkTitle: 'Getting started'
 weight: 1
 ---
 
-To install and set up CVAT:
+To set up CVAT:
 
 1. Install CVAT
 1. Create a superuser
@@ -17,7 +17,7 @@ To install and set up CVAT:
 
 {{< tabpane >}}
   {{< tab header="Ubuntu" >}}
-  1. Open a [terminal window](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
+1. Open a [terminal window](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
 2. Install `docker`.
 
   ```shell
@@ -36,7 +36,7 @@ To install and set up CVAT:
   sudo apt-get update
   sudo apt-get --no-install-recommends install -y docker-ce docker-ce-cli containerd.io
   ```
-More instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
+[More instructions can be found](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 3. Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/) to run docker without root permissions.
 
   ```shell
@@ -86,7 +86,7 @@ More instructions can be found [here](https://docs.docker.com/install/linux/dock
   CVAT_VERSION=dev docker-compose up -d
   ```
 
->[Building the images locally with unreleased changes](#how-to-pullbuildupdate-cvat-images)
+> [Building the images locally with unreleased changes see](#how-to-pullbuildupdate-cvat-images)
 
 10. Create a superuser. A superuser can use an admin panel to assign correct groups to a user.
 
@@ -109,14 +109,13 @@ More instructions can be found [here](https://docs.docker.com/install/linux/dock
 13. Log in as the superuser. Now you can create a new annotation task.
   {{< /tab >}}
   {{< tab header="Windows" >}}
-   1. [Install](https://docs.microsoft.com/windows/wsl/install-win10) WSL2 (Windows subsystem for Linux).
+1. [Install](https://docs.microsoft.com/windows/wsl/install-win10) WSL2 (Windows subsystem for Linux).
   > WSL2 requires Windows 10, version 2004 or higher.
   > You may not have to install a Linux distribution unless needed.
 
 2. Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
-  * [More instructions](https://docs.docker.com/docker-for-windows/install/).
-  * [Official guide for docker WSL2 backend](https://docs.docker.com/docker-for-windows/wsl/).
- 
+  [More instructions](https://docs.docker.com/docker-for-windows/install/).
+  [Official guide for docker WSL2 backend](https://docs.docker.com/docker-for-windows/wsl/).
  >  Check that you are specifically using WSL2 backend for Docker.
 
 3. Download and install [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
@@ -174,8 +173,7 @@ More instructions can be found [here](https://docs.docker.com/install/linux/dock
 12. Log in as the superuser. Now you can create a new annotation task.
   {{< /tab >}}
   {{< tab header="Mac OS" >}}
-    1. Download [Docker for Mac](https://download.docker.com/mac/stable/Docker.dmg).
-  
+1. Download [Docker for Mac](https://download.docker.com/mac/stable/Docker.dmg).
   [More instructions](https://docs.docker.com/v17.12/docker-for-mac/install/#install-and-run-docker-for-mac).
 
 2. Install the _Xcode Command Line Tools_. On Mavericks (10.9) or above run `git` from **Terminal**.
@@ -230,17 +228,17 @@ More instructions can be found [here](https://docs.docker.com/install/linux/dock
   {{< /tab >}}
 {{< /tabpane >}}
 
-## Create a superuser
+## Create a superuser {#superuser}
 
 1. Open [authorization page](https://app.cvat.ai/auth/login).
-1. Log in or create an account.
-1. Create a superuser account:
+2. Log in or create an account.
+3. Create a superuser account:
 
   ```bash
     docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
-1. Modify permissions for the new user in the [Django administration panel](http://localhost:8080/admin). There are several groups:
+4. Modify permissions for the new user in the [Django administration panel](http://localhost:8080/admin). There are several groups:
 * **admin** — _here goes some info about this role and why a user may need it_;
 * **user** — _here goes some info about this role and why a user may need it_;
 * **annotator** — _here goes some info about this role and why a user may need it_;
@@ -254,31 +252,26 @@ Use the [Django administration panel](http://localhost:8080/admin) to:
 * edit a user;
 * delete a user;
 * control permissions and access to the tool.
-
-  ![](/images/image115.jpg)
-
-
-
-
-## Create a task
+## Create a task {#create-task}
 
 1. Open the **Tasks** section.
 1. Click **Create new task**.
 1. Set the name of the task.
 1. Set the label:
+    1.1 Click **Add label**;
+    1.1 Enter the name;
+    1.1 Choose the color.
 
-    4.1. Click **Add label**;
-  
-    4.2. Enter the name;
-   
-    4.3. Choose the color.
+![](/images/create_a_new_task.gif)
+When the task is created, you see a corresponding message in the top right corner.
+
 1. Drag and drop images or videos for the annotation.
 
-## Annotation
+## Annotation {#create-annotation}
 
 ### Basic
 
-1. Click **Open task**.
+1. Click `Open task`.
 1. Choose a job in the jobs list.
 1. Choose a correct section for the type of the task.
 1. Start annotation.
@@ -310,6 +303,6 @@ In CVAT there is the possibility of using automatic and semi-automatic annotatio
 1. Choose a format of the dataset from the [list of supported formats](/docs/manual/advanced/formats/).
 
 
-## See also
+## See also:
   *  [Export and import datasets](../docs/manual/advanced/export-import-datasets.md)
   *  [Creating an annotation task](../docs/manual/basics/creating_an_annotation_task.md)
