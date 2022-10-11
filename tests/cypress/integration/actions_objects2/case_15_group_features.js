@@ -96,8 +96,8 @@ context('Group features', () => {
         cy.get(object).within(() => {
             cy.get('[aria-label="more"]').click();
         });
-        cy.wait(300);
         cy.get('.ant-dropdown')
+            .should('be.visible')
             .not('.ant-dropdown-hidden')
             .within(() => {
                 cy.contains('Change group color').click();
@@ -241,6 +241,7 @@ context('Group features', () => {
 
         it('Change group color.', () => {
             changeGroupColor('#cvat-objects-sidebar-state-item-1', yellowHex);
+            cy.checkCanvasSidebarColorEqualness(1);
         });
 
         it('For these objects, the fill and stroke parameters took the corresponding color values.', () => {
