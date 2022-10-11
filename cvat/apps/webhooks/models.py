@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-from http import HTTPStatus
 
 from django.contrib.auth.models import User
 from django.db import models
