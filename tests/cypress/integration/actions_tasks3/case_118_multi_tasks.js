@@ -58,7 +58,6 @@ context('Create mutli tasks.', () => {
 
             cy.get('.ant-upload-list-item').should('exist').and('be.visible');
             cy.get('.cvat-create-task-content-alert').should('be.visible');
-            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with images from the shared storage', () => {
@@ -90,7 +89,6 @@ context('Create mutli tasks.', () => {
                 });
 
             cy.get('.cvat-create-task-content-alert').should('be.visible');
-            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with remote images', () => {
@@ -101,7 +99,6 @@ context('Create mutli tasks.', () => {
             cy.get('.cvat-file-selector-remote').clear().type(imageUrls);
 
             cy.get('.cvat-create-task-content-alert').should('be.visible');
-            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with local videos', () => {
