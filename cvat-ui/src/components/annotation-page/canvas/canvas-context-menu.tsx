@@ -109,13 +109,6 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         return null;
     }
 
-    const changeLabels = (newLabel: any): void => {
-        for (const o of objectStates) {
-            o.label = newLabel;
-        }
-        updateState(objectStates);
-    };
-
     if (workspace === Workspace.REVIEW_WORKSPACE) {
         // Doesn't support multi-select yet - only show the first active object
         return ReactDOM.createPortal(
@@ -188,6 +181,13 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
             displayedObjects.push(obj);
         }
     }
+
+    const changeLabels = (newLabel: any): void => {
+        for (const o of displayedObjects) {
+            o.label = newLabel;
+        }
+        updateState(objectStates);
+    };
 
     return ReactDOM.createPortal(
         <div className='cvat-canvas-context-menu' style={{ top, left }}>
