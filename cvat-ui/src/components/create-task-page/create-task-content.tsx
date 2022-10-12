@@ -19,12 +19,7 @@ import { getCore, Storage } from 'cvat-core-wrapper';
 import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import { Files } from 'components/file-manager/file-manager';
-
-import {
-    getFileContentType,
-    getContentTypeRemoteFile,
-    getFileNameFromPath,
-} from 'utils/files';
+import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
@@ -268,7 +263,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private handleUploadRemoteFiles = async (urls: string[]): Promise<void> => {
+    private handleUploadRemoteFiles = (urls: string[]): void => {
         const { many } = this.props;
 
         const { files } = this.state;
@@ -280,7 +275,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             if (!many && length > 1) {
                 let index = 0;
                 while (index < length) {
-                    const isImageFile = await getContentTypeRemoteFile(urls[index]) === 'image';
+                    const isImageFile = getContentTypeRemoteFile(urls[index]) === 'image';
                     if (!isImageFile) {
                         uploadFileErrorMessage = UploadFileErrorMessages.one;
                         break;
@@ -290,7 +285,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             } else if (many) {
                 let index = 0;
                 while (index < length) {
-                    const isVideoFile = await getContentTypeRemoteFile(urls[index]) === 'video';
+                    const isVideoFile = getContentTypeRemoteFile(urls[index]) === 'video';
                     if (!isVideoFile) {
                         uploadFileErrorMessage = UploadFileErrorMessages.multi;
                         break;
@@ -884,7 +879,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Row justify='end' gutter={5}>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitMutliTasks} disabled={!!uploadFileErrorMessage}>
+                    <Button
+                        htmlType='submit'
+                        type='primary'
+                        onClick={this.handleSubmitMutliTasks}
+                        disabled={!!uploadFileErrorMessage}
+                    >
                         Submit&nbsp;
                         {currentFiles.length}
                         &nbsp;tasks
