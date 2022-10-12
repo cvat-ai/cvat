@@ -133,14 +133,14 @@ class TestTaskUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.SHARE,
-            resources=["image_case_107_2.png", "image_case_107_1.png"],
+            resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
             # see https://github.com/opencv/cvat/issues/4962
             data_params={"sorting_method": "lexicographical"},
         )
 
         assert task.size == 2
-        assert task.get_frames_info()[0].name == "image_case_107_1.png"
+        assert task.get_frames_info()[0].name == "images/image_1.jpg"
         assert self.stdout.getvalue() == ""
 
     def test_cant_create_task_with_no_data(self):
