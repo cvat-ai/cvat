@@ -572,6 +572,7 @@ export enum ActiveControl {
 export enum ShapeType {
     RECTANGLE = 'rectangle',
     POLYGON = 'polygon',
+    POLYGONS = 'polygons',
     POLYLINE = 'polyline',
     POINTS = 'points',
     ELLIPSE = 'ellipse',

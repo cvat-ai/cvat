@@ -295,16 +295,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 for (const [i, polygon] of this.interaction.latestResponse.entries()) {
                     this.approximateResponsePoints(polygon).then((points: number[][]) => {
                         this.interaction.latestResult[i] = points;
-                        canvasInstance.interact({
-                            enabled: true,
-                            intermediateShape: {
-                                shapeType: ShapeType.POLYGON,
-                                points: polygon.flat(),
-                            },
-                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
-                        });
                     });
                 }
+                canvasInstance.interact({
+                    enabled: true,
+                    intermediateShape: {
+                        shapeType: ShapeType.POLYGONS,
+                        points: this.interaction.latestResult.map((p) => p.flat()).filter((p) => p.length),
+                    },
+                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+                });
             }
         }
 
@@ -392,18 +392,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
 
             if (this.interaction.latestResult.length) {
-                for (const polygon of this.interaction.latestResult) {
-                    if (polygon.length) {
-                        canvasInstance.interact({
-                            enabled: true,
-                            intermediateShape: {
-                                shapeType: ShapeType.POLYGON,
-                                points: polygon.flat(),
-                            },
-                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
-                        });
-                    }
-                }
+                canvasInstance.interact({
+                    enabled: true,
+                    intermediateShape: {
+                        shapeType: ShapeType.POLYGONS,
+                        points: this.interaction.latestResult.map((p) => p.flat()).filter((p) => p.length),
+                    },
+                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+                });
             }
 
             setTimeout(() => this.runInteractionRequest(interactionId));

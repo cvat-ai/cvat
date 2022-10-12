@@ -96,7 +96,7 @@ export interface InteractionData {
     allowRemoveOnlyLast?: boolean;
     intermediateShape?: {
         shapeType: string;
-        points: number[];
+        points: number[] | number[][];
     };
     onChangeToolsBlockerState?: (event: string) => void;
 }

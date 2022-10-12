@@ -34,7 +34,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private threshold: SVG.Rect | null;
     private thresholdRectSize: number;
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
-    private drawnIntermediateShape: SVG.Shape;
+    private drawnIntermediateShape: SVG.Shape | SVG.Shape[];
     private thresholdWasModified: boolean;
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
@@ -239,8 +239,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private release(): void {
         if (this.drawnIntermediateShape) {
-            this.selectize(false, this.drawnIntermediateShape);
-            this.drawnIntermediateShape.remove();
+            if (this.drawnIntermediateShape instanceof SVG.Shape) {
+                this.selectize(false, this.drawnIntermediateShape);
+                this.drawnIntermediateShape.remove();
+            } else {
+                for (const shape of this.drawnIntermediateShape) {
+                    this.selectize(false, shape);
+                    shape.remove();
+                }
+            }
             this.drawnIntermediateShape = null;
         }
 
@@ -285,8 +292,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private updateIntermediateShape(): void {
         const { intermediateShape, geometry } = this;
         if (this.drawnIntermediateShape) {
-            this.selectize(false, this.drawnIntermediateShape);
-            this.drawnIntermediateShape.remove();
+            if (this.drawnIntermediateShape instanceof SVG.Shape) {
+                this.selectize(false, this.drawnIntermediateShape);
+                this.drawnIntermediateShape.remove();
+            } else {
+                for (const shape of this.drawnIntermediateShape) {
+                    this.selectize(false, shape);
+                    shape.remove();
+                }
+            }
         }
 
         if (!intermediateShape) return;
@@ -294,7 +308,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (shapeType === 'polygon') {
             const erroredShape = shapeType === 'polygon' && points.length < 3 * 2;
             this.drawnIntermediateShape = this.canvas
-                .polygon(stringifyPoints(translateToCanvas(geometry.offset, points)))
+                .polygon(stringifyPoints(translateToCanvas(geometry.offset, points as number[])))
                 .attr({
                     'color-rendering': 'optimizeQuality',
                     'shape-rendering': 'geometricprecision',
@@ -304,6 +318,22 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 .fill({ opacity: this.selectedShapeOpacity, color: 'white' })
                 .addClass('cvat_canvas_interact_intermediate_shape');
             this.selectize(true, this.drawnIntermediateShape, erroredShape);
+        } else if (shapeType === 'polygons') {
+            this.drawnIntermediateShape = (points as number[][]).map((p) => {
+                const erroredShape = p.length < 3 * 2;
+                const shape = this.canvas
+                    .polygon(stringifyPoints(translateToCanvas(geometry.offset, p)))
+                    .attr({
+                        'color-rendering': 'optimizeQuality',
+                        'shape-rendering': 'geometricprecision',
+                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        stroke: erroredShape ? 'red' : 'black',
+                    })
+                    .fill({ opacity: this.selectedShapeOpacity, color: 'white' })
+                    .addClass('cvat_canvas_interact_intermediate_shape');
+                this.selectize(true, shape, erroredShape);
+                return shape;
+            });
         } else {
             throw new Error(
                 `Shape type "${shapeType}" was not implemented at interactionHandler::updateIntermediateShape`,
@@ -496,7 +526,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
 
         if (this.drawnIntermediateShape) {
-            this.drawnIntermediateShape.stroke({ width: consts.BASE_STROKE_WIDTH / this.geometry.scale });
+            if (this.drawnIntermediateShape instanceof SVG.Shape) {
+                this.drawnIntermediateShape.stroke({ width: consts.BASE_STROKE_WIDTH / this.geometry.scale });
+            } else {
+                for (const shape of this.drawnIntermediateShape) {
+                    shape.stroke({ width: consts.BASE_STROKE_WIDTH / this.geometry.scale });
+                }
+            }
         }
     }
 
@@ -526,9 +562,17 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
 
         if (this.drawnIntermediateShape) {
-            this.drawnIntermediateShape.fill({
-                opacity: configuration.selectedShapeOpacity,
-            });
+            if (this.drawnIntermediateShape instanceof SVG.Shape) {
+                this.drawnIntermediateShape.fill({
+                    opacity: configuration.selectedShapeOpacity,
+                });
+            } else {
+                for (const shape of this.drawnIntermediateShape) {
+                    shape.fill({
+                        opacity: configuration.selectedShapeOpacity,
+                    });
+                }
+            }
         }
 
         // when interactRectangle
