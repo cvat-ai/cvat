@@ -203,8 +203,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interaction: {
         id: string | null;
         isAborted: boolean;
-        latestResponse: number[][];
-        latestResult: number[][];
+        latestResponse: number[][][];
+        latestResult: number[][][];
         latestRequest: null | {
             interactor: Model;
             data: {
@@ -292,17 +292,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
             if (isActivated && mode === 'interaction' && this.interaction.latestResponse.length) {
-                this.approximateResponsePoints(this.interaction.latestResponse).then((points: number[][]) => {
-                    this.interaction.latestResult = points;
-                    canvasInstance.interact({
-                        enabled: true,
-                        intermediateShape: {
-                            shapeType: ShapeType.POLYGON,
-                            points: this.interaction.latestResult.flat(),
-                        },
-                        onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+                for (const [i, polygon] of this.interaction.latestResponse.entries()) {
+                    this.approximateResponsePoints(polygon).then((points: number[][]) => {
+                        this.interaction.latestResult[i] = points;
+                        canvasInstance.interact({
+                            enabled: true,
+                            intermediateShape: {
+                                shapeType: ShapeType.POLYGON,
+                                points: polygon.flat(),
+                            },
+                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+                        });
                     });
-                });
+                }
             }
         }
 
@@ -359,9 +361,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             try {
                 // run server request
                 this.setState({ fetching: true });
-                const response = await core.lambda.call(jobInstance.taskId, interactor, data);
+                const responseOld = await core.lambda.call(jobInstance.taskId, interactor, data);
+
+                let response: number[][][];
+                if (typeof responseOld[0][0] === 'object') {
+                    response = responseOld;
+                } else {
+                    response = [responseOld];
+                }
+
                 // approximation with cv.approxPolyDP
-                const approximated = await this.approximateResponsePoints(response);
+                const approximated = await Promise.all(response.map((p) => this.approximateResponsePoints(p)));
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
                     // new interaction session or the session is aborted
@@ -382,14 +392,18 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
 
             if (this.interaction.latestResult.length) {
-                canvasInstance.interact({
-                    enabled: true,
-                    intermediateShape: {
-                        shapeType: ShapeType.POLYGON,
-                        points: this.interaction.latestResult.flat(),
-                    },
-                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
-                });
+                for (const polygon of this.interaction.latestResult) {
+                    if (polygon.length) {
+                        canvasInstance.interact({
+                            enabled: true,
+                            intermediateShape: {
+                                shapeType: ShapeType.POLYGON,
+                                points: polygon.flat(),
+                            },
+                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
+                        });
+                    }
+                }
             }
 
             setTimeout(() => this.runInteractionRequest(interactionId));
@@ -421,7 +435,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction.isAborted = true;
             this.interaction.latestRequest = null;
             if (this.interaction.latestResult.length) {
-                this.constructFromPoints(this.interaction.latestResult);
+                for (const polygon of this.interaction.latestResult) {
+                    if (polygon.length) {
+                        this.constructFromPoints(polygon);
+                    }
+                }
             }
         } else if (shapesUpdated) {
             const interactor = activeInteractor as Model;
