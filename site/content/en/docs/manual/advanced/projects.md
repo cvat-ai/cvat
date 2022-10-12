@@ -2,14 +2,14 @@
 title: 'Projects page'
 linkTitle: 'Projects page'
 weight: 1
-description: 'Projects documentation provides details about creating new CVAT Project, restore of the CVAT Project from a back up, and navigation through the VAT Project.'
+description: 'Projects documentation provides details on how to create the CVAT Project, load the CVAT Project from a back up, aand navigate through the Project.'
 
 
 ---
 
 ## Projects page
 
-Project in CVAT is a top level container that helps you to keep CVAT tasks better organized. It allows you to specify settings like: issue tracker, source storage, and target storage, bug tracker, segment size, image quality and many more. Settings of the project will further propagate to the task(s) that you add to the project.
+Project in CVAT is a top level container that helps you to keep CVAT tasks better organized. When you create a Project, you can specify settings like: issue tracker, source storage, and target storage, bug tracker, segment size, image quality and many more. Settings of the project will further propagate to the task(s) that you add to the project.
 
 To open the Project page:
 
@@ -23,7 +23,7 @@ You will see the the following page:
 
 ## Elements of the Projects page
 
-
+**Search bar**
 
 On this page you can create a new project, create a project from a backup, and also see the created projects.
 
