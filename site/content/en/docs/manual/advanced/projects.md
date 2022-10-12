@@ -19,7 +19,7 @@ To open the Project page:
 You will see the the following page:
 
 
-![CVAT Project main page](/images/cvat-project-main-page.png)
+![CVAT Project main page](site\content\en\images\cvat-project-main-page.png)
 
 ## Elements of the Projects page
 
