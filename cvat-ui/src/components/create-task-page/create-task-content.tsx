@@ -879,7 +879,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Row justify='end' gutter={5}>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitMutliTasks} disabled={!!uploadFileErrorMessage}>
+                    <Button
+                        htmlType='submit'
+                        type='primary'
+                        onClick={this.handleSubmitMutliTasks}
+                        disabled={!!uploadFileErrorMessage}
+                    >
                         Submit&nbsp;
                         {currentFiles.length}
                         &nbsp;tasks

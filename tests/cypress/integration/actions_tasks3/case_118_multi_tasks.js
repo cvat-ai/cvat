@@ -56,8 +56,9 @@ context('Create mutli tasks.', () => {
             cy.get('input[type="file"]')
                 .selectFile(imagePaths, { action: 'drag-drop', force: true });
 
-            cy.get('.ant-upload-list-item').should('exist').and('be.visible');
+            cy.get('.ant-upload-animate').should('not.exist');
             cy.get('.cvat-create-task-content-alert').should('be.visible');
+            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with images from the shared storage', () => {
@@ -89,6 +90,7 @@ context('Create mutli tasks.', () => {
                 });
 
             cy.get('.cvat-create-task-content-alert').should('be.visible');
+            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with remote images', () => {
@@ -99,6 +101,7 @@ context('Create mutli tasks.', () => {
             cy.get('.cvat-file-selector-remote').clear().type(imageUrls);
 
             cy.get('.cvat-create-task-content-alert').should('be.visible');
+            cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
 
         it('Trying to create a tasks with local videos', () => {
@@ -110,16 +113,16 @@ context('Create mutli tasks.', () => {
             cy.get('input[type="file"]')
                 .selectFile(videoPaths, { action: 'drag-drop', force: true });
 
-            cy.get('.ant-upload-list-item').should('exist').and('be.visible');
+            cy.get('.ant-upload-animate').should('not.exist');
             cy.get('.cvat-create-task-content-alert').should('not.exist');
             cy.get('.cvat-create-task-content-footer [type="submit"]')
                 .should('not.be.disabled')
                 .contains(`Submit ${videoPaths.length} tasks`)
                 .click();
-            cy.get('.cvat-create-multi-tasks-progress').should('exist')
+            cy.get('.cvat-create-multi-tasks-progress', { timeout: 50000 }).should('exist')
                 .contains(`Total: ${videoPaths.length}`);
             cy.contains('button', 'Cancel');
-            cy.get('.cvat-create-multi-tasks-state', { timeout: 50000 }).should('exist')
+            cy.get('.cvat-create-multi-tasks-state').should('exist')
                 .contains('Finished');
             cy.contains('button', 'Retry failed tasks').should('be.disabled');
             cy.contains('button', 'Ok').click();
