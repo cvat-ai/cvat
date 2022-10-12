@@ -808,6 +808,15 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
     cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${newLabelName}$`)).should('exist');
 });
 
+Cypress.Commands.add('checkCanvasSidebarColorEqualness', (id) => {
+    cy.get(`#cvat-objects-sidebar-state-item-${id}`).then(($el) => {
+        const labelColor = $el.css('backgroundColor');
+        const [r, g, b] = labelColor.match(/(\d+)/g);
+        const hexColor = `#${[r, g, b].map((v) => (+v).toString(16).padStart(2, '0')).join('')}`;
+        cy.get(`#cvat_canvas_shape_${id}`).should('have.attr', 'fill', hexColor);
+    });
+});
+
 Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
     cy.collectLabelsName().then((labelsNames) => {
         if (additionalLabels.some((el) => labelsNames.indexOf(el) === -1)) {
