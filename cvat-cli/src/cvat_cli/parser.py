@@ -122,7 +122,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     task_create_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=20,
+        default=5,
         type=float,
         help="""number of seconds to wait until checking
                 if data compression finished (necessary before uploading annotations)""",
