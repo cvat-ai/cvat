@@ -196,6 +196,10 @@ class CommonData(InstanceLabelData):
     def rel_range(self):
         raise NotImplementedError()
 
+    @property
+    def offset(self) -> int:
+        return 0
+
     def _get_queryset(self):
         raise NotImplementedError()
 
@@ -649,6 +653,10 @@ class JobData(CommonData):
     def start(self):
         segment = self._db_job.segment
         return segment.start_frame
+
+    @property
+    def offset(self):
+        return self.start
 
     @property
     def stop(self):

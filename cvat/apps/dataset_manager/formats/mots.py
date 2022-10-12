@@ -23,16 +23,16 @@ class KeepTracks(ItemTransform):
         return item.wrap(annotations=[a for a in item.annotations
             if 'track_id' in a.attributes])
 
-def _import_task(dataset, task_data):
+def _import_to_task(dataset, instance_data):
     tracks = {}
     label_cat = dataset.categories()[AnnotationType.label]
 
-    root_hint = find_dataset_root(dataset, task_data)
+    root_hint = find_dataset_root(dataset, instance_data)
 
     shift = 0
     for item in dataset:
-        frame_number = task_data.abs_frame_id(
-            match_dm_item(item, task_data, root_hint=root_hint))
+        frame_number = instance_data.abs_frame_id(
+            match_dm_item(item, instance_data, root_hint=root_hint))
 
         track_ids = set()
 
@@ -50,7 +50,7 @@ def _import_task(dataset, task_data):
             else:
                 track_ids.add(track_id)
 
-            shape = task_data.TrackedShape(
+            shape = instance_data.TrackedShape(
                 type='polygon',
                 points=ann.points,
                 occluded=ann.attributes.get('occluded') is True,
@@ -65,7 +65,7 @@ def _import_task(dataset, task_data):
 
             # build trajectories as lists of shapes in track dict
             if track_id not in tracks:
-                tracks[track_id] = task_data.Track(
+                tracks[track_id] = instance_data.Track(
                     label_cat.items[ann.label].name, 0, 'manual', [])
             tracks[track_id].shapes.append(shape)
 
@@ -76,10 +76,10 @@ def _import_task(dataset, task_data):
         prev_shape_idx = 0
         prev_shape = track.shapes[0]
         for shape in track.shapes[1:]:
-            has_skip = task_data.frame_step < shape.frame - prev_shape.frame
+            has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
             if has_skip and not prev_shape.outside:
                 prev_shape = prev_shape._replace(outside=True,
-                        frame=prev_shape.frame + task_data.frame_step)
+                        frame=prev_shape.frame + instance_data.frame_step)
                 prev_shape_idx += 1
                 track.shapes.insert(prev_shape_idx, prev_shape)
             prev_shape = shape
@@ -87,12 +87,12 @@ def _import_task(dataset, task_data):
 
         # Append a shape with outside=True to finish the track
         last_shape = track.shapes[-1]
-        if last_shape.frame + task_data.frame_step <= \
-                int(task_data.meta[task_data.META_FIELD]['stop_frame']):
+        if last_shape.frame + instance_data.frame_step <= \
+                int(instance_data.meta[instance_data.META_FIELD]['stop_frame']):
             track.shapes.append(last_shape._replace(outside=True,
-                frame=last_shape.frame + task_data.frame_step)
+                frame=last_shape.frame + instance_data.frame_step)
             )
-        task_data.add_track(track)
+        instance_data.add_track(track)
 
 @exporter(name='MOTS PNG', ext='ZIP', version='1.0')
 def _export(dst_file, instance_data, save_images=False):
@@ -121,7 +121,7 @@ def _import(src_file, instance_data, load_data_callback=None):
         # Dirty way to determine instance type to avoid circular dependency
         if hasattr(instance_data, '_db_project'):
             for sub_dataset, task_data in instance_data.split_dataset(dataset):
-                _import_task(sub_dataset, task_data)
+                _import_to_task(sub_dataset, task_data)
         else:
-            _import_task(dataset, instance_data)
+            _import_to_task(dataset, instance_data)
 
