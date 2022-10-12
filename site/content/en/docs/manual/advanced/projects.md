@@ -2,7 +2,7 @@
 title: 'Projects page'
 linkTitle: 'Projects page'
 weight: 1
-description: 'Projects documentation provides details about set up of a poject in CVAT, set up from a back up, and navigation through the project.'
+description: 'Projects documentation provides details about creating new CVAT Project, restore of the CVAT Project from a back up, and navigation through the VAT Project.'
 
 
 ---
