@@ -9,7 +9,9 @@ description: 'Projects documentation provides details on how to create the CVAT 
 
 ## Projects page
 
-Project in CVAT is a top level container that helps you to keep CVAT tasks better organized. When you create a Project, you can specify settings like: issue tracker, source storage, and target storage, bug tracker, segment size, image quality and many more. Settings of the project will further propagate to the task(s) that you add to the project.
+Project in CVAT is a top level container that helps you to keep CVAT tasks better organized.
+
+Create a Project and specify settings like: issue tracker, source storage, and target storage, bug tracker, segment size, image quality and many more. Settings of the project will further propagate to the task(s) that you add to the project.
 
 To open the Project page:
 
