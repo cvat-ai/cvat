@@ -1,7 +1,7 @@
 ---
 title: 'Basic navigation'
 linkTitle: 'Basic navigation'
-weight: 6
+weight: 8
 description: 'Overview of basic controls.'
 ---
 1. Use arrows below to move to the next/previous frame.
