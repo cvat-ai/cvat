@@ -58,6 +58,7 @@ import {
     Configuration,
     InteractionResult,
     InteractionData,
+    ColorBy,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -1875,11 +1876,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { colorBy, shapeOpacity, outlinedBorders } = configuration;
         let shapeColor = '';
 
-        if (colorBy === 'Instance') {
+        if (colorBy === ColorBy.INSTANCE) {
             shapeColor = state.color;
-        } else if (colorBy === 'Group') {
+        } else if (colorBy === ColorBy.GROUP) {
             shapeColor = state.group.color;
-        } else if (colorBy === 'Label') {
+        } else if (colorBy === ColorBy.LABEL) {
             shapeColor = state.label.color;
         }
         const outlinedColor = parentShapeType === 'skeleton' ? 'black' : outlinedBorders || shapeColor;

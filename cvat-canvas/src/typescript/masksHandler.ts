@@ -5,7 +5,7 @@
 import { fabric } from 'fabric';
 
 import {
-    DrawData, MasksEditData, Geometry, Configuration, BrushTool,
+    DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy,
 } from './canvasModel';
 import consts from './consts';
 import {
@@ -56,7 +56,7 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private editData: MasksEditData | null;
 
-    private colorBy: 'Instance' | 'Group' | 'Label';
+    private colorBy: ColorBy;
     private latestMousePos: { x: number; y: number; };
     private startTimestamp: number;
     private geometry: Geometry;
@@ -154,11 +154,11 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private getStateColor(state: any): string {
-        if (this.colorBy === 'Instance') {
+        if (this.colorBy === ColorBy.INSTANCE) {
             return state.color;
         }
 
-        if (this.colorBy === 'Label') {
+        if (this.colorBy === ColorBy.LABEL) {
             return state.label.color;
         }
 
@@ -259,7 +259,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.drawnObjects = [];
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
-        this.colorBy = 'Instance';
+        this.colorBy = ColorBy.LABEL;
         this.onDrawDone = onDrawDone;
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
@@ -528,8 +528,6 @@ export class MasksHandlerImpl implements MasksHandler {
                                 image.evented = false;
                                 image.globalCompositeOperation = 'xor';
                                 image.opacity = 0.5;
-                                // image.left = this.latestMousePos.x - image.width / 2;
-                                // image.top = this.latestMousePos.y - image.height / 2;
                                 this.canvas.add(image);
                                 this.drawnObjects.push(image);
                                 this.canvas.renderAll();
