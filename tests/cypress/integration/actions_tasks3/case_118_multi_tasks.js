@@ -119,7 +119,7 @@ context('Create mutli tasks.', () => {
             cy.get('.cvat-create-multi-tasks-progress').should('exist')
                 .contains(`Total: ${videoPaths.length}`);
             cy.contains('button', 'Cancel');
-            cy.get('.cvat-create-multi-tasks-state').should('exist')
+            cy.get('.cvat-create-multi-tasks-state', { timeout: 50000 }).should('exist')
                 .contains('Finished');
             cy.contains('button', 'Retry failed tasks').should('be.disabled');
             cy.contains('button', 'Ok').click();
@@ -163,7 +163,7 @@ context('Create mutli tasks.', () => {
                 .contains(`Submit ${expectedVideosList.length} tasks`)
                 .click();
 
-            cy.get('.cvat-create-multi-tasks-progress').should('exist')
+            cy.get('.cvat-create-multi-tasks-progress', { timeout: 50000 }).should('exist')
                 .contains(`Total: ${expectedVideosList.length}`);
             cy.contains('button', 'Cancel');
             cy.get('.cvat-create-multi-tasks-state').should('exist')
@@ -192,7 +192,7 @@ context('Create mutli tasks.', () => {
                 .should('not.be.disabled')
                 .contains(`Submit ${expectedVideosList.length} tasks`)
                 .click();
-            cy.get('.cvat-create-multi-tasks-progress').should('exist')
+            cy.get('.cvat-create-multi-tasks-progress', { timeout: 50000 }).should('exist')
                 .contains(`Total: ${expectedVideosList.length}`);
             cy.contains('button', 'Cancel');
             cy.get('.cvat-create-multi-tasks-state').should('exist')
