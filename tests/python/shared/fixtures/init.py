@@ -30,6 +30,7 @@ DC_FILES = [
     osp.join(CVAT_ROOT_DIR, dc_file)
     for dc_file in (
         "docker-compose.dev.yml",
+        "tests/docker-compose.file_share.yml",
         "tests/docker-compose.minio.yml",
         "tests/docker-compose.webhook.yml",
     )

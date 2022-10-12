@@ -3,7 +3,7 @@ version: '3.3'
 services:
   cvat_worker_default:
     volumes:
-      - ./tests/cypress/integration/actions_tasks3/assets/case_107:/home/django/share:rw
+      - ./tests/mounted_file_share:/home/django/share:rw
   cvat_server:
     volumes:
-      - ./tests/cypress/integration/actions_tasks3/assets/case_107:/home/django/share:rw
+      - ./tests/mounted_file_share:/home/django/share:rw
