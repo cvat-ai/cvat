@@ -2021,19 +2021,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if (drawnState.label.id !== state.label.id || drawnState.color !== state.color) {
+            if (
+                drawnState.label.id !== state.label.id ||
+                drawnState.group.id !== state.group.id ||
+                drawnState.group.color !== state.group.color ||
+                drawnState.color !== state.color
+            ) {
                 // update shape color if necessary
                 if (shape) {
-                    shape.attr({
-                        ...this.getShapeColorization(state),
-                    });
+                    if (state.shapeType === 'mask') {
+                        // if masks points were updated, draw from scratch
+                        this.deleteObjects([this.drawnStates[+clientID]]);
+                        this.addObjects([state]);
+                        continue;
+                    } else {
+                        shape.attr({ ...this.getShapeColorization(state) });
+                    }
                 }
-            }
-
-            if (
-                drawnState.group.id !== state.group.id || drawnState.group.color !== state.group.color
-            ) {
-                shape.attr({ ...this.getShapeColorization(state) });
             }
 
             this.drawnStates[state.clientID] = this.saveState(state);
