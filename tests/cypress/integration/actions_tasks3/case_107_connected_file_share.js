@@ -9,7 +9,7 @@ context('Connected file share.', () => {
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
     let stdoutToList;
-    const assetLocalPath = `cypress/integration/actions_tasks3/assets/case_${caseId}`;
+    const assetLocalPath = 'mounted_file_share';
 
     function createOpenTaskWithShare() {
         cy.get('.cvat-create-task-dropdown').click();
