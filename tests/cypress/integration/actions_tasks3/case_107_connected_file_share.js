@@ -8,8 +8,16 @@ context('Connected file share.', () => {
     const caseId = '107';
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
-    let stdoutToList;
-    const assetLocalPath = `cypress/integration/actions_tasks3/assets/case_${caseId}`;
+    const expectedTopLevel = [
+        { name: 'images', type: 'DIR', mime_type: 'DIR' },
+        { name: 'videos', type: 'DIR', mime_type: 'DIR' },
+    ];
+
+    const expectedImagesList = [
+        { name: 'image_1.jpg', type: 'REG', mime_type: 'image' },
+        { name: 'image_2.jpg', type: 'REG', mime_type: 'image' },
+        { name: 'image_3.jpg', type: 'REG', mime_type: 'image' },
+    ];
 
     function createOpenTaskWithShare() {
         cy.get('.cvat-create-task-dropdown').click();
@@ -20,17 +28,25 @@ context('Connected file share.', () => {
         cy.get('.cvat-share-tree')
             .should('be.visible')
             .within(() => {
+                cy.intercept('GET', '/api/server/share?**').as('shareRequest');
                 cy.get('[aria-label="plus-square"]').click();
-                cy.exec('docker exec -i cvat_server /bin/bash -c "ls ~/share"').then((command) => {
-                    stdoutToList = command.stdout.split('\n');
-                    // [image_case_107_1.png, image_case_107_2.png, image_case_107_3.png]
-                    expect(stdoutToList.length).to.be.eq(3);
-                    // Number of images to select + selection of all images.
-                    cy.get('[title]').should('have.length', stdoutToList.length + 1);
-                    stdoutToList.forEach((el) => {
-                        cy.get(`[title="${el}"]`).should('exist');
-                        // Click on the checkboxes
-                        cy.get(`[title="${el}"]`).prev().click().should('have.attr', 'class').and('contain', 'checked');
+                cy.wait('@shareRequest').then((interception) => {
+                    expect(interception.response.body
+                        .sort((a, b) => a.name.localeCompare(b.name)))
+                        .to.deep.equal(expectedTopLevel);
+                });
+                cy.get('[title="images"]').parent().within(() => {
+                    cy.get('[aria-label="plus-square"]').click();
+                });
+                cy.wait('@shareRequest').then((interception) => {
+                    expect(interception.response.body
+                        .sort((a, b) => a.name.localeCompare(b.name)))
+                        .to.deep.equal(expectedImagesList);
+                });
+                expectedImagesList.forEach((el) => {
+                    const { name } = el;
+                    cy.get(`[title="${name}"]`).parent().within(() => {
+                        cy.get('.ant-tree-checkbox').click().should('have.attr', 'class').and('contain', 'checked');
                     });
                 });
             });
@@ -48,19 +64,15 @@ context('Connected file share.', () => {
         cy.deleteTask(taskName);
     });
 
-    after(() => {
-        // Renaming to the original name
-        cy.exec(`mv ${assetLocalPath}/${stdoutToList[0]}.bk ${assetLocalPath}/${stdoutToList[0]}`);
-    });
-
     describe(`Testing case "${caseId}"`, () => {
         it('Create a task with "Connected file share".', () => {
             createOpenTaskWithShare();
             cy.openJob();
             cy.get('.cvat-player-filename-wrapper').then((playerFilenameWrapper) => {
-                for (let el = 0; el < stdoutToList.length; el++) {
-                    cy.get(playerFilenameWrapper).should('have.text', stdoutToList[el]);
-                    cy.checkFrameNum(el);
+                for (let frame = 0; frame < expectedImagesList.length; frame++) {
+                    const { name } = expectedImagesList[frame];
+                    cy.get(playerFilenameWrapper).should('have.text', `${expectedTopLevel[0].name}/${name}`);
+                    cy.checkFrameNum(frame);
                     cy.get('.cvat-player-next-button').click().trigger('mouseout');
                 }
             });
@@ -69,21 +81,22 @@ context('Connected file share.', () => {
         it('Check "Fix problem with getting share data for the task when data not available more in Firefox".', () => {
             cy.goToTaskList();
             createOpenTaskWithShare();
-            // Rename the image
-            cy.exec(`mv ${assetLocalPath}/${stdoutToList[0]} ${assetLocalPath}/${stdoutToList[0]}.bk`).then(
-                (fileRenameCommand) => {
-                    expect(fileRenameCommand.code).to.be.eq(0);
-                },
-            );
-            cy.exec('docker exec -i cvat_server /bin/bash -c "find ~/share -name *.png -type f"').then(
-                (findFilesCommand) => {
-                    // [image_case_107_2.png, image_case_107_3.png]
-                    expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
-                },
-            );
+            cy.intercept('GET', '/api/jobs/*/data?**', {
+                statusCode: 500,
+                body: `<!doctype html>
+                <html lang="en">
+                    <head>
+                        <title>Server Error (500)</title>
+                    </head>
+                    <body>
+                        <h1>Server Error (500)</h1><p></p>
+                    </body>
+                </html>`,
+            });
+
             cy.openJob();
             cy.get('.cvat-annotation-header').should('exist');
-            // Error: . "\"No such file or directory /home/django/share/image_case_107_1.png\"".
+            // Error: . No such file or directory <image_name>".
             cy.get('.cvat-notification-notice-fetch-frame-data-from-the-server-failed').should('exist');
             cy.closeNotification('.cvat-notification-notice-fetch-frame-data-from-the-server-failed');
         });
