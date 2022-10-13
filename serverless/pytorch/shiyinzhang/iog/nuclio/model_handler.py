@@ -107,16 +107,15 @@ class ModelHandler:
 
             # Convert a mask to a polygon
             pred = np.array(pred, dtype=np.uint8)
+            pred = cv2.resize(pred, dsize=(crop_shape[0], crop_shape[1]),
+                interpolation=cv2.INTER_CUBIC)
             cv2.normalize(pred, pred, 0, 255, cv2.NORM_MINMAX)
-            polygon = convert_mask_to_polygon(pred)
-            def translate_points_to_image(points):
-                points = [
-                    (p[0] / crop_scale[0] + crop_bbox[0], # x
-                     p[1] / crop_scale[1] + crop_bbox[1]) # y
-                    for p in points]
 
-                return points
+            mask = np.zeros((image.height, image.width), dtype=np.uint8)
+            x = int(crop_bbox[0])
+            y = int(crop_bbox[1])
+            mask[y : y + crop_shape[1], x : x + crop_shape[0]] = pred
 
-            polygon = translate_points_to_image(polygon)
+            polygon = convert_mask_to_polygon(mask)
 
-            return pred, polygon
+            return mask, polygon

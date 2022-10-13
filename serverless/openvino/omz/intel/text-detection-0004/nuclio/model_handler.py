@@ -214,6 +214,8 @@ class ModelHandler:
         pcd.decode(image.height, image.width, output_layer)
         for box in pcd.bboxes:
             box = box.ravel().tolist()
+            if box[4] - box[0] < 4 or box[5] - box[1] < 4:
+                continue
             mask = pcd.pixel_mask
             mask = np.array(mask, dtype=np.uint8)
             mask = cv2.resize(mask, dsize=(image.width, image.height), interpolation=cv2.INTER_CUBIC)
