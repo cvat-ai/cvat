@@ -45,8 +45,8 @@ jobs:
       run: |
         export SHELL=/bin/bash
         eval $(minikube -p minikube docker-env)
-        docker pull cvat/server
-        docker pull cvat/ui
+        docker pull cvat/server:dev
+        docker pull cvat/ui:dev
         echo -n "verifying images:"
         docker images
 
@@ -94,9 +94,11 @@ jobs:
 
     - name: REST API and SDK tests
       run: |
+        kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
         pytest --platform=kube \
           --ignore=tests/python/rest_api/test_cloud_storages.py \
           --ignore=tests/python/rest_api/test_analytics.py \
           --ignore=tests/python/rest_api/test_resource_import_export.py \
+          --ignore=tests/python/rest_api/test_webhooks_sender.py \
           -k 'not create_task_with_cloud_storage_files' \
         tests/python
