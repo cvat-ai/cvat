@@ -329,8 +329,14 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         manifest_files, manifest_root,
         is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None
     )
-    if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
-        raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
+    if manifest_file and not (
+        db_data.storage_method == models.StorageMethodChoice.CACHE and settings.USE_CACHE
+    ):
+        if db_data.storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
+            slogger.glob.warning("This server doesn't allow to use cache for data. "
+                "Please turn 'use cache' off and try to recreate the task")
+
+        raise Exception("A manifest file can only be used if with the 'use cache' option")
 
     if data['server_files'] and is_data_in_cloud:
         cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)

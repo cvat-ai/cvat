@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,6 +14,7 @@ from tempfile import NamedTemporaryFile
 from PIL import Image
 from json.decoder import JSONDecodeError
 
+from .errors import InvalidFieldValueError, InvalidManifestError, InvalidVideoFrameError, MissingFieldError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 class VideoStreamReader:
@@ -24,14 +26,14 @@ class VideoStreamReader:
 
         with closing(av.open(self.source_path, mode='r')) as container:
             video_stream = VideoStreamReader._get_video_stream(container)
-            isBreaked = False
+            stop = False
             for packet in container.demux(video_stream):
-                if isBreaked:
+                if stop:
                     break
                 for frame in packet.decode():
                     # check type of first frame
                     if not frame.pict_type.name == 'I':
-                        raise Exception('First frame is not key frame')
+                        raise InvalidVideoFrameError('First frame is not key frame')
 
                     # get video resolution
                     if video_stream.metadata.get('rotate'):
@@ -46,7 +48,7 @@ class VideoStreamReader:
                     # not all videos contain information about numbers of frames
                     if video_stream.frames:
                         self._frames_number = video_stream.frames
-                    isBreaked = True
+                    stop = True
                     break
 
     @property
@@ -81,9 +83,9 @@ class VideoStreamReader:
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     if None not in {frame.pts, frame_pts} and frame.pts <= frame_pts:
-                        raise Exception('Invalid pts sequences')
+                        raise InvalidVideoFrameError('Invalid pts sequences')
                     if None not in {frame.dts, frame_dts} and frame.dts <= frame_dts:
-                        raise Exception('Invalid dts sequences')
+                        raise InvalidVideoFrameError('Invalid dts sequences')
                     frame_pts, frame_dts = frame.pts, frame.dts
 
                     if frame.key_frame:
@@ -122,9 +124,9 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
                     if None not in {frame.pts, frame_pts} and frame.pts <= frame_pts:
-                        raise Exception('Invalid pts sequences')
+                        raise InvalidVideoFrameError('Invalid pts sequences')
                     if None not in {frame.dts, frame_dts} and frame.dts <= frame_dts:
-                        raise Exception('Invalid dts sequences')
+                        raise InvalidVideoFrameError('Invalid dts sequences')
                     frame_pts, frame_dts = frame.pts, frame.dts
 
                     if frame.key_frame:
@@ -258,6 +260,7 @@ class _Manifest:
 
     FILE_NAME = 'manifest.jsonl'
     VERSION = SupportedVersion.V1_1
+    TYPE: str
 
     def __init__(self, path, upload_dir=None):
         assert path, 'A path to manifest file not found'
@@ -272,6 +275,14 @@ class _Manifest:
     def name(self):
         return os.path.basename(self._path) if not self._upload_dir \
             else os.path.relpath(self._path, self._upload_dir)
+
+    @abstractmethod
+    def get_header_lines_count(self) -> int:
+        if self.TYPE == 'video':
+            return 3
+        elif self.TYPE == 'images':
+            return 2
+        assert False, f"Unknown manifest type '{self.TYPE}'"
 
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
@@ -299,7 +310,7 @@ class _Index:
     def remove(self):
         os.remove(self._path)
 
-    def create(self, manifest, skip):
+    def create(self, manifest, *, skip):
         assert os.path.exists(manifest), 'A manifest file not exists, index cannot be created'
         with open(manifest, 'r+') as manifest_file:
             while skip:
@@ -334,11 +345,13 @@ class _Index:
     def __len__(self):
         return len(self._index)
 
+    def __iter__(self):
+        yield from self._index.values()
+
 def _set_index(func):
     def wrapper(self, *args, **kwargs):
-        func(self, *args,  **kwargs)
-        if self._create_index:
-            self.set_index()
+        self.set_index()
+        return func(self, *args,  **kwargs)
     return wrapper
 
 class _ManifestManager(ABC):
@@ -348,19 +361,18 @@ class _ManifestManager(ABC):
     }
 
     def _json_item_is_valid(self, **state):
-        for item in self._requared_item_attributes:
+        for item in self._required_item_attributes:
             if state.get(item, None) is None:
-                raise Exception(f"Invalid '{self.manifest.name} file structure': '{item}' is required, but not found")
+                raise MissingFieldError(
+                    f"Invalid '{self.manifest.name} file structure': "
+                    f"'{item}' is required, but not found"
+                )
 
-    def __init__(self, path, create_index, upload_dir=None, *args, **kwargs):
+    def __init__(self, path, create_index, upload_dir=None):
         self._manifest = _Manifest(path, upload_dir)
         self._index = _Index(os.path.dirname(self._manifest.path))
         self._reader = None
         self._create_index = create_index
-
-    @property
-    def reader(self):
-        return self._reader
 
     def _parse_line(self, line):
         """ Getting a random line from the manifest file """
@@ -384,8 +396,9 @@ class _ManifestManager(ABC):
         if os.path.exists(self._index.path):
             self._index.load()
         else:
-            self._index.create(self._manifest.path, 3 if self._manifest.TYPE == 'video' else 2)
-            self._index.dump()
+            self._index.create(self._manifest.path, skip=self._manifest.get_header_lines_count())
+            if self._create_index:
+                self._index.dump()
 
     def reset_index(self):
         if os.path.exists(self._index.path):
@@ -402,24 +415,23 @@ class _ManifestManager(ABC):
 
     @abstractmethod
     def create(self, content=None, _tqdm=None):
-        pass
+        ...
 
     @abstractmethod
     def partial_update(self, number, properties):
-        pass
+        ...
 
+    @_set_index
     def __iter__(self):
         with open(self._manifest.path, 'r') as manifest_file:
             manifest_file.seek(self._index[0])
-            image_number = 0
-            line = manifest_file.readline()
-            while line:
-                if line.strip():
-                    parsed_properties = json.loads(line)
-                    self._json_item_is_valid(**parsed_properties)
-                    yield (image_number, parsed_properties)
-                    image_number += 1
+            for idx, line_start in enumerate(self._index):
+                manifest_file.seek(line_start)
                 line = manifest_file.readline()
+                item = json.loads(line)
+                self._json_item_is_valid(**item)
+                yield (idx, item)
+
 
     @property
     def manifest(self):
@@ -440,14 +452,14 @@ class _ManifestManager(ABC):
 
     @abstractproperty
     def data(self):
-        pass
+        ...
 
     @abstractmethod
     def get_subset(self, subset_names):
-        pass
+        ...
 
 class VideoManifestManager(_ManifestManager):
-    _requared_item_attributes = {'number', 'pts'}
+    _required_item_attributes = {'number', 'pts'}
 
     def __init__(self, manifest_path, create_index=True):
         super().__init__(manifest_path, create_index)
@@ -567,7 +579,7 @@ class VideoManifestValidator(VideoManifestManager):
                 return
 
 class ImageManifestManager(_ManifestManager):
-    _requared_item_attributes = {'name', 'extension'}
+    _required_item_attributes = {'name', 'extension'}
 
     def __init__(self, manifest_path, upload_dir=None, create_index=True):
         super().__init__(manifest_path, create_index, upload_dir)
@@ -644,17 +656,17 @@ class _BaseManifestValidator(ABC):
                     line = json.loads(manifest.readline().strip())
                     validator(line)
             return True
-        except (ValueError, KeyError, JSONDecodeError):
+        except (ValueError, KeyError, JSONDecodeError, InvalidManifestError):
             return False
 
     @staticmethod
     def _validate_version(_dict):
         if not _dict['version'] in _Manifest.SupportedVersion.choices():
-            raise ValueError('Incorrect version field')
+            raise InvalidFieldValueError('Incorrect version field')
 
     def _validate_type(self, _dict):
         if not _dict['type'] == self.TYPE:
-            raise ValueError('Incorrect type field')
+            raise InvalidFieldValueError('Incorrect type field')
 
     @abstractproperty
     def validators(self):
@@ -680,18 +692,18 @@ class _VideoManifestStructureValidator(_BaseManifestValidator):
     def _validate_properties(_dict):
         properties = _dict['properties']
         if not isinstance(properties['name'], str):
-            raise ValueError('Incorrect name field')
+            raise InvalidFieldValueError('Incorrect name field')
         if not isinstance(properties['resolution'], list):
-            raise ValueError('Incorrect resolution field')
+            raise InvalidFieldValueError('Incorrect resolution field')
         if not isinstance(properties['length'], int) or properties['length'] == 0:
-            raise ValueError('Incorrect length field')
+            raise InvalidFieldValueError('Incorrect length field')
 
     @staticmethod
     def _validate_first_item(_dict):
         if not isinstance(_dict['number'], int):
-            raise ValueError('Incorrect number field')
+            raise InvalidFieldValueError('Incorrect number field')
         if not isinstance(_dict['pts'], int):
-            raise ValueError('Incorrect pts field')
+            raise InvalidFieldValueError('Incorrect pts field')
 
 class _DatasetManifestStructureValidator(_BaseManifestValidator):
     TYPE = 'images'
@@ -707,27 +719,27 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
     @staticmethod
     def _validate_first_item(_dict):
         if not isinstance(_dict['name'], str):
-            raise ValueError('Incorrect name field')
+            raise InvalidFieldValueError('Incorrect name field')
         if not isinstance(_dict['extension'], str):
-            raise ValueError('Incorrect extension field')
+            raise InvalidFieldValueError('Incorrect extension field')
         # FIXME
         # Width and height are required for 2D data, but
         # for 3D these parameters are not saved now.
         # It is necessary to uncomment these restrictions when manual preparation for 3D data is implemented.
 
         # if not isinstance(_dict['width'], int):
-        #     raise ValueError('Incorrect width field')
+        #     raise InvalidFieldValueError('Incorrect width field')
         # if not isinstance(_dict['height'], int):
-        #     raise ValueError('Incorrect height field')
+        #     raise InvalidFieldValueError('Incorrect height field')
 
 def is_manifest(full_manifest_path):
-    return _is_video_manifest(full_manifest_path) or \
-        _is_dataset_manifest(full_manifest_path)
+    return is_video_manifest(full_manifest_path) or \
+        is_dataset_manifest(full_manifest_path)
 
-def _is_video_manifest(full_manifest_path):
+def is_video_manifest(full_manifest_path):
     validator = _VideoManifestStructureValidator(full_manifest_path)
     return validator.validate()
 
-def _is_dataset_manifest(full_manifest_path):
+def is_dataset_manifest(full_manifest_path):
     validator = _DatasetManifestStructureValidator(full_manifest_path)
     return validator.validate()

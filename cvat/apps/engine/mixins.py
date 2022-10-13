@@ -246,16 +246,10 @@ class UploadMixin:
 
         upload_dir = self.get_upload_dir()
         file_path = osp.join(upload_dir, filename)
-        return (
-            (osp.commonprefix((osp.realpath(file_path), upload_dir)) == upload_dir) and
-            (osp.basename(filename) != self.get_tus_meta_file_name())
-        )
+        return osp.commonprefix((osp.realpath(file_path), upload_dir)) == upload_dir
 
     def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
-
-    def get_tus_meta_file_name(self) -> str:
-        return "__tus_meta__"
 
     def get_request_client_files(self, request):
         serializer = DataSerializer(self._object, data=request.data)
@@ -280,35 +274,10 @@ class UploadMixin:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    def read_tus_upload_meta_file(self, f: IO) -> str:
-        """
-        Reads the input file and returns its contents. The input file can be a zip file or
-        a text file. In case of a zip file, the contents are retrieved from the file internal
-        file defined by get_tus_meta_file_name().
-        """
-
-        if zipfile.is_zipfile(f):
-            contents = zipfile.ZipFile(f).read(self.get_tus_meta_file_name())
-        else:
-            contents = f.read()
-            if isinstance(contents, bytes):
-                contents = contents.decode()
-
-        return contents
-
     def upload_started(self, request):
         """
-        Obtains TUS upload metainfo for the upcoming uploading.
-        Must be used if the initial file order needs to be preserved.
+        Allows to do actions before upcoming file uploading.
         """
-
-        if request.data:
-            serializer = UploadingMetaSerializer(self._object, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            upload_dir = self.get_upload_dir()
-            with open(osp.join(upload_dir, self.get_tus_meta_file_name()), 'wb') as f:
-                meta_contents = self.read_tus_upload_meta_file(serializer.contents_file['file'])
-                f.write(meta_contents)
         return Response(status=status.HTTP_202_ACCEPTED)
 
     def upload_finished(self, request):
