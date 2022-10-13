@@ -37,7 +37,10 @@ class TestGetTasks:
                 id=project_id,
                 **kwargs,
             )
-            assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
+            assert (
+                DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths)
+                == {}
+            )
 
     def _test_task_list_403(self, user, project_id, **kwargs):
         with make_api_client(user) as api_client:
@@ -52,7 +55,9 @@ class TestGetTasks:
         if is_staff:
             users = [user for user in users if is_project_staff(user["id"], project_id)]
         else:
-            users = [user for user in users if not is_project_staff(user["id"], project_id)]
+            users = [
+                user for user in users if not is_project_staff(user["id"], project_id)
+            ]
         assert len(users)
 
         for user in users:
@@ -61,9 +66,13 @@ class TestGetTasks:
             else:
                 self._test_task_list_403(user["username"], project_id, **kwargs)
 
-    def _test_assigned_users_to_see_task_data(self, tasks, users, is_task_staff, **kwargs):
+    def _test_assigned_users_to_see_task_data(
+        self, tasks, users, is_task_staff, **kwargs
+    ):
         for task in tasks:
-            staff_users = [user for user in users if is_task_staff(user["id"], task["id"])]
+            staff_users = [
+                user for user in users if is_task_staff(user["id"], task["id"])
+            ]
             assert len(staff_users)
 
             for user in staff_users:
@@ -72,7 +81,9 @@ class TestGetTasks:
                     assert response.status == HTTPStatus.OK
                     response_data = json.loads(response.data)
 
-                assert any(_task["id"] == task["id"] for _task in response_data["results"])
+                assert any(
+                    _task["id"] == task["id"] for _task in response_data["results"]
+                )
 
     @pytest.mark.parametrize("project_id", [1])
     @pytest.mark.parametrize(
@@ -83,7 +94,15 @@ class TestGetTasks:
         ],
     )
     def test_project_tasks_visibility(
-        self, project_id, groups, users, tasks, is_staff, is_allow, find_users, is_project_staff
+        self,
+        project_id,
+        groups,
+        users,
+        tasks,
+        is_staff,
+        is_allow,
+        find_users,
+        is_project_staff,
     ):
         users = find_users(privilege=groups)
         tasks = list(filter(lambda x: x["project_id"] == project_id, tasks))
@@ -98,7 +117,9 @@ class TestGetTasks:
         self, project_id, groups, users, tasks, find_users, is_task_staff
     ):
         users = find_users(privilege=groups)
-        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        tasks = list(
+            filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks)
+        )
         assert len(tasks)
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff)
@@ -128,18 +149,30 @@ class TestGetTasks:
         assert len(tasks)
 
         self._test_users_to_see_task_list(
-            project_id, tasks, users, is_staff, is_allow, is_project_staff, org=org["slug"]
+            project_id,
+            tasks,
+            users,
+            is_staff,
+            is_allow,
+            is_project_staff,
+            org=org["slug"],
         )
 
-    @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
+    @pytest.mark.parametrize(
+        "org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")]
+    )
     def test_org_task_assignee_to_see_task(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)
-        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        tasks = list(
+            filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks)
+        )
         assert len(tasks)
 
-        self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org["slug"])
+        self._test_assigned_users_to_see_task_data(
+            tasks, users, is_task_staff, org=org["slug"]
+        )
 
 
 @pytest.mark.usefixtures("changedb")
@@ -162,7 +195,9 @@ class TestPostTasks:
         if is_staff:
             users = [user for user in users if is_project_staff(user["id"], project_id)]
         else:
-            users = [user for user in users if not is_project_staff(user["id"], project_id)]
+            users = [
+                user for user in users if not is_project_staff(user["id"], project_id)
+            ]
         assert len(users)
 
         for user in users:
@@ -244,8 +279,18 @@ class TestPostTasks:
                             ],
                             "type": "points",
                         },
-                        {"name": "2", "color": "#4925ec", "attributes": [], "type": "points"},
-                        {"name": "3", "color": "#59a8fe", "attributes": [], "type": "points"},
+                        {
+                            "name": "2",
+                            "color": "#4925ec",
+                            "attributes": [],
+                            "type": "points",
+                        },
+                        {
+                            "name": "3",
+                            "color": "#59a8fe",
+                            "attributes": [],
+                            "type": "points",
+                        },
                     ],
                     "svg": '<line x1="36.329429626464844" y1="45.98662185668945" x2="59.07190704345703" y2="23.076923370361328" '
                     'stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="3"></line>'
@@ -290,7 +335,12 @@ class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
             assert response.status == HTTPStatus.OK
-            assert DeepDiff(data, json.loads(response.data), exclude_paths="root['version']") == {}
+            assert (
+                DeepDiff(
+                    data, json.loads(response.data), exclude_paths="root['version']"
+                )
+                == {}
+            )
         else:
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -395,11 +445,15 @@ class TestPatchTaskAnnotations:
 class TestGetTaskDataset:
     def _test_export_task(self, username, tid, **kwargs):
         with make_api_client(username) as api_client:
-            return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
+            return export_dataset(
+                api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs
+            )
 
     def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
         task = tasks_with_shapes[0]
-        response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
+        response = self._test_export_task(
+            admin_user, task["id"], format="CVAT for images 1.1"
+        )
         assert response.data
 
 
@@ -409,7 +463,9 @@ class TestPostTaskData:
     _USERNAME = "admin1"
 
     @staticmethod
-    def _wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
+    def _wait_until_task_is_created(
+        api: apis.TasksApi, task_id: int
+    ) -> models.RqStatus:
         for _ in range(100):
             (status, _) = api.retrieve_status(task_id)
             if status.state.value in ["Finished", "Failed"]:
@@ -423,7 +479,10 @@ class TestPostTaskData:
             assert response.status == HTTPStatus.CREATED
 
             (_, response) = api_client.tasks_api.create_data(
-                task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
+                task.id,
+                data_request=deepcopy(data),
+                _content_type=content_type,
+                **kwargs,
             )
             assert response.status == HTTPStatus.ACCEPTED
 
@@ -478,8 +537,18 @@ class TestPostTaskData:
                     "attributes": [],
                     "type": "skeleton",
                     "sublabels": [
-                        {"name": "1", "color": "#d12345", "attributes": [], "type": "points"},
-                        {"name": "2", "color": "#350dea", "attributes": [], "type": "points"},
+                        {
+                            "name": "1",
+                            "color": "#d12345",
+                            "attributes": [],
+                            "type": "points",
+                        },
+                        {
+                            "name": "2",
+                            "color": "#350dea",
+                            "attributes": [],
+                            "type": "points",
+                        },
                     ],
                     "svg": '<line x1="19.464284896850586" y1="21.922269821166992" x2="54.08613586425781" y2="43.60293960571289" '
                     'stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>'
@@ -657,5 +726,9 @@ class TestPostTaskData:
         }
 
         self._test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            self._USERNAME,
+            task_spec,
+            data_spec,
+            content_type="application/json",
+            org=org,
         )
