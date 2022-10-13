@@ -2,7 +2,7 @@
 title: 'Projects page'
 linkTitle: 'Projects page'
 weight: 1
-description: 'Projects documentation provides details on how to create the CVAT Project, load the CVAT Project from a back up, aand navigate through the Project.'
+description: 'Projects documentation provides details on how to create the CVAT Project, load the CVAT Project from a backup, aand navigate through the Project.'
 
 
 ---
@@ -11,7 +11,7 @@ description: 'Projects documentation provides details on how to create the CVAT 
 
 Project in CVAT is a top level container that helps you to keep CVAT tasks better organized.
 
-Create a Project and specify settings like: issue tracker, source storage, and target storage, bug tracker, segment size, image quality and many more. Settings of the project will further propagate to the task(s) that you add to the project.
+Create a Project and specify settings like issue tracker, source storage, and target storage, bug tracker, segment size, image quality and other. Settings of the project will further propagate to the task(s) that you add to the project.
 
 To open the Project page:
 
@@ -24,12 +24,20 @@ You will see the the following page:
 ![CVAT Project main page](/images/сvat-project-main-page.png)
 
 
-1. **Projects**. Navigation bar option to get to the Projects page.
-2. **Search box**. Use it to find project by name or assignee.
+1. **Projects** - navigation bar option to get to the Projects page.
+2. **Search box** - use it to find project by name or assignee.
 3. Filters:
 
-      1. **Sort by**. Use it to filter by selected property.
-      2.  f
+      1. **Sort by** - use it to filter projects by selected property like assignee, update date, and others.
+      2.  **Quick filters** - use it to filter by assignet to you, owned by, and not complete projects.
+      3. **Filter** - use it for customizable search by adding you own filtering rules and groups.
+4. **+** - click it to open the drop-down menu:
+
+      1. **Create new project** - use it to create new project.
+      2.  **Create from backup** - use it to create project from backup.
+5. **Create a new one** - duplicates **Create new project** , use it to create new project.
+
+
 
 On this page you can create a new project, create a project from a backup, and also see the created projects.
 
