@@ -212,7 +212,7 @@ def _validate_data(counter, manifest_files=None):
 
     return counter, task_modes[0]
 
-def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
+def _retrieve_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
     if manifests:
         if len(manifests) != 1:
             raise Exception('Only one manifest file can be attached with data')
@@ -296,28 +296,20 @@ def _download_data(urls, upload_dir):
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
-class _InvalidManifestError(Exception):
+class InvalidManifestError(Exception):
     """
     Indicates an invalid manifest file uploaded
     """
 
-def _read_upload_manifest(path: str) -> ImageManifestManager:
+def _read_dataset_manifest(path: str) -> ImageManifestManager:
     """
-    Reads an upload metainfo file and returns the declared list of files.
+    Reads an upload manifest file
     """
-
-    if not osp.isfile(path):
-        raise FileNotFoundError(
-            "Can't find upload manifest file '{}' "
-            "in the uploaded files. When the 'predefined' sorting method is used, "
-            "this file is required in the input files."
-            .format(path)
-        )
 
     if is_dataset_manifest(path):
         return ImageManifestManager(path)
     elif not is_manifest(path):
-        raise _InvalidManifestError(
+        raise InvalidManifestError(
             "Can't recognize a manifest file in "
             "the uploaded file '{}'".format(osp.basename(path))
         )
@@ -384,8 +376,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         manifest_root = upload_dir
     elif is_data_in_cloud:
         manifest_root = db_data.cloud_storage.get_storage_dirname()
+    else:
+        assert False, f"Unknown file storage {db_data.storage}"
 
-    manifest_file = _validate_manifest(
+    manifest_file = _retrieve_manifest(
         manifest_files, manifest_root,
         is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None
     )
@@ -469,6 +463,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             "without cache but with random/predefined sorting"
         )
 
+    # Extract input data
     extractor = None
     manifest_index = _get_manifest_frame_indexer()
     for media_type, media_files in media.items():
@@ -503,18 +498,25 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if extractor is None:
         raise Exception("Can't create a task without data")
 
-    validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
         extractor.extract()
 
-    if db_data.storage == models.StorageChoice.LOCAL or \
-            (db_data.storage == models.StorageChoice.SHARE and \
-            isinstance(extractor, MEDIA_TYPES['zip']['extractor'])):
+    validate_dimension = ValidateDimension()
+    if db_data.storage == models.StorageChoice.LOCAL or (
+        db_data.storage == models.StorageChoice.SHARE and
+        isinstance(extractor, MEDIA_TYPES['zip']['extractor'])
+    ):
         validate_dimension.set_path(upload_dir)
         validate_dimension.validate()
 
-    if db_task.project is not None and db_task.project.tasks.count() > 1 and db_task.project.tasks.first().dimension != validate_dimension.dimension:
-        raise Exception(f'Dimension ({validate_dimension.dimension}) of the task must be the same as other tasks in project ({db_task.project.tasks.first().dimension})')
+    if (db_task.project is not None and
+        db_task.project.tasks.count() > 1 and
+        db_task.project.tasks.first().dimension != validate_dimension.dimension
+    ):
+        raise Exception(
+            f"Dimension ({validate_dimension.dimension}) of the task must be the "
+            f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
+        )
 
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         db_task.dimension = models.DimensionType.DIM_3D
@@ -555,9 +557,16 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         # We should sort media_files according to the manifest content sequence
         # and we should do this in general after validation step for 3D data
         # and after filtering from related_images
-
         if manifest is None:
-            manifest = _read_upload_manifest(osp.join(manifest_root, manifest_file))
+            if not manifest_file or not osp.isfile(manifest_file):
+                raise FileNotFoundError(
+                    "Can't find upload manifest file '{}' "
+                    "in the uploaded files. When the 'predefined' sorting method is used, "
+                    "this file is required in the input files."
+                    .format(manifest_file or db_data.get_manifest_path())
+                )
+
+            manifest = _read_dataset_manifest(osp.join(manifest_root, manifest_file))
             manifest.set_index()
 
         media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)

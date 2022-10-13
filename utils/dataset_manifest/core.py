@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
+from io import StringIO
 import av
 import json
 import os
 
 from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
 from contextlib import closing
-from tempfile import NamedTemporaryFile
 from PIL import Image
 from json.decoder import JSONDecodeError
 
@@ -499,23 +499,20 @@ class VideoManifestManager(_ManifestManager):
                 }, separators=(',', ':'))
                 file.write(f"{json_item}\n")
 
-    # pylint: disable=arguments-differ
-    @_set_index
-    def create(self, _tqdm=None):
+    def create(self, *, _tqdm=None): # pylint: disable=arguments-differ
         """ Creating and saving a manifest file """
         if not len(self._reader):
-            with NamedTemporaryFile(mode='w', delete=False)as tmp_file:
-                self._write_core_part(tmp_file, _tqdm)
-            temp = tmp_file.name
+            tmp_file = StringIO()
+            self._write_core_part(tmp_file, _tqdm)
             with open(self._manifest.path, 'w') as manifest_file:
                 self._write_base_information(manifest_file)
-                with open(temp, 'r') as tmp_file:
-                    manifest_file.write(tmp_file.read())
-            os.remove(temp)
+                manifest_file.write(tmp_file.read())
         else:
             with open(self._manifest.path, 'w') as manifest_file:
                 self._write_base_information(manifest_file)
                 self._write_core_part(manifest_file, _tqdm)
+
+        self.set_index()
 
     def partial_update(self, number, properties):
         pass
@@ -608,13 +605,14 @@ class ImageManifestManager(_ManifestManager):
             }, separators=(',', ':'))
             file.write(f"{json_line}\n")
 
-    @_set_index
     def create(self, content=None, _tqdm=None):
         """ Creating and saving a manifest file for the specialized dataset"""
         with open(self._manifest.path, 'w') as manifest_file:
             self._write_base_information(manifest_file)
             obj = content if content else self._reader
             self._write_core_part(manifest_file, obj, _tqdm)
+
+        self.set_index()
 
     def partial_update(self, number, properties):
         pass

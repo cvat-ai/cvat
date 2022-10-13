@@ -29,7 +29,7 @@ from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from datumaro.util.test_utils import TestDir
+from datumaro.util.test_utils import current_function_name, TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
@@ -3445,7 +3445,7 @@ class TaskDataAPITestCase(APITestCase):
                         source_image = np.array(source_images[img_idx])
                         self.assertTrue(np.array_equal(source_image, server_image))
 
-    def _test_api_v2_tasks_id_data_can_upload_local_images(self, user):
+    def _test_api_v2_tasks_id_data_create_can_upload_local_images(self, user):
         task_spec = {
             "name": "my task #1",
             "owner_id": user.id,
@@ -3468,7 +3468,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
-    def _test_api_v2_tasks_id_data_can_use_server_images(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_images(self, user):
         task_spec = {
             "name": "my task without copying #2",
             "overlap": 0,
@@ -3493,17 +3493,17 @@ class TaskDataAPITestCase(APITestCase):
             self._image_sizes[task_data["server_files[2]"]],
         ]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'my task #3')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_local_video(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_local_video(self, user):
         task_spec = {
             "name": "my video task #4",
             "overlap": 0,
@@ -3521,7 +3521,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
-    def _test_api_v2_tasks_id_data_can_use_server_video(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_video(self, user):
         task_spec = {
             "name": "my video task without copying #5",
             "overlap": 0,
@@ -3538,17 +3538,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'my video task #6')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_server_video_default_segment_size(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_video_default_segment_size(self, user):
         task_spec = {
             "name": "my video task without copying #7",
             "overlap": 0,
@@ -3564,17 +3564,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([("name", "my video task #8")])
             task_data.update([("copy_data", True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_compress_server_video(self, user):
+    def _test_api_v2_tasks_id_data_create_can_compress_server_video(self, user):
         task_spec = {
             "name": "my video task without copying #9",
             "overlap": 0,
@@ -3592,17 +3592,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'my video task #10')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_server_zip_archive(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_zip_archive(self, user):
         task_spec = {
             "name": "my archive task without copying #11",
             "overlap": 0,
@@ -3618,17 +3618,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.LOCAL)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'my archive task #12')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_local_archive(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_local_archive(self, user):
         task_spec = {
             "name": "my archive task #13",
             "overlap": 0,
@@ -3646,7 +3646,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
-    def _test_api_v2_tasks_id_data_can_use_cached_server_video(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_cached_server_video(self, user):
         task_spec = {
             "name": "cached video task without copying #14",
             "overlap": 0,
@@ -3665,17 +3665,17 @@ class TaskDataAPITestCase(APITestCase):
 
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
                 self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'cached video task #15')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_cached_server_images(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_cached_server_images(self, user):
         task_spec = {
             "name": "cached images task with default sorting data and without copying #16",
             "overlap": 0,
@@ -3699,17 +3699,17 @@ class TaskDataAPITestCase(APITestCase):
             self._image_sizes[task_data["server_files[1]"]],
         ]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                 self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'cached images task #17')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_cached_server_zip_archive(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_cached_server_zip_archive(self, user):
         task_spec = {
             "name": "my cached zip archive task without copying #18",
             "overlap": 0,
@@ -3728,17 +3728,17 @@ class TaskDataAPITestCase(APITestCase):
 
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                 self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'my cached zip archive task #19')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_cached_local_pdf(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_cached_local_pdf(self, user):
         task_spec = {
             "name": "my cached pdf task #20",
             "overlap": 0,
@@ -3761,7 +3761,7 @@ class TaskDataAPITestCase(APITestCase):
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE)
 
-    def _test_api_v2_tasks_id_data_can_use_local_pdf(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_local_pdf(self, user):
         task_spec = {
             "name": "my pdf task #21",
             "overlap": 0,
@@ -3782,7 +3782,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
-    def _test_api_v2_tasks_id_data_can_use_server_video_with_meta(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_video_with_meta(self, user):
         task_spec = {
             "name": "my video with meta info task without copying #22",
             "overlap": 0,
@@ -3800,18 +3800,18 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._image_sizes[task_data['server_files[0]']]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
                                             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE,
                                             StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'my video with meta info task #23')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_chunked_local_video(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_chunked_local_video(self, user):
         task_spec = {
             "name": "my cached video task #14",
             "overlap": 0,
@@ -3832,7 +3832,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.FILE_SYSTEM)
 
-    def _test_api_v2_tasks_id_data_can_use_chunked_cached_local_video(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_chunked_cached_local_video(self, user):
         task_spec = {
             "name": "my video task #15",
             "overlap": 0,
@@ -3854,7 +3854,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
-    def _test_api_v2_tasks_id_data_can_use_mxf_video(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_mxf_video(self, user):
         task_spec = {
             "name": "test mxf format",
             "use_zip_chunks": False,
@@ -3872,7 +3872,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
-    def _test_api_v2_tasks_id_data_can_use_local_pcd_zip(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_local_pcd_zip(self, user):
         task_spec = {
             "name": "my archive task #24",
             "overlap": 0,
@@ -3892,7 +3892,7 @@ class TaskDataAPITestCase(APITestCase):
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
 
-    def _test_api_v2_tasks_id_data_can_use_local_pcd_kitti(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_local_pcd_kitti(self, user):
         task_spec = {
             "name": "my archive task #25",
             "overlap": 0,
@@ -3913,7 +3913,7 @@ class TaskDataAPITestCase(APITestCase):
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
 
-    def _test_api_v2_tasks_id_data_can_use_cached_server_images_and_manifest(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_cached_server_images_and_manifest(self, user):
         task_spec = {
             "name": "my images+manifest without copying #26",
             "overlap": 0,
@@ -3938,17 +3938,17 @@ class TaskDataAPITestCase(APITestCase):
             self._image_sizes[task_data["server_files[2]"]],
         ]
 
-        with self.subTest("no copy"):
+        with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                 image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        with self.subTest("with copy"):
+        with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'my images+manifest #27')])
             task_data.update([('copy_data', True)])
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                 image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-    def _test_api_v2_tasks_id_data_can_use_server_images_with_predefined_sorting(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
         # test predefined sorting
         task_spec = {
             "name": 'task custom data sequence server files #28',
@@ -3977,7 +3977,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-    def _test_api_v2_tasks_id_data_can_use_local_images_with_predefined_sorting_single_request(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_local_images_with_predefined_sorting_single_request(self, user):
         task_spec = {
             "name": 'task custom data sequence client files single request #28-2',
             "overlap": 0,
@@ -4001,32 +4001,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-    def _test_api_v2_tasks_id_data_can_use_local_images_with_predefined_sorting_multi_request(self, user):
-        # bug
-        task_spec = {
-            "name": 'task custom data sequence client files split request #28-3',
-            "overlap": 0,
-            "segment_size": 0,
-            "labels": [
-                {"name": "car"},
-                {"name": "person"},
-            ]
-        }
-
-        image_sizes, images = generate_image_files(
-            "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
-        )
-        task_data = {
-            "image_quality": 75,
-            "use_cache": True,
-            "sorting_method": SortingMethod.PREDEFINED
-        }
-        task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
-
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
-
-    def _test_api_v2_tasks_id_data_can_use_server_images_with_natural_sorting(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         # test a natural data sequence
         task_spec = {
             "name": 'task native data sequence #29',
@@ -4055,7 +4030,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-    def _test_api_v2_tasks_id_data_can_use_server_pdf(self, user):
+    def _test_api_v2_tasks_id_data_create_can_use_server_pdf(self, user):
         task_spec = {
             "name": 'task pdf in the shared folder #30',
             "overlap": 0,
@@ -4077,14 +4052,25 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create(self, user):
+        method_list = {
+            func: getattr(self, func) for func in dir(self)
+            if func.startswith('_test_api_v2_tasks_id_data_create_') and
+            callable(getattr(self, func))
+        }
+        assert method_list
+        for name, func in method_list.items():
+            with self.subTest(name):
+                func(user)
+
     def test_api_v2_tasks_id_data_admin(self):
-        self._test_api_v2_tasks_id_data(self.admin)
+        self._test_api_v2_tasks_id_data_create(self.admin)
 
     def test_api_v2_tasks_id_data_owner(self):
-        self._test_api_v2_tasks_id_data(self.owner)
+        self._test_api_v2_tasks_id_data_create(self.owner)
 
     def test_api_v2_tasks_id_data_user(self):
-        self._test_api_v2_tasks_id_data(self.user)
+        self._test_api_v2_tasks_id_data_create(self.user)
 
     def test_api_v2_tasks_id_data_no_auth(self):
         data = {
