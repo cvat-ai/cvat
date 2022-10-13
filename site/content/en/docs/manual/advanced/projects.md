@@ -2,16 +2,17 @@
 title: 'Projects page'
 linkTitle: 'Projects page'
 weight: 1
-description: 'Projects documentation provides details on how to create the CVAT Project, load the CVAT Project from a backup, aand navigate through the Project.'
+description: 'Projects documentation provides details on how to create the CVAT project, load the CVAT project from a backup, aand navigate through the project.'
 
 
 ---
 
 ## Projects page
 
-Project in CVAT is a top-level container that helps you to keep CVAT tasks better organized.
+CVAT project (hereinafter - project) is a top-level container that helps you to keep CVAT tasks of the same type better organized.
+Project usually corresponds to a dataset.
 
-Create a Project and specify settings like issue tracker, source storage, target storage, bug tracker, segment size, image quality, and others. Settings of the project will further propagate to the task(s) added to the project.
+Create a Project and specify settings like issue tracker, source storage, target storage, bug tracker, segment size, image quality, and others. Settings of the project will further propagate to the task(s) assosiated with it and assigned to annotet subset or a full data set.
 
 To open the Project page:
 
@@ -21,7 +22,7 @@ To open the Project page:
 You will see the following page:
 
 
-![CVAT Project main page](/images/сvat-project-main-page.png)
+![CVAT Project main page](../../../images/сvat-project-main-page.png)
 
 
 
@@ -31,16 +32,27 @@ You will see the following page:
 3. Filters:
 
       1. **Sort by**. Use it to filter projects by selected properties like assignee, update date, and others.
-      2.  **Quick filters**. Use  it to filter by assigned to you, owned by, and not complete projects.
+      2.  **Quick filters**. Use it to filter by projects assigned to you, owned by you, and not complete projects.
       3. **Filter**. Use it for customizable search by adding your own filtering rules and groups.
-      4. **Clear filters**
+      4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
 4. **+** . Click it to open the drop-down menu:
 
       1. **Create new project**. Use it to create a new project.
       2.  **Create from backup**. Use it to create a project from the backup.
 5. **Create a new one** duplicates **Create new project**, use it to create a new project.
+6. Project pane, where created project will appear.
 
-A project that you created will show up in the projects pane of the page.
+
+## Create a new project
+
+To create a new project, do the following:
+
+1. In the top right part of the screen click **+** and from the drop-down menu select **Create new project**.
+
+     ![Create new project window](../../../images/create_new_project.png)
+
+
+
 
 
 ### Filter
