@@ -67,7 +67,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
-          tags: cvat/server
+          tags: cvat/server:dev
           load: true
 
       - name: CVAT UI. Build and push
@@ -76,7 +76,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
           file: Dockerfile.ui
-          tags: cvat/ui
+          tags: cvat/ui:dev
           load: true
 
       - name: CVAT SDK. Build
