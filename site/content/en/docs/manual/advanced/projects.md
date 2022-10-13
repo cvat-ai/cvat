@@ -44,8 +44,18 @@ You will see the following page:
 
 ## Create a new project
 
+
+
 > **Note** that the project will be created in the organization that you selected at the time of creation.
 > For more information, see [organizations](/docs/manual/advanced/organization/).
+
+There are two types of labels that you can add to the project at the same time:
+
+* Sceleton lables - where you must add "sceleton" to the uploaded picture.
+* Regular lables - all other types of labels
+
+Main steps of the procedure are common for both types of labels.
+On how to set up a sceleton lable, see [Setup sceleton](#setup-sceleton-extention),
 
 To create a new project, do the following:
 
@@ -86,11 +96,14 @@ To create a new project, do the following:
 6. Optional. Use **Advanced configuration** to add issue tracker, source storage, and target storage to project:
 
       1. Click the **Advanced configuration** drop-down.
-      2. In the **Ïssue tracker** field, enter the URL of the issue tracker, that you use.
-      3.
+      2. In the **Issue tracker** field, enter the URL of the issue tracker, that you use.
+      3. In the **Source storage** field enter the source storage from which you import resoruces.
+      4. In the Target storage field enter the target storage to export resources.
+7. Click:
+      * In case you want to open a new project **Submit & open**
+      * In case you want to create another project **Submit & continue**
 
-
-
+The project will appear on the project pane.
 
 
 
@@ -117,28 +130,7 @@ For clear all filters press `Clear filters`.
 | `ID`           | number or range of job ID                    |                                             |
 | `Name`         | name                                         | On the tasks page - name of the task,<br> on the project page - name of the project |
 
-## Create a project
 
-At CVAT, you can create a project containing tasks of the same type.
-All tasks related to the project will inherit a list of labels.
-
-To create a project, go to the projects section by clicking on the `Projects` item in the top menu.
-On the projects page, you can see a list of projects, use a search,
-or create a new project by clicking on the `+` button and select `Create New Project`.
-
-![](/images/image190.jpg)
-
-> Note that the project will be created in the organization that you selected at the time of creation.
-> Read more about [organizations](/docs/manual/advanced/organization/).
-
-You can change: the name of the project, the list of labels
-(which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
-In advanced configuration also you can specify: a link to the issue, source and target storages.
-Learn more about [creating a label list](/docs/manual/basics/creating_an_annotation_task/#labels),
-[creating the skeleton](/docs/manual/advanced/annotation-with-skeletons/creating-the-skeleton/) and [attach cloud storage](/docs/manual/basics/attach-cloud-storage/).
-
-To save and open project click on `Submit & Open` button. Also you
-can click on `Submit & Continue` button for creating several projects in sequence
 
 ![](/images/image191.jpg)
 
