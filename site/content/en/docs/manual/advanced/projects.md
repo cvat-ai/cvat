@@ -35,7 +35,7 @@ You will see the following page:
       2.  **Quick filters**. Use it to filter by projects assigned to you, owned by you, and not complete projects.
       3. **Filter**. Use it for customizable search by adding your own filtering rules and groups.
       4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
-4. **+** . Click it to open the drop-down menu:
+4. ![Plus](../../../images/plus.png) . Click it to open the drop-down menu:
 
       1. **Create new project**. Use it to create a new project.
       2.  **Create from backup**. Use it to create a project from the backup.
@@ -47,7 +47,7 @@ You will see the following page:
 
 To create a new project, do the following:
 
-1. In the top right part of the screen click **+** and from the drop-down menu select **Create new project**.
+1. In the top right part of the screen click ![Plus](../../../images/plus.png), and from the drop-down menu select **Create new project**.
 
      ![Create new project window](../../../images/create_new_project.png)
 
