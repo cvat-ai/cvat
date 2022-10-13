@@ -90,15 +90,13 @@ jobs:
           gen/generate.sh
           cd ..
 
-          cp -r cvat-sdk/* /tmp/cvat_sdk/
-
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
 
       - name: Running REST API tests
         run: |
-          pip3 install --user /tmp/cvat_sdk/
+          pip3 install --user cvat-sdk/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python/sdk
 
