@@ -44,6 +44,9 @@ You will see the following page:
 
 ## Create a new project
 
+> **Note** that the project will be created in the organization that you selected at the time of creation.
+> For more information, see [organizations](/docs/manual/advanced/organization/).
+
 To create a new project, do the following:
 
 1. In the top right part of the screen click ![Plus](../../../images/plus.png), and from the drop-down menu select **Create new project**.
@@ -80,6 +83,11 @@ To create a new project, do the following:
 
  ![Create project filled labels and attributes](../../../images/create_new_project_02.png)
 
+6. Optional. Use **Advanced configuration** to add issue tracker, source storage, and target storage to project:
+
+      1. Click the **Advanced configuration** drop-down.
+      2. In the **Ïssue tracker** field, enter the URL of the issue tracker, that you use.
+      3.
 
 
 
