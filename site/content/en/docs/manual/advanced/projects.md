@@ -67,9 +67,14 @@ To create a new project, do the following:
                 * **Text** Use it for attributes that must be entered as a text.
                 * **Number** Use it for attributes that must be entered as a number.
             3.  In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
-                * For  **Radio**  enter one or more text values. To separate vaules, press Enter after each value name.
+                * For  **Radio**  enter one or more text values. To separate vaules, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
                 * For **Checkbox** from the drop-down list select one of the values **True** or **False**.
-                *
+                * For **Text** enter the default value in a text form. You can specify only one default value.
+                * For **Number** specify a range, separated by semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
+            4. If you want to change attribute from frame to frame, select **Mutable** checkbox.
+            5. If you want to remove atribute, click ![Garbage bin](../../../images/garbage-bin.png)
+            > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
+
 
 
 
