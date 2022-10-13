@@ -27,17 +27,17 @@ You will see the following page:
 
 
 1. **Projects** is navigation bar option to get to the Projects page.
-2. **Search box**. Use it to find the project by name or assignee.
+2. **Search box** Use it to find the project by name or assignee.
 3. Filters:
 
-      1. **Sort by**. Use it to filter projects by selected properties like assignee, update date, and others.
-      2.  **Quick filters**. Use it to filter by projects assigned to you, owned by you, and not complete projects.
-      3. **Filter**. Use it for customizable search by adding your own filtering rules and groups.
+      1. **Sort by** Use it to filter projects by selected properties like assignee, update date, and others.
+      2.  **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
+      3. **Filter** Use it for customizable search by adding your own filtering rules and groups.
       4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
 4. ![Plus](../../../images/plus.png) . Click it to open the drop-down menu:
 
-      1. **Create new project**. Use it to create a new project.
-      2.  **Create from backup**. Use it to create a project from the backup.
+      1. **Create new project** Use it to create a new project.
+      2.  **Create from backup** Use it to create a project from the backup.
 5. **Create a new one** duplicates **Create new project**, use it to create a new project.
 6. Project pane, where created project will appear.
 
@@ -50,14 +50,28 @@ To create a new project, do the following:
 
      ![Create new project window](../../../images/create_new_project.png)
 
-2. In the **Name** field enter the name of your project.
-3. Click **Add label**, and fill in the following fields:
+2. Go to **Constructor** tab.
+3. In the **Name** field enter the name of your project.
+4. Click **Add label** and fill in the following fields:
 
-      1. **Label name**. Mandatory field. Enter the name of the annotation label.
-      2. **Change colour of the label** (![change colour of the label](../../../images/color-field.png)) Optional. Click the icon and select colour from the colour palette.
-      3. **Add attribute**. Optional. Opens a menu, where you can set attributes:
+      1. **Label name** Mandatory field. Enter the name of the annotation label.
+      2. **Change colour of the label** (![change colour of the label](../../../images/color-field.png)) Optional field. Click the icon and select colour from the colour palette.
+      3. **Add attribute** Optional field. Opens a menu, where you can set follwing attributes:
 
-            1. lalal
+            1. **Name** Mandatory field. Enter the name of the attribute.
+            2. From the drop-down list, select an HTML element, representing the attribute:
+
+                * **Select** is placeholder. Cannot be used as an attribute.
+                * **Radio** Use it to add radio button, to select only one option from several.
+                * **Checkbox** Use it to add checkbox for multiple options choise.
+                * **Text** Use it for attributes that must be entered as a text.
+                * **Number** Use it for attributes that must be entered as a number.
+            3.  In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
+                * For  **Radio**  enter one or more text values. To separate vaules, press Enter after each value name.
+                * For **Checkbox** from the drop-down list select one of the values **True** or **False**.
+                *
+
+
 
 
 
