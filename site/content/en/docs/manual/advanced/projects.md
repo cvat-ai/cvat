@@ -55,7 +55,7 @@ There are two types of labels that you can add to the project at the same time:
 * Regular labels - all other types of labels
 
 The main steps of the procedure are common for both types of labels.
-On how to set up a sceleton lable, see [Setup sceleton](#setup-sceleton-extention),
+On how to set up a sceleton lable, see [setup sceleton](#setup-sceleton-extention),
 
 To create a new project, do the following:
 
@@ -98,7 +98,7 @@ To create a new project, do the following:
       1. Click the **Advanced configuration** drop-down.
       2. In the **Issue tracker** field, enter the URL of the issue tracker, that you use.
       3. In the **Source storage** field enter the source storage from which you import resources.
-      4. In the Target storage field enter the target storage to export resources.
+      4. In the **Target storage** field enter the target storage to export resources.
 7. Click:
       * In case you want to open a new project **Submit & open**
       * In case you want to create another project **Submit & continue**
