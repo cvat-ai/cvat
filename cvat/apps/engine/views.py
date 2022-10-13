@@ -863,81 +863,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.get_backup_dirname()
         return ""
 
-    def get_tus_upload_meta_file_name(self) -> str:
-        return "manifest.jsonl"
-
-    class _InvalidManifestError(Exception):
-        """
-        Indicates an invalid manifest file uploaded
-        """
-
-    def _read_tus_upload_meta_file(self, path: str) -> List[str]:
-        """
-        Reads an upload metainfo file and returns the declared list of files.
-        """
-
-        if is_dataset_manifest(path):
-            return list(ImageManifestManager(path, create_index=False).data)
-        elif not is_manifest(path):
-            raise self._InvalidManifestError(
-                "Can't recognize a manifest file in "
-                "the uploaded file '{}'".format(osp.basename(path))
-            )
-        return None
-
-    def _restore_uploaded_file_order(self,
-        uploaded_files: List[Dict[str, Any]], *, data_info: Dict[str, Any]
-    ) -> List[str]:
-        """
-        Restores file ordering for the "predefined" file sorting method of the task creation.
-
-        Without this, the file order is defined by os.listdir(), which returns files unordered.
-        Read more: https://github.com/opencv/cvat/issues/5061
-        """
-        # TODO: this is a weak solution, and it needs to be generalized to support other
-        # file sources (not only TUS and client_files). Check the attached issue for more info.
-
-        upload_dir = self. get_upload_dir()
-        uploaded_file_names = { osp.relpath(f['file'], upload_dir): f for f in uploaded_files }
-        upload_meta_file = self.get_tus_upload_meta_file_name()
-        if data_info.get('sorting_method') == models.SortingMethod.PREDEFINED.value:
-            if upload_meta_file not in uploaded_file_names:
-                raise FileNotFoundError(
-                    "Can't find upload metainfo file '{}' "
-                    "in the uploaded files. When the 'predefined'  sorting method is used, "
-                    "this file is required in the list of input files."
-                    .format(upload_meta_file)
-                )
-
-        expected_files = self._read_tus_upload_meta_file(osp.join(upload_dir, upload_meta_file))
-        if expected_files is None:
-            # The uploaded meta file was located, and it was correct, but may be
-            # related to another data type (e.g. video).
-            # Don't need to do anything in this step, the file should be processed later.
-            return uploaded_files
-
-        expected_files.append(upload_meta_file)
-
-        mismatching_files = list(uploaded_file_names.keys() ^ expected_files)
-        if mismatching_files:
-            DISPLAY_ENTRIES_COUNT = 5
-            mismatching_display = [
-                fn + (" (upload)" if fn in uploaded_file_names else " (manifest)")
-                for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
-            ]
-            remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
-            raise FileNotFoundError(
-                "Uploaded files do no match the upload metainfo file contents. "
-                "Please check the upload metainfo file and the list of uploaded files. "
-                "Mismatching files: {}{}"
-                .format(
-                    ", ".join(mismatching_display),
-                    f" (and {remaining_count} more). " if 0 < DISPLAY_ENTRIES_COUNT else ""
-                )
-            )
-
-        return [uploaded_file_names[fn] for fn in expected_files]
-
     # UploadMixin method
     def upload_finished(self, request):
         if self.action == 'annotations':
@@ -965,10 +890,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             uploaded_files = task_data.get_uploaded_files()
             uploaded_files.extend(data.get('client_files'))
-            try:
-                uploaded_files = self._restore_uploaded_file_order(uploaded_files, data_info=data)
-            except (FileNotFoundError, self._InvalidManifestError) as e:
-                return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
             serializer.validated_data.update({'client_files': uploaded_files})
 
             db_data = serializer.save()
