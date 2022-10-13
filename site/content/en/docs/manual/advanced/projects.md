@@ -9,33 +9,33 @@ description: 'Projects documentation provides details on how to create the CVAT 
 
 ## Projects page
 
-Project in CVAT is a top level container that helps you to keep CVAT tasks better organized.
+Project in CVAT is a top-level container that helps you to keep CVAT tasks better organized.
 
-Create a Project and specify settings like issue tracker, source storage, and target storage, bug tracker, segment size, image quality and other. Settings of the project will further propagate to the task(s) that you add to the project.
+Create a Project and specify settings like issue tracker, source storage, target storage, bug tracker, segment size, image quality, and others. Settings of the project will further propagate to the task(s) added to the project.
 
 To open the Project page:
 
-1. [Log in](https://app.cvat.ai/) to you CVAT account.
+1. [Log in](https://app.cvat.ai/) to your CVAT account.
 2. On the top navigation bar, click **Projects**.
 
-You will see the the following page:
+You will see the following page:
 
 
 ![CVAT Project main page](/images/сvat-project-main-page.png)
 
 
 1. **Projects** - navigation bar option to get to the Projects page.
-2. **Search box** - use it to find project by name or assignee.
+2. **Search box** - use it to find the project by name or assignee.
 3. Filters:
 
-      1. **Sort by** - use it to filter projects by selected property like assignee, update date, and others.
-      2.  **Quick filters** - use it to filter by assignet to you, owned by, and not complete projects.
-      3. **Filter** - use it for customizable search by adding you own filtering rules and groups.
+      1. **Sort by** - use it to filter projects by selected properties like assignee, update date, and others.
+      2.  **Quick filters** - use it to filter by assigned to you, owned by, and not complete projects.
+      3. **Filter** - use it for customizable search by adding your own filtering rules and groups.
 4. **+** - click it to open the drop-down menu:
 
-      1. **Create new project** - use it to create new project.
-      2.  **Create from backup** - use it to create project from backup.
-5. **Create a new one** - duplicates **Create new project** , use it to create new project.
+      1. **Create new project** - use it to create a new project.
+      2.  **Create from backup** - use it to create a project from the backup.
+5. **Create a new one** - duplicates **Create new project**, use it to create a new project.
 
 
 
