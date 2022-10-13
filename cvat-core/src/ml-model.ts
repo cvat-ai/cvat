@@ -29,6 +29,7 @@ interface SerializedModel {
     id: string;
     name: string;
     labels: string[];
+    version: number;
     attributes: Record<string, ModelAttribute>;
     framework: string;
     description: string;
@@ -48,35 +49,39 @@ export default class MLModel {
         this.serialized = { ...serialized };
     }
 
-    get id(): string {
+    public get id(): string {
         return this.serialized.id;
     }
 
-    get name(): string {
+    public get name(): string {
         return this.serialized.name;
     }
 
-    get labels(): string[] {
+    public get labels(): string[] {
         return Array.isArray(this.serialized.labels) ? [...this.serialized.labels] : [];
     }
 
-    get attributes(): Record<string, ModelAttribute> {
+    public get version(): number {
+        return this.serialized.version;
+    }
+
+    public get attributes(): Record<string, ModelAttribute> {
         return this.serialized.attributes || {};
     }
 
-    get framework(): string {
+    public get framework(): string {
         return this.serialized.framework;
     }
 
-    get description(): string {
+    public get description(): string {
         return this.serialized.description;
     }
 
-    get type(): ModelType {
+    public get type(): ModelType {
         return this.serialized.type;
     }
 
-    get params(): ModelParams {
+    public get params(): ModelParams {
         const result: ModelParams = {
             canvas: {
                 minPosVertices: this.serialized.min_pos_points,
@@ -92,7 +97,7 @@ export default class MLModel {
         return result;
     }
 
-    get tip(): ModelTip {
+    public get tip(): ModelTip {
         return {
             message: this.serialized.help_message,
             gif: this.serialized.animated_gif,
@@ -100,7 +105,7 @@ export default class MLModel {
     }
 
     // Used to set a callback when the tool is blocked in UI
-    set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
+    public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
         this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
     }
 }

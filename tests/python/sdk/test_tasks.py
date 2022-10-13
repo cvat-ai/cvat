@@ -126,6 +126,23 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+    def test_can_create_task_with_remote_data(self):
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": "test_task",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+            resource_type=ResourceType.SHARE,
+            resources=["images/image_1.jpg", "images/image_2.jpg"],
+            # make sure string fields are transferred correctly;
+            # see https://github.com/opencv/cvat/issues/4962
+            data_params={"sorting_method": "lexicographical"},
+        )
+
+        assert task.size == 2
+        assert task.get_frames_info()[0].name == "images/image_1.jpg"
+        assert self.stdout.getvalue() == ""
+
     def test_cant_create_task_with_no_data(self):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)

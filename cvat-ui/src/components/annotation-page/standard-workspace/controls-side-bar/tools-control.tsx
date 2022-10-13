@@ -75,6 +75,7 @@ interface DispatchToProps {
     switchNavigationBlocked(navigationBlocked: boolean): void;
 }
 
+const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
 const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
@@ -369,6 +370,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 // run server request
                 this.setState({ fetching: true });
                 const response = await core.lambda.call(jobInstance.taskId, interactor, data);
+
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response.points);
 
@@ -524,8 +526,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private setActiveInteractor = (value: string): void => {
         const { interactors } = this.props;
+        const [interactor] = interactors.filter((_interactor: Model) => _interactor.id === value);
+
+        if (interactor.version < MIN_SUPPORTED_INTERACTOR_VERSION) {
+            notification.warning({
+                message: 'Interactor API is outdated',
+                description: 'Probably, you should consider updating the serverless function',
+            });
+        }
+
         this.setState({
-            activeInteractor: interactors.filter((interactor: Model) => interactor.id === value)[0],
+            activeInteractor: interactor,
         });
     };
 
@@ -984,7 +995,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private renderInteractorBlock(): JSX.Element {
         const { interactors, canvasInstance, onInteractionStart } = this.props;
         const {
-            activeInteractor, activeLabelID, fetching, convertMasksToPolygons,
+            activeInteractor, activeLabelID, fetching,
         } = this.state;
 
         if (!interactors.length) {
@@ -1048,7 +1059,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             type='primary'
                             loading={fetching}
                             className='cvat-tools-interact-button'
-                            disabled={!activeInteractor || fetching}
+                            disabled={!activeInteractor ||
+                                fetching ||
+                                activeInteractor.version < MIN_SUPPORTED_INTERACTOR_VERSION}
                             onClick={() => {
                                 this.setState({ mode: 'interaction' });
 

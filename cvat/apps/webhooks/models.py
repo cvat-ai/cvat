@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-from http import HTTPStatus
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -89,9 +88,7 @@ class WebhookDelivery(models.Model):
     )
     event = models.CharField(max_length=64)
 
-    status_code = models.IntegerField(
-        choices=tuple((x.name, x.value) for x in HTTPStatus), null=True, default=None
-    )
+    status_code = models.PositiveIntegerField(null=True, default=None)
     redelivery = models.BooleanField(default=False)
 
     created_date = models.DateTimeField(auto_now_add=True)

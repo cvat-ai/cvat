@@ -58,6 +58,7 @@ import {
     Configuration,
     InteractionResult,
     InteractionData,
+    ColorBy,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -1022,7 +1023,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
-                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                if (shape && shape?.remember('_selectHandler')?.options?.rotationPoint) {
                     if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
                         const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
                         if (wrappingRect) {
@@ -1041,7 +1042,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
-                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                if (shape && shape?.remember('_selectHandler')?.options?.rotationPoint) {
                     if (this.drawnStates[this.activeElement.clientID]?.shapeType === 'skeleton') {
                         const wrappingRect = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
                         if (wrappingRect) {
@@ -1875,11 +1876,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { colorBy, shapeOpacity, outlinedBorders } = configuration;
         let shapeColor = '';
 
-        if (colorBy === 'Instance') {
+        if (colorBy === ColorBy.INSTANCE) {
             shapeColor = state.color;
-        } else if (colorBy === 'Group') {
+        } else if (colorBy === ColorBy.GROUP) {
             shapeColor = state.group.color;
-        } else if (colorBy === 'Label') {
+        } else if (colorBy === ColorBy.LABEL) {
             shapeColor = state.label.color;
         }
         const outlinedColor = parentShapeType === 'skeleton' ? 'black' : outlinedBorders || shapeColor;
@@ -2020,19 +2021,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if (drawnState.label.id !== state.label.id || drawnState.color !== state.color) {
+            if (
+                drawnState.label.id !== state.label.id ||
+                drawnState.group.id !== state.group.id ||
+                drawnState.group.color !== state.group.color ||
+                drawnState.color !== state.color
+            ) {
                 // update shape color if necessary
                 if (shape) {
-                    shape.attr({
-                        ...this.getShapeColorization(state),
-                    });
+                    if (state.shapeType === 'mask') {
+                        // if masks points were updated, draw from scratch
+                        this.deleteObjects([this.drawnStates[+clientID]]);
+                        this.addObjects([state]);
+                        continue;
+                    } else {
+                        shape.attr({ ...this.getShapeColorization(state) });
+                    }
                 }
-            }
-
-            if (
-                drawnState.group.id !== state.group.id || drawnState.group.color !== state.group.color
-            ) {
-                shape.attr({ ...this.getShapeColorization(state) });
             }
 
             this.drawnStates[state.clientID] = this.saveState(state);
@@ -2167,7 +2172,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[clientID];
 
-            shape.removeClass('cvat_canvas_shape_activated');
+            if (drawnState.shapeType === 'points') {
+                this.svgShapes[clientID]
+                    .remember('_selectHandler').nested
+                    .removeClass('cvat_canvas_shape_activated');
+            } else {
+                shape.removeClass('cvat_canvas_shape_activated');
+            }
             shape.removeClass('cvat_canvas_shape_draggable');
             if (drawnState.shapeType === 'mask') {
                 shape.attr('opacity', `${this.configuration.shapeOpacity}`);
@@ -2258,7 +2269,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        shape.addClass('cvat_canvas_shape_activated');
+        if (state.shapeType === 'points') {
+            this.svgShapes[clientID]
+                .remember('_selectHandler').nested
+                .addClass('cvat_canvas_shape_activated');
+        } else {
+            shape.addClass('cvat_canvas_shape_activated');
+        }
+
         if (state.shapeType === 'mask') {
             shape.attr('opacity', `${this.configuration.selectedShapeOpacity}`);
         } else {
@@ -2909,7 +2927,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 };
 
-                const mousemove = (e: MouseEvent) => {
+                const mousemove = (e: MouseEvent): void => {
                     if (this.mode === Mode.IDLE) {
                         // stop propagation to canvas where it calls another canvas.moved
                         // and does not allow to activate an element

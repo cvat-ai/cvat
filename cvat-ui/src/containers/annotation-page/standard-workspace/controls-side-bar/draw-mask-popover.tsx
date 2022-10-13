@@ -6,7 +6,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import DrawMaskPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-mask-popover';
-import { rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
+import { rememberObject } from 'actions/annotation-actions';
 import { CombinedState, ShapeType, ObjectType } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 

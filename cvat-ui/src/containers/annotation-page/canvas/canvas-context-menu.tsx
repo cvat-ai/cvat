@@ -7,7 +7,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { connect } from 'react-redux';
-import { CombinedState, ContextMenuType, ShapeType, Workspace } from 'reducers';
+import {
+    CombinedState, ContextMenuType, ShapeType, Workspace,
+} from 'reducers';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
 import { updateCanvasContextMenu } from 'actions/annotation-actions';

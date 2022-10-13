@@ -53,6 +53,12 @@ export enum CuboidDrawingMethod {
     CORNER_POINTS = 'By 4 points',
 }
 
+export enum ColorBy {
+    INSTANCE = 'Instance',
+    GROUP = 'Group',
+    LABEL = 'Label',
+}
+
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
@@ -66,7 +72,7 @@ export interface Configuration {
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
     CSSImageFilter?: string;
-    colorBy?: 'Instance' | 'Group' | 'Label';
+    colorBy?: ColorBy;
     selectedShapeOpacity?: number;
     shapeOpacity?: number;
     controlPointsSize?: number;
@@ -322,7 +328,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 intelligentPolygonCrop: false,
                 forceFrameUpdate: false,
                 CSSImageFilter: '',
-                colorBy: 'Label',
+                colorBy: ColorBy.LABEL,
                 selectedShapeOpacity: 0.5,
                 shapeOpacity: 0.2,
                 outlinedBorders: false,
@@ -786,7 +792,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (['string', 'boolean'].includes(typeof configuration.outlinedBorders)) {
             this.data.configuration.outlinedBorders = configuration.outlinedBorders;
         }
-        if (['Instance', 'Group', 'Label'].includes(configuration.colorBy)) {
+        if (Object.values(ColorBy).includes(configuration.colorBy)) {
             this.data.configuration.colorBy = configuration.colorBy;
         }
 

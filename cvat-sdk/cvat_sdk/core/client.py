@@ -98,6 +98,8 @@ class Client:
             schema = ""
             base_url = url
 
+        base_url = base_url.rstrip("/")
+
         if schema and schema not in cls.ALLOWED_SCHEMAS:
             raise InvalidHostException(
                 f"Invalid url schema '{schema}', expected "
@@ -141,7 +143,7 @@ class Client:
 
     def login(self, credentials: Tuple[str, str]) -> None:
         (auth, _) = self.api_client.auth_api.create_login(
-            models.LoginRequest(username=credentials[0], password=credentials[1])
+            models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
 
         assert "sessionid" in self.api_client.cookies
@@ -279,7 +281,7 @@ class CVAT_API_V2:
     """Build parameterized API URLs"""
 
     def __init__(self, host: str):
-        self.host = host
+        self.host = host.rstrip("/")
         self.base = self.host + "/api/"
         self.git = self.host + "/git/repository/"
 
@@ -308,7 +310,7 @@ class CVAT_API_V2:
 def make_client(
     host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[int, int]] = None
 ) -> Client:
-    url = host
+    url = host.rstrip("/")
     if port:
         url = f"{url}:{port}"
 

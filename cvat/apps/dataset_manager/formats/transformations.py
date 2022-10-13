@@ -47,7 +47,7 @@ class CVATRleToCOCORle(ItemTransform):
         offset = 0
         for rleCount in rle:
             rleCount = math.trunc(rleCount)
-            while (rleCount > 0):
+            while rleCount > 0:
                 x, y = offset % width, offset // width
                 mat[y + top][x + left] = value
                 rleCount -= 1
