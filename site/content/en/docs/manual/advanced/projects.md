@@ -28,8 +28,8 @@ You will see the the following page:
 2. **Search box**. Use it to find project by name or assignee.
 3. Filters:
 
-            1. **Sort by**. Use it to filter by selected property.
-            2.
+      1. **Sort by**. Use it to filter by selected property.
+      2.  f
 
 On this page you can create a new project, create a project from a backup, and also see the created projects.
 
