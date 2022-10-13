@@ -22,7 +22,7 @@ To open the Project page:
 You will see the following page:
 
 
-![CVAT Project main page](../../../images/сvat-project-main-page.png)
+![CVAT Project main page](../../../images/cvat-project-main-page.png)
 
 
 
