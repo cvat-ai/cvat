@@ -15,7 +15,7 @@ Create a Project and specify settings like: issue tracker, source storage, and t
 
 To open the Project page:
 
-1. Log in to you CVAT account.
+1. [Log in](https://app.cvat.ai/) to you CVAT account.
 2. On the top navigation bar, click **Projects**.
 
 You will see the the following page:
@@ -26,7 +26,8 @@ You will see the the following page:
 
 1. **Projects**. Navigation bar option to get to the Projects page.
 2. **Search box**. Use it to find project by name or assignee.
-3.
+3. Filters:
+   1.
 
 On this page you can create a new project, create a project from a backup, and also see the created projects.
 
