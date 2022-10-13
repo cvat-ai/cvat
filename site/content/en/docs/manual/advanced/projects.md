@@ -12,7 +12,7 @@ description: 'Projects documentation provides details on how to create the CVAT 
 CVAT project (hereinafter - project) is a top-level container that helps you to keep CVAT tasks of the same type better organized.
 Project usually corresponds to a dataset.
 
-Create a Project and specify settings like issue tracker, source storage, target storage, bug tracker, segment size, image quality, and others. Settings of the project will further propagate to the task(s) assosiated with it and assigned to annotet subset or a full data set.
+Use this page to create a Project with specified settings like issue tracker, source storage, target storage, bug tracker, segment size, image quality, and others. Settings of the project will further propagate to the task(s) assosiated with it and assigned to annotet subset or a full data set.
 
 To open the Project page:
 
@@ -23,7 +23,6 @@ You will see the following page:
 
 
 ![CVAT Project main page](../../../images/cvat-project-main-page.png)
-
 
 
 
@@ -50,6 +49,15 @@ To create a new project, do the following:
 1. In the top right part of the screen click ![Plus](../../../images/plus.png), and from the drop-down menu select **Create new project**.
 
      ![Create new project window](../../../images/create_new_project.png)
+
+2. In the **Name** field enter the name of your project.
+3. Click **Add label**, and fill in the following fields:
+
+      1. **Label name**. Mandatory field. Enter the name of the annotation label.
+      2. **Change colour of the label** (![change colour of the label](../../../images/color-field.png)) Optional. Click the icon and select colour from the colour palette.
+      3. **Add attribute**. Optional. Opens a menu, where you can set attributes:
+
+            1. lalal
 
 
 
