@@ -27,6 +27,7 @@ You will see the the following page:
 1. **Projects**. Navigation bar option to get to the Projects page.
 2. **Search box**. Use it to find project by name or assignee.
 3. Filters:
+
             1. **Sort by**. Use it to filter by selected property.
             2.
 
