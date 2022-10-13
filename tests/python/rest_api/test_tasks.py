@@ -132,7 +132,7 @@ class TestGetTasks:
         )
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
-    def test_org_task_assigneed_to_see_task(
+    def test_org_task_assignee_to_see_task(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)

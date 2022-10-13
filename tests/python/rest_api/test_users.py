@@ -16,6 +16,18 @@ from shared.utils.config import make_api_client
 
 @pytest.mark.usefixtures("dontchangedb")
 class TestGetUsers:
+
+    def _case_self_id(self, api_client, **kwargs):
+        (_, response) = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
+        return response
+
+    def _case_none_id(self, api_client, **kwargs):
+        return get_paginated_collection(api_client.users_api.list_endpoint, return_json=True, **kwargs)
+
+    def _case_other_id(self, api_client, id_, **kwargs):
+        (_, response) = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
+        return response
+
     def _test_can_see(
         self,
         user,
@@ -26,40 +38,37 @@ class TestGetUsers:
         **kwargs,
     ):
         with make_api_client(user) as api_client:
-            # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
+                response = self._case_self_id(api_client, **kwargs)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
             elif id_ is None:
-                response_data = get_paginated_collection(
-                    api_client.users_api.list_endpoint, return_json=True, **kwargs
-                )
+                response_data = self._case_none_id(api_client, **kwargs)
             else:
-                (_, response) = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
+                response = self._case_other_id(api_client, id_, **kwargs)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
-
+        # print(response_data[0])
         assert DeepDiff(data, response_data, ignore_order=True, exclude_paths=exclude_paths) == {}
 
     def _test_cannot_see(
         self, user, id_: typing.Union[typing.Literal["self"], int, None] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(
-                    **kwargs, _parse_response=False, _check_status=False
-                )
+                return self._case_self_id(api_client, **kwargs, _check_status=False)
             elif id_ is None:
                 (_, response) = api_client.users_api.list(
                     **kwargs, _parse_response=False, _check_status=False
                 )
             else:
-                (_, response) = api_client.users_api.retrieve(
-                    id_, **kwargs, _parse_response=False, _check_status=False
-                )
+                return self._case_other_id(api_client, id_, **kwargs, _check_status=False)
             assert response.status == HTTPStatus.FORBIDDEN
+
+    def _test_get_user_info(self, user):
+        response = self._case_self_id(make_api_client(user))
+        response_data = json.loads(response.data)
+        assert (response_data['username'] == str(user)) & (len(response_data.keys()) == 12)
 
     def test_admin_can_see_all_others(self, users):
         exclude_paths = [f"root[{i}]['last_login']" for i in range(len(users))]
@@ -91,3 +100,7 @@ class TestGetUsers:
 
         for member in org_members:
             self._test_can_see(member, data, org="org1")
+
+    def test_every_user_gets_his_info(self, users):
+        for user in users:
+            self._test_get_user_info(user["username"])
