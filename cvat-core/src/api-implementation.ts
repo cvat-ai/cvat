@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +7,7 @@ const config = require('./config');
 
 (() => {
     const PluginRegistry = require('./plugins').default;
-    const serverProxy = require('./server-proxy');
+    const serverProxy = require('./server-proxy').default;
     const lambdaManager = require('./lambda-manager');
     const {
         isBoolean,
@@ -17,13 +18,14 @@ const config = require('./config');
         checkObjectType,
     } = require('./common');
 
-    const User = require('./user');
+    const User = require('./user').default;
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
     const { Task, Job } = require('./session');
-    const { Project } = require('./project');
-    const { CloudStorage } = require('./cloud-storage');
-    const Organization = require('./organization');
+    const Project = require('./project').default;
+    const CloudStorage = require('./cloud-storage').default;
+    const Organization = require('./organization').default;
+    const Webhook = require('./webhook').default;
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -284,6 +286,39 @@ const config = require('./config');
 
         cvat.organizations.deactivate.implementation = async () => {
             config.organizationID = null;
+        };
+
+        cvat.webhooks.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                page: isInteger,
+                id: isInteger,
+                projectId: isInteger,
+                filter: isString,
+                search: isString,
+                sort: isString,
+            });
+
+            checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['page', 'id', 'filter', 'search', 'sort'].includes(key)) {
+                    searchParams[key] = filter[key];
+                }
+            }
+
+            if (filter.projectId) {
+                if (searchParams.filter) {
+                    const parsed = JSON.parse(searchParams.filter);
+                    searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
+                } else {
+                    searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
+                }
+            }
+
+            const webhooksData = await serverProxy.webhooks.get(searchParams);
+            const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
+            webhooks.count = webhooksData.count;
+            return webhooks;
         };
 
         return cvat;

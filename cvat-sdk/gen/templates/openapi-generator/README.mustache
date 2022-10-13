@@ -16,36 +16,21 @@ For more information, please visit [{{{infoUrl}}}]({{{infoUrl}}})
 {{/infoUrl}}
 
 ## Installation & Usage
-### pip install
 
-If the python package is hosted on a repository, you can install directly using:
-
-```sh
-pip install git+https://{{gitHost}}/{{{gitUserId}}}/{{{gitRepoId}}}.git
-```
-(you may need to run `pip` with root permission: `sudo pip install git+https://{{gitHost}}/{{{gitUserId}}}/{{{gitRepoId}}}.git`)
-
-Then import the package:
-```python
-import {{{packageName}}}
-```
-
-### Setuptools
-
-Install via [Setuptools](http://pypi.python.org/pypi/setuptools).
+To install a prebuilt package, run the following command in the terminal:
 
 ```sh
-python setup.py install --user
+pip install cvat-sdk
 ```
-(or `sudo python setup.py install` to install the package for all users)
 
-Then import the package:
+To install from the local directory, follow [the developer guide](https://opencv.github.io/cvat/docs/api_sdk/sdk/developer_guide).
+
+After installation you can import the package:
+
 ```python
-import {{{packageName}}}
+import cvat_sdk
 ```
 
 ## Getting Started
-
-Please follow the [installation procedure](#installation--usage) and then run the following:
 
 {{> README_common }}

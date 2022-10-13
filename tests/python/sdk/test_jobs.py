@@ -105,7 +105,8 @@ class TestJobUsecases:
 
         task_id = fxt_new_task.id
         path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
-        job = self.client.jobs.retrieve(task_id)
+        job_id = fxt_new_task.get_jobs()[0].id
+        job = self.client.jobs.retrieve(job_id)
         job.export_dataset(
             format_name="CVAT for images 1.1",
             filename=path,

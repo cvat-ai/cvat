@@ -1,9 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import { Webhook } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -51,11 +53,7 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
-        backups: {
-            [projectId: number]: boolean;
-        }
     };
-    restoring: boolean;
 }
 
 export interface TasksQuery {
@@ -88,7 +86,6 @@ export interface JobsState {
 }
 
 export interface TasksState {
-    importing: boolean;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
@@ -101,20 +98,8 @@ export interface TasksState {
     count: number;
     current: Task[];
     activities: {
-        loads: {
-            // only one loading simultaneously
-            [tid: number]: string; // loader name
-        };
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
-        };
-        creates: {
-            taskId: number | null;
-            status: string;
-            error: string;
-        };
-        backups: {
-            [tid: number]: boolean;
         };
         jobUpdates: {
             [jid: number]: boolean,
@@ -123,22 +108,83 @@ export interface TasksState {
 }
 
 export interface ExportState {
-    tasks: {
-        [tid: number]: string[];
-    };
     projects: {
-        [pid: number]: string[];
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+        backup: {
+            current: {
+                [id: number]: boolean;
+            };
+            modalInstance: any | null;
+        };
     };
-    instance: any;
-    modalVisible: boolean;
+    tasks: {
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+        backup: {
+            current: {
+                [id: number]: boolean;
+            };
+            modalInstance: any | null;
+        };
+    };
+    jobs: {
+        dataset: {
+            current: {
+                [id: number]: string[];
+            };
+            modalInstance: any | null;
+        };
+    };
+    instanceType: 'project' | 'task' | 'job' | null;
 }
 
 export interface ImportState {
-    importingId: number | null;
-    progress: number;
-    status: string;
-    instance: any;
-    modalVisible: boolean;
+    projects: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: {
+                    format: string;
+                    progress: number;
+                    status: string;
+                };
+            };
+        };
+        backup: {
+            modalVisible: boolean;
+            importing: boolean;
+        }
+    };
+    tasks: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: string;
+            };
+        };
+        backup: {
+            modalVisible: boolean;
+            importing: boolean;
+        }
+    };
+    jobs: {
+        dataset: {
+            modalInstance: any | null;
+            current: {
+                [id: number]: string;
+            };
+        };
+    };
+    instanceType: 'project' | 'task' | 'job' | null;
 }
 
 export interface FormatsState {
@@ -246,11 +292,13 @@ export interface ShareFileInfo {
     // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
+    mime_type: string;
 }
 
 export interface ShareItem {
     name: string;
     type: 'DIR' | 'REG';
+    mime_type: string;
     children: ShareItem[];
 }
 
@@ -438,10 +486,12 @@ export interface NotificationsState {
         exporting: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
+            backup: null | ErrorState;
         };
         importing: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
+            backup: null | ErrorState;
         };
         cloudStorages: {
             creating: null | ErrorState;
@@ -459,6 +509,12 @@ export interface NotificationsState {
             inviting: null | ErrorState;
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
+        };
+        webhooks: {
+            fetching: null | ErrorState;
+            creating: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
         };
     };
     messages: {
@@ -478,7 +534,17 @@ export interface NotificationsState {
         };
         projects: {
             restoringDone: string;
-        }
+        };
+        exporting: {
+            dataset: string;
+            annotation: string;
+            backup: string;
+        };
+        importing: {
+            dataset: string;
+            annotation: string;
+            backup: string;
+        };
     };
 }
 
@@ -740,6 +806,11 @@ export interface ShortcutsState {
     normalizedKeyMap: Record<string, string>;
 }
 
+export enum StorageLocation {
+    LOCAL = 'local',
+    CLOUD_STORAGE = 'cloud_storage',
+}
+
 export enum ReviewStatus {
     ACCEPTED = 'accepted',
     REJECTED = 'rejected',
@@ -772,6 +843,22 @@ export interface OrganizationState {
     updatingMember: boolean;
 }
 
+export interface WebhooksQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+    projectId: number | null;
+}
+
+export interface WebhooksState {
+    current: Webhook[],
+    totalCount: number;
+    fetching: boolean;
+    query: WebhooksQuery;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -792,6 +879,7 @@ export interface CombinedState {
     import: ImportState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
+    webhooks: WebhooksState;
 }
 
 export enum DimensionType {

@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.41.5",
+  "version": "1.42.2",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -35,6 +35,9 @@
     "@types/resize-observer-browser": "^0.1.6",
     "antd": "~4.18.9",
     "copy-to-clipboard": "^3.3.1",
+    "cvat-canvas": "link:./../cvat-canvas",
+    "cvat-canvas3d": "link:./../cvat-canvas3d",
+    "cvat-core": "link:./../cvat-core",
     "dotenv-webpack": "^7.1.0",
     "error-stack-parser": "^2.0.6",
     "lodash": "^4.17.21",

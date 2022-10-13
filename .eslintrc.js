@@ -17,7 +17,7 @@ module.exports = {
         '.eslintrc.js',
         'lint-staged.config.js',
     ],
-    plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'eslint-plugin-header', 'import'],
+    plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'import'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
         'airbnb-base', 'plugin:import/errors', 'plugin:import/warnings',

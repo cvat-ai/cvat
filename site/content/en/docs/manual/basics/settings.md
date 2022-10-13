@@ -1,7 +1,7 @@
 ---
 title: 'Settings'
 linkTitle: 'Settings'
-weight: 13
+weight: 15
 ---
 To open the settings open the user menu in the header and select the settings item or press `F2`.
 
