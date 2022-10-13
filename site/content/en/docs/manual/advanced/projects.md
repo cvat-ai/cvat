@@ -21,11 +21,12 @@ To open the Project page:
 You will see the the following page:
 
 
-![CVAT Project main page](site/content/en/images/vat-project-main-page.png)
+![CVAT Project main page](/images/сvat-project-main-page.png)
 
-## Elements of the Projects page
 
-**Search bar**
+1. **Projects**. Navigation bar option to get to the Projects page.
+2. **Search box**. Use it to find project by name or assignee.
+3.
 
 On this page you can create a new project, create a project from a backup, and also see the created projects.
 
