@@ -83,7 +83,7 @@ jobs:
         run: |
           docker images
           docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
-            --entrypoint /bin/bash -u root cvat/server \
+            --entrypoint /bin/bash -u root cvat/server:dev \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
           cd cvat-sdk/
@@ -94,7 +94,7 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Running REST API tests
+      - name: Running SDK tests
         run: |
           pip3 install --user cvat-sdk/
           pip3 install --user -r tests/python/requirements.txt
