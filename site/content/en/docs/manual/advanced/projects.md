@@ -53,7 +53,7 @@ To create a new project, do the following:
 
      ![Create new project window](../../../images/create_new_project.png)
 
-2. Go to **Constructor** tab.
+2. Go to the **Constructor** tab.
 3. In the **Name** field enter the name of your project.
 4. Click **Add label** and fill in the following fields:
 
@@ -64,11 +64,11 @@ To create a new project, do the following:
             1. **Name** Mandatory field. Enter the name of the attribute.
             2. From the drop-down list, select an HTML element, representing the attribute:
 
-                * **Select** is placeholder. Cannot be used as an attribute.
+                * **Select** is a placeholder and cannot be used as an attribute.
                 * **Radio** Use it to add radio button, to select only one option from several.
                 * **Checkbox** Use it to add checkbox for multiple options choise.
-                * **Text** Use it for attributes that must be entered as a text.
-                * **Number** Use it for attributes that must be entered as a number.
+                * **Text** Use it for text attributes.
+                * **Number** Use it for numeric attributes.
             3.  In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
                 * For  **Radio**  enter one or more text values. To separate vaules, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
                 * For **Checkbox** from the drop-down list select one of the values **True** or **False**.
