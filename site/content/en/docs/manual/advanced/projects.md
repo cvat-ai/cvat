@@ -10,9 +10,12 @@ description: 'Projects documentation provides details on how to create the CVAT 
 ## Projects page
 
 CVAT project (hereinafter - project) is a top-level container that helps you to keep CVAT tasks of the same type better organized.
+
 A project usually corresponds to a dataset.
 
-Use this page to create a Project with specified settings like issue tracker, source storage, target storage, bug tracker, segment size, image quality, and others. Settings of the project will further propagate to the task(s) associated with it.
+Use this page to create a Project with specified settings like issue tracker, source storage, target storage, bug tracker, segment size, image quality, and others.
+
+Settings of the project will further propagate to the task(s) associated with it.
 
 To open the Project page:
 
@@ -31,13 +34,13 @@ You will see the following page:
 3. Filters:
 
       1. **Sort by** Use it to filter projects by selected properties like assignee, update date, and others.
-      2.  **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
+      2. **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
       3. **Filter** Use it for customizable searches by adding your own filtering rules and groups.
       4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
 4. ![Plus](../../../images/plus.png) . Click it to open the drop-down menu:
 
       1. **Create new project** Use it to create a new project.
-      2.  **Create from backup** Use it to create a project from the backup.
+      2. **Create from backup** Use it to create a project from the backup.
 5. **Create a new one** duplicates **Create new project**, use it to create a new project.
 6. Project pane, where the created project will appear.
 
@@ -51,8 +54,8 @@ You will see the following page:
 
 There are two types of labels that you can add to the project at the same time:
 
-* Skeleton labels - where you must add "skeleton" to the uploaded picture.
-* Regular labels - all other types of labels
+- Skeleton labels - where you must add "skeleton" to the uploaded picture.
+- Regular labels - all other types of labels
 
 The main steps of the procedure are common for both types of labels.
 On how to set up a sceleton lable, see [setup sceleton](#setup-sceleton-extention),
@@ -61,7 +64,7 @@ To create a new project, do the following:
 
 1. In the top right part of the screen click ![Plus](../../../images/plus.png), and from the drop-down menu select **Create new project**.
 
-     ![Create new project window](../../../images/create_new_project.png)
+      ![Create new project window](../../../images/create_new_project.png)
 
 2. Go to the **Constructor** tab.
 3. In the **Name** field enter the name of your project.
@@ -74,16 +77,16 @@ To create a new project, do the following:
             1. **Name** Mandatory field. Enter the name of the attribute.
             2. From the drop-down list, select an HTML element, representing the attribute:
 
-                * **Select** is a placeholder and cannot be used as an attribute.
-                * **Radio** Use it to add a radio button, to select only one option from several.
-                * **Checkbox** Use it to add a checkbox for multiple options choice.
-                * **Text** Use it for text attributes.
-                * **Number** Use it for numeric attributes.
-            3.  In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
-                * For  **Radio**  enter one or more text values. To separate values, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
-                * For **Checkbox** from the drop-down list select one of the values **True** or **False**.
-                * For **Text** enter the default value in a text form. You can specify only one default value.
-                * For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
+                - **Select** is a placeholder and cannot be used as an attribute.
+                - **Radio** Use it to add a radio button, to select only one option from several.
+                - **Checkbox** Use it to add a checkbox for multiple options choice.
+                - **Text** Use it for text attributes.
+                - **Number** Use it for numeric attributes.
+            3. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
+                - For **Radio** enter one or more text values. To separate values, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
+                - For **Checkbox** from the drop-down list select one of the values **True** or **False**.
+                - For **Text** enter the default value in a text form. You can specify only one default value.
+                - For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
             4. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
             5. If you want to remove the attribute, click ![Garbage bin](../../../images/garbage-bin.png)
             > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
@@ -100,8 +103,8 @@ To create a new project, do the following:
       3. In the **Source storage** field enter the source storage from which you import resources.
       4. In the **Target storage** field enter the target storage to export resources.
 7. Click:
-      * In case you want to open a new project **Submit & open**
-      * In case you want to create another project **Submit & continue**
+      - In case you want to open a new project **Submit & open**
+      - In case you want to create another project **Submit & continue**
 
 The project will appear on the project pane.
 
