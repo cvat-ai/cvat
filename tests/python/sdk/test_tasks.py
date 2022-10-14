@@ -14,7 +14,6 @@ from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
-from shared.utils.config import USER_PASS
 from shared.utils.helpers import generate_image_files
 
 from .util import make_pbar

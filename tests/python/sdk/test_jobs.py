@@ -14,8 +14,6 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
-from shared.utils.config import USER_PASS
-
 from .util import make_pbar
 
 
