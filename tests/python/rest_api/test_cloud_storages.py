@@ -32,11 +32,7 @@ class TestGetCloudStorage:
     @pytest.mark.parametrize("storage_id", [1])
     @pytest.mark.parametrize(
         "group, is_owner, is_allow",
-        [
-            ("admin", False, True),
-            ("business", False, False),
-            ("user", True, True),
-        ],
+        [("admin", False, True), ("business", False, False), ("user", True, True)],
     )
     def test_sandbox_user_get_coud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
@@ -64,11 +60,7 @@ class TestGetCloudStorage:
     @pytest.mark.parametrize("storage_id", [2])
     @pytest.mark.parametrize(
         "role, is_owner, is_allow",
-        [
-            ("worker", True, True),
-            ("supervisor", False, True),
-            ("worker", False, False),
-        ],
+        [("worker", True, True), ("supervisor", False, True), ("worker", False, False)],
     )
     def test_org_user_get_coud_storage(
         self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages
@@ -151,12 +143,7 @@ class TestPostCloudStorage:
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize(
         "role, is_allow",
-        [
-            ("owner", True),
-            ("maintainer", True),
-            ("worker", False),
-            ("supervisor", False),
-        ],
+        [("owner", True), ("maintainer", True), ("worker", False), ("supervisor", False)],
     )
     def test_org_user_create_coud_storage(self, org_id, role, is_allow, find_users):
         username = find_users(role=role, org=org_id)[0]["username"]
@@ -172,18 +159,12 @@ class TestPatchCloudStorage:
     _SPEC = {
         "display_name": "New display name",
         "description": "New description",
-        "manifests": [
-            "manifest_1.jsonl",
-            "manifest_2.jsonl",
-        ],
+        "manifests": ["manifest_1.jsonl", "manifest_2.jsonl"],
     }
     _PRIVATE_BUCKET_SPEC = {
         "display_name": "New display name",
         "description": "New description",
-        "manifests": [
-            "sub/manifest_1.jsonl",
-            "sub/manifest_2.jsonl",
-        ],
+        "manifests": ["sub/manifest_1.jsonl", "sub/manifest_2.jsonl"],
     }
     _EXCLUDE_PATHS = [
         f"root['{extra_field}']"
@@ -222,11 +203,7 @@ class TestPatchCloudStorage:
     @pytest.mark.parametrize("storage_id", [1])
     @pytest.mark.parametrize(
         "group, is_owner, is_allow",
-        [
-            ("admin", False, True),
-            ("business", False, False),
-            ("worker", True, True),
-        ],
+        [("admin", False, True), ("business", False, False), ("worker", True, True)],
     )
     def test_sandbox_user_update_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
@@ -254,11 +231,7 @@ class TestPatchCloudStorage:
     @pytest.mark.parametrize("storage_id", [2])
     @pytest.mark.parametrize(
         "role, is_owner, is_allow",
-        [
-            ("worker", True, True),
-            ("maintainer", False, True),
-            ("supervisor", False, False),
-        ],
+        [("worker", True, True), ("maintainer", False, True), ("supervisor", False, False)],
     )
     def test_org_user_update_cloud_storage(
         self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages

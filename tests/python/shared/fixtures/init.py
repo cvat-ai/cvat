@@ -195,18 +195,14 @@ def wait_for_server():
 
 def docker_restore_data_volumes():
     docker_cp(
-        osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"),
-        f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
+        osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"), f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2"
     )
     docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
 def kube_restore_data_volumes():
     pod_name = _kube_get_server_pod_name()
-    kube_cp(
-        osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"),
-        f"{pod_name}:/tmp/cvat_data.tar.bz2",
-    )
+    kube_cp(osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"), f"{pod_name}:/tmp/cvat_data.tar.bz2")
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 

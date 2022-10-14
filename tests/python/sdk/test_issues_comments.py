@@ -12,6 +12,7 @@ from cvat_sdk import Client
 from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
+
 class TestIssuesUsecases:
     @pytest.fixture(autouse=True)
     def setup(
@@ -36,10 +37,7 @@ class TestIssuesUsecases:
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file: Path):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task", "labels": [{"name": "car"}, {"name": "person"}]},
             resource_type=ResourceType.LOCAL,
             resources=[str(fxt_image_file)],
             data_params={"image_quality": 80},
@@ -50,10 +48,7 @@ class TestIssuesUsecases:
     def test_can_retrieve_issue(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
 
@@ -81,10 +76,7 @@ class TestIssuesUsecases:
     def test_can_list_comments(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
         comment = self.client.comments.create(models.CommentWriteRequest(issue.id, message="hi!"))
@@ -99,10 +91,7 @@ class TestIssuesUsecases:
     def test_can_modify_issue(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
 
@@ -116,10 +105,7 @@ class TestIssuesUsecases:
     def test_can_remove_issue(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
 
@@ -156,10 +142,7 @@ class TestCommentsUsecases:
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file: Path):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task", "labels": [{"name": "car"}, {"name": "person"}]},
             resource_type=ResourceType.LOCAL,
             resources=[str(fxt_image_file)],
             data_params={"image_quality": 80},
@@ -170,10 +153,7 @@ class TestCommentsUsecases:
     def test_can_retrieve_comment(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
         comment = self.client.comments.create(models.CommentWriteRequest(issue.id, message="hi!"))
@@ -186,10 +166,7 @@ class TestCommentsUsecases:
     def test_can_list_comments(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
         comment = self.client.comments.create(models.CommentWriteRequest(issue.id, message="hi!"))
@@ -202,10 +179,7 @@ class TestCommentsUsecases:
     def test_can_modify_comment(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
         comment = self.client.comments.create(models.CommentWriteRequest(issue.id, message="hi!"))
@@ -220,10 +194,7 @@ class TestCommentsUsecases:
     def test_can_remove_comment(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
         comment = self.client.comments.create(models.CommentWriteRequest(issue.id, message="hi!"))

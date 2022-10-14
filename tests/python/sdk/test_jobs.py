@@ -41,10 +41,7 @@ class TestJobUsecases:
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file: Path):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task", "labels": [{"name": "car"}, {"name": "person"}]},
             resource_type=ResourceType.LOCAL,
             resources=[str(fxt_image_file)],
             data_params={"image_quality": 80},
@@ -62,8 +59,8 @@ class TestJobUsecases:
                         label_id=fxt_new_task.labels[0].id,
                         type="rectangle",
                         points=[1, 1, 2, 2],
-                    ),
-                ],
+                    )
+                ]
             )
         )
 
@@ -176,10 +173,7 @@ class TestJobUsecases:
     def test_can_get_issues(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
-                frame=0,
-                position=[2.0, 4.0],
-                job=fxt_new_task.get_jobs()[0].id,
-                message="hello",
+                frame=0, position=[2.0, 4.0], job=fxt_new_task.get_jobs()[0].id, message="hello"
             )
         )
 
@@ -198,7 +192,7 @@ class TestJobUsecases:
     def test_can_set_annotations(self, fxt_new_task: Task):
         fxt_new_task.get_jobs()[0].set_annotations(
             models.LabeledDataRequest(
-                tags=[models.LabeledImageRequest(frame=0, label_id=fxt_new_task.labels[0].id)],
+                tags=[models.LabeledImageRequest(frame=0, label_id=fxt_new_task.labels[0].id)]
             )
         )
 
@@ -232,7 +226,7 @@ class TestJobUsecases:
                         type="rectangle",
                         points=[2, 2, 3, 3],
                     ),
-                ],
+                ]
             )
         )
         anns = fxt_new_task.get_jobs()[0].get_annotations()
@@ -254,7 +248,7 @@ class TestJobUsecases:
                         label_id=fxt_task_with_shapes.labels[0].id,
                         type="rectangle",
                         points=[0, 1, 2, 3],
-                    ),
+                    )
                 ],
                 tracks=[
                     models.LabeledTrackRequest(
@@ -263,7 +257,7 @@ class TestJobUsecases:
                         shapes=[
                             models.TrackedShapeRequest(
                                 frame=0, type="polygon", points=[3, 2, 2, 3, 3, 4]
-                            ),
+                            )
                         ],
                     )
                 ],

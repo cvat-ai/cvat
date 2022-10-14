@@ -18,9 +18,7 @@ def generate_coco_json(filename: str, img_info: Tuple[str, int, int]):
     image_filename, image_width, image_height = img_info
 
     content = generate_coco_anno(
-        osp.basename(image_filename),
-        image_width=image_width,
-        image_height=image_height,
+        osp.basename(image_filename), image_width=image_width, image_height=image_height
     )
     with open(filename, "w") as coco:
         coco.write(content)
@@ -76,9 +74,5 @@ def generate_coco_anno(image_path: str, image_width: int, image_height: int) -> 
     }
     """
         )
-        % {
-            "image_path": image_path,
-            "image_height": image_height,
-            "image_width": image_width,
-        }
+        % {"image_path": image_path, "image_height": image_height, "image_width": image_width}
     )

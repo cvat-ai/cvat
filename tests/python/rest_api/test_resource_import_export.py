@@ -148,20 +148,9 @@ class TestSaveResource:
         ],
     )
     def test_save_resource_to_cloud_storage_with_default_location(
-        self,
-        obj_id,
-        obj,
-        resource,
-        projects,
-        tasks,
-        jobs,
-        cloud_storages,
+        self, obj_id, obj, resource, projects, tasks, jobs, cloud_storages
     ):
-        objects = {
-            "projects": projects,
-            "tasks": tasks,
-            "jobs": jobs,
-        }
+        objects = {"projects": projects, "tasks": tasks, "jobs": jobs}
         if obj in ("projects", "tasks"):
             cloud_storage_id = objects[obj][obj_id]["target_storage"]["cloud_storage_id"]
         else:
@@ -257,27 +246,12 @@ class TestImportResource:
 
     @pytest.mark.parametrize(
         "obj_id, obj, resource",
-        [
-            (2, "projects", "dataset"),
-            (11, "tasks", "annotations"),
-            (16, "jobs", "annotations"),
-        ],
+        [(2, "projects", "dataset"), (11, "tasks", "annotations"), (16, "jobs", "annotations")],
     )
     def test_import_resource_from_cloud_storage_with_default_location(
-        self,
-        obj_id,
-        obj,
-        resource,
-        projects,
-        tasks,
-        jobs,
-        cloud_storages,
+        self, obj_id, obj, resource, projects, tasks, jobs, cloud_storages
     ):
-        objects = {
-            "projects": projects,
-            "tasks": tasks,
-            "jobs": jobs,
-        }
+        objects = {"projects": projects, "tasks": tasks, "jobs": jobs}
         if obj in ("projects", "tasks"):
             cloud_storage_id = objects[obj][obj_id]["source_storage"]["cloud_storage_id"]
         else:

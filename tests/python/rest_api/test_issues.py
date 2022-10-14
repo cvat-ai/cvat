@@ -69,12 +69,7 @@ class TestPostIssues:
             "comments": [],
             "job": jid,
             "frame": job["start_frame"],
-            "position": [
-                0.0,
-                0.0,
-                1.0,
-                1.0,
-            ],
+            "position": [0.0, 0.0, 1.0, 1.0],
             "resolved": False,
             "message": "lorem ipsum",
         }
@@ -107,12 +102,7 @@ class TestPostIssues:
             "comments": [],
             "job": jid,
             "frame": job["start_frame"],
-            "position": [
-                0.0,
-                0.0,
-                1.0,
-                1.0,
-            ],
+            "position": [0.0, 0.0, 1.0, 1.0],
             "resolved": False,
             "message": "lorem ipsum",
         }
@@ -247,10 +237,7 @@ class TestDeleteIssues:
     def _test_check_response(self, user, issue_id, expect_success, **kwargs):
         with make_api_client(user) as client:
             (_, response) = client.issues_api.destroy(
-                issue_id,
-                **kwargs,
-                _parse_response=False,
-                _check_status=False,
+                issue_id, **kwargs, _parse_response=False, _check_status=False
             )
 
         if expect_success:

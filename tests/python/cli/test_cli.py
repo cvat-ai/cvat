@@ -74,10 +74,7 @@ class TestCLI:
         files = generate_images(str(self.tmp_path), 5)
 
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task", "labels": [{"name": "car"}, {"name": "person"}]},
             resource_type=ResourceType.LOCAL,
             resources=files,
         )
@@ -166,14 +163,7 @@ class TestCLI:
     def test_can_download_task_frames(self, fxt_new_task: Task, quality: str):
         out_dir = str(self.tmp_path / "downloads")
         self.run_cli(
-            "frames",
-            str(fxt_new_task.id),
-            "0",
-            "1",
-            "--outdir",
-            out_dir,
-            "--quality",
-            quality,
+            "frames", str(fxt_new_task.id), "0", "1", "--outdir", out_dir, "--quality", quality
         )
 
         assert set(os.listdir(out_dir)) == {

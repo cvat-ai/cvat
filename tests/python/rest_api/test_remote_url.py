@@ -12,10 +12,7 @@ from shared.utils.config import get_method, post_method
 
 
 def _post_task_remote_data(username, task_id, resources):
-    data = {
-        "remote_files": resources,
-        "image_quality": 30,
-    }
+    data = {"remote_files": resources, "image_quality": 30}
 
     return post_method(username, f"tasks/{task_id}/data", data)
 

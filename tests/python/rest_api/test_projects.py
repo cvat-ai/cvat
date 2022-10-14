@@ -334,7 +334,7 @@ class TestPostProjects:
         worker = next(u for u in workers if u["org"])
 
         spec = {
-            "name": f'test: worker {worker["username"]} creating a project for his organization',
+            "name": f'test: worker {worker["username"]} creating a project for his organization'
         }
         self._test_create_project_403(worker["username"], spec, org_id=worker["org"])
 
@@ -345,9 +345,7 @@ class TestPostProjects:
 
         user = next(u for u in privileged_users if u["org"])
 
-        spec = {
-            "name": f'test: worker {user["username"]} creating a project for his organization',
-        }
+        spec = {"name": f'test: worker {user["username"]} creating a project for his organization'}
         self._test_create_project_201(user["username"], spec, org_id=user["org"])
 
 
@@ -385,9 +383,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "dataset_file": tmp_file,
-        }
+        import_data = {"dataset_file": tmp_file}
 
         self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
@@ -398,9 +394,7 @@ class TestImportExportDatasetProject:
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
+        import_data = {"dataset_file": tmp_file}
 
         self._test_import_project(admin_user, project_id, "COCO Keypoints 1.0", import_data)
 
@@ -411,9 +405,7 @@ class TestImportExportDatasetProject:
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
+        import_data = {"dataset_file": tmp_file}
 
         self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
@@ -424,9 +416,7 @@ class TestImportExportDatasetProject:
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
-        import_data = {
-            "dataset_file": tmp_file,
-        }
+        import_data = {"dataset_file": tmp_file}
 
         self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
@@ -448,9 +438,7 @@ class TestImportExportDatasetProject:
         tmp_file = io.BytesIO(response.content)
         tmp_file.name = "dataset.zip"
 
-        import_data = {
-            "project_file": tmp_file,
-        }
+        import_data = {"project_file": tmp_file}
 
         with make_api_client(admin_user) as api_client:
             (_, response) = api_client.projects_api.create_backup(

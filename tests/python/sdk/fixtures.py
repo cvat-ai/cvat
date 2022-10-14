@@ -46,6 +46,7 @@ def fxt_coco_file(tmp_path: Path, fxt_image_file: Path):
 
     yield ann_filename
 
+
 @pytest.fixture(scope="class")
 def fxt_login(admin_user: str, dontchangedb):
     client = Client(BASE_URL)

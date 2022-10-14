@@ -40,7 +40,6 @@ class TestTaskUsecases:
         for k in api_client.configuration.logger:
             api_client.configuration.logger[k] = logger
 
-
         yield
 
     @pytest.fixture
@@ -55,10 +54,7 @@ class TestTaskUsecases:
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file: Path):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task", "labels": [{"name": "car"}, {"name": "person"}]},
             resource_type=ResourceType.LOCAL,
             resources=[str(fxt_image_file)],
             data_params={"image_quality": 80},
@@ -76,8 +72,8 @@ class TestTaskUsecases:
                         label_id=fxt_new_task.labels[0].id,
                         type="rectangle",
                         points=[1, 1, 2, 2],
-                    ),
-                ],
+                    )
+                ]
             )
         )
 
@@ -109,9 +105,7 @@ class TestTaskUsecases:
             ],
         }
 
-        data_params = {
-            "image_quality": 75,
-        }
+        data_params = {"image_quality": 75}
 
         task_files = generate_image_files(7)
         for i, f in enumerate(task_files):
@@ -134,10 +128,7 @@ class TestTaskUsecases:
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task", "labels": [{"name": "car"}, {"name": "person"}]},
             resource_type=ResourceType.SHARE,
             resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
@@ -155,19 +146,12 @@ class TestTaskUsecases:
 
         task_spec = {
             "name": f"test {self.user} to create a task with no data",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
+            "labels": [{"name": "car"}],
         }
 
         with pytest.raises(exceptions.ApiException) as capture:
             self.client.tasks.create_from_data(
-                spec=task_spec,
-                resource_type=ResourceType.LOCAL,
-                resources=[],
-                pbar=pbar,
+                spec=task_spec, resource_type=ResourceType.LOCAL, resources=[], pbar=pbar
             )
 
         assert capture.match("No media data found")
@@ -333,7 +317,7 @@ class TestTaskUsecases:
     def test_can_set_annotations(self, fxt_new_task: Task):
         fxt_new_task.set_annotations(
             models.LabeledDataRequest(
-                tags=[models.LabeledImageRequest(frame=0, label_id=fxt_new_task.labels[0].id)],
+                tags=[models.LabeledImageRequest(frame=0, label_id=fxt_new_task.labels[0].id)]
             )
         )
 
@@ -367,7 +351,7 @@ class TestTaskUsecases:
                         type="rectangle",
                         points=[2, 2, 3, 3],
                     ),
-                ],
+                ]
             )
         )
         anns = fxt_new_task.get_annotations()
@@ -389,7 +373,7 @@ class TestTaskUsecases:
                         label_id=fxt_task_with_shapes.labels[0].id,
                         type="rectangle",
                         points=[0, 1, 2, 3],
-                    ),
+                    )
                 ],
                 tracks=[
                     models.LabeledTrackRequest(
@@ -398,7 +382,7 @@ class TestTaskUsecases:
                         shapes=[
                             models.TrackedShapeRequest(
                                 frame=0, type="polygon", points=[3, 2, 2, 3, 3, 4]
-                            ),
+                            )
                         ],
                     )
                 ],

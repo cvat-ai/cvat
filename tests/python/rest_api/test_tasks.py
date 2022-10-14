@@ -76,11 +76,7 @@ class TestGetTasks:
 
     @pytest.mark.parametrize("project_id", [1])
     @pytest.mark.parametrize(
-        "groups, is_staff, is_allow",
-        [
-            ("admin", False, True),
-            ("business", False, False),
-        ],
+        "groups, is_staff, is_allow", [("admin", False, True), ("business", False, False)]
     )
     def test_project_tasks_visibility(
         self, project_id, groups, users, tasks, is_staff, is_allow, find_users, is_project_staff
@@ -105,11 +101,7 @@ class TestGetTasks:
 
     @pytest.mark.parametrize("org, project_id", [({"id": 2, "slug": "org2"}, 2)])
     @pytest.mark.parametrize(
-        "role, is_staff, is_allow",
-        [
-            ("maintainer", False, True),
-            ("supervisor", False, False),
-        ],
+        "role, is_staff, is_allow", [("maintainer", False, True), ("supervisor", False, False)]
     )
     def test_org_project_tasks_visibility(
         self,
@@ -180,11 +172,7 @@ class TestPostTasks:
     @pytest.mark.parametrize("project_id", [1])
     @pytest.mark.parametrize(
         "groups, is_staff, is_allow",
-        [
-            ("admin", False, True),
-            ("business", False, False),
-            ("user", True, True),
-        ],
+        [("admin", False, True), ("business", False, False), ("user", True, True)],
     )
     def test_users_to_create_task_in_project(
         self, project_id, groups, is_staff, is_allow, is_project_staff, find_users
@@ -195,12 +183,7 @@ class TestPostTasks:
         )
 
     @pytest.mark.parametrize("org, project_id", [({"id": 2, "slug": "org2"}, 2)])
-    @pytest.mark.parametrize(
-        "role, is_staff, is_allow",
-        [
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize("role, is_staff, is_allow", [("worker", False, False)])
     def test_worker_cannot_create_task_in_project_without_ownership(
         self, org, project_id, role, is_staff, is_allow, is_project_staff, find_users
     ):
@@ -270,11 +253,7 @@ class TestGetData:
 
     @pytest.mark.parametrize(
         "content_type, task_id",
-        [
-            ("image/png", 8),
-            ("image/png", 5),
-            ("image/x.point-cloud-data", 6),
-        ],
+        [("image/png", 8), ("image/png", 5), ("image/x.point-cloud-data", 6)],
     )
     def test_frame_content_type(self, content_type, task_id):
         with make_api_client(self._USERNAME) as api_client:
@@ -491,10 +470,7 @@ class TestPostTaskData:
             ],
         }
 
-        task_data = {
-            "image_quality": 75,
-            "client_files": generate_image_files(3),
-        }
+        task_data = {"image_quality": 75, "client_files": generate_image_files(3)}
 
         task_id = self._test_create_task(
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
@@ -641,11 +617,7 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
+            "labels": [{"name": "car"}],
         }
 
         data_spec = {
