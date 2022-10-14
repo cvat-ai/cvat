@@ -164,6 +164,7 @@ jobs:
           pip3 install --user /tmp/cvat_sdk/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python/rest_api -k 'GET' -s
+          pytest tests/python/sdk
 
       - name: Creating a log file from cvat containers
         if: failure()
