@@ -16,15 +16,7 @@ from shared.utils.config import USER_PASS
 
 class TestUserUsecases:
     @pytest.fixture(autouse=True)
-    def setup(
-        self,
-        changedb,  # force fixture call order to allow DB setup
-        tmp_path: Path,
-        fxt_logger: Tuple[Logger, io.StringIO],
-        fxt_client: Client,
-        fxt_stdout: io.StringIO,
-        admin_user: str,
-    ):
+    def setup(self, changedb, tmp_path: Path, fxt_logger: Tuple[Logger, io.StringIO], fxt_client: Client, fxt_stdout: io.StringIO, admin_user: str):
         self.tmp_path = tmp_path
         _, self.logger_stream = fxt_logger
         self.client = fxt_client
@@ -47,7 +39,7 @@ class TestUserUsecases:
         users = self.client.users.list()
 
         assert self.user in set(u.username for u in users)
-        assert self.stdout.getvalue() == ""
+        assert self.stdout.getvalue() == ''
 
     def test_can_update_user(self):
         user = self.client.users.retrieve_current_user()
