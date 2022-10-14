@@ -19,11 +19,11 @@ from shared.utils.helpers import generate_image_files
 from .util import make_pbar
 
 
+@pytest.mark.usefixtures("dontchangedb")
 class TestTaskUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
         fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
@@ -33,11 +33,13 @@ class TestTaskUsecases:
         logger, self.logger_stream = fxt_logger
         self.stdout = fxt_stdout
         self.client, self.user = fxt_login
+        self.client.tasks.retrieve(2)
         self.client.logger = logger
 
         api_client = self.client.api_client
         for k in api_client.configuration.logger:
             api_client.configuration.logger[k] = logger
+
 
         yield
 
@@ -80,6 +82,9 @@ class TestTaskUsecases:
         )
 
         return fxt_new_task
+
+    def test_add(self):
+        assert 2 + 2 == 4
 
     def test_can_create_task_with_local_data(self):
         pbar_out = io.StringIO()

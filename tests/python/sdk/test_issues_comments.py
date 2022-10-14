@@ -16,7 +16,6 @@ class TestIssuesUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
         fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
@@ -137,7 +136,6 @@ class TestCommentsUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
         fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
