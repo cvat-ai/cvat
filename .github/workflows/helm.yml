@@ -37,8 +37,9 @@ jobs:
 
     - name: Start minikube
       uses: medyagh/setup-minikube@latest
-      cpus: max
-      memory: max
+      with:
+        cpus: max
+        memory: max
 
     - name: Try the cluster!
       run: kubectl get pods -A
