@@ -43,8 +43,6 @@
             this.history = data.history;
             this.shapes = {}; // key is a frame
             this.tags = {}; // key is a frame
-
-            // TODO: do we need masks as separated field?
             this.tracks = [];
             this.objects = {}; // key is a client id
             this.count = 0;

@@ -67,6 +67,7 @@ export function findAngleDiff(rightAngle: number, leftAngle: number): number {
 export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean {
     const MIN_SHAPE_LENGTH = 3;
     const MIN_SHAPE_AREA = 9;
+    const MIN_MASK_SHAPE_AREA = 1;
 
     if (shapeType === ShapeType.POINTS) {
         return true;
@@ -74,8 +75,8 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
 
     if (shapeType === ShapeType.MASK) {
         const [left, top, right, bottom] = points.slice(-4);
-        const area = (right - left) * (bottom - top);
-        return area >= MIN_SHAPE_AREA;
+        const area = (right - left + 1) * (bottom - top + 1);
+        return area >= MIN_MASK_SHAPE_AREA;
     }
 
     if (shapeType === ShapeType.ELLIPSE) {
