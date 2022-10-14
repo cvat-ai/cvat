@@ -1458,7 +1458,7 @@ def GetCVATDataExtractor(
     instance_data: Union[ProjectData, CommonData],
     include_images: bool = False,
     format_type: str = None,
-    dimension: DimensionType = DimensionType.DIM_2D
+    dimension: DimensionType = DimensionType.DIM_2D,
 ):
     if isinstance(instance_data, ProjectData):
         return CVATProjectDataExtractor(instance_data, include_images, format_type, dimension)
