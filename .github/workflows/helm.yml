@@ -74,6 +74,7 @@ jobs:
         max_tries=30
         while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
         while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for DB pod" && (( max_tries-- )) && sleep 5; done
+        while [[ $(curl -s -o /tmp/server_response -w "%{http_code}" cvat.local/api/server/about) != "200" && max_tries -gt 0 ]]; do echo "waiting for CVAT" && (( max_tries-- )) && sleep 5; done
         kubectl get pods
 
     - name: Generate schema
