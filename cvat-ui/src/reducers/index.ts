@@ -277,8 +277,9 @@ export interface AboutState {
 
 export interface UserAgreement {
     name: string;
-    displayText: string;
+    urlDisplayText: string;
     url: string;
+    textPrefix: string;
     required: boolean;
 }
 

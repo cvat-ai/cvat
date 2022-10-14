@@ -45,6 +45,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - A trailing slash in hostname does't allow SDK to send some requests
   (<https://github.com/opencv/cvat/pull/5057>)
 - Double modal export/backup a task/project (<https://github.com/opencv/cvat/pull/5075>)
+- Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
 - Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
 
 ### Security

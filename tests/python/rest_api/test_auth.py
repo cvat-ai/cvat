@@ -94,7 +94,7 @@ class TestCredentialsManagement:
         email = "123@456.com"
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             (user, response) = api_client.auth_api.create_register(
-                models.RestrictedRegisterRequest(
+                models.RegisterSerializerExRequest(
                     username=username, password1=USER_PASS, password2=USER_PASS, email=email
                 )
             )

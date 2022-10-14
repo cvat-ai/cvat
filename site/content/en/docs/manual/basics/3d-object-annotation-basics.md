@@ -1,7 +1,7 @@
 ---
 title: '3D Object annotation (basics)'
 linkTitle: '3D Object annotation'
-weight: 17
+weight: 19
 description: 'Overview of basic operations available when annotating 3D objects.'
 ---
 

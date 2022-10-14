@@ -1,7 +1,7 @@
 ---
 title: 'Controls sidebar'
 linkTitle: 'Controls sidebar'
-weight: 8
+weight: 10
 description: 'Overview of available functions on the controls sidebar of the annotation tool.'
 ---
 
