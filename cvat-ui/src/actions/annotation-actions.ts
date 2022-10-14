@@ -1221,8 +1221,9 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
 
-            const withSkeletonElements = states.some((state: any) => state.parentID !== null);
-            if (withSkeletonElements) {
+            const needToUpdateAll = states
+                .some((state: any) => [ShapeType.MASK, ShapeType.SKELETON].includes(state.shapeType));
+            if (needToUpdateAll) {
                 dispatch(fetchAnnotationsAsync());
                 return;
             }

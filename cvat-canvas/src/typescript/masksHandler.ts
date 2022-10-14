@@ -356,7 +356,6 @@ export class MasksHandlerImpl implements MasksHandler {
             let [x, y] = [e.pointer.x, e.pointer.y];
             if (angle === 180) {
                 [x, y] = [imageWidth - x, imageHeight - y];
-                // rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
             } else if (angle === 270) {
                 [x, y] = [imageWidth - (y / imageHeight) * imageWidth, (x / imageWidth) * imageHeight];
             } else if (angle === 90) {

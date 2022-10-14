@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import config from './config';
 import ObjectState, { SerializedData } from './object-state';
 import { checkObjectType, clamp } from './common';
 import { DataError, ArgumentError, ScriptingError } from './exceptions';
@@ -2238,6 +2239,10 @@ export class MaskShape extends Shape {
         const [redoLeft, redoTop, redoRight, redoBottom] = points.splice(-4);
         const redoPoints = points;
         const redoSource = Source.MANUAL;
+
+        if (config.removeUnderlyingMaskPixels) {
+            this.removeUnderlyingPixels(frame);
+        }
 
         const undo = (): void => {
             this.points = undoPoints;

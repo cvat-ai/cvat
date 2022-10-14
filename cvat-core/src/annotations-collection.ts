@@ -18,7 +18,7 @@
     const { ArgumentError, ScriptingError } = require('./exceptions');
     const ObjectState = require('./object-state').default;
     const { mask2Rle, truncateMask } = require('./object-utils');
-    const config = require('./config');
+    const config = require('./config').default;
 
     const {
         HistoryActions, ShapeType, ObjectType, colors, Source,
