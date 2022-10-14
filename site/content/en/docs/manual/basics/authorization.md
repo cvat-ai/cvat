@@ -4,7 +4,8 @@ linkTitle: 'Authorization'
 weight: 1
 ---
 
-- First of all, you have to log in to CVAT tool.
+- First of all, you have to log in to CVAT tool. You can use your username or email
+  (specified when registering) for authorization.
 
   ![](/images/image001.jpg)
 
@@ -27,6 +28,10 @@ weight: 1
   annotator, observer.
 
   ![](/images/image003.jpg)
+
+  Username automatically generated from email, can be edited if needed.
+
+  ![](/images/filling_email.gif)
 
 ### Administration panel
 
