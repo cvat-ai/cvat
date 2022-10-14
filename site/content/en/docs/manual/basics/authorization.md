@@ -4,8 +4,8 @@ linkTitle: 'Authorization'
 weight: 1
 ---
 
-- First of all, you have to log in to CVAT tool. You can use your username or email
-  (specified when registering) for authorization.
+- First of all, you have to log in to CVAT tool. For authorization, you can use your username or email
+  you provided during registration.
 
   ![](/images/image001.jpg)
 
@@ -29,7 +29,7 @@ weight: 1
 
   ![](/images/image003.jpg)
 
-  Username automatically generated from email, can be edited if needed.
+  A username generates from the email automatically. It can be edited if needed.
 
   ![](/images/filling_email.gif)
 
