@@ -2281,7 +2281,6 @@ export class MaskShape extends Shape {
         }
         const offset = Math.floor(translatedY) * width + Math.floor(translatedX);
 
-        // TODO: find a better approach
         if (points[offset]) return 1;
         return null;
     }
