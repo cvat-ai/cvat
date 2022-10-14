@@ -51,6 +51,7 @@ def fxt_login(admin_user: str):
     client = Client(BASE_URL)
     client.config.status_check_period = 0.01
     user = admin_user
+    user = "admin1"
 
     client.login((user, USER_PASS))
 
