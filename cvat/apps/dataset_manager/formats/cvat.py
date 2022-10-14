@@ -10,7 +10,7 @@ from collections import OrderedDict
 from glob import glob
 from io import BufferedWriter
 from tempfile import TemporaryDirectory
-from typing import Callable, Union
+from typing import Callable
 
 from datumaro.components.annotation import (AnnotationType, Bbox, Label,
                                             LabelCategories, Points, Polygon,
