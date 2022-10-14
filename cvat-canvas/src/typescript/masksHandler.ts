@@ -9,7 +9,7 @@ import {
 } from './canvasModel';
 import consts from './consts';
 import {
-    PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL, rotate2DPoints,
+    PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL,
 } from './shared';
 
 interface WrappingBBox {
@@ -355,12 +355,12 @@ export class MasksHandlerImpl implements MasksHandler {
             const { angle } = this.geometry;
             let [x, y] = [e.pointer.x, e.pointer.y];
             if (angle === 180) {
-                [x, y] = rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
-            } else if (angle) {
-                // TODO: find a solution
-                // [x, y] = [(x / this.canvas.width) * imageWidth, (y / this.canvas.height) * imageHeight];
-                // [x, y] = [y, x];
-                // [x, y+] = rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
+                [x, y] = [imageWidth - x, imageHeight - y];
+                // rotate2DPoints(imageWidth / 2, imageHeight / 2, -angle, [x, y]);
+            } else if (angle === 270) {
+                [x, y] = [imageWidth - (y / imageHeight) * imageWidth, (x / imageWidth) * imageHeight];
+            } else if (angle === 90) {
+                [x, y] = [(y / imageHeight) * imageWidth, imageHeight - (x / imageWidth) * imageHeight];
             }
 
             const position = { x, y };
@@ -378,7 +378,7 @@ export class MasksHandlerImpl implements MasksHandler {
             }
 
             if (isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
-                const xDiff = position.x - this.resizeBrushToolLatestX;
+                const xDiff = e.pointer.x - this.resizeBrushToolLatestX;
                 let onUpdateConfiguration = null;
                 if (this.isDrawing) {
                     onUpdateConfiguration = this.drawData.onUpdateConfiguration;
@@ -393,7 +393,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     });
                 }
 
-                this.resizeBrushToolLatestX = position.x;
+                this.resizeBrushToolLatestX = e.pointer.x;
                 e.e.stopPropagation();
                 return;
             }
