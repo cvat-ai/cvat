@@ -45,7 +45,7 @@ diskcache==5.0.2
 boto3==1.17.61
 azure-storage-blob==12.13.0
 google-cloud-storage==1.42.0
-git+https://github.com/cvat-ai/datumaro.git@d9f492003ac57ce9c511c3079f67861e177ff134
+git+https://github.com/cvat-ai/datumaro.git@0b49dbe3194d71846a51ae94e8cb2fccd0ed261d
 urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
 natsort==8.0.0
 mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability

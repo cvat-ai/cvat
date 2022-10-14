@@ -52,6 +52,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Restoring CVAT in case of React-renderning fail (<https://github.com/opencv/cvat/pull/5134>)
 - Deleted frames become restored if a user deletes frames from another job of the same task
 (<https://github.com/opencv/cvat/pull/5138>)
+- Skeleton points exported out of order in the COCO Keypoints format
+  (<https://github.com/opencv/cvat/issues/5048>)
 
 ### Security
 - TDB
