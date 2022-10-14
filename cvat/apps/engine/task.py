@@ -336,9 +336,10 @@ def _restore_file_order_from_manifest(
         ]
         remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
         raise FileNotFoundError(
-            "Uploaded files do no match the upload metainfo file contents. "
-            "Please check the upload metainfo file and the list of uploaded files. "
-            "Mismatching files: {}{}"
+            "Uploaded files do no match the upload manifest file contents. "
+            "Please check the upload manifest file contents and the list of uploaded files. "
+            "Mismatching files: {}{}. "
+            "Read more: https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/"
             .format(
                 ", ".join(mismatching_display),
                 f" (and {remaining_count} more). " if 0 < remaining_count else ""
@@ -558,12 +559,13 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         # and we should do this in general after validation step for 3D data
         # and after filtering from related_images
         if manifest is None:
-            if not manifest_file or not osp.isfile(manifest_file):
+            if not manifest_file or not osp.isfile(osp.join(manifest_root, manifest_file)):
                 raise FileNotFoundError(
                     "Can't find upload manifest file '{}' "
                     "in the uploaded files. When the 'predefined' sorting method is used, "
-                    "this file is required in the input files."
-                    .format(manifest_file or db_data.get_manifest_path())
+                    "this file is required in the input files. "
+                    "Read more: https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/"
+                    .format(manifest_file or osp.basename(db_data.get_manifest_path()))
                 )
 
             manifest = _read_dataset_manifest(osp.join(manifest_root, manifest_file))
@@ -683,8 +685,8 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                         manifest.create()
                         _update_status('A manifest had been created')
 
-                        all_frames = len(manifest.reader)
-                        video_size = manifest.reader.resolution
+                        all_frames = len(manifest._reader)
+                        video_size = manifest._reader.resolution
                         manifest_is_prepared = True
 
                     db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 \

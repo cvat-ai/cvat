@@ -1,9 +1,12 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 
+from contextlib import ExitStack, contextmanager
 import io
+from itertools import product
 import os
 import os.path as osp
 import random
@@ -14,7 +17,7 @@ import zipfile
 from collections import defaultdict
 from enum import Enum
 from glob import glob
-from io import BytesIO
+from io import BytesIO, IOBase
 from unittest import mock
 import logging
 
@@ -38,6 +41,16 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 #supress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
+
+@contextmanager
+def disable_logging():
+    old_level = logging.getLogger().level
+
+    try:
+        logging.disable(logging.CRITICAL)
+        yield
+    finally:
+        logging.disable(old_level)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1264,8 +1277,8 @@ class ProjectBackupAPITestCase(APITestCase):
     def tearDownClass(cls):
         super().tearDownClass()
         for task in cls.tasks:
-            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
-            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+            shutil.rmtree(osp.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(osp.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
 
         for f in cls.media['files']:
             os.remove(f)
@@ -1283,7 +1296,7 @@ class ProjectBackupAPITestCase(APITestCase):
         imagename_pattern = "test_{}.jpg"
         for i in range(image_count):
             filename = imagename_pattern.format(i)
-            path = os.path.join(settings.SHARE_ROOT, filename)
+            path = osp.join(settings.SHARE_ROOT, filename)
             cls.media['files'].append(path)
             _, data = generate_image_file(filename)
             with open(path, "wb") as image:
@@ -1302,7 +1315,7 @@ class ProjectBackupAPITestCase(APITestCase):
         )
 
         filename = "test_video_1.mp4"
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = osp.join(settings.SHARE_ROOT, filename)
         cls.media['files'].append(path)
         _, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
@@ -1318,8 +1331,8 @@ class ProjectBackupAPITestCase(APITestCase):
             }
         )
 
-        filename = os.path.join("test_archive_1.zip")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        filename = osp.join("test_archive_1.zip")
+        path = osp.join(settings.SHARE_ROOT, filename)
         cls.media['files'].append(path)
         _, data = generate_zip_archive_file(filename, count=5)
         with open(path, "wb") as zip_archive:
@@ -1331,15 +1344,15 @@ class ProjectBackupAPITestCase(APITestCase):
             }
         )
 
-        filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        cls.media['dirs'].append(os.path.dirname(path))
-        os.makedirs(os.path.dirname(path))
+        filename = osp.join("videos", "test_video_1.mp4")
+        path = osp.join(settings.SHARE_ROOT, filename)
+        cls.media['dirs'].append(osp.dirname(path))
+        os.makedirs(osp.dirname(path))
         _, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
             video.write(data.read())
 
-        manifest_path = os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl')
+        manifest_path = osp.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl')
         generate_manifest_file(data_type='video', manifest_path=manifest_path, sources=[path])
 
         cls.media_data.append(
@@ -1347,14 +1360,14 @@ class ProjectBackupAPITestCase(APITestCase):
                 "image_quality": 70,
                 "copy_data": True,
                 "server_files[0]": filename,
-                "server_files[1]": os.path.join("videos", "manifest.jsonl"),
+                "server_files[1]": osp.join("videos", "manifest.jsonl"),
                 "use_cache": True,
             }
         )
 
-        manifest_path = manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl')
+        manifest_path = manifest_path=osp.join(settings.SHARE_ROOT, 'manifest.jsonl')
         generate_manifest_file(data_type='images', manifest_path=manifest_path,
-            sources=[os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)])
+            sources=[osp.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)])
         cls.media['files'].append(manifest_path)
         cls.media_data.append(
             {
@@ -1857,10 +1870,10 @@ class ProjectImportExportAPITestCase(APITestCase):
 
     def tearDown(self) -> None:
         for task in self.tasks:
-            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
-            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+            shutil.rmtree(osp.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(osp.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
         for project in self.projects:
-            shutil.rmtree(os.path.join(settings.PROJECTS_ROOT, str(project["id"])))
+            shutil.rmtree(osp.join(settings.PROJECTS_ROOT, str(project["id"])))
 
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
@@ -2001,11 +2014,11 @@ class TaskDeleteAPITestCase(APITestCase):
     def test_api_v2_tasks_delete_task_data_after_delete_task(self):
         for task in self.tasks:
             task_dir = task.get_dirname()
-            self.assertTrue(os.path.exists(task_dir))
+            self.assertTrue(osp.exists(task_dir))
         self._check_api_v2_tasks_id(self.admin)
         for task in self.tasks:
             task_dir = task.get_dirname()
-            self.assertFalse(os.path.exists(task_dir))
+            self.assertFalse(osp.exists(task_dir))
 
 class TaskUpdateAPITestCase(APITestCase):
     def setUp(self):
@@ -2608,7 +2621,7 @@ class TaskImportExportAPITestCase(APITestCase):
         imagename_pattern = "test_{}.jpg"
         for i in range(image_count):
             filename = imagename_pattern.format(i)
-            path = os.path.join(settings.SHARE_ROOT, filename)
+            path = osp.join(settings.SHARE_ROOT, filename)
             _, data = generate_image_file(filename)
             with open(path, "wb") as image:
                 image.write(data.read())
@@ -2638,7 +2651,7 @@ class TaskImportExportAPITestCase(APITestCase):
         cls.media_data.append(use_cache_data)
 
         filename = "test_video_1.mp4"
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = osp.join(settings.SHARE_ROOT, filename)
         _, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
             video.write(data.read())
@@ -2653,8 +2666,8 @@ class TaskImportExportAPITestCase(APITestCase):
             }
         )
 
-        filename = os.path.join("test_archive_1.zip")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        filename = osp.join("test_archive_1.zip")
+        path = osp.join(settings.SHARE_ROOT, filename)
         _, data = generate_zip_archive_file(filename, count=5)
         with open(path, "wb") as zip_archive:
             zip_archive.write(data.read())
@@ -2666,8 +2679,8 @@ class TaskImportExportAPITestCase(APITestCase):
         )
 
         filename = "test_pointcloud_pcd.zip"
-        source_path = os.path.join(os.path.dirname(__file__), 'assets', filename)
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        source_path = osp.join(osp.dirname(__file__), 'assets', filename)
+        path = osp.join(settings.SHARE_ROOT, filename)
         shutil.copyfile(source_path, path)
         cls.media_data.append(
             {
@@ -2677,8 +2690,8 @@ class TaskImportExportAPITestCase(APITestCase):
         )
 
         filename = "test_velodyne_points.zip"
-        source_path = os.path.join(os.path.dirname(__file__), 'assets', filename)
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        source_path = osp.join(osp.dirname(__file__), 'assets', filename)
+        path = osp.join(settings.SHARE_ROOT, filename)
         shutil.copyfile(source_path, path)
         cls.media_data.append(
             {
@@ -2697,14 +2710,14 @@ class TaskImportExportAPITestCase(APITestCase):
                 }
             )
 
-        filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        os.makedirs(os.path.dirname(path))
+        filename = osp.join("videos", "test_video_1.mp4")
+        path = osp.join(settings.SHARE_ROOT, filename)
+        os.makedirs(osp.dirname(path))
         _, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
             video.write(data.read())
 
-        generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
+        generate_manifest_file(data_type='video', manifest_path=osp.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
             sources=[path])
 
         cls.media_data.append(
@@ -2712,13 +2725,13 @@ class TaskImportExportAPITestCase(APITestCase):
                 "image_quality": 70,
                 "copy_data": True,
                 "server_files[0]": filename,
-                "server_files[1]": os.path.join("videos", "manifest.jsonl"),
+                "server_files[1]": osp.join("videos", "manifest.jsonl"),
                 "use_cache": True,
             }
         )
 
-        generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
-            sources=[os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)])
+        generate_manifest_file(data_type='images', manifest_path=osp.join(settings.SHARE_ROOT, 'manifest.jsonl'),
+            sources=[osp.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)])
         cls.media_data.append(
             {
                 **{"image_quality": 70,
@@ -2794,38 +2807,38 @@ class TaskImportExportAPITestCase(APITestCase):
 
     def tearDown(self):
         for task in self.tasks:
-            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
-            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+            shutil.rmtree(osp.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(osp.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        path = os.path.join(settings.SHARE_ROOT, "test_1.jpg")
+        path = osp.join(settings.SHARE_ROOT, "test_1.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_2.jpg")
+        path = osp.join(settings.SHARE_ROOT, "test_2.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
+        path = osp.join(settings.SHARE_ROOT, "test_3.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_video_1.mp4")
+        path = osp.join(settings.SHARE_ROOT, "test_video_1.mp4")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
+        path = osp.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
+        path = osp.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
         os.remove(path)
-        os.rmdir(os.path.dirname(path))
+        os.rmdir(osp.dirname(path))
 
-        path = os.path.join(settings.SHARE_ROOT, "test_pointcloud_pcd.zip")
-        os.remove(path)
-
-        path = os.path.join(settings.SHARE_ROOT, "test_velodyne_points.zip")
+        path = osp.join(settings.SHARE_ROOT, "test_pointcloud_pcd.zip")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
+        path = osp.join(settings.SHARE_ROOT, "test_velodyne_points.zip")
+        os.remove(path)
+
+        path = osp.join(settings.SHARE_ROOT, "manifest.jsonl")
         os.remove(path)
 
     def _create_tasks(self):
@@ -3015,7 +3028,7 @@ def generate_image_files(*args):
 def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name='mpeg4'):
     f = BytesIO()
     total_frames = duration * fps
-    file_ext = os.path.splitext(filename)[1][1:]
+    file_ext = osp.splitext(filename)[1][1:]
     container = av.open(f, mode='w', format=file_ext)
 
     stream = container.add_stream(codec_name=codec_name, rate=fps)
@@ -3074,24 +3087,27 @@ def generate_pdf_file(filename, page_count=1):
     file_buf.seek(0)
     return image_sizes, file_buf
 
-def generate_manifest_file(data_type, manifest_path, sources):
-    kwargs = {
-        'images': {
-            'sources': sources,
-            'sorting_method': SortingMethod.LEXICOGRAPHICAL,
-        },
-        'video': {
+def generate_manifest_file(data_type, manifest_path, sources, *,
+    sorting_method=SortingMethod.LEXICOGRAPHICAL,
+    with_hash=False,
+    with_image_info=True,
+):
+    if data_type == 'video':
+        kwargs = {
             'media_file': sources[0],
-            'upload_dir': os.path.dirname(sources[0]),
+            'upload_dir': osp.dirname(sources[0]),
             'force': True
         }
-    }
-
-    if data_type == 'video':
         manifest = VideoManifestManager(manifest_path, create_index=False)
     else:
+        kwargs = {
+            'sources': sources,
+            'sorting_method': sorting_method,
+            'use_image_hash': with_hash,
+            'with_image_info': with_image_info,
+        }
         manifest = ImageManifestManager(manifest_path, create_index=False)
-    manifest.link(**kwargs[data_type])
+    manifest.link(**kwargs)
     manifest.create()
 
 class TaskDataAPITestCase(APITestCase):
@@ -3114,51 +3130,31 @@ class TaskDataAPITestCase(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        filename = "test_1.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._image_sizes[filename] = img_size
 
-        filename = "test_2.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._image_sizes[filename] = img_size
+        for filename in ["test_1.jpg", "test_2.jpg", "test_3.jpg", "test_10.jpg", "test_qwe.jpg"]:
+            path = osp.join(settings.SHARE_ROOT, filename)
+            img_size, data = generate_image_file(filename)
+            with open(path, "wb") as image:
+                image.write(data.read())
+            cls._image_sizes[filename] = img_size
 
-        filename = "test_3.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._image_sizes[filename] = img_size
-
-        filename = "test_10.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._image_sizes[filename] = img_size
-
-        filename = os.path.join("data", "test_3.jpg")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        os.makedirs(os.path.dirname(path))
+        filename = osp.join("data", "test_3.jpg")
+        path = osp.join(settings.SHARE_ROOT, filename)
+        os.makedirs(osp.dirname(path))
         img_size, data = generate_image_file(filename)
         with open(path, "wb") as image:
             image.write(data.read())
         cls._image_sizes[filename] = img_size
 
         filename = "test_video_1.mp4"
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = osp.join(settings.SHARE_ROOT, filename)
         img_sizes, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
             video.write(data.read())
         cls._image_sizes[filename] = img_sizes
 
         filename = "test_rotated_90_video.mp4"
-        path = os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4')
+        path = osp.join(osp.dirname(__file__), 'assets', 'test_rotated_90_video.mp4')
         container = av.open(path, 'r')
         for frame in container.decode(video=0):
             # pyav ignores rotation record in metadata when decoding frames
@@ -3167,23 +3163,23 @@ class TaskDataAPITestCase(APITestCase):
         container.close()
         cls._image_sizes[filename] = img_sizes
 
-        filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        os.makedirs(os.path.dirname(path))
+        filename = osp.join("videos", "test_video_1.mp4")
+        path = osp.join(settings.SHARE_ROOT, filename)
+        os.makedirs(osp.dirname(path))
         img_sizes, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
             video.write(data.read())
         cls._image_sizes[filename] = img_sizes
 
-        filename = os.path.join("test_archive_1.zip")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        filename = osp.join("test_archive_1.zip")
+        path = osp.join(settings.SHARE_ROOT, filename)
         img_sizes, data = generate_zip_archive_file(filename, count=5)
         with open(path, "wb") as zip_archive:
             zip_archive.write(data.read())
         cls._image_sizes[filename] = img_sizes
 
         filename = "test_pointcloud_pcd.zip"
-        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        path = osp.join(osp.dirname(__file__), 'assets', filename)
         image_sizes = []
         # container = av.open(path, 'r')
         zip_file = zipfile.ZipFile(path)
@@ -3195,79 +3191,90 @@ class TaskDataAPITestCase(APITestCase):
         cls._image_sizes[filename] = image_sizes
 
         filename = "test_velodyne_points.zip"
-        path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        path = osp.join(osp.dirname(__file__), 'assets', filename)
         image_sizes = []
         # create zip instance
 
         zip_file = zipfile.ZipFile(path, mode='a')
 
         source_path = []
-        root_path = os.path.abspath(os.path.split(path)[0])
+        root_path = osp.abspath(osp.split(path)[0])
 
         for info in zip_file.namelist():
-            if os.path.splitext(info)[1][1:] == "bin":
+            if osp.splitext(info)[1][1:] == "bin":
                 zip_file.extract(info, root_path)
-                bin_path = os.path.abspath(os.path.join(root_path, info))
+                bin_path = osp.abspath(osp.join(root_path, info))
                 source_path.append(ValidateDimension.convert_bin_to_pcd(bin_path))
 
         for path in source_path:
-            zip_file.write(path, os.path.abspath(path.replace(root_path, "")))
+            zip_file.write(path, osp.abspath(path.replace(root_path, "")))
 
         for info in zip_file.namelist():
-            if os.path.splitext(info)[1][1:] == "pcd":
+            if osp.splitext(info)[1][1:] == "pcd":
                 with zip_file.open(info, "r") as file:
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
-        root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
 
-        shutil.rmtree(root_path)
+        root_path = osp.abspath(osp.join(root_path, filename.split(".")[0]))
+        shutil.rmtree(root_path, ignore_errors=True)
+
         cls._image_sizes[filename] = image_sizes
 
         file_name = 'test_1.pdf'
-        path = os.path.join(settings.SHARE_ROOT, file_name)
+        path = osp.join(settings.SHARE_ROOT, file_name)
         img_sizes, data = generate_pdf_file(file_name, page_count=5)
         with open(path, "wb") as pdf_file:
             pdf_file.write(data.read())
         cls._image_sizes[file_name] = img_sizes
 
-        generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
-            sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
+        generate_manifest_file(data_type='video',
+            manifest_path=osp.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
+            sources=[osp.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
 
-        generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
-            sources=[os.path.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
+        generate_manifest_file(data_type='images',
+            manifest_path=osp.join(settings.SHARE_ROOT, 'manifest.jsonl'),
+            sources=[osp.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
+
+        generate_manifest_file(data_type='images',
+            manifest_path=osp.join(settings.SHARE_ROOT, 'manifest_unordered.jsonl'),
+            sources=[
+                osp.join(settings.SHARE_ROOT, f'test_{suffix}.jpg')
+                for suffix in ['1', 'qwe', '3', '10', '2']
+            ],
+            sorting_method=SortingMethod.PREDEFINED)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        path = os.path.join(settings.SHARE_ROOT, "test_1.jpg")
+        path = osp.join(settings.SHARE_ROOT, "test_1.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_2.jpg")
+        path = osp.join(settings.SHARE_ROOT, "test_2.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
+        path = osp.join(settings.SHARE_ROOT, "test_3.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_10.jpg")
+        path = osp.join(settings.SHARE_ROOT, "test_10.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
+        path = osp.join(settings.SHARE_ROOT, "data", "test_3.jpg")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_video_1.mp4")
+        path = osp.join(settings.SHARE_ROOT, "test_video_1.mp4")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
+        path = osp.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
+        path = osp.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
         os.remove(path)
-        os.rmdir(os.path.dirname(path))
+        os.rmdir(osp.dirname(path))
 
-        path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
+        path = osp.join(settings.SHARE_ROOT, "manifest.jsonl")
         os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_1.pdf")
+        path = osp.join(settings.SHARE_ROOT, "test_1.pdf")
         os.remove(path)
 
     def _run_api_v2_tasks_id_data_post(self, tid, user, data):
@@ -3348,16 +3355,16 @@ class TaskDataAPITestCase(APITestCase):
             task = response.json()
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
-            self.assertEqual(len(image_sizes), task["size"])
+            self.assertAlmostEqual(len(image_sizes), task["size"], delta=2)
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
             # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
             if expected_uploaded_data_location is StorageChoice.SHARE:
-                raw_file_path = os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))
-                share_file_path = os.path.join(settings.SHARE_ROOT, next(iter(data.values())))
-                self.assertEqual(False, os.path.exists(raw_file_path))
-                self.assertEqual(True, os.path.exists(share_file_path))
+                raw_file_path = osp.join(db_data.get_upload_dirname(), next(iter(data.values())))
+                share_file_path = osp.join(settings.SHARE_ROOT, next(iter(data.values())))
+                self.assertEqual(False, osp.exists(raw_file_path))
+                self.assertEqual(True, osp.exists(share_file_path))
 
         # check preview
         response = self._get_preview(task_id, user)
@@ -3380,7 +3387,7 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 images = self._extract_video_chunk(compressed_chunk)
 
-            self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
+            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(image_sizes)), delta=2)
 
             for image_idx, image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
@@ -3409,14 +3416,14 @@ class TaskDataAPITestCase(APITestCase):
                 else:
                     self.assertEqual(image.size, image_sizes[image_idx])
 
-            self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
+            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(image_sizes)), delta=2)
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
                 server_files = [img for key, img in data.items() if key.startswith("server_files") and not img.endswith("manifest.jsonl")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
-                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL))]
+                    source_files = [osp.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL))]
                 else:
                     source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL), func=lambda e: e.name)]
 
@@ -3432,7 +3439,10 @@ class TaskDataAPITestCase(APITestCase):
                             str(getattr(f, 'name', None)).endswith('.pdf'):
                         source_images.extend(convert_from_bytes(f.getvalue(),
                             fmt='png'))
-                    else:
+                    elif not (
+                        isinstance(f, str) and f.endswith('.jsonl') or
+                        isinstance(f, IOBase) and str(getattr(f, 'name', None)).endswith('.jsonl')
+                    ):
                         source_images.append(Image.open(f))
 
                 for img_idx, image in enumerate(images):
@@ -3483,7 +3493,7 @@ class TaskDataAPITestCase(APITestCase):
             "server_files[0]": "test_1.jpg",
             "server_files[1]": "test_2.jpg",
             "server_files[2]": "test_3.jpg",
-            "server_files[3]": os.path.join("data", "test_3.jpg"),
+            "server_files[3]": osp.join("data", "test_3.jpg"),
             "image_quality": 75,
         }
         image_sizes = [
@@ -3559,7 +3569,7 @@ class TaskDataAPITestCase(APITestCase):
             ]
         }
         task_data = {
-            "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
+            "server_files[0]": osp.join("videos", "test_video_1.mp4"),
             "image_quality": 57,
         }
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
@@ -3793,8 +3803,8 @@ class TaskDataAPITestCase(APITestCase):
             ]
         }
         task_data = {
-            "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
-            "server_files[1]": os.path.join("videos", "manifest.jsonl"),
+            "server_files[0]": osp.join("videos", "test_video_1.mp4"),
+            "server_files[1]": osp.join("videos", "manifest.jsonl"),
             "image_quality": 70,
             "use_cache": True
         }
@@ -3823,7 +3833,7 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         task_data = {
-            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
+            "client_files[0]": open(osp.join(osp.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
             "image_quality": 70,
             "use_zip_chunks": True
         }
@@ -3844,7 +3854,7 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         task_data = {
-            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
+            "client_files[0]": open(osp.join(osp.dirname(__file__), 'assets', 'test_rotated_90_video.mp4'), 'rb'),
             "image_quality": 70,
             "use_cache": True,
             "use_zip_chunks": True
@@ -3884,7 +3894,7 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         task_data = {
-            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'), 'rb'),
+            "client_files[0]": open(osp.join(osp.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'), 'rb'),
             "image_quality": 100,
         }
         image_sizes = self._image_sizes["test_pointcloud_pcd.zip"]
@@ -3904,7 +3914,7 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         task_data = {
-            "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_velodyne_points.zip'),
+            "client_files[0]": open(osp.join(osp.dirname(__file__), 'assets', 'test_velodyne_points.zip'),
                                     'rb'),
             "image_quality": 100,
         }
@@ -3960,24 +3970,57 @@ class TaskDataAPITestCase(APITestCase):
             ]
         }
 
-        task_data = {
+        task_data_common = {
             "server_files[0]": "test_1.jpg",
-            "server_files[1]": "test_3.jpg",
-            "server_files[2]": "test_2.jpg",
+            "server_files[1]": "test_qwe.jpg",
+            "server_files[2]": "test_3.jpg",
+            "server_files[3]": "test_10.jpg",
+            "server_files[4]": "test_2.jpg",
             "image_quality": 70,
-            "use_cache": True,
             "sorting_method": SortingMethod.PREDEFINED
         }
         image_sizes = [
-            self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[1]"]],
-            self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[v]
+            for k, v in task_data_common.items() if k.startswith("server_files")
         ]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+        fname = current_function_name()
 
-    def _test_api_v2_tasks_id_data_create_can_use_local_images_with_predefined_sorting_single_request(self, user):
+        for caching_enabled in [True, False]:
+            task_data_common["use_cache"] = caching_enabled
+            if caching_enabled:
+                storage_method = StorageMethodChoice.CACHE
+            else:
+                storage_method = StorageMethodChoice.FILE_SYSTEM
+
+            with self.subTest(fname,
+                manifest=False,
+                caching_enabled=caching_enabled,
+            ):
+                task_data = task_data_common.copy()
+
+                with ExitStack() as es:
+                    es.enter_context(disable_logging())
+                    es.enter_context(self.assertRaisesRegex(FileNotFoundError,
+                        r"Can't find upload manifest file 'manifest.jsonl'"))
+
+                    self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                        self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                        image_sizes, storage_method, StorageChoice.SHARE)
+
+            with self.subTest(fname,
+                manifest=True,
+                caching_enabled=caching_enabled,
+            ):
+                task_data = task_data_common.copy()
+                task_data["server_files[5]"] = "manifest_unordered.jsonl"
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, storage_method, StorageChoice.SHARE)
+
+    def _test_api_v2_tasks_id_data_create_can_use_local_images_with_predefined_sorting(self, user):
+        fname = current_function_name()
+
         task_spec = {
             "name": 'task custom data sequence client files single request #28-2',
             "overlap": 0,
@@ -3988,18 +4031,68 @@ class TaskDataAPITestCase(APITestCase):
             ]
         }
 
-        image_sizes, images = generate_image_files(
-            "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
-        )
-        task_data = {
-            "image_quality": 75,
-            "use_cache": True,
-            "sorting_method": SortingMethod.PREDEFINED
-        }
-        task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+        with TestDir() as test_dir:
+            image_sizes, image_files = generate_image_files(
+                "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
+            )
+            image_paths = []
+            for image in image_files:
+                fp = osp.join(test_dir, image.name)
+                with open(fp, 'wb') as f:
+                    f.write(image.getvalue())
+                image_paths.append(fp)
+            del image_files
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+            task_data_common = {
+                "image_quality": 75,
+                "sorting_method": SortingMethod.PREDEFINED
+            }
+
+            for (caching_enabled, include_image_info) in product([True, False], [True, False]):
+                manifest_path = osp.join(test_dir, "manifest.jsonl")
+                generate_manifest_file("images", manifest_path, image_paths,
+                    sorting_method=SortingMethod.PREDEFINED,
+                    with_image_info=include_image_info)
+
+                task_data_common["use_cache"] = caching_enabled
+                if caching_enabled:
+                    storage_method = StorageMethodChoice.CACHE
+                else:
+                    storage_method = StorageMethodChoice.FILE_SYSTEM
+
+                with self.subTest(fname,
+                    manifest=False,
+                    caching_enabled=caching_enabled,
+                    include_image_info=include_image_info
+                ):
+                    with ExitStack() as es:
+                        images = [es.enter_context(open(p, 'rb')) for p in image_paths]
+
+                        task_data = task_data_common.copy()
+                        task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+
+                        es.enter_context(disable_logging())
+                        es.enter_context(self.assertRaisesRegex(FileNotFoundError,
+                            r"Can't find upload manifest file 'manifest.jsonl'"))
+                        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                            self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                            image_sizes, storage_method, StorageChoice.LOCAL)
+
+                with self.subTest(fname,
+                    manifest=True,
+                    caching_enabled=caching_enabled,
+                    include_image_info=include_image_info
+                ):
+                    with ExitStack() as es:
+                        images = [es.enter_context(open(p, 'rb')) for p in image_paths]
+                        manifest = open(manifest_path)
+
+                        task_data = task_data_common.copy()
+                        task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+                        task_data[f"client_files[{len(images)}]"] = manifest
+                        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                            self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                            image_sizes, storage_method, StorageChoice.LOCAL)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         # test a natural data sequence
@@ -4275,7 +4368,7 @@ class JobAnnotationAPITestCase(APITestCase):
             if dimension == DimensionType.DIM_3D:
                 images = {
                     "client_files[0]": open(
-                        os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'
+                        osp.join(osp.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'
                         if annotation_format == 'Sly Point Cloud Format 1.0' else 'test_velodyne_points.zip'),
                         'rb'),
                     "image_quality": 100,
@@ -5989,27 +6082,27 @@ class ServerShareAPITestCase(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        path = os.path.join(settings.SHARE_ROOT, "file0.txt")
+        path = osp.join(settings.SHARE_ROOT, "file0.txt")
         open(path, "w").write("test string")
-        path = os.path.join(settings.SHARE_ROOT, "test1")
+        path = osp.join(settings.SHARE_ROOT, "test1")
         os.makedirs(path)
-        path = os.path.join(path, "file1.txt")
+        path = osp.join(path, "file1.txt")
         open(path, "w").write("test string")
-        directory = os.path.join(settings.SHARE_ROOT, "test1", "test3")
+        directory = osp.join(settings.SHARE_ROOT, "test1", "test3")
         os.makedirs(directory)
-        path = os.path.join(settings.SHARE_ROOT, "test2")
+        path = osp.join(settings.SHARE_ROOT, "test2")
         os.makedirs(path)
-        path = os.path.join(path, "file2.txt")
+        path = osp.join(path, "file2.txt")
         open(path, "w").write("test string")
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        path = os.path.join(settings.SHARE_ROOT, "file0.txt")
+        path = osp.join(settings.SHARE_ROOT, "file0.txt")
         os.remove(path)
-        path = os.path.join(settings.SHARE_ROOT, "test1")
+        path = osp.join(settings.SHARE_ROOT, "test1")
         shutil.rmtree(path)
-        path = os.path.join(settings.SHARE_ROOT, "test2")
+        path = osp.join(settings.SHARE_ROOT, "test2")
         shutil.rmtree(path)
 
     def _run_api_v2_server_share(self, user, directory):
@@ -6108,7 +6201,7 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
     def _create_shared_files(shared_images):
         image = Image.new('RGB', size=(100, 50))
         for img in shared_images:
-            img_path = os.path.join(settings.SHARE_ROOT, img)
+            img_path = osp.join(settings.SHARE_ROOT, img)
             if not osp.exists(osp.dirname(img_path)):
                 os.makedirs(osp.dirname(img_path))
             image.save(img_path)
@@ -6148,7 +6241,7 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
         response = self._run_api_v2_server_share("/data1")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        shared_images = [img for img in shared_images if os.path.dirname(img) != "/data1/subdir"]
+        shared_images = [img for img in shared_images if osp.dirname(img) != "/data1/subdir"]
         shared_images.append("/data1/subdir/")
         shared_images.append("/data1/")
         remote_files = {"server_files[%d]" % i: shared_images[i] for i in range(len(shared_images))}

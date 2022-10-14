@@ -150,18 +150,20 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
 class DatasetImagesReader:
     def __init__(self,
                 sources,
-                meta=None,
-                sorting_method=SortingMethod.PREDEFINED,
-                use_image_hash=False,
+                *args,
                 start = 0,
                 step = 1,
                 stop = None,
-                *args,
+                meta=None,
+                sorting_method=SortingMethod.PREDEFINED,
+                use_image_hash=False,
+                with_image_info=True,
                 **kwargs):
         self._sources = sort(sources, sorting_method)
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
+        self._with_image_info = with_image_info
         self._start = start
         self._stop = stop if stop else len(sources)
         self._step = step
@@ -200,15 +202,16 @@ class DatasetImagesReader:
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
                     else os.path.basename(image)
                 name, extension = os.path.splitext(img_name)
-                width, height = img.width, img.height
-                if orientation > 4:
-                    width, height = height, width
                 image_properties = {
                     'name': name.replace('\\', '/'),
                     'extension': extension,
-                    'width': width,
-                    'height': height,
                 }
+                if self._with_image_info:
+                    width, height = img.width, img.height
+                    if orientation > 4:
+                        width, height = height, width
+                    image_properties['width'] = width
+                    image_properties['height'] = height
                 if self._meta and img_name in self._meta:
                     image_properties['meta'] = self._meta[img_name]
                 if self._use_image_hash:
