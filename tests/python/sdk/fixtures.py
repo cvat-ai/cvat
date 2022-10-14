@@ -48,7 +48,7 @@ def fxt_coco_file(tmp_path: Path, fxt_image_file: Path):
 
 
 @pytest.fixture(scope="class")
-def fxt_login(admin_user: str, dontchangedb):
+def fxt_login(admin_user: str, restore_db_per_class):
     client = Client(BASE_URL)
     client.config.status_check_period = 0.01
     user = admin_user
