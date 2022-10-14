@@ -2240,10 +2240,6 @@ export class MaskShape extends Shape {
         const redoPoints = points;
         const redoSource = Source.MANUAL;
 
-        if (config.removeUnderlyingMaskPixels) {
-            this.removeUnderlyingPixels(frame);
-        }
-
         const undo = (): void => {
             this.points = undoPoints;
             this.source = undoSource;
@@ -2270,6 +2266,10 @@ export class MaskShape extends Shape {
         );
 
         redo();
+
+        if (config.removeUnderlyingMaskPixels) {
+            this.removeUnderlyingPixels(frame);
+        }
     }
 
     static distance(points: number[], x: number, y: number): null | number {
