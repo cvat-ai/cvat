@@ -183,7 +183,6 @@ class FrameProvider:
             return (frame, self.VIDEO_FRAME_MIME)
         return (frame, mimetypes.guess_type(frame_name)[0])
 
-    def get_frames(self, quality=Quality.ORIGINAL, out_type=Type.BUFFER, start_frame=None, stop_frame=None):
-        sequence = range(start_frame, stop_frame) if start_frame and stop_frame else range(self._db_data.size)
-        for idx in sequence:
+    def get_frames(self, start_frame, stop_frame, quality=Quality.ORIGINAL, out_type=Type.BUFFER):
+        for idx in range(start_frame, stop_frame):
             yield self.get_frame(idx, quality=quality, out_type=out_type)

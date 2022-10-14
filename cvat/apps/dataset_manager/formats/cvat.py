@@ -21,7 +21,7 @@ from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
-from cvat.apps.dataset_manager.bindings import (ProjectData, TaskData, JobData,
+from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData,
                                                 get_defaulted_subset,
                                                 import_dm_annotations,
                                                 match_dm_item)
@@ -984,8 +984,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
         counter += 1
 
     for shape in annotations.shapes:
-        frame_step = annotations.frame_step if isinstance(annotations, (TaskData, JobData)) else annotations.frame_step[shape.task_id]
-        if isinstance(annotations, (TaskData, JobData)):
+        frame_step = annotations.frame_step if not isinstance(annotations, ProjectData) else annotations.frame_step[shape.task_id]
+        if not isinstance(annotations, ProjectData):
             stop_frame = int(annotations.meta[annotations.META_FIELD]['stop_frame'])
         else:
             task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta[annotations.META_FIELD]['tasks']))[0][1]
@@ -1270,18 +1270,16 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
     callback(dumper, project_data)
     dumper.close_document()
 
-def dump_media_files(instance_data: Union[TaskData, JobData], img_dir: str, project_data: ProjectData = None):
+def dump_media_files(instance_data: CommonData, img_dir: str, project_data: ProjectData = None):
     ext = ''
     if instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation':
         ext = FrameProvider.VIDEO_FRAME_EXT
 
     frame_provider = FrameProvider(instance_data.db_data)
-    start_frame = None if isinstance(instance_data, TaskData) else instance_data.start
-    stop_frame = None if isinstance(instance_data, TaskData) else instance_data.stop
     frames = frame_provider.get_frames(
+        instance_data.start, instance_data.stop,
         frame_provider.Quality.ORIGINAL,
-        frame_provider.Type.BUFFER,
-        start_frame, stop_frame)
+        frame_provider.Type.BUFFER)
     for frame_id, (frame_data, _) in zip(instance_data.rel_range, frames):
         if (project_data is not None and (instance_data.db_instance.id, frame_id) in project_data.deleted_frames) \
             or frame_id in instance_data.deleted_frames:

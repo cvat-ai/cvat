@@ -21,7 +21,7 @@ def _import_to_task(dataset, instance_data):
     for item in dataset:
         # NOTE: MOT frames start from 1
         # job has an offset, for task offset is 0
-        frame_number = int(item.id) - 1 + instance_data.offset
+        frame_number = int(item.id) - 1 + instance_data.start
         frame_number = instance_data.abs_frame_id(frame_number)
 
         for ann in item.annotations:

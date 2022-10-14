@@ -177,17 +177,17 @@ class CommonData(InstanceLabelData):
         'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
     Labels = namedtuple('Label', 'id, name, color, type')
 
-    def __init__(self, annotation_ir, host='', create_callback=None) -> None:
+    def __init__(self, annotation_ir, db_task, host='', create_callback=None) -> None:
         self._annotation_ir = annotation_ir
         self._host = host
         self._create_callback = create_callback
         self._MAX_ANNO_SIZE = 30000
         self._frame_info = {}
         self._frame_mapping = {}
-        self._frame_step = self._db_task.data.get_frame_step()
-        self._db_data = self._db_task.data
+        self._frame_step = db_task.data.get_frame_step()
+        self._db_data = db_task.data
 
-        super().__init__(self._db_task)
+        super().__init__(db_task)
 
         self._init_frame_info()
         self._init_meta()
@@ -197,8 +197,12 @@ class CommonData(InstanceLabelData):
         raise NotImplementedError()
 
     @property
-    def offset(self) -> int:
+    def start(self) -> int:
         return 0
+
+    @property
+    def stop(self) -> int:
+        return len(self)
 
     def _get_queryset(self):
         raise NotImplementedError()
@@ -582,7 +586,7 @@ class JobData(CommonData):
         self._db_job = db_job
         self._db_task = db_job.segment.task
 
-        super().__init__(annotation_ir, host, create_callback)
+        super().__init__(annotation_ir, self._db_task, host, create_callback)
 
     def _init_meta(self):
         db_segment = self._db_job.segment
@@ -650,16 +654,12 @@ class JobData(CommonData):
         return range(segment.start_frame, segment.stop_frame + 1)
 
     @property
-    def start(self):
+    def start(self) -> int:
         segment = self._db_job.segment
         return segment.start_frame
 
     @property
-    def offset(self):
-        return self.start
-
-    @property
-    def stop(self):
+    def stop(self) -> int:
         segment = self._db_job.segment
         return segment.stop_frame + 1
 
@@ -671,7 +671,7 @@ class TaskData(CommonData):
     META_FIELD = "task"
     def __init__(self, annotation_ir, db_task, host='', create_callback=None):
         self._db_task = db_task
-        super().__init__(annotation_ir, host, create_callback)
+        super().__init__(annotation_ir, db_task, host, create_callback)
 
     @staticmethod
     def meta_for_task(db_task, host, label_mapping=None):
@@ -1253,7 +1253,7 @@ class CVATDataExtractorMixin:
 
 
 class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
-    def __init__(self, instance_data: Union[TaskData, JobData], include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
+    def __init__(self, instance_data: CommonData, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
         super().__init__(media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud)
         instance_meta = instance_data.meta[instance_data.META_FIELD]
         self._categories = self._load_categories(instance_meta['labels'])
@@ -1455,7 +1455,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
 
 
 def GetCVATDataExtractor(
-    instance_data: Union[ProjectData, TaskData, JobData],
+    instance_data: Union[ProjectData, CommonData],
     include_images: bool = False,
     format_type: str = None,
     dimension: DimensionType = DimensionType.DIM_2D
@@ -1637,7 +1637,7 @@ def match_dm_item(item, instance_data, root_hint=None):
             "'%s' with any task frame" % item.id)
     return frame_number
 
-def find_dataset_root(dm_dataset, instance_data: Union[ProjectData, TaskData, JobData]):
+def find_dataset_root(dm_dataset, instance_data: Union[ProjectData, CommonData]):
     longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts),
         default=None)
     if longest_path is None:
@@ -1653,7 +1653,7 @@ def find_dataset_root(dm_dataset, instance_data: Union[ProjectData, TaskData, Jo
         prefix = prefix[:-1]
     return prefix
 
-def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, TaskData, JobData]):
+def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, CommonData]):
     if len(dm_dataset) == 0:
         return
 
