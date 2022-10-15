@@ -12,6 +12,7 @@
 !/ssh/README.md
 /Mask_RCNN/
 /letsencrypt-webroot/
+/allure-results
 
 # Ignore temporary files
 docker-compose.override.yml

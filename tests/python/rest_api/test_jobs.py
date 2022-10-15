@@ -13,6 +13,7 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
+from tests.python.shared.utils.assertions import assert_response_status, assert_deep_diff_is_empty
 
 from .utils import export_dataset
 
@@ -147,14 +148,13 @@ class TestGetAnnotations:
     def _test_get_job_annotations_200(self, user, jid, data, **kwargs):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve_annotations(jid, **kwargs)
-            assert response.status == HTTPStatus.OK
+            assert_response_status(response, HTTPStatus.OK)
 
             response_data = json.loads(response.data)
             response_data["shapes"] = sorted(response_data["shapes"], key=lambda a: a["id"])
-            assert (
-                DeepDiff(data, response_data, exclude_regex_paths=r"root\['version|updated_date'\]")
-                == {}
-            )
+            response_deep_diff = DeepDiff(data, response_data, exclude_regex_paths=r"root\['version|updated_date'\]")
+            assert_deep_diff_is_empty(response_deep_diff)
+
 
     def _test_get_job_annotations_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
