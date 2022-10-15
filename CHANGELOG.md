@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
 - Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
 - Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
+- Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
