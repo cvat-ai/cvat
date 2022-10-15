@@ -9,7 +9,7 @@ message: >-
 type: software
 authors:
   - email: support+github@cvat.ai
-    name: CVAT.ai Corporation
+    name: CVAT.ai
 identifiers:
   - type: doi
     value: 10.5281/zenodo.4009388
