@@ -95,7 +95,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: us-east1-docker.pkg.dev/cloud-run-example-317621/cvat-docker-repo/cvat-ui:latest
+    image: us-east1-docker.pkg.dev/cloud-run-example-317621/cvat-docker-repo/cvat-ui:0.0.1
     restart: always
     depends_on:
       - cvat_server
