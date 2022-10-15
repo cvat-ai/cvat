@@ -25,7 +25,7 @@ To open the Project page:
 You will see the following page:
 
 
-![CVAT Project main page](../../../images/cvat-project-main-page.png)
+![CVAT Project main page](/images/cvat-project-main-page.png)
 
 
 
@@ -37,7 +37,7 @@ You will see the following page:
       2. **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
       3. **Filter** Use it for customizable searches by adding your own filtering rules and groups.
       4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
-4. ![Plus](../../../images/plus.png) . Click it to open the drop-down menu:
+4. ![Plus](/images/plus.png) . Click it to open the drop-down menu:
 
       1. **Create new project** Use it to create a new project.
       2. **Create from backup** Use it to create a project from the backup.
@@ -64,14 +64,14 @@ To create a new project, do the following:
 
 1. In the top right part of the screen click ![Plus](../../../images/plus.png), and from the drop-down menu select **Create new project**.
 
-      ![Create new project window](../../../images/create_new_project.png)
+      ![Create new project window](/images/create_new_project.png)
 
 2. Go to the **Constructor** tab.
 3. In the **Name** field enter the name of your project.
 4. Click **Add label** and fill in the following fields:
 
       1. **Label name** Mandatory field. Enter the name of the annotation label.
-      2. **Change colour of the label** (![change colour of the label](../../../images/color-field.png)) Optional field. Click the icon and select the color from the color palette.
+      2. **Change colour of the label** (![change colour of the label](/images/color-field.png)) Optional field. Click the icon and select the color from the color palette.
       3. **Add attribute** Optional field. Opens a menu, where you can set the following attributes:
 
             1. **Name** Mandatory field. Enter the name of the attribute.
@@ -88,13 +88,13 @@ To create a new project, do the following:
                 - For **Text** enter the default value in a text form. You can specify only one default value.
                 - For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
             4. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
-            5. If you want to remove the attribute, click ![Garbage bin](../../../images/garbage-bin.png)
+            5. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
             > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
 
-            ![Create project-filled labels and attributes](../../../images/create_new_project_01.png)
+            ![Create project-filled labels and attributes](/images/create_new_project_01.png)
 5. Click **Continue**. Now the project has a label. To add more labels repeat steps 1 to 5.
 
- ![Create project filled labels and attributes](../../../images/create_new_project_02.png)
+ ![Create project filled labels and attributes](/images/create_new_project_02.png)
 
 6. Optional. Use **Advanced configuration** to add an issue tracker, source storage, and target storage to the project:
 
