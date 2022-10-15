@@ -1,4 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,13 +14,15 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 
-def _import_task(dataset, task_data):
+def _import_to_task(dataset, instance_data):
     tracks = {}
     label_cat = dataset.categories()[datumaro.AnnotationType.label]
 
     for item in dataset:
-        frame_number = int(item.id) - 1 # NOTE: MOT frames start from 1
-        frame_number = task_data.abs_frame_id(frame_number)
+        # NOTE: MOT frames start from 1
+        # job has an offset, for task offset is 0
+        frame_number = int(item.id) - 1 + instance_data.start
+        frame_number = instance_data.abs_frame_id(frame_number)
 
         for ann in item.annotations:
             if ann.type != datumaro.AnnotationType.bbox:
@@ -28,7 +31,7 @@ def _import_task(dataset, task_data):
             track_id = ann.attributes.get('track_id')
             if track_id is None:
                 # Extension. Import regular boxes:
-                task_data.add_shape(task_data.LabeledShape(
+                instance_data.add_shape(instance_data.LabeledShape(
                     type='rectangle',
                     label=label_cat.items[ann.label].name,
                     points=ann.points,
@@ -41,7 +44,7 @@ def _import_task(dataset, task_data):
                 ))
                 continue
 
-            shape = task_data.TrackedShape(
+            shape = instance_data.TrackedShape(
                 type='rectangle',
                 points=ann.points,
                 occluded=ann.attributes.get('occluded') is True,
@@ -55,7 +58,7 @@ def _import_task(dataset, task_data):
 
             # build trajectories as lists of shapes in track dict
             if track_id not in tracks:
-                tracks[track_id] = task_data.Track(
+                tracks[track_id] = instance_data.Track(
                     label_cat.items[ann.label].name, 0, 'manual', [])
             tracks[track_id].shapes.append(shape)
 
@@ -67,10 +70,10 @@ def _import_task(dataset, task_data):
         prev_shape_idx = 0
         prev_shape = track.shapes[0]
         for shape in track.shapes[1:]:
-            has_skip = task_data.frame_step < shape.frame - prev_shape.frame
+            has_skip = instance_data.frame_step < shape.frame - prev_shape.frame
             if has_skip and not prev_shape.outside:
                 prev_shape = prev_shape._replace(outside=True,
-                        frame=prev_shape.frame + task_data.frame_step)
+                        frame=prev_shape.frame + instance_data.frame_step)
                 prev_shape_idx += 1
                 track.shapes.insert(prev_shape_idx, prev_shape)
             prev_shape = shape
@@ -78,12 +81,12 @@ def _import_task(dataset, task_data):
 
         # Append a shape with outside=True to finish the track
         last_shape = track.shapes[-1]
-        if last_shape.frame + task_data.frame_step <= \
-                int(task_data.meta['task']['stop_frame']):
+        if last_shape.frame + instance_data.frame_step <= \
+                int(instance_data.meta[instance_data.META_FIELD]['stop_frame']):
             track.shapes.append(last_shape._replace(outside=True,
-                frame=last_shape.frame + task_data.frame_step)
+                frame=last_shape.frame + instance_data.frame_step)
             )
-        task_data.add_track(track)
+        instance_data.add_track(track)
 
 
 @exporter(name='MOT', ext='ZIP', version='1.1')
@@ -107,7 +110,7 @@ def _import(src_file, instance_data, load_data_callback=None):
         # Dirty way to determine instance type to avoid circular dependency
         if hasattr(instance_data, '_db_project'):
             for sub_dataset, task_data in instance_data.split_dataset(dataset):
-                _import_task(sub_dataset, task_data)
+                _import_to_task(sub_dataset, task_data)
         else:
-            _import_task(dataset, instance_data)
+            _import_to_task(dataset, instance_data)
 
