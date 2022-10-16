@@ -18,7 +18,7 @@
     const { ArgumentError, ScriptingError } = require('./exceptions');
     const ObjectState = require('./object-state').default;
     const { mask2Rle, truncateMask } = require('./object-utils');
-    const config = require('./config');
+    const config = require('./config').default;
 
     const {
         HistoryActions, ShapeType, ObjectType, colors, Source,
@@ -43,8 +43,6 @@
             this.history = data.history;
             this.shapes = {}; // key is a frame
             this.tags = {}; // key is a frame
-
-            // TODO: do we need masks as separated field?
             this.tracks = [];
             this.objects = {}; // key is a client id
             this.count = 0;

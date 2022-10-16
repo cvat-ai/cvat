@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import config from './config';
 import ObjectState, { SerializedData } from './object-state';
 import { checkObjectType, clamp } from './common';
 import { DataError, ArgumentError, ScriptingError } from './exceptions';
@@ -2265,6 +2266,10 @@ export class MaskShape extends Shape {
         );
 
         redo();
+
+        if (config.removeUnderlyingMaskPixels) {
+            this.removeUnderlyingPixels(frame);
+        }
     }
 
     static distance(points: number[], x: number, y: number): null | number {
@@ -2276,7 +2281,6 @@ export class MaskShape extends Shape {
         }
         const offset = Math.floor(translatedY) * width + Math.floor(translatedX);
 
-        // TODO: find a better approach
         if (points[offset]) return 1;
         return null;
     }
