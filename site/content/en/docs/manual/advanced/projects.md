@@ -87,8 +87,8 @@ To create a new project, do the following:
        - For **Checkbox** from the drop-down list select one of the values **True** or **False**.
        - For **Text** enter the default value in a text form. You can specify only one default value.
        - For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
-    4. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
-    5. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
+   4. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
+   5. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
 
       > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
 
