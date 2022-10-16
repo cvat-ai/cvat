@@ -91,8 +91,8 @@ To create a new project, do the following:
     5. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
 
       > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
+      ![Create project-filled labels and attributes](/images/create_new_project_01.png)
 
-    ![Create project-filled labels and attributes](/images/create_new_project_01.png)
 5. Click **Continue**. Now the project has a label. To add more labels repeat steps 1 to 5.
 
    ![Create project filled labels and attributes](/images/create_new_project_02.png)
