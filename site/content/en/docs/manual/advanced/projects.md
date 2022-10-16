@@ -75,11 +75,11 @@ To create a new project, do the following:
   3. **Add attribute** Optional field. Opens a menu, where you can set the following attributes:
      1. **Name** Mandatory field. Enter the name of the attribute.
      2. From the drop-down list, select an HTML element, representing the attribute:
-       - **Select** is a placeholder and cannot be used as an attribute.
-       - **Radio** Use it to add a radio button, to select only one option from several.
-       - **Checkbox** Use it to add a checkbox for multiple options choice.
-       - **Text** Use it for text attributes.
-       - **Number** Use it for numeric attributes.
+        - **Select** is a placeholder and cannot be used as an attribute.
+        - **Radio** Use it to add a radio button, to select only one option from several.
+        - **Checkbox** Use it to add a checkbox for multiple options choice.
+        - **Text** Use it for text attributes.
+        - **Number** Use it for numeric attributes.
 
    3. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
 
