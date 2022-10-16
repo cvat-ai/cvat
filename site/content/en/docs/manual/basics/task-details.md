@@ -43,6 +43,7 @@ and the details of the task (specified when the task was created) and the jobs s
   - Duration — is the amount of time the job is being worked.
   - Assignee is the user who is working on the job.
     You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
+    If you have not chosen any [organization] (/docs/manual/advanced/organization) or you have not chosen the assignee, the job is assigned to you.
   - Reviewer – a user assigned to carry out the review,
     read more in the [review](/docs/manual/advanced/review/) section.
   - `Copy`. By clicking `Copy` you will copy the job list to the clipboard.
