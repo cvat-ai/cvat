@@ -73,9 +73,8 @@ To create a new project, do the following:
   1. **Label name** Mandatory field. Enter the name of the annotation label.
   2. **Change colour of the label** (![change colour of the label](/images/color-field.png)) Optional field. Click the icon and select the color from the color palette.
   3. **Add attribute** Optional field. Opens a menu, where you can set the following attributes:
-
-    1. **Name** Mandatory field. Enter the name of the attribute.
-    2. From the drop-down list, select an HTML element, representing the attribute:
+     1. **Name** Mandatory field. Enter the name of the attribute.
+     2. From the drop-down list, select an HTML element, representing the attribute:
        - **Select** is a placeholder and cannot be used as an attribute.
        - **Radio** Use it to add a radio button, to select only one option from several.
        - **Checkbox** Use it to add a checkbox for multiple options choice.
