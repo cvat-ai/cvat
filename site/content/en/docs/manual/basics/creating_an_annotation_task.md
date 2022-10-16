@@ -61,11 +61,14 @@ There are two ways of working with labels (available only if the task is not rel
   1. Checkbox `Mutable` determines if an attribute would be changed frame to frame.
   1. You can delete the attribute by clicking the close button (x).
 
-  Click the `Continue` button to add more labels.
+  Click the `Continue` button to add more labels. You would immediately be able to observe the added labels in the `Raw` mode.
   If you need to cancel adding a label - press the `Cancel` button.
   After all the necessary labels are added click the `Done` button.
   After clicking `Done` the added labels would be displayed as separate elements of different colour.
-  You can edit or delete labels by clicking `Update attributes` or `Delete label`.
+  > Notice that you cannot observe the added labels in the `Constructor` mode when you create an annotation task. 
+  > You can do this only when you open [an existing task](/docs/manual/basics/task-details).
+  > There, you also can edit or delete labels by clicking `Update attributes` or `Delete label` in existing task.
+  > While you are creating a new task you can modify labels only in the `Raw` mode.
 
 - The `Raw` is a way of working with labels for an advanced user.
   Raw presents label data in _json_ format with an option of editing and copying labels as a text.
