@@ -128,6 +128,10 @@ and type of annotation (shape, track). As well as the number of manual and inter
 
 ## UI switcher
 
-Switching between user interface modes.
-
+Switch between user interface modes.
+There are four available mode:
+ - `Standart` - the most suitable for the usual annotation process.
+ - [`Attribute annotation`](/docs/manual/advanced/attribute-annotation-mode-advanced) - the advanced annotation mode.
+ - [`Tag annotation`](/docs/manual/advanced/annotation-with-tags) - the mode that is used to annotate frames.
+ - [`Review`](/docs/manual/advanced/review) - the mode that is used for task validation.
 ![](/images/image145.jpg)
