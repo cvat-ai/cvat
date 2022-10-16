@@ -76,7 +76,6 @@ To create a new project, do the following:
 
     1. **Name** Mandatory field. Enter the name of the attribute.
     2. From the drop-down list, select an HTML element, representing the attribute:
-
        - **Select** is a placeholder and cannot be used as an attribute.
        - **Radio** Use it to add a radio button, to select only one option from several.
        - **Checkbox** Use it to add a checkbox for multiple options choice.
@@ -92,7 +91,7 @@ To create a new project, do the following:
     4. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
     5. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
 
-    > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
+      > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
 
     ![Create project-filled labels and attributes](/images/create_new_project_01.png)
 5. Click **Continue**. Now the project has a label. To add more labels repeat steps 1 to 5.
