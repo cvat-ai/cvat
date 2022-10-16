@@ -32,11 +32,11 @@ You will see the following page:
 1. **Projects** is the navigation bar option to get to the Projects page.
 2. **Search box** Use it to find the project by name or assignee.
 3. Filters:
+   1. **Sort by** Use it to filter projects by selected properties like assignee, update date, and others.
+   2. **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
+   3. **Filter** Use it for customizable searches by adding your own filtering rules and groups.
+   4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
 
-  1. **Sort by** Use it to filter projects by selected properties like assignee, update date, and others.
-  2. **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
-  3. **Filter** Use it for customizable searches by adding your own filtering rules and groups.
-  4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
 4. ![Plus](/images/plus.png) . Click it to open the drop-down menu:
 
   1. **Create new project** Use it to create a new project.
