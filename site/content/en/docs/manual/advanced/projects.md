@@ -70,21 +70,21 @@ To create a new project, do the following:
 3. In the **Name** field enter the name of your project.
 4. Click **Add label** and fill in the following fields:
 
- 1. **Label name** Mandatory field. Enter the name of the annotation label.
- 2. **Change colour of the label** (![change colour of the label](/images/color-field.png)) Optional field. Click the icon and select the color from the color palette.
- 3. **Add attribute** Optional field. Opens a menu, where you can set the following attributes:
+  1. **Label name** Mandatory field. Enter the name of the annotation label.
+  2. **Change colour of the label** (![change colour of the label](/images/color-field.png)) Optional field. Click the icon and select the color from the color palette.
+  3. **Add attribute** Optional field. Opens a menu, where you can set the following attributes:
 
-  1. **Name** Mandatory field. Enter the name of the attribute.
-  2. From the drop-down list, select an HTML element, representing the attribute:
+   1. **Name** Mandatory field. Enter the name of the attribute.
+   2. From the drop-down list, select an HTML element, representing the attribute:
 
-   - **Select** is a placeholder and cannot be used as an attribute.
-   - **Radio** Use it to add a radio button, to select only one option from several.
-   - **Checkbox** Use it to add a checkbox for multiple options choice.
-   - **Text** Use it for text attributes.
-   - **Number** Use it for numeric attributes.
-    3. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
+    - **Select** is a placeholder and cannot be used as an attribute.
+    - **Radio** Use it to add a radio button, to select only one option from several.
+    - **Checkbox** Use it to add a checkbox for multiple options choice.
+    - **Text** Use it for text attributes.
+    - **Number** Use it for numeric attributes.
+   3. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
 
-      - For **Radio** enter one or more text values. To separate values, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
+    - For **Radio** enter one or more text values. To separate values, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
       - For **Checkbox** from the drop-down list select one of the values **True** or **False**.
       - For **Text** enter the default value in a text form. You can specify only one default value.
       - For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
