@@ -64,7 +64,7 @@ To create a new project, do the following:
 
 1. In the top right part of the screen click ![Plus](/images/plus.png), and from the drop-down menu select **Create new project**.
 
-      ![Create new project window](/images/create_new_project.png)
+   ![Create new project window](/images/create_new_project.png)
 
 2. Go to the **Constructor** tab.
 3. In the **Name** field enter the name of your project.
@@ -95,7 +95,7 @@ To create a new project, do the following:
       ![Create project-filled labels and attributes](/images/create_new_project_01.png)
 5. Click **Continue**. Now the project has a label. To add more labels repeat steps 1 to 5.
 
- ![Create project filled labels and attributes](/images/create_new_project_02.png)
+   ![Create project filled labels and attributes](/images/create_new_project_02.png)
 
 6. Optional. Use **Advanced configuration** to add an issue tracker, source storage, and target storage to the project:
 
