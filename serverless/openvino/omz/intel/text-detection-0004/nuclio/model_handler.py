@@ -213,14 +213,17 @@ class ModelHandler:
 
         pcd.decode(image.height, image.width, output_layer)
         for box in pcd.bboxes:
-            box = box.ravel().tolist()
-            if box[4] - box[0] < 4 or box[5] - box[1] < 4:
-                continue
             mask = pcd.pixel_mask
             mask = np.array(mask, dtype=np.uint8)
             mask = cv2.resize(mask, dsize=(image.width, image.height), interpolation=cv2.INTER_CUBIC)
             cv2.normalize(mask, mask, 0, 255, cv2.NORM_MINMAX)
-            cvat_mask = to_cvat_mask((box[0], box[1], box[4], box[5]), mask)
+
+            box = box.ravel().tolist()
+            x_min = min(box[::2])
+            x_max = max(box[::2])
+            y_min = min(box[1::2])
+            y_max = max(box[1::2])
+            cvat_mask = to_cvat_mask((x_min, y_min, x_max, y_max), mask)
 
             results.append({
                 "confidence": None,

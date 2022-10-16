@@ -47,14 +47,14 @@ class ModelHandler:
                 contour = np.flip(contour, axis=1)
                 contour = approximate_polygon(contour, tolerance=2.5)
 
-                Xmin = max(0, int(np.min(contour[:,0])))
-                Xmax = max(0, int(np.max(contour[:,0])))
-                Ymin = max(0, int(np.min(contour[:,1])))
-                Ymax = max(0, int(np.max(contour[:,1])))
-                if len(contour) < 3 or Xmax - Xmin < 4 or Ymax - Ymin < 4:
+                x_min = max(0, int(np.min(contour[:,0])))
+                x_max = max(0, int(np.max(contour[:,0])))
+                y_min = max(0, int(np.min(contour[:,1])))
+                y_max = max(0, int(np.max(contour[:,1])))
+                if len(contour) < 3:
                     continue
 
-                cvat_mask = to_cvat_mask((Xmin, Ymin, Xmax, Ymax), mask_by_label)
+                cvat_mask = to_cvat_mask((x_min, y_min, x_max, y_max), mask_by_label)
 
                 results.append({
                     "confidence": None,
