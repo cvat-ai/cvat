@@ -517,15 +517,12 @@ class LambdaJob:
                         "label_id": label['id'],
                         "type": anno["type"],
                         "occluded": False,
-                        "points": anno["points"],
+                        "points": anno["mask"] if anno["type"] == "mask" else anno["points"],
                         "z_order": 0,
                         "group": anno["group_id"] if "group_id" in anno else None,
                         "attributes": attrs,
                         "source": "auto"
                     }
-
-                    shape["type"] = anno["type"]
-                    shape["points"] = anno['mask'] if anno["type"] == 'mask' else anno["points"]
 
                     if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
                         shape["type"] = "polygon"
