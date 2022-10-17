@@ -7,7 +7,7 @@ jobs:
   Push_to_registry:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Build images
         run: |
           CVAT_VERSION=latest CLAM_AV=yes INSTALL_SOURCES=yes docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
