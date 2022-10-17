@@ -13,13 +13,11 @@ import django_rq
 import requests
 import rq
 import os
-import numpy as np
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status, viewsets
 from rest_framework.response import Response
-from datumaro.util.mask_tools import mask_to_rle
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
