@@ -20,19 +20,27 @@ export const boundariesActions = {
     resetAfterError: (
         job: any,
         states: any[],
+        openTime: number | null,
         frameNumber: number,
+        frameFilename: string,
+        frameHasRelatedContext: boolean,
+        colors: string[],
+        filters: string[],
         frameData: any | null,
         minZ: number,
         maxZ: number,
-        colors: string[],
     ) => createAction(BoundariesActionTypes.RESET_AFTER_ERROR, {
         job,
         states,
+        openTime,
         frameNumber,
+        frameFilename,
+        frameHasRelatedContext,
+        colors,
+        filters,
         frameData,
         minZ,
         maxZ,
-        colors,
     }),
     throwResetError: () => createAction(BoundariesActionTypes.THROW_RESET_ERROR),
 };
@@ -55,9 +63,23 @@ export function resetAfterErrorAsync(): ThunkAction {
 
                 await job.logger.log(LogType.restoreJob);
 
-                dispatch(boundariesActions.resetAfterError(job, states, frameNumber, frameData, minZ, maxZ, colors));
+                dispatch(boundariesActions.resetAfterError(
+                    job,
+                    states,
+                    state.annotation.job.openTime || Date.now(),
+                    frameNumber,
+                    frameData.filename,
+                    frameData.hasRelatedContext,
+                    colors,
+                    [],
+                    frameData,
+                    minZ,
+                    maxZ,
+                ));
             } else {
-                dispatch(boundariesActions.resetAfterError(null, [], 0, null, 0, 0, []));
+                dispatch(boundariesActions.resetAfterError(
+                    null, [], null, 0, '', false, [], [], null, 0, 0,
+                ));
             }
         } catch (error) {
             dispatch(boundariesActions.throwResetError());
