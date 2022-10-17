@@ -77,7 +77,7 @@ function ExportBackupModal(): JSX.Element {
         setUseDefaultStorage(true);
         setStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
-        dispatch(exportActions.closeExportDatasetModal(instance));
+        dispatch(exportActions.closeExportBackupModal(instance));
     };
 
     const handleExport = useCallback(

@@ -1,7 +1,7 @@
 ---
 title: 'Jobs page'
 linkTitle: 'Jobs page'
-weight: 3
+weight: 4
 ---
 
 On the jobs page, users (for example, with the worker role)

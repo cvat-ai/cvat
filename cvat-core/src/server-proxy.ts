@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { isEmail } from './common';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { Storage } from './storage';
 
@@ -290,14 +291,20 @@ class ServerProxy {
             const { backendAPI } = config;
             let response = null;
             try {
-                response = await Axios.get(`${backendAPI}/restrictions/user-agreements`, {
+                response = await Axios.get(`${backendAPI}/user-agreements`, {
                     proxy: config.proxy,
+                    validateStatus: (status) => status === 200 || status === 404,
                 });
+
+                if (response.status === 200) {
+                    return response.data;
+                }
+
+                return [];
             } catch (errorData) {
+
                 throw generateError(errorData);
             }
-
-            return response.data;
         }
 
         async function register(username, firstName, lastName, email, password1, password2, confirmations) {
@@ -325,9 +332,9 @@ class ServerProxy {
             return response.data;
         }
 
-        async function login(username, password) {
+        async function login(credential, password) {
             const authenticationData = [
-                `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
+                `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
                 `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
             ]
                 .join('&')

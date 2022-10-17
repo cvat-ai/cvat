@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import os.path as osp
 import re
 from http import HTTPStatus
@@ -9,8 +10,8 @@ from subprocess import PIPE, CalledProcessError, run
 from time import sleep
 
 import pytest
-import os
 import requests
+
 from shared.utils.config import ASSETS_DIR, get_api_url
 
 CVAT_ROOT_DIR = __file__[: __file__.rfind(osp.join("tests", ""))]
@@ -29,8 +30,9 @@ DC_FILES = [
     osp.join(CVAT_ROOT_DIR, dc_file)
     for dc_file in (
         "docker-compose.dev.yml",
+        "tests/docker-compose.file_share.yml",
         "tests/docker-compose.minio.yml",
-        "tests/docker-compose.webhook.yml"
+        "tests/docker-compose.webhook.yml",
     )
 ] + CONTAINER_NAME_FILES
 
@@ -95,12 +97,16 @@ def _run(command, capture_output=True):
             "Add `-s` option to see more details"
         )
 
+
 def _kube_get_server_pod_name():
     output, _ = _run("kubectl get pods -l component=server -o jsonpath={.items[0].metadata.name}")
     return output
 
+
 def _kube_get_db_pod_name():
-    output, _ = _run("kubectl get pods -l app.kubernetes.io/name=postgresql -o jsonpath={.items[0].metadata.name}")
+    output, _ = _run(
+        "kubectl get pods -l app.kubernetes.io/name=postgresql -o jsonpath={.items[0].metadata.name}"
+    )
     return output
 
 
@@ -131,30 +137,35 @@ def kube_exec_cvat_db(command):
 
 
 def docker_restore_db():
-    docker_exec_cvat_db(
-        "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"
-    )
+    docker_exec_cvat_db("psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql")
+
 
 def kube_restore_db():
     kube_exec_cvat_db(
-        ["/bin/sh", "-c", "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"]
+        [
+            "/bin/sh",
+            "-c",
+            "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql",
+        ]
     )
+
 
 def running_containers():
     return [cn for cn in _run("docker ps --format {{.Names}}")[0].split("\n") if cn]
 
 
 def dump_db():
-    if 'test_cvat_server_1' not in running_containers():
+    if "test_cvat_server_1" not in running_containers():
         pytest.exit("CVAT is not running")
     with open(osp.join(CVAT_DB_DIR, "data.json"), "w") as f:
         try:
-            run( # nosec
+            run(  # nosec
                 "docker exec test_cvat_server_1 \
                     python manage.py dumpdata \
                     --indent 2 --natural-foreign \
                     --exclude=auth.permission --exclude=contenttypes".split(),
-                stdout=f, check=True
+                stdout=f,
+                check=True,
             )
         except CalledProcessError:
             pytest.exit("Database dump failed.\n")
@@ -162,15 +173,9 @@ def dump_db():
 
 def create_compose_files():
     for filename in CONTAINER_NAME_FILES:
-        with open(filename.replace(".tests.yml", ".yml"), "r") as dcf, open(
-            filename, "w"
-        ) as ndcf:
+        with open(filename.replace(".tests.yml", ".yml"), "r") as dcf, open(filename, "w") as ndcf:
             ndcf.writelines(
-                [
-                    line
-                    for line in dcf.readlines()
-                    if not re.match("^.+container_name.+$", line)
-                ]
+                [line for line in dcf.readlines() if not re.match("^.+container_name.+$", line)]
             )
 
 
@@ -195,6 +200,7 @@ def docker_restore_data_volumes():
     )
     docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
+
 def kube_restore_data_volumes():
     pod_name = _kube_get_server_pod_name()
     kube_cp(
@@ -213,16 +219,15 @@ def start_services(rebuild=False):
 
     _run(
         f"docker-compose -p {PREFIX} "
-        + "--env-file " + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
+        + "--env-file "
+        + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
         + f" -f {' -f '.join(DC_FILES)} up -d "
         + "--build" * rebuild,
         capture_output=False,
     )
 
     docker_restore_data_volumes()
-    docker_cp(
-        osp.join(CVAT_DB_DIR, "restore.sql"), f"{PREFIX}_cvat_db_1:/tmp/restore.sql"
-    )
+    docker_cp(osp.join(CVAT_DB_DIR, "restore.sql"), f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(osp.join(CVAT_DB_DIR, "data.json"), f"{PREFIX}_cvat_server_1:/tmp/data.json")
 
 
@@ -235,11 +240,13 @@ def services(request):
     dumpdb = request.config.getoption("--dumpdb")
     platform = request.config.getoption("--platform")
 
-    if platform == 'kube' and any((stop, start, rebuild, cleanup, dumpdb)):
-        raise Exception('''--platform=kube is not compatible with any of the other options
-            --stop-services --start-services --rebuild --cleanup --dumpdb''')
+    if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
+        raise Exception(
+            """--platform=kube is not compatible with any of the other options
+            --stop-services --start-services --rebuild --cleanup --dumpdb"""
+        )
 
-    if platform == 'local':
+    if platform == "local":
         if start and stop:
             raise Exception("--start-services and --stop-services are incompatible")
 
@@ -258,7 +265,8 @@ def services(request):
         if stop:
             _run(
                 f"docker-compose -p {PREFIX} "
-                + "--env-file " + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
+                + "--env-file "
+                + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
                 + f" -f {' -f '.join(DC_FILES)} down -v",
                 capture_output=False,
             )
@@ -273,22 +281,18 @@ def services(request):
         )
 
         if start:
-            pytest.exit(
-                "All necessary containers have been created and started.", returncode=0
-            )
+            pytest.exit("All necessary containers have been created and started.", returncode=0)
 
         yield
 
         docker_restore_db()
         docker_exec_cvat_db("dropdb test_db")
 
-    elif platform == 'kube':
+    elif platform == "kube":
         kube_restore_data_volumes()
         server_pod_name = _kube_get_server_pod_name()
         db_pod_name = _kube_get_db_pod_name()
-        kube_cp(
-            osp.join(CVAT_DB_DIR, "restore.sql"), f"{db_pod_name}:/tmp/restore.sql"
-        )
+        kube_cp(osp.join(CVAT_DB_DIR, "restore.sql"), f"{db_pod_name}:/tmp/restore.sql")
         kube_cp(osp.join(CVAT_DB_DIR, "data.json"), f"{server_pod_name}:/tmp/data.json")
 
         wait_for_server()
@@ -296,7 +300,11 @@ def services(request):
         kube_exec_cvat("python manage.py loaddata /tmp/data.json")
 
         kube_exec_cvat_db(
-            ["/bin/sh", "-c", "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"]
+            [
+                "/bin/sh",
+                "-c",
+                "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql",
+            ]
         )
 
         yield

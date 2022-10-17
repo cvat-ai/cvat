@@ -64,12 +64,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Create image directory
+      - name: Create artifact directories
         run: |
           mkdir /tmp/cvat_server
           mkdir /tmp/cvat_ui
+          mkdir /tmp/cvat_sdk
 
-      - name: CVAT server. Build
+      - name: CVAT server. Build and push
         uses: docker/build-push-action@v3
         with:
           cache-from: type=local,src=/tmp/cvat_cache_server
@@ -78,7 +79,7 @@ jobs:
           tags: cvat/server
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
-      - name: CVAT UI. Build
+      - name: CVAT UI. Build and push
         uses: docker/build-push-action@v3
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
@@ -86,6 +87,19 @@ jobs:
           file: Dockerfile.ui
           tags: cvat/ui
           outputs: type=docker,dest=/tmp/cvat_ui/image.tar
+
+      - name: CVAT SDK. Build
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
+            --entrypoint /bin/bash -u root cvat/server \
+            -c 'python manage.py spectacular --file /transfer/schema.yml'
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          cd cvat-sdk/
+          gen/generate.sh
+          cd ..
+
+          cp -r cvat-sdk/* /tmp/cvat_sdk/
 
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v3
@@ -98,6 +112,12 @@ jobs:
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/image.tar
+
+      - name: Upload CVAT SDK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cvat_sdk
+          path: /tmp/cvat_sdk/
 
   rest_api:
     needs: build
@@ -158,6 +178,12 @@ jobs:
           name: cvat_ui
           path: /tmp/cvat_ui/
 
+      - name: Download CVAT SDK package
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_sdk
+          path: /tmp/cvat_sdk/
+
       - name: Load Docker images
         run: |
           docker load --input /tmp/cvat_server/image.tar
@@ -168,15 +194,7 @@ jobs:
 
       - name: Running REST API and SDK tests
         run: |
-          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
-            --entrypoint /bin/bash -u root cvat/server \
-            -c 'python manage.py spectacular --file /transfer/schema.yml'
-          pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
-
-          pip3 install --user cvat-sdk/
+          pip3 install --user /tmp/cvat_sdk/
           pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python -s -v
@@ -314,7 +332,7 @@ jobs:
         run: |
           max_tries=60
           status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-          while [[  $status_code != "401" && max_tries -gt 0 ]]
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
           do
             echo Number of attempts left: $max_tries
             echo Status code of response: $status_code

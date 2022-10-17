@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { Webhook } from 'cvat-core-wrapper';
@@ -278,8 +277,9 @@ export interface AboutState {
 
 export interface UserAgreement {
     name: string;
-    displayText: string;
+    urlDisplayText: string;
     url: string;
+    textPrefix: string;
     required: boolean;
 }
 

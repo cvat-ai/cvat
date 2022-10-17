@@ -325,8 +325,8 @@ class SerializeMixin:
 
 
 class CreateModelMixin(mixins.CreateModelMixin):
-    def perform_create(self, serializer):
-        super().perform_create(serializer)
+    def perform_create(self, serializer, **kwargs):
+        serializer.save(**kwargs)
         signal_create.send(self, instance=serializer.instance)
 
 class PartialUpdateModelMixin:
@@ -337,8 +337,10 @@ class PartialUpdateModelMixin:
     """
 
     def perform_update(self, serializer):
+        instance = serializer.instance
+        data = serializer.to_representation(instance)
         old_values = {
-            attr: serializer.to_representation(serializer.instance).get(attr, None)
+            attr: data[attr] if attr in data else getattr(instance, attr, None)
             for attr in self.request.data.keys()
         }
 

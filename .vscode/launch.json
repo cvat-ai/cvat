@@ -253,6 +253,21 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "sdk docs: Postprocess generated docs",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/site/process_sdk_docs.py",
+            "args": [
+                "--input-dir", "${workspaceFolder}/cvat-sdk/docs/",
+                "--site-root", "${workspaceFolder}/site/",
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "server: Generate REST API Schema",
             "type": "python",
             "request": "launch",

@@ -65,10 +65,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Create image directory
+      - name: Create artifact directories
         run: |
           mkdir /tmp/cvat_server
           mkdir /tmp/cvat_ui
+          mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v3
@@ -88,6 +89,19 @@ jobs:
           tags: cvat/ui
           outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
+      - name: CVAT SDK. Build
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
+            --entrypoint /bin/bash -u root cvat/server \
+            -c 'python manage.py spectacular --file /transfer/schema.yml'
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          cd cvat-sdk/
+          gen/generate.sh
+          cd ..
+
+          cp -r cvat-sdk/* /tmp/cvat_sdk/
+
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v3
         with:
@@ -100,7 +114,13 @@ jobs:
           name: cvat_ui
           path: /tmp/cvat_ui/image.tar
 
-  rest_api:
+      - name: Upload CVAT SDK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: cvat_sdk
+          path: /tmp/cvat_sdk/
+
+  rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -125,6 +145,12 @@ jobs:
           name: cvat_ui
           path: /tmp/cvat_ui/
 
+      - name: Download CVAT SDK package
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_sdk
+          path: /tmp/cvat_sdk/
+
       - name: Load Docker images
         run: |
           docker load --input /tmp/cvat_server/image.tar
@@ -135,22 +161,14 @@ jobs:
 
       - name: Running REST API tests
         run: |
-          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
-            --entrypoint /bin/bash -u root cvat/server \
-            -c 'python manage.py spectacular --file /transfer/schema.yml'
-          pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
-
-          pip3 install --user cvat-sdk/
+          pip3 install --user /tmp/cvat_sdk/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python/rest_api -k 'GET' -s
 
       - name: Creating a log file from cvat containers
         if: failure()
         env:
-          LOGS_DIR: "${{ github.workspace }}/rest_api"
+          LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
             mkdir $LOGS_DIR
             docker logs test_cvat_server_1 > $LOGS_DIR/cvat.log
@@ -161,7 +179,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: container_logs
-          path: "${{ github.workspace }}/rest_api"
+          path: "${{ github.workspace }}/rest_api_testing"
 
   unit_testing:
     needs: build
@@ -275,7 +293,7 @@ jobs:
         run: |
           max_tries=60
           status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-          while [[  $status_code != "401" && max_tries -gt 0 ]]
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
           do
             echo Number of attempts left: $max_tries
             echo Status code of response: $status_code
@@ -320,9 +338,64 @@ jobs:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
+  generate_github_pages:
+    if: github.ref == 'refs/heads/develop'
+    needs: [rest_api_testing, unit_testing, e2e_testing]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Download CVAT server images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT server images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_sdk
+          path: /tmp/cvat_sdk/
+
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.83.1'
+          extended: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install npm packages
+        working-directory: ./site
+        run: |
+          npm ci
+
+      - name: Build docs
+        run: |
+          pip install -r site/requirements.txt
+          python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
+          python site/build_docs.py
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          force_orphan: true
+
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
-    needs: [rest_api, unit_testing, e2e_testing]
+    needs: [rest_api_testing, unit_testing, e2e_testing, generate_github_pages]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

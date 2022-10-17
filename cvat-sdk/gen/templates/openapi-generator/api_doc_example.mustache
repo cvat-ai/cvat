@@ -1,0 +1,44 @@
+```python
+import time
+from {{{packageName}}} import Configuration, ApiClient, exceptions
+{{#imports}}
+{{.}}
+{{/imports}}
+from pprint import pprint
+
+# Set up an API client
+# Read Configuration class docs for more info about parameters and authentication methods
+configuration = Configuration(
+    host = "{{{basePath}}}",{{#hasAuthMethods}}
+{{#authMethods}}
+{{#isBasic}}
+{{#isBasicBasic}}
+    username = 'YOUR_USERNAME',
+    password = 'YOUR_PASSWORD',
+{{/isBasicBasic}}
+{{/isBasic}}
+{{/authMethods}}
+{{/hasAuthMethods}}
+)
+
+with ApiClient(configuration) as api_client:
+{{#requiredParams}}
+{{^defaultValue}}
+    {{paramName}} = {{{example}}} # {{{dataType}}} | {{{description}}}
+{{/defaultValue}}
+{{/requiredParams}}
+{{#optionalParams}}
+    {{paramName}} = {{{example}}} # {{{dataType}}} | {{{description}}}{{^required}} (optional){{/required}}{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
+{{/optionalParams}}
+
+    try:
+        {{#returnType}}(data, response) = {{/returnType}}%%%make_api_name!!!{{classname}}%%%.{{{operationId}}}({{#requiredParams}}
+            {{^defaultValue}}{{paramName}},{{/defaultValue}}{{/requiredParams}}{{#optionalParams}}
+            {{paramName}}={{paramName}},{{#-last}}
+        {{/-last}}{{/optionalParams}})
+{{#returnType}}
+        pprint(data)
+{{/returnType}}
+    except exceptions.ApiException as e:
+        print("Exception when calling {{classname}}.{{operationId}}: %s\n" % e)
+```

@@ -1,7 +1,7 @@
 ---
 title: 'Attach cloud storage'
 linkTitle: 'Attach cloud storage'
-weight: 21
+weight: 23
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 

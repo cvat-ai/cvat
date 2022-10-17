@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-import re
 import os
+import re
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 

@@ -8,18 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.3.0] - Unreleased
 ### Added
 - SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
-- An env variable to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
+- An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
 - REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
+- Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
+- Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
+- Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
 
 ### Changed
-- `api/docs`, `api/swagger`, `api/schema` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
-- Datumaro version (<https://github.com/opencv/cvat/pull/4984>)
+- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
+- Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
+- Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
+- Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
 
 ### Deprecated
 - TDB
 
 ### Removed
-- TDB
+- The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
 
 ### Fixed
 - Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
@@ -28,7 +33,21 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 (<https://github.com/openvinotoolkit/cvat/pull/4659>)
 - Project import/export with skeletons (<https://github.com/opencv/cvat/pull/4867>,
   <https://github.com/opencv/cvat/pull/5004>)
+- Shape color is not changed on canvas after changing a label (<https://github.com/opencv/cvat/pull/5045>)
 - Unstable e2e restore tests (<https://github.com/opencv/cvat/pull/5010>)
+- IOG and f-BRS serverless function (<https://github.com/opencv/cvat/pull/5039>)
+- Invisible label item in label constructor when label color background is white,
+ or close to it (<https://github.com/opencv/cvat/pull/5041>)
+- Fixed cvat-core ESlint problems (<https://github.com/opencv/cvat/pull/5027>)
+- Fixed task creation with non-local files via the SDK/CLI
+  (<https://github.com/opencv/cvat/issues/4962>)
+- HRNET serverless function (<https://github.com/opencv/cvat/pull/4944>)
+- Invalid export of segmentation masks when the `background` label gets nonzero id (<https://github.com/opencv/cvat/pull/5056>)
+- A trailing slash in hostname does't allow SDK to send some requests
+  (<https://github.com/opencv/cvat/pull/5057>)
+- Double modal export/backup a task/project (<https://github.com/opencv/cvat/pull/5075>)
+- Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
+- Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
 
 ### Security
 - TDB

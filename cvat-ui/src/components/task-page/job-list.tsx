@@ -33,8 +33,8 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
             .issues(jobInstance.id)
             .then((issues: any[]) => {
                 setSummary({
-                    issues_unsolved: issues.filter((issue) => !issue.resolved_date).length,
-                    issues_resolved: issues.filter((issue) => issue.resolved_date).length,
+                    issues_unsolved: issues.filter((issue) => !issue.resolved).length,
+                    issues_resolved: issues.filter((issue) => issue.resolved).length,
                 });
             })
             .catch((_error: any) => {

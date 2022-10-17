@@ -27,7 +27,7 @@ class TestTokenAuth:
     @staticmethod
     def login(client: ApiClient, username: str) -> models.Token:
         (auth, _) = client.auth_api.create_login(
-            models.LoginRequest(username=username, password=USER_PASS)
+            models.LoginSerializerExRequest(username=username, password=USER_PASS)
         )
         client.set_default_header("Authorization", "Token " + auth.key)
         return auth
@@ -94,7 +94,7 @@ class TestCredentialsManagement:
         email = "123@456.com"
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             (user, response) = api_client.auth_api.create_register(
-                models.RestrictedRegisterRequest(
+                models.RegisterSerializerExRequest(
                     username=username, password1=USER_PASS, password2=USER_PASS, email=email
                 )
             )
