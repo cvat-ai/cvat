@@ -6,9 +6,7 @@
 import os
 import os.path as osp
 import base64
-from typing import IO
 import uuid
-import zipfile
 
 from django.conf import settings
 from django.core.cache import cache
