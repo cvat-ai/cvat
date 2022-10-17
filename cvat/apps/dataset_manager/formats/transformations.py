@@ -38,9 +38,9 @@ class RotatedBoxesToPolygons(ItemTransform):
 
 class CVATRleToCOCORle(ItemTransform):
     @staticmethod
-    def convert_mask(mask, img_h, img_w):
-        rle = mask.points[:-4]
-        left, top, right = list(math.trunc(v) for v in mask.points[-4:-1])
+    def convert_mask(shape, img_h, img_w):
+        rle = shape.points[:-4]
+        left, top, right = list(math.trunc(v) for v in shape.points[-4:-1])
         mat = np.zeros((img_h, img_w), dtype=np.uint8)
         width = right - left + 1
         value = 0
@@ -55,8 +55,8 @@ class CVATRleToCOCORle(ItemTransform):
             value = abs(value - 1)
 
         rle = mask_utils.encode(np.asfortranarray(mat))
-        return dm.RleMask(rle=rle, label=mask.label, z_order=mask.z_order,
-            attributes=mask.attributes, group=mask.group)
+        return dm.RleMask(rle=rle, label=shape.label, z_order=shape.z_order,
+            attributes=shape.attributes, group=shape.group)
 
 class EllipsesToMasks:
     @staticmethod
