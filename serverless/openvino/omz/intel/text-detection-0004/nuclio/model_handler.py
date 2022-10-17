@@ -7,12 +7,8 @@ import os
 import cv2
 import numpy as np
 from model_loader import ModelLoader
+from shared import to_cvat_mask
 
-def to_cvat_mask(box: list, mask):
-    xtl, ytl, xbr, ybr = box
-    flattened = mask[ytl:ybr, xtl:xbr].flat[:].tolist()
-    flattened.extend([xtl, ytl, xbr, ybr])
-    return flattened
 
 class PixelLinkDecoder():
     def __init__(self, pixel_threshold, link_threshold):

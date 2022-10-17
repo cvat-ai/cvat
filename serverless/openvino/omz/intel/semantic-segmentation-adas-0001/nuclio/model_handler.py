@@ -6,15 +6,9 @@
 import os
 import cv2
 import numpy as np
-from skimage.measure import approximate_polygon, find_contours
 from model_loader import ModelLoader
-
-
-def to_cvat_mask(box: list, mask):
-    xtl, ytl, xbr, ybr = box
-    flattened = mask[ytl:ybr + 1, xtl:xbr + 1].flat[:].tolist()
-    flattened.extend([xtl, ytl, xbr, ybr])
-    return flattened
+from shared import to_cvat_mask
+from skimage.measure import approximate_polygon, find_contours
 
 
 class ModelHandler:
