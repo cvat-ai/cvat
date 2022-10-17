@@ -222,18 +222,18 @@ export class MasksHandlerImpl implements MasksHandler {
         return imageData;
     }
 
-    private updateBrushTools(brushTool: BrushTool, opts: Partial<BrushTool> = {}): void {
-        if (this.tool?.type.startsWith('polygon-') && this.drawablePolygon && brushTool.type !== this.tool.type) {
+    private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
+        if (this.drawablePolygon && (typeof brushTool === 'undefined' || brushTool.type !== this.tool.type)) {
             // tool was switched from polygon to brush for example
             this.keepDrawnPolygon();
         }
 
-        this.tool = { ...brushTool, ...opts };
-
-        // setup new brush marker
         this.removeBrushMarker();
-        if (this.isDrawing || this.isEditing) {
-            this.setupBrushMarker();
+        if (brushTool) {
+            this.tool = { ...brushTool, ...opts };
+            if (this.isDrawing || this.isEditing) {
+                this.setupBrushMarker();
+            }
         }
     }
 
@@ -508,10 +508,6 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public draw(drawData: DrawData): void {
-        if (drawData.brushTool) {
-            this.updateBrushTools(drawData.brushTool);
-        }
-
         if (drawData.enabled && drawData.shapeType === 'mask') {
             if (!this.isInsertion && drawData.initialState?.shapeType === 'mask') {
                 // initialize inserting pipeline if not started
@@ -545,15 +541,12 @@ export class MasksHandlerImpl implements MasksHandler {
 
             this.canvas.getElement().parentElement.style.display = 'block';
             this.startTimestamp = Date.now();
-        } else if (this.isDrawing) {
-            try {
-                // drawing has been finished
-                this.removeBrushMarker();
-                if (this.drawablePolygon) {
-                    this.keepDrawnPolygon();
-                }
+        }
 
-                // TODO: make a smarter validation
+        this.updateBrushTools(drawData.brushTool);
+
+        if (!drawData.enabled && this.isDrawing) {
+            try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
@@ -586,13 +579,6 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public edit(editData: MasksEditData): void {
-        if (editData.brushTool && editData.state) {
-            this.updateBrushTools(
-                editData.brushTool,
-                { color: this.getStateColor(this.editData.state) },
-            );
-        }
-
         if (editData.enabled && editData.state.shapeType === 'mask') {
             if (!this.isEditing) {
                 // start editing pipeline if not started yet
@@ -622,14 +608,15 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.startTimestamp = Date.now();
                 this.onEditStart(editData.state);
             }
-        } else if (!editData.enabled) {
-            try {
-                // editing has been finished
-                this.removeBrushMarker();
-                if (this.drawablePolygon) {
-                    this.keepDrawnPolygon();
-                }
+        }
 
+        this.updateBrushTools(
+            editData.brushTool,
+            editData.state ? { color: this.getStateColor(editData.state) } : {},
+        );
+
+        if (!editData.enabled && this.isEditing) {
+            try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
