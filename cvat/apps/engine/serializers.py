@@ -168,6 +168,16 @@ class LabelSerializer(SublabelSerializer):
                 db_attr.save()
         return db_label
 
+class MetadataSerializer(serializers.ModelSerializer):
+    task_id = serializers.IntegerField(required=False)
+    key = serializers.CharField(max_length=255)
+    value = serializers.CharField(max_length=255)
+    id = serializers.IntegerField(required=False)
+    class Meta:
+        model = models.Metadata
+        fields = ('task_id', 'key', 'value', 'id')
+
+
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.JobCommit
@@ -450,6 +460,7 @@ class StorageSerializer(serializers.ModelSerializer):
 
 class TaskReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
+    metadata = MetadataSerializer(required=False, source='metadata_set', many=True)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -470,7 +481,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage',
+            'subset', 'organization', 'target_storage', 'source_storage','metadata',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -491,12 +502,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    metadata = MetadataSerializer(required=False, source='metadata_set', many=True)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage', 'metadata'
         )
         write_once_fields = ('overlap', 'segment_size', 'project_id', 'owner_id', 'labels')
 
@@ -523,6 +535,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
+        metadata = validated_data.pop('metadata_set', [])
 
         # configure source/target storages for import/export
         storages = _configure_related_storages({
@@ -533,6 +546,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task = models.Task.objects.create(
             **storages,
             **validated_data)
+        for meta_obj in metadata:
+            models.Metadata.objects.create(task_id=db_task.id, key=meta_obj['key'], value=meta_obj["value"])
 
         def create_labels(labels, parent_label=None):
             label_colors = list()

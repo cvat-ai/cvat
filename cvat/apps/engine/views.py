@@ -15,6 +15,7 @@ from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
 
 import cv2
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
 import django_rq
@@ -53,7 +54,7 @@ from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
-    CloudProviderChoice, Location
+    CloudProviderChoice, Location, Metadata
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
@@ -704,6 +705,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
             "segment_set__job_set")
+    Task.objects.prefetch_related(
+        Prefetch('metadata_set', queryset=models.Metadata.objects.order_by('id')))
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -1229,6 +1232,30 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             export_func=_export_annotations,
             callback=dm.views.export_task_as_dataset
         )
+
+    @action(detail=True, methods=['POST'], url_path='metadata')
+    def metadata(self, request, pk):
+        metaset = Metadata.objects.filter(task_id=pk)
+        keys_from_db = set([i.id for i in metaset])
+        for item in request.data:
+            uid = item["id"]
+            if uid is None:
+                Metadata(key=item["key"], value=item["value"], task_id=pk).save()
+            else:
+                try:
+                    obj = metaset.get(pk=uid)
+                    if obj.key != item["key"] or obj.value != item["value"]:
+                        obj.key = item["key"]
+                        obj.value = item["value"]
+                        obj.save(update_fields=["key", "value"])
+                    keys_from_db.remove(uid)
+                except ObjectDoesNotExist:
+                    Metadata(key=item["key"], value=item["value"], task_id=pk).save()
+
+        for uid in keys_from_db:
+            metaset.get(id=uid).delete()
+
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 @extend_schema(tags=['jobs'])
 @extend_schema_view(

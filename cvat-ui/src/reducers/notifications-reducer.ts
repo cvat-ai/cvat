@@ -150,12 +150,18 @@ const defaultState: NotificationsState = {
             updatingMembership: null,
             removingMembership: null,
         },
+        metadata: {
+            updating: null
+        }
     },
     messages: {
         tasks: {
             loadingDone: '',
             importingDone: '',
             movingDone: '',
+        },
+        metadata:{
+            updating: '',
         },
         models: {
             inferenceDone: '',
@@ -1622,6 +1628,33 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not fetch a list of jobs',
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-update-organization-membership-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_METADATA_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    metadata: {
+                        ...state.messages.metadata,
+                        updating: `Metadata updated`
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_METADATA_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    metadata: {
+                        ...state.errors.metadata,
+                        updating: {
+                            message: 'Could not update metadata',
+                            reason: action.payload.error.toString(),
                         },
                     },
                 },

@@ -564,6 +564,23 @@
                 return response.data;
             }
 
+            async function updateMetadata(id, metadata) {
+                const { backendAPI } = config;
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/tasks/${id}/metadata`, JSON.stringify(metadata), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             async function deleteTask(id, organizationID = null) {
                 const { backendAPI } = config;
 
@@ -896,7 +913,7 @@
                     totalSize += file.size;
                 }
                 delete taskDataSpec.client_files;
-
+                taskSpec.metadata = taskDataSpec.metadata
                 const taskData = new FormData();
                 for (const [key, value] of Object.entries(taskDataSpec)) {
                     if (Array.isArray(value)) {
@@ -1923,6 +1940,7 @@
                             exportDataset: exportDataset('tasks'),
                             export: exportTask,
                             import: importTask,
+                            updateMetadata: updateMetadata,
                         }),
                         writable: false,
                     },

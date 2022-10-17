@@ -14,6 +14,7 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
+import MetadataTable from "../meta-editor/metadata-menu";
 
 const { Option } = Select;
 
@@ -469,6 +470,10 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row>
                     <Col span={24}>{this.renderBugTracker()}</Col>
+                </Row>
+                <Row>
+                    <div style={{paddingBottom: '8px'}}>Metadata</div>
+                    <Col span={24}><MetadataTable/></Col>
                 </Row>
             </Form>
         );

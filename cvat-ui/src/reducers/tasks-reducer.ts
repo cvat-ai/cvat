@@ -42,6 +42,8 @@ const defaultState: TasksState = {
         jobUpdates: {},
     },
     importing: false,
+    metadataLoading: false,
+    metadata: [],
 };
 
 export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
@@ -367,6 +369,55 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 updating: false,
             };
         }
+        case TasksActionTypes.UPDATE_TASK_METADATA_SUCCESS: {
+            return {
+                ...state,
+                metadataLoading: false,
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_METADATA_FAILED: {
+            return {
+                ...state,
+                metadataLoading: false,
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_METADATA_STARTED: {
+            return {
+                ...state,
+                metadataLoading: true,
+            };
+        }
+
+
+        case TasksActionTypes.UPDATE_TASK_METADATA: {
+            const { taskId, newMetadata } = action.payload;
+            let tasks = state.current
+            let idx = tasks.findIndex(x => x.instance.id == taskId)
+
+            if (idx != -1) {
+                let data = newMetadata.map(el => {
+                        return {key: el.key, value: el.value, id: el.id, task_id: taskId}
+                    }
+                )
+                let old = tasks[idx]
+                old.instance.metadata = data
+                tasks[idx] = old
+            }
+
+            return {
+                ...state,
+                current: tasks
+            };
+        }
+
+
+        case TasksActionTypes.SET_TASK_METADATA: {
+            return {
+                ...state,
+                metadata: action.payload,
+            };
+        }
+
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

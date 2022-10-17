@@ -1204,6 +1204,7 @@
                 dimension: undefined,
                 cloud_storage_id: undefined,
                 sorting_method: undefined,
+                metadata: undefined,
             };
 
             const updateTrigger = new FieldUpdateTrigger();
@@ -1758,6 +1759,12 @@
                     _updateTrigger: {
                         get: () => updateTrigger,
                     },
+                    metadata: {
+                        get: () => data.metadata,
+                        set: (metadata) => {
+                            data.metadata = metadata;
+                        },
+                    },
                 }),
             );
 
@@ -1843,6 +1850,14 @@
          */
         async save(onUpdate = () => {}) {
             const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
+            return result;
+        }
+
+        /**
+         * Method updates metadata of a created task
+         */
+        async updateMetadata(data) {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.updateMetadata, data);
             return result;
         }
 
@@ -2333,6 +2348,7 @@
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,
             sorting_method: this.sortingMethod,
+            metadata: this.metadata,
         };
 
         if (typeof this.startFrame !== 'undefined') {
@@ -2352,6 +2368,9 @@
         }
         if (typeof this.cloudStorageId !== 'undefined') {
             taskDataSpec.cloud_storage_id = this.cloudStorageId;
+        }
+        if (typeof this.metadata !== 'undefined') {
+            taskDataSpec.metadata = this.metadata;
         }
 
         const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
@@ -2373,6 +2392,11 @@
         const result = await serverProxy.tasks.import(file);
         return result;
     };
+
+    Task.prototype.updateMetadata.implementation = async function (metadata) {
+        const result = await serverProxy.tasks.updateMetadata(this.id, metadata);
+        return result;
+    }
 
     Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
         if (!Number.isInteger(frame) || frame < 0) {

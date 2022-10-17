@@ -33,14 +33,15 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const task = state.tasks.current[own.idx];
     const { deletes } = state.tasks.activities;
     const id = own.taskID;
-
-    return {
-        hidden: state.tasks.hideEmpty && task.instance.jobs.length === 0,
-        deleted: id in deletes ? deletes[id] === true : false,
-        previewImage: task.preview,
-        taskInstance: task.instance,
-        activeInference: state.models.inferences[id] || null,
-    };
+    if (task !== undefined) {
+        return {
+            hidden: state.tasks.hideEmpty && task.instance.jobs.length === 0,
+            deleted: id in deletes ? deletes[id] === true : false,
+            previewImage: task.preview,
+            taskInstance: task.instance,
+            activeInference: state.models.inferences[id] || null,
+        }
+    }
 }
 
 function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {

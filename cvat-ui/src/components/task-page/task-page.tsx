@@ -17,6 +17,9 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { Task } from 'reducers';
 import TopBarComponent from './top-bar';
+import {Button} from "antd";
+import {DownCircleOutlined} from "@ant-design/icons";
+import MetadataTable from "../meta-editor/metadata-menu";
 
 interface TaskPageComponentProps {
     task: Task | null | undefined;
@@ -28,9 +31,23 @@ interface TaskPageComponentProps {
     getTask: () => void;
 }
 
+interface State {
+    metaVisible: boolean;
+    saveDisabled: boolean;
+}
+
 type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
 
-class TaskPageComponent extends React.PureComponent<Props> {
+class TaskPageComponent extends React.PureComponent<Props, State> {
+
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            metaVisible: false,
+            saveDisabled: true
+        };
+    }
+
     public componentDidMount(): void {
         const { task, fetching, getTask } = this.props;
 
@@ -52,6 +69,29 @@ class TaskPageComponent extends React.PureComponent<Props> {
         if (deleteActivity) {
             history.replace('/tasks');
         }
+
+    }
+
+    private renderMetadata(): JSX.Element | Boolean {
+        const { task } = this.props;
+        let metadata = task?.instance.metadata
+        interface Metadata {
+            key: string;
+            value: string;
+            id: number;
+        }
+        let dataa: Metadata[] = [];
+        dataa = metadata;
+        return (
+        <table style={{"width": "100%"}}>
+            <tbody>
+            <tr>
+                <th><MetadataTable metadata={dataa} saveDisabled={false} task={task}/></th>
+            </tr>
+
+            </tbody>
+        </table>
+        );
     }
 
     public render(): JSX.Element {
@@ -83,6 +123,8 @@ class TaskPageComponent extends React.PureComponent<Props> {
                     <Col md={22} lg={18} xl={16} xxl={14}>
                         <TopBarComponent taskInstance={(task as Task).instance} />
                         <DetailsContainer task={task as Task} />
+                        <Button style={{"width": "100%"}} onClick={()=>{this.setState({metaVisible: !this.state.metaVisible})}}>Metadata<DownCircleOutlined/> </Button>
+                        {this.state.metaVisible && this.renderMetadata()}
                         <JobListContainer task={task as Task} />
                     </Col>
                 </Row>

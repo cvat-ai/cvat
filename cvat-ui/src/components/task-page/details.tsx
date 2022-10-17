@@ -49,6 +49,9 @@ interface State {
     format: string;
     lfs: boolean;
     updatingRepository: boolean;
+    meta: any;
+    metaVisible: boolean;
+    loading: boolean;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {

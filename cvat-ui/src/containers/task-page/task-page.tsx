@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
-import { getTasksAsync } from 'actions/tasks-actions';
+import {getTasksAsync, setMetadataAsync, updateMetadataAsync} from 'actions/tasks-actions';
 
 import TaskPageComponent from 'components/task-page/task-page';
 import { Task, CombinedState } from 'reducers';
@@ -30,7 +30,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     const { list } = state.plugins;
     const { tasks } = state;
     const {
-        gettingQuery, fetching, updating,
+        gettingQuery, fetching, updating, metadataLoading
     } = tasks;
     const { deletes, jobUpdates } = tasks.activities;
 

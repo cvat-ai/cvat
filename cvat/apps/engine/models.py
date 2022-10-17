@@ -518,6 +518,15 @@ class Skeleton(models.Model):
         default_permissions = ()
         unique_together = ('root',)
 
+class Metadata(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
+    key = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
+    class Meta:
+        default_permissions = ()
+        unique_together = ('task', 'key')
+
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'
     RADIO = 'radio'

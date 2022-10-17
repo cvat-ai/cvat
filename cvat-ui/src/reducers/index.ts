@@ -93,6 +93,8 @@ export interface TasksState {
     fetching: boolean;
     updating: boolean;
     hideEmpty: boolean;
+    metadataLoading: boolean;
+    metadata: []
     moveTask: {
         modalVisible: boolean;
         taskId: number | null;
@@ -460,6 +462,9 @@ export interface NotificationsState {
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
         };
+        metadata:{
+            updating: null | ErrorState
+        }
     };
     messages: {
         tasks: {
@@ -470,6 +475,9 @@ export interface NotificationsState {
         models: {
             inferenceDone: string;
         };
+        metadata:{
+            updating: string
+        }
         auth: {
             changePasswordDone: string;
             registerDone: string;

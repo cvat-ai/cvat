@@ -39,6 +39,11 @@ export enum TasksActionTypes {
     IMPORT_TASK_SUCCESS = 'IMPORT_TASK_SUCCESS',
     IMPORT_TASK_FAILED = 'IMPORT_TASK_FAILED',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
+    UPDATE_TASK_METADATA_SUCCESS = 'UPDATE_TASK_METADATA_SUCCESS',
+    UPDATE_TASK_METADATA_FAILED = 'UPDATE_TASK_METADATA_FAILED',
+    UPDATE_TASK_METADATA_STARTED = 'UPDATE_TASK_METADATA_STARTED',
+    UPDATE_TASK_METADATA = 'UPDATE_TASK_METADATA',
+    SET_TASK_METADATA = 'SET_TASK_METADATA',
 }
 
 function getTasks(query: TasksQuery, updateQuery: boolean): AnyAction {
@@ -101,6 +106,54 @@ export function getTasksAsync(query: TasksQuery, updateQuery = true): ThunkActio
         dispatch(getInferenceStatusAsync());
         dispatch(getTasksSuccess(array, await Promise.all(promises), result.count));
     };
+}
+
+export function setMetadataAsync(metadata: any[]): AnyAction {
+    const action = {
+        type: TasksActionTypes.SET_TASK_METADATA,
+        payload: metadata,
+    };
+    return action;
+}
+
+export function updateMetadataAsync(taskId: number | undefined, data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const taskInstance = new cvat.classes.Task({id: taskId});
+        try {
+            dispatch(changeMetadataStarted());
+            await taskInstance.updateMetadata(data);
+            dispatch(updateTaskInstanceMetadata(taskId, data));
+            dispatch(changeMetadataSuccess());
+        } catch (error) {
+            dispatch(changeMetadataFailed(error));
+            return;
+        }
+    };
+}
+
+function changeMetadataStarted(): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_METADATA_STARTED,
+    };
+    return action;
+}
+
+function changeMetadataFailed(error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_METADATA_FAILED,
+        payload: {
+            error,
+        },
+    };
+
+    return action;
+}
+
+function changeMetadataSuccess(): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_METADATA_SUCCESS,
+    };
+    return action;
 }
 
 function loadAnnotations(task: any, loader: any): AnyAction {
@@ -346,6 +399,8 @@ function createTaskUpdateStatus(status: string): AnyAction {
 
 export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<any> => {
+        const store = getCVATStore();
+        const state: CombinedState = store.getState();
         const description: any = {
             name: data.basic.name,
             labels: data.labels,
@@ -353,6 +408,7 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
+            metadata: state.tasks.metadata,
         };
 
         if (data.projectId) {
@@ -566,4 +622,16 @@ export function moveTaskToProjectAsync(
             dispatch(updateTaskFailed(error, taskInstance));
         }
     };
+}
+
+function updateTaskInstanceMetadata(taskId: number | undefined, newMetadata: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_METADATA,
+        payload: {
+            taskId,
+            newMetadata,
+        },
+    };
+
+    return action;
 }
