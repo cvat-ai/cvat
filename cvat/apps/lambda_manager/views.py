@@ -13,10 +13,13 @@ import django_rq
 import requests
 import rq
 import os
+import numpy as np
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status, viewsets
 from rest_framework.response import Response
+from datumaro.util.mask_tools import mask_to_rle
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -527,13 +530,26 @@ class LambdaJob:
                     if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
                         shape["type"] = "polygon"
                         shape["points"] = anno["points"]
+                    elif anno["type"] == "mask":
+                        [xtl, ytl, xbr, ybr] = shape["points"][-4:]
+                        cut_points = shape["points"][:-4]
+                        rle = [0]
+                        prev = shape["points"][0]
+                        for val in cut_points:
+                            if val == prev:
+                                rle[-1] += 1
+                            else:
+                                rle.append(1)
+                                prev = val
+                        rle.extend([xtl, ytl, xbr, ybr])
+                        shape["points"] = rle
 
                     results.append_shape(shape)
 
                 # Accumulate data during 100 frames before sumbitting results.
                 # It is optimization to make fewer calls to our server. Also
                 # it isn't possible to keep all results in memory.
-                if frame % 100 == 0:
+                if frame and frame % 100 == 0:
                     results.submit()
 
         results.submit()
