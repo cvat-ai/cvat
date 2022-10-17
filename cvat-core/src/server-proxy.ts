@@ -291,14 +291,20 @@ class ServerProxy {
             const { backendAPI } = config;
             let response = null;
             try {
-                response = await Axios.get(`${backendAPI}/restrictions/user-agreements`, {
+                response = await Axios.get(`${backendAPI}/user-agreements`, {
                     proxy: config.proxy,
+                    validateStatus: (status) => status === 200 || status === 404,
                 });
+
+                if (response.status === 200) {
+                    return response.data;
+                }
+
+                return [];
             } catch (errorData) {
+
                 throw generateError(errorData);
             }
-
-            return response.data;
         }
 
         async function register(username, firstName, lastName, email, password1, password2, confirmations) {

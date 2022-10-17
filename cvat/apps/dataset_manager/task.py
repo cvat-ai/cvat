@@ -16,7 +16,7 @@ from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
 from .annotation import AnnotationIR, AnnotationManager
-from .bindings import TaskData
+from .bindings import TaskData, JobData
 from .formats.registry import make_exporter, make_importer
 from .util import bulk_create
 
@@ -553,24 +553,24 @@ class JobAnnotation:
         return self.ir_data.data
 
     def export(self, dst_file, exporter, host='', **options):
-        task_data = TaskData(
+        job_data = JobData(
             annotation_ir=self.ir_data,
-            db_task=self.db_job.segment.task,
+            db_job=self.db_job,
             host=host,
         )
-        exporter(dst_file, task_data, **options)
+        exporter(dst_file, job_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
-        task_data = TaskData(
+        job_data = JobData(
             annotation_ir=AnnotationIR(),
-            db_task=self.db_job.segment.task,
+            db_job=self.db_job,
             create_callback=self.create,
         )
         self.delete()
 
-        importer(src_file, task_data, **options)
+        importer(src_file, job_data, **options)
 
-        self.create(task_data.data.slice(self.start_frame, self.stop_frame).serialize())
+        self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
 class TaskAnnotation:
     def __init__(self, pk):

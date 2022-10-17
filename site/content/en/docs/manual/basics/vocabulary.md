@@ -1,7 +1,7 @@
 ---
 title: 'Vocabulary'
 linkTitle: 'Vocabulary'
-weight: 19
+weight: 21
 description: 'List of terms pertaining to annotation in CVAT.'
 ---
 ## Label
