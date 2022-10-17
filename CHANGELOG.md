@@ -48,6 +48,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Double modal export/backup a task/project (<https://github.com/opencv/cvat/pull/5075>)
 - Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
 - Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
+- Restoring CVAT in case of React-renderning fail (<https://github.com/opencv/cvat/pull/5134>)
 
 ### Security
 - TDB
