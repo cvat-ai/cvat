@@ -460,22 +460,23 @@ class TestImportExportDatasetProject:
 
     def test_can_import_export_dataset_with_imagenet_format(self):
         # https://github.com/opencv/cvat/issues/4850
-        username = 'admin1'
-        format_name = 'ImageNet 1.0'
+        username = "admin1"
+        format_name = "ImageNet 1.0"
         project_id = 4
 
         response = self._test_export_project(username, project_id, format_name)
 
         tmp_file = io.BytesIO(response.data)
-        tmp_file.name = 'dataset.zip'
+        tmp_file.name = "dataset.zip"
 
         import_data = {
-            'dataset_file': tmp_file,
+            "dataset_file": tmp_file,
         }
 
         self._test_import_project(username, project_id, format_name, import_data)
 
-@pytest.mark.usefixtures('changedb')
+
+@pytest.mark.usefixtures("changedb")
 class TestPatchProjectLabel:
     def test_admin_can_delete_label(self, projects):
         project = deepcopy(list(projects)[1])
