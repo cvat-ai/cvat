@@ -360,7 +360,7 @@ class LambdaQueue:
 
         return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
 
-    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup, max_distance):
+    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance):
         jobs = self.get_jobs()
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
@@ -383,6 +383,7 @@ class LambdaQueue:
                 "task": task,
                 "quality": quality,
                 "cleanup": cleanup,
+                "conv_mask_to_poly": conv_mask_to_poly,
                 "mapping": mapping,
                 "max_distance": max_distance
             })
@@ -455,7 +456,7 @@ class LambdaJob:
         self.job.delete()
 
     @staticmethod
-    def _call_detector(function, db_task, labels, quality, threshold, mapping):
+    def _call_detector(function, db_task, labels, quality, threshold, mapping, conv_mask_to_poly):
         class Results:
             def __init__(self, task_id):
                 self.task_id = task_id
@@ -511,7 +512,7 @@ class LambdaJob:
                         "group": None,
                     })
                 else:
-                    results.append_shape({
+                    shape = {
                         "frame": frame,
                         "label_id": label['id'],
                         "type": anno["type"],
@@ -521,7 +522,16 @@ class LambdaJob:
                         "group": anno["group_id"] if "group_id" in anno else None,
                         "attributes": attrs,
                         "source": "auto"
-                    })
+                    }
+
+                    shape["type"] = anno["type"]
+                    shape["points"] = anno['mask'] if anno["type"] == 'mask' else anno["points"]
+
+                    if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
+                        shape["type"] = "polygon"
+                        shape["points"] = anno["points"]
+
+                    results.append_shape(shape)
 
                 # Accumulate data during 100 frames before sumbitting results.
                 # It is optimization to make fewer calls to our server. Also
@@ -638,7 +648,7 @@ class LambdaJob:
 
         if function.kind == LambdaType.DETECTOR:
             LambdaJob._call_detector(function, db_task, labels, quality,
-                kwargs.get("threshold"), kwargs.get("mapping"))
+                kwargs.get("threshold"), kwargs.get("mapping"), kwargs.get("conv_mask_to_poly"))
         elif function.kind == LambdaType.REID:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
@@ -757,6 +767,7 @@ class RequestViewSet(viewsets.ViewSet):
             task = request.data['task']
             quality = request.data.get("quality")
             cleanup = request.data.get('cleanup', False)
+            conv_mask_to_poly = request.data.get('convMaskToPoly', False)
             mapping = request.data.get('mapping')
             max_distance = request.data.get('max_distance')
         except KeyError as err:
@@ -769,7 +780,7 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
         job = queue.enqueue(lambda_func, threshold, task, quality,
-            mapping, cleanup, max_distance)
+            mapping, cleanup, conv_mask_to_poly, max_distance)
 
         return job.to_dict()
 

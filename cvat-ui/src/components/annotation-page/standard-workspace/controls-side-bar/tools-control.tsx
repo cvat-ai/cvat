@@ -883,7 +883,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private renderMasksConvertingBlock(): JSX.Element {
         const { convertMasksToPolygons } = this.state;
         return (
-            <Row className='cvat-detector-setups-container'>
+            <Row className='cvat-interactors-setups-container'>
                 <Switch
                     checked={convertMasksToPolygons}
                     onChange={(checked: boolean) => {
@@ -1086,7 +1086,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderDetectorBlock(): JSX.Element {
-        const { convertMasksToPolygons } = this.state;
         const {
             jobInstance, detectors, curZOrder, frame, createAnnotations,
         } = this.props;
@@ -1173,9 +1172,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 if (!jobLabel || !modelLabel) return null;
 
                                 const objectData = {
-                                    // shapeType: 'mask',
                                     label: jobLabel,
-                                    // points: data.mask,
                                     objectType: ObjectType.SHAPE,
                                     frame,
                                     occluded: false,
@@ -1202,7 +1199,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     zOrder: curZOrder,
                                 };
 
-                                if (data.type === 'mask' && data.points && convertMasksToPolygons) {
+                                if (data.type === 'mask' && data.points && body.convMaskToPoly) {
                                     return new core.classes.ObjectState({
                                         ...objectData,
                                         shapeType: 'polygon',
@@ -1259,7 +1256,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         {this.renderInteractorBlock()}
                     </Tabs.TabPane>
                     <Tabs.TabPane key='detectors' tab='Detectors'>
-                        {this.renderMasksConvertingBlock()}
                         {this.renderDetectorBlock()}
                     </Tabs.TabPane>
                     <Tabs.TabPane key='trackers' tab='Trackers'>
