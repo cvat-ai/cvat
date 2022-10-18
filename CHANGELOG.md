@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
 - Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
 - Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
+- Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
+(<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
 
 ### Changed
@@ -54,6 +56,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 (<https://github.com/opencv/cvat/pull/5138>)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
+- Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
 
 ### Security
 - TDB
