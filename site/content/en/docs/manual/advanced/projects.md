@@ -32,15 +32,15 @@ You will see the following page:
 1. **Projects** is the navigation bar option to get to the Projects page.
 2. **Search box** Use it to find the project by name or assignee.
 3. Filters:
-   1. **Sort by** Use it to filter projects by selected properties like assignee, update date, and others.
-   2. **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
-   3. **Filter** Use it for customizable searches by adding your own filtering rules and groups.
-   4. **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
+   - **Sort by** Use it to filter projects by selected properties like assignee, update date, and others.
+   -  **Quick filters** Use it to filter by projects assigned to you, owned by you, and not complete projects.
+   -  **Filter** Use it for customizable searches by adding your own filtering rules and groups.
+   -  **Clear filters** is only active, when one of the filters is active. Use it to clear all filters.
 
 4. ![Plus](/images/plus.png) . Click it to open the drop-down menu:
 
-   1. **Create new project** Use it to create a new project.
-   2. **Create from backup** Use it to create a project from the backup.
+   - **Create new project** Use it to create a new project.
+   - **Create from backup** Use it to create a project from the backup.
 5. **Create a new one** duplicates **Create new project**, use it to create a new project.
 6. Project pane, where the created project will appear.
 
@@ -69,30 +69,29 @@ To create a new project, do the following:
 2. Go to the **Constructor** tab.
 3. In the **Name** field enter the name of your project.
 4. Click **Add label** and fill in the following fields:
-
-  1. **Label name** Mandatory field. Enter the name of the annotation label.
+  **Label name** Mandatory field. Enter the name of the annotation label.
   2. **Change colour of the label** (![change colour of the label](/images/color-field.png)) Optional field. Click the icon and select the color from the color palette.
   3. **Add attribute** Optional field. Opens a menu, where you can set the following attributes:
-     1. **Name** Mandatory field. Enter the name of the attribute.
-     2. From the drop-down list, select an HTML element, representing the attribute:
-        - **Select** is a placeholder and cannot be used as an attribute.
-        - **Radio** Use it to add a radio button, to select only one option from several.
-        - **Checkbox** Use it to add a checkbox for multiple options choice.
-        - **Text** Use it for text attributes.
-        - **Number** Use it for numeric attributes.
+  - **Name** Mandatory field. Enter the name of the attribute.
+  - From the drop-down list, select an HTML element, representing the attribute:
+  - **Select** is a placeholder and cannot be used as an attribute.
+  - **Radio** Use it to add a radio button, to select only one option from several.
+  - **Checkbox** Use it to add a checkbox for multiple options choice.
+  - **Text** Use it for text attributes.
+  - **Number** Use it for numeric attributes.
 
-   3. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
+  4. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
 
-       - For **Radio** enter one or more text values. To separate values, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
-       - For **Checkbox** from the drop-down list select one of the values **True** or **False**.
-       - For **Text** enter the default value in a text form. You can specify only one default value.
-       - For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
-   4. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
-   5. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
+   - For **Radio** enter one or more text values. To separate values, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
+   - For **Checkbox** from the drop-down list select one of the values **True** or **False**.
+   - For **Text** enter the default value in a text form. You can specify only one default value.
+   - For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
+   5. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
+   6. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
 
-      > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
+   > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
 
-      ![Create project-filled labels and attributes](/images/create_new_project_01.png)
+   ![Create project-filled labels and attributes](/images/create_new_project_01.png)
 
 5. Click **Continue**. Now the project has a label. To add more labels repeat steps 1 to 5.
 
