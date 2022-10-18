@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -108,3 +108,28 @@ def parse_specific_attributes(specific_attributes):
     return {
         key: value for (key, value) in parsed_specific_attributes
     } if parsed_specific_attributes else dict()
+
+
+def process_failed_job(rq_job):
+    if rq_job.meta['tmp_file_descriptor']:
+        os.close(rq_job.meta['tmp_file_descriptor'])
+    if os.path.exists(rq_job.meta['tmp_file']):
+        os.remove(rq_job.meta['tmp_file'])
+    exc_info = str(rq_job.exc_info) or str(rq_job.dependency.exc_info)
+    if rq_job.dependency:
+        rq_job.dependency.delete()
+    rq_job.delete()
+
+    return exc_info
+
+def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
+    rq_job_id_download_file = rq_id + f'?action=download_{filename}'
+    rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
+    if not rq_job_download_file:
+        # note: boto3 resource isn't pickleable, so we can't use storage
+        rq_job_download_file = queue.enqueue_call(
+            func=rq_func,
+            args=(db_storage, filename, key),
+            job_id=rq_job_id_download_file
+        )
+    return rq_job_download_file

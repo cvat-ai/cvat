@@ -15,7 +15,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.3.0
+version: 0.3.1
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -26,10 +26,36 @@ appVersion: latest
 
 dependencies:
   - name: redis
-    version: "12.9.*"
+    version: "16.13.*"
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
+
   - name: postgresql
-    version: "10.3.*"
+    version: "10.16.*"
     repository: https://charts.bitnami.com/bitnami
     condition: postgresql.enabled
+
+  - name: nuclio
+    version: 0.12.1
+    repository: https://nuclio.github.io/nuclio/charts
+    condition: nuclio.enabled
+
+  - name: logstash
+    version: "6.8.*"
+    repository: https://helm.elastic.co
+    condition: analytics.enabled
+
+  - name: elasticsearch
+    version: "6.8.*"
+    repository: https://helm.elastic.co
+    condition: analytics.enabled
+
+  - name: kibana
+    version: "6.8.*"
+    repository: https://helm.elastic.co
+    condition: analytics.enabled
+
+  - name: traefik
+    version: 10.24.0
+    repository: https://helm.traefik.io/traefik
+    condition: ingress.enabled

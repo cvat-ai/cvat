@@ -8,11 +8,20 @@ http:
       - strip-prefix
       service: kibana
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
+    kibana_https:
+      entryPoints:
+      - websecure
+      middlewares:
+      - analytics-auth
+      - strip-prefix
+      service: kibana
+      tls: {}
+      rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
 
   middlewares:
     analytics-auth:
       forwardauth:
-        address: http://cvat:8080/analytics
+        address: http://cvat_server:8080/analytics
         authRequestHeaders:
           - "Cookie"
           - "Authorization"

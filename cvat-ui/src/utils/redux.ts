@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Action, ActionCreatorsMapObject, AnyAction } from 'redux';
 import { ThunkAction as _ThunkAction, ThunkDispatch as _ThunkDispatch } from 'redux-thunk';
-import { CombinedState } from '../reducers/interfaces';
+import { CombinedState } from '../reducers';
 
 export interface ActionWithPayload<T, P> extends Action<T> {
     payload: P;

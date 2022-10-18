@@ -2,64 +2,78 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
 cvat:
   backend:
+    server:
+      replicas: 1
+      labels: {}
+      annotations: {}
+      resources: {}
+      affinity: {}
+      tolerations: []
+      envs:
+        ALLOWED_HOSTS: "*"
+        DJANGO_MODWSGI_EXTRA_ARGS: ""
+      additionalEnv: []
+      additionalVolumes: []
+      additionalVolumeMounts: []
+    worker:
+      default:
+        replicas: 2
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
+      low:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
+    utils:
+      replicas: 1
+      labels: {}
+      annotations: {}
+      resources: {}
+      affinity: {}
+      tolerations: []
+      additionalEnv: []
+      additionalVolumes: []
+      additionalVolumeMounts: []
     replicas: 1
-    image: openvino/cvat_server
+    image: cvat/server
     tag: latest
     permissionFix:
       enabled: true
-    labels: {}
-    #  test: test
-    annotations: {}
-    # test.io/test: test
-    resources: {}
-    affinity: {}
-    tolerations: []
-    # nodeAffinity:
-    #   requiredDuringSchedulingIgnoredDuringExecution:
-    #     nodeSelectorTerms:
-    #     - matchExpressions:
-    #       - key: kubernetes.io/e2e-az-name
-    #         operator: In
-    #         values:
-    #         - e2e-az1
-    #         - e2e-az2
-    envs:
-      ALLOWED_HOSTS: "*"
-      DJANGO_MODWSGI_EXTRA_ARGS: ""
-    additionalEnv: []
-    # Example:
-    #  - name: volume-from-secret
-    # - name: TEST
-    #  value: "test"
-    additionalVolumes: []
-    # Example(assumes that pvc was already created):
-    # - name: tmp
-    #   persistentVolumeClaim:
-    #       claimName: tmp
-    additionalVolumeMounts: []
-    # Example:
-    # -   mountPath: /tmp
-    #     name: tmp
-    #     subPath: test
     service:
-      type: ClusterIP
-      ports:
-        - port: 8080
-          targetPort: 8080
-          protocol: TCP
-          name: http
+      annotations:
+        traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+      spec:
+        type: ClusterIP
+        ports:
+          - port: 8080
+            targetPort: 8080
+            protocol: TCP
+            name: http
     defaultStorage:
-      enabled: true
-      size: 20Gi
+        enabled: true
+        size: 20Gi
   frontend:
     replicas: 1
-    image: openvino/cvat_ui
+    image: cvat/ui
     tag: latest
     labels: {}
     #  test: test
@@ -154,7 +168,7 @@ postgresql:
     user: postgres
     password: postgres
     dbname: cvat
-  # If not external following config will be applied by default
+ # If not external following config will be applied by default
   global:
     postgresql:
       existingSecret: cvat-postgres-secret
@@ -173,38 +187,130 @@ redis:
   #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
   enabled: true
   external:
-    host: 127.0.0.1
-  usePassword: false
+      host: 127.0.0.1
+  auth:
+    enabled: false
   cluster:
     enabled: false
 
-ingress:
+nuclio:
   enabled: false
-# Example for nginx ingress and cert manager
-#    annotations:
-#        kubernetes.io/ingress.class: nginx
-#        kubernetes.io/tls-acme: "true"
-#        ingress.kubernetes.io/ssl-redirect: "true"
-#        nginx.ingress.kubernetes.io/use-regex: "true"
-#        nginx.ingress.kubernetes.io/secure-backends: "true"
-#        nginx.ingress.kubernetes.io/proxy-body-size: "0"
-#        nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
-#        nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
-#        cert-manager.io/cluster-issuer: <issuer_name>
-#    hosts:
-#        - host: <your domain>
-#          paths:
-#              - path: "/api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*"
-#                service:
-#                    name: <release_name>-backend-service
-#                    port: 8080
-#              - path : "/"
-#                pathType: "Prefix"
-#                service:
-#                    name: <release_name>-frontend-service
-#                    port: 80
-#
-#    tls:
-#        - hosts:
-#              - <your domain>
-#          secretName: ingress-tls-cvat
+# See https://github.com/nuclio/nuclio/blob/master/hack/k8s/helm/nuclio/values.yaml for more info
+#  registry:
+#    loginUrl: someurl
+#    credentials:
+#      username: someuser
+#      password: somepass
+
+analytics:
+  enabled: false
+  external:
+    useExternal: false
+    logServerHost: logstash
+    logServerPort: 8080
+  ingress:
+    path: /analytics
+    pathType: "Prefix"
+    annotations:
+      kubernetes.io/ingress.class: traefik
+    service:
+      name: kibana
+      port: 5601
+
+# Because custom images are required here, you'll need to build them yourself and add them to your preferred docker registry.
+# Ignored if analytics.enabled is false
+# See https://github.com/elastic/helm-charts/blob/main/logstash/values.yaml for details
+logstash:
+  image: "your_logstash_image"
+  imageTag: "latest"
+  # For compatibility with compose config
+  extraEnvs:
+    - name: "LOGSTASH_OUTPUT_HOST"
+      value: "elasticsearch-master:9200"
+    - name: LOGSTASH_OUTPUT_USER
+      value: ""
+    - name: LOGSTASH_OUTPUT_PASS
+      value: ""
+  imagePullPolicy: Always
+  service:
+    type: ClusterIP
+    ports:
+      - name: http
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+
+# Ignored if analytics.enabled is false
+# See https://github.com/elastic/helm-charts/blob/main/elasticsearch/values.yaml for details
+elasticsearch:
+  image: "your_elasticsearch_image"
+  imageTag: "latest"
+  replicas: 1
+  minimumMasterNodes: 1
+
+# Ignored if analytics.enabled is false
+# See https://github.com/elastic/helm-charts/blob/main/kibana/values.yaml for details
+kibana:
+  image: "your_kibana_image"
+  imageTag: "latest"
+
+ingress:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    kubernetes.io/ingress.class: traefik
+  hosts:
+    - host: cvat.local
+      paths:
+        - path: /api
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
+        - path: /admin
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
+        - path: /static/admin
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
+        - path: /django-rq
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
+        - path: /git
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
+        - path: /opencv
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
+        - path: /profiler
+          pathType: "Prefix"
+          service:
+            name: backend-service
+            port: 8080
+        - path : /
+          pathType: "Prefix"
+          service:
+            name: frontend-service
+            port: 80
+  # tls:
+  #   - hosts:
+  #     - <your_domain>
+  #   secretName: ingress-tls-cvat
+
+traefik:
+  logs:
+    general:
+      level: INFO
+  service:
+    externalIPs:
+      # - "192.168.49.2"

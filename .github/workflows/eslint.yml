@@ -1,11 +1,11 @@
-name: Linter
+name: ESLint
 on: pull_request
 jobs:
-  ESLint:
+  Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
       - id: files
@@ -26,9 +26,8 @@ jobs:
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            npm ci
-            cd tests && npm ci && cd ..
-            npm install eslint-detailed-reporter --save-dev --legacy-peer-deps
+            yarn install --frozen-lockfile && cd tests && yarn install --frozen-lockfile && cd ..
+            yarn add eslint-detailed-reporter -D -W
             mkdir -p eslint_report
 
             echo "ESLint version: "$(npx eslint --version)

@@ -1,4 +1,5 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,6 +23,7 @@ import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
 from distutils.util import strtobool
+from cvat import __version__
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -112,21 +114,21 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'rest_auth',
+    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    'rest_auth.registration',
+    'dj_rest_auth.registration',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.organizations',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
-    'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
+    'cvat.apps.webhooks',
 ]
 
 SITE_ID = 1
@@ -177,14 +179,15 @@ REST_FRAMEWORK = {
         'anon': '100/minute',
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer',
+    'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
 }
 
 REST_AUTH_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
@@ -255,6 +258,7 @@ AUTHENTICATION_BACKENDS = [
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
@@ -276,6 +280,12 @@ RQ_QUEUES = {
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
+    },
+    'webhooks': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h'
     }
 }
 
@@ -283,7 +293,8 @@ NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
     'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)
+    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120),
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
 }
 
 RQ_SHOW_ADMIN_LINK = True
@@ -339,6 +350,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
+# Make sure to update other config files when upading these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
 LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
@@ -350,6 +362,9 @@ os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 
 CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
 os.makedirs(CACHE_ROOT, exist_ok=True)
+
+JOBS_ROOT = os.path.join(DATA_ROOT, 'jobs')
+os.makedirs(JOBS_ROOT, exist_ok=True)
 
 TASKS_ROOT = os.path.join(DATA_ROOT, 'tasks')
 os.makedirs(TASKS_ROOT, exist_ok=True)
@@ -371,6 +386,9 @@ os.makedirs(MIGRATIONS_LOGS_ROOT, exist_ok=True)
 
 CLOUD_STORAGE_ROOT = os.path.join(DATA_ROOT, 'storages')
 os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
+
+TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
+os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
 LOGGING = {
     'version': 1,
@@ -441,11 +459,6 @@ LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
 RESTRICTIONS = {
-    'user_agreements': [],
-
-    # this setting reduces task visibility to owner and assignee only
-    'reduce_task_visibility': False,
-
     # allow access to analytics component to users with business role
     # otherwise, only the administrator has access
     'analytics_visibility': True,
@@ -501,21 +514,20 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    'VERSION': 'alpha',
+    'VERSION': __version__,
     'CONTACT': {
-        'name': 'Nikita Manovich',
-        'url': 'https://github.com/nmanovic',
-        'email': 'nikita.manovich@intel.com',
+        'name': 'CVAT.ai team',
+        'url': 'https://github.com/cvat-ai/cvat',
+        'email': 'support@cvat.ai',
     },
     'LICENSE': {
         'name': 'MIT License',
         'url': 'https://en.wikipedia.org/wiki/MIT_License',
     },
+
     'SERVE_PUBLIC': True,
-    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-    'SCHEMA_PATH_PREFIX': '/api',
-    'SCHEMA_PATH_PREFIX_TRIM': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+
     # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
@@ -527,9 +539,35 @@ SPECTACULAR_SETTINGS = {
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
         'description': 'CVAT documentation',
-        'url': 'https://openvinotoolkit.github.io/cvat/docs/',
+        'url': 'https://opencv.github.io/cvat/docs/',
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
-}
 
+    # TODO: Our current implementation does not suppose this.
+    # Need to reconsider this later. It happens, for example,
+    # in TaskSerializer for data-originated fields - they can be empty.
+    # https://github.com/tfranzel/drf-spectacular/issues/54
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+
+    # Required for correct file upload type (bytes)
+    'COMPONENT_SPLIT_REQUEST': True,
+
+    'ENUM_NAME_OVERRIDES': {
+        'ShapeType': 'cvat.apps.engine.models.ShapeType',
+        'OperationStatus': 'cvat.apps.engine.models.StateChoice',
+        'ChunkType': 'cvat.apps.engine.models.DataChoice',
+        'StorageMethod': 'cvat.apps.engine.models.StorageMethodChoice',
+        'JobStatus': 'cvat.apps.engine.models.StatusChoice',
+        'JobStage': 'cvat.apps.engine.models.StageChoice',
+        'StorageType': 'cvat.apps.engine.models.StorageChoice',
+        'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+    },
+
+    # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
+    # some libraries (e.g. drf-nested-routers) use "_pk" suffixed path variables.
+    # This setting globally coerces path variables like "{user_pk}" to "{user_id}".
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SCHEMA_PATH_PREFIX_TRIM': False,
+}

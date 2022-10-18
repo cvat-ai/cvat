@@ -1,4 +1,5 @@
-# Copyright (C) 2019-2021 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -20,7 +21,7 @@ from cvat.apps.engine.utils import parse_specific_attributes
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 
 class BasicUserSerializer(serializers.ModelSerializer):
-    def validate(self, data):
+    def validate(self, attrs):
         if hasattr(self, 'initial_data'):
             unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
             if unknown_keys:
@@ -30,7 +31,7 @@ class BasicUserSerializer(serializers.ModelSerializer):
                 else:
                     message = 'Got unknown fields: {}'.format(unknown_keys)
                 raise serializers.ValidationError(message)
-        return data
+        return attrs
 
     class Meta:
         model = User
@@ -47,47 +48,77 @@ class UserSerializer(serializers.ModelSerializer):
             'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
+        extra_kwargs = {
+            'last_login': { 'allow_null': True }
+        }
 
 class AttributeSerializer(serializers.ModelSerializer):
+    values = serializers.ListField(allow_empty=True,
+        child=serializers.CharField(max_length=200),
+    )
+
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value',
-            'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
 
     # pylint: disable=no-self-use
     def to_internal_value(self, data):
         attribute = data.copy()
-        attribute['values'] = '\n'.join(map(lambda x: x.strip(), data.get('values', [])))
+        attribute['values'] = '\n'.join(data.get('values', []))
         return attribute
 
     def to_representation(self, instance):
         if instance:
-            attribute = super().to_representation(instance)
-            attribute['values'] = attribute['values'].split('\n')
+            rep = super().to_representation(instance)
+            rep['values'] = instance.values.split('\n')
         else:
-            attribute = instance
+            rep = instance
 
-        return attribute
+        return rep
 
-class LabelSerializer(serializers.ModelSerializer):
+class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
-    attributes = AttributeSerializer(many=True, source='attributespec_set',
-        default=[])
+    attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
     color = serializers.CharField(allow_blank=True, required=False)
-    deleted = serializers.BooleanField(required=False, help_text="Delete label if value is true from proper Task/Project object")
+    type = serializers.CharField(allow_blank=True, required=False)
+    has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted')
+        fields = ('id', 'name', 'color', 'attributes', 'type', 'has_parent', )
+        read_only_fields = ('parent',)
+
+class SkeletonSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    svg = serializers.CharField(allow_blank=True, required=False)
+
+    class Meta:
+        model = models.Skeleton
+        fields = ('id', 'svg',)
+
+class LabelSerializer(SublabelSerializer):
+    deleted = serializers.BooleanField(required=False, help_text='Delete label if value is true from proper Task/Project object')
+    sublabels = SublabelSerializer(many=True, required=False)
+    svg = serializers.CharField(allow_blank=True, required=False)
+
+    class Meta:
+        model = models.Label
+        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'sublabels', 'has_parent')
+
+    def to_representation(self, instance):
+        label = super().to_representation(instance)
+        if label['type'] == str(models.LabelType.SKELETON):
+            label['svg'] = instance.skeleton.svg
+        return label
 
     def validate(self, attrs):
-        if attrs.get('deleted') == True and attrs.get('id') is None:
+        if attrs.get('deleted') and attrs.get('id') is None:
             raise serializers.ValidationError('Deleted label must have an ID')
 
         return attrs
 
     @staticmethod
-    def update_instance(validated_data, parent_instance):
+    def update_instance(validated_data, parent_instance, parent_label=None):
         attributes = validated_data.pop('attributespec_set', [])
         instance = dict()
         if isinstance(parent_instance, models.Project):
@@ -105,9 +136,10 @@ class LabelSerializer(serializers.ModelSerializer):
             db_label.name = validated_data.get('name', db_label.name)
             logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
         else:
-            db_label = models.Label.objects.create(name=validated_data.get('name'), **instance)
+            db_label = models.Label.objects.create(name=validated_data.get('name'), type=validated_data.get('type'),
+                parent=parent_label, **instance)
             logger.info("New {} label was created".format(db_label.name))
-        if validated_data.get('deleted') == True:
+        if validated_data.get('deleted'):
             db_label.delete()
             return
         if not validated_data.get('color', None):
@@ -134,6 +166,7 @@ class LabelSerializer(serializers.ModelSerializer):
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
                 db_attr.values = attr.get('values', db_attr.values)
                 db_attr.save()
+        return db_label
 
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -159,12 +192,15 @@ class JobReadSerializer(serializers.ModelSerializer):
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'labels', 'bug_tracker', 'status', 'stage', 'state', 'mode',
-            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type')
+            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
+            'updated_date',)
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
+
     def to_representation(self, instance):
+        # FIXME: deal with resquest/response separation
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
 
@@ -273,8 +309,8 @@ class RqStatusSerializer(serializers.Serializer):
     progress = serializers.FloatField(max_value=100, default=0)
 
 class WriteOnceMixin:
-
-    """Adds support for write once fields to serializers.
+    """
+    Adds support for write once fields to serializers.
 
     To use it, specify a list of fields as `write_once_fields` on the
     serializer's Meta:
@@ -295,12 +331,15 @@ class WriteOnceMixin:
 
         # We're only interested in PATCH/PUT.
         if 'update' in getattr(self.context.get('view'), 'action', ''):
-            return self._set_write_once_fields(extra_kwargs)
+            extra_kwargs = self._set_write_once_fields(extra_kwargs)
 
         return extra_kwargs
 
     def _set_write_once_fields(self, extra_kwargs):
-        """Set all fields in `Meta.write_once_fields` to read_only."""
+        """
+        Set all fields in `Meta.write_once_fields` to read_only.
+        """
+
         write_once_fields = getattr(self.Meta, 'write_once_fields', None)
         if not write_once_fields:
             return extra_kwargs
@@ -318,7 +357,7 @@ class WriteOnceMixin:
 
         return extra_kwargs
 
-class DataSerializer(serializers.ModelSerializer):
+class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     use_zip_chunks = serializers.BooleanField(default=False)
     client_files = ClientFileSerializer(many=True, default=[])
@@ -336,7 +375,7 @@ class DataSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
-        match = re.search("step\s*=\s*([1-9]\d*)", value)
+        match = re.search(r"step\s*=\s*([1-9]\d*)", value)
         if not match:
             raise serializers.ValidationError("Invalid frame filter expression")
         return value
@@ -348,11 +387,11 @@ class DataSerializer(serializers.ModelSerializer):
         return value
 
     # pylint: disable=no-self-use
-    def validate(self, data):
-        if 'start_frame' in data and 'stop_frame' in data \
-            and data['start_frame'] > data['stop_frame']:
+    def validate(self, attrs):
+        if 'start_frame' in attrs and 'stop_frame' in attrs \
+            and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
-        return data
+        return attrs
 
     def create(self, validated_data):
         files = self._pop_data(validated_data)
@@ -404,34 +443,66 @@ class DataSerializer(serializers.ModelSerializer):
                 remote_file = models.RemoteFile(data=instance, **f)
                 remote_file.save()
 
-class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
+class StorageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Storage
+        fields = ('id', 'location', 'cloud_storage_id')
+
+class TaskReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
-    data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type')
-    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type')
-    size = serializers.ReadOnlyField(source='data.size')
-    image_quality = serializers.ReadOnlyField(source='data.image_quality')
-    data = serializers.ReadOnlyField(source='data.id')
+    data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
+    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
+    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
+    size = serializers.ReadOnlyField(source='data.size', required=False)
+    image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
+    data = serializers.ReadOnlyField(source='data.id', required=False)
     owner = BasicUserSerializer(required=False)
-    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
-            'owner_id', 'assignee_id', 'bug_tracker', 'created_date', 'updated_date',
-            'overlap', 'segment_size', 'status', 'labels', 'segments',
-            'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
-            'size', 'image_quality', 'data', 'dimension', 'subset', 'organization')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status',
-            'data_chunk_size', 'owner', 'assignee', 'data_compressed_chunk_type',
-            'data_original_chunk_type', 'size', 'image_quality', 'data',
-            'organization')
-        write_once_fields = ('overlap', 'segment_size', 'project_id')
+            'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
+            'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
+            'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
+            'subset', 'organization', 'target_storage', 'source_storage',
+        )
+        read_only_fields = fields
+        extra_kwargs = {
+            'organization': { 'allow_null': True },
+            'overlap': { 'allow_null': True },
+        }
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if instance.project_id:
+            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
+        return response
+
+class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
+
+    class Meta:
+        model = models.Task
+        fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
+            'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
+            'target_storage', 'source_storage',
+        )
+        write_once_fields = ('overlap', 'segment_size', 'project_id', 'owner_id', 'labels')
+
+    def to_representation(self, instance):
+        serializer = TaskReadSerializer(instance, context=self.context)
+        return serializer.data
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
@@ -452,22 +523,43 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
-        db_task = models.Task.objects.create(**validated_data)
-        label_colors = list()
-        for label in labels:
-            attributes = label.pop('attributespec_set')
-            if label.get('id', None):
-                del label['id']
-            if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_colors)
-            label_colors.append(label['color'])
-            db_label = models.Label.objects.create(task=db_task, **label)
-            for attr in attributes:
-                if attr.get('id', None):
-                    del attr['id']
-                models.AttributeSpec.objects.create(label=db_label, **attr)
 
-        task_path = db_task.get_task_dirname()
+        # configure source/target storages for import/export
+        storages = _configure_related_storages({
+            'source_storage': validated_data.pop('source_storage', None),
+            'target_storage': validated_data.pop('target_storage', None),
+        })
+
+        db_task = models.Task.objects.create(
+            **storages,
+            **validated_data)
+
+        def create_labels(labels, parent_label=None):
+            label_colors = list()
+            for label in labels:
+                attributes = label.pop('attributespec_set')
+                if label.get('id', None):
+                    del label['id']
+                if not label.get('color', None):
+                    label['color'] = get_label_color(label['name'], label_colors)
+                label_colors.append(label['color'])
+
+                sublabels = label.pop('sublabels', [])
+                svg = label.pop('svg', '')
+                db_label = models.Label.objects.create(task=db_task, parent=parent_label, **label)
+                create_labels(sublabels, parent_label=db_label)
+                if db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, svg=svg)
+
+                for attr in attributes:
+                    if attr.get('id', None):
+                        del attr['id']
+                    models.AttributeSpec.objects.create(label=db_label, **attr)
+
+        create_labels(labels)
+        task_path = db_task.get_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
@@ -476,12 +568,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         db_task.save()
         return db_task
-
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-        if instance.project_id:
-            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
-        return response
 
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
@@ -492,18 +578,33 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
-        if instance.project_id is None:
+
+        def update_labels(labels, parent_label=None):
             for label in labels:
-                LabelSerializer.update_instance(label, instance)
+                sublabels = label.pop('sublabels', [])
+                svg = label.pop('svg', '')
+                db_label = LabelSerializer.update_instance(label, instance, parent_label)
+                update_labels(sublabels, parent_label=db_label)
+                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, svg=svg)
+
+        if instance.project_id is None:
+            update_labels(labels)
+
         validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_project_id)
             if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
-                    raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
+                raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
-                        new_label = project.label_set.filter(name=old_label.name).first()
+                        if old_label.parent:
+                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                        else:
+                            new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
                     old_label.attributespec_set.all().delete()
@@ -518,7 +619,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     if len(new_label_for_name):
                         old_label.name = new_label_for_name[0].get('name', old_label.name)
                     try:
-                        new_label = project.label_set.filter(name=old_label.name).first()
+                        if old_label.parent:
+                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                        else:
+                            new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
                     for (model, attr, attr_name) in (
@@ -535,6 +639,9 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         )
             instance.project = project
 
+        # update source and target storages
+        _update_related_storages(instance, validated_data)
+
         instance.save()
         return instance
 
@@ -546,21 +653,46 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 project = models.Project.objects.filter(id=project_id).first()
                 if project is None:
                     raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
+            new_sublabel_names = {}
             for old_label in old_labels:
                 new_labels = tuple(filter(lambda x: x.get('id') == old_label.id, attrs.get('label_set', [])))
                 if len(new_labels):
-                    new_label_names.add(new_labels[0].get('name', old_label.name))
+                    parent = new_labels[0].get('parent', old_label.parent)
+                    if parent:
+                        if parent.name not in new_sublabel_names:
+                            new_sublabel_names[parent.name] = set()
+                        new_sublabel_names[parent.name].add(new_labels[0].get('name', old_label.name))
+                    else:
+                        new_label_names.add(new_labels[0].get('name', old_label.name))
                 else:
-                    new_label_names.add(old_label.name)
+                    parent = old_label.parent
+                    if parent:
+                        if parent.name not in new_sublabel_names:
+                            new_sublabel_names[parent.name] = set()
+                        new_sublabel_names[parent.name].add(old_label.name)
+                    else:
+                        new_label_names.add(old_label.name)
             target_project = models.Project.objects.get(id=project_id)
             target_project_label_names = set()
+            target_project_sublabel_names = {}
             for label in target_project.label_set.all():
-                target_project_label_names.add(label.name)
+                parent = label.parent
+                if parent:
+                    if parent.name not in target_project_sublabel_names:
+                        target_project_sublabel_names[parent.name] = set()
+                    target_project_sublabel_names[parent.name].add(label.name)
+                else:
+                    target_project_label_names.add(label.name)
             if not new_label_names.issubset(target_project_label_names):
                 raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+
+            for label, sublabels in new_sublabel_names.items():
+                if sublabels != target_project_sublabel_names.get(label):
+                    raise serializers.ValidationError('All task or project label names must be mapped to the target project')
         else:
             if 'label_set' in attrs.keys():
                 label_names = [label['name'] for label in attrs.get('label_set')]
@@ -576,22 +708,26 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
         read_only_fields = ('name',)
 
-class ProjectSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
+class ProjectReadSerializer(serializers.ModelSerializer):
+    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[], read_only=True)
     owner = BasicUserSerializer(required=False, read_only=True)
-    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    assignee = BasicUserSerializer(allow_null=True, required=False)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
-    dimension = serializers.CharField(max_length=16, required=False, read_only=True)
+    assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
+    task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
+    dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
+    target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
+    source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
-            'owner_id', 'assignee_id', 'bug_tracker', 'task_subsets',
-            'created_date', 'updated_date', 'status', 'dimension', 'organization')
+            'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
+            'dimension', 'organization', 'target_storage', 'source_storage',
+        )
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
-            'assignee', 'task_subsets', 'dimension', 'organization', 'tasks')
+            'assignee', 'task_subsets', 'dimension', 'organization', 'tasks',
+            'target_storage', 'source_storage',
+        )
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
@@ -601,25 +737,66 @@ class ProjectSerializer(serializers.ModelSerializer):
         response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
         return response
 
+class ProjectWriteSerializer(serializers.ModelSerializer):
+    labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
+    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    task_subsets = serializers.ListField(write_only=True, child=serializers.CharField(), required=False)
+
+    target_storage = StorageSerializer(write_only=True, required=False)
+    source_storage = StorageSerializer(write_only=True, required=False)
+
+    class Meta:
+        model = models.Project
+        fields = ('name', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
+            'target_storage', 'source_storage', 'task_subsets',
+        )
+
+    def to_representation(self, instance):
+        serializer = ProjectReadSerializer(instance, context=self.context)
+        return serializer.data
+
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
-        db_project = models.Project.objects.create(**validated_data)
-        label_colors = list()
-        for label in labels:
-            if label.get('id', None):
-                del label['id']
-            attributes = label.pop('attributespec_set')
-            if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_colors)
-            label_colors.append(label['color'])
-            db_label = models.Label.objects.create(project=db_project, **label)
-            for attr in attributes:
-                if attr.get('id', None):
-                    del attr['id']
-                models.AttributeSpec.objects.create(label=db_label, **attr)
 
-        project_path = db_project.get_project_dirname()
+        # configure source/target storages for import/export
+        storages = _configure_related_storages({
+            'source_storage': validated_data.pop('source_storage', None),
+            'target_storage': validated_data.pop('target_storage', None),
+        })
+
+        db_project = models.Project.objects.create(
+            **storages,
+            **validated_data)
+
+        def create_labels(labels, parent_label=None):
+            label_colors = list()
+            for label in labels:
+                attributes = label.pop('attributespec_set')
+                if label.get('id', None):
+                    del label['id']
+                if not label.get('color', None):
+                    label['color'] = get_label_color(label['name'], label_colors)
+                label_colors.append(label['color'])
+
+                sublabels = label.pop('sublabels', [])
+                svg = label.pop('svg', [])
+                db_label = models.Label.objects.create(project=db_project, parent=parent_label, **label)
+                create_labels(sublabels, parent_label=db_label)
+                if db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, svg=svg)
+
+                for attr in attributes:
+                    if attr.get('id', None):
+                        del attr['id']
+                    models.AttributeSpec.objects.create(label=db_label, **attr)
+
+        create_labels(labels)
+
+        project_path = db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
         os.makedirs(db_project.get_project_logs_dirname())
@@ -633,8 +810,24 @@ class ProjectSerializer(serializers.ModelSerializer):
         instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         labels = validated_data.get('label_set', [])
-        for label in labels:
-            LabelSerializer.update_instance(label, instance)
+
+        def update_labels(labels, parent_label=None):
+            for label in labels:
+                sublabels = label.pop('sublabels', [])
+                svg = label.pop('svg', '')
+                db_label = LabelSerializer.update_instance(label, instance, parent_label)
+                if not label.get('deleted'):
+                    update_labels(sublabels, parent_label=db_label)
+
+                    if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
+                        for db_sublabel in list(db_label.sublabels.all()):
+                            svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                        models.Skeleton.objects.create(root=db_label, svg=svg)
+
+        update_labels(labels)
+
+        # update source and target storages
+        _update_related_storages(instance, validated_data)
 
         instance.save()
         return instance
@@ -681,9 +874,10 @@ class PluginsSerializer(serializers.Serializer):
     MODELS = serializers.BooleanField()
     PREDICT = serializers.BooleanField()
 
-class DataMetaSerializer(serializers.ModelSerializer):
+class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
+    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
 
     class Meta:
         model = models.Data
@@ -695,16 +889,16 @@ class DataMetaSerializer(serializers.ModelSerializer):
             'stop_frame',
             'frame_filter',
             'frames',
+            'deleted_frames',
         )
-        read_only_fields = (
-            'chunk_size',
-            'size',
-            'image_quality',
-            'start_frame',
-            'stop_frame',
-            'frame_filter',
-            'frames',
-        )
+        read_only_fields = fields
+
+class DataMetaWriteSerializer(serializers.ModelSerializer):
+    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
+
+    class Meta:
+        model = models.Data
+        fields = ('deleted_frames',)
 
 class AttributeValSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField()
@@ -718,49 +912,56 @@ class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0, allow_null=True)
-    source = serializers.CharField(default = 'manual')
+    group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
+    source = serializers.CharField(default='manual')
 
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
-        source="labeledimageattributeval_set")
+        source="labeledimageattributeval_set", default=[])
 
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
-    occluded = serializers.BooleanField()
+    occluded = serializers.BooleanField(default=False)
+    outside = serializers.BooleanField(default=False, required=False)
     z_order = serializers.IntegerField(default=0)
     rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
     points = serializers.ListField(
         child=serializers.FloatField(),
-        allow_empty=False,
+        allow_empty=True, required=False
     )
 
-class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
+class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
-        source="labeledshapeattributeval_set")
+        source="labeledshapeattributeval_set", default=[])
+
+class LabeledShapeSerializer(SubLabeledShapeSerializer):
+    elements = SubLabeledShapeSerializer(many=True, required=False)
 
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    outside = serializers.BooleanField()
     attributes = AttributeValSerializer(many=True,
-        source="trackedshapeattributeval_set")
+        source="trackedshapeattributeval_set", default=[])
 
-class LabeledTrackSerializer(AnnotationSerializer):
-    shapes = TrackedShapeSerializer(many=True, allow_empty=False,
+class SubLabeledTrackSerializer(AnnotationSerializer):
+    shapes = TrackedShapeSerializer(many=True, allow_empty=True,
         source="trackedshape_set")
     attributes = AttributeValSerializer(many=True,
-        source="labeledtrackattributeval_set")
+        source="labeledtrackattributeval_set", default=[])
+
+class LabeledTrackSerializer(SubLabeledTrackSerializer):
+    elements = SubLabeledTrackSerializer(many=True, required=False)
 
 class LabeledDataSerializer(serializers.Serializer):
-    version = serializers.IntegerField()
-    tags   = LabeledImageSerializer(many=True)
-    shapes = LabeledShapeSerializer(many=True)
-    tracks = LabeledTrackSerializer(many=True)
+    version = serializers.IntegerField(default=0) # TODO: remove
+    tags   = LabeledImageSerializer(many=True, default=[])
+    shapes = LabeledShapeSerializer(many=True, default=[])
+    tracks = LabeledTrackSerializer(many=True, default=[])
 
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
+    mime_type = serializers.CharField(max_length=255)
 
 class LogEventSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False)
@@ -827,6 +1028,10 @@ class IssueReadSerializer(serializers.ModelSerializer):
         fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
             'created_date', 'updated_date', 'comments', 'resolved')
         read_only_fields = fields
+        extra_kwargs = {
+            'created_date': { 'allow_null': True },
+            'updated_date': { 'allow_null': True },
+        }
 
 
 class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -845,6 +1050,12 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         models.Comment.objects.create(issue=db_issue,
             message=message, owner=db_issue.owner)
         return db_issue
+
+    def update(self, instance, validated_data):
+        message = validated_data.pop('message', None)
+        if message:
+            raise NotImplementedError('Check https://github.com/cvat-ai/cvat/issues/122')
+        return super().update(instance, validated_data)
 
     class Meta:
         model = models.Issue
@@ -873,6 +1084,7 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
         model = models.CloudStorage
         exclude = ['credentials']
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
 @extend_schema_serializer(
     examples=[
@@ -940,8 +1152,8 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
 class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
-    key = serializers.CharField(max_length=20, allow_blank=True, required=False)
-    secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=44, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
@@ -955,6 +1167,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             'manifests', 'organization'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     # pylint: disable=no-self-use
     def validate_specific_attributes(self, value):
@@ -974,19 +1187,19 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def _manifests_validation(storage, manifests):
-            # check manifest files availability
-            for manifest in manifests:
-                file_status = storage.get_file_status(manifest)
-                if file_status == Status.NOT_FOUND:
-                    raise serializers.ValidationError({
-                        'manifests': "The '{}' file does not exist on '{}' cloud storage" \
-                            .format(manifest, storage.name)
-                    })
-                elif file_status == Status.FORBIDDEN:
-                    raise serializers.ValidationError({
-                        'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
-                            .format(manifest, storage.name)
-                    })
+        # check manifest files availability
+        for manifest in manifests:
+            file_status = storage.get_file_status(manifest)
+            if file_status == Status.NOT_FOUND:
+                raise serializers.ValidationError({
+                    'manifests': "The '{}' file does not exist on '{}' cloud storage" \
+                        .format(manifest, storage.name)
+                })
+            elif file_status == Status.FORBIDDEN:
+                raise serializers.ValidationError({
+                    'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                        .format(manifest, storage.name)
+                })
 
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
@@ -1138,3 +1351,61 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         model = models.RelatedFile
         fields = '__all__'
         read_only_fields = ('path',)
+
+
+def _update_related_storages(instance, validated_data):
+    for storage in ('source_storage', 'target_storage'):
+        new_conf = validated_data.pop(storage, None)
+
+        if not new_conf:
+            continue
+
+        cloud_storage_id = new_conf.get('cloud_storage_id')
+        if cloud_storage_id:
+            _validate_existence_of_cloud_storage(cloud_storage_id)
+
+        # storage_instance maybe None
+        storage_instance = getattr(instance, storage)
+        if not storage_instance:
+            storage_instance = models.Storage(**new_conf)
+            storage_instance.save()
+            setattr(instance, storage, storage_instance)
+            continue
+
+        new_location = new_conf.get('location')
+        storage_instance.location = new_location or storage_instance.location
+        storage_instance.cloud_storage_id = new_conf.get('cloud_storage_id', \
+            storage_instance.cloud_storage_id if not new_location else None)
+
+        cloud_storage_id = storage_instance.cloud_storage_id
+        if cloud_storage_id:
+            try:
+                _ = models.CloudStorage.objects.get(id=cloud_storage_id)
+            except models.CloudStorage.DoesNotExist:
+                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+
+        storage_instance.save()
+
+def _configure_related_storages(validated_data):
+
+    storages = {
+        'source_storage': None,
+        'target_storage': None,
+    }
+
+    for i in storages:
+        storage_conf = validated_data.get(i)
+        if storage_conf:
+            cloud_storage_id = storage_conf.get('cloud_storage_id')
+            if cloud_storage_id:
+                _validate_existence_of_cloud_storage(cloud_storage_id)
+            storage_instance = models.Storage(**storage_conf)
+            storage_instance.save()
+            storages[i] = storage_instance
+    return storages
+
+def _validate_existence_of_cloud_storage(cloud_storage_id):
+    try:
+        _ = models.CloudStorage.objects.get(id=cloud_storage_id)
+    except models.CloudStorage.DoesNotExist:
+        raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')

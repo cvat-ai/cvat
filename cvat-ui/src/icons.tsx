@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,6 +42,7 @@ import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
 import SVGBackgroundIcon from './assets/background-icon.svg';
 import SVGForegroundIcon from './assets/foreground-icon.svg';
 import SVGCubeIcon from './assets/cube-icon.svg';
+import SVGSkeletonIcon from './assets/skeleton-icon.svg';
 import SVGResetPerspectiveIcon from './assets/reset-perspective.svg';
 import SVGColorizeIcon from './assets/colorize-icon.svg';
 import SVGAITools from './assets/ai-tools-icon.svg';
@@ -50,7 +52,8 @@ import SVGFilterIcon from './assets/object-filter-icon.svg';
 import SVGCVATAzureProvider from './assets/vscode-icons_file-type-azure.svg';
 import SVGCVATS3Provider from './assets/S3.svg';
 import SVGCVATGoogleCloudProvider from './assets/google-cloud.svg';
-import SVGOpenVINO from './assets/openvino.svg';
+import SVGRestoreIcon from './assets/restore-icon.svg';
+import SVGMultiPlusIcon from './assets/multi-plus-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -89,6 +92,7 @@ export const ObjectOutsideIcon = React.memo((): JSX.Element => <SVGObjectOutside
 export const BackgroundIcon = React.memo((): JSX.Element => <SVGBackgroundIcon />);
 export const ForegroundIcon = React.memo((): JSX.Element => <SVGForegroundIcon />);
 export const CubeIcon = React.memo((): JSX.Element => <SVGCubeIcon />);
+export const SkeletonIcon = React.memo((): JSX.Element => <SVGSkeletonIcon />);
 export const ResetPerspectiveIcon = React.memo((): JSX.Element => <SVGResetPerspectiveIcon />);
 export const AIToolsIcon = React.memo((): JSX.Element => <SVGAITools />);
 export const ColorizeIcon = React.memo((): JSX.Element => <SVGColorizeIcon />);
@@ -98,4 +102,5 @@ export const FilterIcon = React.memo((): JSX.Element => <SVGFilterIcon />);
 export const AzureProvider = React.memo((): JSX.Element => <SVGCVATAzureProvider />);
 export const S3Provider = React.memo((): JSX.Element => <SVGCVATS3Provider />);
 export const GoogleCloudProvider = React.memo((): JSX.Element => <SVGCVATGoogleCloudProvider />);
-export const OpenVINOIcon = React.memo((): JSX.Element => <SVGOpenVINO />);
+export const RestoreIcon = React.memo((): JSX.Element => <SVGRestoreIcon />);
+export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);

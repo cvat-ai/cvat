@@ -1,0 +1,1298 @@
+{
+  "job": {
+    "2": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 1,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            223.39453125,
+            226.0751953125,
+            513.7663269042969,
+            377.9619903564453
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 2,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            63.0791015625,
+            139.75390625,
+            132.19337349397574,
+            112.3867469879533,
+            189.71144578313397,
+            159.23614457831354,
+            191.1030120481937,
+            246.9048192771097,
+            86.73554216867524,
+            335.5012048192784,
+            32.00060240964012,
+            250.15180722891637
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 3,
+          "label_id": 4,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            83.0244140625,
+            216.75390625,
+            112.24759036144678,
+            162.48313253012202,
+            167.44638554216908,
+            183.35662650602535,
+            149.35602409638705,
+            252.0072289156633,
+            84.41626506024113,
+            292.8265060240974,
+            72.81987951807241,
+            258.9650602409638
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 2,
+          "group": 0,
+          "id": 4,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            24.443359375,
+            107.2275390625,
+            84.91109877913368,
+            61.125083240844106,
+            169.4316315205324,
+            75.1561598224198,
+            226.5581576026634,
+            113.90865704772477,
+            240.5892341842391,
+            205.77880133185317,
+            210.52264150943483,
+            270.9230854605994
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 22,
+          "group": 0,
+          "id": 5,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            148.94921875,
+            285.6865234375,
+            313.515094339622,
+            400.32830188679145,
+            217.36415094339463,
+            585.2339622641503,
+            64.81698113207494,
+            499.25283018867776
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "7": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 29,
+          "label_id": 9,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            364.0361328125,
+            528.87890625,
+            609.5286041189956,
+            586.544622425632,
+            835.2494279176244,
+            360.0000000000018,
+            543.6247139588122,
+            175.4691075514893,
+            326.9656750572103,
+            192.76887871853796,
+            244.58581235698148,
+            319.63386727689067
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "8": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "9": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 27,
+          "label_id": 11,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            448.3779296875,
+            356.4892578125,
+            438.2558352402775,
+            761.3861556064112,
+            744.1780320366161,
+            319.37356979405195,
+            446.1288329519466,
+            163.03832951945333
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "10": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 30,
+          "label_id": 13,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            440.0439453125,
+            84.0791015625,
+            71.83311938382576,
+            249.81514762516053,
+            380.4441591784325,
+            526.585365853658,
+            677.6251604621302,
+            260.42875481386363,
+            629.4557124518615,
+            127.35044929396645
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "11": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 31,
+          "label_id": 6,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            65.6189987163034,
+            100.96585365853753,
+            142.12734274711147,
+            362.6243902439037
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "12": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "13": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "14": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "16": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 33,
+          "label_id": 7,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            100.14453125,
+            246.03515625,
+            408.8692551505537,
+            327.5483359746413,
+            588.5839936608554,
+            289.0380348652925,
+            623.8851030110927,
+            183.77654516640177,
+            329.2812995245622,
+            71.45483359746322
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "17": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 34,
+          "label_id": 16,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            106.36066411239153,
+            85.1515964240134,
+            240.08352490421748,
+            241.26526181354166
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 35,
+          "label_id": 16,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            414.29522752496996,
+            124.8035516093205,
+            522.2641509433943,
+            286.75693673695605
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "18": {
+      "shapes": [
+        {
+          "attributes": [
+            {
+              "spec_id": 2,
+              "value": "white"
+            }
+          ],
+          "elements": [
+            {
+              "attributes": [
+                {
+                  "spec_id": 3,
+                  "value": "val1"
+                }
+              ],
+              "frame": 0,
+              "group": 0,
+              "id": 39,
+              "label_id": 25,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                259.91862203681984,
+                67.8260869565238
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 40,
+              "label_id": 26,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                283.65217391304554,
+                276.52173913043686
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 37,
+              "label_id": 23,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                135.8260869565238,
+                118.10276296228554
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 38,
+              "label_id": 24,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                172.10450871201368,
+                274.6245183225243
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            }
+          ],
+          "frame": 0,
+          "group": 0,
+          "id": 36,
+          "label_id": 22,
+          "occluded": false,
+          "outside": false,
+          "points": [],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "skeleton",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [
+        {
+          "attributes": [
+            {
+              "spec_id": 2,
+              "value": "white"
+            }
+          ],
+          "elements": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 2,
+              "label_id": 23,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 2,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    381.9130434782637,
+                    355.0592829431864
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 6,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    137.0966796875,
+                    156.11214469590232
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 3,
+              "label_id": 24,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 3,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    461.9389738212561,
+                    583.320176176868
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 7,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    217.12261003049207,
+                    384.3730379295848
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            },
+            {
+              "attributes": [
+                {
+                  "spec_id": 3,
+                  "value": "val1"
+                }
+              ],
+              "frame": 0,
+              "group": 0,
+              "id": 4,
+              "label_id": 25,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 4,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    655.6465767436227,
+                    281.7391304347839
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 8,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    410.83021295285835,
+                    82.7919921875
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 5,
+              "label_id": 26,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 5,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    708.000000000003,
+                    586.0869565217404
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 9,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    463.1836362092399,
+                    387.13981827445605
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            }
+          ],
+          "frame": 0,
+          "group": 0,
+          "id": 1,
+          "label_id": 22,
+          "shapes": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "id": 1,
+              "occluded": false,
+              "outside": false,
+              "points": [],
+              "rotation": 0.0,
+              "type": "skeleton",
+              "z_order": 0
+            }
+          ],
+          "source": "manual"
+        }
+      ],
+      "version": 0
+    }
+  },
+  "task": {
+    "2": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 1,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            223.39453125,
+            226.0751953125,
+            513.7663269042969,
+            377.9619903564453
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 2,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            63.0791015625,
+            139.75390625,
+            132.19337349397574,
+            112.3867469879533,
+            189.71144578313397,
+            159.23614457831354,
+            191.1030120481937,
+            246.9048192771097,
+            86.73554216867524,
+            335.5012048192784,
+            32.00060240964012,
+            250.15180722891637
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 3,
+          "label_id": 4,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            83.0244140625,
+            216.75390625,
+            112.24759036144678,
+            162.48313253012202,
+            167.44638554216908,
+            183.35662650602535,
+            149.35602409638705,
+            252.0072289156633,
+            84.41626506024113,
+            292.8265060240974,
+            72.81987951807241,
+            258.9650602409638
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 2,
+          "group": 0,
+          "id": 4,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            24.443359375,
+            107.2275390625,
+            84.91109877913368,
+            61.125083240844106,
+            169.4316315205324,
+            75.1561598224198,
+            226.5581576026634,
+            113.90865704772477,
+            240.5892341842391,
+            205.77880133185317,
+            210.52264150943483,
+            270.9230854605994
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 22,
+          "group": 0,
+          "id": 5,
+          "label_id": 3,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            148.94921875,
+            285.6865234375,
+            313.515094339622,
+            400.32830188679145,
+            217.36415094339463,
+            585.2339622641503,
+            64.81698113207494,
+            499.25283018867776
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "5": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 29,
+          "label_id": 9,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            364.0361328125,
+            528.87890625,
+            609.5286041189956,
+            586.544622425632,
+            835.2494279176244,
+            360.0000000000018,
+            543.6247139588122,
+            175.4691075514893,
+            326.9656750572103,
+            192.76887871853796,
+            244.58581235698148,
+            319.63386727689067
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "6": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "7": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 27,
+          "label_id": 11,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            448.3779296875,
+            356.4892578125,
+            438.2558352402775,
+            761.3861556064112,
+            744.1780320366161,
+            319.37356979405195,
+            446.1288329519466,
+            163.03832951945333
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "8": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 30,
+          "label_id": 13,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            440.0439453125,
+            84.0791015625,
+            71.83311938382576,
+            249.81514762516053,
+            380.4441591784325,
+            526.585365853658,
+            677.6251604621302,
+            260.42875481386363,
+            629.4557124518615,
+            127.35044929396645
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "9": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 31,
+          "label_id": 6,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            65.6189987163034,
+            100.96585365853753,
+            142.12734274711147,
+            362.6243902439037
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "11": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 33,
+          "label_id": 7,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            100.14453125,
+            246.03515625,
+            408.8692551505537,
+            327.5483359746413,
+            588.5839936608554,
+            289.0380348652925,
+            623.8851030110927,
+            183.77654516640177,
+            329.2812995245622,
+            71.45483359746322
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "12": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "13": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 34,
+          "label_id": 16,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            106.36066411239153,
+            85.1515964240134,
+            240.08352490421748,
+            241.26526181354166
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 35,
+          "label_id": 16,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            414.29522752496996,
+            124.8035516093205,
+            522.2641509433943,
+            286.75693673695605
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "14": {
+      "shapes": [
+        {
+          "attributes": [
+            {
+              "spec_id": 2,
+              "value": "white"
+            }
+          ],
+          "elements": [
+            {
+              "attributes": [
+                {
+                  "spec_id": 3,
+                  "value": "val1"
+                }
+              ],
+              "frame": 0,
+              "group": 0,
+              "id": 39,
+              "label_id": 25,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                259.91862203681984,
+                67.8260869565238
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 40,
+              "label_id": 26,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                283.65217391304554,
+                276.52173913043686
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 37,
+              "label_id": 23,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                135.8260869565238,
+                118.10276296228554
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 38,
+              "label_id": 24,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                172.10450871201368,
+                274.6245183225243
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            }
+          ],
+          "frame": 0,
+          "group": 0,
+          "id": 36,
+          "label_id": 22,
+          "occluded": false,
+          "outside": false,
+          "points": [],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "skeleton",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [
+        {
+          "attributes": [
+            {
+              "spec_id": 2,
+              "value": "white"
+            }
+          ],
+          "elements": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 2,
+              "label_id": 23,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 2,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    381.9130434782637,
+                    355.0592829431864
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 6,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    137.0966796875,
+                    156.11214469590232
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 3,
+              "label_id": 24,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 3,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    461.9389738212561,
+                    583.320176176868
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 7,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    217.12261003049207,
+                    384.3730379295848
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            },
+            {
+              "attributes": [
+                {
+                  "spec_id": 3,
+                  "value": "val1"
+                }
+              ],
+              "frame": 0,
+              "group": 0,
+              "id": 4,
+              "label_id": 25,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 4,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    655.6465767436227,
+                    281.7391304347839
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 8,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    410.83021295285835,
+                    82.7919921875
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 5,
+              "label_id": 26,
+              "shapes": [
+                {
+                  "attributes": [],
+                  "frame": 0,
+                  "id": 5,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    708.000000000003,
+                    586.0869565217404
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                },
+                {
+                  "attributes": [],
+                  "frame": 3,
+                  "id": 9,
+                  "occluded": false,
+                  "outside": false,
+                  "points": [
+                    463.1836362092399,
+                    387.13981827445605
+                  ],
+                  "rotation": 0.0,
+                  "type": "points",
+                  "z_order": 0
+                }
+              ],
+              "source": "manual"
+            }
+          ],
+          "frame": 0,
+          "group": 0,
+          "id": 1,
+          "label_id": 22,
+          "shapes": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "id": 1,
+              "occluded": false,
+              "outside": false,
+              "points": [],
+              "rotation": 0.0,
+              "type": "skeleton",
+              "z_order": 0
+            }
+          ],
+          "source": "manual"
+        }
+      ],
+      "version": 0
+    }
+  }
+}

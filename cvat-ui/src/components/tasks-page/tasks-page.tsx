@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,11 +14,11 @@ import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { TasksQuery, Indexable } from 'reducers/interfaces';
+import { TasksQuery, Indexable } from 'reducers';
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
-import { getTasksAsync, hideEmptyTasks, importTaskAsync } from 'actions/tasks-actions';
+import { getTasksAsync, hideEmptyTasks } from 'actions/tasks-actions';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -70,7 +71,7 @@ function TasksPageComponent(props: Props): JSX.Element {
                     <Button
                         type='link'
                         onClick={(): void => {
-                            dispatch(hideEmptyTasks(true));
+                            dispatch(hideEmptyTasks(false));
                             message.destroy();
                         }}
                     >
@@ -139,7 +140,6 @@ function TasksPageComponent(props: Props): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
-                onImportTask={(file: File) => dispatch(importTaskAsync(file))}
                 importing={importing}
             />
             { fetching ? (

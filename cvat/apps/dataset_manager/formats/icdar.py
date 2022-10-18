@@ -1,4 +1,5 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -90,7 +91,7 @@ def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         dataset = Dataset.import_from(tmp_dir, 'icdar_word_recognition', env=dm_env)
-        dataset.transform(CaptionToLabel, 'icdar')
+        dataset.transform(CaptionToLabel, label='icdar')
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
@@ -110,7 +111,7 @@ def _import(src_file, instance_data, load_data_callback=None):
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'icdar_text_localization', env=dm_env)
-        dataset.transform(AddLabelToAnns, 'icdar')
+        dataset.transform(AddLabelToAnns, label='icdar')
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
@@ -133,7 +134,7 @@ def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         dataset = Dataset.import_from(tmp_dir, 'icdar_text_segmentation', env=dm_env)
-        dataset.transform(AddLabelToAnns, 'icdar')
+        dataset.transform(AddLabelToAnns, label='icdar')
         dataset.transform('masks_to_polygons')
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)

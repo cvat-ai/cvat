@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import { useSelector } from 'react-redux';
 import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import TopBarComponent from './top-bar';
 import MembersList from './members-list';
 

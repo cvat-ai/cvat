@@ -1,8 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { UserAddOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
 import Form, { RuleRender, RuleObject } from 'antd/lib/form';
 import Button from 'antd/lib/button';
@@ -11,7 +12,7 @@ import Checkbox from 'antd/lib/checkbox';
 
 import patterns from 'utils/validation-patterns';
 
-import { UserAgreement } from 'reducers/interfaces';
+import { UserAgreement } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
 
 export interface UserConfirmation {
@@ -89,7 +90,7 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
         const [agreement] = userAgreements
             .filter((userAgreement: UserAgreement): boolean => userAgreement.name === name);
         if (agreement.required && !value) {
-            return Promise.reject(new Error(`You must accept ${agreement.displayText} to continue!`));
+            return Promise.reject(new Error(`You must accept ${agreement.urlDisplayText} to continue!`));
         }
 
         return Promise.resolve();
@@ -98,8 +99,11 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 
 function RegisterFormComponent(props: Props): JSX.Element {
     const { fetching, userAgreements, onSubmit } = props;
+    const [form] = Form.useForm();
+    const [usernameEdited, setUsernameEdited] = useState(false);
     return (
         <Form
+            form={form}
             onFinish={(values: Record<string, string | boolean>) => {
                 const agreements = Object.keys(values)
                     .filter((key: string):boolean => key.startsWith('agreement:'));
@@ -155,25 +159,6 @@ function RegisterFormComponent(props: Props): JSX.Element {
             </Row>
             <Form.Item
                 hasFeedback
-                name='username'
-                rules={[
-                    {
-                        required: true,
-                        message: 'Please specify a username',
-                    },
-                    {
-                        validator: validateUsername,
-                    },
-                ]}
-            >
-                <Input
-                    prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='Username'
-                />
-            </Form.Item>
-
-            <Form.Item
-                hasFeedback
                 name='email'
                 rules={[
                     {
@@ -190,9 +175,34 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     autoComplete='email'
                     prefix={<MailOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
                     placeholder='Email address'
+                    onChange={(event) => {
+                        const { value } = event.target;
+                        if (!usernameEdited) {
+                            const [username] = value.split('@');
+                            form.setFieldsValue({ username });
+                        }
+                    }}
                 />
             </Form.Item>
-
+            <Form.Item
+                hasFeedback
+                name='username'
+                rules={[
+                    {
+                        required: true,
+                        message: 'Please specify a username',
+                    },
+                    {
+                        validator: validateUsername,
+                    },
+                ]}
+            >
+                <Input
+                    prefix={<UserAddOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    placeholder='Username'
+                    onChange={() => setUsernameEdited(true)}
+                />
+            </Form.Item>
             <Form.Item
                 hasFeedback
                 name='password1'
@@ -242,10 +252,12 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     ]}
                 >
                     <Checkbox>
-                        I read and accept the
-                        <a rel='noopener noreferrer' target='_blank' href={userAgreement.url}>
-                            {` ${userAgreement.displayText}`}
-                        </a>
+                        {userAgreement.textPrefix}
+                        {!!userAgreement.url &&
+                            <a rel='noopener noreferrer' target='_blank' href={userAgreement.url}>
+                                {` ${userAgreement.urlDisplayText}`}
+                            </a>
+                        }
                     </Checkbox>
                 </Form.Item>
             ))}
