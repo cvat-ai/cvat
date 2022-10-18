@@ -15,7 +15,7 @@ def init_context(context):
     labels_spec = functionconfig['metadata']['annotations']['spec']
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
 
-    model_handler = ModelLoader(labels)
+    model_handler = ModelLoader(labels) # pylint: disable=no-value-for-parameter
     context.user_data.model_handler = model_handler
 
     context.logger.info("Init context...100%")

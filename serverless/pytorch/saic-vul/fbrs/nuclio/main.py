@@ -12,7 +12,7 @@ from model_handler import ModelHandler
 def init_context(context):
     context.logger.info("Init context...  0%")
 
-    model = ModelHandler()
+    model = ModelHandler() # pylint: disable=no-value-for-parameter
     context.user_data.model = model
 
     context.logger.info("Init context...100%")
