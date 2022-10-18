@@ -8,7 +8,7 @@ import os.path as osp
 import shutil
 from glob import glob
 from tempfile import TemporaryDirectory
-
+from datumaro.util.image import find_images
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
@@ -55,15 +55,11 @@ def _import(src_file, instance_data, load_data_callback=None):
             for f in anno_files:
                 shutil.move(f, anno_dir)
 
-        # @update: add jpeg_dir @date: 2022/05/11
         jpeg_dir = osp.join(tmp_dir, 'JPEGImages')
         if not osp.isdir(jpeg_dir):
-            jpg_files = glob(osp.join(tmp_dir, '**', '*.jpg'), recursive=True)
-            jpeg_files = glob(osp.join(tmp_dir, '**', '*.jpeg'), recursive=True)
             os.makedirs(jpeg_dir, exist_ok=True)
-            for f in jpg_files:
-                shutil.move(f, jpeg_dir)
-            for f in jpeg_files:
+            images = [image for image in find_images(tmp_dir, recursive=True)]
+            for f in images:
                 shutil.move(f, jpeg_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'voc', env=dm_env)

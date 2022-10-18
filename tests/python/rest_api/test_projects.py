@@ -4,20 +4,27 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import os
+import os.path as osp
+import shutil
 from copy import deepcopy
 from http import HTTPStatus
 from itertools import groupby, product
+from tempfile import TemporaryDirectory
 from time import sleep
 
 import pytest
+from datumaro.util.image import find_images
+from datumaro.util.os_util import find_files
 from deepdiff import DeepDiff
+from pyunpack import Archive
 
 from shared.utils.config import get_method, make_api_client, patch_method
 
 from .utils import export_dataset
 
 
-@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("dontchangedb")
 class TestGetProjects:
     def _find_project_by_user_org(self, user, projects, is_project_staff_flag, is_project_staff):
         for p in projects:
@@ -265,7 +272,7 @@ class TestGetProjectBackup:
         )
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("changedb")
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
@@ -351,7 +358,7 @@ class TestPostProjects:
         self._test_create_project_201(user["username"], spec, org_id=user["org"])
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("changedb")
 class TestImportExportDatasetProject:
     def _test_export_project(self, username, pid, format_name):
         with make_api_client(username) as api_client:
@@ -458,8 +465,62 @@ class TestImportExportDatasetProject:
             )
             assert response.status == HTTPStatus.ACCEPTED
 
+    def test_can_import_export_dataset_with_pascal_voc_format(self):
+        username = "admin1"
+        format_name = "PASCAL VOC 1.1"
+        project_id = 4
 
-@pytest.mark.usefixtures("restore_db_per_function")
+        response = self._test_export_project(username, project_id, format_name)
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = "dataset.zip"
+
+        import_data = {
+            "dataset_file": tmp_file,
+        }
+
+        self._test_import_project(username, project_id, format_name, import_data)
+
+    def test_can_import_export_dataset_with_special_pascal_voc_format(self):
+        username = "admin1"
+        format_name = "PASCAL VOC 1.1"
+        project_id = 4
+
+        response = self._test_export_project(username, project_id, format_name)
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = "temp_dataset.zip"
+        with TemporaryDirectory() as tmp_dir:
+            with open(osp.join(tmp_dir, "temp_dataset.zip"), "wb") as f:
+                f.write(tmp_file.getvalue())
+            dataset_file = osp.join(tmp_dir, 'dataset')
+            os.makedirs(dataset_file, exist_ok=True)
+            Archive(osp.join(tmp_dir, "temp_dataset.zip")).extractall(dataset_file)
+
+            images = [image for image in find_images(osp.join(dataset_file, 'JPEGImages'), recursive=True)]
+            for f in images:
+                shutil.move(f, dataset_file)
+
+            anns = [ann for ann in find_files(osp.join(dataset_file, 'Annotations'), exts='.xml', recursive=True)]
+            for f in anns:
+                shutil.move(f, dataset_file)
+
+            shutil.rmtree(osp.join(dataset_file, 'Annotations'))
+            shutil.rmtree(osp.join(dataset_file, 'ImageSets'))
+            shutil.rmtree(osp.join(dataset_file, 'JPEGImages'))
+            shutil.make_archive(dataset_file, 'zip', tmp_dir, dataset_file)
+
+            with open(osp.join(tmp_dir, 'dataset.zip'), 'rb') as binary_file:
+                file = io.BytesIO(binary_file.read())
+                file.name = "dataset.zip"
+
+                import_data = {
+                    "dataset_file": file,
+                }
+
+                self._test_import_project(username, project_id, format_name, import_data)
+
+@pytest.mark.usefixtures("changedb")
 class TestPatchProjectLabel:
     def test_admin_can_delete_label(self, projects):
         project = deepcopy(list(projects)[1])
