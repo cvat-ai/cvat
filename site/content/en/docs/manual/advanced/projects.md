@@ -87,8 +87,8 @@ To create a new project, do the following:
    - For **Text** enter the default value in a text form. You can specify only one default value.
    - For **Number** specify a range, separated by a semicolon, from the lowest number to the highest number, and step.  For example: `10;100;2`
 
-   1. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
-   2. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
+   5. If you want to change the attribute from frame to frame, select the **Mutable** checkbox.
+   6. If you want to remove the attribute, click ![Garbage bin](/images/garbage-bin.png)
 
    > **Note** you can add more than one attribute, by clicking **Add attribute**  more than one time.
 
