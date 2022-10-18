@@ -11,7 +11,7 @@ jobs:
       REPO: ${{ github.repository }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Getting SHA with cache from the default branch
         id: get-sha
