@@ -3,21 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import math
 import os
 import cv2
 import numpy as np
-import math
 from model_loader import ModelLoader
+from shared import to_cvat_mask
 from skimage.measure import approximate_polygon, find_contours
 
-
 MASK_THRESHOLD = 0.5
-
-def to_cvat_mask(box: list, mask):
-    xtl, ytl, xbr, ybr = box
-    flattened = mask[ytl:ybr + 1, xtl:xbr + 1].flat[:].tolist()
-    flattened.extend([xtl, ytl, xbr, ybr])
-    return flattened
 
 # Ref: https://software.intel.com/en-us/forums/computer-vision/topic/804895
 def segm_postprocess(box: list, raw_cls_mask, im_h, im_w):

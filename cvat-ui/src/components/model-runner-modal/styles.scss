@@ -15,3 +15,10 @@
 .cvat-run-model-label-attribute-block {
     padding-left: $grid-unit-size * 4;
 }
+
+.detector-runner-clean-previous-annotations-wrapper,
+.detector-runner-convert-masks-to-polygons-wrapper {
+    span {
+        margin-left: $grid-unit-size;
+    }
+}
