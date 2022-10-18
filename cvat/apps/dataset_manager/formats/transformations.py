@@ -72,3 +72,19 @@ class EllipsesToMasks:
         rle = mask_utils.encode(np.asfortranarray(mat))
         return dm.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
             attributes=ellipse.attributes, group=ellipse.group)
+
+class MaskToPolygonTransformation:
+    """
+    Manages common logic for mask to polygons conversion in dataset import.
+    This usecase is supposed for backward compatibility for the transition period.
+    """
+
+    @classmethod
+    def declare_arg_names(cls):
+        return ['conv_mask_to_poly']
+
+    @classmethod
+    def convert_dataset(cls, dataset, **kwargs):
+        if kwargs.get('conv_mask_to_poly', True):
+            dataset.transform('masks_to_polygons')
+        return dataset

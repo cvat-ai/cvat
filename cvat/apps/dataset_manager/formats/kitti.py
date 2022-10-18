@@ -13,7 +13,7 @@ from pyunpack import Archive
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import RotatedBoxesToPolygons
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
 from .utils import make_colormap
 
@@ -49,7 +49,6 @@ def _import(src_file, instance_data, **kwargs):
         if 'background' not in [label['name'] for _, label in labels_meta]:
             dataset.filter('/item/annotation[label != "background"]',
                 filter_annotations=True)
-        if kwargs.get('conv_mask_to_poly', True):
-            dataset.transform('masks_to_polygons')
+        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
 
         import_dm_annotations(dataset, instance_data)

@@ -9,6 +9,7 @@ from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
+from cvat.apps.dataset_manager.formats.transformations import MaskToPolygonTransformation
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
@@ -29,8 +30,7 @@ def _import(src_file, instance_data, load_data_callback=None, **kwargs):
         Archive(src_file.name).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'label_me', env=dm_env)
-        if kwargs.get('conv_mask_to_poly', True):
-            dataset.transform('masks_to_polygons')
+        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)

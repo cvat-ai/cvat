@@ -15,7 +15,7 @@ from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import RotatedBoxesToPolygons
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
 
 
@@ -135,8 +135,7 @@ def _import(src_file, instance_data, load_data_callback=None, **kwargs):
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         dataset = Dataset.import_from(tmp_dir, 'icdar_text_segmentation', env=dm_env)
         dataset.transform(AddLabelToAnns, label='icdar')
-        if kwargs.get('conv_mask_to_poly', True):
-            dataset.transform('masks_to_polygons')
+        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
