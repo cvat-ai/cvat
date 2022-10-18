@@ -496,11 +496,11 @@ class TestImportExportDatasetProject:
             os.makedirs(dataset_file, exist_ok=True)
             Archive(osp.join(tmp_dir, "temp_dataset.zip")).extractall(dataset_file)
 
-            images = glob(osp.join(dataset_file, "JPEGImages", '**', '*.png'), recursive=True)
+            images = glob(osp.join(dataset_file, "JPEGImages", "**", "*.png"), recursive=True)
             for f in images:
                 shutil.move(f, dataset_file)
 
-            anns = glob(osp.join(dataset_file, "Annotations", '**', '*.xml'), recursive=True)
+            anns = glob(osp.join(dataset_file, "Annotations", "**", "*.xml"), recursive=True)
             for f in anns:
                 shutil.move(f, dataset_file)
 
