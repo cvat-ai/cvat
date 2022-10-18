@@ -39,6 +39,6 @@
     "platform": "^1.3.5",
     "quickhull": "^1.0.3",
     "store": "^2.0.12",
-    "tus-js-client": "^2.3.0"
+    "tus-js-client": "^3.0.1"
   }
 }
