@@ -415,6 +415,7 @@ export function propagateObjectAsync(sessionInstance: any, objectState: any, fro
                 shapeType: _objectState.shapeType,
                 label: _objectState.label,
                 zOrder: _objectState.zOrder,
+                rotation: _objectState.rotation,
                 frame: from,
                 elements: _objectState.shapeType === 'skeleton' ? _objectState.elements
                     .map((element: any): any => getCopyFromState(element)) : [],

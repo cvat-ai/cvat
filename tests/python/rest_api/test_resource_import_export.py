@@ -103,7 +103,7 @@ def _idempotent_saving_resource_to_cloud_storage(*args, **kwargs):
     remove_asset(args[1]["resource"], kwargs["filename"])
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestSaveResource:
     _USERNAME = "admin1"
     _ORG = 2
@@ -213,7 +213,7 @@ def _import_dataset_from_cloud_storage(user, obj_id, obj, **kwargs):
         status = response.status_code
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestImportResource:
     _USERNAME = "admin1"
