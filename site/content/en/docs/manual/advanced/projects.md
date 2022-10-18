@@ -80,7 +80,7 @@ To create a new project, do the following:
    - **Text** Use it for text attributes.
    - **Number** Use it for numeric attributes.
 
-  4. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
+   4. In the **Attribute value** field, specify the attribute value. This field depends on the type of the HTML element from the previous step:
 
    - For **Radio** enter one or more text values. To separate values, press Enter after each value name. To remove value from the field, at the end of the value name, click `X`.
    - For **Checkbox** from the drop-down list select one of the values **True** or **False**.
