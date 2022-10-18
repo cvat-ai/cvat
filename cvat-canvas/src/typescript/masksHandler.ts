@@ -105,6 +105,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 opacity: 0.75,
                 left: this.latestMousePos.x - this.tool.size / 2,
                 top: this.latestMousePos.y - this.tool.size / 2,
+                stroke: 'white',
+                strokeWidth: 1,
             };
             this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
                 ...common,
@@ -115,7 +117,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 height: this.tool.size,
             });
 
+            this.canvas.defaultCursor = 'none';
             this.canvas.add(this.brushMarker);
+        } else {
+            this.canvas.defaultCursor = 'inherit';
         }
     }
 
@@ -264,7 +269,12 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
-        this.canvas = new fabric.Canvas(canvas, { containerClass: 'cvat_masks_canvas_wrapper', fireRightClick: true, selection: false });
+        this.canvas = new fabric.Canvas(canvas, {
+            containerClass: 'cvat_masks_canvas_wrapper',
+            fireRightClick: true,
+            selection: false,
+            defaultCursor: 'inherit',
+        });
         this.canvas.imageSmoothingEnabled = false;
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());

@@ -11,7 +11,6 @@ import Button from 'antd/lib/button';
 import Icon, { VerticalAlignBottomOutlined } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
-import message from 'antd/lib/message';
 
 import { getCore } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
@@ -32,7 +31,6 @@ const DraggableArea = (
 );
 
 const MIN_BRUSH_SIZE = 1;
-let polygonFinishingTipShown = false;
 function BrushTools(): React.ReactPortal | null {
     const dispatch = useDispatch();
     const defaultLabelID = useSelector((state: CombinedState) => state.annotation.drawing.activeLabelID);
@@ -106,11 +104,6 @@ function BrushTools(): React.ReactPortal | null {
                 });
             }
         }
-
-        if (currentTool.startsWith('polygon-') && !polygonFinishingTipShown) {
-            polygonFinishingTipShown = true;
-            message.info('Double click the canvas to finish a polygon', 5);
-        }
     }, [currentTool, brushSize, brushForm, removeUnderlyingPixels, visible, activeLabelID, editableState]);
 
     useEffect(() => {
@@ -172,6 +165,8 @@ function BrushTools(): React.ReactPortal | null {
         return null;
     }
 
+    const polygonFinishMessage = 'Double click the canvas to finish a polygon';
+
     return ReactDOM.createPortal((
         <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
             <Button
@@ -220,18 +215,22 @@ function BrushTools(): React.ReactPortal | null {
                 icon={<Icon component={EraserIcon} />}
                 onClick={() => setCurrentTool('eraser')}
             />
-            <Button
-                type='text'
-                className={['cvat-brush-tools-polygon-plus', ...(currentTool === 'polygon-plus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
-                icon={<Icon component={PolygonPlusIcon} />}
-                onClick={() => setCurrentTool('polygon-plus')}
-            />
-            <Button
-                type='text'
-                className={['cvat-brush-tools-polygon-minus', ...(currentTool === 'polygon-minus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
-                icon={<Icon component={PolygonMinusIcon} />}
-                onClick={() => setCurrentTool('polygon-minus')}
-            />
+            <CVATTooltip title={polygonFinishMessage}>
+                <Button
+                    type='text'
+                    className={['cvat-brush-tools-polygon-plus', ...(currentTool === 'polygon-plus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                    icon={<Icon component={PolygonPlusIcon} />}
+                    onClick={() => setCurrentTool('polygon-plus')}
+                />
+            </CVATTooltip>
+            <CVATTooltip title={polygonFinishMessage}>
+                <Button
+                    type='text'
+                    className={['cvat-brush-tools-polygon-minus', ...(currentTool === 'polygon-minus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                    icon={<Icon component={PolygonMinusIcon} />}
+                    onClick={() => setCurrentTool('polygon-minus')}
+                />
+            </CVATTooltip>
             { ['brush', 'eraser'].includes(currentTool) ? (
                 <CVATTooltip title='Brush size [Hold Alt + Right Mouse Click + Drag Left/Right]'>
                     <InputNumber
