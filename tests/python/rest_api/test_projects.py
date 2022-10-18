@@ -8,14 +8,13 @@ import os
 import os.path as osp
 import shutil
 from copy import deepcopy
+from glob import glob
 from http import HTTPStatus
 from itertools import groupby, product
 from tempfile import TemporaryDirectory
 from time import sleep
 
 import pytest
-from datumaro.util.image import find_images
-from datumaro.util.os_util import find_files
 from deepdiff import DeepDiff
 from pyunpack import Archive
 
@@ -497,18 +496,11 @@ class TestImportExportDatasetProject:
             os.makedirs(dataset_file, exist_ok=True)
             Archive(osp.join(tmp_dir, "temp_dataset.zip")).extractall(dataset_file)
 
-            images = [
-                image for image in find_images(osp.join(dataset_file, "JPEGImages"), recursive=True)
-            ]
+            images = glob(osp.join(dataset_file, "JPEGImages", '**', '*.png'), recursive=True)
             for f in images:
                 shutil.move(f, dataset_file)
 
-            anns = [
-                ann
-                for ann in find_files(
-                    osp.join(dataset_file, "Annotations"), exts=".xml", recursive=True
-                )
-            ]
+            anns = glob(osp.join(dataset_file, "Annotations", '**', '*.xml'), recursive=True)
             for f in anns:
                 shutil.move(f, dataset_file)
 
