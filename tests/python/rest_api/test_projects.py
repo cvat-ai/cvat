@@ -493,24 +493,31 @@ class TestImportExportDatasetProject:
         with TemporaryDirectory() as tmp_dir:
             with open(osp.join(tmp_dir, "temp_dataset.zip"), "wb") as f:
                 f.write(tmp_file.getvalue())
-            dataset_file = osp.join(tmp_dir, 'dataset')
+            dataset_file = osp.join(tmp_dir, "dataset")
             os.makedirs(dataset_file, exist_ok=True)
             Archive(osp.join(tmp_dir, "temp_dataset.zip")).extractall(dataset_file)
 
-            images = [image for image in find_images(osp.join(dataset_file, 'JPEGImages'), recursive=True)]
+            images = [
+                image for image in find_images(osp.join(dataset_file, "JPEGImages"), recursive=True)
+            ]
             for f in images:
                 shutil.move(f, dataset_file)
 
-            anns = [ann for ann in find_files(osp.join(dataset_file, 'Annotations'), exts='.xml', recursive=True)]
+            anns = [
+                ann
+                for ann in find_files(
+                    osp.join(dataset_file, "Annotations"), exts=".xml", recursive=True
+                )
+            ]
             for f in anns:
                 shutil.move(f, dataset_file)
 
-            shutil.rmtree(osp.join(dataset_file, 'Annotations'))
-            shutil.rmtree(osp.join(dataset_file, 'ImageSets'))
-            shutil.rmtree(osp.join(dataset_file, 'JPEGImages'))
-            shutil.make_archive(dataset_file, 'zip', tmp_dir, dataset_file)
+            shutil.rmtree(osp.join(dataset_file, "Annotations"))
+            shutil.rmtree(osp.join(dataset_file, "ImageSets"))
+            shutil.rmtree(osp.join(dataset_file, "JPEGImages"))
+            shutil.make_archive(dataset_file, "zip", tmp_dir, dataset_file)
 
-            with open(osp.join(tmp_dir, 'dataset.zip'), 'rb') as binary_file:
+            with open(osp.join(tmp_dir, "dataset.zip"), "rb") as binary_file:
                 file = io.BytesIO(binary_file.read())
                 file.name = "dataset.zip"
 
@@ -519,6 +526,7 @@ class TestImportExportDatasetProject:
                 }
 
                 self._test_import_project(username, project_id, format_name, import_data)
+
 
 @pytest.mark.usefixtures("changedb")
 class TestPatchProjectLabel:
