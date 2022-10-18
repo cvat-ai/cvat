@@ -26,7 +26,7 @@ class TestCLI:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
+        restore_db_per_function,  # force fixture call order to allow DB setup
         fxt_stdout: io.StringIO,
         tmp_path: Path,
         admin_user: str,
