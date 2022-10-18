@@ -152,8 +152,10 @@ function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): numb
         sorted = [...objectStates].sort((a: any, b: any): number => a.clientID - b.clientID);
     } else if (ordering === StatesOrdering.ID_DESCENT) {
         sorted = [...objectStates].sort((a: any, b: any): number => b.clientID - a.clientID);
-    } else {
+    } else if (ordering === StatesOrdering.UPDATED) {
         sorted = [...objectStates].sort((a: any, b: any): number => b.updated - a.updated);
+    } else {
+        sorted = [...objectStates].sort((a: any, b: any): number => a.zOrder - b.zOrder);
     }
 
     return sorted.map((state: any) => state.clientID);
