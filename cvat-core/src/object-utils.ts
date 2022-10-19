@@ -257,15 +257,11 @@ export function mask2Rle(mask: number[]): number[] {
     }, []);
 }
 
-export function rle2Mask(rle: number[]): [number[], number[]] {
-    const [left, top, right, bottom] = rle.slice(-4);
-    const width = right - left + 1;
-    const height = bottom - top + 1;
+export function rle2Mask(rle: number[], width: number, height: number): number[] {
     const decoded = Array(width * height).fill(0);
-    const latestIdx = rle.length - 4;
     let decodedIdx = 0;
     let value = 0;
-    for (let rleCountIdx = 0; rleCountIdx < latestIdx; rleCountIdx += 1) {
+    for (let rleCountIdx = 0; rleCountIdx < rle.length; rleCountIdx += 1) {
         let count = rle[rleCountIdx];
         while (count > 0) {
             decoded[decodedIdx] = value;
@@ -275,5 +271,5 @@ export function rle2Mask(rle: number[]): [number[], number[]] {
         value = Math.abs(value - 1);
     }
 
-    return [decoded, [left, top, right, bottom]];
+    return decoded;
 }

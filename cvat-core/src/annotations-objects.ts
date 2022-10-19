@@ -2169,7 +2169,7 @@ export class MaskShape extends Shape {
 
     constructor(data, clientID, color, injection) {
         super(data, clientID, color, injection);
-        [this.points, [this.left, this.top, this.right, this.bottom]] = rle2Mask(this.points);
+        [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
         this.getMasksOnFrame = injection.getMasksOnFrame;
         this.pinned = true;
         this.shapeType = ShapeType.MASK;
@@ -2178,7 +2178,6 @@ export class MaskShape extends Shape {
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
         if (updated.points) {
-            // const { points } = data;
             const { width, height } = this.frameMeta[frame];
             const fittedPoints = truncateMask(data.points, 0, width, height);
             return fittedPoints;
@@ -2197,12 +2196,15 @@ export class MaskShape extends Shape {
         const others = this.getMasksOnFrame(frame)
             .filter((mask: MaskShape) => mask.clientID !== this.clientID && !mask.removed);
         const width = this.right - this.left + 1;
+        const height = this.bottom - this.top + 1;
         const updatedObjects: Record<number, MaskShape> = {};
 
-        for (let i = 0; i < this.points.length; i++) {
-            if (this.points[i]) {
-                const x = (i % width) + this.left;
-                const y = Math.trunc(i / width) + this.top;
+        const masks = {};
+        const currentMask = rle2Mask(this.points, width, height);
+        for (let i = 0; i < currentMask.length; i++) {
+            if (currentMask[i]) {
+                const imageX = (i % width) + this.left;
+                const imageY = Math.trunc(i / width) + this.top;
                 for (const other of others) {
                     const box = {
                         left: other.left,
@@ -2210,13 +2212,15 @@ export class MaskShape extends Shape {
                         right: other.right,
                         bottom: other.bottom,
                     };
-                    const translatedX = x - box.left;
-                    const translatedY = y - box.top;
+                    const translatedX = imageX - box.left;
+                    const translatedY = imageY - box.top;
                     const [otherWidth, otherHeight] = [box.right - box.left + 1, box.bottom - box.top + 1];
                     if (translatedX >= 0 && translatedX < otherWidth &&
                         translatedY >= 0 && translatedY < otherHeight) {
+                        masks[other.clientID] = masks[other.clientID] ||
+                            rle2Mask(other.points, otherWidth, otherHeight);
                         const j = translatedY * otherWidth + translatedX;
-                        other.points[j] = 0;
+                        masks[other.clientID][j] = 0;
                         updatedObjects[other.clientID] = other;
                     }
                 }
@@ -2224,11 +2228,12 @@ export class MaskShape extends Shape {
         }
 
         for (const object of Object.values(updatedObjects)) {
+            object.points = mask2Rle(masks[object.clientID]);
             object.updated = Date.now();
         }
     }
 
-    protected savePoints(points: number[], frame: number): void {
+    protected savePoints(maskPoints: number[], frame: number): void {
         const undoPoints = this.points;
         const undoLeft = this.left;
         const undoRight = this.right;
@@ -2236,7 +2241,9 @@ export class MaskShape extends Shape {
         const undoBottom = this.bottom;
         const undoSource = this.source;
 
-        const [redoLeft, redoTop, redoRight, redoBottom] = points.splice(-4);
+        const [redoLeft, redoTop, redoRight, redoBottom] = maskPoints.splice(-4);
+        const points = mask2Rle(maskPoints);
+
         const redoPoints = points;
         const redoSource = Source.MANUAL;
 
@@ -2288,13 +2295,15 @@ export class MaskShape extends Shape {
 
 MaskShape.prototype.toJSON = function () {
     const result = Shape.prototype.toJSON.call(this);
-    result.points = [...mask2Rle(this.points), this.left, this.top, this.right, this.bottom];
+    result.points = this.points.slice();
+    result.points.push(this.left, this.top, this.right, this.bottom);
     return result;
 };
 
 MaskShape.prototype.get = function (frame) {
     const result = Shape.prototype.get.call(this, frame);
-    result.points = [...this.points, this.left, this.top, this.right, this.bottom];
+    result.points = rle2Mask(this.points, this.right - this.left + 1, this.bottom - this.top + 1);
+    result.points.push(this.left, this.top, this.right, this.bottom);
     return result;
 };
 

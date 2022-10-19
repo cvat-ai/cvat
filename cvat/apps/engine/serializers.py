@@ -8,6 +8,7 @@ import re
 import shutil
 
 from tempfile import NamedTemporaryFile
+from typing import OrderedDict
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
@@ -919,14 +920,37 @@ class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledimageattributeval_set", default=[])
 
+class OptimizedFloatListField(serializers.ListField):
+    '''Default ListField is extremely slow when try to process long lists of points'''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, child=serializers.FloatField())
+
+    def to_internal_value(self, data):
+        return self.run_child_validation(data)
+
+    def to_representation(self, data):
+        return data
+
+    def run_child_validation(self, data):
+        errors = OrderedDict()
+        for idx, item in enumerate(data):
+            if type(item) not in [int, float]:
+                errors[idx] = exceptions.ValidationError('Value must be a float or an integer')
+
+        if not errors:
+            return data
+
+        raise exceptions.ValidationError(errors)
+
+
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField(default=False)
     outside = serializers.BooleanField(default=False, required=False)
     z_order = serializers.IntegerField(default=0)
     rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
-    points = serializers.ListField(
-        child=serializers.FloatField(),
+    points = OptimizedFloatListField(
         allow_empty=True, required=False
     )
 
