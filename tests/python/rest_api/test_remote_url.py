@@ -32,7 +32,7 @@ def _wait_until_task_is_created(username, task_id):
     raise Exception("Cannot create task")
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestCreateFromRemote:
     task_id = 12
 

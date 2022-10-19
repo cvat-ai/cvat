@@ -11,7 +11,7 @@ from deepdiff import DeepDiff
 from shared.utils.config import get_method, patch_method
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetMemberships:
     def _test_can_see_memberships(self, user, data, **kwargs):
         response = get_method(user, "memberships", **kwargs)
@@ -44,7 +44,7 @@ class TestGetMemberships:
             self._test_cannot_see_memberships(user, org_id=1)
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchMemberships:
     _ORG = 2
 

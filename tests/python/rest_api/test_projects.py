@@ -17,7 +17,7 @@ from shared.utils.config import get_method, make_api_client, patch_method
 from .utils import export_dataset
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetProjects:
     def _find_project_by_user_org(self, user, projects, is_project_staff_flag, is_project_staff):
         for p in projects:
@@ -265,7 +265,7 @@ class TestGetProjectBackup:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
@@ -351,7 +351,7 @@ class TestPostProjects:
         self._test_create_project_201(user["username"], spec, org_id=user["org"])
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestImportExportDatasetProject:
     def _test_export_project(self, username, pid, format_name):
         with make_api_client(username) as api_client:
@@ -459,7 +459,7 @@ class TestImportExportDatasetProject:
             assert response.status == HTTPStatus.ACCEPTED
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
     def test_admin_can_delete_label(self, projects):
         project = deepcopy(list(projects)[1])

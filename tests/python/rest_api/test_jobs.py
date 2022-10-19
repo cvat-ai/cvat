@@ -47,7 +47,7 @@ def filter_jobs(jobs, tasks, org):
     return jobs, kwargs
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
     def _test_get_job_200(self, user, jid, data, **kwargs):
         with make_api_client(user) as client:
@@ -97,7 +97,7 @@ class TestGetJobs:
                     self._test_get_job_403(user["username"], job["id"], **kwargs)
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestListJobs:
     def _test_list_jobs_200(self, user, data, **kwargs):
         with make_api_client(user) as client:
@@ -142,7 +142,7 @@ class TestListJobs:
                 self._test_list_jobs_403(user["username"], **kwargs)
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAnnotations:
     def _test_get_job_annotations_200(self, user, jid, data, **kwargs):
         with make_api_client(user) as client:
@@ -266,7 +266,7 @@ class TestGetAnnotations:
             self._test_get_job_annotations_403(username, job_id, **kwargs)
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchJobAnnotations:
     def _check_respone(self, username, jid, expect_success, data=None, org=None):
         kwargs = {}
@@ -402,7 +402,7 @@ class TestPatchJobAnnotations:
         self._check_respone(username, jid, expect_success, data, org=org)
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchJob:
     @pytest.fixture(scope="class")
     def find_task_staff_user(self, is_task_staff):
@@ -489,7 +489,7 @@ class TestPatchJob:
                 assert response.status == HTTPStatus.FORBIDDEN
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
     def _export_dataset(self, username, jid, **kwargs):
         with make_api_client(username) as api_client:
