@@ -44,12 +44,11 @@ jobs:
     - name: Try the cluster!
       run: kubectl get pods -A
 
-    - name: Pull images
+    - name: Build images
       run: |
         export SHELL=/bin/bash
         eval $(minikube -p minikube docker-env)
-        docker pull cvat/server:dev
-        docker pull cvat/ui:dev
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml build
         echo -n "verifying images:"
         docker images
 
