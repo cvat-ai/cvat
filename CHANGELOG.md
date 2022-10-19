@@ -135,6 +135,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
 - Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
 - Fixed build of retinanet function image (<https://github.com/cvat-ai/cvat/pull/54>)
+- Dataset import for Datumaro format (<https://github.com/opencv/cvat/pull/4544>)
 
 ## \[2.0.0] - 2022-03-04
 ### Added
