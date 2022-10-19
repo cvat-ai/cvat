@@ -132,7 +132,7 @@ For more information about the supported formats, look at the
 | --------------------------------------------------------------------------------------------------------- | ------ | ------ |
 | [CVAT for images](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     |   ✔️    |   ✔️    |
 | [CVAT for a video](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) |   ✔️    |   ✔️    |
-| [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |        |   ✔️    |
+| [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |   ✔️    |   ✔️    |
 | [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     |   ✔️    |   ✔️    |
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             |   ✔️    |   ✔️    |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                                |   ✔️    |   ✔️    |
@@ -140,6 +140,7 @@ For more information about the supported formats, look at the
 | [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                                        |   ✔️    |   ✔️    |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       |   ✔️    |   ✔️    |
 | [MOT](https://motchallenge.net/)                                                                          |   ✔️    |   ✔️    |
+| [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)                                                   |   ✔️    |   ✔️    |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    |   ✔️    |   ✔️    |
 | [ImageNet](http://www.image-net.org)                                                                      |   ✔️    |   ✔️    |
 | [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                      |   ✔️    |   ✔️    |
@@ -150,7 +151,9 @@ For more information about the supported formats, look at the
 | [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                |   ✔️    |   ✔️    |
 | [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   |   ✔️    |   ✔️    |
 | [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            |   ✔️    |   ✔️    |
+| [Kitti Raw Format](https://www.cvlibs.net/datasets/kitti/raw_data.php)                                    |   ✔️    |   ✔️    |
 | [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   |   ✔️    |   ✔️    |
+| [Sly Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi)                  |   ✔️    |   ✔️    |
 
 <!--lint enable maximum-line-length-->
 
