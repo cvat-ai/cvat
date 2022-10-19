@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -163,7 +164,7 @@ function HeaderContainer(props: Props): JSX.Element {
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, FORUM_URL, GITHUB_URL, GUIDE_URL,
+        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
     } = consts;
 
     const history = useHistory();
@@ -199,7 +200,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         </Col>
                         <Col>
                             <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
-                                License
+                                MIT License
                             </a>
                         </Col>
                         <Col>
@@ -208,8 +209,8 @@ function HeaderContainer(props: Props): JSX.Element {
                             </a>
                         </Col>
                         <Col>
-                            <a href={FORUM_URL} target='_blank' rel='noopener noreferrer'>
-                                Forum on Intel Developer Zone
+                            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
+                                Find us on Discord
                             </a>
                         </Col>
                     </Row>
@@ -226,7 +227,7 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const resetOrganization = (): void => {
         localStorage.removeItem('currentOrganization');
-        if (/\d+$/.test(window.location.pathname)) {
+        if (/(webhooks)|(\d+)/.test(window.location.pathname)) {
             window.location.pathname = '/';
         } else {
             window.location.reload();
@@ -236,7 +237,7 @@ function HeaderContainer(props: Props): JSX.Element {
     const setNewOrganization = (organization: any): void => {
         if (!currentOrganization || currentOrganization.slug !== organization.slug) {
             localStorage.setItem('currentOrganization', organization.slug);
-            if (/\d+$/.test(window.location.pathname)) {
+            if (/\d+/.test(window.location.pathname)) {
                 // a resource is opened (task/job/etc.)
                 window.location.pathname = '/';
             } else {

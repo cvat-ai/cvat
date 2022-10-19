@@ -4,7 +4,7 @@ jobs:
   Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: files
         uses: jitterbit/get-changed-files@v1
         continue-on-error: true
@@ -17,7 +17,7 @@ jobs:
           # If different modules use different Black configs,
           # we need to run Black for each python component group separately.
           # Otherwise, they all will use the same config.
-          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python/sdk" "tests/python/cli")
+          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python")
 
           isValueIn () {
             # Checks if a value is in an array
@@ -66,7 +66,7 @@ jobs:
             echo "The dirs will be checked: $UPDATED_DIRS"
             EXIT_CODE=0
             for DIR in $UPDATED_DIRS; do
-              black --check $DIR >> ./black_report/black_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
+              black --check --diff $DIR >> ./black_report/black_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
             done
             deactivate
             exit $EXIT_CODE

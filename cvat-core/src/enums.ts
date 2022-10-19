@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier = MIT
 
@@ -389,7 +390,23 @@ export enum CloudStorageCredentialsType {
 }
 
 /**
- * Task statuses
+ * Types of cloud storage statuses
+ * @enum {string}
+ * @name CloudStorageStatus
+ * @memberof module:API.cvat.enums
+ * @property {string} AVAILABLE 'AVAILABLE'
+ * @property {string} NOT_FOUND 'NOT_FOUND'
+ * @property {string} FORBIDDEN 'FORBIDDEN'
+ * @readonly
+ */
+export enum CloudStorageStatus {
+    AVAILABLE = 'AVAILABLE',
+    NOT_FOUND = 'NOT_FOUND',
+    FORBIDDEN = 'FORBIDDEN',
+}
+
+/**
+ * Membership roles
  * @enum {string}
  * @name MembershipRole
  * @memberof module:API.cvat.enums
@@ -422,4 +439,44 @@ export enum SortingMethod {
     NATURAL = 'natural',
     PREDEFINED = 'predefined',
     RANDOM = 'random',
+}
+
+/**
+ * Types of storage locations
+ * @enum {string}
+ * @name StorageLocation
+ * @memberof module:API.cvat.enums
+ * @property {string} LOCAL 'local'
+ * @property {string} CLOUD_STORAGE 'cloud_storage'
+ * @readonly
+*/
+export enum StorageLocation {
+    LOCAL = 'local',
+    CLOUD_STORAGE = 'cloud_storage',
+}
+
+/**
+ * Webhook source types
+ * @enum {string}
+ * @name WebhookSourceType
+ * @memberof module:API.cvat.enums
+ * @property {string} ORGANIZATION 'organization'
+ * @property {string} PROJECT 'project'
+ * @readonly
+*/
+export enum WebhookSourceType {
+    ORGANIZATION = 'organization',
+    PROJECT = 'project',
+}
+
+/**
+ * Webhook content types
+ * @enum {string}
+ * @name WebhookContentType
+ * @memberof module:API.cvat.enums
+ * @property {string} JSON 'json'
+ * @readonly
+*/
+export enum WebhookContentType {
+    JSON = 'application/json',
 }

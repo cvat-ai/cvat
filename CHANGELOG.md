@@ -5,7 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.2.0] - Unreleased
+## \[2.3.0] - Unreleased
+### Added
+- SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
+- An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
+- REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
+- Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
+- Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
+- Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
+
+### Changed
+- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
+- Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
+- Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
+- Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
+
+### Deprecated
+- TDB
+
+### Removed
+- The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
+
+### Fixed
+- Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
+non-ascii paths while adding files from "Connected file share" (issue #4428)
+- Removed unnecessary volumes defined in docker-compose.serverless.yml
+(<https://github.com/openvinotoolkit/cvat/pull/4659>)
+- Project import/export with skeletons (<https://github.com/opencv/cvat/pull/4867>,
+  <https://github.com/opencv/cvat/pull/5004>)
+- Shape color is not changed on canvas after changing a label (<https://github.com/opencv/cvat/pull/5045>)
+- Unstable e2e restore tests (<https://github.com/opencv/cvat/pull/5010>)
+- IOG and f-BRS serverless function (<https://github.com/opencv/cvat/pull/5039>)
+- Invisible label item in label constructor when label color background is white,
+ or close to it (<https://github.com/opencv/cvat/pull/5041>)
+- Fixed cvat-core ESlint problems (<https://github.com/opencv/cvat/pull/5027>)
+- Fixed task creation with non-local files via the SDK/CLI
+  (<https://github.com/opencv/cvat/issues/4962>)
+- HRNET serverless function (<https://github.com/opencv/cvat/pull/4944>)
+- Invalid export of segmentation masks when the `background` label gets nonzero id (<https://github.com/opencv/cvat/pull/5056>)
+- A trailing slash in hostname does't allow SDK to send some requests
+  (<https://github.com/opencv/cvat/pull/5057>)
+- Double modal export/backup a task/project (<https://github.com/opencv/cvat/pull/5075>)
+- Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
+- Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
+- Angle is not propagated when use ``propagate`` feature (<https://github.com/opencv/cvat/pull/5139>)
+- Restoring CVAT in case of React-renderning fail (<https://github.com/opencv/cvat/pull/5134>)
+- Deleted frames become restored if a user deletes frames from another job of the same task
+(<https://github.com/opencv/cvat/pull/5138>)
+- Skeleton points exported out of order in the COCO Keypoints format
+  (<https://github.com/opencv/cvat/issues/5048>)
+
+### Security
+- TDB
+
+## \[2.2.0] - 2022-09-12
 ### Added
 - Added ability to delete frames from a job based on (<https://github.com/openvinotoolkit/cvat/pull/4194>)
 - Support of attributes returned by serverless functions based on (<https://github.com/openvinotoolkit/cvat/pull/4506>)
@@ -17,27 +70,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Possibility to display tags on frame
 - Support source and target storages (server part)
 - Tests for import/export annotation, dataset, backup from/to cloud storage
-- Added Python SDK package (`cvat-sdk`)
+- Added Python SDK package (`cvat-sdk`) (<https://github.com/opencv/cvat/pull/4813>)
 - Previews for jobs
 - Documentation for LDAP authentication (<https://github.com/cvat-ai/cvat/pull/39>)
 - OpenCV.js caching and autoload (<https://github.com/cvat-ai/cvat/pull/30>)
 - Publishing dev version of CVAT docker images (<https://github.com/cvat-ai/cvat/pull/53>)
-- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type: Skeleton (<https://github.com/cvat-ai/cvat/pull/1>)
+- Support of Human Pose Estimation, Facial Landmarks (and similar) use-cases, new shape type:
+Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv/cvat/pull/4829>)
 - Added helm chart support for serverless functions and analytics (<https://github.com/cvat-ai/cvat/pull/110>)
+- Added confirmation when remove a track (<https://github.com/opencv/cvat/pull/4846>)
+- [COCO Keypoints](https://cocodataset.org/#keypoints-2020) format support (<https://github.com/opencv/cvat/pull/4821>,
+  <https://github.com/opencv/cvat/pull/4908>)
+- Support for Oracle OCI Buckets (<https://github.com/opencv/cvat/pull/4876>)
+- `cvat-sdk` and `cvat-cli` packages on PyPI (<https://github.com/opencv/cvat/pull/4903>)
+- UI part for source and target storages (<https://github.com/opencv/cvat/pull/4842>)
+- Backup import/export modals (<https://github.com/opencv/cvat/pull/4842>)
+- Annotations import modal (<https://github.com/opencv/cvat/pull/4842>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14
 - Simplified running REST API tests. Extended CI-nightly workflow
-- REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`)
+- REST API tests are partially moved to Python SDK (`users`, `projects`, `tasks`, `issues`)
 - cvat-ui: Improve UI/UX on label, create task and create project forms (<https://github.com/cvat-ai/cvat/pull/7>)
 - Removed link to OpenVINO documentation (<https://github.com/cvat-ai/cvat/pull/35>)
 - Clarified meaning of chunking for videos
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
 
 ### Fixed
 - Task creation progressbar bug
@@ -51,9 +107,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Image search in cloud storage (<https://github.com/cvat-ai/cvat/pull/8>)
 - Reset password functionality (<https://github.com/cvat-ai/cvat/pull/52>)
 - Creating task with cloud storage data (<https://github.com/cvat-ai/cvat/pull/116>)
-
-### Security
-- TDB
+- Show empty tasks (<https://github.com/cvat-ai/cvat/pull/100>)
+- Fixed project filtration (<https://github.com/opencv/cvat/pull/4878>)
+- Maximum callstack exceed when create task with 100000+ files from cloud storage (<https://github.com/opencv/cvat/pull/4836>)
+- Fixed invocation of serverless functions (<https://github.com/opencv/cvat/pull/4907>)
+- Removing label attributes (<https://github.com/opencv/cvat/pull/4927>)
+- Notification with a required manifest file (<https://github.com/opencv/cvat/pull/4921>)
 
 ## \[2.1.0] - 2022-04-08
 ### Added

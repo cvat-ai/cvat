@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -49,7 +50,7 @@ function getStore(): Store<CombinedState> {
     return store;
 }
 
-function receiveAnnotationsParameters(): AnnotationsParameters {
+export function receiveAnnotationsParameters(): AnnotationsParameters {
     if (store === null) {
         store = getCVATStore();
     }
@@ -88,7 +89,7 @@ export function computeZRange(states: any[]): number[] {
     return [minZ, maxZ];
 }
 
-async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
+export async function jobInfoGenerator(job: any): Promise<Record<string, number>> {
     const { total } = await job.annotations.statistics();
     return {
         'frame count': job.stopFrame - job.startFrame + 1,
@@ -349,74 +350,6 @@ export function removeAnnotationsAsync(
     };
 }
 
-export function uploadJobAnnotationsAsync(job: any, loader: any, file: File): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const state: CombinedState = getStore().getState();
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-
-            if (state.tasks.activities.loads[job.taskId]) {
-                throw Error('Annotations is being uploaded for the task');
-            }
-            if (state.annotation.activities.loads[job.id]) {
-                throw Error('Only one uploading of annotations for a job allowed at the same time');
-            }
-
-            dispatch({
-                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS,
-                payload: {
-                    job,
-                    loader,
-                },
-            });
-
-            const frame = state.annotation.player.frame.number;
-            await job.annotations.upload(file, loader);
-
-            await job.logger.log(LogType.uploadAnnotations, {
-                ...(await jobInfoGenerator(job)),
-            });
-
-            await job.annotations.clear(true);
-            await job.actions.clear();
-            const history = await job.actions.get();
-
-            // One more update to escape some problems
-            // in canvas when shape with the same
-            // clientID has different type (polygon, rectangle) for example
-            dispatch({
-                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
-                payload: {
-                    job,
-                    states: [],
-                    history,
-                },
-            });
-
-            const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
-
-            setTimeout(() => {
-                dispatch({
-                    type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
-                    payload: {
-                        history,
-                        job,
-                        states,
-                    },
-                });
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_FAILED,
-                payload: {
-                    job,
-                    error,
-                },
-            });
-        }
-    };
-}
-
 export function collectStatisticsAsync(sessionInstance: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
@@ -472,6 +405,7 @@ export function propagateObjectAsync(sessionInstance: any, objectState: any, fro
                 shapeType: _objectState.shapeType,
                 label: _objectState.label,
                 zOrder: _objectState.zOrder,
+                rotation: _objectState.rotation,
                 frame: from,
                 elements: _objectState.shapeType === 'skeleton' ? _objectState.elements
                     .map((element: any): any => getCopyFromState(element)) : [],
@@ -1516,6 +1450,16 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
     };
 }
 
+const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
+    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+};
+
 export function pasteShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
@@ -1528,22 +1472,7 @@ export function pasteShapeAsync(): ThunkAction {
         } = getStore().getState().annotation;
 
         if (initialState && canvasInstance) {
-            let activeControl = ActiveControl.CURSOR;
-            if (initialState.shapeType === ShapeType.RECTANGLE) {
-                activeControl = ActiveControl.DRAW_RECTANGLE;
-            } else if (initialState.shapeType === ShapeType.POINTS) {
-                activeControl = ActiveControl.DRAW_POINTS;
-            } else if (initialState.shapeType === ShapeType.POLYGON) {
-                activeControl = ActiveControl.DRAW_POLYGON;
-            } else if (initialState.shapeType === ShapeType.POLYLINE) {
-                activeControl = ActiveControl.DRAW_POLYLINE;
-            } else if (initialState.shapeType === ShapeType.CUBOID) {
-                activeControl = ActiveControl.DRAW_CUBOID;
-            } else if (initialState.shapeType === ShapeType.ELLIPSE) {
-                activeControl = ActiveControl.DRAW_ELLIPSE;
-            } else if (initialState.shapeType === ShapeType.SKELETON) {
-                activeControl = ActiveControl.DRAW_SKELETON;
-            }
+            const activeControl = ShapeTypeToControl[initialState.shapeType as ShapeType] || ActiveControl.CURSOR;
 
             dispatch({
                 type: AnnotationActionTypes.PASTE_SHAPE,
@@ -1623,21 +1552,8 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
             return;
         }
-        if (activeShapeType === ShapeType.RECTANGLE) {
-            activeControl = ActiveControl.DRAW_RECTANGLE;
-        } else if (activeShapeType === ShapeType.POINTS) {
-            activeControl = ActiveControl.DRAW_POINTS;
-        } else if (activeShapeType === ShapeType.POLYGON) {
-            activeControl = ActiveControl.DRAW_POLYGON;
-        } else if (activeShapeType === ShapeType.POLYLINE) {
-            activeControl = ActiveControl.DRAW_POLYLINE;
-        } else if (activeShapeType === ShapeType.CUBOID) {
-            activeControl = ActiveControl.DRAW_CUBOID;
-        } else if (activeShapeType === ShapeType.ELLIPSE) {
-            activeControl = ActiveControl.DRAW_ELLIPSE;
-        } else if (activeShapeType === ShapeType.SKELETON) {
-            activeControl = ActiveControl.DRAW_SKELETON;
-        }
+
+        activeControl = ShapeTypeToControl[activeShapeType];
 
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
@@ -1689,31 +1605,20 @@ export function redrawShapeAsync(): ThunkAction {
         if (activatedStateID !== null) {
             const [state] = states.filter((_state: any): boolean => _state.clientID === activatedStateID);
             if (state && state.objectType !== ObjectType.TAG) {
-                let activeControl = ActiveControl.CURSOR;
-                if (state.shapeType === ShapeType.RECTANGLE) {
-                    activeControl = ActiveControl.DRAW_RECTANGLE;
-                } else if (state.shapeType === ShapeType.POINTS) {
-                    activeControl = ActiveControl.DRAW_POINTS;
-                } else if (state.shapeType === ShapeType.POLYGON) {
-                    activeControl = ActiveControl.DRAW_POLYGON;
-                } else if (state.shapeType === ShapeType.POLYLINE) {
-                    activeControl = ActiveControl.DRAW_POLYLINE;
-                } else if (state.shapeType === ShapeType.CUBOID) {
-                    activeControl = ActiveControl.DRAW_CUBOID;
-                } else if (state.shapeType === ShapeType.SKELETON) {
-                    activeControl = ActiveControl.DRAW_SKELETON;
-                }
-
+                const activeControl = ShapeTypeToControl[state.shapeType as ShapeType] || ActiveControl.CURSOR;
                 dispatch({
                     type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
                     payload: {
                         activeControl,
                     },
                 });
+
                 if (canvasInstance instanceof Canvas) {
                     canvasInstance.cancel();
                 }
+
                 canvasInstance.draw({
+                    skeletonSVG: state.shapeType === ShapeType.SKELETON ? state.label.structure.svg : undefined,
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,

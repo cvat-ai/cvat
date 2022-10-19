@@ -73,7 +73,7 @@ jobs:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -141,9 +141,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
@@ -214,7 +214,9 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:latest
+          docker tag cvat/ui:latest cvat/ui:dev
 
       - name: OPA tests
         run: |
@@ -274,9 +276,9 @@ jobs:
                 'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
                 'canvas3d_functionality_2', 'issues_prs', 'issues_prs2']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 
@@ -308,10 +310,10 @@ jobs:
       - name: Pull CVAT UI image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
 
           docker pull ${{ steps.meta-ui.outputs.tags }}
-          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui
+          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui:dev
 
       - name: Run CVAT instance
         run: |
@@ -319,6 +321,7 @@ jobs:
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f tests/docker-compose.file_share.yml \
+            -f tests/docker-compose.minio.yml \
             -f components/serverless/docker-compose.serverless.yml up -d
 
       - name: Waiting for server
@@ -328,7 +331,7 @@ jobs:
         run: |
           max_tries=60
           status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-          while [[  $status_code != "401" && max_tries -gt 0 ]]
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
           do
             echo Number of attempts left: $max_tries
             echo Status code of response: $status_code
@@ -338,14 +341,14 @@ jobs:
             (( max_tries-- ))
           done
 
-          if [[ $status_code != "401" ]]; then
+          if [[ $status_code != "200" ]]; then
              echo Response from server is incorrect, output:
              cat /tmp/server_response
           fi
           echo ::set-output name=status_code::${status_code}
 
       - name: Fail on bad response from server
-        if: steps.wait-server.outputs.status_code != '401'
+        if: steps.wait-server.outputs.status_code != '200'
         uses: actions/github-script@v3
         with:
           script: |
@@ -382,7 +385,7 @@ jobs:
       - name: Creating a log file from "cvat" container logs
         if: failure()
         run: |
-            docker logs cvat > ${{ github.workspace }}/tests/cvat.log
+            docker logs cvat_server > ${{ github.workspace }}/tests/cvat.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
@@ -408,7 +411,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -430,7 +433,7 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
 
       - name: Downloading coverage results
         uses: actions/download-artifact@v2

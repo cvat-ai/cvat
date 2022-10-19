@@ -22,7 +22,7 @@ export class GroupHandlerImpl implements GroupHandler {
     private bindedOnSelectStart: (event: MouseEvent) => void;
     private bindedOnSelectUpdate: (event: MouseEvent) => void;
     private bindedOnSelectStop: (event: MouseEvent) => void;
-    private selectionRect: SVG.Rect;
+    private selectionRect: SVG.Rect | null;
     private startSelectionPoint: {
         x: number;
         y: number;

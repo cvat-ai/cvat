@@ -18,7 +18,7 @@ spec:
 
   build:
     image: cvat.pth.foolwood.siammask
-    baseImage: nvidia/cuda:11.1-devel-ubuntu20.04
+    baseImage: nvidia/cuda:11.1.1-devel-ubuntu20.04
 
     directives:
       preCopy:

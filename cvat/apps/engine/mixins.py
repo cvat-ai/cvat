@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,12 +10,13 @@ import uuid
 from django.conf import settings
 from django.core.cache import cache
 from distutils.util import strtobool
-from rest_framework import status
+from rest_framework import status, mixins
 from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
+from cvat.apps.webhooks.signals import signal_update, signal_create, signal_delete
 
 class TusFile:
     _tus_cache_timeout = 3600
@@ -279,6 +281,11 @@ class AnnotationMixin:
             return Response(serializer.data)
 
     def import_annotations(self, request, pk, db_obj, import_func, rq_func, rq_id):
+        is_tus_request = request.headers.get('Upload-Length', None) is not None or \
+            request.method == 'OPTIONS'
+        if is_tus_request:
+            return self.init_tus_upload(request)
+
         use_default_location = request.query_params.get('use_default_location', True)
         use_settings = strtobool(str(use_default_location))
         obj = db_obj if use_settings else request.query_params
@@ -315,3 +322,40 @@ class SerializeMixin:
             file_name = request.query_params.get("filename", "")
             return import_func(request, filename=file_name)
         return self.upload_data(request)
+
+
+class CreateModelMixin(mixins.CreateModelMixin):
+    def perform_create(self, serializer, **kwargs):
+        serializer.save(**kwargs)
+        signal_create.send(self, instance=serializer.instance)
+
+class PartialUpdateModelMixin:
+    """
+    Update fields of a model instance.
+
+    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
+    """
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        data = serializer.to_representation(instance)
+        old_values = {
+            attr: data[attr] if attr in data else getattr(instance, attr, None)
+            for attr in self.request.data.keys()
+        }
+
+        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
+
+        if getattr(serializer.instance, '_prefetched_objects_cache', None):
+            serializer.instance._prefetched_objects_cache = {}
+
+        signal_update.send(self, instance=serializer.instance, old_values=old_values)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return mixins.UpdateModelMixin.update(self, request=request, *args, **kwargs)
+
+class DestroyModelMixin(mixins.DestroyModelMixin):
+    def perform_destroy(self, instance):
+        signal_delete.send(self, instance=instance)
+        super().perform_destroy(instance)
