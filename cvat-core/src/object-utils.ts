@@ -259,15 +259,19 @@ export function mask2Rle(mask: number[]): number[] {
 
 export function rle2Mask(rle: number[], width: number, height: number): number[] {
     const decoded = Array(width * height).fill(0);
+    const { length } = rle;
     let decodedIdx = 0;
     let value = 0;
-    for (let rleCountIdx = 0; rleCountIdx < rle.length; rleCountIdx += 1) {
-        let count = rle[rleCountIdx];
+    let i = 0;
+
+    while (i < length) {
+        let count = rle[i];
         while (count > 0) {
             decoded[decodedIdx] = value;
             decodedIdx++;
             count--;
         }
+        i++;
         value = Math.abs(value - 1);
     }
 

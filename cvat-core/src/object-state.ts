@@ -334,7 +334,7 @@ export default class ObjectState {
                         }
 
                         if (Array.isArray(data.points)) {
-                            return Array.from(data.points);
+                            return data.points;
                         }
 
                         return [];
@@ -366,7 +366,7 @@ export default class ObjectState {
                             data.updateFlags.points = true;
                         }
 
-                        data.points = Array.from(points);
+                        data.points = points.slice();
                     },
                 },
                 rotation: {

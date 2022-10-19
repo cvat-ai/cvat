@@ -520,7 +520,7 @@ export class Shape extends Drawn {
             clientID: this.clientID,
             occluded: this.occluded,
             z_order: this.zOrder,
-            points: [...this.points],
+            points: this.points.slice(),
             rotation: this.rotation,
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 attributeAccumulator.push({
@@ -562,7 +562,7 @@ export class Shape extends Drawn {
             occluded: this.occluded,
             lock: this.lock,
             zOrder: this.zOrder,
-            points: [...this.points],
+            points: this.points.slice(),
             rotation: this.rotation,
             attributes: { ...this.attributes },
             descriptions: [...this.descriptions],
