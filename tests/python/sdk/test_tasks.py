@@ -126,6 +126,49 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+    def test_can_create_task_with_local_data_and_predefined_sorting_without_manifest(self):
+        task_spec = {
+            "name": f"test {self.user} to create a task with local data with predefined sorting",
+            "labels": [
+                {
+                    "name": "car",
+                    "color": "#ff00ff",
+                    "attributes": [
+                        {
+                            "name": "a",
+                            "mutable": True,
+                            "input_type": "number",
+                            "default_value": "5",
+                            "values": ["4", "5", "6"],
+                        }
+                    ],
+                }
+            ],
+        }
+
+        data_params = {
+            "image_quality": 75,
+            "sorting_method": "predefined"
+        }
+
+        task_files = generate_image_files(6)
+        for i, f in enumerate(task_files):
+            fname = self.tmp_path / osp.basename(f.name)
+            with fname.open("wb") as fd:
+                fd.write(f.getvalue())
+                task_files[i] = str(fname)
+
+        task_files = [task_files[i] for i in [2, 4, 1, 5, 0, 3]]
+
+        task = self.client.tasks.create_from_data(
+            spec=task_spec,
+            data_params=data_params,
+            resource_type=ResourceType.LOCAL,
+            resources=task_files,
+        )
+
+        assert [f.name for f in task.get_meta().frames] == [osp.basename(f) for f in task_files]
+
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
             spec={
