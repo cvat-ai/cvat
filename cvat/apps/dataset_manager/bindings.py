@@ -1903,6 +1903,6 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                     list(map(lambda ri: ri.path, dataset_item.related_images))
 
         if len(root_paths):
-            dataset_files['data_root'] = osp.commonpath(root_paths)
+            dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
