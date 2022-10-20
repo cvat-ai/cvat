@@ -5,18 +5,25 @@
 
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
+from django.http import Http404, HttpResponseBadRequest
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from rest_framework.response import Response
-from dj_rest_auth.registration.views import RegisterView
+from rest_framework import status
+from dj_rest_auth.registration.views import RegisterView, SocialLoginView
 from allauth.account import app_settings as allauth_settings
+from allauth.account.views import ConfirmEmailView
+from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView, OAuth2LoginView
 from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
 
-
+from cvat.apps.iam.adapters import GitHubAdapter, GoogleAdapter
 from .authentication import Signer
 
 def get_context(request):
@@ -116,3 +123,31 @@ class RegisterViewEx(RegisterView):
             data['email_verification_required'] = False
             data['key'] = user.auth_token.key
         return data
+
+# class GithubLogin(SocialLoginView):
+#     adapter_class = GitHubOAuth2Adapter
+#     callback_url = settings.GITHUB_CALLBACK_URL
+#     client_class = OAuth2Client
+
+# class GoogleLogin(SocialLoginView):
+#     adapter_class = GoogleOAuth2Adapter
+#     callback_url = settings.GOOGLE_CALLBACK_URL
+#     client_class = OAuth2Client
+
+github_oauth2_login = OAuth2LoginView.adapter_view(GitHubAdapter)
+github_oauth2_callback = OAuth2CallbackView.adapter_view(GitHubAdapter)
+
+google_oauth2_login = OAuth2LoginView.adapter_view(GoogleAdapter)
+google_oauth2_callback = OAuth2CallbackView.adapter_view(GoogleAdapter)
+
+class CustomConfirmEmailView(ConfirmEmailView):
+    template_name = 'account/email/email_confirmation_signup_message.html'
+
+    def get(self, *args, **kwargs):
+        try:
+            if not allauth_settings.CONFIRM_EMAIL_ON_GET:
+                return super().get(*args, **kwargs)
+            return self.post(*args, **kwargs)
+        except Http404:
+            return HttpResponseBadRequest('This e-mail confirmation link expired or is invalid.'
+                                        'Please issue a new e-mail confirmation request')

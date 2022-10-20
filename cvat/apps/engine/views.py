@@ -234,7 +234,9 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
-            'PREDICT':False # FIXME: it is unused anymore (for UI only)
+            'PREDICT': False, # FIXME: it is unused anymore (for UI only)
+            'SOCIAL_PROVIDERS': [] if not settings.USE_ALLAUTH_SOCIAL_ACCOUNTS else \
+                settings.SOCIALACCOUNT_PROVIDERS.keys()
         }
         return Response(response)
 

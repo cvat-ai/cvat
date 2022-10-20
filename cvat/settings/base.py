@@ -120,6 +120,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
+    # social providers
+    'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.google',
     'dj_rest_auth.registration',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
@@ -262,6 +265,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
+ACCOUNT_EMAIL_VERIFICATION_IS_REQUIRED_REDIRECT_URL = '/auth/account-email-verification-sent'
 
 OLD_PASSWORD_FIELD_ENABLED = True
 
@@ -571,3 +575,51 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': False,
 }
+
+# allauth configuration
+USE_ALLAUTH_SOCIAL_ACCOUNTS = strtobool(os.getenv('USE_ALLAUTH_SOCIAL_ACCOUNTS', 'False'))
+
+ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
+
+# the same in UI
+ACCOUNT_USERNAME_MIN_LENGTH = 5
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
+ACCOUNT_LOGOUT_ON_GET = True
+
+if USE_ALLAUTH_SOCIAL_ACCOUNTS:
+    SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+    SOCIALACCOUNT_LOGIN_ON_GET = True
+
+    GITHUB_CALLBACK_URL = 'http://localhost:7000/api/auth/github/login/callback/'
+    GOOGLE_CALLBACK_URL = 'http://localhost:7000/api/auth/google/login/callback/'
+
+    SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
+    SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
+
+    SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
+    SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
+
+    SOCIALACCOUNT_PROVIDERS = {
+        'google': {
+            'APP': {
+                'client_id': SOCIAL_AUTH_GOOGLE_CLIENT_ID,
+                'secret': SOCIAL_AUTH_GOOGLE_CLIENT_SECRET,
+                'key': ''
+            },
+            'SCOPE': [ 'profile', 'email', 'openid'],
+            'AUTH_PARAMS': {
+                'access_type': 'online',
+            }
+        },
+        'github': {
+            'APP': {
+                'client_id': SOCIAL_AUTH_GITHUB_CLIENT_ID,
+                'secret': SOCIAL_AUTH_GITHUB_CLIENT_SECRET,
+                'key': ''
+            },
+            'SCOPE': [ 'profile', 'email', 'openid'],
+            'AUTH_PARAMS': {
+                'access_type': 'online',
+            }
+        },
+    }
