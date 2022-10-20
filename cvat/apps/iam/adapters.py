@@ -17,7 +17,7 @@ UserModel = get_user_model()
 
 class DefaultAccountAdapterEx(DefaultAccountAdapter):
     def respond_email_verification_sent(self, request, user):
-        return HttpResponseRedirect(settings.ACCOUNT_EMAIL_VERIFICATION_IS_REQUIRED_REDIRECT_URL)
+        return HttpResponseRedirect(settings.ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL)
 
 class SocialAccountAdapterEx(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):

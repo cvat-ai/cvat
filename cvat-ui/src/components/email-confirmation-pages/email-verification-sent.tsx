@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,11 +14,11 @@ const { Content } = Layout;
  * Component for displaying message that email should be verified
  */
 
-export default function EmailVerificationIsRequiredPage(): JSX.Element {
+export default function EmailVerificationSentPage(): JSX.Element {
     return (
         <Layout>
             <Content>
-                <Row justify='center' align='middle' id='email-verification-is-required-page-container'>
+                <Row justify='center' align='middle' id='email-verification-sent-page-container'>
                     <Col>
                         <h1>Please, confirm your email</h1>
                         <Button type='link' href='/auth/login'>

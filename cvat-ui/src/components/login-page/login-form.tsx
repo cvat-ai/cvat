@@ -7,10 +7,7 @@ import React from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
-import {
-    UserOutlined, LockOutlined, GithubOutlined, GooglePlusOutlined,
-} from '@ant-design/icons';
-import Space from 'antd/lib/space';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 
 export interface LoginData {
     credential: string;
@@ -59,16 +56,6 @@ function LoginFormComponent(props: Props): JSX.Element {
                     placeholder='Password'
                     type='password'
                 />
-            </Form.Item>
-            <Form.Item>
-                <Space>
-                    <Button type='link' href='http://localhost:7000/api/auth/github/login'>
-                        <GithubOutlined />
-                    </Button>
-                    <Button type='link' href='http://localhost:7000/api/auth/google/login'>
-                        <GooglePlusOutlined />
-                    </Button>
-                </Space>
             </Form.Item>
 
             <Form.Item>
