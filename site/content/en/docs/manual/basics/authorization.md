@@ -4,7 +4,7 @@ linkTitle: 'Authorization'
 weight: 1
 ---
 
-- First of all, you have to log in to CVAT tool. For authorization, you can use your username or email
+- First of all, you have to log in to CVAT tool. For authentication, you can use your username or email
   you provided during registration.
 
   ![](/images/image001.jpg)

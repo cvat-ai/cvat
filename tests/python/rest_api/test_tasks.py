@@ -27,7 +27,7 @@ def get_cloud_storage_content(username, cloud_storage_id, manifest):
         return data
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths="", **kwargs):
         with make_api_client(user) as api_client:
@@ -142,7 +142,7 @@ class TestGetTasks:
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org["slug"])
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
@@ -264,7 +264,7 @@ class TestPostTasks:
         self._test_create_task_201(username, spec)
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
     _USERNAME = "user1"
 
@@ -285,7 +285,7 @@ class TestGetData:
             assert response.headers["Content-Type"] == content_type
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
@@ -391,7 +391,7 @@ class TestPatchTaskAnnotations:
         self._test_check_response(is_allow, response, data)
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
     def _test_export_task(self, username, tid, **kwargs):
         with make_api_client(username) as api_client:
@@ -403,7 +403,7 @@ class TestGetTaskDataset:
         assert response.data
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestPostTaskData:
     _USERNAME = "admin1"
