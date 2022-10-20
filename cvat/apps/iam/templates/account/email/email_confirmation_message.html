@@ -130,7 +130,6 @@
               <a href="https://www.cvat.ai/" target="_blank" style="display: inline-block;">
                 <img
                   src="https://github.com/opencv/cvat/blob/develop/site/content/en/images/cvat_poster_with_name.png?raw=true"
-                  {% comment %} src="{% static "admin/img/cvat_poster_with_name.png" %}" {% endcomment %}
                   alt="Logo"
                   border="0"
                   width="100%"
@@ -211,18 +210,6 @@
                     <table border="0" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" bgcolor="#FCA836" style="border-radius: 6px;">
-                          {% comment %} <form method="post" action="{{ activate_url }}" target="_blank">
-                            {% csrf_token %}
-                              {{ form.as_p }}
-                              <button
-                                name="action_add"
-                                type="submit"
-                                style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;"
-                              >
-                                {% blocktrans %}Confirm{% endblocktrans %}
-                              </button>
-                          </form> {% endcomment %}
-
                           <a href="{{ activate_url }}" target="_blank" style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;">
                             Confirm
                           </a>
@@ -276,15 +263,6 @@
             </td>
           </tr>
           <!-- end permission -->
-
-          <!-- start unsubscribe -->
-          {% comment %} <tr>
-            <td align="center" bgcolor="#e9ecef" style="padding: 12px 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #666;">
-              <p style="margin: 0;">To stop receiving these emails, you can <a href="https://sendgrid.com" target="_blank">unsubscribe</a> at any time.</p>
-              <p style="margin: 0;">Paste 1234 S. Broadway St. City, State 12345</p>
-            </td>
-          </tr> {% endcomment %}
-          <!-- end unsubscribe -->
 
         </table>
         <!--[if (gte mso 9)|(IE)]>
