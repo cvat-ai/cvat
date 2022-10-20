@@ -156,8 +156,6 @@ cvat:
           targetPort: 8181
           protocol: TCP
           name: http
-    defaultStorage:
-        enabled: true
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
