@@ -19,6 +19,15 @@ cvat:
       envs:
         ALLOWED_HOSTS: "*"
         DJANGO_MODWSGI_EXTRA_ARGS: ""
+        USE_ALLAUTH_SOCIAL_ACCOUNTS: "False"
+      secret:
+        # create: true
+        name: cvat-server-secret
+        socialAccountAuthentication:
+          googleClientId: ""
+          googleClientSecret: ""
+          githubClientId: ""
+          githubClientSecret: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []

@@ -56,6 +56,30 @@ spec:
             value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}
           - name: DJANGO_MODWSGI_EXTRA_ARGS
             value: {{ .Values.cvat.backend.server.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
+          - name: USE_ALLAUTH_SOCIAL_ACCOUNTS
+            value: {{ .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS }}
+            {{- if .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS }}
+            - name: SOCIAL_AUTH_GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key:  googleClientId
+                  name: "{{ .Release.Name }}-{{ .Values.cvat.backend.server.secret.name }}-auth"
+            - name: SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key:  googleClientSecret
+                  name: "{{ .Release.Name }}-{{ .Values.cvat.backend.server.secret.name }}-auth"
+            - name: SOCIAL_AUTH_GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key:  githubClientId
+                  name: "{{ .Release.Name }}-{{ .Values.cvat.backend.server.secret.name }}-auth"
+            - name: SOCIAL_AUTH_GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key:  googleClientSecret
+                  name: "{{ .Release.Name }}-{{ .Values.cvat.backend.server.secret.name }}-auth"
+            {{- end }}
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
             value: "{{ .Release.Name }}-redis-master"
