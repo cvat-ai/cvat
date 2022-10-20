@@ -123,33 +123,19 @@ class RegisterViewEx(RegisterView):
             data['key'] = user.auth_token.key
         return data
 
-# class RulesView(views.APIView):
-#     permission_classes = [AllowAny]
-#     authentication_classes = []
-#     iam_organization_field = None
-
-#     def get(self, request, format=None):
-#         """
-#         Return OPA rules bundle.
-#         """
-#         # TODO
-#         file_path = osp.join('cvat', 'apps', 'iam', 'rules', 'bundle.tar.gz')
-#         filename = 'bundle.tar.gz'
-#         sendfile(request, file_path, attachment=True,
-#                             attachment_filename=filename)
-
-
+# Django Generic View is used here instead of DRF APIView due to native support of etag
+# that doesn't supported by DRF without extra dependencies
 class RulesView(View):
     @staticmethod
     def _get_bundle_path():
         return osp.join(settings.STATIC_ROOT, 'opa', 'bundle.tar.gz')
 
     @staticmethod
-    def etag_func(_):
-        with open(RulesView._get_bundle_path(), 'rb') as f:
+    def _etag_func(file_path):
+        with open(file_path, 'rb') as f:
             return hashlib.blake2b(f.read()).hexdigest()
 
-    @method_decorator(etag(lambda request: RulesView.etag_func(request)))
+    @method_decorator(etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path())))
     def get(self, request):
         file_path = self._get_bundle_path()
         return sendfile(request, file_path)
