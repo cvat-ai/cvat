@@ -1889,12 +1889,12 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
         for dataset_item in subset_dataset:
             if dataset_item.image and dataset_item.image.has_data:
                 dataset_files['media'].append(dataset_item.image.path)
-                data_root = dataset_item.image.path.rsplit(dataset_item.id, 2)
+                data_root = dataset_item.image.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
             elif dataset_item.point_cloud:
                 dataset_files['media'].append(dataset_item.point_cloud)
-                data_root = dataset_item.point_cloud.rsplit(dataset_item.id, 2)
+                data_root = dataset_item.point_cloud.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
 
