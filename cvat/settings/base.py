@@ -590,8 +590,8 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
     SOCIALACCOUNT_LOGIN_ON_GET = True
 
-    GITHUB_CALLBACK_URL = 'http://localhost:7000/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = 'http://localhost:7000/api/auth/google/login/callback/'
+    GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
+    GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
 
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
