@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,23 +18,19 @@ export enum BoundariesActionTypes {
 }
 
 export const boundariesActions = {
-    resetAfterError: (
-        job: any,
-        states: any[],
-        frameNumber: number,
-        frameData: any | null,
-        minZ: number,
-        maxZ: number,
-        colors: string[],
-    ) => createAction(BoundariesActionTypes.RESET_AFTER_ERROR, {
-        job,
-        states,
-        frameNumber,
-        frameData,
-        minZ,
-        maxZ,
-        colors,
-    }),
+    resetAfterError: (payload?: {
+        job: any;
+        states: any[];
+        openTime: number;
+        frameNumber: number;
+        frameFilename: string;
+        frameHasRelatedContext: boolean;
+        colors: string[];
+        filters: string[];
+        frameData: any;
+        minZ: number;
+        maxZ: number;
+    }) => createAction(BoundariesActionTypes.RESET_AFTER_ERROR, payload),
     throwResetError: () => createAction(BoundariesActionTypes.THROW_RESET_ERROR),
 };
 
@@ -55,9 +52,19 @@ export function resetAfterErrorAsync(): ThunkAction {
 
                 await job.logger.log(LogType.restoreJob);
 
-                dispatch(boundariesActions.resetAfterError(job, states, frameNumber, frameData, minZ, maxZ, colors));
-            } else {
-                dispatch(boundariesActions.resetAfterError(null, [], 0, null, 0, 0, []));
+                dispatch(boundariesActions.resetAfterError({
+                    job,
+                    states,
+                    openTime: state.annotation.job.openTime || Date.now(),
+                    frameNumber,
+                    frameFilename: frameData.filename,
+                    frameHasRelatedContext: frameData.hasRelatedContext,
+                    colors,
+                    filters: [],
+                    frameData,
+                    minZ,
+                    maxZ,
+                }));
             }
         } catch (error) {
             dispatch(boundariesActions.throwResetError());

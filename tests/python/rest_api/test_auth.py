@@ -11,7 +11,7 @@ from cvat_sdk.api_client import ApiClient, Configuration, models
 from shared.utils.config import BASE_URL, USER_PASS, make_api_client
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestBasicAuth:
     def test_can_do_basic_auth(self, admin_user: str):
         username = admin_user
@@ -22,12 +22,12 @@ class TestBasicAuth:
             assert user.username == username
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestTokenAuth:
     @staticmethod
     def login(client: ApiClient, username: str) -> models.Token:
         (auth, _) = client.auth_api.create_login(
-            models.LoginRequest(username=username, password=USER_PASS)
+            models.LoginSerializerExRequest(username=username, password=USER_PASS)
         )
         client.set_default_header("Authorization", "Token " + auth.key)
         return auth
@@ -87,14 +87,14 @@ class TestTokenAuth:
             assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestCredentialsManagement:
     def test_can_register(self):
         username = "newuser"
         email = "123@456.com"
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             (user, response) = api_client.auth_api.create_register(
-                models.RestrictedRegisterRequest(
+                models.RegisterSerializerExRequest(
                     username=username, password1=USER_PASS, password2=USER_PASS, email=email
                 )
             )

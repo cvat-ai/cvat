@@ -10,7 +10,7 @@ import pytest
 from shared.utils.config import server_get
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAnalytics:
     endpoint = "analytics/app/kibana"
 

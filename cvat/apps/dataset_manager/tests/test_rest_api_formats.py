@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,7 +23,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, TaskData
+from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
 
@@ -185,7 +186,7 @@ class _DbTestBase(APITestCase):
         task_ann = TaskAnnotation(task_id)
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+        extractor = CvatTaskOrJobDataExtractor(task_data, include_images=include_images)
         return Dataset.from_extractors(extractor)
 
     def _get_request_with_data(self, path, data, user):

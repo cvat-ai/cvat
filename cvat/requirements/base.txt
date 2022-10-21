@@ -1,6 +1,6 @@
 attrs==21.4.0
 click==7.1.2
-Django==3.2.15
+Django==3.2.16
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-compressor==2.4
@@ -45,7 +45,7 @@ diskcache==5.0.2
 boto3==1.17.61
 azure-storage-blob==12.13.0
 google-cloud-storage==1.42.0
-git+https://github.com/cvat-ai/datumaro.git@bac20235bd6c792b4d068a54fd3ad14be50bb26f
+git+https://github.com/cvat-ai/datumaro.git@0b49dbe3194d71846a51ae94e8cb2fccd0ed261d
 urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
 natsort==8.0.0
 mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
