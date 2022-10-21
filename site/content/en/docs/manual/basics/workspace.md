@@ -31,7 +31,7 @@ In addition the workspace also has the following functions:
     ![](/images/image068_mapillary_vistas.jpg)
 
   - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-  dark images using color settings (it affects only how a user sees the image, not the image itself).
+    dark images using color settings (it affects only how a user sees the image, not the image itself).
 
     ![](/images/image164_mapillary_vistas.jpg)
 
