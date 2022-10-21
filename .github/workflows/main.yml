@@ -124,6 +124,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
         with:
@@ -152,6 +154,7 @@ jobs:
           skip-dirs: /etc/ssh,/opt/venv/lib/python3.8/site-packages/slapdtest
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          trivyignores: .github/workflows/.trivyignore
 
       - name: Run Trivy scanner for cvat/ui
         uses: aquasecurity/trivy-action@master
@@ -162,6 +165,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          trivyignores: .github/workflows/.trivyignore
 
   rest_api_testing:
     needs: build
