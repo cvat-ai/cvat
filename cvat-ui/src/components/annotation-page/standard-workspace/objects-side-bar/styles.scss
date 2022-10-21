@@ -159,6 +159,10 @@
     overflow-y: auto;
 }
 
+.cvat-objects-sidebar-z-layer-mark {
+    text-align: center;
+}
+
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
     border-top: 2px solid $object-item-border-color;
     border-right: 2px solid $object-item-border-color;
