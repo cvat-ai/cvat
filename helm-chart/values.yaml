@@ -43,6 +43,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      webhooks:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
@@ -55,7 +65,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: latest
+    tag: dev
     permissionFix:
       enabled: true
     service:
@@ -74,7 +84,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: latest
+    tag: dev
     labels: {}
     #  test: test
     annotations: {}

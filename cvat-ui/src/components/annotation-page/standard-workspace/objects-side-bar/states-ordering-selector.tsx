@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,6 +35,9 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
                 </Select.Option>
                 <Select.Option key={StatesOrdering.UPDATED} value={StatesOrdering.UPDATED}>
                     {StatesOrdering.UPDATED}
+                </Select.Option>
+                <Select.Option key={StatesOrdering.Z_ORDER} value={StatesOrdering.Z_ORDER}>
+                    {StatesOrdering.Z_ORDER}
                 </Select.Option>
             </Select>
         </Col>
