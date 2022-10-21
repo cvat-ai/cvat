@@ -41,7 +41,7 @@ spec:
             - --set=bundles.cvat.service=cvat
             - --set=bundles.cvat.resource=/api/auth/rules
             - --set=bundles.cvat.polling.min_delay_seconds=10
-            - --set=bundles.cvat.polling.max_delay_seconds=30
+            - --set=bundles.cvat.polling.max_delay_seconds=15
           {{- with .Values.cvat.opa.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
