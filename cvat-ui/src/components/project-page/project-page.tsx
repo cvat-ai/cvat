@@ -58,7 +58,10 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
     const [isMounted, setIsMounted] = useState(false);
-    const [visibility, setVisibility] = useState(defaultVisibility);
+    const [predefined, setPredefined] = useState(defaultVisibility.predefined);
+    const [recent, setRecent] = useState(defaultVisibility.recent);
+    const [builder, setBuilder] = useState(defaultVisibility.builder);
+    const [sorting, setSorting] = useState(defaultVisibility.sorting);
 
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery = { ...tasksQuery };
@@ -185,38 +188,34 @@ export default function ProjectPageComponent(): JSX.Element {
                             />
                             <div>
                                 <SortingComponent
-                                    visible={visibility.sorting}
+                                    visible={sorting}
                                     onVisibleChange={(visible: boolean) => (
-                                        setVisibility({ ...defaultVisibility, sorting: visible })
+                                        setSorting(visible)
                                     )}
                                     defaultFields={tasksQuery.sort?.split(',') || ['-ID']}
                                     sortingFields={['ID', 'Owner', 'Status', 'Assignee', 'Updated date', 'Subset', 'Mode', 'Dimension', 'Name']}
-                                    onApplySorting={(sorting: string | null) => {
+                                    onApplySorting={(_sorting: string | null) => {
                                         dispatch(getProjectTasksAsync({
                                             ...tasksQuery,
                                             page: 1,
                                             projectId: id,
-                                            sort: sorting,
+                                            sort: _sorting,
                                         }));
                                     }}
                                 />
                                 <FilteringComponent
                                     value={updatedQuery.filter}
-                                    predefinedVisible={visibility.predefined}
-                                    builderVisible={visibility.builder}
-                                    recentVisible={visibility.recent}
+                                    predefinedVisible={predefined}
+                                    builderVisible={builder}
+                                    recentVisible={recent}
                                     onPredefinedVisibleChange={(visible: boolean) => (
-                                        setVisibility({ ...defaultVisibility, predefined: visible })
+                                        setPredefined(visible)
                                     )}
                                     onBuilderVisibleChange={(visible: boolean) => (
-                                        setVisibility({ ...defaultVisibility, builder: visible })
+                                        setBuilder(visible)
                                     )}
                                     onRecentVisibleChange={(visible: boolean) => (
-                                        setVisibility({
-                                            ...defaultVisibility,
-                                            builder: visibility.builder,
-                                            recent: visible,
-                                        })
+                                        setRecent(visible)
                                     )}
                                     onApplyFilter={(filter: string | null) => {
                                         dispatch(getProjectTasksAsync({
