@@ -18,10 +18,10 @@ from datumaro.components.annotation import (AnnotationType, Bbox, Label,
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
                                            Importer)
-from datumaro.util.image import Image
+from datumaro.util.image import Image, find_images
 from defusedxml import ElementTree
 
-from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData,
+from cvat.apps.dataset_manager.bindings import (CommonData, ProjectData,
                                                 get_defaulted_subset,
                                                 import_dm_annotations,
                                                 match_dm_item)
@@ -95,18 +95,18 @@ class CvatExtractor(Extractor):
         items = OrderedDict()
 
         def parse_image_dir(image_dir, subset):
-            for file in sorted(glob(image_dir), key=osp.basename):
-                name, ext = osp.splitext(osp.basename(file))
+            for file in find_images(image_dir, recursive=True):
+                name, ext = osp.splitext(osp.relpath(file, image_dir))
                 if ext.lower() in CvatPath.MEDIA_EXTS:
                     items[(subset, name)] = DatasetItem(id=name, annotations=[],
                         image=Image(path=file), subset=subset or DEFAULT_SUBSET_NAME,
                     )
 
         if subsets == [DEFAULT_SUBSET_NAME] and not osp.isdir(osp.join(image_dir, DEFAULT_SUBSET_NAME)):
-            parse_image_dir(osp.join(image_dir, '*.*'), None)
+            parse_image_dir(image_dir, None)
         else:
             for subset in subsets:
-                parse_image_dir(osp.join(image_dir, subset, '*.*'), subset)
+                parse_image_dir(osp.join(image_dir, subset), subset)
         return items
 
     @classmethod
