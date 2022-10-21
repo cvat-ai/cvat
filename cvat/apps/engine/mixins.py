@@ -249,17 +249,18 @@ class UploadMixin:
     def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
 
-    def get_request_client_files(self, request):
+    def _get_request_client_files(self, request):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data.get('client_files')
 
     def append_files(self, request):
         """
-        Processes files sent in a single request inside a file uploading session.
+        Processes a single or multiple files sent in a single request inside
+        a file uploading session.
         """
 
-        client_files = self.get_request_client_files(request)
+        client_files = self._get_request_client_files(request)
         if client_files:
             upload_dir = self.get_upload_dir()
             for client_file in client_files:

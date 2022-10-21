@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import copy
 import errno
 import io
 import os
@@ -872,7 +873,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def _get_tus_metafile_names(self) -> List[str]:
         return [
-            self.get_tus_auto_ordering_metafile_name(),
+            self._get_tus_auto_ordering_metafile_name(),
             self._get_tus_custom_ordering_metafile_name(),
         ]
 
@@ -932,7 +933,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 break
 
         if not upload_metafile:
-            # No sorting were explicitly requested, backward compatibility
+            # No sorting were explicitly requested, work the backward compatibility mode
             return uploaded_files
 
         expected_files = self._read_tus_upload_meta_file(osp.join(upload_dir, upload_metafile))
@@ -976,7 +977,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     # UploadMixin method
     def append_files(self, request):
-        client_files = self.get_request_client_files(request)
+        client_files = self._get_request_client_files(request)
         if client_files:
             metafile = osp.join(self.get_upload_dir(), self._get_tus_auto_ordering_metafile_name())
             if osp.isfile(metafile):
@@ -988,7 +989,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         osp.relpath(client_file['file'].name, self.get_upload_dir()),
                         file_list)
 
-        return super().append_files()
+        return super().append_files(request)
 
     # UploadMixin method
     def upload_started(self, request):
@@ -1045,8 +1046,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             serializer.is_valid(raise_exception=True)
             data = serializer.validated_data
 
+            # Merge file lists from TUS and simple uploading
+            if data.get('client_files'):
+                self.append_files(request)
             uploaded_files = task_data.get_uploaded_files()
-            uploaded_files.extend(data.get('client_files'))
             try:
                 if data.get('sorting_method') == models.SortingMethod.PREDEFINED:
                     uploaded_files = self._restore_uploaded_file_order(uploaded_files)
@@ -1054,11 +1057,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
             serializer.validated_data.update({'client_files': uploaded_files})
 
+            # Refresh the db value with the updated file list
             db_data = serializer.save()
             self._object.data = db_data
             self._object.save()
-            data = {k: v for k, v in serializer.data.items()}
 
+            # Create a temporary copy of the parameters we will try to create the task with
+            # and sync on success
+            data = copy(serializer.data)
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']

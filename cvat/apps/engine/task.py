@@ -542,17 +542,22 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
         related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
 
-    if (
-        validate_dimension.dimension != models.DimensionType.DIM_3D and
-        not isinstance(extractor, MEDIA_TYPES['video']['extractor'])
-    ) and (
+    if validate_dimension.dimension != models.DimensionType.DIM_3D and (
         (
+            not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and
             isBackupRestore and
             db_data.storage_method == models.StorageMethodChoice.CACHE and
             db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
         ) or (
             not isDatasetImport and
-            db_data.sorting_method == models.SortingMethod.PREDEFINED
+            db_data.sorting_method == models.SortingMethod.PREDEFINED and (
+                # Sorting with manifest is required for zip
+                isinstance(extractor, MEDIA_TYPES['zip']['extractor']) or
+
+                # Sorting with manifest is optional for non-video
+                (manifest_file or manifest) and
+                not isinstance(extractor, MEDIA_TYPES['video']['extractor'])
+            )
         )
     ):
         # We should sort media_files according to the manifest content sequence
