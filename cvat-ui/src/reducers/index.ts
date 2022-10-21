@@ -23,6 +23,7 @@ export interface AuthState {
     showChangePasswordDialog: boolean;
     allowChangePassword: boolean;
     allowResetPassword: boolean;
+    hasEmailVerificationBeenSent: boolean;
 }
 
 export interface ProjectsQuery {

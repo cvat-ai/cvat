@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { RouteComponentProps } from 'react-router';
+import { RouteComponentProps, useHistory } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
 import Button from 'antd/lib/button';
 import Title from 'antd/lib/typography/Title';
@@ -22,10 +22,12 @@ const cvat = getCore();
 interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
+    hasEmailVerificationBeenSent: boolean;
     onLogin: (credential: string, password: string) => void;
 }
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
+    const history = useHistory();
     const { backendAPI } = cvat.config;
     const sizes = {
         style: {
@@ -35,7 +37,13 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
 
     const { Content } = Layout;
 
-    const { fetching, onLogin, renderResetPassword } = props;
+    const {
+        fetching, onLogin, renderResetPassword, hasEmailVerificationBeenSent,
+    } = props;
+
+    if (hasEmailVerificationBeenSent) {
+        history.push('/auth/email-verification-sent');
+    }
 
     return (
         <Layout>

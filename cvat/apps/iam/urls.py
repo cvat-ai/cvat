@@ -18,11 +18,12 @@ from cvat.apps.iam.views import (
     github_oauth2_login as github_login,
     github_oauth2_callback as github_callback,
     google_oauth2_login as google_login,
-    google_oauth2_callback as google_callback
+    google_oauth2_callback as google_callback,
+    LoginViewEx,
 )
 
 urlpatterns = [
-    path('login', LoginView.as_view(), name='rest_login'),
+    path('login', LoginViewEx.as_view(), name='rest_login'),
     path('logout', LogoutView.as_view(), name='rest_logout'),
     path('signing', SigningView.as_view(), name='signing')
 ]

@@ -10,13 +10,11 @@ from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from rest_framework.response import Response
-from rest_framework import status
-from dj_rest_auth.registration.views import RegisterView, SocialLoginView
+from dj_rest_auth.registration.views import RegisterView
+from dj_rest_auth.views import LoginView
 from allauth.account import app_settings as allauth_settings
 from allauth.account.views import ConfirmEmailView
-from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
-from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.account.utils import has_verified_email, send_email_confirmation
 from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView, OAuth2LoginView
 from furl import furl
 
@@ -112,6 +110,37 @@ class SigningView(views.APIView):
         url = furl(url).add({Signer.QUERY_PARAM: sign}).url
         return Response(url)
 
+class LoginViewEx(LoginView):
+    def post(self, request, *args, **kwargs):
+        self.request = request
+        self.serializer = self.get_serializer(data=self.request.data)
+        try:
+            self.serializer.is_valid(raise_exception=True)
+        except ValidationError as ex:
+            print(ex)
+
+            user = self.serializer.get_auth_user(
+                self.serializer.data.get('username'),
+                self.serializer.data.get('email'),
+                self.serializer.data.get('password')
+            )
+            if not user:
+                raise
+
+            # Check that user's email is verified.
+            # If not, send a verification email.
+            if not has_verified_email(user):
+                send_email_confirmation(request, user)
+                # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
+                # because redirect will make a POST request and we'll get a 404 code
+                # (although in the browser request method will be displayed like GET)
+                return HttpResponseBadRequest('Unverified email')
+
+        except Exception as ex:
+            print(ex)
+
+        self.login()
+        return self.get_response()
 
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
@@ -123,16 +152,6 @@ class RegisterViewEx(RegisterView):
             data['email_verification_required'] = False
             data['key'] = user.auth_token.key
         return data
-
-# class GithubLogin(SocialLoginView):
-#     adapter_class = GitHubOAuth2Adapter
-#     callback_url = settings.GITHUB_CALLBACK_URL
-#     client_class = OAuth2Client
-
-# class GoogleLogin(SocialLoginView):
-#     adapter_class = GoogleOAuth2Adapter
-#     callback_url = settings.GOOGLE_CALLBACK_URL
-#     client_class = OAuth2Client
 
 github_oauth2_login = OAuth2LoginView.adapter_view(GitHubAdapter)
 github_oauth2_callback = OAuth2CallbackView.adapter_view(GitHubAdapter)

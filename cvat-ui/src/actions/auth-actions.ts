@@ -42,7 +42,9 @@ export const authActions = {
     authorizeFailed: (error: any) => createAction(AuthActionTypes.AUTHORIZED_FAILED, { error }),
     login: () => createAction(AuthActionTypes.LOGIN),
     loginSuccess: (user: any) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user }),
-    loginFailed: (error: any) => createAction(AuthActionTypes.LOGIN_FAILED, { error }),
+    loginFailed: (error: any, hasEmailVerificationBeenSent = false) => (
+        createAction(AuthActionTypes.LOGIN_FAILED, { error, hasEmailVerificationBeenSent })
+    ),
     register: () => createAction(AuthActionTypes.REGISTER),
     registerSuccess: (user: any) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
     registerFailed: (error: any) => createAction(AuthActionTypes.REGISTER_FAILED, { error }),
@@ -109,7 +111,8 @@ export const loginAsync = (credential: string, password: string): ThunkAction =>
         const users = await cvat.users.get({ self: true });
         dispatch(authActions.loginSuccess(users[0]));
     } catch (error) {
-        dispatch(authActions.loginFailed(error));
+        const hasEmailVerificationBeenSent = error.message.includes('Unverified email');
+        dispatch(authActions.loginFailed(error, hasEmailVerificationBeenSent));
     }
 };
 
