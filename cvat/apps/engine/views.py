@@ -8,7 +8,7 @@ import io
 import os
 import os.path as osp
 import textwrap
-from typing import Any, Dict, List
+from typing import IO, Any, Dict, List, Sequence
 import pytz
 import shutil
 import traceback
@@ -66,7 +66,8 @@ from cvat.apps.engine.serializers import (
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UploadingMetaSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, TusUploadingMetaSerializer,
+    UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
     ProjectFileSerializer, TaskFileSerializer)
@@ -863,6 +864,162 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.get_backup_dirname()
         return ""
 
+    def _get_tus_auto_ordering_metafile_name(self) -> str:
+        return "__tus_auto_order__"
+
+    def _get_tus_custom_ordering_metafile_name(self) -> str:
+        return "__tus_custom_order__"
+
+    def _get_tus_metafile_names(self) -> List[str]:
+        return [
+            self.get_tus_auto_ordering_metafile_name(),
+            self._get_tus_custom_ordering_metafile_name(),
+        ]
+
+    # UploadMixin method
+    def validate_uploaded_file_name(self, filename: str) -> bool:
+        return (
+            super().validate_uploaded_file_name(filename) and
+            osp.basename(filename) not in self._get_tus_metafile_names()
+        )
+
+    def _read_tus_upload_meta_file(self, f: IO) -> Sequence[str]:
+        """
+        Reads the input file and returns its contents.
+        """
+
+        contents = f.read()
+        if isinstance(contents, bytes):
+            contents = contents.decode()
+
+        return contents.splitlines()
+
+    def _prepare_upload_metafile_entry(self, filename: str) -> str:
+        return osp.normpath(filename.strip()).lstrip("/")
+
+    def _maybe_append_tus_upload_metafile_entry(self,
+        metafile: str, filename: str, file_list: Sequence[str]
+    ):
+        new_entry = self._prepare_upload_metafile_entry(filename)
+        if new_entry not in file_list:
+            with open(metafile, 'a') as f:
+                print(new_entry, file=f)
+        else:
+            # Don't do anything in the opposite case, because
+            # a file upload can be restarted. In such case we'll
+            # just reuse the first position
+            pass
+
+    class _InvalidMetafileError(Exception):
+        """
+        Indicates an invalid upload metafile found
+        """
+
+    def _restore_uploaded_file_order(self, uploaded_files: List[Dict[str, Any]]) -> List[str]:
+        """
+        Restores file ordering for the "predefined" file sorting method of the task creation.
+        Without this, the file order is defined by os.listdir(), which returns files unordered.
+        Read more: https://github.com/opencv/cvat/issues/5061
+        """
+
+        upload_dir = self. get_upload_dir()
+
+        upload_metafile = None
+        for filename in self._get_tus_metafile_names():
+            filename = osp.join(upload_dir, filename)
+            if osp.isfile(filename):
+                upload_metafile = filename
+                break
+
+        if not upload_metafile:
+            # No sorting were explicitly requested, backward compatibility
+            return uploaded_files
+
+        expected_files = self._read_tus_upload_meta_file(osp.join(upload_dir, upload_metafile))
+        expected_files.append(upload_metafile)
+
+        uploaded_file_names = { osp.relpath(f['file'], upload_dir): f for f in uploaded_files }
+        mismatching_files = list(uploaded_file_names.keys() ^ expected_files)
+        if mismatching_files:
+            DISPLAY_ENTRIES_COUNT = 5
+            mismatching_display = [
+                fn + (" (uploaded)" if fn in uploaded_file_names else " (expected)")
+                for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
+            ]
+            remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
+            raise self._InvalidMetafileError(
+                "Uploaded files do no match the upload file list contents. "
+                "Please check the upload metainfo and the list of uploaded files. "
+                "Mismatching files: {}{}"
+                .format(
+                    ", ".join(mismatching_display),
+                    f" (and {remaining_count} more). " if 0 < DISPLAY_ENTRIES_COUNT else ""
+                )
+            )
+
+        return [uploaded_file_names[fn] for fn in expected_files]
+
+    # UploadMixin method
+    def init_file_upload(self, request):
+        response = super().init_file_upload(request)
+
+        if response.status_code == status.HTTP_201_CREATED:
+            metafile = osp.join(self.get_upload_dir(), self._get_tus_auto_ordering_metafile_name())
+            if osp.isfile(metafile):
+                with open(metafile) as f:
+                    file_list = self._read_tus_upload_meta_file(f)
+
+                self._maybe_append_tus_upload_metafile_entry(metafile, response['Upload-Filename'],
+                    file_list)
+
+        return response
+
+    # UploadMixin method
+    def append_files(self, request):
+        client_files = self.get_request_client_files(request)
+        if client_files:
+            metafile = osp.join(self.get_upload_dir(), self._get_tus_auto_ordering_metafile_name())
+            if osp.isfile(metafile):
+                with open(metafile) as f:
+                    file_list = self._read_tus_upload_meta_file(f)
+
+                for client_file in client_files:
+                    self._maybe_append_tus_upload_metafile_entry(metafile,
+                        osp.relpath(client_file['file'].name, self.get_upload_dir()),
+                        file_list)
+
+        return super().append_files()
+
+    # UploadMixin method
+    def upload_started(self, request):
+        """
+        Obtains TUS upload metainfo for the upcoming uploading.
+        Must be used if the initial file order needs to be preserved.
+        """
+
+        if request.data:
+            serializer = TusUploadingMetaSerializer(self._object, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            upload_dir = self.get_upload_dir()
+
+            if serializer.validated_data['ordered']:
+                # The server must record uploaded files order during the uploading
+                with open(
+                    osp.join(upload_dir, self._get_tus_auto_ordering_metafile_name()), 'w'
+                ) as f:
+                    pass # just create the file
+
+            elif serializer.validated_data.get('files'):
+                # Remember the list of expected files for the upcoming uploading
+                expected_files = serializer.validated_data['files']
+                with open(
+                    osp.join(upload_dir, self._get_tus_custom_ordering_metafile_name()), 'w'
+                ) as f:
+                    for filename in expected_files:
+                        print(self._prepare_upload_metafile_entry(filename), file=f)
+
+        return Response(status=status.HTTP_202_ACCEPTED)
+
     # UploadMixin method
     def upload_finished(self, request):
         if self.action == 'annotations':
@@ -890,6 +1047,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             uploaded_files = task_data.get_uploaded_files()
             uploaded_files.extend(data.get('client_files'))
+            try:
+                if data.get('sorting_method') == models.SortingMethod.PREDEFINED:
+                    uploaded_files = self._restore_uploaded_file_order(uploaded_files)
+            except self._InvalidMetafileError as e:
+                return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
             serializer.validated_data.update({'client_files': uploaded_files})
 
             db_data = serializer.save()
@@ -955,7 +1117,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             After all data is sent, the operation status can be retrieved in the /status endpoint.
         """),
         request=PolymorphicProxySerializer('TaskData',
-            serializers=[DataSerializer, UploadingMetaSerializer],
+            serializers=[DataSerializer, TusUploadingMetaSerializer],
             resource_type_field_name=None),
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
