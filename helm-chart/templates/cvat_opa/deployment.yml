@@ -40,6 +40,8 @@ spec:
             - --set=services.cvat.url=http://{{ .Release.Name }}-backend-service:8080
             - --set=bundles.cvat.service=cvat
             - --set=bundles.cvat.resource=/api/auth/rules
+            - --set=bundles.cvat.polling.min_delay_seconds=10
+            - --set=bundles.cvat.polling.max_delay_seconds=30
           {{- with .Values.cvat.opa.resources }}
           resources:
           {{- toYaml . | nindent 12 }}

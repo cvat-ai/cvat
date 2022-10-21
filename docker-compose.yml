@@ -194,6 +194,8 @@ services:
       - --set=services.cvat.url=http://cvat-server:8080
       - --set=bundles.cvat.service=cvat
       - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=10
+      - --set=bundles.cvat.polling.max_delay_seconds=30
 
 volumes:
   cvat_db:
