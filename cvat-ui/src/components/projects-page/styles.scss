@@ -174,7 +174,16 @@
 }
 
 .cvat-project-list-content {
+    max-height: calc(100% - 40px);
+    overflow-y: auto;
     padding-bottom: $grid-unit-size;
+}
+
+.cvat-project-list-loader {
+    margin-top: 50px;
+    position: relative;
+    width: 100%;
+    height: 300px;
 }
 
 .cvat-projects-list {

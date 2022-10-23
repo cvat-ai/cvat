@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 
 import { CombinedState, Indexable } from 'reducers';
-import { getProjectsAsync, restoreProjectAsync } from 'actions/projects-actions';
+import { getProjectsLazyAsync, restoreProjectAsync } from 'actions/projects-actions';
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
@@ -38,7 +38,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     }
 
     useEffect(() => {
-        dispatch(getProjectsAsync({ ...updatedQuery }));
+        dispatch(getProjectsLazyAsync({ ...updatedQuery }));
         setIsMounted(true);
     }, []);
 
