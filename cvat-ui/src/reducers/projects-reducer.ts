@@ -14,6 +14,7 @@ const defaultState: ProjectsState = {
     initialized: false,
     fetching: false,
     count: 0,
+    pages: {},
     current: [],
     gettingQuery: {
         page: 1,
@@ -63,6 +64,26 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 fetching: true,
                 count: 0,
                 current: [],
+            };
+        case ProjectsActionTypes.GET_PROJECTS_LAZY:
+            if (!state.pages[action.payload.page]) {
+                const combinedWithPreviews = action.payload.array.map(
+                    (project: any, index: number): Project => ({
+                        instance: project,
+                        preview: action.payload.previews[index],
+                    }),
+                );
+                state.pages[action.payload.page] = combinedWithPreviews;
+                state.current = Object.keys(state.pages).reduce(
+                    (acc, key) => acc.concat(state.pages[+key]),
+                    [] as Project[],
+                );
+            }
+            return {
+                ...state,
+                initialized: false,
+                fetching: false,
+                count: action.payload.count,
             };
         case ProjectsActionTypes.GET_PROJECTS_SUCCESS: {
             const combinedWithPreviews = action.payload.array.map(
