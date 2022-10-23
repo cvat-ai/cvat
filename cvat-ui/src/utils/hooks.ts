@@ -1,7 +1,7 @@
 // Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
-import { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -58,4 +58,25 @@ export function useCardHeightHOC(params: ICardHeightHOC): () => string {
 
         return height;
     };
+}
+
+export function useOnScreen(ref: React.MutableRefObject<HTMLElement | null>): boolean {
+    const [isIntersecting, setIntersecting] = useState(false);
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIntersecting(entry.isIntersecting);
+            },
+        );
+
+        if (ref.current) {
+            observer.observe(ref.current);
+        }
+        return () => {
+            if (ref.current) {
+                observer.unobserve(ref.current);
+            }
+        };
+    }, []);
+    return isIntersecting;
 }
