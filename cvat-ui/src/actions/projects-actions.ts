@@ -17,6 +17,7 @@ const cvat = getCore();
 export enum ProjectsActionTypes {
     UPDATE_PROJECTS_GETTING_QUERY = 'UPDATE_PROJECTS_GETTING_QUERY',
     GET_PROJECTS = 'GET_PROJECTS',
+    GET_PROJECTS_LAZY = 'GET_PROJECTS_LAZY',
     GET_PROJECTS_SUCCESS = 'GET_PROJECTS_SUCCESS',
     GET_PROJECTS_FAILED = 'GET_PROJECTS_FAILED',
     CREATE_PROJECT = 'CREATE_PROJECT',
@@ -39,6 +40,11 @@ export enum ProjectsActionTypes {
 // prettier-ignore
 const projectActions = {
     getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
+    getProjectsLazy: (page: number, array: any[], previews: string[], count: number) => (
+        createAction(ProjectsActionTypes.GET_PROJECTS_LAZY, {
+            page, array, previews, count,
+        })
+    ),
     getProjectsSuccess: (array: any[], previews: string[], count: number) => (
         createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, previews, count })
     ),
@@ -137,6 +143,43 @@ export function getProjectsAsync(
                 ...tasksQuery,
                 projectId: filteredQuery.id,
             }));
+        }
+    };
+}
+
+export function getProjectsLazyAsync(query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {}) {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        for (const key of Object.keys(query)) {
+            const value = (query as Indexable)[key];
+            if (value === null || typeof value === 'undefined') {
+                delete (query as Indexable)[key];
+            }
+        }
+        let result = null;
+        try {
+            result = await cvat.projects.get(query);
+        } catch (error) {
+            dispatch(projectActions.getProjectsFailed(error));
+            throw error;
+        }
+        const array = Array.from(result);
+        const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
+        dispatch(
+            projectActions.getProjectsLazy(
+                query.page ? query.page : 1,
+                array,
+                await Promise.all(previewPromises),
+                result.count,
+            ),
+        );
+
+        if (Object.keys(query).includes('id') && typeof query.id === 'number') {
+            dispatch(
+                getProjectTasksAsync({
+                    ...tasksQuery,
+                    projectId: query.id,
+                }),
+            );
         }
     };
 }
