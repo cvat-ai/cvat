@@ -77,7 +77,7 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
 
 export class DrawHandlerImpl implements DrawHandler {
     // callback is used to notify about creating new shape
-    private onDrawDone: (
+    private onDrawDoneDefault: (
         data: object | null,
         duration?: number,
         continueDraw?: boolean,
@@ -347,6 +347,15 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private removeCrosshair(): void {
         this.crosshair.hide();
+    }
+
+    private onDrawDone(...args: any[]): void {
+        if (this.drawData.onDrawDone) {
+            this.drawData.onDrawDone.call(this, ...args);
+            return;
+        }
+
+        this.onDrawDoneDefault.call(this, ...args);
     }
 
     private release(): void {
@@ -1234,7 +1243,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.outlinedBorders = configuration.outlinedBorders || 'black';
         this.autobordersEnabled = false;
         this.startTimestamp = Date.now();
-        this.onDrawDone = onDrawDone;
+        this.onDrawDoneDefault = onDrawDone;
         this.canvas = canvas;
         this.text = text;
         this.initialized = false;

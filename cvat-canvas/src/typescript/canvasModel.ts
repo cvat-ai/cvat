@@ -99,6 +99,7 @@ export interface DrawData {
     crosshair?: boolean;
     brushTool?: BrushTool;
     redraw?: number;
+    onDrawDone?: (data: object) => void;
     onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }
 

@@ -8,6 +8,7 @@ import {
     DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy,
 } from './canvasModel';
 import consts from './consts';
+import { DrawHandler } from './drawHandler';
 import {
     PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL,
 } from './shared';
@@ -38,6 +39,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private onDrawRepeat: (data: DrawData) => void;
     private onEditStart: (state: any) => void;
     private onEditDone: (state: any, points: number[]) => void;
+    private vectorDrawHandler: DrawHandler;
 
     private redraw: number | null;
     private isDrawing: boolean;
@@ -48,6 +50,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private resizeBrushToolLatestX: number;
     private brushMarker: fabric.Rect | fabric.Circle | null;
     private drawablePolygon: null | fabric.Polygon;
+    private polygonIsBeingDrawn: boolean;
     private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
 
     private tool: DrawData['brushTool'] | null;
@@ -63,30 +66,11 @@ export class MasksHandlerImpl implements MasksHandler {
     private drawingOpacity: number;
 
     private keepDrawnPolygon(): void {
-        try {
-            const points = this.drawablePolygon.get('points');
-            if (points.length > 3) { // at least three points necessary including sliding point
-                points.splice(points.length - 1, 1);
-                this.drawablePolygon.set('points', [...points]);
-            } else {
-                this.canvas.remove(this.drawablePolygon);
-                return;
-            }
-
-            if (this.tool.type === 'polygon-minus') {
-                this.drawablePolygon.globalCompositeOperation = 'destination-out';
-                this.drawablePolygon.opacity = 1;
-            } else {
-                this.drawablePolygon.globalCompositeOperation = 'xor';
-                this.drawablePolygon.opacity = 0.5;
-                this.drawnObjects.push(this.drawablePolygon);
-            }
-
-            this.drawablePolygon.stroke = undefined;
-            this.canvas.renderAll();
-        } finally {
-            this.drawablePolygon = null;
-        }
+        const canvasWrapper = this.canvas.getElement().parentElement;
+        canvasWrapper.style.pointerEvents = '';
+        canvasWrapper.style.zIndex = '';
+        this.polygonIsBeingDrawn = false;
+        this.vectorDrawHandler.draw({ enabled: false }, this.geometry);
     }
 
     private removeBrushMarker(): void {
@@ -124,10 +108,17 @@ export class MasksHandlerImpl implements MasksHandler {
         }
     }
 
+    private releaseCanvasWrapperCSS(): void {
+        const canvasWrapper = this.canvas.getElement().parentElement;
+        canvasWrapper.style.pointerEvents = '';
+        canvasWrapper.style.zIndex = '';
+        canvasWrapper.style.display = '';
+    }
+
     private releasePaste(): void {
+        this.releaseCanvasWrapperCSS();
         this.canvas.clear();
         this.canvas.renderAll();
-        this.canvas.getElement().parentElement.style.display = '';
         this.isInsertion = false;
         this.drawnObjects = [];
         this.onDrawDone(null);
@@ -135,24 +126,29 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private releaseDraw(): void {
         this.removeBrushMarker();
+        this.releaseCanvasWrapperCSS();
+        if (this.polygonIsBeingDrawn) {
+            this.polygonIsBeingDrawn = false;
+            this.vectorDrawHandler.cancel();
+        }
         this.canvas.clear();
         this.canvas.renderAll();
-        this.canvas.getElement().parentElement.style.display = '';
         this.isDrawing = false;
         this.isInsertion = false;
         this.redraw = null;
         this.drawnObjects = [];
         this.onDrawDone(null);
-        if (this.drawablePolygon) {
-            this.drawablePolygon = null;
-        }
     }
 
     private releaseEdit(): void {
         this.removeBrushMarker();
+        this.releaseCanvasWrapperCSS();
+        if (this.polygonIsBeingDrawn) {
+            this.polygonIsBeingDrawn = false;
+            this.vectorDrawHandler.cancel();
+        }
         this.canvas.clear();
         this.canvas.renderAll();
-        this.canvas.getElement().parentElement.style.display = '';
         this.isEditing = false;
         this.drawnObjects = [];
         this.onEditDone(null, null);
@@ -228,7 +224,7 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
-        if (this.drawablePolygon && (typeof brushTool === 'undefined' || brushTool.type !== this.tool.type)) {
+        if (this.polygonIsBeingDrawn && (typeof brushTool === 'undefined' || brushTool.type !== this.tool.type)) {
             // tool was switched from polygon to brush for example
             this.keepDrawnPolygon();
         }
@@ -239,6 +235,40 @@ export class MasksHandlerImpl implements MasksHandler {
             if (this.isDrawing || this.isEditing) {
                 this.setupBrushMarker();
             }
+        }
+
+        if (this.tool?.type?.startsWith('polygon-')) {
+            this.polygonIsBeingDrawn = true;
+            this.vectorDrawHandler.draw({
+                enabled: true,
+                shapeType: 'polygon',
+                onDrawDone: (data: { points: number[] } | null) => {
+                    if (!data) return;
+                    const points = data.points.reduce((acc: fabric.Point[], _: number, idx: number) => {
+                        if (idx % 2) {
+                            acc.push(new fabric.Point(data.points[idx - 1], data.points[idx]));
+                        }
+
+                        return acc;
+                    }, []);
+                    const polygon = new fabric.Polygon(points, {
+                        opacity: this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity,
+                        fill: this.tool.type === 'polygon-minus' ? 'white' : (this.tool.color || 'white'),
+                        selectable: false,
+                        objectCaching: false,
+                        absolutePositioned: true,
+                        globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
+                    });
+
+                    this.canvas.add(polygon);
+                    this.drawnObjects.push(polygon);
+                    this.canvas.renderAll();
+                },
+            }, this.geometry);
+
+            const canvasWrapper = this.canvas.getElement().parentElement as HTMLDivElement;
+            canvasWrapper.style.pointerEvents = 'none';
+            canvasWrapper.style.zIndex = '0';
         }
     }
 
@@ -252,6 +282,7 @@ export class MasksHandlerImpl implements MasksHandler {
         onDrawRepeat: (data: DrawData) => void,
         onEditStart: (state: any) => void,
         onEditDone: (state: any, points: number[]) => void,
+        vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
     ) {
         this.redraw = null;
@@ -259,6 +290,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isEditing = false;
         this.isMouseDown = false;
         this.isBrushSizeChanging = false;
+        this.polygonIsBeingDrawn = false;
         this.drawData = null;
         this.editData = null;
         this.drawnObjects = [];
@@ -269,6 +301,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
+        this.vectorDrawHandler = vectorDrawHandler;
         this.canvas = new fabric.Canvas(canvas, {
             containerClass: 'cvat_masks_canvas_wrapper',
             fireRightClick: true,
@@ -284,22 +317,8 @@ export class MasksHandlerImpl implements MasksHandler {
             this.isBrushSizeChanging = false;
         });
 
-        this.canvas.on('mouse:dblclick', (e: fabric.IEvent<MouseEvent>) => {
-            if (this.drawablePolygon) {
-                // removed the latest two points just added
-                // here we remove only one point, one more point will be removed in keepDrawnPolygon
-                const points = this.drawablePolygon.get('points').slice(0, -1);
-                this.drawablePolygon.set('points', points);
-                this.keepDrawnPolygon();
-                e.e.stopPropagation();
-            }
-        });
-
         this.canvas.on('mouse:down', (options: fabric.IEvent<MouseEvent>) => {
-            const {
-                tool, isDrawing, isEditing, isInsertion,
-            } = this;
-            const point = new fabric.Point(options.pointer.x, options.pointer.y);
+            const { isDrawing, isEditing, isInsertion } = this;
             this.isMouseDown = (isDrawing || isEditing) && options.e.button === 0 && !options.e.altKey;
             this.isBrushSizeChanging = (isDrawing || isEditing) && options.e.button === 2 && options.e.altKey;
 
@@ -318,45 +337,6 @@ export class MasksHandlerImpl implements MasksHandler {
                 if (!continueInserting) {
                     this.releasePaste();
                 }
-                return;
-            }
-
-            if (this.drawablePolygon) {
-                // update polygon if drawing has been started
-                if (options.e.button === 2) {
-                    // remove the latest point
-                    const points = this.drawablePolygon.get('points');
-                    if (points.length > 2) { // at least three points including sliding point
-                        points.splice(points.length - 1, 1);
-                        this.drawablePolygon.set('points', [...points]);
-                    } else {
-                        this.canvas.remove(this.drawablePolygon);
-                        this.drawablePolygon = null;
-                    }
-                } else {
-                    // remove sliding point, add one point, add new sliding point
-                    this.drawablePolygon.set('points', [
-                        ...this.drawablePolygon.get('points').slice(0, -1),
-                        point,
-                        fabric.util.object.clone(point),
-                    ]);
-                }
-
-                this.canvas.renderAll();
-            } else if ((isDrawing || isEditing) && tool.type.startsWith('polygon-')) {
-                // create a new polygon
-                this.drawablePolygon = new fabric.Polygon([point, fabric.util.object.clone(point)], {
-                    opacity: this.drawingOpacity,
-                    strokeWidth: consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                    stroke: 'black',
-                    fill: tool.type === 'polygon-minus' ? 'white' : (tool.color || 'white'),
-                    selectable: false,
-                    objectCaching: false,
-                    absolutePositioned: true,
-                });
-
-                this.canvas.add(this.drawablePolygon);
-                this.canvas.renderAll();
             }
         });
 
@@ -523,8 +503,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 // initialize inserting pipeline if not started
                 const { points } = drawData.initialState;
                 const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
-                const [left, top, right, bottom] = points.splice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                const [left, top, right, bottom] = points.slice(-4);
+                const imageBitmap = expandChannels(color[0], color[1], color[2], points, 4);
                 imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
@@ -595,8 +575,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.canvas.getElement().parentElement.style.display = 'block';
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
-                const [left, top, right, bottom] = points.splice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                const [left, top, right, bottom] = points.slice(-4);
+                const imageBitmap = expandChannels(color[0], color[1], color[2], points, 4);
                 imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
