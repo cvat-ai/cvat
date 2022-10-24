@@ -31,14 +31,7 @@ In addition the workspace also has the following functions:
     ![](/images/image068_mapillary_vistas.jpg)
 
   - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-  dark images using `F3` — color settings (changes displaying settings and not the
-  image itself).
-
-  Shortcuts:
-
-  - `Shift+B+=`/`Shift+B+-` for brightness.
-  - `Shift+C+=`/`Shift+C+-` for contrast.
-  - `Shift+S+=`/`Shift+S+-` for saturation.
+  dark images using color settings (it affects only how a user sees the image, not the image itself).
 
     ![](/images/image164_mapillary_vistas.jpg)
 

@@ -361,7 +361,24 @@
           "z_order": 0
         }
       ],
-      "tags": [],
+      "tags": [
+        {
+          "attributes": [],
+          "frame": 2,
+          "group": 0,
+          "id": 1,
+          "label_id": 17,
+          "source": "manual"
+        },
+        {
+          "attributes": [],
+          "frame": 3,
+          "group": 0,
+          "id": 2,
+          "label_id": 16,
+          "source": "manual"
+        }
+      ],
       "tracks": [],
       "version": 0
     },
@@ -1003,7 +1020,24 @@
           "z_order": 0
         }
       ],
-      "tags": [],
+      "tags": [
+        {
+          "attributes": [],
+          "frame": 2,
+          "group": 0,
+          "id": 1,
+          "label_id": 17,
+          "source": "manual"
+        },
+        {
+          "attributes": [],
+          "frame": 3,
+          "group": 0,
+          "id": 2,
+          "label_id": 16,
+          "source": "manual"
+        }
+      ],
       "tracks": [],
       "version": 0
     },

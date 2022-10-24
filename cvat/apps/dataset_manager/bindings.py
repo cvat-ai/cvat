@@ -1885,17 +1885,24 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
             'data_root': dataset.data_path + osp.sep,
         }
 
+        root_paths = set()
         for dataset_item in subset_dataset:
             if dataset_item.image and dataset_item.image.has_data:
                 dataset_files['media'].append(dataset_item.image.path)
+                data_root = dataset_item.image.path.rsplit(dataset_item.id, 1)
+                if len(data_root) == 2:
+                    root_paths.add(data_root[0])
             elif dataset_item.point_cloud:
                 dataset_files['media'].append(dataset_item.point_cloud)
+                data_root = dataset_item.point_cloud.rsplit(dataset_item.id, 1)
+                if len(data_root) == 2:
+                    root_paths.add(data_root[0])
+
             if isinstance(dataset_item.related_images, list):
                 dataset_files['media'] += \
                     list(map(lambda ri: ri.path, dataset_item.related_images))
 
-        shortes_path = min(dataset_files['media'], key=lambda x: len(Path(x).parts), default=None)
-        if shortes_path is not None:
-            dataset_files['data_root'] = str(Path(shortes_path).parent.absolute()) + osp.sep
+        if len(root_paths):
+            dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
