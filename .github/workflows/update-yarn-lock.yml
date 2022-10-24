@@ -27,5 +27,3 @@ jobs:
         with:
           commit_message: Update yarn.lock file
           file_pattern: yarn.lock
-
-
