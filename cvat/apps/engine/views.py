@@ -748,6 +748,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return queryset
 
+    def get_object(self) -> Task:
+        # Adds return type annotation
+        return super().get_object()
+
     @extend_schema(summary='Method recreates a task from an attached task backup file',
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
@@ -916,7 +920,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         Indicates an invalid upload metafile found
         """
 
-    def _restore_uploaded_file_order(self, uploaded_files: List[Dict[str, Any]]) -> List[str]:
+    def _sort_uploaded_files(self, uploaded_files: List[Dict[str, Any]]) -> List[str]:
         """
         Restores file ordering for the "predefined" file sorting method of the task creation.
         Without this, the file order is defined by os.listdir(), which returns files unordered.
@@ -1046,18 +1050,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             serializer.is_valid(raise_exception=True)
             data = serializer.validated_data
 
-            # Merge file lists from TUS and simple uploading
+            # Merge file lists from TUS and simple/multi uploading
             if data.get('client_files'):
-                self.append_files(request)
+                response = self.append_files(request)
+                if not 200 <= response.status_code < 300:
+                    return response
             uploaded_files = task_data.get_uploaded_files()
-            try:
-                if data.get('sorting_method') == models.SortingMethod.PREDEFINED:
-                    uploaded_files = self._restore_uploaded_file_order(uploaded_files)
-            except self._InvalidMetafileError as e:
-                return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
-            serializer.validated_data.update({'client_files': uploaded_files})
+            data.update({'client_files': uploaded_files})
 
-            # Refresh the db value with the updated file list
+            # Refresh the db value with the updated file list and other request parameters
             db_data = serializer.save()
             self._object.data = db_data
             self._object.save()
@@ -1068,6 +1069,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
+
+            if data['client_files']:
+                # Django will sort client_files by filename automatically, which conflicts
+                # with the "predefined" sorting method. We need to restore the upload file
+                # order. This is not needed for other *_files fields, because they are
+                # not being sorted.
+                try:
+                    if data['sorting_method'] == models.SortingMethod.PREDEFINED:
+                        data['client_files'] = self._sort_uploaded_files(data['client_files'])
+                except self._InvalidMetafileError as e:
+                    return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+
             if data['use_cache']:
                 self._object.data.storage_method = StorageMethodChoice.CACHE
                 self._object.data.save(update_fields=['storage_method'])

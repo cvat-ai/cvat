@@ -3330,9 +3330,14 @@ class TaskDataAPITestCase(APITestCase):
         stream = container.streams.video[0]
         return [f.to_image() for f in container.decode(stream)]
 
-    def _test_api_v2_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
+    def _test_api_v2_tasks_id_data_spec(self, user, spec, data,
+                                        expected_compressed_type,
+                                        expected_original_type,
+                                        expected_image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
-                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.DIM_2D):
+                                        expected_uploaded_data_location=StorageChoice.LOCAL,
+                                        dimension=DimensionType.DIM_2D, *,
+                                        expected_files=None):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -3355,7 +3360,7 @@ class TaskDataAPITestCase(APITestCase):
             task = response.json()
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
-            self.assertAlmostEqual(len(image_sizes), task["size"], delta=2)
+            self.assertAlmostEqual(len(expected_image_sizes), task["size"], delta=2)
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
@@ -3376,7 +3381,7 @@ class TaskDataAPITestCase(APITestCase):
         if expected_status_code == status.HTTP_200_OK:
             if dimension == DimensionType.DIM_2D:
                 preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
-                self.assertLessEqual(preview.size, image_sizes[0])
+                self.assertLessEqual(preview.size, expected_image_sizes[0])
 
         # check compressed chunk
         response = self._get_compressed_chunk(task_id, user, 0)
@@ -3391,14 +3396,14 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 images = self._extract_video_chunk(compressed_chunk)
 
-            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(image_sizes)), delta=2)
+            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)), delta=2)
 
             for image_idx, image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
                     properties = ValidateDimension.get_pcd_properties(image)
-                    self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), image_sizes[image_idx])
+                    self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), expected_image_sizes[image_idx])
                 else:
-                    self.assertEqual(image.size, image_sizes[image_idx])
+                    self.assertEqual(image.size, expected_image_sizes[image_idx])
 
         # check original chunk
         response = self._get_original_chunk(task_id, user, 0)
@@ -3416,11 +3421,11 @@ class TaskDataAPITestCase(APITestCase):
             for image_idx, image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
                     properties = ValidateDimension.get_pcd_properties(image)
-                    self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), image_sizes[image_idx])
+                    self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), expected_image_sizes[image_idx])
                 else:
-                    self.assertEqual(image.size, image_sizes[image_idx])
+                    self.assertEqual(image.size, expected_image_sizes[image_idx])
 
-            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(image_sizes)), delta=2)
+            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)), delta=2)
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
                 server_files = [img for key, img in data.items() if key.startswith("server_files")]
@@ -3441,14 +3446,23 @@ class TaskDataAPITestCase(APITestCase):
                 if sorting == SortingMethod.PREDEFINED and manifest:
                     manifest = _add_prefix(_name_key(manifest))
                     manifest_root = osp.dirname(manifest)
+                    if client_files:
+                        _add_manifest_prefix = lambda x: (
+                            x if osp.abspath(x) == x else osp.join(manifest_root, x)
+                        )
+                    else:
+                        _add_manifest_prefix = lambda x: x
                     manifest_files = list(ImageManifestManager(manifest, create_index=False).data)
                     name_map = {_name_key(f): f for f in source_files}
                     assert len(manifest_files) == len(source_files)
-                    source_files = [name_map[osp.join(manifest_root, f)] for f in manifest_files]
+                    source_files = [name_map[_add_manifest_prefix(f)] for f in manifest_files]
                 else:
                     source_files = sort(source_files, sorting_method=sorting, func=_name_key)
 
-                source_files = list(map(_add_prefix, source_files))
+                if expected_files is not None:
+                    source_files = expected_files
+                else:
+                    source_files = list(map(_add_prefix, source_files))
 
                 source_images = []
                 for f in source_files:
@@ -4093,6 +4107,8 @@ class TaskDataAPITestCase(APITestCase):
                         images = [es.enter_context(open(p, 'rb')) for p in image_paths]
 
                         task_data = task_data_common.copy()
+                        expected_image_sizes = image_sizes
+                        expected_files = None
 
                         if manifest:
                             manifest_file = open(manifest_path)
@@ -4105,14 +4121,23 @@ class TaskDataAPITestCase(APITestCase):
                             )
                             task_data[f"client_files[{len(images)}]"] = manifest_file
                         else:
+                            # In this case we reproduce the old (buggy) behavior,
+                            # where the client files were sorted lexicographically
+                            # https://github.com/opencv/cvat/issues/5061
                             task_data.update(
                                 (f"client_files[{i}]", f)
                                 for i, f in enumerate(images)
                             )
+                            sorted_images = sort(zip(image_sizes, images),
+                                sorting_method=SortingMethod.LEXICOGRAPHICAL,
+                                func=lambda x: x[1].name)
+                            expected_image_sizes = [v[0] for v in sorted_images]
+                            expected_files = [v[1] for v in sorted_images]
 
                         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                            image_sizes, storage_method, StorageChoice.LOCAL)
+                            expected_image_sizes, storage_method, StorageChoice.LOCAL,
+                            expected_files=expected_files)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         # test a natural data sequence
@@ -4173,7 +4198,7 @@ class TaskDataAPITestCase(APITestCase):
         }
         assert method_list
         for name, func in method_list.items():
-            if name == '_test_api_v2_tasks_id_data_create_can_use_local_images_with_predefined_sorting':
+            # if name == '_test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting':
                 with self.subTest(name):
                     func(user)
 

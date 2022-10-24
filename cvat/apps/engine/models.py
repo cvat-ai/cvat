@@ -409,6 +409,7 @@ class ClientFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
+        # note that Django will sort the files by filenames automatically
 
 # For server files on the mounted share
 class ServerFile(models.Model):

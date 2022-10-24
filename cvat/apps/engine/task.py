@@ -550,7 +550,8 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
         ) or (
             not isDatasetImport and
-            db_data.sorting_method == models.SortingMethod.PREDEFINED and (
+            not isBackupRestore and
+            data['sorting_method'] == models.SortingMethod.PREDEFINED and (
                 # Sorting with manifest is required for zip
                 isinstance(extractor, MEDIA_TYPES['zip']['extractor']) or
 
