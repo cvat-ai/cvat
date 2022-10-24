@@ -489,20 +489,20 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { payload } = action;
 
             let { activeControl } = state.canvas;
-            const controlMapping = {
-                [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
-                [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
-                [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
-                [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
-                [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
-                [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
-                [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
-                [ShapeType.MASK]: ActiveControl.DRAW_MASK,
-            };
-
-            if (payload.activeObjectType === ObjectType.TAG) {
+            if ('activeObjectType' in payload && payload.activeObjectType === ObjectType.TAG) {
                 activeControl = ActiveControl.CURSOR;
-            } else {
+            } else if ('activeShapeType' in payload) {
+                const controlMapping = {
+                    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+                    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+                    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+                    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+                    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+                    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+                    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+                    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
+                };
+
                 activeControl = controlMapping[payload.activeShapeType as ShapeType];
             }
 

@@ -50,7 +50,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private resizeBrushToolLatestX: number;
     private brushMarker: fabric.Rect | fabric.Circle | null;
     private drawablePolygon: null | fabric.Polygon;
-    private polygonIsBeingDrawn: boolean;
+    private isPolygonDrawing: boolean;
     private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
 
     private tool: DrawData['brushTool'] | null;
@@ -69,7 +69,7 @@ export class MasksHandlerImpl implements MasksHandler {
         const canvasWrapper = this.canvas.getElement().parentElement;
         canvasWrapper.style.pointerEvents = '';
         canvasWrapper.style.zIndex = '';
-        this.polygonIsBeingDrawn = false;
+        this.isPolygonDrawing = false;
         this.vectorDrawHandler.draw({ enabled: false }, this.geometry);
     }
 
@@ -127,8 +127,8 @@ export class MasksHandlerImpl implements MasksHandler {
     private releaseDraw(): void {
         this.removeBrushMarker();
         this.releaseCanvasWrapperCSS();
-        if (this.polygonIsBeingDrawn) {
-            this.polygonIsBeingDrawn = false;
+        if (this.isPolygonDrawing) {
+            this.isPolygonDrawing = false;
             this.vectorDrawHandler.cancel();
         }
         this.canvas.clear();
@@ -143,8 +143,8 @@ export class MasksHandlerImpl implements MasksHandler {
     private releaseEdit(): void {
         this.removeBrushMarker();
         this.releaseCanvasWrapperCSS();
-        if (this.polygonIsBeingDrawn) {
-            this.polygonIsBeingDrawn = false;
+        if (this.isPolygonDrawing) {
+            this.isPolygonDrawing = false;
             this.vectorDrawHandler.cancel();
         }
         this.canvas.clear();
@@ -224,7 +224,7 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
-        if (this.polygonIsBeingDrawn) {
+        if (this.isPolygonDrawing) {
             // tool was switched from polygon to brush for example
             this.keepDrawnPolygon();
         }
@@ -254,7 +254,7 @@ export class MasksHandlerImpl implements MasksHandler {
         }
 
         if (this.tool?.type?.startsWith('polygon-')) {
-            this.polygonIsBeingDrawn = true;
+            this.isPolygonDrawing = true;
             this.vectorDrawHandler.draw({
                 enabled: true,
                 shapeType: 'polygon',
@@ -308,7 +308,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isEditing = false;
         this.isMouseDown = false;
         this.isBrushSizeChanging = false;
-        this.polygonIsBeingDrawn = false;
+        this.isPolygonDrawing = false;
         this.drawData = null;
         this.editData = null;
         this.drawnObjects = [];
