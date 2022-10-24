@@ -252,16 +252,17 @@ function BrushTools(): React.ReactPortal | null {
                 icon={<VerticalAlignBottomOutlined />}
                 onClick={() => setRemoveUnderlyingPixels(!removeUnderlyingPixels)}
             />
-            <LabelSelector
-                disabled={!!editableState}
-                labels={labels}
-                value={defaultLabelID}
-                onChange={({ id: labelID }: { id: number }) => {
-                    if (Number.isInteger(labelID)) {
-                        dispatch(rememberObject({ activeLabelID: labelID }));
-                    }
-                }}
-            />
+            { !editableState && (
+                <LabelSelector
+                    labels={labels}
+                    value={defaultLabelID}
+                    onChange={({ id: labelID }: { id: number }) => {
+                        if (Number.isInteger(labelID)) {
+                            dispatch(rememberObject({ activeLabelID: labelID }));
+                        }
+                    }}
+                />
+            )}
             { dragBar }
         </div>
     ), window.document.body);
