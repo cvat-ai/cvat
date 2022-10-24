@@ -3359,7 +3359,7 @@ class TaskDataAPITestCase(APITestCase):
             task = response.json()
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
-            self.assertAlmostEqual(len(expected_image_sizes), task["size"], delta=2)
+            self.assertEqual(len(expected_image_sizes), task["size"])
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
@@ -3395,7 +3395,7 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 images = self._extract_video_chunk(compressed_chunk)
 
-            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)), delta=2)
+            self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
             for image_idx, image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
@@ -3424,7 +3424,7 @@ class TaskDataAPITestCase(APITestCase):
                 else:
                     self.assertEqual(image.size, expected_image_sizes[image_idx])
 
-            self.assertAlmostEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)), delta=2)
+            self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
                 server_files = [img for key, img in data.items() if key.startswith("server_files")]
@@ -4185,9 +4185,8 @@ class TaskDataAPITestCase(APITestCase):
         }
         assert method_list
         for name, func in method_list.items():
-            # if name == '_test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting':
-                with self.subTest(name):
-                    func(user)
+            with self.subTest(name):
+                func(user)
 
     def test_api_v2_tasks_id_data_admin(self):
         self._test_api_v2_tasks_id_data_create(self.admin)
