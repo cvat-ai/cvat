@@ -6,9 +6,8 @@
 
 import itertools
 import os
-import os.path as osp
 import sys
-from typing import Any, Dict, List
+from typing import List
 from rest_framework.serializers import ValidationError
 import rq
 import re
@@ -68,15 +67,15 @@ def _copy_data_from_source(server_files, upload_dir, server_dir=None):
 
     for path in server_files:
         if server_dir is None:
-            source_path = osp.join(settings.SHARE_ROOT, osp.normpath(path))
+            source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
         else:
-            source_path = osp.join(server_dir, osp.normpath(path))
-        target_path = osp.join(upload_dir, path)
-        if osp.isdir(source_path):
+            source_path = os.path.join(server_dir, os.path.normpath(path))
+        target_path = os.path.join(upload_dir, path)
+        if os.path.isdir(source_path):
             copy_tree(source_path, target_path)
         else:
-            target_dir = osp.dirname(target_path)
-            if not osp.exists(target_dir):
+            target_dir = os.path.dirname(target_path)
+            if not os.path.exists(target_dir):
                 os.makedirs(target_dir)
             shutil.copyfile(source_path, target_path)
 
@@ -122,7 +121,7 @@ def _save_task_to_db(db_task, extractor):
         db_job.save()
 
         job_path = db_job.get_dirname()
-        if osp.isdir(job_path):
+        if os.path.isdir(job_path):
             shutil.rmtree(job_path)
         os.makedirs(job_path)
 
@@ -137,11 +136,11 @@ def _count_files(data, manifest_files=None):
     server_files = []
 
     for path in data["server_files"]:
-        path = osp.normpath(path).lstrip('/')
-        if '..' in path.split(osp.sep):
+        path = os.path.normpath(path).lstrip('/')
+        if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
-        full_path = osp.abspath(osp.join(share_root, path))
-        if osp.commonprefix([share_root, full_path]) != share_root:
+        full_path = os.path.abspath(os.path.join(share_root, path))
+        if os.path.commonprefix([share_root, full_path]) != share_root:
             raise ValueError("Bad file path: " + path)
         server_files.append(path)
 
@@ -152,7 +151,7 @@ def _count_files(data, manifest_files=None):
     # the example above only 2.txt and 1.txt files will be in the final list.
     # Also need to correctly handle 'a/b/c0', 'a/b/c' case.
     without_extra_dirs = [v[1] for v in zip([""] + sorted_server_files, sorted_server_files)
-        if not osp.dirname(v[0]).startswith(v[1])]
+        if not os.path.dirname(v[0]).startswith(v[1])]
 
     # we need to keep the original sequence of files
     data['server_files'] = [f for f in server_files if f in without_extra_dirs]
@@ -176,7 +175,7 @@ def _count_files(data, manifest_files=None):
     )
 
     count_files(
-        file_mapping={ f:osp.abspath(osp.join(share_root, f)) for f in data['server_files']},
+        file_mapping={ f:os.path.abspath(os.path.join(share_root, f)) for f in data['server_files']},
         counter=counter,
     )
 
@@ -217,12 +216,12 @@ def _retrieve_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
         if len(manifests) != 1:
             raise Exception('Only one manifest file can be attached with data')
         manifest_file = manifests[0]
-        full_manifest_path = osp.join(root_dir, manifests[0])
+        full_manifest_path = os.path.join(root_dir, manifests[0])
         if is_in_cloud:
             cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
             # check that cloud storage manifest file exists and is up to date
-            if not osp.exists(full_manifest_path) or \
-                    datetime.utcfromtimestamp(osp.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) \
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) \
                     < cloud_storage_instance.get_file_last_modified(manifest_file):
                 cloud_storage_instance.download_file(manifest_file, full_manifest_path)
         if is_manifest(full_manifest_path):
@@ -273,7 +272,7 @@ def _download_data(urls, upload_dir):
     job = rq.get_current_job()
     local_files = {}
     for url in urls:
-        name = osp.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
+        name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
         if name in local_files:
             raise Exception("filename collision: {}".format(name))
         _validate_url(url)
@@ -284,7 +283,7 @@ def _download_data(urls, upload_dir):
         response = requests.get(url, stream=True)
         if response.status_code == 200:
             response.raw.decode_content = True
-            with open(osp.join(upload_dir, name), 'wb') as output_file:
+            with open(os.path.join(upload_dir, name), 'wb') as output_file:
                 shutil.copyfileobj(response.raw, output_file)
         else:
             raise Exception("Failed to download " + url)
@@ -311,7 +310,7 @@ def _read_dataset_manifest(path: str) -> ImageManifestManager:
     elif not is_manifest(path):
         raise InvalidManifestError(
             "Can't recognize a manifest file in "
-            "the uploaded file '{}'".format(osp.basename(path))
+            "the uploaded file '{}'".format(os.path.basename(path))
         )
     return None
 
@@ -324,7 +323,7 @@ def _restore_file_order_from_manifest(
     Read more: https://github.com/opencv/cvat/issues/5061
     """
 
-    input_files = {osp.relpath(p, upload_dir): p for p in extractor.absolute_source_paths}
+    input_files = {os.path.relpath(p, upload_dir): p for p in extractor.absolute_source_paths}
     manifest_files = list(manifest.data)
 
     mismatching_files = list(input_files.keys() ^ manifest_files)
@@ -406,26 +405,26 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         segment_step, *_ = _get_task_segment_data(db_task, data_size)
         for start_frame in range(0, data_size, segment_step):
             first_sorted_media_image = sorted_media[start_frame]
-            cloud_storage_instance.download_file(first_sorted_media_image, osp.join(upload_dir, first_sorted_media_image))
+            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
 
         # prepare task manifest file from cloud storage manifest file
         # NOTE we should create manifest before defining chunk_size
         # FIXME in the future when will be implemented archive support
         manifest = ImageManifestManager(db_data.get_manifest_path())
         cloud_storage_manifest = ImageManifestManager(
-            osp.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
+            os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
             db_data.cloud_storage.get_storage_dirname()
         )
-        cloud_storage_manifest_prefix = osp.dirname(manifest_file)
+        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
         cloud_storage_manifest.set_index()
         if cloud_storage_manifest_prefix:
             sorted_media_without_manifest_prefix = [
-                osp.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+                os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
             ]
             sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
             def _add_prefix(properties):
                 file_name = properties['name']
-                properties['name'] = osp.join(cloud_storage_manifest_prefix, file_name)
+                properties['name'] = os.path.join(cloud_storage_manifest_prefix, file_name)
                 return properties
             content = list(map(_add_prefix, raw_content))
         else:
@@ -443,9 +442,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     # need to update images list by all found images in directories
     if (data['server_files']) and len(media['directory']) and len(media['image']):
         media['image'].extend(
-            [osp.relpath(image, upload_dir) for image in
+            [os.path.relpath(image, upload_dir) for image in
                 MEDIA_TYPES['directory']['extractor'](
-                    source_path=[osp.join(upload_dir, f) for f in media['directory']],
+                    source_path=[os.path.join(upload_dir, f) for f in media['directory']],
                 ).absolute_source_paths
             ]
         )
@@ -480,7 +479,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             data['stop_frame'] = None
             db_data.frame_filter = ''
 
-        source_paths = [osp.join(upload_dir, f) for f in media_files]
+        source_paths = [os.path.join(upload_dir, f) for f in media_files]
 
         details = {
             'source_path': source_paths,
@@ -523,7 +522,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         db_task.dimension = models.DimensionType.DIM_3D
 
         keys_of_related_files = validate_dimension.related_files.keys()
-        absolute_keys_of_related_files = [osp.join(upload_dir, f) for f in keys_of_related_files]
+        absolute_keys_of_related_files = [os.path.join(upload_dir, f) for f in keys_of_related_files]
         # When a task is created, the sorting method can be random and in this case, reinitialization will be with correct sorting
         # but when a task is restored from a backup, a random sorting is changed to predefined and we need to manually sort files
         # in the correct order.
@@ -565,16 +564,16 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         # and we should do this in general after validation step for 3D data
         # and after filtering from related_images
         if manifest is None:
-            if not manifest_file or not osp.isfile(osp.join(manifest_root, manifest_file)):
+            if not manifest_file or not os.path.isfile(os.path.join(manifest_root, manifest_file)):
                 raise FileNotFoundError(
                     "Can't find upload manifest file '{}' "
                     "in the uploaded files. When the 'predefined' sorting method is used, "
                     "this file is required in the input files. "
                     "Read more: https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/"
-                    .format(manifest_file or osp.basename(db_data.get_manifest_path()))
+                    .format(manifest_file or os.path.basename(db_data.get_manifest_path()))
                 )
 
-            manifest = _read_dataset_manifest(osp.join(manifest_root, manifest_file))
+            manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file))
             manifest.set_index()
 
         media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)
@@ -650,18 +649,18 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 continue
 
             # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
-            if manifest_file and not osp.exists(db_data.get_manifest_path()):
-                shutil.copyfile(osp.join(upload_dir, manifest_file),
+            if manifest_file and not os.path.exists(db_data.get_manifest_path()):
+                shutil.copyfile(os.path.join(upload_dir, manifest_file),
                     db_data.get_manifest_path())
                 if upload_dir != settings.SHARE_ROOT:
-                    os.remove(osp.join(upload_dir, manifest_file))
+                    os.remove(os.path.join(upload_dir, manifest_file))
 
             if task_mode == MEDIA_TYPES['video']['mode']:
                 try:
                     manifest_is_prepared = False
                     if manifest_file:
                         try:
-                            manifest = VideoManifestValidator(source_path=osp.join(upload_dir, media_files[0]),
+                            manifest = VideoManifestValidator(source_path=os.path.join(upload_dir, media_files[0]),
                                                               manifest_path=db_data.get_manifest_path())
                             manifest.init_index()
                             manifest.validate_seek_key_frames()
@@ -697,7 +696,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
                     db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 \
                         if data['stop_frame'] else all_frames, all_frames), db_data.get_frame_step()))
-                    video_path = osp.join(upload_dir, media_files[0])
+                    video_path = os.path.join(upload_dir, media_files[0])
                 except Exception as ex:
                     db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
                     manifest.remove()
@@ -746,7 +745,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
                     db_images.extend([
                         models.Image(data=db_data,
-                            path=osp.relpath(path, upload_dir),
+                            path=os.path.relpath(path, upload_dir),
                             frame=frame, width=w, height=h)
                         for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
                     ])
@@ -766,7 +765,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 db_images.extend([
                     models.Image(
                         data=db_data,
-                        path=osp.relpath(data[1], upload_dir),
+                        path=os.path.relpath(data[1], upload_dir),
                         frame=data[2],
                         width=size[0],
                         height=size[1])
@@ -786,7 +785,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         created_images = models.Image.objects.filter(data_id=db_data.id)
 
         db_related_files = [
-            models.RelatedFile(data=image.data, primary_image=image, path=osp.join(upload_dir, related_file_path))
+            models.RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
             for image in created_images
             for related_file_path in related_images.get(image.path, [])
         ]
@@ -795,7 +794,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     else:
         models.Video.objects.create(
             data=db_data,
-            path=osp.relpath(video_path, upload_dir),
+            path=os.path.relpath(video_path, upload_dir),
             width=video_size[0], height=video_size[1])
 
     if db_data.stop_frame == 0:
