@@ -224,13 +224,29 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
-        if (this.polygonIsBeingDrawn && (typeof brushTool === 'undefined' || brushTool.type !== this.tool.type)) {
+        if (this.polygonIsBeingDrawn) {
             // tool was switched from polygon to brush for example
             this.keepDrawnPolygon();
         }
 
         this.removeBrushMarker();
         if (brushTool) {
+            if (brushTool.color && this.tool?.color !== brushTool.color) {
+                const color = fabric.Color.fromHex(brushTool.color);
+                for (const object of this.drawnObjects) {
+                    if (object instanceof fabric.Line) {
+                        const alpha = +object.stroke.split(',')[3].slice(0, -1);
+                        color.setAlpha(alpha);
+                        object.set({ stroke: color.toRgba() });
+                    } else {
+                        const alpha = +(object.fill as string).split(',')[3].slice(0, -1);
+                        color.setAlpha(alpha);
+                        object.set({ fill: color.toRgba() });
+                    }
+                }
+                this.canvas.renderAll();
+            }
+
             this.tool = { ...brushTool, ...opts };
             if (this.isDrawing || this.isEditing) {
                 this.setupBrushMarker();
@@ -251,9 +267,11 @@ export class MasksHandlerImpl implements MasksHandler {
 
                         return acc;
                     }, []);
+
+                    const color = fabric.Color.fromHex(this.tool.color);
+                    color.setAlpha(this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity);
                     const polygon = new fabric.Polygon(points, {
-                        opacity: this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity,
-                        fill: this.tool.type === 'polygon-minus' ? 'white' : (this.tool.color || 'white'),
+                        fill: color.toRgba(),
                         selectable: false,
                         objectCaching: false,
                         absolutePositioned: true,

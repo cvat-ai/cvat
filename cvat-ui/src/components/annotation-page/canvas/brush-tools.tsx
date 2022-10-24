@@ -39,7 +39,6 @@ function BrushTools(): React.ReactPortal | null {
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
     const { visible } = config;
 
-    const [activeLabelID, setActiveLabelID] = useState<number | null>(null);
     const [editableState, setEditableState] = useState<any | null>(null);
     const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'polygon-plus' | 'polygon-minus'>('brush');
     const [brushForm, setBrushForm] = useState<'circle' | 'square'>('circle');
@@ -62,11 +61,7 @@ function BrushTools(): React.ReactPortal | null {
     );
 
     useEffect(() => {
-        setActiveLabelID(defaultLabelID);
-    }, [defaultLabelID]);
-
-    useEffect(() => {
-        const label = labels.find((_label: any) => _label.id === activeLabelID);
+        const label = labels.find((_label: any) => _label.id === defaultLabelID);
         getCore().config.removeUnderlyingMaskPixels = removeUnderlyingPixels;
         if (visible && label && canvasInstance instanceof Canvas) {
             const onUpdateConfiguration = ({ brushTool }: any): void => {
@@ -85,7 +80,6 @@ function BrushTools(): React.ReactPortal | null {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
-                        removeUnderlyingPixels,
                     },
                     onUpdateConfiguration,
                 });
@@ -98,13 +92,12 @@ function BrushTools(): React.ReactPortal | null {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
-                        removeUnderlyingPixels,
                     },
                     onUpdateConfiguration,
                 });
             }
         }
-    }, [currentTool, brushSize, brushForm, removeUnderlyingPixels, visible, activeLabelID, editableState]);
+    }, [currentTool, brushSize, brushForm, visible, defaultLabelID, editableState]);
 
     useEffect(() => {
         const canvasContainer = window.document.getElementsByClassName('cvat-canvas-container')[0];
@@ -159,13 +152,11 @@ function BrushTools(): React.ReactPortal | null {
                 canvasInstance.html().removeEventListener('canvas.editdone', updateEditableState);
             }
         };
-    }, [visible]);
+    }, [visible, editableState]);
 
     if (!labels.length) {
         return null;
     }
-
-    const polygonFinishMessage = 'Double click the canvas to finish a polygon';
 
     return ReactDOM.createPortal((
         <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
@@ -196,7 +187,7 @@ function BrushTools(): React.ReactPortal | null {
                             rememberObject({
                                 activeObjectType: ObjectType.SHAPE,
                                 activeShapeType: ShapeType.MASK,
-                                activeLabelID: typeof activeLabelID === 'number' ? activeLabelID : undefined,
+                                activeLabelID: defaultLabelID,
                             }),
                         );
                     }
@@ -215,22 +206,18 @@ function BrushTools(): React.ReactPortal | null {
                 icon={<Icon component={EraserIcon} />}
                 onClick={() => setCurrentTool('eraser')}
             />
-            <CVATTooltip title={polygonFinishMessage}>
-                <Button
-                    type='text'
-                    className={['cvat-brush-tools-polygon-plus', ...(currentTool === 'polygon-plus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
-                    icon={<Icon component={PolygonPlusIcon} />}
-                    onClick={() => setCurrentTool('polygon-plus')}
-                />
-            </CVATTooltip>
-            <CVATTooltip title={polygonFinishMessage}>
-                <Button
-                    type='text'
-                    className={['cvat-brush-tools-polygon-minus', ...(currentTool === 'polygon-minus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
-                    icon={<Icon component={PolygonMinusIcon} />}
-                    onClick={() => setCurrentTool('polygon-minus')}
-                />
-            </CVATTooltip>
+            <Button
+                type='text'
+                className={['cvat-brush-tools-polygon-plus', ...(currentTool === 'polygon-plus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                icon={<Icon component={PolygonPlusIcon} />}
+                onClick={() => setCurrentTool('polygon-plus')}
+            />
+            <Button
+                type='text'
+                className={['cvat-brush-tools-polygon-minus', ...(currentTool === 'polygon-minus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                icon={<Icon component={PolygonMinusIcon} />}
+                onClick={() => setCurrentTool('polygon-minus')}
+            />
             { ['brush', 'eraser'].includes(currentTool) ? (
                 <CVATTooltip title='Brush size [Hold Alt + Right Mouse Click + Drag Left/Right]'>
                     <InputNumber
@@ -253,10 +240,12 @@ function BrushTools(): React.ReactPortal | null {
                     />
                 </CVATTooltip>
             ) : null}
-            <Select value={brushForm} onChange={(value: 'circle' | 'square') => setBrushForm(value)}>
-                <Select.Option value='circle'>Circle</Select.Option>
-                <Select.Option value='square'>Square</Select.Option>
-            </Select>
+            { ['brush', 'eraser'].includes(currentTool) ? (
+                <Select value={brushForm} onChange={(value: 'circle' | 'square') => setBrushForm(value)}>
+                    <Select.Option value='circle'>Circle</Select.Option>
+                    <Select.Option value='square'>Square</Select.Option>
+                </Select>
+            ) : null}
             <Button
                 type='text'
                 className={['cvat-brush-tools-underlying-pixels', ...(removeUnderlyingPixels ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
@@ -264,10 +253,13 @@ function BrushTools(): React.ReactPortal | null {
                 onClick={() => setRemoveUnderlyingPixels(!removeUnderlyingPixels)}
             />
             <LabelSelector
+                disabled={!!editableState}
                 labels={labels}
-                value={activeLabelID}
-                onChange={(label: number) => {
-                    setActiveLabelID(label);
+                value={defaultLabelID}
+                onChange={({ id: labelID }: { id: number }) => {
+                    if (Number.isInteger(labelID)) {
+                        dispatch(rememberObject({ activeLabelID: labelID }));
+                    }
                 }}
             />
             { dragBar }
