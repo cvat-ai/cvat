@@ -70,9 +70,18 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 class JobAnnotation:
-    def __init__(self, pk):
-        self.db_job = models.Job.objects.select_related('segment__task') \
-            .select_for_update().get(id=pk)
+    def __init__(self, pk, is_prefetched=False):
+        if is_prefetched:
+            self.db_job = models.Job.objects.select_related('segment__task') \
+                .select_for_update().get(id=pk)
+        else:
+            self.db_job = models.Job.objects.prefetch_related(
+                'segment',
+                'segment__task',
+                Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                    Prefetch('images', queryset=models.Image.objects.order_by('frame'))
+                ))
+            ).get(pk=pk)
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -630,7 +639,7 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
-            annotation = JobAnnotation(db_job.id)
+            annotation = JobAnnotation(db_job.id, is_prefetched=True)
             annotation.init_from_db()
             if annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = annotation.ir_data.version

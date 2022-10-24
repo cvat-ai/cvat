@@ -550,7 +550,7 @@
               "assignee": null,
               "id": 14,
               "stage": "annotation",
-              "state": "new",
+              "state": "in progress",
               "status": "annotation",
               "url": "http://localhost:8080/api/jobs/14"
             }
@@ -564,7 +564,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2022-03-05T09:47:49.667000Z",
+      "updated_date": "2022-10-24T14:35:16.820282Z",
       "url": "http://localhost:8080/api/tasks/9"
     },
     {

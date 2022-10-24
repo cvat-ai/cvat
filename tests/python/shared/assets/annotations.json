@@ -280,7 +280,53 @@
       "version": 0
     },
     "14": {
-      "shapes": [],
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 15,
+          "group": 0,
+          "id": 41,
+          "label_id": 6,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            74.68764302059753,
+            255.14588100686706,
+            166.59267734554123,
+            731.9708237986288
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 1,
+              "value": "mazda"
+            }
+          ],
+          "elements": [],
+          "frame": 16,
+          "group": 0,
+          "id": 42,
+          "label_id": 5,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            45.16506024096452,
+            109.59277108433889,
+            126.08072289156735,
+            139.52048192771326
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
       "tags": [],
       "tracks": [],
       "version": 0
@@ -927,6 +973,51 @@
             100.96585365853753,
             142.12734274711147,
             362.6243902439037
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 15,
+          "group": 0,
+          "id": 41,
+          "label_id": 6,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            74.68764302059753,
+            255.14588100686706,
+            166.59267734554123,
+            731.9708237986288
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 1,
+              "value": "mazda"
+            }
+          ],
+          "elements": [],
+          "frame": 16,
+          "group": 0,
+          "id": 42,
+          "label_id": 5,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            45.16506024096452,
+            109.59277108433889,
+            126.08072289156735,
+            139.52048192771326
           ],
           "rotation": 0.0,
           "source": "manual",

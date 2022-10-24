@@ -3,14 +3,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import json
+import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from typing import List
 
 import pytest
+import os.path as osp
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+from tempfile import NamedTemporaryFile, mkdtemp
+from xml.etree import ElementTree
 
 from shared.utils.config import make_api_client
 
@@ -488,7 +493,6 @@ class TestPatchJob:
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
 
-
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
     def _export_dataset(self, username, jid, **kwargs):
@@ -510,3 +514,82 @@ class TestJobDataset:
         job = jobs_with_shapes[0]
         response = self._export_annotations(admin_user, job["id"], format="CVAT for images 1.1")
         assert response.data
+
+    @pytest.mark.parametrize("username, jid", [('admin1', 14)])
+    def test_check_exported_annotations_structure(
+        self,
+        username,
+        jid,
+        tasks,
+        jobs,
+        annotations,
+    ):
+        job_data = jobs[jid]
+        annotations_before = annotations["job"][str(jid)]
+
+        response = self._export_annotations(username, jid, format="COCO 1.0")
+        assert response.data
+        temp_anno_file_name = None
+        with NamedTemporaryFile(mode="w+b", prefix="cvat", delete=False, suffix=".zip") as temp_anno_file:
+            temp_anno_file_name = temp_anno_file.name
+            temp_anno_file.write(response.data)
+
+        with zipfile.ZipFile(temp_anno_file_name, mode="r") as zip_file:
+            exported_annotations = json.loads(zip_file.read(zip_file.namelist()[0]))
+
+        assert len(annotations_before["shapes"]) == len(exported_annotations["annotations"])
+        # NOTE: data step is not stored in assets, default = 1
+        assert job_data["stop_frame"] - job_data["start_frame"] + 1 == len(exported_annotations["images"])
+
+        task_id = job_data["task_id"]
+        task_size = tasks[task_id]["size"]
+        assert task_size > len(exported_annotations["images"])
+        os.remove(temp_anno_file_name)
+
+    @pytest.mark.parametrize("username, jid", [('admin1', 14)])
+    def test_check_exported_dataset_structure(
+        self,
+        username,
+        jid,
+        tasks,
+        jobs,
+        annotations,
+    ):
+        annotations_file_name = "annotations.xml"
+        job_data = jobs[jid]
+        # NOTE: data step is not stored in assets, default = 1
+        job_size = job_data["stop_frame"] - job_data["start_frame"] + 1
+        task_id = job_data["task_id"]
+        task_data = tasks[task_id]
+
+        response = self._export_dataset(username, jid, format="CVAT for images 1.1")
+        assert response.data
+        temp_dataset_file_name = None
+        with NamedTemporaryFile(mode="w+b", prefix="cvat", delete=False, suffix=".zip") as temp_dataset_file:
+            temp_dataset_file_name = temp_dataset_file.name
+            temp_dataset_file.write(response.data)
+
+        with zipfile.ZipFile(temp_dataset_file_name, mode="r") as zip_file:
+            assert len(zip_file.namelist()) == job_size + 1 # images + annotation file
+            temp_dir = mkdtemp(suffix='cvat')
+            zip_file.extract(annotations_file_name, temp_dir)
+
+        document = ElementTree.parse(osp.join(temp_dir, annotations_file_name))
+        # check meta information
+        meta = document.find("meta")
+        instance = meta.getchildren()[0]
+        assert instance.tag == "job"
+        assert instance.find("id").text == str(jid)
+        assert instance.find("size").text == str(job_size)
+        assert instance.find("start_frame").text == str(job_data["start_frame"])
+        assert instance.find("stop_frame").text == str(job_data["stop_frame"])
+        assert instance.find("mode").text == job_data["mode"]
+        # check images
+        current_id = job_data["start_frame"]
+        for image_elem in document.findall("image"):
+            assert image_elem.attrib["id"] == str(current_id)
+            current_id += 1
+
+        os.remove(temp_dataset_file_name)
+        os.remove(osp.join(temp_dir, annotations_file_name))
+        os.rmdir(temp_dir)
