@@ -166,7 +166,7 @@ Assets directory has two parts:
    ```
    Just dump JSON assets with:
    ```
-   python3 tests/python/shared/utils/dump_objests.py
+   python3 tests/python/shared/utils/dump_objects.py
    ```
 
 1. If your test infrastructure has been corrupted and you have errors during db restoring.
