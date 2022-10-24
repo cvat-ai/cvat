@@ -1024,12 +1024,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # The server must record uploaded files order during the uploading
                 self._init_tus_input_ordering()
 
-        elif self._object.data['sorting_method'] == SortingMethod.PREDEFINED:
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                data="When the 'predefined' file sorting is used, the initial TUS request "
-                "must specify the input file order."
-            )
-
         return Response(status=status.HTTP_202_ACCEPTED)
 
     # UploadMixin method
@@ -1140,15 +1134,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             - Data - POST, no extra headers (legacy) or 'Upload-Start' + 'Upload-Finish' headers.
               Contains Data in the body.
             - Upload-Start - POST, has an 'Upload-Start' header.
-              Can contain upload metainfo in the body. This metadata must be present if the
-              "predefined" sorting method is specified.
+              Can contain upload metainfo in the body.
             - Upload-Length - HEAD, has an 'Upload-Length' header (read the TUS protocol)
             - Chunk - PATCH (read the TUS protocol).
             - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain Data in the body.
             - Upload-Multiple - POST, has a 'Upload-Multiple' header. Contains Data in the body.
 
             The Upload-Start request allows to specify file order for TUS requests.
-            This is needed because files in these requests and the requests themselves
+            This may be needed because files in these requests and the requests themselves
             can come (or be sent) unordered. To state that the input files are sent in
             the correct order, pass an empty list of files in the 'files' field. A list of
             strings is expected to be a list file names in the required order.

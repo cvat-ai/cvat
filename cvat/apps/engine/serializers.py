@@ -988,7 +988,7 @@ class TusUploadingMetaSerializer(serializers.Serializer):
     """
 
     files = serializers.ListField(
-        child=serializers.CharField(max_length=1024), allow_empty=True, required=True)
+        child=serializers.CharField(max_length=1024), default=[], allow_empty=True)
     """Allows to specify the list of files for the uploading."""
 
 class DatasetFileSerializer(serializers.Serializer):
