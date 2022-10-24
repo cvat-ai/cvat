@@ -54,10 +54,11 @@ If the task is not related to any project, there are two ways of working with la
      - Number — is used when an attribute is entered as a number.
   1. Set values for the attribute:
      - Multiple values (for attributes represented as Select, Radio or Checkbox) are separated by pressing `Enter`.
-     The entered value is displayed as a separate element which can be removed by pressing `Backspace` or clicking the close button (x).
+     The entered value is displayed as a separate element which can be removed by pressing `Backspace`
+     or clicking the close button (x).
      - If an attribute is represented as Text, its default value is a string.
-     - If Number is chosen as the way attribute is shown as, value is required to contain 3 numbers, separated by semicolons:
-     minimum value, maximum value and icrement.
+     - If Number is chosen as the way attribute is shown as, value should contain 3 numbers, separated by semicolons:
+     minimum value, maximum value and increment.
   1. Checkbox `Mutable` determines if an attribute would be changeable frame to frame.
 
 
@@ -180,7 +181,8 @@ Use it for interpolation mode. There are several ways of using this option:
   are very different, you will have two shapes for the same object.
   This functionality works only for bounding boxes.
   Polygons, polylines, points do not support automatic merge on overlapped segments
-  even if the overlap parameter does not equal zero and the match between corresponding shapes on adjacent segments is perfect.
+  even if the overlap parameter does not equal zero
+  and the match between corresponding shapes on adjacent segments is perfect.
 
 ### Segment size
 
