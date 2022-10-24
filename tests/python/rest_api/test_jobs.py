@@ -493,6 +493,7 @@ class TestPatchJob:
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
     def _export_dataset(self, username, jid, **kwargs):
@@ -515,8 +516,8 @@ class TestJobDataset:
         response = self._export_annotations(admin_user, job["id"], format="CVAT for images 1.1")
         assert response.data
 
-    @pytest.mark.parametrize("username, jid", [('admin1', 14)])
-    def test_check_exported_annotations_structure(
+    @pytest.mark.parametrize("username, jid", [("admin1", 14)])
+    def test_check_exported_coco_annotations_structure(
         self,
         username,
         jid,
@@ -526,11 +527,15 @@ class TestJobDataset:
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
+        task_id = job_data["task_id"]
+        task_size = tasks[task_id]["size"]
 
         response = self._export_annotations(username, jid, format="COCO 1.0")
         assert response.data
         temp_anno_file_name = None
-        with NamedTemporaryFile(mode="w+b", prefix="cvat", delete=False, suffix=".zip") as temp_anno_file:
+        with NamedTemporaryFile(
+            mode="w+b", prefix="cvat", delete=False, suffix=".zip"
+        ) as temp_anno_file:
             temp_anno_file_name = temp_anno_file.name
             temp_anno_file.write(response.data)
 
@@ -539,15 +544,14 @@ class TestJobDataset:
 
         assert len(annotations_before["shapes"]) == len(exported_annotations["annotations"])
         # NOTE: data step is not stored in assets, default = 1
-        assert job_data["stop_frame"] - job_data["start_frame"] + 1 == len(exported_annotations["images"])
+        assert job_data["stop_frame"] - job_data["start_frame"] + 1 == \
+            len(exported_annotations["images"])
 
-        task_id = job_data["task_id"]
-        task_size = tasks[task_id]["size"]
         assert task_size > len(exported_annotations["images"])
         os.remove(temp_anno_file_name)
 
-    @pytest.mark.parametrize("username, jid", [('admin1', 14)])
-    def test_check_exported_dataset_structure(
+    @pytest.mark.parametrize("username, jid", [("admin1", 14)])
+    def test_check_exported_cvat_dataset_structure(
         self,
         username,
         jid,
@@ -559,31 +563,33 @@ class TestJobDataset:
         job_data = jobs[jid]
         # NOTE: data step is not stored in assets, default = 1
         job_size = job_data["stop_frame"] - job_data["start_frame"] + 1
-        task_id = job_data["task_id"]
-        task_data = tasks[task_id]
 
         response = self._export_dataset(username, jid, format="CVAT for images 1.1")
         assert response.data
         temp_dataset_file_name = None
-        with NamedTemporaryFile(mode="w+b", prefix="cvat", delete=False, suffix=".zip") as temp_dataset_file:
+        with NamedTemporaryFile(
+            mode="w+b", prefix="cvat", delete=False, suffix=".zip"
+        ) as temp_dataset_file:
             temp_dataset_file_name = temp_dataset_file.name
             temp_dataset_file.write(response.data)
 
         with zipfile.ZipFile(temp_dataset_file_name, mode="r") as zip_file:
-            assert len(zip_file.namelist()) == job_size + 1 # images + annotation file
-            temp_dir = mkdtemp(suffix='cvat')
+            assert len(zip_file.namelist()) == job_size + 1  # images + annotation file
+            temp_dir = mkdtemp(suffix="cvat")
             zip_file.extract(annotations_file_name, temp_dir)
 
         document = ElementTree.parse(osp.join(temp_dir, annotations_file_name))
         # check meta information
         meta = document.find("meta")
-        instance = meta.getchildren()[0]
+        instance = list(meta)[0]
         assert instance.tag == "job"
         assert instance.find("id").text == str(jid)
         assert instance.find("size").text == str(job_size)
         assert instance.find("start_frame").text == str(job_data["start_frame"])
         assert instance.find("stop_frame").text == str(job_data["stop_frame"])
         assert instance.find("mode").text == job_data["mode"]
+        assert instance.find("bug_tracker").text == job_data["bug_tracker"]
+        assert len(instance.find("segments")) == 1
         # check images
         current_id = job_data["start_frame"]
         for image_elem in document.findall("image"):
