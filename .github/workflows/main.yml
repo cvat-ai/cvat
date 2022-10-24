@@ -152,9 +152,9 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           skip-dirs: /etc/ssh,/opt/venv/lib/python3.8/site-packages/slapdtest
-          vuln-type: 'os,library'
+          vuln-type: 'library'
           severity: 'CRITICAL,HIGH'
-          trivyignores: .github/workflows/.trivyignore
+          # trivyignores: .github/workflows/.trivyignore
 
       - name: Run Trivy scanner for cvat/ui
         uses: aquasecurity/trivy-action@master
@@ -163,9 +163,9 @@ jobs:
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          vuln-type: 'os,library'
+          vuln-type: 'library'
           severity: 'CRITICAL,HIGH'
-          trivyignores: .github/workflows/.trivyignore
+          # trivyignores: .github/workflows/.trivyignore
 
   rest_api_testing:
     needs: build
