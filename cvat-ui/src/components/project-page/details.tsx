@@ -3,17 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 
 import { getCore } from 'cvat-core-wrapper';
-import { updateProjectAsync } from 'actions/projects-actions';
+import { getProjectTasksAsync, updateProjectAsync } from 'actions/projects-actions';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
 import UserSelector from 'components/task-page/user-selector';
+import { CombinedState } from 'reducers';
 
 const core = getCore();
 
@@ -23,7 +24,7 @@ interface DetailsComponentProps {
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
     const { project } = props;
-
+    const tasksGettingQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const dispatch = useDispatch();
     const [projectName, setProjectName] = useState(project.name);
 
@@ -77,6 +78,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 onSubmit={(labels: any[]): void => {
                     project.labels = labels.map((labelData): any => new core.classes.Label(labelData));
                     dispatch(updateProjectAsync(project));
+                    dispatch(getProjectTasksAsync(tasksGettingQuery));
                 }}
             />
         </div>

@@ -139,14 +139,12 @@ export function createProjectAsync(data: any): ThunkAction {
 }
 
 export function updateProjectAsync(projectInstance: any): ThunkAction {
-    return async (dispatch, getState): Promise<void> => {
+    return async (dispatch): Promise<void> => {
         try {
-            const state = getState();
             dispatch(projectActions.updateProject());
             await projectInstance.save();
             const [project] = await cvat.projects.get({ id: projectInstance.id });
             dispatch(projectActions.updateProjectSuccess(project));
-            dispatch(getProjectTasksAsync(state.projects.tasksGettingQuery));
         } catch (error) {
             let project = null;
             try {
