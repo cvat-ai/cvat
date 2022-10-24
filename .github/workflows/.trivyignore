@@ -1,2 +1,6 @@
-# Ubuntu hasn't updated the docker image yet
+# (cvat/server) Ubuntu hasn't updated the docker image yet
 CVE-2022-2602
+
+# (cvat/ui) Vulnerabilities come from base image
+CVE-2022-40303
+CVE-2022-40304
