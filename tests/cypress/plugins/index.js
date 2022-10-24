@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 const fs = require('fs');
+const path = require('path');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
 const { imageGenerator } = require('./imageGenerator/addPlugin');
@@ -31,6 +32,30 @@ module.exports = (on, config) => {
         },
     });
     on('task', { isFileExist });
+    on('task', {
+        downloads: (downloadspath) => fs.readdirSync(downloadspath),
+    });
+    on('task', {
+        createFolder: (folder) => {
+            if (!fs.existsSync(folder)){
+                fs.mkdirSync(folder);
+            }
+            return null;
+        }
+    })
+    on('task', {
+        cleanFolder: (folder) => {
+            fs.readdir(folder, (err, files) => {
+                if (err) throw err;
+                for (const file of files) {
+                    fs.unlink(path.join(folder, file), (err_) => {
+                        if (err_) throw err;
+                    });
+                }
+            });
+            return null;
+        },
+    });
     // Try to resolve "Cypress failed to make a connection to the Chrome DevTools Protocol"
     // https://github.com/cypress-io/cypress/issues/7450
     on('before:browser:launch', (browser, launchOptions) => {

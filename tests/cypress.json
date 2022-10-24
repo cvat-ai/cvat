@@ -4,7 +4,7 @@
   "viewportWidth": 1300,
   "viewportHeight": 960,
   "defaultCommandTimeout": 25000,
-  "downloadsFolder": "cypress/fixtures",
+  "downloadsFolder": "cypress/fixtures/downloads",
   "env": {
     "user": "admin",
     "email": "admin@localhost.company",
@@ -12,7 +12,8 @@
   },
   "testFiles": [
     "auth_page.js",
-    "skeletons_pipeline.js",
+    "skeleton/skeletons_pipeline.js",
+    "skeleton/skeletons_import_export.js",
     "webhooks.js",
     "actions_tasks/**/*.js",
     "actions_tasks2/**/*.js",
