@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-const config = require('./config');
+const config = require('./config').default;
 
 (() => {
     const PluginRegistry = require('./plugins').default;
