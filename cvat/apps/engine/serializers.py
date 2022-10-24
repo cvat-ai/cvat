@@ -981,11 +981,15 @@ class AnnotationFileSerializer(serializers.Serializer):
 class TusUploadingMetaSerializer(serializers.Serializer):
     """
     Allows to specify TUS file uploading details.
+
+    To state that the input files are sent in the correct order,
+    pass an empty list of files in the 'files' field. A list of
+    strings is expected to be a list file names in the required order.
     """
 
     files = serializers.ListField(
-        child=serializers.CharField(max_length=1024), allow_empty=False, required=False)
-    """Allows to specify the list of files for the uploading"""
+        child=serializers.CharField(max_length=1024), allow_empty=True, required=True)
+    """Allows to specify the list of files for the uploading."""
 
 class DatasetFileSerializer(serializers.Serializer):
     dataset_file = serializers.FileField()

@@ -57,7 +57,7 @@ from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, Task, Project, Issue, Data,
+    Job, SortingMethod, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
     CloudProviderChoice, Location
 )
@@ -935,8 +935,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 break
 
         if not upload_metafile:
-            # No sorting were explicitly requested, work the backward compatibility mode
-            return uploaded_files
+            raise FileNotFoundError("Uploaded file order is not specified")
 
         expected_files = self._read_tus_upload_meta_file(osp.join(upload_dir, upload_metafile))
         expected_files.append(upload_metafile)
@@ -1017,13 +1016,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             serializer = TusUploadingMetaSerializer(self._object, data=request.data)
             serializer.is_valid(raise_exception=True)
 
-            if serializer.validated_data.get('files'):
+            if serializer.validated_data['files']:
                 # Remember the list of expected files for the upcoming uploading
                 self._init_tus_custom_ordering(serializer.validated_data['files'])
 
             else:
                 # The server must record uploaded files order during the uploading
                 self._init_tus_input_ordering()
+
+        elif self._object.data['sorting_method'] == SortingMethod.PREDEFINED:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                data="When the 'predefined' file sorting is used, the initial TUS request "
+                "must specify the input file order."
+            )
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -1141,6 +1146,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             - Chunk - PATCH (read the TUS protocol).
             - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain Data in the body.
             - Upload-Multiple - POST, has a 'Upload-Multiple' header. Contains Data in the body.
+
+            The Upload-Start request allows to specify file order for TUS requests.
+            This is needed because files in these requests and the requests themselves
+            can come (or be sent) unordered. To state that the input files are sent in
+            the correct order, pass an empty list of files in the 'files' field. A list of
+            strings is expected to be a list file names in the required order.
 
             After all data is sent, the operation status can be retrieved in the /status endpoint.
         """),
