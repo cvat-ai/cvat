@@ -641,16 +641,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
         } else {
-            if (this.data.drawData.initialState) {
-                this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
-            }
-
             if (disableInternalSVGDrawing(drawData, this.data.drawData)) {
                 this.notify(UpdateReasons.DRAW);
                 return;
             }
 
             this.data.drawData = { ...drawData };
+            if (this.data.drawData.initialState) {
+                this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
+            }
         }
 
         // install default values for drawing method
