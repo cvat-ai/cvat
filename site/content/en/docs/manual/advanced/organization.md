@@ -31,7 +31,7 @@ To go to the organization page, open the user menu, go to `Organization` and cli
 ### Invite members into organization
 
 To add members, click `Invite members`. In the window that appears,
-enter the email of an atready registered user that you want to add and select the role you want to assign (each role has a different set of rights):
+enter the email of an already registered user that you want to add and select the role you want to assign (each role has a different set of rights):
 
 - `Worker` - workers only have access to tasks, projects, and jobs assigned to them.
 - `Supervisor` - this role allows users to create jobs, tasks, and projects and assign them to members of the organization.
