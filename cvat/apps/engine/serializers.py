@@ -983,9 +983,6 @@ class TusUploadingMetaSerializer(serializers.Serializer):
     Allows to specify TUS file uploading details.
     """
 
-    ordered = serializers.BooleanField(required=False, default=False)
-    """Whether the uploading requests and files inside are ordered or not"""
-
     files = serializers.ListField(
         child=serializers.CharField(max_length=1024), allow_empty=False, required=False)
     """Allows to specify the list of files for the uploading"""

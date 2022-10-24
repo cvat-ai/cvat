@@ -9,7 +9,7 @@ import io
 import os
 import os.path as osp
 import textwrap
-from typing import IO, Any, Dict, List, Sequence
+from typing import Any, Dict, List, Sequence
 import pytz
 import shutil
 import traceback
@@ -869,15 +869,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.get_backup_dirname()
         return ""
 
-    def _get_tus_auto_ordering_metafile_name(self) -> str:
-        return "__tus_auto_order__"
+    def _get_tus_input_ordering_metafile_name(self) -> str:
+        return "__tus_input_order__"
 
     def _get_tus_custom_ordering_metafile_name(self) -> str:
         return "__tus_custom_order__"
 
     def _get_tus_metafile_names(self) -> List[str]:
         return [
-            self._get_tus_auto_ordering_metafile_name(),
+            self._get_tus_input_ordering_metafile_name(),
             self._get_tus_custom_ordering_metafile_name(),
         ]
 
@@ -888,14 +888,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             osp.basename(filename) not in self._get_tus_metafile_names()
         )
 
-    def _read_tus_upload_meta_file(self, f: IO) -> Sequence[str]:
+    def _read_tus_upload_meta_file(self, f: str) -> Sequence[str]:
         """
         Reads the input file and returns its contents.
         """
 
-        contents = f.read()
-        if isinstance(contents, bytes):
-            contents = contents.decode()
+        with open(f) as f:
+            contents = f.read()
 
         return contents.splitlines()
 
@@ -931,8 +930,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         upload_metafile = None
         for filename in self._get_tus_metafile_names():
-            filename = osp.join(upload_dir, filename)
-            if osp.isfile(filename):
+            if osp.isfile(osp.join(upload_dir, filename)):
                 upload_metafile = filename
                 break
 
@@ -943,7 +941,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         expected_files = self._read_tus_upload_meta_file(osp.join(upload_dir, upload_metafile))
         expected_files.append(upload_metafile)
 
-        uploaded_file_names = { osp.relpath(f['file'], upload_dir): f for f in uploaded_files }
+        uploaded_file_names = { f: f for f in uploaded_files }
         mismatching_files = list(uploaded_file_names.keys() ^ expected_files)
         if mismatching_files:
             DISPLAY_ENTRIES_COUNT = 5
@@ -969,7 +967,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = super().init_file_upload(request)
 
         if response.status_code == status.HTTP_201_CREATED:
-            metafile = osp.join(self.get_upload_dir(), self._get_tus_auto_ordering_metafile_name())
+            metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
             if osp.isfile(metafile):
                 with open(metafile) as f:
                     file_list = self._read_tus_upload_meta_file(f)
@@ -983,7 +981,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_files(self, request):
         client_files = self._get_request_client_files(request)
         if client_files:
-            metafile = osp.join(self.get_upload_dir(), self._get_tus_auto_ordering_metafile_name())
+            metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
             if osp.isfile(metafile):
                 with open(metafile) as f:
                     file_list = self._read_tus_upload_meta_file(f)
@@ -995,6 +993,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return super().append_files(request)
 
+    def _init_tus_input_ordering(self):
+        with open(
+            osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name()), 'w'
+        ):
+            pass # just create the file
+
+    def _init_tus_custom_ordering(self, file_list: List[str]):
+        with open(
+            osp.join(self.get_upload_dir(), self._get_tus_custom_ordering_metafile_name()), 'w'
+        ) as f:
+            for filename in file_list:
+                print(self._prepare_upload_metafile_entry(filename), file=f)
+
     # UploadMixin method
     def upload_started(self, request):
         """
@@ -1005,23 +1016,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if request.data:
             serializer = TusUploadingMetaSerializer(self._object, data=request.data)
             serializer.is_valid(raise_exception=True)
-            upload_dir = self.get_upload_dir()
 
-            if serializer.validated_data['ordered']:
-                # The server must record uploaded files order during the uploading
-                with open(
-                    osp.join(upload_dir, self._get_tus_auto_ordering_metafile_name()), 'w'
-                ) as f:
-                    pass # just create the file
-
-            elif serializer.validated_data.get('files'):
+            if serializer.validated_data.get('files'):
                 # Remember the list of expected files for the upcoming uploading
-                expected_files = serializer.validated_data['files']
-                with open(
-                    osp.join(upload_dir, self._get_tus_custom_ordering_metafile_name()), 'w'
-                ) as f:
-                    for filename in expected_files:
-                        print(self._prepare_upload_metafile_entry(filename), file=f)
+                self._init_tus_custom_ordering(serializer.validated_data['files'])
+
+            else:
+                # The server must record uploaded files order during the uploading
+                self._init_tus_input_ordering()
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -1051,11 +1053,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data = serializer.validated_data
 
             # Merge file lists from TUS and simple/multi uploading
+            uploaded_files = task_data.get_uploaded_files()
             if data.get('client_files'):
+                if not uploaded_files:
+                    # This request is the only request in the uploading.
+                    # We need to remember file ordering as it may be lost,
+                    # e.g. on a server crash. The input file order could be
+                    # restored from this variable otherwise.
+                    self._init_tus_custom_ordering([f['file'].name for f in data['client_files']])
                 response = self.append_files(request)
                 if not 200 <= response.status_code < 300:
                     return response
-            uploaded_files = task_data.get_uploaded_files()
+                uploaded_files = task_data.get_uploaded_files()
             data.update({'client_files': uploaded_files})
 
             # Refresh the db value with the updated file list and other request parameters

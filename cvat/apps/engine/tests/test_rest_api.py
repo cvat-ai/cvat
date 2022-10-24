@@ -3336,8 +3336,7 @@ class TaskDataAPITestCase(APITestCase):
                                         expected_image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
-                                        dimension=DimensionType.DIM_2D, *,
-                                        expected_files=None):
+                                        dimension=DimensionType.DIM_2D):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -3459,10 +3458,7 @@ class TaskDataAPITestCase(APITestCase):
                 else:
                     source_files = sort(source_files, sorting_method=sorting, func=_name_key)
 
-                if expected_files is not None:
-                    source_files = expected_files
-                else:
-                    source_files = list(map(_add_prefix, source_files))
+                source_files = list(map(_add_prefix, source_files))
 
                 source_images = []
                 for f in source_files:
@@ -4121,23 +4117,14 @@ class TaskDataAPITestCase(APITestCase):
                             )
                             task_data[f"client_files[{len(images)}]"] = manifest_file
                         else:
-                            # In this case we reproduce the old (buggy) behavior,
-                            # where the client files were sorted lexicographically
-                            # https://github.com/opencv/cvat/issues/5061
                             task_data.update(
                                 (f"client_files[{i}]", f)
                                 for i, f in enumerate(images)
                             )
-                            sorted_images = sort(zip(image_sizes, images),
-                                sorting_method=SortingMethod.LEXICOGRAPHICAL,
-                                func=lambda x: x[1].name)
-                            expected_image_sizes = [v[0] for v in sorted_images]
-                            expected_files = [v[1] for v in sorted_images]
 
                         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                            expected_image_sizes, storage_method, StorageChoice.LOCAL,
-                            expected_files=expected_files)
+                            expected_image_sizes, storage_method, StorageChoice.LOCAL)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         # test a natural data sequence
