@@ -275,6 +275,29 @@ const defaultData = {
     },
 };
 
+function hasShapeIsBeingDrawn(): boolean {
+    const [element] = window.document.getElementsByClassName('cvat_canvas_shape_drawing');
+    if (element) {
+        return !!(element as any).instance.remember('_paintHandler');
+    }
+
+    return false;
+}
+
+function disableInternalSVGDrawing(data: DrawData | MasksEditData, currentData: DrawData | MasksEditData): boolean {
+    // P.S. spaghetti code, but probably significant refactoring needed to find a better solution
+    // when it is a mask drawing/editing using polygon fill
+    // a user needs to close drawing/editing twice
+    // first close stops internal drawing/editing with svg.js
+    // the second one stops drawing/editing mask itself
+
+    return !data.enabled && currentData.enabled &&
+        (('shapeType' in currentData && currentData.shapeType === 'mask') ||
+        ('state' in currentData && currentData.state.shapeType === 'mask')) &&
+        currentData.brushTool?.type?.startsWith('polygon-') &&
+        hasShapeIsBeingDrawn();
+}
+
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
         activeElement: ActiveElement;
@@ -618,10 +641,16 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
         } else {
-            this.data.drawData = { ...drawData };
             if (this.data.drawData.initialState) {
                 this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
             }
+
+            if (disableInternalSVGDrawing(drawData, this.data.drawData)) {
+                this.notify(UpdateReasons.DRAW);
+                return;
+            }
+
+            this.data.drawData = { ...drawData };
         }
 
         // install default values for drawing method
@@ -654,6 +683,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (editData.enabled) {
             this.data.editData = { ...editData };
+        } else if (disableInternalSVGDrawing(editData, this.data.editData)) {
+            this.notify(UpdateReasons.EDIT);
+            return;
         } else {
             this.data.editData = { enabled: false };
         }

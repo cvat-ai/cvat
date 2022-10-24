@@ -174,25 +174,27 @@ function BrushTools(): React.ReactPortal | null {
                     }
                 }}
             />
-            <Button
-                type='text'
-                disabled={!!editableState}
-                className='cvat-brush-tools-continue'
-                icon={<Icon component={PlusIcon} />}
-                onClick={() => {
-                    if (canvasInstance instanceof Canvas) {
-                        canvasInstance.draw({ enabled: false, continue: true });
+            {!editableState && (
+                <Button
+                    type='text'
+                    disabled={!!editableState}
+                    className='cvat-brush-tools-continue'
+                    icon={<Icon component={PlusIcon} />}
+                    onClick={() => {
+                        if (canvasInstance instanceof Canvas) {
+                            canvasInstance.draw({ enabled: false, continue: true });
 
-                        dispatch(
-                            rememberObject({
-                                activeObjectType: ObjectType.SHAPE,
-                                activeShapeType: ShapeType.MASK,
-                                activeLabelID: defaultLabelID,
-                            }),
-                        );
-                    }
-                }}
-            />
+                            dispatch(
+                                rememberObject({
+                                    activeObjectType: ObjectType.SHAPE,
+                                    activeShapeType: ShapeType.MASK,
+                                    activeLabelID: defaultLabelID,
+                                }),
+                            );
+                        }
+                    }}
+                />
+            )}
             <hr />
             <Button
                 type='text'

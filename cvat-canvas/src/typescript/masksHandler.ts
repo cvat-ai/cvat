@@ -238,7 +238,7 @@ export class MasksHandlerImpl implements MasksHandler {
                         const alpha = +object.stroke.split(',')[3].slice(0, -1);
                         color.setAlpha(alpha);
                         object.set({ stroke: color.toRgba() });
-                    } else {
+                    } else if (!(object instanceof fabric.Image)) {
                         const alpha = +(object.fill as string).split(',')[3].slice(0, -1);
                         color.setAlpha(alpha);
                         object.set({ fill: color.toRgba() });
