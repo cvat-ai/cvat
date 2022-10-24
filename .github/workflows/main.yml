@@ -41,8 +41,8 @@ jobs:
           echo Default branch is ${DEFAULT_BRANCH}
           echo Workflow will try to get cache from commit: ${SHA}
 
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
+          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
   build:
     needs: search_cache

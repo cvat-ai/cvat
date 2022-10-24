@@ -34,8 +34,8 @@ jobs:
           echo Last CI-nightly workflow run time: $last_night_date
           echo Last commit time in develop branch: $last_commit_date
 
-          echo ::set-output name=last_commit_time::${last_commit_time}
-          echo ::set-output name=last_night_time::${last_night_time}
+          echo "last_commit_time=${last_commit_time}" >> $GITHUB_OUTPUT
+          echo "last_night_time=${last_night_time}" >> $GITHUB_OUTPUT
 
   search_cache:
     needs: check_updates
@@ -66,8 +66,8 @@ jobs:
           echo Default branch is ${DEFAULT_BRANCH}
           echo Workflow will try to get cache from commit: ${SHA}
 
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
+          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
   build:
     needs: search_cache
@@ -345,7 +345,7 @@ jobs:
              echo Response from server is incorrect, output:
              cat /tmp/server_response
           fi
-          echo ::set-output name=status_code::${status_code}
+          echo "status_code=${status_code}" >> $GITHUB_OUTPUT
 
       - name: Fail on bad response from server
         if: steps.wait-server.outputs.status_code != '200'
