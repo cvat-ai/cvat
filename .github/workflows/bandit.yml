@@ -18,8 +18,8 @@ jobs:
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
           PR_FILES=${{ steps.changed-files.outputs.all_changed_files }}
-          echo $PR_FILES
           for FILE in $PR_FILES; do
+              echo $FILE
               EXTENSION="${FILE##*.}"
               DIRECTORY="${FILE%%/*}"
               if [[ "$EXTENSION" == 'py' && "$DIRECTORY" != 'cvat-sdk' ]]; then
