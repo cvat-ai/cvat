@@ -1237,7 +1237,8 @@ class ProjectDumpUpload(_DbTestBase):
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
                 if dump_format_name in ('Market-1501 1.0', 'Cityscapes 1.0'):
-                    self.skipTest('TO-DO: fix bug for this formats')
+                    # TO-DO: fix bug for this formats
+                    continue
 
                 with self.subTest(format=dump_format_name):
                     project = projects['main']
@@ -1250,11 +1251,10 @@ class ProjectDumpUpload(_DbTestBase):
                     url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
 
                     if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0", \
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0", \
-                        "Datumaro 1.0"\
+                        "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0", \
+                        "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1", \
+                        "Segmentation mask 1.1", "TFRecord 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "YOLO 1.1" \
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1305,7 +1305,6 @@ class ProjectDumpUpload(_DbTestBase):
                         if osp.exists(file_zip_name):
                             with open(file_zip_name, 'rb') as binary_file:
                                 response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
-                                print(response.status_code)
                                 self.assertEqual(response.status_code, edata['accept code'])
 
     def test_api_v2_export_annotations(self):
