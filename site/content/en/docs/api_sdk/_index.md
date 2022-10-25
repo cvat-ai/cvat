@@ -1,7 +1,7 @@
 ---
 title: "API & SDK"
 linkTitle: "API & SDK"
-weight: 5
+weight: 6
 description: 'How to interact with CVAT'
 ---
 
