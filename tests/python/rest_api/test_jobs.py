@@ -3,19 +3,19 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import json
+import os
+import os.path as osp
 import zipfile
 from copy import deepcopy
 from http import HTTPStatus
+from tempfile import NamedTemporaryFile, mkdtemp
 from typing import List
+from xml.etree import ElementTree
 
 import pytest
-import os.path as osp
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-from tempfile import NamedTemporaryFile, mkdtemp
-from xml.etree import ElementTree
 
 from shared.utils.config import make_api_client
 
@@ -544,8 +544,9 @@ class TestJobDataset:
 
         assert len(annotations_before["shapes"]) == len(exported_annotations["annotations"])
         # NOTE: data step is not stored in assets, default = 1
-        assert job_data["stop_frame"] - job_data["start_frame"] + 1 == \
-            len(exported_annotations["images"])
+        assert job_data["stop_frame"] - job_data["start_frame"] + 1 == len(
+            exported_annotations["images"]
+        )
 
         assert task_size > len(exported_annotations["images"])
         os.remove(temp_anno_file_name)
@@ -588,7 +589,6 @@ class TestJobDataset:
         assert instance.find("start_frame").text == str(job_data["start_frame"])
         assert instance.find("stop_frame").text == str(job_data["stop_frame"])
         assert instance.find("mode").text == job_data["mode"]
-        assert instance.find("bug_tracker").text == job_data["bug_tracker"]
         assert len(instance.find("segments")) == 1
         # check images
         current_id = job_data["start_frame"]
