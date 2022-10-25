@@ -178,7 +178,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@3.1.1
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: container_logs
           path: "${{ github.workspace }}/rest_api_testing"
@@ -237,7 +237,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@3.1.1
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: container_logs
           path: "${{ github.workspace }}/unit_testing"
@@ -328,14 +328,14 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@3.1.1
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: container_logs
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@3.1.1
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
