@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,8 +12,7 @@ from tempfile import TemporaryDirectory
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
-    ProjectData, import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
@@ -36,8 +36,7 @@ def _import(src_file, instance_data, load_data_callback=None):
         # put label map from the task if not present
         labelmap_file = osp.join(tmp_dir, 'labelmap.txt')
         if not osp.isfile(labelmap_file):
-            labels_meta = instance_data.meta['project']['labels'] \
-                if isinstance(instance_data, ProjectData) else instance_data.meta['task']['labels']
+            labels_meta = instance_data.meta[instance_data.META_FIELD]['labels']
             labels = (label['name'] + ':::' for _, label in labels_meta)
             with open(labelmap_file, 'w') as f:
                 f.write('\n'.join(labels))

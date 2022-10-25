@@ -126,7 +126,6 @@ INSTALLED_APPS = [
     'cvat.apps.organizations',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
-    'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
@@ -177,14 +176,14 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '150/minute',
+        'anon': '100/minute',
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer',
+    'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
 }
 
 REST_AUTH_SERIALIZERS = {
@@ -460,11 +459,6 @@ LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
 RESTRICTIONS = {
-    'user_agreements': [],
-
-    # this setting reduces task visibility to owner and assignee only
-    'reduce_task_visibility': False,
-
     # allow access to analytics component to users with business role
     # otherwise, only the administrator has access
     'analytics_visibility': True,

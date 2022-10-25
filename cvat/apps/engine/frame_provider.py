@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -182,6 +183,6 @@ class FrameProvider:
             return (frame, self.VIDEO_FRAME_MIME)
         return (frame, mimetypes.guess_type(frame_name)[0])
 
-    def get_frames(self, quality=Quality.ORIGINAL, out_type=Type.BUFFER):
-        for idx in range(self._db_data.size):
+    def get_frames(self, start_frame, stop_frame, quality=Quality.ORIGINAL, out_type=Type.BUFFER):
+        for idx in range(start_frame, stop_frame):
             yield self.get_frame(idx, quality=quality, out_type=out_type)

@@ -49,8 +49,7 @@ def hex2rgb(color):
     return tuple(int(color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
 
 def make_colormap(instance_data):
-    instance_name = 'project' if 'project' in instance_data.meta.keys() else 'task'
-    labels = [label for _, label in instance_data.meta[instance_name]['labels']]
+    labels = [label for _, label in instance_data.meta[instance_data.META_FIELD]['labels']]
     label_names = [label['name'] for label in labels]
 
     if 'background' not in label_names:

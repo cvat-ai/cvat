@@ -311,7 +311,7 @@ def services(request):
 
 
 @pytest.fixture(scope="function")
-def changedb(request):
+def restore_db_per_function(request):
     # Note that autouse fixtures are executed first within their scope, so be aware of the order
     # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
     # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
@@ -323,7 +323,7 @@ def changedb(request):
 
 
 @pytest.fixture(scope="class")
-def dontchangedb(request):
+def restore_db_per_class(request):
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_db()

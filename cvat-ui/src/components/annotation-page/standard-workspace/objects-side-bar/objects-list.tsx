@@ -1,11 +1,15 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 
+import Text from 'antd/lib/typography/Text';
+
 import { StatesOrdering } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
+import { ObjectState } from 'cvat-core-wrapper';
 import ObjectListHeader from './objects-list-header';
 
 interface Props {
@@ -47,6 +51,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         showAllStates,
     } = props;
 
+    let latestZOrder: number | null = null;
     return (
         <>
             <ObjectListHeader
@@ -67,14 +72,32 @@ function ObjectListComponent(props: Props): JSX.Element {
             />
             <div className='cvat-objects-sidebar-states-list'>
                 {sortedStatesID.map(
-                    (id: number): JSX.Element => (
-                        <ObjectItemContainer
-                            readonly={readonly}
-                            objectStates={objectStates}
-                            key={id}
-                            clientID={id}
-                        />
-                    ),
+                    (id: number): JSX.Element => {
+                        const object = objectStates.find((state: ObjectState) => state.clientID === id);
+                        const zOrder = object?.zOrder || latestZOrder;
+
+                        const renderZLayer = latestZOrder !== zOrder && statesOrdering === StatesOrdering.Z_ORDER;
+                        if (renderZLayer) {
+                            latestZOrder = zOrder;
+                        }
+
+                        return (
+                            <React.Fragment key={id}>
+                                {renderZLayer && (
+                                    <div className='cvat-objects-sidebar-z-layer-mark'>
+                                        <Text strong>
+                                            {`Layer ${zOrder}`}
+                                        </Text>
+                                    </div>
+                                )}
+                                <ObjectItemContainer
+                                    readonly={readonly}
+                                    objectStates={objectStates}
+                                    clientID={id}
+                                />
+                            </React.Fragment>
+                        );
+                    },
                 )}
             </div>
         </>

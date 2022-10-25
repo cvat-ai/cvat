@@ -125,10 +125,10 @@ description: 'Installing a development environment for different operating syste
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
-- Pull OpenPolicyAgent Docker-image (run from CVAT root dir):
+- Pull and run OpenPolicyAgent Docker image (run from CVAT root dir):
 
   ```bash
-  sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up cvat_opa
+  sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
   ```
 
 ### Run CVAT
