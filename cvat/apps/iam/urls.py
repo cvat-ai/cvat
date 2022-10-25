@@ -12,7 +12,7 @@ from dj_rest_auth.views import (
 from allauth.account import app_settings as allauth_settings
 
 from cvat.apps.iam.views import (
-    SigningView, RegisterViewEx, RulesView, CustomConfirmEmailView,
+    SigningView, RegisterViewEx, RulesView, ConfirmEmailViewEx,
 )
 from cvat.apps.iam.views import (
     github_oauth2_login as github_login,
@@ -44,7 +44,7 @@ if settings.IAM_TYPE == 'BASIC':
        allauth_settings.EmailVerificationMethod.NONE:
         # emails
         urlpatterns += [
-            re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', CustomConfirmEmailView.as_view(),
+            re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailViewEx.as_view(),
                 name='account_confirm_email'),
         ]
     if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS:
