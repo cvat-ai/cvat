@@ -42,6 +42,7 @@ jobs:
           PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
           UPDATED_DIRS=""
           for FILE in $PR_FILES; do
+              echo $FILE
               EXTENSION="${FILE##*.}"
               DIRECTORY="$(dirname $FILE)"
               if [[ "$EXTENSION" == "py" ]]; then
