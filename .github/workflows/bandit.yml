@@ -12,14 +12,14 @@ jobs:
         uses: tj-actions/changed-files@v33
         id: changed-files
         with:
-          files-ignore: '.github/workflows/bandit.yml'
+          separator: ','
 
       - name: Run checks
         env:
           PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          PR_FILES=${{ steps.changed-files.outputs.all_changed_files }}
+          PR_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
           for FILE in $PR_FILES; do
               echo $FILE
               EXTENSION="${FILE##*.}"
