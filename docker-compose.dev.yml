@@ -25,3 +25,10 @@ services:
         no_proxy:
         socks_proxy:
       dockerfile: Dockerfile.ui
+
+  cvat_opa:
+    volumes:
+      - ./cvat/apps/iam/rules:/rules
+    ports:
+      - '8181:8181'
+    command: run --server --set=decision_logs.console=true /rules
