@@ -58,6 +58,8 @@ import SVGMultiPlusIcon from './assets/multi-plus-icon.svg';
 import SVGBackArrowIcon from './assets/back-arrow-icon.svg';
 import SVGClearIcon from './assets/clear-icon.svg';
 import SVGShowPasswordIcon from './assets/show-password.svg';
+import SVGSocialGithubLogo from './assets/social-github-logo.svg';
+import SVGSocialGoogleLogo from './assets/social-google-logo.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
@@ -112,3 +114,5 @@ export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />)
 export const BackArrowIcon = React.memo((): JSX.Element => <SVGBackArrowIcon />);
 export const ClearIcon = React.memo((): JSX.Element => <SVGClearIcon />);
 export const ShowPasswordIcon = React.memo((): JSX.Element => <SVGShowPasswordIcon />);
+export const SocialGithubLogo = React.memo((): JSX.Element => <SVGSocialGithubLogo />);
+export const SocialGoogleLogo = React.memo((): JSX.Element => <SVGSocialGoogleLogo />);

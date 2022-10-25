@@ -5,9 +5,10 @@
 import './styles.scss';
 import React from 'react';
 import Layout from 'antd/lib/layout';
-import { Row } from 'antd/lib/grid';
+import { Col, Row } from 'antd/lib/grid';
 import { CVATMinimalisticLogo } from 'icons';
 import Icon from '@ant-design/icons';
+import Title from 'antd/lib/typography/Title';
 import SVGSigningBackground from '../../assets/signing-background.svg';
 
 interface SignInLayoutComponentProps {
@@ -26,6 +27,10 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
             <Layout>
                 <Content>
                     <Row justify='center' align='middle' style={{ height: '100%' }}>
+                        <Col span={12} className='cvat-signing-title'>
+                            <Title>Open Data</Title>
+                            <Title>Annotation Platform</Title>
+                        </Col>
                         {children}
                     </Row>
                 </Content>

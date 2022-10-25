@@ -77,14 +77,14 @@
     }
 
     .ant-input {
-        font-size: 18px;
+        font-size: 20px;
         padding: 12px 0 6px 0 !important;
     }
 
     .ant-typography {
         text-transform: uppercase;
         color: $border-color-1;
-        font-size: 8px;
+        font-size: 10px;
         letter-spacing: 1px;
     }
 }
@@ -104,10 +104,27 @@
     font-weight: bold;
     border: none;
     box-shadow: none;
+
+    &:hover,
+    &:focus {
+        background-color: black;
+        color: gray;
+    }
 }
 
-.cvat-credentials-action-button:hover,
-.cvat-credentials-action-button:focus {
-    background-color: black;
-    color: gray;
+.cvat-social-authentication-button {
+    @extend .cvat-credentials-action-button;
+
+    margin-bottom: $grid-unit-size;
+    padding: $grid-unit-size $grid-unit-size*4;
+}
+
+.cvat-social-authentication-google {
+    background: $social-google-background;
+
+    &:hover,
+    &:focus {
+        background: $social-google-background;
+        color: white;
+    }
 }

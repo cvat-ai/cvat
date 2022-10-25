@@ -8,11 +8,14 @@ import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import Icon from '@ant-design/icons';
-import { BackArrowIcon, ClearIcon } from 'icons';
+import {
+    BackArrowIcon, ClearIcon, SocialGithubLogo, SocialGoogleLogo,
+} from 'icons';
 import { Col, Row } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Link } from 'react-router-dom';
+import SocialAccountLink from 'components/signing-common/social-account-link';
 
 export interface LoginData {
     credential: string;
@@ -68,7 +71,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Form className='cvat-login-form' form={form}>
+            <Form className={`cvat-login-form ${credentialNonEmpty ? 'cvat-login-form-extended' : ''}`} form={form}>
                 <Form.Item
                     className='cvat-credentials-form-item'
                     name='credential'
@@ -140,7 +143,16 @@ function LoginFormComponent(props: Props): JSX.Element {
                             </Button>
                         </Col>
                     </Row>
-                ) : null
+                ) : (
+                    <>
+                        <SocialAccountLink icon={SocialGithubLogo}>
+                            Continue with Github
+                        </SocialAccountLink>
+                        <SocialAccountLink icon={SocialGoogleLogo} className='cvat-social-authentication-google'>
+                            Continue with Google
+                        </SocialAccountLink>
+                    </>
+                )
             }
         </div>
     );
