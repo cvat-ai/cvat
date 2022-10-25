@@ -49,6 +49,7 @@ RUN python3 -m pip install --no-cache-dir -U pip==22.0.2 setuptools==60.6.0 whee
 COPY cvat/requirements/ /tmp/requirements/
 RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 
+
 FROM ubuntu:20.04
 
 ARG http_proxy
