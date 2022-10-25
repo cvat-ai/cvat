@@ -11,6 +11,8 @@ jobs:
       - name: Get changed files
         uses: tj-actions/changed-files@v33
         id: changed-files
+        with:
+          files-ignore: '.github/workflows/bandit.yml'
 
       - name: Run checks
         env:
