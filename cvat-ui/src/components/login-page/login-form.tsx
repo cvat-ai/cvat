@@ -33,7 +33,7 @@ function LoginFormComponent(props: Props): JSX.Element {
     const [form] = Form.useForm();
     const [credentialNonEmpty, setCredentialNonEmpty] = useState(false);
     return (
-        <div className='cvat-login-form-wrapper'>
+        <div className='cvat-signing-form-wrapper'>
             {
                 credentialNonEmpty ? (
                     <Row justify='space-between' className='cvat-credentials-navigation'>
@@ -71,7 +71,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Form className={`cvat-login-form ${credentialNonEmpty ? 'cvat-login-form-extended' : ''}`} form={form}>
+            <Form className={`cvat-signing-form ${credentialNonEmpty ? 'cvat-signing-form-extended' : ''}`} form={form}>
                 <Form.Item
                     className='cvat-credentials-form-item'
                     name='credential'

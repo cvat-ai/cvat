@@ -112,6 +112,51 @@
     }
 }
 
+.cvat-signing-form-wrapper {
+    border-radius: 32px;
+    background: $background-color-1;
+    padding: $grid-unit-size * 6;
+    height: 620px;
+
+    .ant-form-item {
+        margin-bottom: $grid-unit-size*5;
+    }
+}
+
+.cvat-signing-form {
+    margin-top: $grid-unit-size*10;
+    margin-bottom: $grid-unit-size*16;
+    transition: all 0.8s ease;
+}
+
+.cvat-signing-form-extended {
+    margin-top: $grid-unit-size*6;
+    margin-bottom: $grid-unit-size*12;
+    transition: all 0.8s ease;
+}
+
+.cvat-password-reset-form-wrapper {
+    @extend .cvat-signing-form-wrapper;
+
+    h2 {
+        margin-bottom: 0;
+    }
+
+    .cvat-password-reset-tip {
+        font-weight: bold;
+        margin-bottom: $grid-unit-size*18;
+    }
+}
+
+.cvat-password-reset-form {
+    .cvat-credentials-form-item {
+        margin-bottom: $grid-unit-size*3;
+    }
+
+    margin-top: $grid-unit-size*6;
+    transition: all 0.8s ease;
+}
+
 .cvat-social-authentication-button {
     @extend .cvat-credentials-action-button;
 
