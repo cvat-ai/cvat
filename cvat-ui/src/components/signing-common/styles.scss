@@ -1,0 +1,113 @@
+// Copyright (C) 2022 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+@import '../../styles.scss';
+
+.cvat-signing-title {
+    .ant-typography {
+        color: $text-color-2;
+        margin: 0;
+        font-size: 68px;
+    }
+
+    .ant-typography:last-child {
+        margin: 0;
+    }
+}
+
+.cvat-signing-header {
+    background: transparent;
+    position: absolute;
+}
+
+.cvat-signing-background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.cvat-credentials-link {
+    a {
+        color: black;
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+    }
+
+    a:hover {
+        color: black;
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+    }
+}
+
+.cvat-credentials-form-item.ant-form-item-has-error {
+    .ant-input-affix-wrapper {
+        border: none;
+        box-shadow: 0 1px 0 0 $error-color;
+        border-radius: 0;
+        padding: 0;
+        transition: all 0.8s ease;
+    }
+
+    .ant-input-affix-wrapper-focused {
+        box-shadow: 0 2px 0 0 $error-color !important;
+    }
+}
+
+.cvat-credentials-form-item {
+    .ant-input-affix-wrapper {
+        border: none;
+        box-shadow: 0 1px 0 0 $border-color-1;
+        border-radius: 0;
+        padding: 0;
+        transition: all 0.8s ease;
+    }
+
+    .ant-input-prefix {
+        position: absolute;
+        z-index: 1;
+    }
+
+    .ant-input-affix-wrapper-focused {
+        box-shadow: 0 2px 0 0 black;
+    }
+
+    .ant-input-affix-wrapper-focused:hover {
+        box-shadow: 0 2px 0 0 black;
+    }
+
+    .ant-input {
+        font-size: 18px;
+        padding: 12px 0 6px 0 !important;
+    }
+
+    .ant-typography {
+        text-transform: uppercase;
+        color: $border-color-1;
+        font-size: 8px;
+        letter-spacing: 1px;
+    }
+}
+
+.cvat-credentials-navigation {
+    margin-bottom: $grid-unit-size*4;
+    transition: all 0.8s ease;
+}
+
+.cvat-credentials-action-button {
+    width: 100%;
+    border-radius: $grid-unit-size*2;
+    background-color: black;
+    height: $grid-unit-size*11;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    box-shadow: none;
+}
+
+.cvat-credentials-action-button:hover,
+.cvat-credentials-action-button:focus {
+    background-color: black;
+    color: gray;
+}

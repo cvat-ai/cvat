@@ -20,12 +20,13 @@ export interface LoginData {
 }
 
 interface Props {
+    renderResetPassword: boolean;
     fetching: boolean;
     onSubmit(loginData: LoginData): void;
 }
 
 function LoginFormComponent(props: Props): JSX.Element {
-    const { fetching, onSubmit } = props;
+    const { fetching, onSubmit, renderResetPassword } = props;
     const [form] = Form.useForm();
     const [credentialNonEmpty, setCredentialNonEmpty] = useState(false);
     return (
@@ -42,11 +43,15 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 }}
                             />
                         </Col>
-                        <Col className='cvat-credentials-link'>
-                            <Text strong>
-                                <Link to='/auth/password/reset'>Forgot password?</Link>
-                            </Text>
-                        </Col>
+                        {
+                            renderResetPassword ? (
+                                <Col className='cvat-credentials-link'>
+                                    <Text strong>
+                                        <Link to='/auth/password/reset'>Forgot password?</Link>
+                                    </Text>
+                                </Col>
+                            ) : null
+                        }
                     </Row>
                 ) : null
             }

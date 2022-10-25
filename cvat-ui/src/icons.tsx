@@ -6,6 +6,7 @@
 import React from 'react';
 
 import SVGCVATLogo from './assets/cvat-logo.svg';
+import SVGCVATMinimalisticLogo from './assets/cvat-minimalistic-logo.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
 import SVGMoveIcon from './assets/move-icon.svg';
 import SVGRotateIcon from './assets/rotate-icon.svg';
@@ -59,6 +60,7 @@ import SVGClearIcon from './assets/clear-icon.svg';
 import SVGShowPasswordIcon from './assets/show-password.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
+export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
 export const RotateIcon = React.memo((): JSX.Element => <SVGRotateIcon />);
