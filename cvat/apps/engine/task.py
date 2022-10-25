@@ -191,8 +191,10 @@ def _validate_data(counter, manifest_files=None):
             else:
                 multiple_entries += len(counter[media_type])
 
-            if manifest_files and media_type not in ('video', 'image'):
-                raise Exception('File with meta information can only be uploaded with video/images ')
+            if manifest_files and media_type not in ('video', 'image', 'zip', 'archive'):
+                raise Exception(
+                    'File with meta information can only be uploaded with video/images/archives'
+                )
 
     if unique_entries == 1 and multiple_entries > 0 or unique_entries > 1:
         unique_types = ', '.join([k for k, v in MEDIA_TYPES.items() if v['unique']])

@@ -365,12 +365,18 @@ class ZipReader(ImageListReader):
 
     def get_path(self, i):
         if self._zip_source.filename:
-            return os.path.join(os.path.dirname(self._zip_source.filename), self._source_path[i]) \
-                if not self.extract_dir else os.path.join(self.extract_dir, self._source_path[i])
+            prefix = self.extract_dir or os.path.dirname(self._zip_source.filename)
+            return os.path.join(prefix, self._source_path[i])
         else: # necessary for mime_type definition
             return self._source_path[i]
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
+        if source_files:
+            # file list is expected to be a processed output of self.get_path()
+            # which returns files with the output directory prefix
+            prefix = self.extract_dir or os.path.dirname(self._zip_source.filename or '')
+            source_files = [os.path.relpath(fn, prefix) for fn in source_files]
+
         super().reconcile(
             source_files=source_files,
             step=step,

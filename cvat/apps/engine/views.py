@@ -893,7 +893,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         """
 
         with open(path) as f:
-            return f.readlines()
+            return [line.strip() for line in f]
 
     def _prepare_upload_metafile_entry(self, filename: str) -> str:
         return osp.normpath(filename.strip()).lstrip("/")
@@ -955,7 +955,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 "Mismatching files: {}{}"
                 .format(
                     ", ".join(mismatching_display),
-                    f" (and {remaining_count} more). " if 0 < DISPLAY_ENTRIES_COUNT else ""
+                    f" (and {remaining_count} more). " if 0 < remaining_count else ""
                 )
             )
 
@@ -1055,10 +1055,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     # e.g. on a server crash. The input file order could be
                     # restored from this variable otherwise.
                     self._init_tus_custom_ordering([f['file'].name for f in data['client_files']])
+
                 response = self.append_files(request)
                 if not 200 <= response.status_code < 300:
                     return response
                 uploaded_files = task_data.get_uploaded_files()
+
             data.update({'client_files': uploaded_files})
 
             # Refresh the db value with the updated file list and other request parameters

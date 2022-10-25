@@ -3317,11 +3317,20 @@ class TaskDataAPITestCase(APITestCase):
         return self._run_api_v2_task_id_data_get(tid, user, "frame", "original", number)
 
     @staticmethod
-    def _extract_zip_chunk(chunk_buffer, dimension=DimensionType.DIM_2D):
-        chunk = zipfile.ZipFile(chunk_buffer, mode='r')
+    def _extract_zip_archive(archive, dimension=DimensionType.DIM_2D):
+        chunk = zipfile.ZipFile(archive, mode='r')
         if dimension == DimensionType.DIM_3D:
-            return [BytesIO(chunk.read(f)) for f in sorted(chunk.namelist()) if f.rsplit(".", maxsplit=1)[-1] == "pcd"]
-        return [Image.open(BytesIO(chunk.read(f))) for f in sorted(chunk.namelist())]
+            return [(f, BytesIO(chunk.read(f)))
+                for f in sorted(chunk.namelist())
+                if f.rsplit(".", maxsplit=1)[-1] == "pcd"
+            ]
+        return [(f, Image.open(BytesIO(chunk.read(f))))
+            for f in sorted(chunk.namelist())
+        ]
+
+    @classmethod
+    def _extract_zip_chunk(cls, chunk_buffer, dimension=DimensionType.DIM_2D):
+        return [f[1] for f in cls._extract_zip_archive(chunk_buffer, dimension=dimension)]
 
     @staticmethod
     def _extract_video_chunk(chunk_buffer):
@@ -3344,7 +3353,7 @@ class TaskDataAPITestCase(APITestCase):
 
         # post data for the task
         response = self._run_api_v2_tasks_id_data_post(task_id, user, data)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
 
         response = self._get_task(user, task_id)
 
@@ -3396,12 +3405,12 @@ class TaskDataAPITestCase(APITestCase):
 
             self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
-            for image_idx, image in enumerate(images):
+            for image_idx, received_image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
-                    properties = ValidateDimension.get_pcd_properties(image)
+                    properties = ValidateDimension.get_pcd_properties(received_image)
                     self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), expected_image_sizes[image_idx])
                 else:
-                    self.assertEqual(image.size, expected_image_sizes[image_idx])
+                    self.assertEqual(received_image.size, expected_image_sizes[image_idx])
 
         # check original chunk
         response = self._get_original_chunk(task_id, user, 0)
@@ -3416,12 +3425,12 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 images = self._extract_video_chunk(original_chunk)
 
-            for image_idx, image in enumerate(images):
+            for image_idx, received_image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
-                    properties = ValidateDimension.get_pcd_properties(image)
+                    properties = ValidateDimension.get_pcd_properties(received_image)
                     self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), expected_image_sizes[image_idx])
                 else:
-                    self.assertEqual(image.size, expected_image_sizes[image_idx])
+                    self.assertEqual(received_image.size, expected_image_sizes[image_idx])
 
             self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
@@ -3429,62 +3438,61 @@ class TaskDataAPITestCase(APITestCase):
                 server_files = [img for key, img in data.items() if key.startswith("server_files")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
+                _name_key = lambda x: getattr(x, 'name', x)
+
                 if server_files:
-                    _name_key = lambda x: x
                     _add_prefix = lambda x: os.path.join(settings.SHARE_ROOT, x)
                     source_files = server_files
                 else:
-                    _name_key = lambda e: e.name
                     _add_prefix = lambda x: x
                     source_files = client_files
 
-                sorting = data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL)
                 manifest = next((v for v in source_files if _name_key(v).endswith('.jsonl')), None)
-                source_files = [f for f in source_files if not _name_key(f).endswith('jsonl')]
+                source_files = [_add_prefix(f)
+                    for f in source_files if not _name_key(f).endswith('jsonl')]
+
+                source_images = {}
+                for f in source_files:
+                    if zipfile.is_zipfile(f):
+                        for frame_name, frame in self._extract_zip_archive(f, dimension=dimension):
+                            source_images[frame_name] = frame
+                    elif isinstance(f, str) and f.endswith('.pdf'):
+                        with open(f, 'rb') as pdf_file:
+                            for i, frame in enumerate(convert_from_bytes(pdf_file.read(), fmt='png')):
+                                source_images[f"frame_{i}"] = frame
+                    elif isinstance(f, IOBase) and getattr(f, 'name', '').endswith('.pdf'):
+                        for i, frame in enumerate(convert_from_bytes(f.getvalue(), fmt='png')):
+                            source_images[f"frame_{i}"] = frame
+                    elif isinstance(f, str) and not f.endswith('.jsonl'):
+                        source_images[f] = Image.open(f)
+                    elif isinstance(f, IOBase) and not f.name.endswith('.jsonl'):
+                        source_images[f.name] = Image.open(f)
+
+                sorting = data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL)
                 if sorting == SortingMethod.PREDEFINED and manifest:
                     manifest = _add_prefix(_name_key(manifest))
                     manifest_root = os.path.dirname(manifest)
-                    if client_files:
-                        _add_manifest_prefix = lambda x: (
-                            x if os.path.abspath(x) == x else os.path.join(manifest_root, x)
-                        )
-                    else:
-                        _add_manifest_prefix = lambda x: x
                     manifest_files = list(ImageManifestManager(manifest, create_index=False).data)
-                    name_map = {_name_key(f): f for f in source_files}
-                    assert len(manifest_files) == len(source_files)
-                    source_files = [name_map[_add_manifest_prefix(f)] for f in manifest_files]
+                    assert len(manifest_files) == len(source_images)
+                    source_images = [
+                        source_images.get(os.path.join(manifest_root, f)) or source_images[f]
+                        for f in manifest_files
+                    ]
                 else:
-                    source_files = sort(source_files, sorting_method=sorting, func=_name_key)
+                    source_images = [v[1] for v in sort(
+                        source_images.items(),
+                        sorting_method=sorting,
+                        func=lambda e: _name_key(e[0])
+                    )]
 
-                source_files = list(map(_add_prefix, source_files))
-
-                source_images = []
-                for f in source_files:
-                    if zipfile.is_zipfile(f):
-                        source_images.extend(self._extract_zip_chunk(f, dimension=dimension))
-                    elif isinstance(f, str) and f.endswith('.pdf'):
-                        with open(f, 'rb') as pdf_file:
-                            source_images.extend(convert_from_bytes(pdf_file.read(),
-                                fmt='png'))
-                    elif isinstance(f, io.BytesIO) and \
-                            str(getattr(f, 'name', None)).endswith('.pdf'):
-                        source_images.extend(convert_from_bytes(f.getvalue(),
-                            fmt='png'))
-                    elif not (
-                        isinstance(f, str) and f.endswith('.jsonl') or
-                        isinstance(f, IOBase) and str(getattr(f, 'name', None)).endswith('.jsonl')
-                    ):
-                        source_images.append(Image.open(f))
-
-                for img_idx, image in enumerate(images):
+                for (received_image, source_image) in zip(images, source_images):
                     if dimension == DimensionType.DIM_3D:
-                        server_image = np.array(image.getbuffer())
-                        source_image = np.array(source_images[img_idx].getbuffer())
+                        server_image = np.array(received_image.getbuffer())
+                        source_image = np.array(source_image.getbuffer())
                         self.assertTrue(np.array_equal(source_image, server_image))
                     else:
-                        server_image = np.array(image)
-                        source_image = np.array(source_images[img_idx])
+                        server_image = np.array(received_image)
+                        source_image = np.array(source_image)
                         self.assertTrue(np.array_equal(source_image, server_image))
 
     def _test_api_v2_tasks_id_data_create_can_upload_local_images(self, user):
@@ -4103,10 +4111,9 @@ class TaskDataAPITestCase(APITestCase):
 
                         task_data = task_data_common.copy()
                         expected_image_sizes = image_sizes
-                        expected_files = None
 
                         if manifest:
-                            manifest_file = open(manifest_path)
+                            manifest_file = es.enter_context(open(manifest_path))
                             task_data.update(
                                 (f"client_files[{i}]", f)
                                 for i, f in enumerate(reversed(images))
@@ -4124,6 +4131,79 @@ class TaskDataAPITestCase(APITestCase):
                         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                             expected_image_sizes, storage_method, StorageChoice.LOCAL)
+
+    def _test_api_v2_tasks_id_data_create_can_use_local_archive_with_predefined_sorting(self, user):
+        fname = current_function_name()
+
+        task_spec = {
+            "name": 'task custom data sequence client files single request #28-3',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        with TestDir() as test_dir:
+            image_sizes, image_files = generate_image_files(
+                "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
+            )
+            image_paths = []
+            for image in image_files:
+                fp = os.path.join(test_dir, image.name)
+                with open(fp, 'wb') as f:
+                    f.write(image.getvalue())
+                image_paths.append(fp)
+
+            archive_path = os.path.join(test_dir, 'archive.zip')
+            with zipfile.ZipFile(archive_path, 'x') as archive:
+                for image_path in image_paths:
+                    archive.write(image_path, os.path.relpath(image_path, test_dir))
+
+            del image_files
+
+            task_data_common = {
+                "image_quality": 75,
+                "sorting_method": SortingMethod.PREDEFINED,
+            }
+
+            for (caching_enabled, include_image_info, manifest) in product(
+                [True, False], [True, False], [True, False]
+            ):
+                manifest_path = os.path.join(test_dir, "manifest.jsonl")
+                generate_manifest_file("images", manifest_path, image_paths,
+                    sorting_method=SortingMethod.PREDEFINED,
+                    with_image_info=include_image_info)
+
+                task_data_common["use_cache"] = caching_enabled
+                if caching_enabled:
+                    storage_method = StorageMethodChoice.CACHE
+                else:
+                    storage_method = StorageMethodChoice.FILE_SYSTEM
+
+                with self.subTest(fname,
+                    manifest=manifest,
+                    caching_enabled=caching_enabled,
+                    include_image_info=include_image_info
+                ):
+                    with ExitStack() as es:
+                        task_data = task_data_common.copy()
+                        task_data[f"client_files[0]"] = es.enter_context(open(archive_path, 'rb'))
+
+                        if manifest:
+                            task_data[f"client_files[1]"] = es.enter_context(open(manifest_path))
+                        else:
+                            es.enter_context(self.assertRaisesMessage(FileNotFoundError,
+                                "Can't find upload manifest file"
+                            ))
+
+                            # suppress error stacktrace spam from another thread
+                            es.enter_context(disable_logging())
+
+                        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                            self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                            image_sizes, storage_method, StorageChoice.LOCAL)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         # test a natural data sequence
