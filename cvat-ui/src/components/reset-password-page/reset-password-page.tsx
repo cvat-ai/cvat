@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
@@ -12,31 +12,9 @@ import { CombinedState } from 'reducers';
 import SigningLayout from 'components/signing-common/signing-layout';
 import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
 
-interface StateToProps {
-    fetching: boolean;
-}
-
-interface DispatchToProps {
-    onResetPassword: typeof requestPasswordResetAsync;
-}
-
-interface ResetPasswordPageComponentProps {
-    fetching: boolean;
-    onResetPassword: (email: string) => void;
-}
-
-function mapStateToProps(state: CombinedState): StateToProps {
-    return {
-        fetching: state.auth.fetching,
-    };
-}
-
-const mapDispatchToProps: DispatchToProps = {
-    onResetPassword: requestPasswordResetAsync,
-};
-
-function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps): JSX.Element {
-    const { fetching, onResetPassword } = props;
+function ResetPasswordPagePageComponent(): JSX.Element {
+    const dispatch = useDispatch();
+    const fetching = useSelector((state: CombinedState) => state.auth.fetching);
 
     return (
         <SigningLayout>
@@ -46,7 +24,7 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
                         <ResetPasswordForm
                             fetching={fetching}
                             onSubmit={(resetPasswordData: ResetPasswordData): void => {
-                                onResetPassword(resetPasswordData.email);
+                                dispatch(requestPasswordResetAsync(resetPasswordData.email));
                             }}
                         />
                     </Col>
@@ -56,4 +34,4 @@ function ResetPasswordPagePageComponent(props: ResetPasswordPageComponentProps):
     );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ResetPasswordPagePageComponent);
+export default React.memo(ResetPasswordPagePageComponent);
