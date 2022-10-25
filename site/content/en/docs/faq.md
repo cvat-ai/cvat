@@ -1,7 +1,7 @@
 ---
 title: 'Frequently asked questions'
 linkTitle: 'FAQ'
-weight: 2
+weight: 3
 description: 'Answers to frequently asked questions'
 ---
 

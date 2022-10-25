@@ -12,7 +12,7 @@ from dj_rest_auth.views import (
 from allauth.account import app_settings as allauth_settings
 
 from cvat.apps.iam.views import (
-    SigningView, RegisterViewEx, CustomConfirmEmailView,
+    SigningView, RegisterViewEx, RulesView, CustomConfirmEmailView,
 )
 from cvat.apps.iam.views import (
     github_oauth2_login as github_login,
@@ -25,7 +25,8 @@ from cvat.apps.iam.views import (
 urlpatterns = [
     path('login', LoginViewEx.as_view(), name='rest_login'),
     path('logout', LogoutView.as_view(), name='rest_logout'),
-    path('signing', SigningView.as_view(), name='signing')
+    path('signing', SigningView.as_view(), name='signing'),
+    path('rules', RulesView.as_view(), name='rules'),
 ]
 
 if settings.IAM_TYPE == 'BASIC':

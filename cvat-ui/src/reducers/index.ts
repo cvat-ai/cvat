@@ -603,6 +603,7 @@ export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
+    Z_ORDER = 'Z Order',
 }
 
 export enum ContextMenuType {
