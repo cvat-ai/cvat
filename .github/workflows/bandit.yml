@@ -11,8 +11,6 @@ jobs:
       - name: Get changed files
         uses: tj-actions/changed-files@v33
         id: changed-files
-        with:
-          separator: ','
 
       - name: Run checks
         env:
