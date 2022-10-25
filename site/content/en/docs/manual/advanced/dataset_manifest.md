@@ -11,11 +11,62 @@ description: This section on [GitHub](https://github.com/cvat-ai/cvat/tree/devel
 
 <!--lint disable heading-style-->
 
-### Steps before use
+## Overview
 
-When used separately from Computer Vision Annotation Tool(CVAT), the required dependencies must be installed
+When a new task is created in CVAT, we need to tell where to take the dataset sources.
+CVAT allows to use different data sources, including file uploads, a mounted server
+file share, cloud storage files and others.
 
-#### Ubuntu:20.04
+Dataset manifest files in CVAT allow to provide extra information about the source data.
+They are mainly used when working with cloud storages to reduce the amount
+of network traffic used and speed up the task creation process. However, they can also
+be used in other cases.
+
+A manifest file is a text file in the JSONL format.
+
+## How and when to use manifest files
+
+Manifest files can be used in the following cases:
+- A video file or a set of images is used as the data source and
+  the caching mode is enabled (`use_cache`). [Read mode](/docs/manual/advanced/data_on_fly/)
+- The data is located in a cloud storage. [Read more](/docs/manual/basics/cloud-storages/)
+- The `predefined` file sorting method is specified. [Read more](/docs/manual/basics/creating_an_annotation_task/#sorting-method)
+
+### The predefined sorting method
+
+Independently of the file source used, when the `predefined`
+sorting method is selected, the source files will be ordered according
+to the `.jsonl` manifest file, if it is found in the input list of files.
+For archives (e.g. `.zip`), a manifest file (`*.jsonl`) required when using
+the `predefined` file ordering. A manifest file must be provided next to the archive
+in the input list of files (i.e. it must not be inside the archive).
+
+> If the input files are images and available locally to the server at the time of task creation
+(i.e. they are not in the cloud), only the file names and extensions are required in
+the manifest file.
+
+## How to generate manifest files
+
+CVAT provides a dedicated Python tool to generate manifest files.
+The source code can be found [here](https://github.com/opencv/cvat/tree/develop/utils/dataset_manifest).
+
+### Use the script from a Docker image
+
+The script can be used from the `cvat/server` image:
+
+```bash
+docker run -it --rm -u "$(id -u)":"$(id -g)" \
+    -v "/path/to/host/data/":"/path/inside/container/":rw \
+    --entrypoint '/usr/bin/env python' \
+    cvat/server \
+    utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/
+```
+
+Make sure to adapt the command to your file locations.
+
+### Use the script directly
+
+**Ubuntu:20.04**
 
 Install dependencies:
 
@@ -41,10 +92,10 @@ pip install -U pip
 pip install -r requirements.txt
 ```
 
-### Using
+### Usage
 
 ```bash
-usage: python create.py [-h] [--force] [--output-dir .] source
+usage: create.py [-h] [--force] [--output-dir .] source
 
 positional arguments:
   source                Source paths
@@ -57,14 +108,7 @@ optional arguments:
                         Directory where the manifest file will be saved
 ```
 
-### Alternative way to use with cvat/server
-
-```bash
-docker run -it --entrypoint python3 -v /path/to/host/data/:/path/inside/container/:rw cvat/server
-utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/
-```
-
-### Examples of using
+### Examples
 
 Create a dataset manifest in the current directory with video which contains enough keyframes:
 
@@ -126,4 +170,15 @@ A manifest file contains some intuitive information and some specific like:
 {"name":"image1","extension":".jpg","width":720,"height":405,"meta":{"related_images":[]},"checksum":"548918ec4b56132a5cff1d4acabe9947"}
 {"name":"image2","extension":".jpg","width":183,"height":275,"meta":{"related_images":[]},"checksum":"4b4eefd03cc6a45c1c068b98477fb639"}
 {"name":"image3","extension":".jpg","width":301,"height":167,"meta":{"related_images":[]},"checksum":"0e454a6f4a13d56c82890c98be063663"}
+```
+
+If the images are available to the server at the time of task creation,
+extra fields can be omitted:
+
+```json
+{"version":"1.0"}
+{"type":"images"}
+{"name":"image1","extension":".jpg"}
+{"name":"subdir/image2","extension":".jpg"}
+{"name":"subdir/image3","extension":".png"}
 ```

@@ -139,6 +139,10 @@ For example, the sequence `2.jpeg, 10.jpeg, 1.jpeg` after sorting will be:
 - `natural`: 1.jpeg, 2.jpeg, 10.jpeg
 - `predefined`: 2.jpeg, 10.jpeg, 1.jpeg
 
+When the `predefined` mode is selected, an optional
+[manifest file](/docs/manual/advanced/dataset_manifest.md) can be provided to specify the
+required file order. The file is required for image archive uploads (e.g. `.zip`).
+
 ### Use zip/video chunks
 
 Force to use zip chunks as compressed data. Cut out content for videos only.
