@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
@@ -20,11 +21,11 @@ interface LoginPageComponentProps {
 }
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
-    const sizes = {
-        style: {
-            width: 400,
-        },
-    };
+    // const sizes = {
+    //     style: {
+    //         width: 400,
+    //     },
+    // };
 
     const { Content } = Layout;
 
@@ -33,33 +34,23 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     return (
         <Layout>
             <Content>
-                <Row style={{ height: '33%' }} />
-                <Row justify='center' align='middle'>
-                    <Col {...sizes}>
-                        <Title level={2}> Login </Title>
-                        <LoginForm
-                            fetching={fetching}
-                            onSubmit={(loginData: LoginData): void => {
-                                onLogin(loginData.credential, loginData.password);
-                            }}
-                        />
-                        <Row justify='start' align='top'>
-                            <Col>
-                                <Text strong>
-                                    New to CVAT? Create
-                                    <Link to='/auth/register'> an account</Link>
-                                </Text>
+                {/* <Row style={{ height: '33%' }} /> */}
+                <Row justify='center' align='middle' style={{ height: '100%' }}>
+                    <Col span={12} className='cvat-login-title'>
+                        <Title>Open Data</Title>
+                        <Title>Annotation Platform</Title>
+                    </Col>
+                    <Col span={10}>
+                        <Row>
+                            <Col span={18}>
+                                <LoginForm
+                                    fetching={fetching}
+                                    onSubmit={(loginData: LoginData): void => {
+                                        onLogin(loginData.credential, loginData.password);
+                                    }}
+                                />
                             </Col>
                         </Row>
-                        {renderResetPassword && (
-                            <Row justify='start' align='top'>
-                                <Col>
-                                    <Text strong>
-                                        <Link to='/auth/password/reset'>Forgot your password?</Link>
-                                    </Text>
-                                </Col>
-                            </Row>
-                        )}
                     </Col>
                 </Row>
             </Content>
