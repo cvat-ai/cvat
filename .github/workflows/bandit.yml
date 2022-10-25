@@ -6,15 +6,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - id: files
-        uses: jitterbit/get-changed-files@v1
-        continue-on-error: true
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v33
 
       - name: Run checks
         env:
           PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          PR_FILES=${{ steps.changed-files.outputs.all_changed_files }}
+          echo $PR_FILES
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
               DIRECTORY="${FILE%%/*}"
