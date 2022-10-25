@@ -9,7 +9,7 @@ import io
 import os
 import os.path as osp
 import textwrap
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 import pytz
 import shutil
 import traceback
@@ -57,7 +57,7 @@ from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, SortingMethod, Task, Project, Issue, Data,
+    Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
     CloudProviderChoice, Location
 )
@@ -78,7 +78,6 @@ from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
-from utils.dataset_manifest.core import is_dataset_manifest, is_manifest
 
 from . import models, task
 from .log import clogger, slogger
@@ -888,30 +887,31 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             osp.basename(filename) not in self._get_tus_metafile_names()
         )
 
-    def _read_tus_upload_meta_file(self, f: str) -> Sequence[str]:
+    def _read_tus_upload_meta_file(self, path: str) -> Sequence[str]:
         """
         Reads the input file and returns its contents.
         """
 
-        with open(f) as f:
-            contents = f.read()
-
-        return contents.splitlines()
+        with open(path) as f:
+            return f.readlines()
 
     def _prepare_upload_metafile_entry(self, filename: str) -> str:
         return osp.normpath(filename.strip()).lstrip("/")
 
     def _maybe_append_tus_upload_metafile_entry(self,
-        metafile: str, filename: str, file_list: Sequence[str]
+        metafile: str, filename: str, *, existing_files: Optional[Sequence[str]] = None
     ):
+        if existing_files is None:
+            existing_files = self._read_tus_upload_meta_file(metafile)
+
         new_entry = self._prepare_upload_metafile_entry(filename)
-        if new_entry not in file_list:
+        if new_entry not in existing_files:
             with open(metafile, 'a') as f:
                 print(new_entry, file=f)
         else:
             # Don't do anything in the opposite case, because
-            # a file upload can be restarted. In such case we'll
-            # just reuse the first position
+            # file uploading can be restarted. In such case we'll
+            # just reuse the first position of this file
             pass
 
     class _InvalidMetafileError(Exception):
@@ -968,11 +968,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if response.status_code == status.HTTP_201_CREATED:
             metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
             if osp.isfile(metafile):
-                with open(metafile) as f:
-                    file_list = self._read_tus_upload_meta_file(f)
-
-                self._maybe_append_tus_upload_metafile_entry(metafile, response['Upload-Filename'],
-                    file_list)
+                self._maybe_append_tus_upload_metafile_entry(metafile, response['Upload-Filename'])
 
         return response
 
@@ -982,13 +978,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if client_files:
             metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
             if osp.isfile(metafile):
-                with open(metafile) as f:
-                    file_list = self._read_tus_upload_meta_file(f)
+                file_list = self._read_tus_upload_meta_file(metafile)
 
                 for client_file in client_files:
                     self._maybe_append_tus_upload_metafile_entry(metafile,
                         osp.relpath(client_file['file'].name, self.get_upload_dir()),
-                        file_list)
+                        existing_files=file_list)
 
         return super().append_files(request)
 
@@ -1124,14 +1119,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             Supports the TUS open file uploading protocol (https://tus.io/).
 
             Implements the following protocols:
-            a. A single Data request (legacy)
+            a. A single Data request
             b.1. An Upload-Start request
             b.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
             b.2.b. Upload-Multiple requests
             b.3. An Upload-Finished request
 
             Requests:
-            - Data - POST, no extra headers (legacy) or 'Upload-Start' + 'Upload-Finish' headers.
+            - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers.
               Contains Data in the body.
             - Upload-Start - POST, has an 'Upload-Start' header.
               Can contain upload metainfo in the body.
@@ -1140,14 +1135,32 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain Data in the body.
             - Upload-Multiple - POST, has a 'Upload-Multiple' header. Contains Data in the body.
 
-            The Upload-Start request allows to specify file order for TUS requests.
+            The 'Upload-Start' request allows to specify file order for TUS requests.
             This may be needed because files in these requests and the requests themselves
-            can come (or be sent) unordered. To state that the input files are sent in
-            the correct order, pass an empty list of files in the 'files' field. A list of
-            strings is expected to be a list file names in the required order.
+            can come (or be sent) unordered. To state that the input files are sent ordered,
+            pass an empty list of files in the 'files' field. If the files are sent unordered,
+            the ordered file list is expected in the 'files' field. It must be a list of string
+            file names, relatively to the dataset root.
+            Example:
+            files = [
+                cats/cat_1.jpg,
+                dogs/dog2.jpg,
+                image_3.png,
+                ...
+            ]
+
+            Independently of the file declaration field used
+            ('client_files', 'server_files', etc.), when the 'predefined'
+            sorting method is selected, the uploaded files will be ordered according
+            to the '.jsonl' manifest file, if it is found in the list of files.
+            For archives (e.g. '.zip'), a manifest file ('*.jsonl') required when using
+            the 'predefined' file ordering. Such file must be provided next to the archive
+            in the list of files. Read more about manifest files here:
+            https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
 
             After all data is sent, the operation status can be retrieved in the /status endpoint.
         """),
+        # TODO: add a tutorial on this endpoint in the REST API docs
         request=PolymorphicProxySerializer('TaskData',
             serializers=[DataSerializer, TusUploadingMetaSerializer],
             resource_type_field_name=None),
