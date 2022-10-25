@@ -2184,6 +2184,18 @@ class ServerProxy {
             }
         }
 
+        async function advancedAuthentication(): Promise<any> {
+            const { backendAPI } = config;
+            try {
+                const response = await Axios.get(`${backendAPI}/server/advanced-auth`, {
+                    proxy: config.proxy,
+                });
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -2195,6 +2207,7 @@ class ServerProxy {
                         exception,
                         login,
                         logout,
+                        advancedAuthentication,
                         changePassword,
                         requestPasswordReset,
                         resetPassword,

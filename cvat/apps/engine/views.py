@@ -28,7 +28,7 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema
+    extend_schema_view, extend_schema, inline_serializer
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
@@ -235,8 +235,29 @@ class ServerViewSet(viewsets.ViewSet):
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
-            'SOCIAL_PROVIDERS': [] if not settings.USE_ALLAUTH_SOCIAL_ACCOUNTS else \
-                settings.SOCIALACCOUNT_PROVIDERS.keys()
+        }
+        return Response(response)
+
+    @staticmethod
+    @extend_schema(
+        summary='Method provides a list with advanced integrated authentication methods (e.g. social accounts)',
+        responses={
+            '200': OpenApiResponse(response=inline_serializer(
+                name='AdvancedAuthentication',
+                fields={
+                    'GOOGLE_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
+                    'GITHUB_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
+                }
+            )),
+        }
+    )
+    @action(detail=False, methods=['GET'], url_path='advanced-auth', permission_classes=[])
+    def advanced_authentication(request):
+        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
+        response = {
+            'GOOGLE_ACCOUNT_AUTHENTICATION': use_social_auth and 'google' in integrated_auth_providers,
+            'GITHUB_ACCOUNT_AUTHENTICATION': use_social_auth and 'github' in integrated_auth_providers,
         }
         return Response(response)
 

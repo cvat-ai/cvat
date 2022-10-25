@@ -7,6 +7,7 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { UserConfirmation } from 'components/register-page/register-form';
 import { getCore } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
+import { AdvancedAuthMethodsList } from '../reducers';
 
 const cvat = getCore();
 
@@ -35,6 +36,9 @@ export enum AuthActionTypes {
     LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
     LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
     LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
+    LOAD_ADVANCED_AUTHENTICATION = 'LOAD_ADVANCED_AUTHENTICATION',
+    LOAD_ADVANCED_AUTHENTICATION_SUCCESS = 'LOAD_ADVANCED_AUTHENTICATION_SUCCESS',
+    LOAD_ADVANCED_AUTHENTICATION_FAILED = 'LOAD_ADVANCED_AUTHENTICATION_FAILED',
 }
 
 export const authActions = {
@@ -71,6 +75,13 @@ export const authActions = {
         })
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
+    loadAdvancedAuth: () => createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION),
+    loadAdvancedAuthSuccess: (list: AdvancedAuthMethodsList) => (
+        createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS, { list })
+    ),
+    loadAdvancedAuthFailed: (error: any) => (
+        createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_FAILED, { error })
+    ),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -198,5 +209,15 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
         dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword, allowResetPassword));
     } catch (error) {
         dispatch(authActions.loadServerAuthActionsFailed(error));
+    }
+};
+
+export const loadAdvancedAuthAsync = (): ThunkAction => async (dispatch): Promise<void> => {
+    dispatch(authActions.loadAdvancedAuth());
+    try {
+        const list: AdvancedAuthMethodsList = await cvat.server.advancedAuthentication();
+        dispatch(authActions.loadAdvancedAuthSuccess(list));
+    } catch (error) {
+        dispatch(authActions.loadAdvancedAuthFailed(error));
     }
 };

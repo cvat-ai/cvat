@@ -7,7 +7,7 @@ from django.urls import path, re_path
 from django.conf import settings
 from django.urls.conf import include
 from dj_rest_auth.views import (
-    LoginView, LogoutView, PasswordChangeView,
+    LogoutView, PasswordChangeView,
     PasswordResetView, PasswordResetConfirmView)
 from allauth.account import app_settings as allauth_settings
 

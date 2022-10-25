@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { RouteComponentProps, useHistory } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
 import Button from 'antd/lib/button';
@@ -23,7 +23,10 @@ interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
+    googleAuthentication: boolean;
+    githubAuthentication: boolean;
     onLogin: (credential: string, password: string) => void;
+    loadAdvancedAuthenticationMethods: () => void;
 }
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
@@ -38,12 +41,17 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     const { Content } = Layout;
 
     const {
-        fetching, onLogin, renderResetPassword, hasEmailVerificationBeenSent,
+        fetching, renderResetPassword, hasEmailVerificationBeenSent,
+        googleAuthentication, githubAuthentication, onLogin, loadAdvancedAuthenticationMethods,
     } = props;
 
     if (hasEmailVerificationBeenSent) {
         history.push('/auth/email-verification-sent');
     }
+
+    useEffect(() => {
+        loadAdvancedAuthenticationMethods();
+    }, []);
 
     return (
         <Layout>
@@ -58,29 +66,41 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                 onLogin(loginData.credential, loginData.password);
                             }}
                         />
-                        <Row justify='center' align='top'>
-                            <Col>
-                                or
-                            </Col>
-                        </Row>
-                        <Row justify='space-between' align='middle'>
-                            <Col span={11}>
-                                <Button href={`${backendAPI}/auth/google/login`}>
-                                    <Space>
-                                        <GooglePlusOutlined />
-                                        Continue with Google
-                                    </Space>
-                                </Button>
-                            </Col>
-                            <Col span={11} offset={1}>
-                                <Button href={`${backendAPI}/auth/github/login`}>
-                                    <Space>
-                                        <GithubOutlined />
-                                        Continue with Github
-                                    </Space>
-                                </Button>
-                            </Col>
-                        </Row>
+                        {(googleAuthentication || githubAuthentication) &&
+                        (
+                            <>
+                                <Row justify='center' align='top'>
+                                    <Col>
+                                        or
+                                    </Col>
+                                </Row>
+                                <Row justify='space-between' align='middle'>
+                                    {googleAuthentication && (
+                                        <Col span={11}>
+                                            <Button href={`${backendAPI}/auth/google/login`}>
+                                                <Space>
+                                                    <GooglePlusOutlined />
+                                                    Continue with Google
+                                                </Space>
+                                            </Button>
+                                        </Col>
+                                    )}
+                                    {githubAuthentication && (
+                                        <Col
+                                            span={11}
+                                            offset={googleAuthentication ? 1 : 0}
+                                        >
+                                            <Button href={`${backendAPI}/auth/github/login`}>
+                                                <Space>
+                                                    <GithubOutlined />
+                                                    Continue with Github
+                                                </Space>
+                                            </Button>
+                                        </Col>
+                                    )}
+                                </Row>
+                            </>
+                        )}
                         <Row justify='start' align='top'>
                             <Col>
                                 <Text strong>
