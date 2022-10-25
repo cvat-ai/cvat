@@ -13,8 +13,7 @@ context('Importing and exporting skeletons', () => {
     });
 
     beforeEach(() => {
-        cy.visit('auth/login');
-        cy.login();
+        cy.loginHeadless();
     });
 
     after(() => {

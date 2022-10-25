@@ -32,6 +32,19 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     });
 });
 
+Cypress.Commands.add('loginHeadless', () => {
+    cy.visit('/');
+    cy.request({
+        method: 'POST',
+        url: '/api/auth/login',
+        body: {
+            username: Cypress.env('user'),
+            email: Cypress.env('email'),
+            password: Cypress.env('password'),
+        },
+    })
+});
+
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('.cvat-right-header').within(() => {
         cy.get('.cvat-header-menu-user-dropdown-user').should('have.text', username).trigger('mouseover');
