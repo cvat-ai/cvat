@@ -16,7 +16,6 @@ from time import sleep
 
 import pytest
 from deepdiff import DeepDiff
-from pyunpack import Archive
 
 from shared.utils.config import get_method, make_api_client, patch_method
 
@@ -504,27 +503,25 @@ class TestImportExportDatasetProject:
 
         response = self._test_export_project(username, project_id, format_name)
 
-        tmp_file = io.BytesIO(response.data)
-        tmp_file.name = "temp_dataset.zip"
         with TemporaryDirectory() as tmp_dir:
             with open(osp.join(tmp_dir, "temp_dataset.zip"), "wb") as f:
-                f.write(tmp_file.getvalue())
-            dataset_file = osp.join(tmp_dir, "dataset")
-            os.makedirs(dataset_file, exist_ok=True)
-            Archive(osp.join(tmp_dir, "temp_dataset.zip")).extractall(dataset_file)
+                f.write(response.data)
+            dataset_dir = osp.join(tmp_dir, "dataset")
+            os.makedirs(dataset_dir, exist_ok=True)
+            shutil.unpack_archive(osp.join(tmp_dir, "temp_dataset.zip"), dataset_dir)
 
-            images = glob(osp.join(dataset_file, "JPEGImages", "**", "*.png"), recursive=True)
+            images = glob(osp.join(dataset_dir, "JPEGImages", "**", "*.png"), recursive=True)
             for f in images:
-                shutil.move(f, dataset_file)
+                shutil.move(f, dataset_dir)
 
-            anns = glob(osp.join(dataset_file, "Annotations", "**", "*.xml"), recursive=True)
+            anns = glob(osp.join(dataset_dir, "Annotations", "**", "*.xml"), recursive=True)
             for f in anns:
-                shutil.move(f, dataset_file)
+                shutil.move(f, dataset_dir)
 
-            shutil.rmtree(osp.join(dataset_file, "Annotations"))
-            shutil.rmtree(osp.join(dataset_file, "ImageSets"))
-            shutil.rmtree(osp.join(dataset_file, "JPEGImages"))
-            shutil.make_archive(dataset_file, "zip", tmp_dir, dataset_file)
+            shutil.rmtree(osp.join(dataset_dir, "Annotations"))
+            shutil.rmtree(osp.join(dataset_dir, "ImageSets"))
+            shutil.rmtree(osp.join(dataset_dir, "JPEGImages"))
+            shutil.make_archive(dataset_dir, "zip", tmp_dir, dataset_dir)
 
             with open(osp.join(tmp_dir, "dataset.zip"), "rb") as binary_file:
                 file = io.BytesIO(binary_file.read())
