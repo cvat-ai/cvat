@@ -65,16 +65,7 @@ function mapDispatchToProps(dispatch: any, own: Props): DispatchToProps {
     return {
         getTask: (): void => {
             dispatch(
-                getTasksAsync({
-                    id,
-                    page: 1,
-                    search: null,
-                    owner: null,
-                    assignee: null,
-                    name: null,
-                    status: null,
-                    mode: null,
-                }),
+                getTasksAsync({ id }),
             );
         },
     };
