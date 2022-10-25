@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - id: files
+        id: files
 
       # - name: Get changed files
       #   uses: tj-actions/changed-files@v33
