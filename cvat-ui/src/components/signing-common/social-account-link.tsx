@@ -11,18 +11,20 @@ import { CustomIconComponentProps } from '@ant-design/icons/lib/components/Icon'
 interface SocialAccountLinkProps {
     children: string;
     className?: string;
+    href: string;
     icon: React.ForwardRefExoticComponent<CustomIconComponentProps>;
 }
 
 function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
-    const { children, className, icon } = props;
+    const {
+        children, className, href, icon,
+    } = props;
     return (
         <Row>
             <Col flex='auto'>
                 <Button
+                    href={href}
                     className={`cvat-social-authentication-button ${className}`}
-                    onClick={() => {
-                    }}
                 >
                     <Row align='middle'>
                         <Col>

@@ -9,13 +9,12 @@ import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import Icon from '@ant-design/icons';
 import {
-    BackArrowIcon, ClearIcon, SocialGithubLogo, SocialGoogleLogo,
+    BackArrowIcon, ClearIcon,
 } from 'icons';
 import { Col, Row } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Link } from 'react-router-dom';
-import SocialAccountLink from 'components/signing-common/social-account-link';
 
 export interface LoginData {
     credential: string;
@@ -25,11 +24,14 @@ export interface LoginData {
 interface Props {
     renderResetPassword: boolean;
     fetching: boolean;
+    socialAuthentication: JSX.Element | null;
     onSubmit(loginData: LoginData): void;
 }
 
 function LoginFormComponent(props: Props): JSX.Element {
-    const { fetching, onSubmit, renderResetPassword } = props;
+    const {
+        fetching, onSubmit, renderResetPassword, socialAuthentication,
+    } = props;
     const [form] = Form.useForm();
     const [credentialNonEmpty, setCredentialNonEmpty] = useState(false);
     return (
@@ -71,7 +73,12 @@ function LoginFormComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Form className={`cvat-signing-form ${credentialNonEmpty ? 'cvat-signing-form-extended' : ''}`} form={form}>
+            <Form
+                className={`cvat-signing-form
+                 ${!credentialNonEmpty && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''}
+                 ${credentialNonEmpty ? 'cvat-signing-form-extended' : ''}`}
+                form={form}
+            >
                 <Form.Item
                     className='cvat-credentials-form-item'
                     name='credential'
@@ -126,12 +133,13 @@ function LoginFormComponent(props: Props): JSX.Element {
                 }
             </Form>
             {
-                credentialNonEmpty ? (
+                credentialNonEmpty || !socialAuthentication ? (
                     <Row>
                         <Col flex='auto'>
                             <Button
                                 className='cvat-credentials-action-button'
                                 loading={fetching}
+                                disabled={!credentialNonEmpty}
                                 onClick={async () => {
                                     const loginData: LoginData = await form.validateFields();
                                     onSubmit(loginData);
@@ -141,16 +149,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                             </Button>
                         </Col>
                     </Row>
-                ) : (
-                    <>
-                        <SocialAccountLink icon={SocialGithubLogo}>
-                            Continue with Github
-                        </SocialAccountLink>
-                        <SocialAccountLink icon={SocialGoogleLogo} className='cvat-social-authentication-google'>
-                            Continue with Google
-                        </SocialAccountLink>
-                    </>
-                )
+                ) : socialAuthentication
             }
         </div>
     );

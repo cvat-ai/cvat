@@ -129,6 +129,10 @@
     transition: all 0.8s ease;
 }
 
+.cvat-signing-form-empty-socials {
+    margin-bottom: $grid-unit-size*24;
+}
+
 .cvat-signing-form-extended {
     margin-top: $grid-unit-size*6;
     margin-bottom: $grid-unit-size*14;
