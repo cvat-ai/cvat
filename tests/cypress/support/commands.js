@@ -42,7 +42,7 @@ Cypress.Commands.add('loginHeadless', () => {
             email: Cypress.env('email'),
             password: Cypress.env('password'),
         },
-    })
+    });
 });
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {

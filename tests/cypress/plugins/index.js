@@ -33,16 +33,13 @@ module.exports = (on, config) => {
     });
     on('task', { isFileExist });
     on('task', {
-        downloads: (downloadspath) => fs.readdirSync(downloadspath),
-    });
-    on('task', {
         createFolder: (folder) => {
-            if (!fs.existsSync(folder)){
+            if (!fs.existsSync(folder)) {
                 fs.mkdirSync(folder);
             }
             return null;
-        }
-    })
+        },
+    });
     on('task', {
         cleanFolder: (folder) => {
             fs.readdir(folder, (err, files) => {

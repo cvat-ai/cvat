@@ -22,8 +22,8 @@ context('Importing and exporting skeletons', () => {
 
     describe('Import and export svg skeleton file', () => {
         // TODO Move to common utils
-        const getSvgElementCount = (filePath) => {
-            return cy.readFile(filePath).then((content) => {
+        const getSvgElementCount = (filePath) => cy.readFile(filePath)
+            .then((content) => {
                 const contentWithRoot = `<root>${content}</root>`;
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(contentWithRoot, 'image/svg+xml');
@@ -31,23 +31,27 @@ context('Importing and exporting skeletons', () => {
                 expect(xml.querySelector('parsererror'), 'SVG parsing error').to.be.null;
                 const circles = xml.getElementsByTagName('circle');
                 const lines = xml.getElementsByTagName('line');
+                console.log({
+                    circle: circles.length,
+                    line: lines.length,
+                });
                 return {
                     circle: circles.length,
                     line: lines.length,
                 };
             });
-        };
 
         // TODO Move to common utils
         const compareCanvasWithSvg = (svgFilePath) => {
-            cy.get('.cvat-skeleton-configurator-svg').within(async () => {
-                const svgElements = await getSvgElementCount(svgFilePath);
-                cy.get('circle').should('have.length', svgElements.circle);
-                if (svgElements.line) {
-                    cy.get('line').should('have.length', svgElements.line);
-                } else {
-                    cy.get('line').should('not.exist');
-                }
+            getSvgElementCount(svgFilePath).then((svgElements) => {
+                cy.get('.cvat-skeleton-configurator-svg').within(() => {
+                    cy.get('circle').should('have.length', svgElements.circle);
+                    if (svgElements.line) {
+                        cy.get('line').should('have.length', svgElements.line);
+                    } else {
+                        cy.get('line').should('not.exist');
+                    }
+                });
             });
         };
 
@@ -90,11 +94,11 @@ context('Importing and exporting skeletons', () => {
             ];
             drawCanvasPoints(points);
 
-            cy.task('downloads', downloadsFolder).then((before) => {
+            cy.task('listFiles', downloadsFolder).then((before) => {
                 cy.get('.cvat-skeleton-configurator-svg-buttons > button').click();
-                cy.task('downloads', downloadsFolder).then((after) => {
+                cy.task('listFiles', downloadsFolder).then((after) => {
                     expect(after.length).to.be.eq(before.length + 1);
-                    return (after.filter((f) => before.includes(f)))[0];
+                    return (after.filter((f) => !before.includes(f)))[0];
                 }).then((fileName) => {
                     cy.log(fileName);
                     compareCanvasWithSvg(`${downloadsFolder}/${fileName}`);
@@ -103,5 +107,3 @@ context('Importing and exporting skeletons', () => {
         });
     });
 });
-
-
