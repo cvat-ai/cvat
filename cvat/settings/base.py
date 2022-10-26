@@ -617,7 +617,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'secret': SOCIAL_AUTH_GITHUB_CLIENT_SECRET,
                 'key': ''
             },
-            'SCOPE': [ 'profile', 'email', 'openid'],
+            'SCOPE': [ 'read:user', 'user:email' ],
             'AUTH_PARAMS': {
                 'access_type': 'online',
             }
