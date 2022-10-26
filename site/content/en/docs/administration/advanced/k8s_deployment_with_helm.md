@@ -56,7 +56,7 @@ helm dependency update
      traefik:
        service:
          externalIPs:
-           - "your minikube IP (can be obtained with `minicube ip` command)"
+           - "your minikube IP (can be obtained with `minikube ip` command)"
      ```
    - Also ensure that your CVAT ingress appears on your hosts file (/etc/hosts).
      You can do this by running this command:
@@ -69,10 +69,6 @@ helm dependency update
 1. Create `values.override.yaml` file inside `helm-chart` directory.
 1. Fill `values.override.yaml` with new parameters for chart.
 1. Override [postgresql password](#postgresql-password)
-1. Create a rules.tar.gz archive containing all OPA rules inside this `helm-chart` directory.
-   ```shell
-   find ../cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | tar -czf rules.tar.gz -C ../cvat/apps/iam/rules/ -T -
-   ```
 
 ### Postgresql password?
 Put below into your `values.override.yaml`

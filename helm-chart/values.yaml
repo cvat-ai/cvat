@@ -19,6 +19,15 @@ cvat:
       envs:
         ALLOWED_HOSTS: "*"
         DJANGO_MODWSGI_EXTRA_ARGS: ""
+        USE_ALLAUTH_SOCIAL_ACCOUNTS: false
+      secret:
+        create: true
+        name: cvat-server-secret
+        socialAccountAuthentication:
+          googleClientId: ""
+          googleClientSecret: ""
+          githubClientId: ""
+          githubClientSecret: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
@@ -166,8 +175,6 @@ cvat:
           targetPort: 8181
           protocol: TCP
           name: http
-    defaultStorage:
-        enabled: true
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
