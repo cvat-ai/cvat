@@ -386,7 +386,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None
     )
     if manifest_file and not (
-        db_data.sorting_method == models.SortingMethod.PREDEFINED or
+        data['sorting_method'] == models.SortingMethod.PREDEFINED or
         db_data.storage_method == models.StorageMethodChoice.CACHE and settings.USE_CACHE
     ):
         if db_data.storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
@@ -652,10 +652,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
             # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
             if manifest_file and not os.path.exists(db_data.get_manifest_path()):
-                shutil.copyfile(os.path.join(upload_dir, manifest_file),
+                shutil.copyfile(os.path.join(manifest_root, manifest_file),
                     db_data.get_manifest_path())
-                if upload_dir != settings.SHARE_ROOT:
-                    os.remove(os.path.join(upload_dir, manifest_file))
+                if manifest_root and not manifest_root.startswith(settings.SHARE_ROOT):
+                    os.remove(os.path.join(manifest_root, manifest_file))
 
             if task_mode == MEDIA_TYPES['video']['mode']:
                 try:
