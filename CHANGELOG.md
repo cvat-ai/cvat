@@ -58,6 +58,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
+- Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 
 ### Security
 - TDB
