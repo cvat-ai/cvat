@@ -27,6 +27,7 @@ from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
+from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from cvat.apps.iam.adapters import GitHubAdapter, GoogleAdapter
 from .authentication import Signer
@@ -129,6 +130,7 @@ class LoginViewEx(LoginView):
     Accept the following POST parameters: username, email, password
     Return the REST Framework Token Object's key.
     """
+    @extend_schema(responses=get_token_serializer_class())
     def post(self, request, *args, **kwargs):
         self.request = request
         self.serializer = self.get_serializer(data=self.request.data)
