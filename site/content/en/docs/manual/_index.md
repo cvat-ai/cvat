@@ -1,6 +1,6 @@
 ---
 title: 'Manual'
 linkTitle: 'Manual'
-weight: 3
+weight: 4
 description: 'This section contains documents for CVAT simple and advanced users'
 ---
