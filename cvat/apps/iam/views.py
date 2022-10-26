@@ -118,6 +118,17 @@ class SigningView(views.APIView):
         return Response(url)
 
 class LoginViewEx(LoginView):
+    """
+    Check the credentials and return the REST Token
+    if the credentials are valid and authenticated.
+    If email verification is enabled and the user has the unverified email,
+    an email with a confirmation link will be sent.
+    Calls Django Auth login method to register User ID
+    in Django session framework.
+
+    Accept the following POST parameters: username, email, password
+    Return the REST Framework Token Object's key.
+    """
     def post(self, request, *args, **kwargs):
         self.request = request
         self.serializer = self.get_serializer(data=self.request.data)
