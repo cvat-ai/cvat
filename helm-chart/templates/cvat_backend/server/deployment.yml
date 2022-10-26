@@ -57,7 +57,7 @@ spec:
           - name: DJANGO_MODWSGI_EXTRA_ARGS
             value: {{ .Values.cvat.backend.server.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
           - name: USE_ALLAUTH_SOCIAL_ACCOUNTS
-            value: {{ .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS }}
+            value: {{ .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS | squote }}
           {{- if .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS }}
           - name: SOCIAL_AUTH_GOOGLE_CLIENT_ID
             valueFrom:
