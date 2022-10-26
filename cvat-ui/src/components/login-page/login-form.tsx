@@ -85,9 +85,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     <Input
                         autoComplete='credential'
                         placeholder='enter your email or username'
-                        prefix={
-                            <Text>Email or username</Text>
-                        }
+                        prefix={<Text>Email or username</Text>}
                         suffix={(
                             credentialNonEmpty ? (
                                 <Icon
@@ -130,7 +128,7 @@ function LoginFormComponent(props: Props): JSX.Element {
             {
                 credentialNonEmpty ? (
                     <Row>
-                        <Col className='cvat-credentials-link' flex='auto'>
+                        <Col flex='auto'>
                             <Button
                                 className='cvat-credentials-action-button'
                                 loading={fetching}

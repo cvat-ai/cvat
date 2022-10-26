@@ -63,8 +63,7 @@ const config = require('./config');
             firstName,
             lastName,
             email,
-            password1,
-            password2,
+            password,
             userConfirmations,
         ) => {
             const user = await serverProxy.server.register(
@@ -72,8 +71,7 @@ const config = require('./config');
                 firstName,
                 lastName,
                 email,
-                password1,
-                password2,
+                password,
                 userConfirmations,
             );
 

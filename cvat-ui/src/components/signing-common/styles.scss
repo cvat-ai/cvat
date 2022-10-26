@@ -116,7 +116,7 @@
     border-radius: 32px;
     background: $background-color-1;
     padding: $grid-unit-size * 6;
-    height: 620px;
+    min-height: 620px;
 
     .ant-form-item {
         margin-bottom: $grid-unit-size*5;
@@ -131,7 +131,7 @@
 
 .cvat-signing-form-extended {
     margin-top: $grid-unit-size*6;
-    margin-bottom: $grid-unit-size*12;
+    margin-bottom: $grid-unit-size*14;
     transition: all 0.8s ease;
 }
 
@@ -155,6 +155,18 @@
 
     margin-top: $grid-unit-size*6;
     transition: all 0.8s ease;
+}
+
+.cvat-register-form-wrapper {
+    @extend .cvat-signing-form-wrapper;
+
+    .ant-form-item {
+        margin-bottom: $grid-unit-size*3;
+
+        &:nth-last-child(2) {
+            margin-bottom: $grid-unit-size*8;
+        }
+    }
 }
 
 .cvat-social-authentication-button {
