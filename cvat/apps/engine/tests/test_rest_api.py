@@ -3284,10 +3284,10 @@ class TaskDataAPITestCase(APITestCase):
             if not os.listdir(path):
                 os.rmdir(path)
 
-    def _run_api_v2_tasks_id_data_post(self, tid, user, data):
+    def _run_api_v2_tasks_id_data_post(self, tid, user, data, *, headers=None):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/tasks/{}/data'.format(tid),
-                data=data)
+                data=data, **{'HTTP_' + k: v for k, v in (headers or {}).items()})
 
         return response
 
@@ -3352,7 +3352,12 @@ class TaskDataAPITestCase(APITestCase):
                                         expected_image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
-                                        dimension=DimensionType.DIM_2D):
+                                        dimension=DimensionType.DIM_2D,
+                                        *,
+                                        send_data_callback=None):
+        if send_data_callback is None:
+            send_data_callback = self._run_api_v2_tasks_id_data_post
+
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -3360,7 +3365,7 @@ class TaskDataAPITestCase(APITestCase):
         task_id = response.data["id"]
 
         # post data for the task
-        response = self._run_api_v2_tasks_id_data_post(task_id, user, data)
+        response = send_data_callback(task_id, user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
 
         response = self._get_task(user, task_id)
@@ -4345,6 +4350,144 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
+    def _test_api_v2_tasks_id_data_create_can_send_ordered_images_with_multifile_requests(self, user):
+        task_spec = {
+            "name": 'task custom data sequence client files multi request #31',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data_common = {
+            "image_quality": 70,
+            "sorting_method": SortingMethod.PREDEFINED,
+        }
+
+        def _send_data(tid, user, data):
+            response = self._run_api_v2_tasks_id_data_post(tid, user, data={'files': upload_info},
+                headers={ 'Upload-Start': True })
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+
+            for group_idx, file_group in enumerate(file_groups):
+                request_data = {k: v for k, v in data.items() if '_files' not in k}
+                request_data.update({
+                    f'client_files[{i}]': images[f] for i, f in enumerate(file_group)
+                })
+
+                if group_idx == len(file_groups) - 1:
+                    headers = { 'Upload-Finish': True }
+                else:
+                    headers = { 'Upload-Multiple': True }
+
+                response = self._run_api_v2_tasks_id_data_post(tid, user, data=request_data,
+                    headers=headers)
+
+                if group_idx != len(file_groups) - 1:
+                    assert response.status_code == status.HTTP_200_OK, response.status_code
+            return response
+
+        def _send_data_and_fail(*args, **kwargs):
+            response = _send_data(*args, **kwargs)
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            raise Exception(response.data)
+
+        filenames = [
+            "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_qwe.jpg", "test_4.jpg", "test_2.jpg"
+        ]
+
+        for name, upload_info, file_groups in (
+            (
+                "input ordering, multiple requests, the last one has data",
+                [],
+                [
+                    [ 0, 1, 2 ],
+                    [ 3, 4 ],
+                    [ 5, ],
+                ]
+            ),
+
+            (
+                "input ordering, multiple requests, the last one has no data",
+                [],
+                [
+                    [ 0, 1, 2 ],
+                    [ 3, 4, 5 ],
+                    [ ],
+                ]
+            ),
+
+            (
+                "input ordering, multiple requests, the last one has data, has an empty request",
+                [],
+                [
+                    [ 0, 1, 2 ],
+                    [ ],
+                    [ 3, 4, 5 ],
+                ]
+            ),
+
+            (
+                "custom ordering, multiple requests, the last one has no data, files unordered",
+                filenames,
+                [
+                    [ 2, 4, 0 ],
+                    [ 3, 5, 1 ],
+                    [  ],
+                ]
+            ),
+
+            (
+                "custom ordering, multiple requests, the last one has data, files unordered",
+                filenames,
+                [
+                    [ 2, 0 ],
+                    [ 3, 5, 4 ],
+                    [ 1, ],
+                ]
+            ),
+        ):
+            with self.subTest(current_function_name() + ' ' + name):
+                image_sizes, images = generate_image_files(*filenames)
+
+                task_data = task_data_common.copy()
+                task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    send_data_callback=_send_data)
+
+        with self.subTest(current_function_name() + ' mismatching file sets - extra files'):
+            upload_info = [filenames[0]]
+            file_groups = [[ 0, 1 ]]
+            image_sizes, images = generate_image_files(*filenames[:2])
+
+            task_data = task_data_common.copy()
+            task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+
+            with self.assertRaisesMessage(Exception, "(extra)"):
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    send_data_callback=_send_data_and_fail)
+
+        with self.subTest(current_function_name() + ' mismatching file sets - missing files'):
+            upload_info = filenames[0:3]
+            file_groups = [[ 0, 1 ]]
+            image_sizes, images = generate_image_files(*upload_info)
+
+            task_data = task_data_common.copy()
+            task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+
+            with self.assertRaisesMessage(Exception, "(missing)"):
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    send_data_callback=_send_data_and_fail)
 
     def _test_api_v2_tasks_id_data_create(self, user):
         method_list = {

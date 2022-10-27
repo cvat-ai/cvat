@@ -858,11 +858,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return Response(serializer.data)
 
+    def _is_data_uploading(self) -> bool:
+        return 'data' in self.action
+
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
             return self._object.get_tmp_dirname()
-        elif 'data' in self.action:
+        elif self._is_data_uploading():
             return self._object.data.get_upload_dirname()
         elif 'backup' in self.action:
             return backup.get_backup_dirname()
@@ -896,7 +899,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return [line.strip() for line in f]
 
     def _prepare_upload_metafile_entry(self, filename: str) -> str:
-        return osp.normpath(filename.strip()).lstrip("/")
+        filename = osp.normpath(filename.strip())
+        upload_dir = self.get_upload_dir()
+        if filename.startswith(upload_dir):
+            filename = osp.relpath(filename, upload_dir)
+        return filename.lstrip("/.")
 
     def _maybe_append_tus_upload_metafile_entry(self,
         metafile: str, filename: str, *, existing_files: Optional[Sequence[str]] = None
@@ -945,7 +952,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if mismatching_files:
             DISPLAY_ENTRIES_COUNT = 5
             mismatching_display = [
-                fn + (" (uploaded)" if fn in uploaded_file_names else " (expected)")
+                fn + (" (extra)" if fn in uploaded_file_names else " (missing)")
                 for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
             ]
             remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
@@ -965,7 +972,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def init_file_upload(self, request):
         response = super().init_file_upload(request)
 
-        if response.status_code == status.HTTP_201_CREATED:
+        if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
             metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
             if osp.isfile(metafile):
                 self._maybe_append_tus_upload_metafile_entry(metafile, response['Upload-Filename'])
@@ -975,15 +982,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     # UploadMixin method
     def append_files(self, request):
         client_files = self._get_request_client_files(request)
-        if client_files:
+        if self._is_data_uploading() and client_files:
             metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
             if osp.isfile(metafile):
                 file_list = self._read_tus_upload_meta_file(metafile)
 
                 for client_file in client_files:
                     self._maybe_append_tus_upload_metafile_entry(metafile,
-                        osp.relpath(client_file['file'].name, self.get_upload_dir()),
-                        existing_files=file_list)
+                        client_file['file'].name, existing_files=file_list)
 
         return super().append_files(request)
 
@@ -1007,13 +1013,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         Must be used if the initial file order needs to be preserved.
         """
 
-        if request.data:
-            serializer = TusUploadingMetaSerializer(self._object, data=request.data)
-            serializer.is_valid(raise_exception=True)
+        if self._is_data_uploading():
+            if request.data:
+                serializer = TusUploadingMetaSerializer(self._object, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                file_list = serializer.validated_data['files']
+            else:
+                file_list = None
 
-            if serializer.validated_data['files']:
+            if file_list:
                 # Remember the list of expected files for the upcoming uploading
-                self._init_tus_custom_ordering(serializer.validated_data['files'])
+                self._init_tus_custom_ordering(file_list)
 
             else:
                 # The server must record uploaded files order during the uploading
