@@ -1173,9 +1173,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             After all data is sent, the operation status can be retrieved in the /status endpoint.
         """),
         # TODO: add a tutorial on this endpoint in the REST API docs
-        request=PolymorphicProxySerializer('TaskData',
-            serializers=[DataSerializer, TusUploadingMetaSerializer],
-            resource_type_field_name=None),
+        request=DataSerializer,
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
                 description='Initializes data upload. Optionally, can include upload metadata in the request body.'),
