@@ -41,7 +41,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/pull/5057>)
 
 ### Security
-- Fixed an arbitrary server file write vulnerability (<https://github.com/opencv/cvat/pull/5083>)
+- TBD
 
 ## \[2.2.0] - 2022-09-12
 ### Added

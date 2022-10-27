@@ -64,6 +64,17 @@ class TestTaskUsecases:
         return task
 
     @pytest.fixture
+    def fxt_new_task_without_data(self):
+        task = self.client.tasks.create(
+            spec={
+                "name": "test_task",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+        )
+
+        return task
+
+    @pytest.fixture
     def fxt_task_with_shapes(self, fxt_new_task: Task):
         fxt_new_task.set_annotations(
             models.LabeledDataRequest(
@@ -126,30 +137,10 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    def test_can_create_task_with_local_data_and_predefined_sorting_without_manifest(self):
-        task_spec = {
-            "name": f"test {self.user} to create a task with local data with predefined sorting",
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [
-                        {
-                            "name": "a",
-                            "mutable": True,
-                            "input_type": "number",
-                            "default_value": "5",
-                            "values": ["4", "5", "6"],
-                        }
-                    ],
-                }
-            ],
-        }
-
-        data_params = {
-            "image_quality": 75,
-            "sorting_method": "predefined"
-        }
+    def test_can_create_task_with_local_data_and_predefined_sorting(self,
+        fxt_new_task_without_data: Task
+    ):
+        task = fxt_new_task_without_data
 
         task_files = generate_image_files(6)
         for i, f in enumerate(task_files):
@@ -160,11 +151,9 @@ class TestTaskUsecases:
 
         task_files = [task_files[i] for i in [2, 4, 1, 5, 0, 3]]
 
-        task = self.client.tasks.create_from_data(
-            spec=task_spec,
-            data_params=data_params,
-            resource_type=ResourceType.LOCAL,
+        task.upload_data(
             resources=task_files,
+            params={"sorting_method": "predefined"},
         )
 
         assert [f.name for f in task.get_meta().frames] == [osp.basename(f) for f in task_files]

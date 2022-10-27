@@ -62,9 +62,9 @@ class Task(
 
     def upload_data(
         self,
-        resource_type: ResourceType,
         resources: Sequence[str],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         pbar: Optional[ProgressReporter] = None,
         params: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -261,9 +261,9 @@ class TasksRepo(
     def create_from_data(
         self,
         spec: models.ITaskWriteRequest,
-        resource_type: ResourceType,
         resources: Sequence[str],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         data_params: Optional[Dict[str, Any]] = None,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
@@ -291,7 +291,7 @@ class TasksRepo(
         task = self.create(spec=spec)
         self._client.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
 
-        task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
+        task.upload_data(resource_type=resource_type, resources=resources, pbar=pbar, params=data_params)
 
         self._client.logger.info("Awaiting for task %s creation...", task.id)
         status: models.RqStatus = None

@@ -4,12 +4,9 @@
 
 from __future__ import annotations
 
-import json
 import os
 import os.path as osp
-from contextlib import ExitStack, closing
-from io import StringIO
-from tempfile import TemporaryDirectory
+from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
@@ -17,7 +14,6 @@ import urllib3
 
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.rest import RESTClientObject
-from cvat_sdk.core.exceptions import TooManyManifests
 from cvat_sdk.core.helpers import StreamWithProgress, expect_status
 from cvat_sdk.core.progress import ProgressReporter
 
@@ -99,40 +95,6 @@ class Uploader:
             method=method,
             positive_statuses=positive_statuses,
         )
-
-    def _split_files_by_requests(
-        self, filenames: List[str]
-    ) -> Tuple[List[Tuple[List[str], int]], List[str], int]:
-        bulk_files: Dict[str, int] = {}
-        separate_files: Dict[str, int] = {}
-
-        # sort by size
-        for filename in filenames:
-            filename = os.path.abspath(filename)
-            file_size = os.stat(filename).st_size
-            if MAX_REQUEST_SIZE < file_size:
-                separate_files[filename] = file_size
-            else:
-                bulk_files[filename] = file_size
-
-        total_size = sum(bulk_files.values()) + sum(separate_files.values())
-
-        # group small files by requests
-        bulk_file_groups: List[Tuple[List[str], int]] = []
-        current_group_size: int = 0
-        current_group: List[str] = []
-        for filename, file_size in bulk_files.items():
-            if MAX_REQUEST_SIZE < current_group_size + file_size:
-                bulk_file_groups.append((current_group, current_group_size))
-                current_group_size = 0
-                current_group = []
-
-            current_group.append(filename)
-            current_group_size += file_size
-        if current_group:
-            bulk_file_groups.append((current_group, current_group_size))
-
-        return bulk_file_groups, separate_files, total_size
 
     @staticmethod
     def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
@@ -256,7 +218,7 @@ class Uploader:
             )
             tus_uploader.upload()
 
-    def _tus_start_upload(self, url, *, query_params=None):
+    def _tus_start_upload(self, url, *, query_params=None, fields=None):
         response = self._client.api_client.rest_client.POST(
             url,
             query_params=query_params,
@@ -264,6 +226,7 @@ class Uploader:
                 "Upload-Start": "",
                 **self._client.api_client.get_common_headers(),
             },
+            post_params=fields,
         )
         expect_status(202, response)
         return response
@@ -337,6 +300,10 @@ class DatasetUploader(Uploader):
 
 
 class DataUploader(Uploader):
+    def __init__(self, client: Client, *, max_request_size: int = MAX_REQUEST_SIZE):
+        super().__init__(client)
+        self.max_request_size = max_request_size
+
     def upload_files(
         self,
         url: str,
@@ -345,99 +312,81 @@ class DataUploader(Uploader):
         pbar: Optional[ProgressReporter] = None,
         **kwargs,
     ):
-        with ExitStack() as manifest_es:
-            if str(
-                kwargs.get("sorting_method")
-            ).lower() == "predefined" and not self._has_upload_metainfo_file(resources):
-                manifest_dir = manifest_es.enter_context(TemporaryDirectory())
-                manifest_file = osp.join(manifest_dir, self._default_upload_metainfo_filename())
-                with open(manifest_file, "w") as f:
-                    f.write(self._generate_upload_metainfo_file(resources).getvalue())
-                resources.append(manifest_file)
+        bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
 
-            bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
+        if pbar is not None:
+            pbar.start(total_size, desc="Uploading data")
+
+        upload_info = None
+        if str(kwargs.get("sorting_method")).lower() == "predefined":
+            # need to request file ordering, because we reorder files to send more efficiently
+            upload_info = {'files': [osp.basename(p) for p in resources]}
+
+        self._tus_start_upload(url, fields=upload_info)
+
+        for group, group_size in bulk_file_groups:
+            with ExitStack() as es:
+                files = {}
+                for i, filename in enumerate(group):
+                    files[f"client_files[{i}]"] = (
+                        filename,
+                        es.enter_context(open(filename, "rb")).read(),
+                    )
+                response = self._client.api_client.rest_client.POST(
+                    url,
+                    post_params=dict(**kwargs, **files),
+                    headers={
+                        "Content-Type": "multipart/form-data",
+                        "Upload-Multiple": "",
+                        **self._client.api_client.get_common_headers(),
+                    },
+                )
+            expect_status(200, response)
 
             if pbar is not None:
-                pbar.start(total_size, desc="Uploading data")
+                pbar.advance(group_size)
 
-            self._tus_start_upload(url)
-
-            for group, group_size in bulk_file_groups:
-                with ExitStack() as es:
-                    files = {}
-                    for i, filename in enumerate(group):
-                        files[f"client_files[{i}]"] = (
-                            filename,
-                            es.enter_context(closing(open(filename, "rb"))).read(),
-                        )
-                    response = self._client.api_client.rest_client.POST(
-                        url,
-                        post_params=dict(**kwargs, **files),
-                        headers={
-                            "Content-Type": "multipart/form-data",
-                            "Upload-Multiple": "",
-                            **self._client.api_client.get_common_headers(),
-                        },
-                    )
-                expect_status(200, response)
-
-                if pbar is not None:
-                    pbar.advance(group_size)
-
-            for filename in separate_files:
-                # TODO: check if basename produces invalid paths here, can lead to overwriting
-                self._upload_file_data_with_tus(
-                    url,
-                    filename,
-                    meta={"filename": osp.basename(filename)},
-                    pbar=pbar,
-                    logger=self._client.logger.debug,
-                )
-
-            self._tus_finish_upload(url, fields=kwargs)
-
-    def _has_upload_metainfo_file(self, resources: Sequence[str]) -> bool:
-        file = self._find_upload_metainfo_file(resources)
-        return file and osp.isfile(file)
-
-    def _find_upload_metainfo_file(self, resources: Sequence[str]) -> Optional[str]:
-        candidates = [f for f in resources if f.endswith(".jsonl")]
-        if not candidates:
-            return None
-        elif len(candidates) != 1:
-            raise TooManyManifests(candidates=candidates)
-        else:
-            return candidates[0]
-
-    @staticmethod
-    def _default_upload_metainfo_filename() -> str:
-        return "manifest.jsonl"
-
-    def _generate_upload_metainfo_file(self, resources: Sequence[str]) -> StringIO:
-        contents = StringIO()
-        self._write_base_information(contents)
-
-        records = []
-        for file in resources:
-            name, ext = osp.splitext(osp.basename(file))
-            record = {"name": name, "extension": ext}
-            records.append(record)
-        self._write_core_part(contents, records)
-
-        return contents
-
-    def _write_base_information(self, file):
-        base_info = {
-            "version": "1.1",
-            "type": "images",
-        }
-        for key, value in base_info.items():
-            json_line = json.dumps({key: value}, separators=(",", ":"))
-            file.write(f"{json_line}\n")
-
-    def _write_core_part(self, file, records):
-        for record in records:
-            json_line = json.dumps(
-                {key: value for key, value in record.items()}, separators=(",", ":")
+        for filename in separate_files:
+            self._upload_file_data_with_tus(
+                url,
+                filename,
+                meta={"filename": osp.basename(filename)},
+                pbar=pbar,
+                logger=self._client.logger.debug,
             )
-            file.write(f"{json_line}\n")
+
+        self._tus_finish_upload(url, fields=kwargs)
+
+    def _split_files_by_requests(
+        self, filenames: List[str]
+    ) -> Tuple[List[Tuple[List[str], int]], List[str], int]:
+        bulk_files: Dict[str, int] = {}
+        separate_files: Dict[str, int] = {}
+
+        # sort by size
+        for filename in filenames:
+            filename = os.path.abspath(filename)
+            file_size = os.stat(filename).st_size
+            if self.max_request_size < file_size:
+                separate_files[filename] = file_size
+            else:
+                bulk_files[filename] = file_size
+
+        total_size = sum(bulk_files.values()) + sum(separate_files.values())
+
+        # group small files by requests
+        bulk_file_groups: List[Tuple[List[str], int]] = []
+        current_group_size: int = 0
+        current_group: List[str] = []
+        for filename, file_size in bulk_files.items():
+            if self.max_request_size < current_group_size + file_size:
+                bulk_file_groups.append((current_group, current_group_size))
+                current_group_size = 0
+                current_group = []
+
+            current_group.append(filename)
+            current_group_size += file_size
+        if current_group:
+            bulk_file_groups.append((current_group, current_group_size))
+
+        return bulk_file_groups, separate_files, total_size
