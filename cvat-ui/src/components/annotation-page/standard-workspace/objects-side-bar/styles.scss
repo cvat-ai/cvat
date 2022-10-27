@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -156,6 +157,10 @@
     background-color: $background-color-2;
     height: calc(100% - 50px);
     overflow-y: auto;
+}
+
+.cvat-objects-sidebar-z-layer-mark {
+    text-align: center;
 }
 
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {

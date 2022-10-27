@@ -12,12 +12,13 @@ from dj_rest_auth.views import (
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
 from allauth.account import app_settings as allauth_settings
 
-from cvat.apps.iam.views import SigningView, RegisterViewEx
+from cvat.apps.iam.views import SigningView, RegisterViewEx, RulesView
 
 urlpatterns = [
     path('login', LoginView.as_view(), name='rest_login'),
     path('logout', LogoutView.as_view(), name='rest_logout'),
-    path('signing', SigningView.as_view(), name='signing')
+    path('signing', SigningView.as_view(), name='signing'),
+    path('rules', RulesView.as_view(), name='rules'),
 ]
 
 if settings.IAM_TYPE == 'BASIC':

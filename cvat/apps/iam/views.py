@@ -3,11 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import hashlib
+import os.path as osp
+from django_sendfile import sendfile
+
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import etag
 from rest_framework.response import Response
 from dj_rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
@@ -15,7 +22,6 @@ from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
-
 
 from .authentication import Signer
 
@@ -116,3 +122,20 @@ class RegisterViewEx(RegisterView):
             data['email_verification_required'] = False
             data['key'] = user.auth_token.key
         return data
+
+# Django Generic View is used here instead of DRF APIView due to native support of etag
+# that doesn't supported by DRF without extra dependencies
+class RulesView(View):
+    @staticmethod
+    def _get_bundle_path():
+        return osp.join(settings.STATIC_ROOT, 'opa', 'bundle.tar.gz')
+
+    @staticmethod
+    def _etag_func(file_path):
+        with open(file_path, 'rb') as f:
+            return hashlib.blake2b(f.read()).hexdigest()
+
+    @method_decorator(etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path())))
+    def get(self, request):
+        file_path = self._get_bundle_path()
+        return sendfile(request, file_path)

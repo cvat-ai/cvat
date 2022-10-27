@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
 - Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
 - Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
+- Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
+(<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
 
 ### Changed
@@ -49,11 +51,16 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
 - Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
 - Angle is not propagated when use ``propagate`` feature (<https://github.com/opencv/cvat/pull/5139>)
+- Could not fetch task in a corner case (<https://github.com/opencv/cvat/pull/5163>)
 - Restoring CVAT in case of React-renderning fail (<https://github.com/opencv/cvat/pull/5134>)
 - Deleted frames become restored if a user deletes frames from another job of the same task
 (<https://github.com/opencv/cvat/pull/5138>)
+- Wrong issue position when create a quick issue on a rotated shape (<https://github.com/opencv/cvat/pull/5162>)
+- Extra rerenders of different pages with each click (<https://github.com/opencv/cvat/pull/5178>)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
+- Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
+- Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 
 ### Security
 - TBD
@@ -135,6 +142,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
 - Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
 - Fixed build of retinanet function image (<https://github.com/cvat-ai/cvat/pull/54>)
+- Bug: Import dataset of Imagenet format fail (<https://github.com/opencv/cvat/issues/4850>)
 
 ## \[2.0.0] - 2022-03-04
 ### Added

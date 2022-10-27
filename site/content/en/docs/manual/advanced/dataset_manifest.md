@@ -55,11 +55,11 @@ The source code can be found [here](https://github.com/opencv/cvat/tree/develop/
 The script can be used from the `cvat/server` image:
 
 ```bash
-docker run -it --rm -u "$(id -u)":"$(id -g)" \
-    -v "/path/to/host/data/":"/path/inside/container/":rw \
-    --entrypoint '/usr/bin/env python' \
+docker run -it --rm -u root \
+    -v "${PWD}":"/local":rw \
+    --entrypoint '/usr/bin/bash' \
     cvat/server \
-    utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/
+    -c 'python -m pip install -r utils/dataset_manifest/requirements.txt && python utils/dataset_manifest/create.py --output-dir /local /local/<path/to/sources>
 ```
 
 Make sure to adapt the command to your file locations.

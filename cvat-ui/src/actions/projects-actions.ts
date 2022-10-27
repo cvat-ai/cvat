@@ -70,7 +70,7 @@ export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): Thun
             getState().projects.gettingQuery,
             tasksQuery,
         ));
-        const query: TasksQuery = {
+        const query: Partial<TasksQuery> = {
             ...state.projects.tasksGettingQuery,
             ...tasksQuery,
         };
