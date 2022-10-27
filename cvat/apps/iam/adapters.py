@@ -38,6 +38,7 @@ class SocialAccountAdapterEx(DefaultSocialAccountAdapter):
         elif users:
             sociallogin.connect(request, users[0])
         return
+
 class GitHubAdapter(GitHubOAuth2Adapter):
     def get_callback_url(self, request, app):
         return settings.GITHUB_CALLBACK_URL

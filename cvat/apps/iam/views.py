@@ -136,9 +136,7 @@ class LoginViewEx(LoginView):
         self.serializer = self.get_serializer(data=self.request.data)
         try:
             self.serializer.is_valid(raise_exception=True)
-        except ValidationError as ex:
-            print(ex)
-
+        except ValidationError:
             user = self.serializer.get_auth_user(
                 self.serializer.data.get('username'),
                 self.serializer.data.get('email'),
@@ -155,9 +153,8 @@ class LoginViewEx(LoginView):
                 # because redirect will make a POST request and we'll get a 404 code
                 # (although in the browser request method will be displayed like GET)
                 return HttpResponseBadRequest('Unverified email')
-
-        except Exception as ex:
-            print(ex)
+        except Exception:
+            pass
 
         self.login()
         return self.get_response()
