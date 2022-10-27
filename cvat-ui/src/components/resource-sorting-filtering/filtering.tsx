@@ -133,8 +133,13 @@ export default function ResourceFilterHOC(
                 const path: HTMLElement[] = event.composedPath()
                     .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
                 if (path.some((el: HTMLElement) => el.id === 'root') && !path.some((el: HTMLElement) => el.classList.contains('ant-btn'))) {
-                    onBuilderVisibleChange(false);
-                    onRecentVisibleChange(false);
+                    if (builderVisible) {
+                        onBuilderVisibleChange(false);
+                    }
+
+                    if (predefinedVisible) {
+                        onRecentVisibleChange(false);
+                    }
                 }
             };
 

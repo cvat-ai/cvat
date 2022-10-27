@@ -123,7 +123,9 @@ function SortingModalComponent(props: Props): JSX.Element {
             const path: HTMLElement[] = event.composedPath()
                 .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
             if (path.some((el: HTMLElement) => el.id === 'root') && !path.some((el: HTMLElement) => el.classList.contains('ant-btn'))) {
-                onVisibleChange(false);
+                if (visible) {
+                    onVisibleChange(false);
+                }
             }
         };
 
