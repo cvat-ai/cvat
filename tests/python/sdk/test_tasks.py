@@ -128,7 +128,6 @@ class TestTaskUsecases:
         task = self.client.tasks.create_from_data(
             spec=task_spec,
             data_params=data_params,
-            resource_type=ResourceType.LOCAL,
             resources=task_files,
             pbar=pbar,
         )
@@ -137,8 +136,8 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    def test_can_create_task_with_local_data_and_predefined_sorting(self,
-        fxt_new_task_without_data: Task
+    def test_can_create_task_with_local_data_and_predefined_sorting(
+        self, fxt_new_task_without_data: Task
     ):
         task = fxt_new_task_without_data
 
