@@ -131,7 +131,7 @@ class TestCLI:
             "--completion_verification_period",
             "0.01",
             "--sorting-method",
-            "predefined"
+            "predefined",
         )
 
         task_id = int(stdout.split()[-1])
