@@ -34,9 +34,9 @@ class TestCLI:
     ):
         self.tmp_path = tmp_path
         self.stdout = fxt_stdout
-        self.host, self.port = "localhost", "7000" #BASE_URL.rsplit(":", maxsplit=1)
-        self.user = "admin" #admin_user
-        self.password = "password" #USER_PASS
+        self.host, self.port = BASE_URL.rsplit(":", maxsplit=1)
+        self.user = admin_user
+        self.password = USER_PASS
         self.client = make_client(
             host=self.host, port=self.port, credentials=(self.user, self.password)
         )
