@@ -15,12 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
+- An option to supply custom file ordering for task data uploads with TUS (<https://github.com/opencv/cvat/pull/5083>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
+- Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
 
 ### Deprecated
 - TDB
@@ -61,6 +63,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/issues/5048>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
+- `predefined` sorting method for task data uploads with SDK/CLI (<https://github.com/opencv/cvat/pull/5083>)
 
 ### Security
 - TBD
