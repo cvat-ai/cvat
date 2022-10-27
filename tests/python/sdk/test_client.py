@@ -21,7 +21,7 @@ class TestClientUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
+        restore_db_per_function,  # force fixture call order to allow DB setup
         fxt_logger: Tuple[Logger, io.StringIO],
         fxt_client: Client,
         fxt_stdout: io.StringIO,

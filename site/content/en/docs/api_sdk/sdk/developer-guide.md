@@ -55,7 +55,19 @@ pip install -r gen/requirements.txt
 ./gen/generate.sh
 ```
 
-4. To allow editing of the package, install it with `pip install -e cvat-sdk/`.
+4. Install the packages:
+
+  ```bash
+  pip install cvat-sdk/
+  pip install cvat-cli/
+  ```
+
+  If you want to edit package files, install them with `-e`:
+
+  ```bash
+  pip install -e cvat-sdk/
+  pip install -e cvat-cli/
+  ```
 
 ## How to edit templates
 

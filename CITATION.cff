@@ -1,0 +1,38 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Computer Vision Annotation Tool (CVAT)
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - email: support+github@cvat.ai
+    name: CVAT.ai Corporation
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.4009388
+repository-code: 'https://github.com/opencv/cvat'
+url: 'http://cvat.ai/'
+abstract: >-
+  Annotate better with CVAT, the industry-leading
+  data engine for machine learning. Used and trusted
+  by teams at any scale, for data of any scale.
+keywords:
+  - image-labeling-tool
+  - computer-vision-annotation
+  - labeling-tool
+  - image-labeling
+  - semantic-segmentation
+  - annotation-tool
+  - object-detection
+  - image-classification
+  - video-annotation
+  - computer-vision
+  - deep-learning
+  - annotation
+license: MIT
+version: 2.2.0
+date-released: '2022-09-12'
+

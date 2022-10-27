@@ -90,6 +90,7 @@ jobs:
 
       - name: CVAT SDK. Build
         run: |
+          docker load --input /tmp/cvat_server/image.tar
           docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
@@ -126,7 +127,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
@@ -289,7 +290,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 

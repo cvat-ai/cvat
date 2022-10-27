@@ -15,7 +15,7 @@ from deepdiff import DeepDiff
 from shared.utils.config import make_api_client
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPostIssues:
     def _test_check_response(self, user, data, is_allow, **kwargs):
         with make_api_client(user) as client:
@@ -120,7 +120,7 @@ class TestPostIssues:
         self._test_check_response(username, data, is_allow, org_id=org)
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchIssues:
     def _test_check_response(self, user, issue_id, data, is_allow, **kwargs):
         with make_api_client(user) as client:
@@ -242,7 +242,7 @@ class TestPatchIssues:
             )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteIssues:
     def _test_check_response(self, user, issue_id, expect_success, **kwargs):
         with make_api_client(user) as client:

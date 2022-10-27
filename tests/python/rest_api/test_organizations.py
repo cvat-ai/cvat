@@ -42,7 +42,7 @@ class TestMetadataOrganizations:
         assert response.status_code == HTTPStatus.OK
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetOrganizations:
     _ORG = 2
 
@@ -76,7 +76,7 @@ class TestGetOrganizations:
             assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchOrganizations:
     _ORG = 2
 
@@ -128,7 +128,7 @@ class TestPatchOrganizations:
             assert response.status_code != HTTPStatus.OK
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteOrganizations:
     _ORG = 2
 
