@@ -51,6 +51,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
 - Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
 - Angle is not propagated when use ``propagate`` feature (<https://github.com/opencv/cvat/pull/5139>)
+- Could not fetch task in a corner case (<https://github.com/opencv/cvat/pull/5163>)
 - Restoring CVAT in case of React-renderning fail (<https://github.com/opencv/cvat/pull/5134>)
 - Deleted frames become restored if a user deletes frames from another job of the same task
 (<https://github.com/opencv/cvat/pull/5138>)
@@ -59,6 +60,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/issues/5048>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
 - Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
+- Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 
 ### Security
 - TDB
