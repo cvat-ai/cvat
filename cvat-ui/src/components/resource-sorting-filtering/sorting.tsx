@@ -119,6 +119,9 @@ function SortingModalComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
         const listener = (event: MouseEvent): void => {
             const path: HTMLElement[] = event.composedPath()
                 .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
@@ -131,7 +134,7 @@ function SortingModalComponent(props: Props): JSX.Element {
 
         window.addEventListener('click', listener);
         return () => window.removeEventListener('click', listener);
-    }, []);
+    }, [visible]);
 
     useEffect(() => {
         if (!isMounted) return;
