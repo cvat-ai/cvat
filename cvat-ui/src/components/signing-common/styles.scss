@@ -7,7 +7,7 @@
     .ant-typography {
         color: $text-color-2;
         margin: 0;
-        font-size: 68px;
+        font-size: $grid-unit-size*8.5;
     }
 
     .ant-typography:last-child {
@@ -46,7 +46,7 @@
         box-shadow: 0 1px 0 0 $error-color;
         border-radius: 0;
         padding: 0;
-        transition: all 0.8s ease;
+        transition: $base-transition;
     }
 
     .ant-input-affix-wrapper-focused {
@@ -60,7 +60,7 @@
         box-shadow: 0 1px 0 0 $border-color-1;
         border-radius: 0;
         padding: 0;
-        transition: all 0.8s ease;
+        transition: $base-transition;
     }
 
     .ant-input-prefix {
@@ -77,43 +77,42 @@
     }
 
     .ant-input {
-        font-size: 20px;
-        padding: 12px 0 6px 0 !important;
+        font-size: $grid-unit-size * 2.5;
+        padding: $grid-unit-size * 1.5 0 $grid-unit-size * 0.75 0 !important;
     }
 
     .ant-typography {
         text-transform: uppercase;
         color: $border-color-1;
-        font-size: 10px;
+        font-size: $grid-unit-size * 1.25;
         letter-spacing: 1px;
     }
 }
 
 .cvat-credentials-navigation {
     margin-bottom: $grid-unit-size*4;
-    transition: all 0.8s ease;
 }
 
 .cvat-credentials-action-button {
     width: 100%;
     border-radius: $grid-unit-size*2;
-    background-color: black;
+    background-color: $action-button-color-1;
     height: $grid-unit-size*11;
     color: white;
-    font-size: 16px;
+    font-size: $grid-unit-size*2;
     font-weight: bold;
     border: none;
     box-shadow: none;
 
     &:hover,
     &:focus {
-        background-color: black;
-        color: gray;
+        background-color: $action-button-color-1;
+        color: $action-button-color-2;
     }
 }
 
 .cvat-signing-form-wrapper {
-    border-radius: 32px;
+    border-radius: $grid-unit-size * 4;
     background: $background-color-1;
     padding: $grid-unit-size * 6;
     min-height: 620px;
@@ -126,7 +125,7 @@
 .cvat-signing-form {
     margin-top: $grid-unit-size*10;
     margin-bottom: $grid-unit-size*16;
-    transition: all 0.8s ease;
+    transition: $base-transition;
 }
 
 .cvat-signing-form-empty-socials {
@@ -136,7 +135,6 @@
 .cvat-signing-form-extended {
     margin-top: $grid-unit-size*6;
     margin-bottom: $grid-unit-size*14;
-    transition: all 0.8s ease;
 }
 
 .cvat-password-reset-form-wrapper {
@@ -158,7 +156,7 @@
     }
 
     margin-top: $grid-unit-size*6;
-    transition: all 0.8s ease;
+    transition: $base-transition;
 }
 
 .cvat-register-form-wrapper {
@@ -176,8 +174,13 @@
 .cvat-social-authentication-button {
     @extend .cvat-credentials-action-button;
 
+    .anticon {
+        margin-top: $grid-unit-size*0.5;
+    }
+
     margin-bottom: $grid-unit-size;
     padding: $grid-unit-size $grid-unit-size*4;
+    display: flex;
 }
 
 .cvat-social-authentication-google {
@@ -186,6 +189,6 @@
     &:hover,
     &:focus {
         background: $social-google-background;
-        color: white;
+        color: $action-button-color-3;
     }
 }

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import Icon from '@ant-design/icons';
 import Form, { RuleRender, RuleObject } from 'antd/lib/form';
 import Button from 'antd/lib/button';
@@ -17,6 +17,7 @@ import patterns from 'utils/validation-patterns';
 
 import { UserAgreement } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
+import CVATSigningInput from 'components/signing-common/cvat-signing-input';
 
 export interface UserConfirmation {
     name: string;
@@ -103,6 +104,9 @@ function RegisterFormComponent(props: Props): JSX.Element {
     const { fetching, onSubmit } = props;
     const [form] = Form.useForm();
     const [usernameEdited, setUsernameEdited] = useState(false);
+    const inputReset = useCallback((name: string):void => {
+        form.setFieldsValue({ [name]: '' });
+    }, [form]);
     const userAgreements = [{
         name: 'cvat_ai_terms_of_use', url: 'https://www.cvat.ai/terms-of-use', required: true, value: false, urlDisplayText: 'CVAT.ai Terms of Use', textPrefix: 'I read and accept',
     }, {
@@ -147,9 +151,10 @@ function RegisterFormComponent(props: Props): JSX.Element {
                                 },
                             ]}
                         >
-                            <Input
-                                prefix={<Text>First name</Text>}
+                            <CVATSigningInput
                                 placeholder='enter your first name'
+                                prefix='First name'
+                                onReset={() => inputReset('firstName')}
                             />
                         </Form.Item>
                     </Col>
@@ -165,9 +170,10 @@ function RegisterFormComponent(props: Props): JSX.Element {
                                 },
                             ]}
                         >
-                            <Input
-                                prefix={<Text>Last name</Text>}
+                            <CVATSigningInput
                                 placeholder='enter your last name'
+                                prefix='Last name'
+                                onReset={() => inputReset('lastName')}
                             />
                         </Form.Item>
                     </Col>
@@ -186,10 +192,11 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         },
                     ]}
                 >
-                    <Input
+                    <CVATSigningInput
                         autoComplete='email'
                         placeholder='enter your email'
-                        prefix={<Text>Email</Text>}
+                        prefix='Email'
+                        onReset={() => inputReset('email')}
                         onChange={(event) => {
                             const { value } = event.target;
                             if (!usernameEdited) {
@@ -212,9 +219,10 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         },
                     ]}
                 >
-                    <Input
+                    <CVATSigningInput
                         placeholder='enter your username'
-                        prefix={<Text>Username</Text>}
+                        prefix='Username'
+                        onReset={() => inputReset('username')}
                         onChange={() => setUsernameEdited(true)}
                     />
                 </Form.Item>

@@ -3,16 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Icon from '@ant-design/icons';
-import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
-import { BackArrowIcon, ClearIcon } from 'icons';
+import { BackArrowIcon } from 'icons';
 import { Col, Row } from 'antd/lib/grid';
 import { Link } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
+import CVATSigningInput from 'components/signing-common/cvat-signing-input';
 
 export interface ResetPasswordData {
     email: string;
@@ -24,8 +24,10 @@ interface Props {
 }
 
 function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element {
-    const [emailNonEmpty, setEmailNonEmpty] = useState(false);
     const [form] = Form.useForm();
+    const inputReset = useCallback((name: string):void => {
+        form.setFieldsValue({ [name]: '' });
+    }, [form]);
     return (
         <div className='cvat-password-reset-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
@@ -58,26 +60,11 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                         },
                     ]}
                 >
-                    <Input
+                    <CVATSigningInput
                         autoComplete='email'
                         placeholder='enter your email'
-                        prefix={
-                            <Text>Email</Text>
-                        }
-                        suffix={(
-                            emailNonEmpty ? (
-                                <Icon
-                                    component={ClearIcon}
-                                    onClick={() => {
-                                        form.setFieldsValue({ email: '' });
-                                    }}
-                                />
-                            ) : null
-                        )}
-                        onChange={(event) => {
-                            const { value } = event.target;
-                            setEmailNonEmpty(!!value);
-                        }}
+                        prefix='Email'
+                        onReset={() => inputReset('email')}
                     />
                 </Form.Item>
             </Form>

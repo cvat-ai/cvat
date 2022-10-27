@@ -9,7 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
 import { CombinedState } from 'reducers';
-import SigningLayout from 'components/signing-common/signing-layout';
+import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import ResetPasswordForm, { ResetPasswordData } from './reset-password-form';
 
 function ResetPasswordPagePageComponent(): JSX.Element {
@@ -18,9 +18,9 @@ function ResetPasswordPagePageComponent(): JSX.Element {
 
     return (
         <SigningLayout>
-            <Col span={10}>
-                <Row>
-                    <Col span={18}>
+            <Col {...formSizes.wrapper}>
+                <Row justify='center'>
+                    <Col {...formSizes.form}>
                         <ResetPasswordForm
                             fetching={fetching}
                             onSubmit={(resetPasswordData: ResetPasswordData): void => {

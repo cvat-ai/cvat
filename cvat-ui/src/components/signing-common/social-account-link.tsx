@@ -26,7 +26,7 @@ function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
                     href={href}
                     className={`cvat-social-authentication-button ${className}`}
                 >
-                    <Row align='middle'>
+                    <Row align='middle' style={{ width: '100%' }}>
                         <Col>
                             <Icon component={icon} />
                         </Col>

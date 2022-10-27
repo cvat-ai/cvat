@@ -3,14 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 
 import { UserAgreement } from 'reducers';
-import SigningLayout from 'components/signing-common/signing-layout';
+import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
 interface RegisterPageComponentProps {
@@ -31,9 +30,9 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
 
     return (
         <SigningLayout>
-            <Col span={10}>
-                <Row>
-                    <Col span={18}>
+            <Col {...formSizes.wrapper}>
+                <Row justify='center'>
+                    <Col {...formSizes.form}>
                         <RegisterForm
                             fetching={fetching}
                             userAgreements={userAgreements}

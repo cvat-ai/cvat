@@ -8,7 +8,7 @@ import { RouteComponentProps, useHistory } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 
-import SigningLayout from 'components/signing-common/signing-layout';
+import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
 import { SocialGithubLogo, SocialGoogleLogo } from 'icons';
 import LoginForm, { LoginData } from './login-form';
@@ -45,15 +45,14 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
 
     return (
         <SigningLayout>
-            <Col span={10}>
-                <Row>
-                    <Col span={18}>
+            <Col {...formSizes.wrapper}>
+                <Row justify='center'>
+                    <Col {...formSizes.form}>
                         <LoginForm
                             fetching={fetching}
                             renderResetPassword={renderResetPassword}
                             socialAuthentication={(googleAuthentication || githubAuthentication) ? (
                                 <>
-                                    (
                                     {githubAuthentication && (
                                         <SocialAccountLink
                                             icon={SocialGithubLogo}
@@ -71,7 +70,6 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                             Continue with Google
                                         </SocialAccountLink>
                                     )}
-                                    )
                                 </>
                             ) : null}
                             onSubmit={(loginData: LoginData): void => {

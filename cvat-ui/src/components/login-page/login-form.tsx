@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
@@ -34,6 +34,10 @@ function LoginFormComponent(props: Props): JSX.Element {
     } = props;
     const [form] = Form.useForm();
     const [credentialNonEmpty, setCredentialNonEmpty] = useState(false);
+
+    const inputReset = useCallback((name: string):void => {
+        form.setFieldsValue({ [name]: '' });
+    }, [form]);
     return (
         <div className='cvat-signing-form-wrapper'>
             {
@@ -98,7 +102,8 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 <Icon
                                     component={ClearIcon}
                                     onClick={() => {
-                                        form.setFieldsValue({ credential: '' });
+                                        setCredentialNonEmpty(false);
+                                        inputReset('credential');
                                     }}
                                 />
                             ) : null
