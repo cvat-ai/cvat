@@ -1236,81 +1236,81 @@ class ProjectDumpUpload(_DbTestBase):
                 if not dump_format.ENABLED or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
-                with self.subTest(format=dump_format_name):
-                    if dump_format_name in [
-                        'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
-                        'MOT 1.1', 'TFRecord 1.0'
-                    ]:
-                        self.skipTest("TO-DO: fix bug for this formats")
-                    project = copy.deepcopy(projects['main'])
-                    if dump_format_name in tasks:
-                        project['labels'] = tasks[dump_format_name]['labels']
-                    project = self._create_project(project)
-                    tasks['task in project #1']['project_id'] = project['id']
-                    task = self._create_task(tasks['task in project #1'], self._generate_task_images(3))
+                if dump_format_name in [
+                    'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
+                    'MOT 1.1', 'TFRecord 1.0'
+                ]:
+                    # TO-DO: fix bug for this formats
+                    continue
+                project = copy.deepcopy(projects['main'])
+                if dump_format_name in tasks:
+                    project['labels'] = tasks[dump_format_name]['labels']
+                project = self._create_project(project)
+                tasks['task in project #1']['project_id'] = project['id']
+                task = self._create_task(tasks['task in project #1'], self._generate_task_images(3))
 
-                    url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
+                url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
 
-                    if dump_format_name in [
-                        "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0",
-                        "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
-                        "Segmentation mask 1.1", "TFRecord 1.0", "VGGFace2 1.0",
-                        "WiderFace 1.0", "YOLO 1.1"
-                    ]:
-                        self._create_annotations(task, dump_format_name, "default")
-                    else:
-                        self._create_annotations(task, dump_format_name, "random")
+                if dump_format_name in [
+                    "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0",
+                    "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
+                    "Segmentation mask 1.1", "TFRecord 1.0", "VGGFace2 1.0",
+                    "WiderFace 1.0", "YOLO 1.1"
+                ]:
+                    self._create_annotations(task, dump_format_name, "default")
+                else:
+                    self._create_annotations(task, dump_format_name, "random")
 
-                    for user, edata in list(expected.items()):
-                        user_name = edata['name']
-                        file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
+                for user, edata in list(expected.items()):
+                    user_name = edata['name']
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
+                    data = {
+                        "format": dump_format_name,
+                    }
 
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["accept code"])
+                    response = self._get_request_with_data(url, data, user)
+                    self.assertEqual(response.status_code, edata["accept code"])
 
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["create code"])
+                    response = self._get_request_with_data(url, data, user)
+                    self.assertEqual(response.status_code, edata["create code"])
 
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["code"])
+                    data = {
+                        "format": dump_format_name,
+                        "action": "download",
+                    }
+                    response = self._get_request_with_data(url, data, user)
+                    self.assertEqual(response.status_code, edata["code"])
 
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                    if response.status_code == status.HTTP_200_OK:
+                        content = BytesIO(b"".join(response.streaming_content))
+                        with open(file_zip_name, "wb") as f:
+                            f.write(content.getvalue())
 
-                        self.assertEqual(response.status_code, edata['code'])
-                        self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+                    self.assertEqual(response.status_code, edata['code'])
+                    self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
             for upload_format in upload_formats:
                 if not upload_format.ENABLED or upload_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
                     continue
                 upload_format_name = upload_format.DISPLAY_NAME
-                with self.subTest(format=upload_format_name):
-                    if upload_format_name in [
-                        'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
-                        'MOT 1.1', 'TFRecord 1.0'
-                    ]:
-                        self.skipTest("TO-DO: fix bug for this formats")
-                    for user, edata in list(expected.items()):
-                        project = copy.deepcopy(projects['main'])
-                        if upload_format_name in tasks:
-                            project['labels'] = tasks[upload_format_name]['labels']
-                        project = self._create_project(project)
-                        file_zip_name = osp.join(test_dir, f"{test_name}_{edata['name']}_{upload_format_name}.zip")
-                        url = self._generate_url_upload_project_dataset(project['id'], upload_format_name)
+                if upload_format_name in [
+                    'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
+                    'MOT 1.1', 'TFRecord 1.0'
+                ]:
+                    # TO-DO: fix bug for this formats
+                    continue
+                for user, edata in list(expected.items()):
+                    project = copy.deepcopy(projects['main'])
+                    if upload_format_name in tasks:
+                        project['labels'] = tasks[upload_format_name]['labels']
+                    project = self._create_project(project)
+                    file_zip_name = osp.join(test_dir, f"{test_name}_{edata['name']}_{upload_format_name}.zip")
+                    url = self._generate_url_upload_project_dataset(project['id'], upload_format_name)
 
-                        if osp.exists(file_zip_name):
-                            with open(file_zip_name, 'rb') as binary_file:
-                                response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
-                                self.assertEqual(response.status_code, edata['accept code'])
+                    if osp.exists(file_zip_name):
+                        with open(file_zip_name, 'rb') as binary_file:
+                            response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                            self.assertEqual(response.status_code, edata['accept code'])
 
     def test_api_v2_export_annotations(self):
         test_name = self._testMethodName
