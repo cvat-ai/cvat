@@ -56,6 +56,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Deleted frames become restored if a user deletes frames from another job of the same task
 (<https://github.com/opencv/cvat/pull/5138>)
 - Wrong issue position when create a quick issue on a rotated shape (<https://github.com/opencv/cvat/pull/5162>)
+- Extra rerenders of different pages with each click (<https://github.com/opencv/cvat/pull/5178>)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
