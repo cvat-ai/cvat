@@ -23,7 +23,7 @@ jobs:
           PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
           for FILE in $PR_FILES; do
               if [[ $FILE == helm-chart/* ]] ; then
-                echo "::set-output name=helm_dir_changed::true"
+                echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
                 break
               fi
           done

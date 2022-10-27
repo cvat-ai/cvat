@@ -166,8 +166,6 @@ cvat:
           targetPort: 8181
           protocol: TCP
           name: http
-    defaultStorage:
-        enabled: true
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
@@ -282,7 +280,7 @@ ingress:
           service:
             name: backend-service
             port: 8080
-        - path: /static/admin
+        - path: /static
           pathType: "Prefix"
           service:
             name: backend-service
