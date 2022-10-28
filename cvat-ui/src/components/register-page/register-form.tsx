@@ -101,19 +101,12 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 });
 
 function RegisterFormComponent(props: Props): JSX.Element {
-    const { fetching, onSubmit } = props;
+    const { fetching, onSubmit, userAgreements } = props;
     const [form] = Form.useForm();
     const [usernameEdited, setUsernameEdited] = useState(false);
     const inputReset = useCallback((name: string):void => {
         form.setFieldsValue({ [name]: '' });
     }, [form]);
-    const userAgreements = [{
-        name: 'cvat_ai_terms_of_use', url: 'https://www.cvat.ai/terms-of-use', required: true, value: false, urlDisplayText: 'CVAT.ai Terms of Use', textPrefix: 'I read and accept',
-    }, {
-        name: 'privacy_policy', url: 'https://www.cvat.ai/privacy', required: true, value: false, urlDisplayText: 'CVAT.ai Privacy Policy', textPrefix: 'I read and accept',
-    }, {
-        name: 'newsletter', url: '', required: false, value: false, urlDisplayText: '', textPrefix: 'I would like to receive CVAT email newsletter',
-    }];
     return (
         <div className='cvat-register-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
