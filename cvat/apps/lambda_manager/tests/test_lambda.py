@@ -166,7 +166,7 @@ class LambdaTestCase(APITestCase):
         return task
 
 
-    def _generate_task_images(self, count): # pylint: disable=no-self-use
+    def _generate_task_images(self, count):
         images = {
             "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
             for i in range(count)

@@ -138,13 +138,13 @@ class _DbTestBase(APITestCase):
         return response
 
     @staticmethod
-    def _generate_task_images(count, name_offsets = 0): # pylint: disable=no-self-use
+    def _generate_task_images(count, name_offsets = 0):
         images = {"client_files[%d]" % i: generate_image_file("image_%d.jpg" % (i + name_offsets)) for i in range(count)}
         images["image_quality"] = 75
         return images
 
     @staticmethod
-    def _generate_task_videos(count):  # pylint: disable=no-self-use
+    def _generate_task_videos(count):
         videos = {"client_files[%d]" % i: generate_video_file("video_%d.mp4" % i) for i in range(count)}
         videos["image_quality"] = 75
         return videos

@@ -61,7 +61,6 @@ class AttributeSerializer(serializers.ModelSerializer):
         model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         attribute = data.copy()
         attribute['values'] = '\n'.join(data.get('values', []))
@@ -264,11 +263,9 @@ class ClientFileSerializer(serializers.ModelSerializer):
         model = models.ClientFile
         fields = ('file', )
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         return {'file': data}
 
-    # pylint: disable=no-self-use
     def to_representation(self, instance):
         if instance:
             upload_dir = instance.data.get_upload_dirname()
@@ -281,11 +278,9 @@ class ServerFileSerializer(serializers.ModelSerializer):
         model = models.ServerFile
         fields = ('file', )
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         return {'file': data}
 
-    # pylint: disable=no-self-use
     def to_representation(self, instance):
         return instance.file if instance else instance
 
@@ -294,11 +289,9 @@ class RemoteFileSerializer(serializers.ModelSerializer):
         model = models.RemoteFile
         fields = ('file', )
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         return {'file': data}
 
-    # pylint: disable=no-self-use
     def to_representation(self, instance):
         return instance.file if instance else instance
 
@@ -373,20 +366,17 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method')
 
-    # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
         match = re.search(r"step\s*=\s*([1-9]\d*)", value)
         if not match:
             raise serializers.ValidationError("Invalid frame filter expression")
         return value
 
-    # pylint: disable=no-self-use
     def validate_chunk_size(self, value):
         if not value > 0:
             raise serializers.ValidationError('Chunk size must be a positive integer')
         return value
 
-    # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
             and attrs['start_frame'] > attrs['stop_frame']:
@@ -411,7 +401,6 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.save()
         return instance
 
-    # pylint: disable=no-self-use
     def _pop_data(self, validated_data):
         client_files = validated_data.pop('client_files')
         server_files = validated_data.pop('server_files')
@@ -424,7 +413,6 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return files
 
 
-    # pylint: disable=no-self-use
     def _create_files(self, instance, files):
         if 'client_files' in files:
             client_objects = []
@@ -504,7 +492,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         serializer = TaskReadSerializer(instance, context=self.context)
         return serializer.data
 
-    # pylint: disable=no-self-use
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if not (validated_data.get("label_set") or project_id):
@@ -569,7 +556,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task.save()
         return db_task
 
-    # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -756,7 +742,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         serializer = ProjectReadSerializer(instance, context=self.context)
         return serializer.data
 
-    # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
 
@@ -803,7 +788,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         return db_project
 
-    # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -1069,11 +1053,9 @@ class ManifestSerializer(serializers.ModelSerializer):
         model = models.Manifest
         fields = ('filename', )
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         return {'filename': data }
 
-    # pylint: disable=no-self-use
     def to_representation(self, instance):
         return instance.filename if instance else instance
 
@@ -1169,7 +1151,6 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
         extra_kwargs = { 'organization': { 'allow_null': True } }
 
-    # pylint: disable=no-self-use
     def validate_specific_attributes(self, value):
         if value:
             attributes = value.split('&')
@@ -1275,7 +1256,6 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
-    # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         credentials = Credentials()
         credentials.convert_from_db({

@@ -223,7 +223,7 @@ class TaskExportTest(_DbTestBase):
         }
         return self._generate_custom_annotations(annotations, task)
 
-    def _generate_task_images(self, count): # pylint: disable=no-self-use
+    def _generate_task_images(self, count):
         images = {
             "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i)
             for i in range(count)
@@ -514,7 +514,7 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual(i + 1, 4)
 
 class FrameMatchingTest(_DbTestBase):
-    def _generate_task_images(self, paths): # pylint: disable=no-self-use
+    def _generate_task_images(self, paths):
         f = BytesIO()
         with zipfile.ZipFile(f, 'w') as archive:
             for path in paths:

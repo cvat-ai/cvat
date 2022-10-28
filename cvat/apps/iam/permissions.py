@@ -1126,7 +1126,6 @@ class IssuePermission(OpenPolicyAgentPermission):
 
 
 class PolicyEnforcer(BasePermission):
-    # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
         permissions = []
         # DRF can send OPTIONS request. Internally it will try to get
@@ -1157,7 +1156,6 @@ class PolicyEnforcer(BasePermission):
 class IsMemberInOrganization(BasePermission):
     message = 'You should be an active member in the organization.'
 
-    # pylint: disable=no-self-use
     def has_permission(self, request, view):
         user = request.user
         organization = request.iam_context['organization']
