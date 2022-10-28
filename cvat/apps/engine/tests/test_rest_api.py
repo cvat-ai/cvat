@@ -3,8 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack
 import io
 from itertools import product
 import os
@@ -29,27 +28,20 @@ from django.http import HttpResponse
 from PIL import Image
 from pycocotools import coco as coco_loader
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
+from rest_framework.test import APIClient
 
 from datumaro.util.test_utils import current_function_name, TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
-from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+
+from cvat.apps.engine.media_extractors import ValidateDimension, sort
+from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, disable_logging, generate_video_file
+from cvat.apps.engine.tests.utils import generate_image_file as _generate_image_file
 
 #supress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
-
-@contextmanager
-def disable_logging():
-    old_level = logging.getLogger().level
-
-    try:
-        logging.disable(logging.CRITICAL)
-        yield
-    finally:
-        logging.disable(old_level)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -247,26 +239,7 @@ def create_dummy_db_projects(obj):
 
     return projects
 
-
-class ForceLogin:
-    def __init__(self, user, client):
-        self.user = user
-        self.client = client
-
-    def __enter__(self):
-        if self.user:
-            self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
-
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        if self.user:
-            self.client.logout()
-
-class JobGetAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class JobGetAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -325,9 +298,9 @@ class JobGetAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class JobPartialUpdateAPITestCase(APITestCase):
+class JobPartialUpdateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = create_dummy_db_tasks(self)[0]
         self.job = Job.objects.filter(segment__task_id=self.task.id).first()
         self.job.assignee = self.annotator
@@ -404,9 +377,9 @@ class JobPartialUpdateAPITestCase(APITestCase):
         response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
 
-class JobUpdateAPITestCase(APITestCase):
+class JobUpdateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = create_dummy_db_tasks(self)[0]
         self.job = Job.objects.filter(segment__task_id=self.task.id).first()
         self.job.assignee = self.annotator
@@ -432,9 +405,9 @@ class JobUpdateAPITestCase(APITestCase):
         response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
         self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
 
-class JobDataMetaPartialUpdateAPITestCase(APITestCase):
+class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = create_dummy_db_tasks(self)[0]
         self.job = Job.objects.filter(segment__task_id=self.task.id).first()
         self.job.assignee = self.annotator
@@ -475,11 +448,8 @@ class JobDataMetaPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v1_jobs_data_meta_id(self.admin, data)
 
-class ServerAboutAPITestCase(APITestCase):
+class ServerAboutAPITestCase(ApiTestBase):
     ACCEPT_HEADER_TEMPLATE = 'application/vnd.cvat+json; version={}'
-
-    def setUp(self):
-        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -523,10 +493,7 @@ class ServerAboutAPITestCase(APITestCase):
             response = self._run_api_server_about(self.admin, version)
             self._check_response_version(response, version)
 
-class ServerExceptionAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerExceptionAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -567,10 +534,7 @@ class ServerExceptionAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ServerLogsAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerLogsAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -615,9 +579,9 @@ class ServerLogsAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class UserAPITestCase(APITestCase):
+class UserAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         create_db_users(self)
 
     def _check_response(self, user, response, is_full=True):
@@ -825,10 +789,7 @@ class UserDeleteAPITestCase(UserAPITestCase):
         response = self._run_api_v2_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class ProjectListAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectListAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -865,10 +826,7 @@ class ProjectListAPITestCase(APITestCase):
         response = self._run_api_v2_projects(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class ProjectGetAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectGetAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -914,10 +872,7 @@ class ProjectGetAPITestCase(APITestCase):
     def test_api_v2_projects_id_no_auth(self):
         self._check_api_v2_projects_id(None)
 
-class ProjectDeleteAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectDeleteAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -952,10 +907,7 @@ class ProjectDeleteAPITestCase(APITestCase):
     def test_api_v2_projects_id_no_auth(self):
         self._check_api_v2_projects_id(None)
 
-class ProjectCreateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectCreateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1045,10 +997,7 @@ class ProjectCreateAPITestCase(APITestCase):
         }
         self._check_api_v2_projects(None, data)
 
-class ProjectPartialUpdateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1125,10 +1074,7 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v2_projects_id(None, data)
 
-class UpdateLabelsAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class UpdateLabelsAPITestCase(ApiTestBase):
     def assertLabelsEqual(self, label1, label2):
         self.assertEqual(label1.get("name", label2.get("name")), label2.get("name"))
         self.assertEqual(label1.get("color", label2.get("color")), label2.get("color"))
@@ -1223,10 +1169,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         }
         self._check_api_v2_project(data)
 
-class ProjectListOfTasksAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectListOfTasksAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1264,7 +1207,7 @@ class ProjectListOfTasksAPITestCase(APITestCase):
         response = self._run_api_v2_projects_id_tasks(None, project.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class ProjectBackupAPITestCase(APITestCase):
+class ProjectBackupAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1645,10 +1588,7 @@ class ProjectBackupAPITestCase(APITestCase):
     def test_api_v2_projects_id_export_no_auth(self):
         self._run_api_v2_projects_id_export_import(None)
 
-class ProjectExportAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectExportAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1719,9 +1659,9 @@ class ProjectExportAPITestCase(APITestCase):
         self._check_xml(pid, user, 3)
 
 
-class ProjectImportExportAPITestCase(APITestCase):
+class ProjectImportExportAPITestCase(ApiTestBase):
     def setUp(self) -> None:
-        self.client = APIClient()
+        super().setUp()
         self.tasks = []
         self.projects = []
 
@@ -1867,17 +1807,15 @@ class ProjectImportExportAPITestCase(APITestCase):
         response = self._run_api_v2_projects_id_dataset_import_status(pid_import, self.owner)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         for task in self.tasks:
             shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
             shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
         for project in self.projects:
             shutil.rmtree(os.path.join(settings.PROJECTS_ROOT, str(project["id"])))
+        return super().tearDown()
 
-class TaskListAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskListAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1914,10 +1852,7 @@ class TaskListAPITestCase(APITestCase):
         response = self._run_api_v2_tasks(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class TaskGetAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskGetAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1972,10 +1907,7 @@ class TaskGetAPITestCase(APITestCase):
     def test_api_v2_tasks_id_no_auth(self):
         self._check_api_v2_tasks_id(None)
 
-class TaskDeleteAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskDeleteAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2019,10 +1951,7 @@ class TaskDeleteAPITestCase(APITestCase):
             task_dir = task.get_dirname()
             self.assertFalse(os.path.exists(task_dir))
 
-class TaskUpdateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2059,10 +1988,7 @@ class TaskUpdateAPITestCase(APITestCase):
         data = { "name": "new name for the task" }
         self._check_api_v2_tasks_id(None, data)
 
-class TaskPartialUpdateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2201,11 +2127,7 @@ class TaskPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v2_tasks_id(None, data)
 
-class TaskDataMetaPartialUpdateAPITestCase(APITestCase):
-
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskDataMetaPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2311,11 +2233,9 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         }
         self._check_api_v2_task(data)
 
-class TaskMoveAPITestCase(APITestCase):
-
+class TaskMoveAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
-
+        super().setUp()
         self._run_api_v2_job_id_annotation(self.task.segment_set.first().job_set.first().id, self.annotation_data)
 
     @classmethod
@@ -2495,9 +2415,9 @@ class TaskMoveAPITestCase(APITestCase):
         }
         self._check_api_v2_tasks(self.task.id, data)
 
-class TaskCreateAPITestCase(APITestCase):
+class TaskCreateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         project = {
             "name": "Project for task creation",
             "owner": self.user,
@@ -2604,10 +2524,9 @@ class TaskCreateAPITestCase(APITestCase):
         }
         self._check_api_v2_tasks(None, data)
 
-class TaskImportExportAPITestCase(APITestCase):
-
+class TaskImportExportAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.tasks = []
 
     @classmethod
@@ -2809,6 +2728,8 @@ class TaskImportExportAPITestCase(APITestCase):
             shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
             shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
 
+        return super().tearDown()
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -3003,15 +2924,10 @@ class TaskImportExportAPITestCase(APITestCase):
         self._run_api_v2_tasks_id_export_import(None)
 
 def generate_image_file(filename):
-    f = BytesIO()
     gen = random.SystemRandom()
     width = gen.randint(100, 800)
     height = gen.randint(100, 800)
-    image = Image.new('RGB', size=(width, height))
-    image.save(f, 'jpeg')
-    f.name = filename
-    f.seek(0)
-
+    f = _generate_image_file(filename, size=(width, height))
     return (width, height), f
 
 def generate_image_files(*filenames):
@@ -3023,41 +2939,6 @@ def generate_image_files(*filenames):
         images.append(image)
 
     return image_sizes, images
-
-def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name='mpeg4'):
-    f = BytesIO()
-    total_frames = duration * fps
-    file_ext = os.path.splitext(filename)[1][1:]
-    container = av.open(f, mode='w', format=file_ext)
-
-    stream = container.add_stream(codec_name=codec_name, rate=fps)
-    stream.width = width
-    stream.height = height
-    stream.pix_fmt = 'yuv420p'
-
-    for frame_i in range(total_frames):
-        img = np.empty((stream.width, stream.height, 3))
-        img[:, :, 0] = 0.5 + 0.5 * np.sin(2 * np.pi * (0 / 3 + frame_i / total_frames))
-        img[:, :, 1] = 0.5 + 0.5 * np.sin(2 * np.pi * (1 / 3 + frame_i / total_frames))
-        img[:, :, 2] = 0.5 + 0.5 * np.sin(2 * np.pi * (2 / 3 + frame_i / total_frames))
-
-        img = np.round(255 * img).astype(np.uint8)
-        img = np.clip(img, 0, 255)
-
-        frame = av.VideoFrame.from_ndarray(img, format='rgb24')
-        for packet in stream.encode(frame):
-            container.mux(packet)
-
-    # Flush stream
-    for packet in stream.encode():
-        container.mux(packet)
-
-    # Close the file
-    container.close()
-    f.name = filename
-    f.seek(0)
-
-    return [(width, height)] * total_frames, f
 
 def generate_zip_archive_file(filename, count):
     image_sizes = []
@@ -3114,16 +2995,13 @@ def generate_manifest_file(data_type, manifest_path, sources, *,
 def get_manifest_images_list(manifest_path):
     return list(ImageManifestManager(manifest_path, create_index=False).data)
 
-class TaskDataAPITestCase(APITestCase):
+class TaskDataAPITestCase(ApiTestBase):
     class ChunkType(str, Enum):
         IMAGESET = 'imageset'
         VIDEO = 'video'
 
         def __str__(self):
             return self.value
-
-    def setUp(self):
-        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -4553,10 +4431,7 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001,
         else:
             self.assertEqual(obj1, obj2, msg=current_key)
 
-class JobAnnotationAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -6415,10 +6290,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def test_api_v2_tasks_id_annotations_upload_coco_user(self):
         self._run_coco_annotation_upload_test(self.user)
 
-class ServerShareAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerShareAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -6533,10 +6405,7 @@ class ServerShareAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ServerShareDifferentTypesAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerShareDifferentTypesAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -6617,9 +6486,9 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
         self.assertEqual(len(response.data["frames"]), images_count)
 
 
-class TaskAnnotation2DContext(APITestCase):
+class TaskAnnotation2DContext(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = {
             "name": "my archive task without copying #11",
             "overlap": 0,
