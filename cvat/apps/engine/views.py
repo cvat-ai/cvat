@@ -329,7 +329,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(
             serializer,
             owner=self.request.user,
@@ -836,7 +836,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(
             serializer,
             owner=self.request.user,
@@ -1755,7 +1755,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return IssueWriteSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
@@ -1830,7 +1830,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return CommentWriteSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
 @extend_schema(tags=['users'])
