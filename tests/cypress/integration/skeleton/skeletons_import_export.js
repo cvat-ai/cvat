@@ -14,6 +14,7 @@ context('Importing and exporting skeletons', () => {
 
     beforeEach(() => {
         cy.loginHeadless();
+        cy.visit('/tasks/create');
     });
 
     after(() => {
@@ -22,35 +23,29 @@ context('Importing and exporting skeletons', () => {
 
     describe('Import and export svg skeleton file', () => {
         // TODO Move to common utils
-        const getSvgElementCount = (filePath) => cy.readFile(filePath)
+        const getSvgAsXml = (filePath) => cy.readFile(filePath)
             .then((content) => {
                 const contentWithRoot = `<root>${content}</root>`;
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(contentWithRoot, 'image/svg+xml');
-                /* eslint-disable-next-line */
-                expect(xml.querySelector('parsererror'), 'SVG parsing error').to.be.null;
-                const circles = xml.getElementsByTagName('circle');
-                const lines = xml.getElementsByTagName('line');
-                console.log({
-                    circle: circles.length,
-                    line: lines.length,
-                });
-                return {
-                    circle: circles.length,
-                    line: lines.length,
-                };
+                return xml;
             });
 
         // TODO Move to common utils
         const compareCanvasWithSvg = (svgFilePath) => {
-            getSvgElementCount(svgFilePath).then((svgElements) => {
-                cy.get('.cvat-skeleton-configurator-svg').within(() => {
-                    cy.get('circle').should('have.length', svgElements.circle);
-                    if (svgElements.line) {
-                        cy.get('line').should('have.length', svgElements.line);
-                    } else {
-                        cy.get('line').should('not.exist');
-                    }
+            getSvgAsXml(svgFilePath).then((xml) => {
+                cy.get('.cvat-skeleton-configurator-svg').then((canvas) => {
+                    const xmlNodes = xml.childNodes[0].childNodes;
+                    const canvasNodes = canvas[0].childNodes;
+                    xmlNodes.forEach((xmlNode, i) => {
+                        if (xmlNode.nodeName === 'line' || xmlNode.nodeName === 'circle') {
+                            const canvasNode = canvasNodes[i];
+                            expect(xmlNode.attributes.length).to.be.eq(canvasNode.attributes.length);
+                            for (const attr of xmlNode.attributes) {
+                                expect(canvasNode.attributes[attr.name].value).to.be.eql(attr.value);
+                            }
+                        }
+                    });
                 });
             });
         };
@@ -74,7 +69,6 @@ context('Importing and exporting skeletons', () => {
         };
 
         it('Upload svg file', () => {
-            cy.visit('/tasks/create');
             cy.get('.cvat-constructor-viewer-new-skeleton-item').click();
             cy.get('.cvat-skeleton-configurator-svg-buttons > span').within(() => {
                 cy.get('button').should('not.have.attr', 'disabled');
@@ -84,7 +78,6 @@ context('Importing and exporting skeletons', () => {
         });
 
         it('Download svg file', () => {
-            cy.visit('/tasks/create');
             cy.get('.cvat-constructor-viewer-new-skeleton-item').click();
 
             const points = [
@@ -100,7 +93,6 @@ context('Importing and exporting skeletons', () => {
                     expect(after.length).to.be.eq(before.length + 1);
                     return (after.filter((f) => !before.includes(f)))[0];
                 }).then((fileName) => {
-                    cy.log(fileName);
                     compareCanvasWithSvg(`${downloadsFolder}/${fileName}`);
                 });
             });
