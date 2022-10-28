@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,9 +23,12 @@ context('Hotkeys to change labels feature.', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const secondLabel = `Case ${caseId} second`;
-    const additionalAttrsSecondLabel = [
-        { additionalAttrName: attrName, additionalValue: '0;3;1', typeAttribute: 'Number', mutable: false },
-    ];
+    const additionalAttrsSecondLabel = [{
+        additionalAttrName: attrName,
+        additionalValue: '0;3;1',
+        typeAttribute: 'Number',
+        mutable: false,
+    }];
     let firstLabelCurrentVal = '';
     let secondLabelCurrentVal = '';
 
@@ -33,9 +37,11 @@ context('Hotkeys to change labels feature.', () => {
         cy.get('.cvat-settings-modal').within(() => {
             cy.contains('Workspace').click();
             cy.get('.cvat-workspace-settings-show-text-always').within(() => {
-                check
-                    ? cy.get('[type="checkbox"]').check().should('be.checked')
-                    : cy.get('[type="checkbox"]').uncheck().should('not.be.checked');
+                if (check) {
+                    cy.get('[type="checkbox"]').check().should('be.checked');
+                } else {
+                    cy.get('[type="checkbox"]').uncheck().should('not.be.checked');
+                }
             });
         });
         cy.closeSettings();
@@ -102,7 +108,8 @@ context('Hotkeys to change labels feature.', () => {
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .should('have.text', secondLabelCurrentVal);
             cy.contains('tspan', `${secondLabelCurrentVal} 1 (manual)`).should('be.visible');
-            // The value of the attribute of the 2nd label corresponds to the value of the attribute of the same name of the 1st label
+            // The value of the attribute of the 2nd label corresponds
+            //  to the value of the attribute of the same name of the 1st label
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-object-item-number-attribute')
                 .find('input')
@@ -166,6 +173,7 @@ context('Hotkeys to change labels feature.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .should('have.text', firstLabelCurrentVal);
+            cy.checkCanvasSidebarColorEqualness(1);
         });
     });
 });

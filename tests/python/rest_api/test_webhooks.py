@@ -12,7 +12,7 @@ from deepdiff import DeepDiff
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPostWebhooks:
     proj_webhook = {
         "description": "webhook description",
@@ -370,7 +370,7 @@ class TestPostWebhooks:
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetWebhooks:
     def test_admin_can_get_webhook(self, webhooks, users, projects):
         proj_webhooks = [w for w in webhooks if w["type"] == "project"]
@@ -528,7 +528,7 @@ class TestGetWebhooks:
         assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetListWebhooks:
     def test_can_get_webhooks_list(self, webhooks):
         response = get_method("admin2", "webhooks")
@@ -732,7 +732,7 @@ class TestGetListWebhooks:
         assert DeepDiff(expected_response, response.json()["results"], ignore_order=True) == {}
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchWebhooks:
     WID = 2
 
@@ -977,7 +977,7 @@ class TestPatchWebhooks:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteWebhooks:
     @pytest.mark.parametrize(
         "privilege, allow", [("user", False), ("business", False), ("admin", True)]

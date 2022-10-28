@@ -11,7 +11,7 @@ from deepdiff import DeepDiff
 from shared.utils.config import get_method, patch_method, post_method
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStorage:
     def _test_can_see(self, user, storage_id, data, **kwargs):
         response = get_method(user, f"cloudstorages/{storage_id}", **kwargs)
@@ -92,7 +92,7 @@ class TestGetCloudStorage:
             self._test_cannot_see(username, storage_id, org_id=org_id)
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPostCloudStorage:
     _SPEC = {
         "provider_type": "AWS_S3_BUCKET",
@@ -167,7 +167,7 @@ class TestPostCloudStorage:
             self._test_cannot_create(username, self._SPEC, org_id=org_id)
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchCloudStorage:
     _SPEC = {
         "display_name": "New display name",

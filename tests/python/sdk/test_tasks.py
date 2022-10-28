@@ -14,7 +14,6 @@ from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
-from shared.utils.config import USER_PASS
 from shared.utils.helpers import generate_image_files
 
 from .util import make_pbar
@@ -24,19 +23,20 @@ class TestTaskUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
+        fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
-        fxt_client: Client,
         fxt_stdout: io.StringIO,
-        admin_user: str,
     ):
         self.tmp_path = tmp_path
-        _, self.logger_stream = fxt_logger
-        self.client = fxt_client
+        logger, self.logger_stream = fxt_logger
         self.stdout = fxt_stdout
-        self.user = admin_user
-        self.client.login((self.user, USER_PASS))
+        self.client, self.user = fxt_login
+        self.client.logger = logger
+
+        api_client = self.client.api_client
+        for k in api_client.configuration.logger:
+            api_client.configuration.logger[k] = logger
 
         yield
 
@@ -133,14 +133,14 @@ class TestTaskUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.SHARE,
-            resources=["image_case_107_2.png", "image_case_107_1.png"],
+            resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
             # see https://github.com/opencv/cvat/issues/4962
             data_params={"sorting_method": "lexicographical"},
         )
 
         assert task.size == 2
-        assert task.get_frames_info()[0].name == "image_case_107_1.png"
+        assert task.get_frames_info()[0].name == "images/image_1.jpg"
         assert self.stdout.getvalue() == ""
 
     def test_cant_create_task_with_no_data(self):

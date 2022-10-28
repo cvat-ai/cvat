@@ -8,19 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.3.0] - Unreleased
 ### Added
 - SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
-- An env variable to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
+- An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
 - REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
+- Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
+- Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
+- Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
+(<https://github.com/opencv/cvat/pull/5145>)
+- Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
 
 ### Changed
-- `api/docs`, `api/swagger`, `api/schema` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>)
-- Datumaro version (<https://github.com/opencv/cvat/pull/4984>)
+- `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
+- Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
+- Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
 
 ### Deprecated
 - TDB
 
 ### Removed
-- TDB
+- The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
 
 ### Fixed
 - Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
@@ -31,14 +37,30 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   <https://github.com/opencv/cvat/pull/5004>)
 - Shape color is not changed on canvas after changing a label (<https://github.com/opencv/cvat/pull/5045>)
 - Unstable e2e restore tests (<https://github.com/opencv/cvat/pull/5010>)
-- IOG and f-BRS serverless function (<https://github.com/opencv/cvat/pulls>)
+- IOG and f-BRS serverless function (<https://github.com/opencv/cvat/pull/5039>)
 - Invisible label item in label constructor when label color background is white,
  or close to it (<https://github.com/opencv/cvat/pull/5041>)
 - Fixed cvat-core ESlint problems (<https://github.com/opencv/cvat/pull/5027>)
 - Fixed task creation with non-local files via the SDK/CLI
   (<https://github.com/opencv/cvat/issues/4962>)
+- HRNET serverless function (<https://github.com/opencv/cvat/pull/4944>)
+- Invalid export of segmentation masks when the `background` label gets nonzero id (<https://github.com/opencv/cvat/pull/5056>)
 - A trailing slash in hostname does't allow SDK to send some requests
   (<https://github.com/opencv/cvat/pull/5057>)
+- Double modal export/backup a task/project (<https://github.com/opencv/cvat/pull/5075>)
+- Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
+- Dataset export for job (<https://github.com/opencv/cvat/pull/5052>)
+- Angle is not propagated when use ``propagate`` feature (<https://github.com/opencv/cvat/pull/5139>)
+- Could not fetch task in a corner case (<https://github.com/opencv/cvat/pull/5163>)
+- Restoring CVAT in case of React-renderning fail (<https://github.com/opencv/cvat/pull/5134>)
+- Deleted frames become restored if a user deletes frames from another job of the same task
+(<https://github.com/opencv/cvat/pull/5138>)
+- Wrong issue position when create a quick issue on a rotated shape (<https://github.com/opencv/cvat/pull/5162>)
+- Extra rerenders of different pages with each click (<https://github.com/opencv/cvat/pull/5178>)
+- Skeleton points exported out of order in the COCO Keypoints format
+  (<https://github.com/opencv/cvat/issues/5048>)
+- Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
+- Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 
 ### Security
 - TDB
@@ -120,6 +142,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
 - Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
 - Fixed build of retinanet function image (<https://github.com/cvat-ai/cvat/pull/54>)
+- Bug: Import dataset of Imagenet format fail (<https://github.com/opencv/cvat/issues/4850>)
 
 ## \[2.0.0] - 2022-03-04
 ### Added

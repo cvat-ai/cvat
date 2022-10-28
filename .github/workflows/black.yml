@@ -4,7 +4,7 @@ jobs:
   Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: files
         uses: jitterbit/get-changed-files@v1
         continue-on-error: true
@@ -66,7 +66,7 @@ jobs:
             echo "The dirs will be checked: $UPDATED_DIRS"
             EXIT_CODE=0
             for DIR in $UPDATED_DIRS; do
-              black --check $DIR >> ./black_report/black_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
+              black --check --diff $DIR >> ./black_report/black_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
             done
             deactivate
             exit $EXIT_CODE
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload artifacts
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: black_report
           path: black_report

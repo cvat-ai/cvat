@@ -31,7 +31,7 @@ export enum TasksActionTypes {
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
-function getTasks(query: TasksQuery, updateQuery: boolean): AnyAction {
+function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
         payload: {
@@ -65,7 +65,10 @@ function getTasksFailed(error: any): AnyAction {
     return action;
 }
 
-export function getTasksAsync(query: TasksQuery, updateQuery = true): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getTasksAsync(
+    query: Partial<TasksQuery>,
+    updateQuery = true,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getTasks(query, updateQuery));
 

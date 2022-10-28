@@ -34,8 +34,8 @@ jobs:
           echo Last CI-nightly workflow run time: $last_night_date
           echo Last commit time in develop branch: $last_commit_date
 
-          echo ::set-output name=last_commit_time::${last_commit_time}
-          echo ::set-output name=last_night_time::${last_night_time}
+          echo "last_commit_time=${last_commit_time}" >> $GITHUB_OUTPUT
+          echo "last_night_time=${last_night_time}" >> $GITHUB_OUTPUT
 
   search_cache:
     needs: check_updates
@@ -66,14 +66,14 @@ jobs:
           echo Default branch is ${DEFAULT_BRANCH}
           echo Workflow will try to get cache from commit: ${SHA}
 
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
+          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
   build:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -141,9 +141,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
@@ -258,7 +258,7 @@ jobs:
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: coverage_results
           path: |
@@ -276,9 +276,9 @@ jobs:
                 'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
                 'canvas3d_functionality_2', 'issues_prs', 'issues_prs2']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 
@@ -345,7 +345,7 @@ jobs:
              echo Response from server is incorrect, output:
              cat /tmp/server_response
           fi
-          echo ::set-output name=status_code::${status_code}
+          echo "status_code=${status_code}" >> $GITHUB_OUTPUT
 
       - name: Fail on bad response from server
         if: steps.wait-server.outputs.status_code != '200'
@@ -389,20 +389,20 @@ jobs:
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: cypress_screenshots
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: cvat_container_logs
           path: ${{ github.workspace }}/tests/cvat.log
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: coverage_results
           path: ${{ github.workspace }}/tests/.nyc_output
@@ -411,7 +411,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2

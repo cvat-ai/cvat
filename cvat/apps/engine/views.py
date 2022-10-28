@@ -1623,7 +1623,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     lambda frame: frame >= start_frame and frame <= stop_frame,
                     serializer.validated_data['deleted_frames']
                 )) + list(filter(
-                    lambda frame: frame < start_frame and frame > stop_frame,
+                    lambda frame: frame < start_frame or frame > stop_frame,
                     db_data.deleted_frames,
                 ))
                 db_data = serializer.save()

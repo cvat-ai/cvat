@@ -4,8 +4,12 @@ from pathlib import Path
 import re
 
 
+SUCCESS_CHAR = '\u2714'
+FAIL_CHAR = '\u2716'
+
 CVAT_VERSION_PATTERN = r'VERSION\s*=\s*\((\d+),\s*(\d*),\s*(\d+),\s*[\',\"](\w+)[\',\"],\s*(\d+)\)'
 COMPOSE_VERSION_PATTERN = r'(\$\{CVAT_VERSION:-)([\w.]+)(\})'
+HELM_VERSION_PATTERN = r'(^    image: cvat/(?:ui|server)\n    tag: )([\w.]+)'
 
 @dataclass()
 class Version:
@@ -90,10 +94,10 @@ def update_compose_config(new_version: Version) -> None:
         with open(compose_file, 'w') as fp:
             fp.write(compose_text)
 
-        print(f'\u2714 {compose_file} was updated. {match[2]} -> {new_version_repr}\n')
+        print(f'{SUCCESS_CHAR} {compose_file} was updated. {match[2]} -> {new_version_repr}\n')
 
     else:
-        print(f'\u2714 {compose_file} no need to update.')
+        print(f'{SUCCESS_CHAR} {compose_file} no need to update.')
 
 def update_cvat_version(old_version: str, new_version: Version) -> None:
     version_file = get_cvat_version_filename()
@@ -106,7 +110,32 @@ def update_cvat_version(old_version: str, new_version: Version) -> None:
     with open(version_file, 'w') as fp:
         fp.write(version_text)
 
-    print(f'\u2714 {version_file} was updated. {old_version} -> {new_version_str}\n')
+    print(f'{SUCCESS_CHAR} {version_file} was updated. {old_version} -> {new_version_str}\n')
+
+def update_helm_version(new_version: Version) -> None:
+    helm_values_file = get_helm_version_filename()
+    with open(helm_values_file, 'r') as fp:
+        helm_values_text = fp.read()
+
+    if new_version.prerelease == 'final':
+        new_version_repr = new_version.compose_repr()
+    else:
+        new_version_repr = 'dev'
+
+    match = re.search(HELM_VERSION_PATTERN, helm_values_text, re.M)
+    if not match:
+        raise RuntimeError('Cannot match version pattern')
+
+    if match[2] != new_version_repr:
+        helm_values_text = re.sub(HELM_VERSION_PATTERN, f'\\g<1>{new_version_repr}', helm_values_text, 2, re.M)
+        with open(helm_values_file, 'w') as fp:
+            fp.write(helm_values_text)
+
+        print(f'{SUCCESS_CHAR} {helm_values_file} was updated. {match[2]} -> {new_version_repr}\n')
+
+    else:
+        print(f'{SUCCESS_CHAR} {helm_values_file} no need to update.')
+
 
 def verify_input(version_types: dict, args: dict) -> None:
     versions_to_bump = [args[v_type] for v_type in version_types]
@@ -122,7 +151,10 @@ def get_cvat_version_filename() -> Path:
 def get_compose_filename() -> Path:
     return Path(__file__).resolve().parents[2] / 'docker-compose.yml'
 
-def get_current_version() -> tuple[str, Version]:
+def get_helm_version_filename() -> Path:
+    return Path(__file__).resolve().parents[2] / 'helm-chart' / 'values.yaml'
+
+def get_current_version() -> 'tuple[str, Version]':
     version_file = get_cvat_version_filename()
 
     with open(version_file, 'r') as fp:
@@ -180,7 +212,7 @@ def main() -> None:
     try:
         verify_input(version_types, vars(args))
     except ValueError as e:
-        print(f'\u2716 ERROR: {e}\n')
+        print(f'{FAIL_CHAR} ERROR: {e}\n')
         parser.print_help()
         return
 
@@ -202,10 +234,11 @@ def main() -> None:
     elif args.major:
         version.increment_major()
 
-    print(f'\u2714 Bump version to {version}\n')
+    print(f'{SUCCESS_CHAR} Bump version to {version}\n')
 
     update_cvat_version(version_str, version)
     update_compose_config(version)
+    update_helm_version(version)
 
 if __name__ == '__main__':
     main()

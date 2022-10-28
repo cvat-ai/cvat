@@ -41,14 +41,14 @@ jobs:
           echo Default branch is ${DEFAULT_BRANCH}
           echo Workflow will try to get cache from commit: ${SHA}
 
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
+          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
   build:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
@@ -91,6 +91,7 @@ jobs:
 
       - name: CVAT SDK. Build
         run: |
+          docker load --input /tmp/cvat_server/image.tar
           docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
@@ -123,9 +124,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
@@ -161,8 +162,10 @@ jobs:
       - name: Running REST API tests
         run: |
           pip3 install --user /tmp/cvat_sdk/
+          pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python/rest_api -k 'GET' -s
+          pytest tests/python/sdk tests/python/cli
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -175,7 +178,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: container_logs
           path: "${{ github.workspace }}/rest_api_testing"
@@ -184,7 +187,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -234,7 +237,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: container_logs
           path: "${{ github.workspace }}/unit_testing"
@@ -248,12 +251,12 @@ jobs:
       matrix:
         specs: ['canvas3d_functionality', 'actions']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 
@@ -325,14 +328,14 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: container_logs
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
@@ -342,7 +345,7 @@ jobs:
     needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           fetch-depth: 0
@@ -370,7 +373,7 @@ jobs:
           extended: true
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
 
@@ -397,7 +400,7 @@ jobs:
     needs: [rest_api_testing, unit_testing, e2e_testing, generate_github_pages]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Download CVAT server images
         uses: actions/download-artifact@v3

@@ -60,8 +60,7 @@ optional arguments:
 ### Alternative way to use with cvat/server
 
 ```bash
-docker run -it --entrypoint python3 -v /path/to/host/data/:/path/inside/container/:rw cvat/server
-utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/
+docker run -it -u root --entrypoint bash -v /path/to/host/data/:/path/inside/container/:rw cvat/server -c "pip3 install -r utils/dataset_manifest/requirements.txt && python3 utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/"
 ```
 
 ### Examples of using

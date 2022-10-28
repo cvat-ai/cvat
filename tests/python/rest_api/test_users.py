@@ -14,7 +14,7 @@ from deepdiff import DeepDiff
 from shared.utils.config import make_api_client
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetUsers:
     def _test_can_see(
         self,

@@ -277,8 +277,9 @@ export interface AboutState {
 
 export interface UserAgreement {
     name: string;
-    displayText: string;
+    urlDisplayText: string;
     url: string;
+    textPrefix: string;
     required: boolean;
 }
 
@@ -589,6 +590,7 @@ export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
+    Z_ORDER = 'Z Order',
 }
 
 export enum ContextMenuType {
