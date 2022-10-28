@@ -27,7 +27,7 @@ for service in $BUILD; do
       ;;
     "analytics")
       ELK_VERSION=6.8.23  # fixed.
-      docker build -f rebotics/components/analytics/logstash/Dockerfile --build-arg ELK_VERSION=${ELK_VERSION} -t retechlabs/rebotics-cvat-logstash:${VERSION} components/analytics/logstash
+      docker build -f rebotics/components/analytics/logstash/Dockerfile --build-arg ELK_VERSION=${ELK_VERSION} -t retechlabs/rebotics-cvat-logstash:${VERSION} rebotics/components/analytics/logstash
       ;;
     *)
       echo "Invalid service \"$service\". Known services are: \"cvat\", \"opa\", \"analytics\"."
