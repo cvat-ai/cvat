@@ -33,7 +33,7 @@ function LoginFormComponent(props: Props): JSX.Element {
         fetching, onSubmit, renderResetPassword, socialAuthentication,
     } = props;
     const [form] = Form.useForm();
-    const [credentialNonEmpty, setCredentialNonEmpty] = useState(false);
+    const [credential, setCredential] = useState('');
 
     const inputReset = useCallback((name: string):void => {
         form.setFieldsValue({ [name]: '' });
@@ -41,13 +41,13 @@ function LoginFormComponent(props: Props): JSX.Element {
     return (
         <div className='cvat-signing-form-wrapper'>
             {
-                credentialNonEmpty ? (
+                credential ? (
                     <Row justify='space-between' className='cvat-credentials-navigation'>
                         <Col>
                             <Icon
                                 component={BackArrowIcon}
                                 onClick={() => {
-                                    setCredentialNonEmpty(false);
+                                    setCredential('');
                                     form.setFieldsValue({ credential: '' });
                                 }}
                             />
@@ -56,7 +56,11 @@ function LoginFormComponent(props: Props): JSX.Element {
                             renderResetPassword ? (
                                 <Col className='cvat-credentials-link'>
                                     <Text strong>
-                                        <Link to='/auth/password/reset'>Forgot password?</Link>
+                                        <Link to={credential.includes('@') ?
+                                            `/auth/password/reset?credential=${credential}` : '/auth/password/reset'}
+                                        >
+                                            Forgot password?
+                                        </Link>
                                     </Text>
                                 </Col>
                             ) : null
@@ -79,8 +83,8 @@ function LoginFormComponent(props: Props): JSX.Element {
             </Row>
             <Form
                 className={`cvat-signing-form
-                 ${!credentialNonEmpty && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''}
-                 ${credentialNonEmpty ? 'cvat-signing-form-extended' : ''}`}
+                 ${!credential && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''}
+                 ${credential ? 'cvat-signing-form-extended' : ''}`}
                 form={form}
             >
                 <Form.Item
@@ -98,11 +102,11 @@ function LoginFormComponent(props: Props): JSX.Element {
                         placeholder='enter your email or username'
                         prefix={<Text>Email or username</Text>}
                         suffix={(
-                            credentialNonEmpty ? (
+                            credential ? (
                                 <Icon
                                     component={ClearIcon}
                                     onClick={() => {
-                                        setCredentialNonEmpty(false);
+                                        setCredential('');
                                         inputReset('credential');
                                     }}
                                 />
@@ -110,12 +114,12 @@ function LoginFormComponent(props: Props): JSX.Element {
                         )}
                         onChange={(event) => {
                             const { value } = event.target;
-                            setCredentialNonEmpty(!!value);
+                            setCredential(value);
                         }}
                     />
                 </Form.Item>
                 {
-                    credentialNonEmpty ? (
+                    credential ? (
                         <Form.Item
                             className='cvat-credentials-form-item'
                             name='password'
@@ -138,13 +142,13 @@ function LoginFormComponent(props: Props): JSX.Element {
                 }
             </Form>
             {
-                credentialNonEmpty || !socialAuthentication ? (
+                credential || !socialAuthentication ? (
                     <Row>
                         <Col flex='auto'>
                             <Button
                                 className='cvat-credentials-action-button'
                                 loading={fetching}
-                                disabled={!credentialNonEmpty}
+                                disabled={!credential}
                                 onClick={async () => {
                                     const loginData: LoginData = await form.validateFields();
                                     onSubmit(loginData);

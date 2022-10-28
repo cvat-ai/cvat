@@ -164,10 +164,27 @@
 
     .ant-form-item {
         margin-bottom: $grid-unit-size*3;
+    }
 
-        &:nth-last-child(2) {
-            margin-bottom: $grid-unit-size*8;
-        }
+    .ant-form-item:last-child:not(.cvat-credentials-form-item) {
+        margin-top: $grid-unit-size*6;
+        margin-bottom: 0;
+    }
+
+    .cvat-register-form-last-field {
+        margin-bottom: $grid-unit-size*4;
+    }
+}
+
+.cvat-register-form-wrapper-extended {
+    @extend .cvat-signing-form-wrapper;
+
+    .ant-form-item:last-child:not(.cvat-credentials-form-item) {
+        margin-bottom: 0;
+    }
+
+    .cvat-register-form-last-field {
+        margin-bottom: $grid-unit-size*12;
     }
 }
 

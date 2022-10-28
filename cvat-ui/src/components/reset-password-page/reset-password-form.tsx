@@ -10,7 +10,7 @@ import Icon from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import { BackArrowIcon } from 'icons';
 import { Col, Row } from 'antd/lib/grid';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import CVATSigningInput from 'components/signing-common/cvat-signing-input';
 
@@ -25,6 +25,9 @@ interface Props {
 
 function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element {
     const [form] = Form.useForm();
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const defaultCredential = params.get('credential');
     const inputReset = useCallback((name: string):void => {
         form.setFieldsValue({ [name]: '' });
     }, [form]);
@@ -45,7 +48,13 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                     <Title level={2}> Let&apos;s create a new one </Title>
                 </Col>
             </Row>
-            <Form form={form} className='cvat-password-reset-form'>
+            <Form
+                form={form}
+                className='cvat-password-reset-form'
+                initialValues={{
+                    email: defaultCredential,
+                }}
+            >
                 <Form.Item
                     className='cvat-credentials-form-item'
                     name='email'
