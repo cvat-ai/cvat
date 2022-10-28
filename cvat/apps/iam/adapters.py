@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.conf import settings
 
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
@@ -30,11 +30,11 @@ class SocialAccountAdapterEx(DefaultSocialAccountAdapter):
             return
 
         if not sociallogin.email_addresses:
-            raise ImmediateHttpResponse(response='No email is associated with this social account')
+            raise ImmediateHttpResponse(response=HttpResponseBadRequest('No email is associated with this social account'))
 
         users = filter_users_by_email(sociallogin.user.email)
         if len(users) > 1:
-            raise ImmediateHttpResponse(f'Cannot connect account with ${sociallogin.user.email} email.')
+            raise ImmediateHttpResponse(HttpResponseBadRequest(f'Cannot connect account with ${sociallogin.user.email} email.'))
         elif users:
             sociallogin.connect(request, users[0])
         return

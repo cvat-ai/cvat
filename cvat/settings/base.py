@@ -266,6 +266,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
+INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
 OLD_PASSWORD_FIELD_ENABLED = True
 
@@ -588,6 +589,10 @@ ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
     SOCIALACCOUNT_LOGIN_ON_GET = True
+    # It's required to define email in the case when a user has a private hidden email.
+    # (e.g in github account set keep my email addresses private)
+    # default = ACCOUNT_EMAIL_REQUIRED
+    SOCIALACCOUNT_QUERY_EMAIL = True
 
     GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'

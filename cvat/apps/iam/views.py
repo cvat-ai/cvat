@@ -9,7 +9,7 @@ from django_sendfile import sendfile
 
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
@@ -202,5 +202,5 @@ class ConfirmEmailViewEx(ConfirmEmailView):
                 return super().get(*args, **kwargs)
             return self.post(*args, **kwargs)
         except Http404:
-            return HttpResponseBadRequest('This e-mail confirmation link expired or is invalid.'
-                                        'Please issue a new e-mail confirmation request')
+            return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
+
