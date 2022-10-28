@@ -153,7 +153,7 @@ class RulesView(views.APIView):
 
     @staticmethod
     def _get_bundle_path():
-        return osp.join(settings.STATIC_ROOT, 'opa', 'bundle.tar.gz')
+        return settings.IAM_RULE_BUNDLE_PATH
 
     @staticmethod
     def _etag_func(file_path):
