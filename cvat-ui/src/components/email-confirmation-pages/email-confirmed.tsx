@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,9 +18,9 @@ const { Countdown } = Statistic;
  */
 
 function EmailConfirmationPage(): JSX.Element {
-    const linkRef = useRef();
-    const onFinish = () => {
-        linkRef.current.click();
+    const linkRef = useRef<HTMLAnchorElement>(null);
+    const onFinish = (): void => {
+        linkRef.current?.click();
     };
     return (
         <Layout>
