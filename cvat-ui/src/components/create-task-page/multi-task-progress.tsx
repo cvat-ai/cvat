@@ -11,6 +11,7 @@ import Button from 'antd/lib/button';
 import Collapse from 'antd/lib/collapse';
 import Text from 'antd/lib/typography/Text';
 import List from 'antd/lib/list';
+import { useMemo } from 'react';
 
 interface Props {
     tasks: any[];
@@ -30,17 +31,27 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
     } = props;
     let alertType: any = 'info';
 
-    const countPending = items.filter((item) => item.status === 'pending').length;
-    const countProgress = items.filter((item) => item.status === 'progress').length;
-    const countCompleted = items.filter((item) => item.status === 'completed').length;
-    const countFailed = items.filter((item) => item.status === 'failed').length;
-    const countCancelled = items.filter((item) => item.status === 'cancelled').length;
+    const counts = useMemo(() => items.reduce(
+        (acc, item) => ({
+          ...acc,
+          [item.status]: acc[item.status] + 1
+        }),
+        {
+          pending: 0,
+          progress: 0,
+          completed: 0,
+          failed: 0,
+          cancelled: 0
+        }
+      ), [items]);
+
     const countAll = items.length;
+
     const percent = countAll ?
-        Math.ceil(((countAll - (countPending + countProgress)) / countAll) * 100) :
+        Math.ceil(((countAll - (counts.pending + counts.progress)) / countAll) * 100) :
         0;
 
-    const failedFiles: string[] = percent === 100 && countFailed ?
+    const failedFiles: string[] = percent === 100 && counts.failed ?
         items.filter((item) => item.status === 'failed')
             .map((item): string => {
                 const tabs = Object.keys(item.files);
@@ -51,9 +62,9 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
         [];
 
     if (percent === 100) {
-        if (countFailed === countAll) {
+        if (counts.failed === countAll) {
             alertType = 'error';
-        } else if (countFailed) {
+        } else if (counts.failed) {
             alertType = 'warning';
         }
     }
@@ -72,18 +83,18 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                     ) : null}
                     <Row className='cvat-create-multi-tasks-progress'>
                         <Col>
-                            {`Pending: ${countPending} `}
+                            {`Pending: ${counts.pending} `}
                         </Col>
                         <Col offset={1}>
-                            {`Progress: ${countProgress} `}
+                            {`Progress: ${counts.progress} `}
                         </Col>
                         <Col offset={1}>
-                            {`Completed: ${countCompleted} `}
+                            {`Completed: ${counts.completed} `}
                         </Col>
                         <Col offset={1}>
-                            {`Failed: ${countFailed} `}
+                            {`Failed: ${counts.failed} `}
                         </Col>
-                        {countCancelled ? (<Col offset={1}>{`Cancelled: ${countCancelled} `}</Col>) : null}
+                        {counts.cancelled ? (<Col offset={1}>{`Cancelled: ${counts.cancelled} `}</Col>) : null}
                         <Col offset={1}>
                             {`Total: ${countAll}.`}
                         </Col>
@@ -96,7 +107,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                         trailColor='#d8d8d8'
                     />
                     <br />
-                    {percent === 100 && countFailed ? (
+                    {percent === 100 && counts.failed ? (
                         <Row>
                             <Collapse style={{
                                 width: '100%',
@@ -125,14 +136,14 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                             (
                                 <>
                                     <Col>
-                                        <Button disabled={!countFailed} onClick={onRetryFailedTasks}>
+                                        <Button disabled={!counts.failed} onClick={onRetryFailedTasks}>
                                             Retry failed tasks
                                         </Button>
                                     </Col>
                                     {
-                                        countCancelled ? (
+                                        counts.cancelled ? (
                                             <Col>
-                                                <Button disabled={!countCancelled} onClick={onRetryCancelledTasks}>
+                                                <Button disabled={!counts.cancelled} onClick={onRetryCancelledTasks}>
                                                     Retry cancelled tasks
                                                 </Button>
                                             </Col>
@@ -146,7 +157,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                                 </>
                             ) : (
                                 <Col>
-                                    <Button onClick={onCancel} disabled={!countPending}>
+                                    <Button onClick={onCancel} disabled={!counts.pending}>
                                         Cancel pending tasks
                                     </Button>
                                 </Col>
