@@ -27,6 +27,7 @@ from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
+from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from cvat.apps.iam.adapters import GitHubAdapter, GoogleAdapter
 from .authentication import Signer
@@ -118,14 +119,24 @@ class SigningView(views.APIView):
         return Response(url)
 
 class LoginViewEx(LoginView):
+    """
+    Check the credentials and return the REST Token
+    if the credentials are valid and authenticated.
+    If email verification is enabled and the user has the unverified email,
+    an email with a confirmation link will be sent.
+    Calls Django Auth login method to register User ID
+    in Django session framework.
+
+    Accept the following POST parameters: username, email, password
+    Return the REST Framework Token Object's key.
+    """
+    @extend_schema(responses=get_token_serializer_class())
     def post(self, request, *args, **kwargs):
         self.request = request
         self.serializer = self.get_serializer(data=self.request.data)
         try:
             self.serializer.is_valid(raise_exception=True)
-        except ValidationError as ex:
-            print(ex)
-
+        except ValidationError:
             user = self.serializer.get_auth_user(
                 self.serializer.data.get('username'),
                 self.serializer.data.get('email'),
@@ -142,9 +153,8 @@ class LoginViewEx(LoginView):
                 # because redirect will make a POST request and we'll get a 404 code
                 # (although in the browser request method will be displayed like GET)
                 return HttpResponseBadRequest('Unverified email')
-
-        except Exception as ex:
-            print(ex)
+        except Exception:
+            pass
 
         self.login()
         return self.get_response()

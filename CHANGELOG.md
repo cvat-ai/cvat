@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
+- Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)

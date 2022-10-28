@@ -302,7 +302,6 @@ class ServerProxy {
 
                 return [];
             } catch (errorData) {
-
                 throw generateError(errorData);
             }
         }

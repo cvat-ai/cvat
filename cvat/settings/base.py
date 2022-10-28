@@ -577,14 +577,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 # allauth configuration
-USE_ALLAUTH_SOCIAL_ACCOUNTS = strtobool(os.getenv('USE_ALLAUTH_SOCIAL_ACCOUNTS', 'False'))
+USE_ALLAUTH_SOCIAL_ACCOUNTS = strtobool(os.getenv('USE_ALLAUTH_SOCIAL_ACCOUNTS') or 'False')
 
 ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 
 # the same in UI
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
-ACCOUNT_LOGOUT_ON_GET = True
 
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
@@ -618,8 +617,5 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
-            'AUTH_PARAMS': {
-                'access_type': 'online',
-            }
         },
     }
