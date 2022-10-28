@@ -1,0 +1,16 @@
+version: '3.3'
+services:
+  logstash:
+    container_name: reb_cvat_logstash
+    image: retechlabs/rebotics-cvat-logstash:${VERSION:-latest}
+    networks:
+      - reb_cvat
+    environment:
+      LOGSTASH_OUTPUT_HOST: ${LOGSTASH_OUTPUT_HOST}
+      LOGSTASH_OUTPUT_USER: ${LOGSTASH_OUTPUT_USER}
+      LOGSTASH_OUTPUT_PASS: ${LOGSTASH_OUTPUT_PASS}
+    restart: unless-stopped
+
+  cvat_server:
+    env_file:
+      .env.local.analytics
