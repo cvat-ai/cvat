@@ -187,11 +187,19 @@ class RulesView(View):
         file_path = self._get_bundle_path()
         return sendfile(request, file_path)
 
+class OAuth2CallbackViewEx(OAuth2CallbackView):
+    def dispatch(self, request, *args, **kwargs):
+        # Distinguish cancel from error
+        if (auth_error := request.GET.get('error', None)) and \
+            auth_error == self.adapter.login_cancelled_error:
+            return HttpResponseRedirect(settings.SOCIALACCOUNT_CALLBACK_CANCELLED_URL)
+        return super().dispatch(request, *args, **kwargs)
+
 github_oauth2_login = OAuth2LoginView.adapter_view(GitHubAdapter)
-github_oauth2_callback = OAuth2CallbackView.adapter_view(GitHubAdapter)
+github_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GitHubAdapter)
 
 google_oauth2_login = OAuth2LoginView.adapter_view(GoogleAdapter)
-google_oauth2_callback = OAuth2CallbackView.adapter_view(GoogleAdapter)
+google_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GoogleAdapter)
 
 class ConfirmEmailViewEx(ConfirmEmailView):
     template_name = 'account/email/email_confirmation_signup_message.html'

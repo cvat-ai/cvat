@@ -593,6 +593,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     # (e.g in github account set keep my email addresses private)
     # default = ACCOUNT_EMAIL_REQUIRED
     SOCIALACCOUNT_QUERY_EMAIL = True
+    SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
 
     GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
