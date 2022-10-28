@@ -153,7 +153,7 @@ class LoginViewEx(LoginView):
                 # because redirect will make a POST request and we'll get a 404 code
                 # (although in the browser request method will be displayed like GET)
                 return HttpResponseBadRequest('Unverified email')
-        except Exception:
+        except Exception: # nosec
             pass
 
         self.login()
