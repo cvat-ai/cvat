@@ -208,7 +208,6 @@ disable=raw-checker-failed,
         too-many-branches,
         too-many-arguments,
         too-many-locals,
-        too-many-statements,
         too-many-boolean-expressions,
         consider-merging-isinstance,
         too-many-nested-blocks,
@@ -516,7 +515,8 @@ enable=singleton-comparison,
        logging-unsupported-format,
        logging-format-truncated,
        logging-too-many-args,
-       logging-too-few-args
+       logging-too-few-args,
+       too-many-statements
 
 
 [BASIC]
@@ -723,7 +723,7 @@ max-public-methods=20
 max-returns=6
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=150
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2
