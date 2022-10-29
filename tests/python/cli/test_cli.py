@@ -220,3 +220,23 @@ class TestCLI:
             self.run_cli(*(["--insecure"] if not verify else []), "ls")
 
         assert capture.value.args[0] == verify
+
+    def test_load_json_file_into_labels(self, fxt_coco_file):
+
+        image = generate_images(str(self.tmp_path), 1)
+
+        # TODO:
+        #  the opened file is valid, but becomes empty and yields a KeyError
+        #  when passed to deserialization method as run_cli argument
+
+        with open(fxt_coco_file, "r") as source:
+            output = self.run_cli(
+                "create",
+                "test_task",
+                ResourceType.LOCAL.name,
+                image,
+                "--labels",
+                json.load(source),
+            )
+
+            assert output is not None
