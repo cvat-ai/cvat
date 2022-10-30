@@ -7,6 +7,7 @@ from http import HTTPStatus
 
 import pytest
 
+from cvat.tests.python.enums.user_enums import AccessRights
 from shared.utils.config import server_get
 
 
@@ -26,7 +27,7 @@ class TestGetAnalytics:
 
     @pytest.mark.parametrize(
         "privilege, is_allow",
-        [("admin", True), ("business", True), ("worker", False), ("user", False)],
+        AccessRights.list()
     )
     def test_can_see(self, privilege, is_allow, find_users):
         user = find_users(privilege=privilege)[0]["username"]
@@ -34,4 +35,16 @@ class TestGetAnalytics:
         if is_allow:
             self._test_can_see(user)
         else:
+            pass
+
+    @pytest.mark.parametrize(
+        "privilege, is_allow",
+        AccessRights.list()
+    )
+    def test_cant_see(self, privilege, is_allow, find_users):
+        user = find_users(privilege=privilege)[0]["username"]
+
+        if not is_allow:
             self._test_cannot_see(user)
+        else:
+            pass
