@@ -46,7 +46,8 @@
             "program": "${workspaceRoot}/manage.py",
             "env": {
                 "CVAT_SERVERLESS": "1",
-                "ALLOWED_HOSTS": "*"
+                "ALLOWED_HOSTS": "*",
+                "IAM_BUNDLE_RULES": "1"
 
             },
             "args": [
