@@ -5,7 +5,6 @@
 
 import functools
 import hashlib
-import os.path as osp
 
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
