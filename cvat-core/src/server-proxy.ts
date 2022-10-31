@@ -21,7 +21,7 @@ const FormData = require('form-data');
 const store = require('store');
 const Axios = require('axios');
 const tus = require('tus-js-client');
-const config = require('./config');
+const config = require('./config').default;
 const DownloadWorker = require('./download.worker');
 const { ServerError } = require('./exceptions');
 
