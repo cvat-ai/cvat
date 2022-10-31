@@ -7,10 +7,11 @@ description: 'Information about JavaScript/Typescript coding style that is used 
 
 ## Overview
 
-We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a
-little exception - we prefer 4 spaces for indentation of nested blocks and statements.
+We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript
+code with a little exception - we prefer 4 spaces for indentation of nested blocks and statements.
 
-For Python, we use [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) to enforce the coding style and autoformat files.
+For Python, we use [Black](https://github.com/psf/black) and
+[isort](https://pycqa.github.io/isort/) to enforce the coding style and autoformat files.
 Currently, not all components implement formatting.
 
 
