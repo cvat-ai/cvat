@@ -40,7 +40,7 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # Since migration only works with Python<=3.9, because the Iterable class has been removed from collections in Python 3.10, install Python<=3.9 if you don’t have it:
+  # Since migration only works with Python 3.9, because the Iterable class has been removed from collections in Python 3.10, install Python 3.9 if you don’t have it:
   pikaur -S python39
   ```
 
