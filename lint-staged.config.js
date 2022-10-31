@@ -14,9 +14,11 @@ module.exports = (stagedFiles) => {
     const eslintExtensions = ['ts', 'tsx', 'js'].map(makePattern);
     const scssExtensions = ['scss'].map(makePattern);
     const pythonExtensions = ['py'].map(makePattern);
+    const mdExtensions = ['md'].map(makePattern);
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
     const scssFiles = micromatch(stagedFiles, scssExtensions);
     const pythonFiles = micromatch(stagedFiles, pythonExtensions);
+    const mdFiles = micromatch(stagedFiles, mdExtensions);
 
     const uiTests = containsInPath('/tests/cypress', eslintFiles);
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
@@ -49,6 +51,8 @@ module.exports = (stagedFiles) => {
     tasks.push(['isort', cvatCli.join(' ')]);
     tasks.push(['isort', pythonTests.join(' ')]);
     tasks.push(['pylint', pythonFiles.join(' ')]);
+
+    tasks.push(['npx remark -q -f --no-stdout --silently-ignore', mdFiles.join(' ')]);
 
     const commands = [];
     for (const [command, files] of tasks) {
