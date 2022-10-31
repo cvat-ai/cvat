@@ -20,9 +20,6 @@ It is recommended to use [git pre-commit hooks](https://git-scm.com/book/en/v2/C
 to avoid the need of manual control of linting and formatting the code. We provide a set of hooks
 that can be enabled in the local development environment.
 
-> Please note that our hooks support only Linux environments. We are open for contributions and
-> requests for other platforms.
-
 If you followed the [development environment set up instructions](../development-environment), the
 hooks should be already installed automatically. They are automatically used when you run
 `git commit`.
