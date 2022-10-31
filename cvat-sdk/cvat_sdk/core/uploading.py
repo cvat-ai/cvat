@@ -13,6 +13,7 @@ import requests
 import urllib3
 
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.exceptions import ApiException
 from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.helpers import StreamWithProgress, expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
@@ -211,18 +212,31 @@ class Uploader:
                 This is different from the instance attribute 'offset' because this makes an
                 http request to the tus server to retrieve the offset.
                 """
-                # FIXME: traefik changes HEAD to GET for some reason, and it breaks the protocol
+                try:
+                    resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
+                except ApiException as ex:
+                    if ex.status == 405:  # Method Not Allowed
+                        # In CVAT up to version 2.2.0, HEAD requests were internally
+                        # converted to GET by mod_wsgi, and subsequently rejected by the server.
+                        # For compatibility with old servers, we'll handle such rejections by
+                        # restarting the upload from the beginning.
+                        return 0
 
-                # Assume we are starting from scratch. This effectively disallows us to resume
-                # old file uploading
-                return 0
+                    raise tus_uploader.TusCommunicationError(
+                        f"Attempt to retrieve offset failed with status {ex.status}",
+                        ex.status,
+                        ex.body,
+                    ) from ex
 
-                # resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
-                # offset = resp.headers.get("upload-offset")
-                # if offset is None:
-                #     msg = "Attempt to retrieve offset fails with status {}".format(resp.status_code)
-                #     raise tus_uploader.TusCommunicationError(msg, resp.status_code, resp.content)
-                # return int(offset)
+                offset = resp.headers.get("upload-offset")
+                if offset is None:
+                    raise tus_uploader.TusCommunicationError(
+                        f"Attempt to retrieve offset failed with status {resp.status}",
+                        resp.status,
+                        resp.data,
+                    )
+
+                return int(offset)
 
         # Add headers required by CVAT server
         headers = {}
