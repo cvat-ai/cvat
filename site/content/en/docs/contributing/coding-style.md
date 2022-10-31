@@ -27,12 +27,7 @@ hooks should be already installed automatically. They are automatically used whe
 
 To install hooks manually, you can run the following commands:
 ```bash
-npx husky install
-```
-
-If you don't want to use `husky`, you can enable hooks with this command:
-```bash
-git config --local core.hooksPath ".husky"
+yarn prepare
 ```
 
 To make a commit without running the hooks, use the `--no-verify` option: `git commit --no-verify`.
