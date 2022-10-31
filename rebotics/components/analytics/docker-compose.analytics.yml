@@ -5,11 +5,8 @@ services:
     image: retechlabs/rebotics-cvat-logstash:${VERSION:-latest}
     networks:
       - reb_cvat
-    environment:
-      LOGSTASH_OUTPUT_HOST: ${LOGSTASH_OUTPUT_HOST}
-      LOGSTASH_OUTPUT_USER: ${LOGSTASH_OUTPUT_USER}
-      LOGSTASH_OUTPUT_PASS: ${LOGSTASH_OUTPUT_PASS}
-      LOGSTASH_OUTPUT_REGION: ${LOGSTASH_OUTPUT_REGION}
+    env_file:
+      .env.local.analytics
     restart: unless-stopped
 
   cvat_server:

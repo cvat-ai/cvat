@@ -424,7 +424,7 @@ LOGGING = {
             'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8080),
             'version': 1,
             'message_type': 'django',
-            'database_path': LOGSTASH_DB,
+            'database_path': None,  # LOGSTASH_DB
         }
     },
     'root': {
@@ -437,12 +437,12 @@ LOGGING = {
         'cvat.server': {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': False
+            'propagate': True
         },
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': False
+            'propagate': True
         },
         'django': {
             'handlers': ['console'],
@@ -463,8 +463,8 @@ if django_log_handlers:
     LOGGING['loggers']['django']['handlers'] = django_log_handlers.split(',')
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
-    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
-    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
+    LOGGING['loggers']['cvat.server']['handlers'].insert(0, 'logstash')
+    LOGGING['loggers']['cvat.client']['handlers'].insert(0, 'logstash')
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
