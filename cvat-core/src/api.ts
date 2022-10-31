@@ -34,7 +34,7 @@ function build() {
 
     const User = require('./user').default;
     const pjson = require('../package.json');
-    const config = require('./config');
+    const config = require('./config').default;
 
     /**
      * API entrypoint
