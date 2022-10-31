@@ -125,10 +125,12 @@ description: 'Installing a development environment for different operating syste
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
-- Pull and run OpenPolicyAgent Docker image (run from CVAT root dir):
+- Pull and run OpenPolicyAgent Docker image:
 
   ```bash
-  sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+   docker run -d --rm --name cvat_opa_debug openpolicyagent/opa:0.34.2-rootless \
+   run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
+   --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
   ```
 
 ### Run CVAT
