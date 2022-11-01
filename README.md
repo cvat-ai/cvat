@@ -153,7 +153,7 @@ For more information about the supported formats, look at the
 | [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            |   ✔️    |   ✔️    |
 | [Kitti Raw Format](https://www.cvlibs.net/datasets/kitti/raw_data.php)                                    |   ✔️    |   ✔️    |
 | [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   |   ✔️    |   ✔️    |
-| [Supervisely Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi)                  |   ✔️    |   ✔️    |
+| [Supervisely Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi)          |   ✔️    |   ✔️    |
 
 <!--lint enable maximum-line-length-->
 
