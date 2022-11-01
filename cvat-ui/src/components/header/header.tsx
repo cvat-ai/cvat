@@ -230,7 +230,7 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const resetOrganization = (): void => {
         localStorage.removeItem('currentOrganization');
-        if (/\d+$/.test(window.location.pathname)) {
+        if (/(webhooks)|(\d+)/.test(window.location.pathname)) {
             window.location.pathname = '/';
         } else {
             window.location.reload();
@@ -240,7 +240,7 @@ function HeaderContainer(props: Props): JSX.Element {
     const setNewOrganization = (organization: any): void => {
         if (!currentOrganization || currentOrganization.slug !== organization.slug) {
             localStorage.setItem('currentOrganization', organization.slug);
-            if (/\d+$/.test(window.location.pathname)) {
+            if (/\d+/.test(window.location.pathname)) {
                 // a resource is opened (task/job/etc.)
                 window.location.pathname = '/';
             } else {

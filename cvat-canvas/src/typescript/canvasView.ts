@@ -263,7 +263,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         if (data) {
-            const { clientID, points } = data as any;
+            const { clientID, elements } = data as any;
+            const points = data.points || elements.map((el: any) => el.points).flat();
             if (typeof clientID === 'number') {
                 const event: CustomEvent = new CustomEvent('canvas.canceled', {
                     bubbles: false,
@@ -1863,7 +1864,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 drawnStateDescriptions.length !== stateDescriptions.length ||
                 drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
             ) {
-                // need to remove created text and create it again
+                // remove created text and create it again
                 if (text) {
                     text.remove();
                     this.svgTexts[state.clientID] = this.addText(state);
@@ -1880,6 +1881,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }
                         }
                     }
+                }
+            }
+
+            if (drawnState.label.id !== state.label.id || drawnState.color !== state.color) {
+                // update shape color if necessary
+                if (shape) {
+                    shape.attr({
+                        ...this.getShapeColorization(state),
+                    });
                 }
             }
 

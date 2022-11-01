@@ -1,0 +1,17 @@
+cvat:
+  backend:
+    server:
+      additionalVolumeMounts:
+      - mountPath: /home/django/share
+        name: cvat-backend-data
+        subPath: share
+    worker:
+      default:
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+traefik:
+  service:
+    externalIPs:
+      - 192.168.49.2

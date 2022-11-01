@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +11,10 @@ export function isBoolean(value): boolean {
 
 export function isInteger(value): boolean {
     return typeof value === 'number' && Number.isInteger(value);
+}
+
+export function isEmail(value): boolean {
+    return typeof value === 'string' && RegExp(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).test(value);
 }
 
 // Called with specific Enum context
@@ -60,7 +65,7 @@ export function checkExclusiveFields(obj, exclusive, ignore): void {
     }
 }
 
-export function checkObjectType(name, value, type, instance): boolean {
+export function checkObjectType(name, value, type, instance?): boolean {
     if (type) {
         if (typeof value !== type) {
             // specific case for integers which aren't native type in JS

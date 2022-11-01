@@ -1,7 +1,7 @@
 ---
 title: 'Interface of the annotation tool'
 linkTitle: 'Interface'
-weight: 5
+weight: 7
 ---
 
 ## Main user interface

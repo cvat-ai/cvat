@@ -9,10 +9,10 @@ This is the native CVAT annotation format. It supports all CVAT annotations
 features, so it can be used to make data backups.
 
 - supported annotations CVAT for Images: Rectangles, Polygons, Polylines,
-  Points, Cuboids, Tags, Tracks
+  Points, Cuboids, Skeletons, Tags, Tracks
 
 - supported annotations CVAT for Videos: Rectangles, Polygons, Polylines,
-  Points, Cuboids, Tracks
+  Points, Cuboids, Skeletons, Tracks
 
 - attributes are supported
 

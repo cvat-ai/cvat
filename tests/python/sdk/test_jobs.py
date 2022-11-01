@@ -14,8 +14,6 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
-from shared.utils.config import USER_PASS
-
 from .util import make_pbar
 
 
@@ -23,19 +21,20 @@ class TestJobUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
+        fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
-        fxt_client: Client,
         fxt_stdout: io.StringIO,
-        admin_user: str,
     ):
         self.tmp_path = tmp_path
-        _, self.logger_stream = fxt_logger
-        self.client = fxt_client
+        logger, self.logger_stream = fxt_logger
         self.stdout = fxt_stdout
-        self.user = admin_user
-        self.client.login((self.user, USER_PASS))
+        self.client, self.user = fxt_login
+        self.client.logger = logger
+
+        api_client = self.client.api_client
+        for k in api_client.configuration.logger:
+            api_client.configuration.logger[k] = logger
 
         yield
 
@@ -105,7 +104,8 @@ class TestJobUsecases:
 
         task_id = fxt_new_task.id
         path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
-        job = self.client.jobs.retrieve(task_id)
+        job_id = fxt_new_task.get_jobs()[0].id
+        job = self.client.jobs.retrieve(job_id)
         job.export_dataset(
             format_name="CVAT for images 1.1",
             filename=path,

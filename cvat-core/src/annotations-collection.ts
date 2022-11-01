@@ -396,50 +396,36 @@
             );
         }
 
-        split(objectState, frame) {
-            checkObjectType('object state', objectState, null, ObjectState);
-            checkObjectType('frame', frame, 'integer', null);
-
-            const object = this.objects[objectState.clientID];
-            if (typeof object === 'undefined') {
-                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
-            }
-
-            if (objectState.objectType !== ObjectType.TRACK) {
-                return;
-            }
-
-            const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
-            if (frame <= +keyframes[0]) {
-                return;
-            }
-
+        _splitInternal(objectState, object, frame): ObjectState[] {
             const labelAttributes = object.label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
             }, {});
 
-            const exported = object.toJSON();
+            // first clear all server ids which may exist in the object being splitted
+            const copy = trackFactory(object.toJSON(), -1, this.injection);
+            copy.clearServerID();
+            const exported = copy.toJSON();
+
+            // then create two copies, before this frame and after this frame
+            const prev = {
+                frame: exported.frame,
+                group: 0,
+                label_id: exported.label_id,
+                attributes: exported.attributes,
+                shapes: [],
+                source: Source.MANUAL,
+                elements: [],
+            };
+
+            // after this frame copy is almost the same, except of starting frame
+            const next = JSON.parse(JSON.stringify(prev));
+            next.frame = frame;
+
+            // get position of the object on a frame where user does split and push it to next shape
             const position = {
                 type: objectState.shapeType,
                 points: objectState.shapeType === ShapeType.SKELETON ? undefined : [...objectState.points],
-                elements: objectState.shapeType === ShapeType.SKELETON ? objectState.elements.map((el: ObjectState) => {
-                    const elementAttributes = el.attributes;
-                    return {
-                        attributes: Object.keys(elementAttributes).reduce((acc, attrID) => {
-                            acc.push({
-                                spec_id: +attrID,
-                                value: elementAttributes[attrID],
-                            });
-                            return acc;
-                        }, []),
-                        label_id: el.label.id,
-                        occluded: el.occluded,
-                        outside: el.outside,
-                        points: [...el.points],
-                        type: el.shapeType,
-                    };
-                }) : undefined,
                 rotation: objectState.rotation,
                 occluded: objectState.occluded,
                 outside: objectState.outside,
@@ -456,72 +442,66 @@
                 }, []),
                 frame,
             };
-
-            const prev = {
-                frame: exported.frame,
-                group: 0,
-                label_id: exported.label_id,
-                attributes: exported.attributes,
-                shapes: [],
-                source: Source.MANUAL,
-            };
-
-            const next = JSON.parse(JSON.stringify(prev));
-            next.frame = frame;
             next.shapes.push(JSON.parse(JSON.stringify(position)));
-
-            exported.shapes.map((shape) => {
-                delete shape.id;
-                (shape.elements || []).forEach((element) => {
-                    delete element.id;
-                });
-
+            // split all shapes of an initial object into two groups (before/after the frame)
+            exported.shapes.forEach((shape) => {
                 if (shape.frame < frame) {
                     prev.shapes.push(JSON.parse(JSON.stringify(shape)));
                 } else if (shape.frame > frame) {
                     next.shapes.push(JSON.parse(JSON.stringify(shape)));
                 }
-
-                return shape;
             });
-            prev.shapes.push(position);
-
-            // add extra keyframe if no other keyframes before outside
-            if (!prev.shapes.some((shape) => shape.frame === frame - 1)) {
-                prev.shapes.push(JSON.parse(JSON.stringify(position)));
-                prev.shapes[prev.shapes.length - 2].frame -= 1;
-            }
+            prev.shapes.push(JSON.parse(JSON.stringify(position)));
             prev.shapes[prev.shapes.length - 1].outside = true;
-            (prev.shapes[prev.shapes.length - 1].elements || []).forEach((el) => {
-                el.outside = true;
+
+            // do the same recursively for all objet elements if there are any
+            objectState.elements.forEach((elementState, idx) => {
+                const elementObject = object.elements[idx];
+                const [prevEl, nextEl] = this._splitInternal(elementState, elementObject, frame);
+                prev.elements.push(prevEl);
+                next.elements.push(nextEl);
             });
 
-            let clientID = ++this.count;
-            const prevTrack = trackFactory(prev, clientID, this.injection);
-            this.tracks.push(prevTrack);
-            this.objects[clientID] = prevTrack;
+            return [prev, next];
+        }
 
-            clientID = ++this.count;
-            const nextTrack = trackFactory(next, clientID, this.injection);
-            this.tracks.push(nextTrack);
-            this.objects[clientID] = nextTrack;
+        split(objectState, frame) {
+            checkObjectType('object state', objectState, null, ObjectState);
+            checkObjectType('frame', frame, 'integer', null);
+
+            const object = this.objects[objectState.clientID];
+            if (typeof object === 'undefined') {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            }
+
+            if (objectState.objectType !== ObjectType.TRACK) return;
+            const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
+            if (frame <= +keyframes[0]) return;
+
+            const [prev, next] = this._splitInternal(objectState, object, frame);
+            const imported = this.import({
+                tracks: [prev, next],
+                tags: [],
+                shapes: [],
+            });
 
             // Remove source object
             object.removed = true;
 
+            const [prevImported, nextImported] = imported.tracks;
             this.history.do(
                 HistoryActions.SPLITTED_TRACK,
                 () => {
                     object.removed = false;
-                    prevTrack.removed = true;
-                    nextTrack.removed = true;
+                    prevImported.removed = true;
+                    nextImported.removed = true;
                 },
                 () => {
                     object.removed = true;
-                    prevTrack.removed = false;
-                    nextTrack.removed = false;
+                    prevImported.removed = false;
+                    nextImported.removed = false;
                 },
-                [object.clientID, prevTrack.clientID, nextTrack.clientID],
+                [object.clientID, prevImported.clientID, nextImported.clientID],
                 frame,
             );
         }
