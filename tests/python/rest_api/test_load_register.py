@@ -1,18 +1,18 @@
+import json
 import os
 import random
 import secrets
-from faker import Faker
 from pprint import pprint
 
-import json
 import gevent
 import locust
-from locust.env import Environment
-from locust.stats import stats_printer, stats_history
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions
 from cvat_sdk.api_client.models import RegisterSerializerExRequest
+from faker import Faker
+from locust.env import Environment
+from locust.stats import stats_history, stats_printer
 
-from shared.utils.config import BASE_URL, USER_PASS, ASSETS_DIR
+from shared.utils.config import ASSETS_DIR, BASE_URL, USER_PASS
 
 
 class AdminUserNotFoundInDbException(Exception):
