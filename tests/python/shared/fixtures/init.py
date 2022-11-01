@@ -218,7 +218,7 @@ def start_services(rebuild=False):
         )
 
     _run(
-        f"docker-compose -p {PREFIX} "
+        f"CVAT_VERSION=dev docker-compose -p {PREFIX} "
         + "--env-file "
         + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
         + f" -f {' -f '.join(DC_FILES)} up -d "
@@ -264,7 +264,7 @@ def services(request):
 
         if stop:
             _run(
-                f"docker-compose -p {PREFIX} "
+                f"CVAT_VERSION=dev docker-compose -p {PREFIX} "
                 + "--env-file "
                 + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
                 + f" -f {' -f '.join(DC_FILES)} down -v",
