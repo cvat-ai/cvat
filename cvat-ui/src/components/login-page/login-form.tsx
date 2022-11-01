@@ -41,7 +41,7 @@ function LoginFormComponent(props: Props): JSX.Element {
     return (
         <div className='cvat-signing-form-wrapper'>
             {
-                credential ? (
+                credential && (
                     <Row justify='space-between' className='cvat-credentials-navigation'>
                         <Col>
                             <Icon
@@ -53,7 +53,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                             />
                         </Col>
                         {
-                            renderResetPassword ? (
+                            renderResetPassword && (
                                 <Col className='cvat-credentials-link'>
                                     <Text strong>
                                         <Link to={credential.includes('@') ?
@@ -63,15 +63,28 @@ function LoginFormComponent(props: Props): JSX.Element {
                                         </Link>
                                     </Text>
                                 </Col>
-                            ) : null
+                            )
                         }
                     </Row>
-                ) : null
+                )
             }
-            <Row>
+            <Row justify='space-between'>
                 <Col>
                     <Title level={2}> Sign in </Title>
                 </Col>
+                {
+                    !credential && renderResetPassword && (
+                        <Col className='cvat-credentials-link'>
+                            <Text strong>
+                                <Link to={credential.includes('@') ?
+                                    `/auth/password/reset?credential=${credential}` : '/auth/password/reset'}
+                                >
+                                    Forgot password?
+                                </Link>
+                            </Text>
+                        </Col>
+                    )
+                }
             </Row>
             <Row>
                 <Col className='cvat-credentials-link'>

@@ -58,7 +58,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                             icon={SocialGithubLogo}
                                             href={`${backendAPI}/auth/github/login`}
                                         >
-                                            Continue with Github
+                                            Continue with GitHub
                                         </SocialAccountLink>
                                     )}
                                     {googleAuthentication && (

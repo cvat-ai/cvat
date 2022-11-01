@@ -65,7 +65,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
             <Header className='cvat-signing-header'>
                 <Icon className='cvat-logo-icon' component={CVATMinimalisticLogo} />
             </Header>
-            <Layout>
+            <Layout className='cvat-signing-layout'>
                 <Content>
                     <Row justify='center' align='middle' style={{ height: '100%' }}>
                         <Col {...titleSizes} className='cvat-signing-title'>

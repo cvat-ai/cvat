@@ -220,7 +220,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     />
                 </Form.Item>
                 <Form.Item
-                    className='cvat-credentials-form-item cvat-register-form-last-field'
+                    className='cvat-credentials-form-item'
                     name='password'
                     rules={[
                         {
@@ -237,6 +237,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
 
                 {userAgreements.map((userAgreement: UserAgreement): JSX.Element => (
                     <Form.Item
+                        className='cvat-agreements-form-item'
                         name={`agreement:${userAgreement.name}`}
                         key={userAgreement.name}
                         initialValue={false}
