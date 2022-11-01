@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.3.0] - Unreleased
+## \[2.3.0] - 2022-11-01
 ### Added
 - SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
 - An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
@@ -22,9 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
-
-### Deprecated
-- TDB
 
 ### Removed
 - The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
@@ -63,9 +60,6 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
 - Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
-
-### Security
-- TDB
 
 ## \[2.2.0] - 2022-09-12
 ### Added

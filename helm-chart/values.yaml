@@ -65,7 +65,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: dev
+    tag: v2.3.0
     permissionFix:
       enabled: true
     service:
@@ -84,7 +84,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: dev
+    tag: v2.3.0
     labels: {}
     #  test: test
     annotations: {}
