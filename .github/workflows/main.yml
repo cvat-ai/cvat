@@ -123,6 +123,8 @@ jobs:
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      CVAT_VERSION: dev
     steps:
       - uses: actions/checkout@v3
 
@@ -187,6 +189,8 @@ jobs:
   unit_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      CVAT_VERSION: dev
     steps:
       - uses: actions/checkout@v3
 
@@ -216,15 +220,15 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          CVAT_VERSION=dev docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
 
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          CVAT_VERSION=dev docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'python manage.py test cvat/apps -k tasks_id -k lambda -k share -v 2'
 
-          CVAT_VERSION=dev docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
@@ -247,6 +251,8 @@ jobs:
   e2e_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      CVAT_VERSION: dev
     strategy:
       fail-fast: false
       matrix:
@@ -283,7 +289,7 @@ jobs:
 
       - name: Run CVAT instance
         run: |
-          CVAT_VERSION=dev docker-compose \
+          docker-compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f components/serverless/docker-compose.serverless.yml \
