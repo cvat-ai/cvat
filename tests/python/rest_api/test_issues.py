@@ -169,7 +169,7 @@ class TestPatchIssues:
             ("user", True, None, True),
             ("user", False, None, False),
             ("worker", False, True, True),
-            ("worker", True, False, False),
+            ("worker", True, False, True),
             ("worker", False, False, False),
         ],
     )
@@ -203,7 +203,7 @@ class TestPatchIssues:
             ("owner", True, None, True),
             ("owner", False, None, True),
             ("worker", False, True, True),
-            ("worker", True, False, False),
+            ("worker", True, False, True),
             ("worker", False, False, False),
         ],
     )
