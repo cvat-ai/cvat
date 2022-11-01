@@ -47,7 +47,7 @@
             "env": {
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
-                "IAM_BUNDLE_RULES": "1"
+                "IAM_OPA_BUNDLE": "1"
 
             },
             "args": [

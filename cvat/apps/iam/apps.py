@@ -1,9 +1,8 @@
 from distutils.util import strtobool
 import os
-from pathlib import Path
-import tarfile
 from django.apps import AppConfig
-from django.conf import settings
+
+from .utils import create_opa_bundle
 
 class IAMConfig(AppConfig):
     name = 'cvat.apps.iam'
@@ -12,13 +11,5 @@ class IAMConfig(AppConfig):
         from .signals import register_signals
         register_signals(self)
 
-        if strtobool(os.environ.get("IAM_BUNDLE_RULES", '0')):
-            bundle_path = Path(settings.IAM_RULE_BUNDLE_PATH)
-            if bundle_path.is_file():
-                bundle_path.unlink()
-
-            # Prepare OPA rules bundle
-            rules_path = Path(settings.BASE_DIR) / 'cvat/apps/iam/rules'
-            with tarfile.open(bundle_path, 'w:gz') as tar:
-                for f in rules_path.glob('*[!.gen].rego'):
-                    tar.add(name=f, arcname=f.relative_to(rules_path.parent))
+        if strtobool(os.environ.get("IAM_OPA_BUNDLE", '0')):
+            create_opa_bundle()

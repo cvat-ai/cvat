@@ -152,7 +152,7 @@ class RulesView(views.APIView):
 
     @staticmethod
     def _get_bundle_path():
-        return settings.IAM_RULE_BUNDLE_PATH
+        return settings.IAM_OPA_BUNDLE_PATH
 
     @staticmethod
     def _etag_func(file_path):
