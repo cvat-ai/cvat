@@ -8,7 +8,7 @@
     "build": "yarn run patch; webpack --config ./webpack.config.js",
     "server": "yarn run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'",
     "type-check": "tsc --noEmit",
-    "type-check:watch": "yarn run type-check -- --watch"
+    "type-check:watch": "yarn run type-check --watch"
   },
   "author": "CVAT.ai",
   "license": "MIT",

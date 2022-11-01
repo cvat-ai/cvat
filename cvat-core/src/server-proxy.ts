@@ -3,9 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { isEmail } from './common';
-import { StorageLocation, WebhookSourceType } from './enums';
+import FormData from 'form-data';
+import store from 'store';
+import Axios from 'axios';
+import * as tus from 'tus-js-client';
 import { Storage } from './storage';
+import { StorageLocation, WebhookSourceType } from './enums';
+import { isEmail } from './common';
+import config from './config';
+import DownloadWorker from './download.worker';
+import { ServerError } from './exceptions';
 
 type Params = {
     org: number | string,
@@ -16,14 +23,6 @@ type Params = {
     filename?: string,
     action?: string,
 };
-
-const FormData = require('form-data');
-const store = require('store');
-const Axios = require('axios');
-const tus = require('tus-js-client');
-const config = require('./config').default;
-const DownloadWorker = require('./download.worker');
-const { ServerError } = require('./exceptions');
 
 function enableOrganization() {
     return { org: config.organizationID || '' };
@@ -302,7 +301,6 @@ class ServerProxy {
 
                 return [];
             } catch (errorData) {
-
                 throw generateError(errorData);
             }
         }
@@ -424,6 +422,21 @@ class ServerProxy {
             } catch (errorData) {
                 throw generateError(errorData);
             }
+        }
+
+        async function getSelf() {
+            const { backendAPI } = config;
+
+            let response = null;
+            try {
+                response = await Axios.get(`${backendAPI}/users/self`, {
+                    proxy: config.proxy,
+                });
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+
+            return response.data;
         }
 
         async function authorized() {
@@ -746,7 +759,7 @@ class ServerProxy {
                 }
             }
             try {
-                return wait();
+                return await wait();
             } catch (errorData) {
                 throw generateError(errorData);
             }
@@ -1276,21 +1289,6 @@ class ServerProxy {
             return response.data.results;
         }
 
-        async function getSelf() {
-            const { backendAPI } = config;
-
-            let response = null;
-            try {
-                response = await Axios.get(`${backendAPI}/users/self`, {
-                    proxy: config.proxy,
-                });
-            } catch (errorData) {
-                throw generateError(errorData);
-            }
-
-            return response.data;
-        }
-
         async function getPreview(tid, jid) {
             const { backendAPI } = config;
 
@@ -1523,7 +1521,7 @@ class ServerProxy {
             }
 
             try {
-                return wait();
+                return await wait();
             } catch (errorData) {
                 throw generateError(errorData);
             }
