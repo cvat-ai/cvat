@@ -41,8 +41,8 @@ jobs:
           echo Default branch is ${DEFAULT_BRANCH}
           echo Workflow will try to get cache from commit: ${SHA}
 
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
+          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
   build:
     needs: search_cache
@@ -173,14 +173,15 @@ jobs:
           LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
             mkdir $LOGS_DIR
-            docker logs test_cvat_server_1 > $LOGS_DIR/cvat.log
+            docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
+            docker logs test_cvat_worker_default_1 > $LOGS_DIR/cvat_worker_default.log
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
-          name: container_logs
+          name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
 
   unit_testing:
@@ -237,9 +238,9 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
-          name: container_logs
+          name: unit_tests_container_logs
           path: "${{ github.workspace }}/unit_testing"
 
 
@@ -328,14 +329,14 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
-          name: container_logs
+          name: e2e_container_logs
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
