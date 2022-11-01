@@ -87,9 +87,11 @@ description: 'Installing a development environment for different operating syste
   >
   > If you have any problems with installing dependencies from
   > `cvat/requirements/*.txt`, you may need to reinstall your system python
-  > In some cases after system update it can be configured incorrectly and cannot compile some native modules
+  > In some cases after system update it can be configured incorrectly and cannot compile
+  > some native modules
   >
-  > Make sure Homebrew lib path is in `DYLD_LIBRARY_PATH`. For Apple Silicon: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH`
+  > Make sure Homebrew lib path is in `DYLD_LIBRARY_PATH`.
+  > For Apple Silicon: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH`
   >
   > Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
   > You can install older 4.X FFMpeg using Homebrew like that:
@@ -100,7 +102,8 @@ description: 'Installing a development environment for different operating syste
   >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
   >  git checkout master
   > ```
-  > if you are still facing error `Running setup.py install for av ... error`, you may try more radical variant
+  > if you are still facing error `Running setup.py install for av ... error`, you may
+  > try more radical variant
   > ```
   >  cd "$(brew --repo homebrew/core)"
   >  git checkout addd616edc9134f057e33694c420f4900be59db8
@@ -121,18 +124,24 @@ description: 'Installing a development environment for different operating syste
   > ```
   > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   > ```
-  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit `cvat/requirements/base.txt`.
+  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have
+  > to edit `cvat/requirements/base.txt`.
   > Change `tensorflow` to `tensorflow-macos`
   > May need to downgrade version Python to 3.9.* or upgrade version `tensorflow-macos`
 
   > Note for Arch Linux users:
   >
-  > In order to build `python-ldap`, the `gcc` compiler needs to be pointed to the right file, since lib name has been changed from `libldap_r` to `libldap`, otherwise wheels for `python-ldap` won't be built and the install will fail. You need to create a symlink between the newer and older `ldap` libraries:
+  > In order to build `python-ldap`, the `gcc` compiler needs to be pointed to the right file,
+  > since lib name has been changed from `libldap_r` to `libldap`, otherwise wheels
+  > for `python-ldap` won't be built and the install will fail. You need to create
+  > a symlink between the newer and older `ldap` libraries:
   > ```
   > sudo ln -s /usr/lib/libldap.so /usr/lib/libldap_r.so
   > ```
   >
-  > Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910) with FFMPEG5, you may consider changing the `av` version requirement in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
+  > Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
+  > with FFMPEG5, you may consider changing the `av` version requirement
+  > in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
   >
   > Perform these actions before installing cvat requirements from the list mentioned above.
 
