@@ -4,14 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os
-import os.path as osp
-import shutil
 from copy import deepcopy
-from glob import glob
 from http import HTTPStatus
 from itertools import groupby, product
-from tempfile import TemporaryDirectory
 from time import sleep
 
 import pytest
@@ -495,43 +490,6 @@ class TestImportExportDatasetProject:
         }
 
         self._test_import_project(username, project_id, format_name, import_data)
-
-    def test_can_import_export_dataset_with_special_pascal_voc_format(self):
-        username = "admin1"
-        format_name = "PASCAL VOC 1.1"
-        project_id = 4
-
-        response = self._test_export_project(username, project_id, format_name)
-
-        with TemporaryDirectory() as tmp_dir:
-            with open(osp.join(tmp_dir, "temp_dataset.zip"), "wb") as f:
-                f.write(response.data)
-            dataset_dir = osp.join(tmp_dir, "dataset")
-            os.makedirs(dataset_dir, exist_ok=True)
-            shutil.unpack_archive(osp.join(tmp_dir, "temp_dataset.zip"), dataset_dir)
-
-            images = glob(osp.join(dataset_dir, "JPEGImages", "**", "*.png"), recursive=True)
-            for f in images:
-                shutil.move(f, dataset_dir)
-
-            anns = glob(osp.join(dataset_dir, "Annotations", "**", "*.xml"), recursive=True)
-            for f in anns:
-                shutil.move(f, dataset_dir)
-
-            shutil.rmtree(osp.join(dataset_dir, "Annotations"))
-            shutil.rmtree(osp.join(dataset_dir, "ImageSets"))
-            shutil.rmtree(osp.join(dataset_dir, "JPEGImages"))
-            shutil.make_archive(dataset_dir, "zip", tmp_dir, dataset_dir)
-
-            with open(osp.join(tmp_dir, "dataset.zip"), "rb") as binary_file:
-                file = io.BytesIO(binary_file.read())
-                file.name = "dataset.zip"
-
-                import_data = {
-                    "dataset_file": file,
-                }
-
-                self._test_import_project(username, project_id, format_name, import_data)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

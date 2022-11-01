@@ -8,7 +8,7 @@ import os.path as osp
 import shutil
 from glob import glob
 from tempfile import TemporaryDirectory
-from datumaro.util.image import find_images
+
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
@@ -58,13 +58,6 @@ def _import(src_file, instance_data, load_data_callback=None):
             os.makedirs(anno_dir, exist_ok=True)
             for f in anno_files:
                 shutil.move(f, anno_dir)
-
-        jpeg_dir = osp.join(tmp_dir, "JPEGImages")
-        if not osp.isdir(jpeg_dir):
-            os.makedirs(jpeg_dir, exist_ok=True)
-            images = [image for image in find_images(tmp_dir, recursive=True)]
-            for f in images:
-                shutil.move(f, jpeg_dir)
 
         dataset = Dataset.import_from(tmp_dir, "voc", env=dm_env)
         dataset.transform("masks_to_polygons")
