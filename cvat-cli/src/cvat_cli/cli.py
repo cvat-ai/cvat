@@ -19,9 +19,11 @@ class CLI:
 
         # allow arbitrary kwargs in models
         # TODO: will silently ignore invalid args, so remove this ASAP
-        self.client.api.configuration.discard_unknown_keys = True
+        self.client.api_client.configuration.discard_unknown_keys = True
 
         self.client.login(credentials)
+
+        self.client.check_server_version(fail_if_unsupported=False)
 
     def tasks_list(self, *, use_json_output: bool = False, **kwargs):
         """List all tasks in either basic or JSON format."""

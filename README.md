@@ -30,9 +30,10 @@ Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a 
 - [Installation guide](https://opencv.github.io/cvat/docs/administration/basics/installation/)
 - [Manual](https://opencv.github.io/cvat/docs/manual/)
 - [Contributing](https://opencv.github.io/cvat/docs/contributing/)
-- [Django REST API documentation](https://opencv.github.io/cvat/docs/administration/basics/rest_api_guide/)
 - [Datumaro dataset framework](https://github.com/cvat-ai/datumaro/blob/develop/README.md)
-- [Command line interface](https://opencv.github.io/cvat/docs/manual/advanced/cli/)
+- [Server API](#api)
+- [Python SDK](#sdk)
+- [Command line tool](#cli)
 - [XML annotation format](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/)
 - [AWS Deployment Guide](https://opencv.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
 - [Frequently asked questions](https://opencv.github.io/cvat/docs/faq/)
@@ -85,11 +86,6 @@ Prebuilt docker images are the easiest way to start using CVAT locally. They are
 
 The images have been downloaded more than 1M times so far.
 
-## REST API
-
-CVAT has a REST API: [documentation](https://opencv.github.io/cvat/docs/administration/basics/rest_api_guide/).
-Its current version is `2.0-alpha`. We focus on its improvement, and the API may be changed in the next releases.
-
 ## Screencasts 🎦
 
 Here are some screencasts showing how to use CVAT.
@@ -103,6 +99,22 @@ Here are some screencasts showing how to use CVAT.
 - [Segmentation mode](https://youtu.be/9Fe_GzMLo3E)
 - [Tutorial for polygons](https://youtu.be/C7-r9lZbjBw)
 - [Semi-automatic segmentation](https://youtu.be/9HszWP_qsRQ)
+
+## API
+
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/api/)
+
+## SDK
+
+- Install with `pip install cvat-sdk`
+- [PyPI package homepage](https://pypi.org/project/cvat-sdk/)
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/sdk/)
+
+## CLI
+
+- Install with `pip install cvat-cli`
+- [PyPI package homepage](https://pypi.org/project/cvat-cli/)
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/cli/)
 
 ## Supported annotation formats
 
@@ -120,13 +132,15 @@ For more information about the supported formats, look at the
 | --------------------------------------------------------------------------------------------------------- | ------ | ------ |
 | [CVAT for images](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     |   ✔️    |   ✔️    |
 | [CVAT for a video](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) |   ✔️    |   ✔️    |
-| [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |        |   ✔️    |
+| [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |   ✔️    |   ✔️    |
 | [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     |   ✔️    |   ✔️    |
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             |   ✔️    |   ✔️    |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                                |   ✔️    |   ✔️    |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           |   ✔️    |   ✔️    |
+| [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                                        |   ✔️    |   ✔️    |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       |   ✔️    |   ✔️    |
 | [MOT](https://motchallenge.net/)                                                                          |   ✔️    |   ✔️    |
+| [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)                                                   |   ✔️    |   ✔️    |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    |   ✔️    |   ✔️    |
 | [ImageNet](http://www.image-net.org)                                                                      |   ✔️    |   ✔️    |
 | [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                      |   ✔️    |   ✔️    |
@@ -137,7 +151,9 @@ For more information about the supported formats, look at the
 | [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                |   ✔️    |   ✔️    |
 | [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   |   ✔️    |   ✔️    |
 | [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            |   ✔️    |   ✔️    |
+| [Kitti Raw Format](https://www.cvlibs.net/datasets/kitti/raw_data.php)                                    |   ✔️    |   ✔️    |
 | [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   |   ✔️    |   ✔️    |
+| [Supervisely Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi) |   ✔️    |   ✔️    |
 
 <!--lint enable maximum-line-length-->
 

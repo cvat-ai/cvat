@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,20 +10,21 @@
 
 function build() {
     const PluginRegistry = require('./plugins').default;
-    const loggerStorage = require('./logger-storage');
-    const Log = require('./log');
+    const loggerStorage = require('./logger-storage').default;
+    const { Log } = require('./log');
     const ObjectState = require('./object-state').default;
-    const Statistics = require('./statistics');
-    const Comment = require('./comment');
-    const Issue = require('./issue');
+    const Statistics = require('./statistics').default;
+    const Comment = require('./comment').default;
+    const Issue = require('./issue').default;
     const { Job, Task } = require('./session');
-    const { Project } = require('./project');
-    const implementProject = require('./project-implementation');
+    const Project = require('./project').default;
+    const implementProject = require('./project-implementation').default;
     const { Attribute, Label } = require('./labels');
-    const MLModel = require('./ml-model');
+    const MLModel = require('./ml-model').default;
     const { FrameData } = require('./frames');
-    const { CloudStorage } = require('./cloud-storage');
-    const Organization = require('./organization');
+    const CloudStorage = require('./cloud-storage').default;
+    const Organization = require('./organization').default;
+    const Webhook = require('./webhook').default;
 
     const enums = require('./enums');
 
@@ -30,9 +32,9 @@ function build() {
         Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
     } = require('./exceptions');
 
-    const User = require('./user');
+    const User = require('./user').default;
     const pjson = require('../package.json');
-    const config = require('./config');
+    const config = require('./config').default;
 
     /**
      * API entrypoint
@@ -701,6 +703,9 @@ function build() {
              * @memberof module:API.cvat.config
              * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
+             * @property {number} removeUnderlyingMaskPixels defines if after adding/changing
+             * a mask it should remove overlapped pixels from other objects
+             * @memberof module:API.cvat.config
              */
             get backendAPI() {
                 return config.backendAPI;
@@ -725,6 +730,12 @@ function build() {
             },
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
+            },
+            get removeUnderlyingMaskPixels(): boolean {
+                return config.removeUnderlyingMaskPixels;
+            },
+            set removeUnderlyingMaskPixels(value: boolean) {
+                config.removeUnderlyingMaskPixels = value;
             },
         },
         /**
@@ -844,6 +855,26 @@ function build() {
             },
         },
         /**
+         * This namespace could be used to get webhooks list from the server
+         * @namespace webhooks
+         * @memberof module:API.cvat
+         */
+        webhooks: {
+            /**
+            * Method returns a list of organizations
+            * @method get
+            * @async
+            * @memberof module:API.cvat.webhooks
+            * @returns {module:API.cvat.classes.Webhook[]}
+            * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async get(filter: any) {
+                const result = await PluginRegistry.apiWrapper(cvat.webhooks.get, filter);
+                return result;
+            },
+        },
+        /**
          * Namespace is used for access to classes
          * @namespace classes
          * @memberof module:API.cvat
@@ -864,6 +895,7 @@ function build() {
             FrameData,
             CloudStorage,
             Organization,
+            Webhook,
         },
     };
 

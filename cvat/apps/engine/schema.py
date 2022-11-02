@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import textwrap
 from typing import Type
 from rest_framework import serializers
 from drf_spectacular.extensions import OpenApiSerializerExtension
@@ -78,6 +79,8 @@ class WriteOnceSerializerExtension(OpenApiSerializerExtension):
     """
     Enables support for cvat.apps.engine.serializers.WriteOnceMixin in drf-spectacular.
     Doesn't block other extensions on the target serializer.
+
+    Removes the WriteOnceMixin class docstring from derived class descriptions.
     """
 
     match_subclasses = True
@@ -94,12 +97,19 @@ class WriteOnceSerializerExtension(OpenApiSerializerExtension):
         return False
 
     def map_serializer(self, auto_schema, direction):
-        return auto_schema._map_serializer(
+        from cvat.apps.engine.serializers import WriteOnceMixin
+
+        schema = auto_schema._map_serializer(
             _copy_serializer(self.target, context={
                 'view': auto_schema.view,
                 self._PROCESSED_INDICATOR_NAME: True
             }),
             direction, bypass_extensions=False)
+
+        if schema.get('description') == textwrap.dedent(WriteOnceMixin.__doc__).strip():
+            del schema['description']
+
+        return schema
 
 class OpenApiTypeProxySerializerExtension(PolymorphicProxySerializerExtension):
     """

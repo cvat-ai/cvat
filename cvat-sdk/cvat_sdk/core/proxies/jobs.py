@@ -146,7 +146,7 @@ class Job(
         return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
-        self._client.api.tasks_api.jobs_partial_update_data_meta(
+        self._client.api_client.tasks_api.jobs_partial_update_data_meta(
             self.id,
             patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(deleted_frames=ids),
         )

@@ -27,7 +27,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -39,6 +39,7 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      IAM_OPA_BUNDLE: '1'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
     command: -c supervisord/server.conf
@@ -53,13 +54,13 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
-      - cvat
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      cvat:
+        aliases:
+          - cvat-server
 
   cvat_utils:
     container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -79,7 +80,7 @@ services:
 
   cvat_worker_default:
     container_name: cvat_worker_default
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -100,7 +101,7 @@ services:
 
   cvat_worker_low:
     container_name: cvat_worker_low
-    image: cvat/server:${CVAT_VERSION:-latest}
+    image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
@@ -119,9 +120,30 @@ services:
     networks:
       - cvat
 
+  cvat_worker_webhooks:
+    container_name: cvat_worker_webhooks
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/worker.webhooks.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-latest}
+    image: cvat/ui:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_server
@@ -166,11 +188,15 @@ services:
       cvat:
         aliases:
           - opa
-    volumes:
-      - ./cvat/apps/iam/rules:/rules
-    ports:
-      - '8181:8181'
-    command: run --server --addr :8181 --set=decision_logs.console=true /rules
+    command:
+      - run
+      - --server
+      - --set=decision_logs.console=true
+      - --set=services.cvat.url=http://cvat-server:8080
+      - --set=bundles.cvat.service=cvat
+      - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=5
+      - --set=bundles.cvat.polling.max_delay_seconds=15
 
 volumes:
   cvat_db:

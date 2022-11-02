@@ -23,9 +23,9 @@ def create_git_repo(
     if status_check_period is None:
         status_check_period = client.config.status_check_period
 
-    common_headers = client.api.get_common_headers()
+    common_headers = client.api_client.get_common_headers()
 
-    response = client.api.rest_client.POST(
+    response = client.api_client.rest_client.POST(
         client.api_map.git_create(task_id),
         post_params={"path": repo_url, "lfs": use_lfs, "tid": task_id},
         headers=common_headers,
@@ -39,7 +39,7 @@ def create_git_repo(
     status = None
     while status != "finished":
         sleep(status_check_period)
-        response = client.api.rest_client.GET(check_url, headers=common_headers)
+        response = client.api_client.rest_client.GET(check_url, headers=common_headers)
         response_json = json.loads(response.data)
         status = response_json["status"]
         if status == "failed" or status == "unknown":

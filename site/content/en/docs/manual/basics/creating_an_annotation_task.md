@@ -6,9 +6,10 @@ description: 'Instructions on how to create and configure an annotation task.'
 ---
 
 Create an annotation task pressing `+` button and select `Create new task` on the tasks page or on the project page.
+
 ![](/images/image004.jpg)
 
-> Notice that the task will be created in the organization that you selected at the time of creation.
+> Notice that the task will be created inside the organization that you had selected at the time of creation.
 > Read more about [organizations](/docs/manual/advanced/organization/).
 
 Specify parameters of the task:
@@ -32,6 +33,7 @@ The project that this task will be related with.
 There are two ways of working with labels (available only if the task is not related to the project):
 
 - The `Constructor` is a simple way to add and adjust labels. To add a new label click the `Add label` button.
+
   ![](/images/image123.jpg)
 
   You can set a name of the label in the `Label name` field and choose a color for each label.
@@ -240,6 +242,18 @@ If the annotation file is large, you can create a repository with
 ### Issue tracker
 
 Specify full issue tracker's URL if it's necessary.
+
+### Source storage
+
+Specify source storage for import resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the `Use project source storage` switch will determine whether
+to use the default values ​​or specify new ones.
+
+### Target storage
+
+Specify target storage for export resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the `Use project target storage` switch will determine whether
+to use the default values ​​or specify new ones.
 
 To save and open task click on `Submit & Open` button. Also you
 can click on `Submit & Continue` button for creating several tasks in sequence.

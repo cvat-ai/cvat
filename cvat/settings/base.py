@@ -23,6 +23,7 @@ import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
 from distutils.util import strtobool
+from cvat import __version__
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -125,9 +126,9 @@ INSTALLED_APPS = [
     'cvat.apps.organizations',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
-    'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
+    'cvat.apps.webhooks',
 ]
 
 SITE_ID = 1
@@ -182,10 +183,11 @@ REST_FRAMEWORK = {
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer',
+    'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
 }
 
 REST_AUTH_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
@@ -256,6 +258,7 @@ AUTHENTICATION_BACKENDS = [
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
@@ -277,6 +280,12 @@ RQ_QUEUES = {
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
+    },
+    'webhooks': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h'
     }
 }
 
@@ -381,6 +390,9 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
+IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
+os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -450,11 +462,6 @@ LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
 RESTRICTIONS = {
-    'user_agreements': [],
-
-    # this setting reduces task visibility to owner and assignee only
-    'reduce_task_visibility': False,
-
     # allow access to analytics component to users with business role
     # otherwise, only the administrator has access
     'analytics_visibility': True,
@@ -510,7 +517,7 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    'VERSION': 'alpha (2.0)',
+    'VERSION': __version__,
     'CONTACT': {
         'name': 'CVAT.ai team',
         'url': 'https://github.com/cvat-ai/cvat',
@@ -567,4 +574,3 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': False,
 }
-

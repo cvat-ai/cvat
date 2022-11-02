@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,10 +13,12 @@
     } = require('./annotations-objects');
     const AnnotationsFilter = require('./annotations-filter').default;
     const { checkObjectType } = require('./common');
-    const Statistics = require('./statistics');
+    const Statistics = require('./statistics').default;
     const { Label } = require('./labels');
     const { ArgumentError, ScriptingError } = require('./exceptions');
     const ObjectState = require('./object-state').default;
+    const { mask2Rle, truncateMask } = require('./object-utils');
+    const config = require('./config').default;
 
     const {
         HistoryActions, ShapeType, ObjectType, colors, Source,
@@ -55,6 +57,8 @@
                 history: this.history,
                 nextClientID: () => ++this.count,
                 groupColors: {},
+                getMasksOnFrame: (frame: number) => this.shapes[frame]
+                    .filter((object) => object.objectShape === ObjectType.MASK),
             };
         }
 
@@ -93,9 +97,8 @@
                 // In this case a corresponded message will be sent to the console
                 if (trackModel) {
                     this.tracks.push(trackModel);
-                    this.objects[clientID] = trackModel;
-
                     result.tracks.push(trackModel);
+                    this.objects[clientID] = trackModel;
                 }
             }
 
@@ -106,15 +109,15 @@
             const data = {
                 tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
                 shapes: Object.values(this.shapes)
-                    .reduce((accumulator, value) => {
-                        accumulator.push(...value);
+                    .reduce((accumulator, frameShapes) => {
+                        accumulator.push(...frameShapes);
                         return accumulator;
                     }, [])
                     .filter((shape) => !shape.removed)
                     .map((shape) => shape.toJSON()),
                 tags: Object.values(this.tags)
-                    .reduce((accumulator, value) => {
-                        accumulator.push(...value);
+                    .reduce((accumulator, frameTags) => {
+                        accumulator.push(...frameTags);
                         return accumulator;
                     }, [])
                     .filter((tag) => !tag.removed)
@@ -356,6 +359,12 @@
                         'The object is not in collection yet. Call ObjectState.put([state]) before you can merge it',
                     );
                 }
+
+                if (state.shapeType === ShapeType.MASK) {
+                    throw new ArgumentError(
+                        'Merging for masks is not supported',
+                    );
+                }
                 return object;
             });
 
@@ -396,50 +405,36 @@
             );
         }
 
-        split(objectState, frame) {
-            checkObjectType('object state', objectState, null, ObjectState);
-            checkObjectType('frame', frame, 'integer', null);
-
-            const object = this.objects[objectState.clientID];
-            if (typeof object === 'undefined') {
-                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
-            }
-
-            if (objectState.objectType !== ObjectType.TRACK) {
-                return;
-            }
-
-            const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
-            if (frame <= +keyframes[0]) {
-                return;
-            }
-
+        _splitInternal(objectState, object, frame): ObjectState[] {
             const labelAttributes = object.label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
             }, {});
 
-            const exported = object.toJSON();
+            // first clear all server ids which may exist in the object being splitted
+            const copy = trackFactory(object.toJSON(), -1, this.injection);
+            copy.clearServerID();
+            const exported = copy.toJSON();
+
+            // then create two copies, before this frame and after this frame
+            const prev = {
+                frame: exported.frame,
+                group: 0,
+                label_id: exported.label_id,
+                attributes: exported.attributes,
+                shapes: [],
+                source: Source.MANUAL,
+                elements: [],
+            };
+
+            // after this frame copy is almost the same, except of starting frame
+            const next = JSON.parse(JSON.stringify(prev));
+            next.frame = frame;
+
+            // get position of the object on a frame where user does split and push it to next shape
             const position = {
                 type: objectState.shapeType,
                 points: objectState.shapeType === ShapeType.SKELETON ? undefined : [...objectState.points],
-                elements: objectState.shapeType === ShapeType.SKELETON ? objectState.elements.map((el: ObjectState) => {
-                    const elementAttributes = el.attributes;
-                    return {
-                        attributes: Object.keys(elementAttributes).reduce((acc, attrID) => {
-                            acc.push({
-                                spec_id: +attrID,
-                                value: elementAttributes[attrID],
-                            });
-                            return acc;
-                        }, []),
-                        label_id: el.label.id,
-                        occluded: el.occluded,
-                        outside: el.outside,
-                        points: [...el.points],
-                        type: el.shapeType,
-                    };
-                }) : undefined,
                 rotation: objectState.rotation,
                 occluded: objectState.occluded,
                 outside: objectState.outside,
@@ -456,72 +451,66 @@
                 }, []),
                 frame,
             };
-
-            const prev = {
-                frame: exported.frame,
-                group: 0,
-                label_id: exported.label_id,
-                attributes: exported.attributes,
-                shapes: [],
-                source: Source.MANUAL,
-            };
-
-            const next = JSON.parse(JSON.stringify(prev));
-            next.frame = frame;
             next.shapes.push(JSON.parse(JSON.stringify(position)));
-
-            exported.shapes.map((shape) => {
-                delete shape.id;
-                (shape.elements || []).forEach((element) => {
-                    delete element.id;
-                });
-
+            // split all shapes of an initial object into two groups (before/after the frame)
+            exported.shapes.forEach((shape) => {
                 if (shape.frame < frame) {
                     prev.shapes.push(JSON.parse(JSON.stringify(shape)));
                 } else if (shape.frame > frame) {
                     next.shapes.push(JSON.parse(JSON.stringify(shape)));
                 }
-
-                return shape;
             });
-            prev.shapes.push(position);
-
-            // add extra keyframe if no other keyframes before outside
-            if (!prev.shapes.some((shape) => shape.frame === frame - 1)) {
-                prev.shapes.push(JSON.parse(JSON.stringify(position)));
-                prev.shapes[prev.shapes.length - 2].frame -= 1;
-            }
+            prev.shapes.push(JSON.parse(JSON.stringify(position)));
             prev.shapes[prev.shapes.length - 1].outside = true;
-            (prev.shapes[prev.shapes.length - 1].elements || []).forEach((el) => {
-                el.outside = true;
+
+            // do the same recursively for all objet elements if there are any
+            objectState.elements.forEach((elementState, idx) => {
+                const elementObject = object.elements[idx];
+                const [prevEl, nextEl] = this._splitInternal(elementState, elementObject, frame);
+                prev.elements.push(prevEl);
+                next.elements.push(nextEl);
             });
 
-            let clientID = ++this.count;
-            const prevTrack = trackFactory(prev, clientID, this.injection);
-            this.tracks.push(prevTrack);
-            this.objects[clientID] = prevTrack;
+            return [prev, next];
+        }
 
-            clientID = ++this.count;
-            const nextTrack = trackFactory(next, clientID, this.injection);
-            this.tracks.push(nextTrack);
-            this.objects[clientID] = nextTrack;
+        split(objectState, frame) {
+            checkObjectType('object state', objectState, null, ObjectState);
+            checkObjectType('frame', frame, 'integer', null);
+
+            const object = this.objects[objectState.clientID];
+            if (typeof object === 'undefined') {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            }
+
+            if (objectState.objectType !== ObjectType.TRACK) return;
+            const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
+            if (frame <= +keyframes[0]) return;
+
+            const [prev, next] = this._splitInternal(objectState, object, frame);
+            const imported = this.import({
+                tracks: [prev, next],
+                tags: [],
+                shapes: [],
+            });
 
             // Remove source object
             object.removed = true;
 
+            const [prevImported, nextImported] = imported.tracks;
             this.history.do(
                 HistoryActions.SPLITTED_TRACK,
                 () => {
                     object.removed = false;
-                    prevTrack.removed = true;
-                    nextTrack.removed = true;
+                    prevImported.removed = true;
+                    nextImported.removed = true;
                 },
                 () => {
                     object.removed = true;
-                    prevTrack.removed = false;
-                    nextTrack.removed = false;
+                    prevImported.removed = false;
+                    nextImported.removed = false;
                 },
-                [object.clientID, prevTrack.clientID, nextTrack.clientID],
+                [object.clientID, prevImported.clientID, nextImported.clientID],
                 frame,
             );
         }
@@ -621,6 +610,7 @@
                     [val]: { shape: 0, track: 0 },
                 }), {})),
 
+                mask: { shape: 0 },
                 tag: 0,
                 manually: 0,
                 interpolated: 0,
@@ -807,7 +797,14 @@
                             group: 0,
                             label_id: state.label.id,
                             occluded: state.occluded || false,
-                            points: [...state.points],
+                            points: state.shapeType === 'mask' ? (() => {
+                                const { width, height } = this.frameMeta[state.frame];
+                                const points = truncateMask(state.points, 0, width, height);
+                                const [left, top, right, bottom] = points.splice(-4);
+                                const rlePoints = mask2Rle(points);
+                                rlePoints.push(left, top, right, bottom);
+                                return rlePoints;
+                            })() : state.points,
                             rotation: state.rotation || 0,
                             type: state.shapeType,
                             z_order: state.zOrder,
@@ -885,6 +882,11 @@
             // eslint-disable-next-line no-unsanitized/method
             const imported = this.import(constructed);
             const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+            for (const object of importedArray) {
+                if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels) {
+                    object.removeUnderlyingPixels(object.frame);
+                }
+            }
 
             if (objectStates.length) {
                 this.history.do(

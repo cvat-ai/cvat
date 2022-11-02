@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ObjectItemElementComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-element';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { Workspace } from 'reducers';
+import { ShapeType, Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
 import consts from 'consts';
 
@@ -23,9 +24,9 @@ interface Props {
     visible: boolean;
     left: number;
     top: number;
+    latestComments: string[];
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
-    latestComments: string[];
 }
 
 interface ReviewContextMenuProps {
@@ -105,49 +106,49 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 left={left}
                 latestComments={latestComments}
                 onClick={(param: MenuInfo) => {
-                    const [state] = objectStates.filter(
-                        (_state: any): boolean => _state.clientID === contextMenuClientID,
-                    );
-                    if (param.key === ReviewContextMenuKeys.OPEN_ISSUE) {
-                        if (state) {
-                            let { points } = state;
-                            if (['ellipse', 'rectangle'].includes(state.shapeType)) {
-                                const [cx, cy] = state.shapeType === 'ellipse' ? state.points : [
-                                    (state.points[0] + state.points[2]) / 2,
-                                    (state.points[1] + state.points[3]) / 2,
-                                ];
-                                const [rx, ry] = [state.points[2] - cx, cy - state.points[3]];
-                                points = state.shapeType === 'ellipse' ? [
-                                    state.points[0] - rx,
-                                    state.points[1] - ry,
-                                    state.points[0] + rx,
-                                    state.points[1] + ry,
-                                ] : state.points;
+                    const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
+                    if (state) {
+                        let { points } = state;
+                        if ([ShapeType.ELLIPSE, ShapeType.RECTANGLE].includes(state.shapeType)) {
+                            const [cx, cy] = state.shapeType === 'ellipse' ? state.points : [
+                                (state.points[0] + state.points[2]) / 2,
+                                (state.points[1] + state.points[3]) / 2,
+                            ];
+                            const [rx, ry] = [state.points[2] - cx, cy - state.points[3]];
+                            points = state.shapeType === 'ellipse' ? [
+                                state.points[0] - rx,
+                                state.points[1] - ry,
+                                state.points[0] + rx,
+                                state.points[1] + ry,
+                            ] : state.points;
 
-                                points = [
-                                    [points[0], points[1]],
-                                    [points[2], points[1]],
-                                    [points[2], points[3]],
-                                    [points[0], points[3]],
-                                ].map(([x, y]: number[]) => rotatePoint(x, y, state.rotation, cx, cy)).flat();
-                            }
+                            points = [
+                                [points[0], points[1]],
+                                [points[2], points[1]],
+                                [points[2], points[3]],
+                                [points[0], points[3]],
+                            ].map(([x, y]: number[]) => rotatePoint(x, y, state.rotation, cx, cy)).flat();
+                        } else if (state.shapeType === ShapeType.MASK) {
+                            points = state.points.slice(-4);
+                            points = [
+                                points[0], points[1],
+                                points[2], points[1],
+                                points[2], points[3],
+                                points[0], points[3],
+                            ];
+                        }
 
+                        if (param.key === ReviewContextMenuKeys.OPEN_ISSUE) {
                             onStartIssue(points);
-                        }
-                    } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_POSITION) {
-                        if (state) {
-                            openIssue(state.points, consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT);
-                        }
-                    } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_ATTRIBUTE) {
-                        if (state) {
-                            openIssue(state.points, consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT);
-                        }
-                    } else if (
-                        param.keyPath.length === 2 &&
-                        param.keyPath[1] === ReviewContextMenuKeys.QUICK_ISSUE_FROM_LATEST
-                    ) {
-                        if (state) {
-                            openIssue(state.points, latestComments[+param.keyPath[0]]);
+                        } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_POSITION) {
+                            openIssue(points, consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT);
+                        } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_ATTRIBUTE) {
+                            openIssue(points, consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT);
+                        } else if (
+                            param.keyPath.length === 2 &&
+                            param.keyPath[1] === ReviewContextMenuKeys.QUICK_ISSUE_FROM_LATEST
+                        ) {
+                            openIssue(points, latestComments[+param.keyPath[0]]);
                         }
                     }
                 }}

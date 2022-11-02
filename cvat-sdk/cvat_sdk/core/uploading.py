@@ -243,7 +243,7 @@ class Uploader:
                 input_file = StreamWithProgress(input_file, pbar, length=file_size)
 
             tus_uploader = self._make_tus_uploader(
-                self._client.api,
+                self._client.api_client,
                 url=url.rstrip("/") + "/",
                 metadata=meta,
                 file_stream=input_file,
@@ -253,23 +253,23 @@ class Uploader:
             tus_uploader.upload()
 
     def _tus_start_upload(self, url, *, query_params=None):
-        response = self._client.api.rest_client.POST(
+        response = self._client.api_client.rest_client.POST(
             url,
             query_params=query_params,
             headers={
                 "Upload-Start": "",
-                **self._client.api.get_common_headers(),
+                **self._client.api_client.get_common_headers(),
             },
         )
         expect_status(202, response)
         return response
 
     def _tus_finish_upload(self, url, *, query_params=None, fields=None):
-        response = self._client.api.rest_client.POST(
+        response = self._client.api_client.rest_client.POST(
             url,
             headers={
                 "Upload-Finish": "",
-                **self._client.api.get_common_headers(),
+                **self._client.api_client.get_common_headers(),
             },
             query_params=query_params,
             post_params=fields,
@@ -356,13 +356,13 @@ class DataUploader(Uploader):
                         filename,
                         es.enter_context(closing(open(filename, "rb"))).read(),
                     )
-                response = self._client.api.rest_client.POST(
+                response = self._client.api_client.rest_client.POST(
                     url,
                     post_params=dict(**kwargs, **files),
                     headers={
                         "Content-Type": "multipart/form-data",
                         "Upload-Multiple": "",
-                        **self._client.api.get_common_headers(),
+                        **self._client.api_client.get_common_headers(),
                     },
                 )
             expect_status(200, response)

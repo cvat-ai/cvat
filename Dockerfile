@@ -154,7 +154,7 @@ COPY --chown=${USER} cvat/ ${HOME}/cvat
 USER ${USER}
 WORKDIR ${HOME}
 
-RUN mkdir data share media keys logs /tmp/supervisord
+RUN mkdir -p data share keys logs /tmp/supervisord static
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]

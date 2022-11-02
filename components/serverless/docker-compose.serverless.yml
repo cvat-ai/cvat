@@ -17,10 +17,18 @@ services:
       NUCLIO_DASHBOARD_DEFAULT_FUNCTION_MOUNT_MODE: 'volume'
     ports:
       - '8070:8070'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "3"
 
   cvat_server:
     environment:
       CVAT_SERVERLESS: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-volumes:
-  cvat_events:
+  cvat_worker_low:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
