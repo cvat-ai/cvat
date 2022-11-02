@@ -1,3 +1,4 @@
+# pylint: disable=unnecessary-lambda
 import json
 import os
 import random
