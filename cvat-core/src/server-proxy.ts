@@ -216,7 +216,15 @@ class ServerProxy {
                 return reqConfig;
             }
 
-            reqConfig.params = { ...enableOrganization(), ...(reqConfig.params || {}) };
+            const organization = enableOrganization();
+            // for users when organization is unset
+            // we are interested in getting all the users,
+            // not only those who are not in any organization
+            if (reqConfig.url.endsWith('/users') && !organization.org) {
+                return reqConfig;
+            }
+
+            reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
             return reqConfig;
         });
 
