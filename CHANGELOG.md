@@ -66,6 +66,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 - Cannot assign a resource to a user who has an organization (<https://github.com/opencv/cvat/pull/5218>)
+- Oriented bounding boxes broken with COCO format ss(<https://github.com/opencv/cvat/pull/5219>)
 
 ### Security
 - TDB
