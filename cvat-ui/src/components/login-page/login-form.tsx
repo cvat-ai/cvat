@@ -38,6 +38,17 @@ function LoginFormComponent(props: Props): JSX.Element {
     const inputReset = useCallback((name: string):void => {
         form.setFieldsValue({ [name]: '' });
     }, [form]);
+    const forgotPasswordLink = (
+        <Col className='cvat-credentials-link'>
+            <Text strong>
+                <Link to={credential.includes('@') ?
+                    `/auth/password/reset?credential=${credential}` : '/auth/password/reset'}
+                >
+                    Forgot password?
+                </Link>
+            </Text>
+        </Col>
+    );
     return (
         <div className='cvat-signing-form-wrapper'>
             {
@@ -53,17 +64,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                             />
                         </Col>
                         {
-                            renderResetPassword && (
-                                <Col className='cvat-credentials-link'>
-                                    <Text strong>
-                                        <Link to={credential.includes('@') ?
-                                            `/auth/password/reset?credential=${credential}` : '/auth/password/reset'}
-                                        >
-                                            Forgot password?
-                                        </Link>
-                                    </Text>
-                                </Col>
-                            )
+                            renderResetPassword && forgotPasswordLink
                         }
                     </Row>
                 )
@@ -73,17 +74,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     <Title level={2}> Sign in </Title>
                 </Col>
                 {
-                    !credential && renderResetPassword && (
-                        <Col className='cvat-credentials-link'>
-                            <Text strong>
-                                <Link to={credential.includes('@') ?
-                                    `/auth/password/reset?credential=${credential}` : '/auth/password/reset'}
-                                >
-                                    Forgot password?
-                                </Link>
-                            </Text>
-                        </Col>
-                    )
+                    !credential && renderResetPassword && forgotPasswordLink
                 }
             </Row>
             <Row>
@@ -95,9 +86,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                 </Col>
             </Row>
             <Form
-                className={`cvat-signing-form
-                 ${!credential && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''}
-                 ${credential ? 'cvat-signing-form-extended' : ''}`}
+                className={`cvat-signing-form ${!credential && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''} ${credential ? 'cvat-signing-form-extended' : ''}`}
                 form={form}
             >
                 <Form.Item
@@ -115,7 +104,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                         placeholder='enter your email or username'
                         prefix={<Text>Email or username</Text>}
                         suffix={(
-                            credential ? (
+                            credential && (
                                 <Icon
                                     component={ClearIcon}
                                     onClick={() => {
@@ -123,7 +112,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                                         inputReset('credential');
                                     }}
                                 />
-                            ) : null
+                            )
                         )}
                         onChange={(event) => {
                             const { value } = event.target;
@@ -132,7 +121,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     />
                 </Form.Item>
                 {
-                    credential ? (
+                    credential && (
                         <Form.Item
                             className='cvat-credentials-form-item'
                             name='password'
@@ -151,7 +140,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 }
                             />
                         </Form.Item>
-                    ) : null
+                    )
                 }
             </Form>
             {

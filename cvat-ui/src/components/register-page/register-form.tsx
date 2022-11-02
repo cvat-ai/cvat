@@ -108,7 +108,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
         form.setFieldsValue({ [name]: '' });
     }, [form]);
     return (
-        <div className={`${userAgreements.length ? 'cvat-register-form-wrapper' : 'cvat-register-form-wrapper-extended'}`}>
+        <div className={`cvat-register-form-wrapper ${!userAgreements.length ? 'cvat-register-form-wrapper-extended' : ''}`}>
             <Row justify='space-between' className='cvat-credentials-navigation'>
                 <Col>
                     <Link to='/auth/login'><Icon component={BackArrowIcon} /></Link>
@@ -220,7 +220,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     />
                 </Form.Item>
                 <Form.Item
-                    className='cvat-credentials-form-item'
+                    className='cvat-credentials-form-item cvat-register-form-last-field'
                     name='password'
                     rules={[
                         {
