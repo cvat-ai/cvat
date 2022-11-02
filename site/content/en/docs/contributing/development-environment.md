@@ -169,12 +169,7 @@ description: 'Installing a development environment for different operating syste
 
   > Note for Arch Linux users:
   >
-  > By default pacman will install `docker-compose` [v2](https://archlinux.org/packages/community/x86_64/docker-compose/), however this version is unsupported at the moment.
-  > You need to install `docker-compose` v1 from AUR, for example, this [package](https://aur.archlinux.org/packages/docker-compose-v1-bin).
-  > ```bash
-  > pikaur -S docker-compose-v1-bin
-  > ```
-  > You will also need to either additionally install `libxcrypt-compat`
+  > To launch docker you will also need to either additionally install `libxcrypt-compat`
   > ```bash
   > sudo pacman -S libxcrypt-compat
   > ```
