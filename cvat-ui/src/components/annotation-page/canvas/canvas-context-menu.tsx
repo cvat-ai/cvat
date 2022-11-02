@@ -11,7 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ObjectItemElementComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-element';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { Workspace } from 'reducers';
+import { ShapeType, Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
 import consts from 'consts';
 
@@ -24,9 +24,9 @@ interface Props {
     visible: boolean;
     left: number;
     top: number;
+    latestComments: string[];
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
-    latestComments: string[];
 }
 
 interface ReviewContextMenuProps {
@@ -109,7 +109,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                     const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
                     if (state) {
                         let { points } = state;
-                        if (['ellipse', 'rectangle'].includes(state.shapeType)) {
+                        if ([ShapeType.ELLIPSE, ShapeType.RECTANGLE].includes(state.shapeType)) {
                             const [cx, cy] = state.shapeType === 'ellipse' ? state.points : [
                                 (state.points[0] + state.points[2]) / 2,
                                 (state.points[1] + state.points[3]) / 2,
@@ -128,6 +128,14 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                                 [points[2], points[3]],
                                 [points[0], points[3]],
                             ].map(([x, y]: number[]) => rotatePoint(x, y, state.rotation, cx, cy)).flat();
+                        } else if (state.shapeType === ShapeType.MASK) {
+                            points = state.points.slice(-4);
+                            points = [
+                                points[0], points[1],
+                                points[2], points[1],
+                                points[2], points[3],
+                                points[0], points[3],
+                            ];
                         }
 
                         if (param.key === ReviewContextMenuKeys.OPEN_ISSUE) {

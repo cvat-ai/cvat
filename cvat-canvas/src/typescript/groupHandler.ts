@@ -1,11 +1,11 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
 import { GroupData } from './canvasModel';
-
-import { translateToSVG } from './shared';
+import { expandChannels, imageDataToDataURL, translateToSVG } from './shared';
 
 export interface GroupHandler {
     group(groupData: GroupData): void;
@@ -31,6 +31,7 @@ export class GroupHandlerImpl implements GroupHandler {
     private initialized: boolean;
     private statesToBeGroupped: any[];
     private highlightedShapes: Record<number, SVG.Shape>;
+    private groupingCopies: Record<number, SVG.Image>;
 
     private getSelectionBox(
         event: MouseEvent,
@@ -106,11 +107,7 @@ export class GroupHandlerImpl implements GroupHandler {
                         (state: any): boolean => state.clientID === clientID,
                     )[0];
 
-                    if (objectState) {
-                        this.statesToBeGroupped.push(objectState);
-                        this.highlightedShapes[clientID] = shape;
-                        (shape as any).addClass('cvat_canvas_shape_grouping');
-                    }
+                    this.appendToSelection(objectState);
                 }
             }
         }
@@ -164,6 +161,7 @@ export class GroupHandlerImpl implements GroupHandler {
         this.canvas = canvas;
         this.statesToBeGroupped = [];
         this.highlightedShapes = {};
+        this.groupingCopies = {};
         this.selectionRect = null;
         this.initialized = false;
         this.startSelectionPoint = {
@@ -185,23 +183,67 @@ export class GroupHandlerImpl implements GroupHandler {
         }
     }
 
+    private appendToSelection(objectState: any): void {
+        const { clientID } = objectState;
+
+        const shape = this.canvas.select(`#cvat_canvas_shape_${clientID}`).first();
+        if (shape) {
+            if (objectState.shapeType === 'mask') {
+                const { points } = objectState;
+                const colorRGB = [139, 0, 139];
+                const [left, top, right, bottom] = points.slice(-4);
+                const imageBitmap = expandChannels(colorRGB[0], colorRGB[1], colorRGB[2], points, 4);
+
+                const bbox = shape.bbox();
+                const image = this.canvas.image().attr({
+                    'color-rendering': 'optimizeQuality',
+                    'shape-rendering': 'geometricprecision',
+                    'data-z-order': Number.MAX_SAFE_INTEGER,
+                    'grouping-copy-for': clientID,
+                }).move(bbox.x, bbox.y);
+                this.groupingCopies[clientID] = image;
+
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
+                    (dataURL: string) => new Promise((resolve, reject) => {
+                        image.loaded(() => {
+                            resolve();
+                        });
+                        image.error(() => {
+                            reject();
+                        });
+                        image.load(dataURL);
+                    }),
+                );
+            }
+
+            this.statesToBeGroupped.push(objectState);
+            this.highlightedShapes[clientID] = shape;
+            shape.addClass('cvat_canvas_shape_grouping');
+        }
+    }
+
     public select(objectState: any): void {
         const stateIndexes = this.statesToBeGroupped.map((state): number => state.clientID);
-        const includes = stateIndexes.indexOf(objectState.clientID);
+        const { clientID } = objectState;
+        const includes = stateIndexes.indexOf(clientID);
         if (includes !== -1) {
-            const shape = this.highlightedShapes[objectState.clientID];
+            const shape = this.highlightedShapes[clientID];
             this.statesToBeGroupped.splice(includes, 1);
             if (shape) {
-                delete this.highlightedShapes[objectState.clientID];
+                if (this.groupingCopies[clientID]) {
+                    // remove clones for masks
+                    this.groupingCopies[clientID].remove();
+                    delete this.groupingCopies[clientID];
+                }
+
+                delete this.highlightedShapes[clientID];
                 shape.removeClass('cvat_canvas_shape_grouping');
             }
         } else {
-            const shape = this.canvas.select(`#cvat_canvas_shape_${objectState.clientID}`).first();
-            if (shape) {
-                this.statesToBeGroupped.push(objectState);
-                this.highlightedShapes[objectState.clientID] = shape;
-                shape.addClass('cvat_canvas_shape_grouping');
-            }
+            this.appendToSelection(objectState);
         }
     }
 
@@ -210,8 +252,14 @@ export class GroupHandlerImpl implements GroupHandler {
             const shape = this.highlightedShapes[state.clientID];
             shape.removeClass('cvat_canvas_shape_grouping');
         }
+
+        for (const shape of Object.values(this.groupingCopies)) {
+            shape.remove();
+        }
+
         this.statesToBeGroupped = [];
         this.highlightedShapes = {};
+        this.groupingCopies = {};
         if (this.selectionRect) {
             this.selectionRect.remove();
             this.selectionRect = null;

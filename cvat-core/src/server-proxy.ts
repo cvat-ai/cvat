@@ -684,14 +684,18 @@ class ServerProxy {
             useDefaultLocation: boolean,
             sourceStorage: Storage,
             file: File | string,
-            onUpdate,
-        ) {
+            options: {
+                convMaskToPoly: boolean,
+                updateStatusCallback: (s: string, n: number) => void,
+            },
+        ): Promise<void> {
             const { backendAPI, origin } = config;
-            const params: Params = {
+            const params: Params & { conv_mask_to_poly: boolean } = {
                 ...enableOrganization(),
                 ...configureStorage(sourceStorage, useDefaultLocation),
                 format,
                 filename: typeof file === 'string' ? file : file.name,
+                conv_mask_to_poly: options.convMaskToPoly,
             };
 
             const url = `${backendAPI}/projects/${id}/dataset`;
@@ -705,8 +709,8 @@ class ServerProxy {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
-                                if (onUpdate && response.data.message) {
-                                    onUpdate(response.data.message, response.data.progress || 0);
+                                if (response.data.message) {
+                                    options.updateStatusCallback(response.data.message, response.data.progress || 0);
                                 }
                                 setTimeout(requestStatus, 3000);
                             } else if (response.status === 201) {
@@ -740,7 +744,7 @@ class ServerProxy {
                     totalSentSize: 0,
                     totalSize: (file as File).size,
                     onUpdate: (percentage) => {
-                        onUpdate('The dataset is being uploaded to the server', percentage);
+                        options.updateStatusCallback('The dataset is being uploaded to the server', percentage);
                     },
                 };
 
@@ -1449,13 +1453,15 @@ class ServerProxy {
             useDefaultLocation: boolean,
             sourceStorage: Storage,
             file: File | string,
-        ) {
+            options: { convMaskToPoly: boolean },
+        ): Promise<void> {
             const { backendAPI, origin } = config;
-            const params: Params = {
+            const params: Params & { conv_mask_to_poly: boolean } = {
                 ...enableOrganization(),
                 ...configureStorage(sourceStorage, useDefaultLocation),
                 format,
                 filename: typeof file === 'string' ? file : file.name,
+                conv_mask_to_poly: options.convMaskToPoly,
             };
 
             const url = `${backendAPI}/${session}s/${id}/annotations`;

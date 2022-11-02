@@ -560,7 +560,7 @@ class JobAnnotation:
         )
         exporter(dst_file, job_data, **options)
 
-    def import_annotations(self, src_file, importer):
+    def import_annotations(self, src_file, importer, **options):
         job_data = JobData(
             annotation_ir=AnnotationIR(),
             db_job=self.db_job,
@@ -568,7 +568,7 @@ class JobAnnotation:
         )
         self.delete()
 
-        importer(src_file, job_data)
+        importer(src_file, job_data, **options)
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
@@ -766,19 +766,19 @@ def export_task(task_id, dst_file, format_name,
         task.export(f, exporter, host=server_url, save_images=save_images)
 
 @transaction.atomic
-def import_task_annotations(task_id, src_file, format_name):
+def import_task_annotations(task_id, src_file, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
     task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        task.import_annotations(f, importer)
+        task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
 
 @transaction.atomic
-def import_job_annotations(job_id, src_file, format_name):
+def import_job_annotations(job_id, src_file, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
     job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        job.import_annotations(f, importer)
+        job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)

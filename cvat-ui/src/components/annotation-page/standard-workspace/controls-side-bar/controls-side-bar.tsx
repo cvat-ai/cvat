@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,8 +10,8 @@ import {
     ActiveControl, ObjectType, Rotation, ShapeType,
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Label } from 'components/labels-editor/common';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import { LabelOptColor } from 'components/labels-editor/common';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
@@ -26,6 +27,7 @@ import DrawPolylineControl, { Props as DrawPolylineControlProps } from './draw-p
 import DrawPointsControl, { Props as DrawPointsControlProps } from './draw-points-control';
 import DrawEllipseControl, { Props as DrawEllipseControlProps } from './draw-ellipse-control';
 import DrawCuboidControl, { Props as DrawCuboidControlProps } from './draw-cuboid-control';
+import DrawMaskControl, { Props as DrawMaskControlProps } from './draw-mask-control';
 import DrawSkeletonControl, { Props as DrawSkeletonControlProps } from './draw-skeleton-control';
 import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
 import MergeControl, { Props as MergeControlProps } from './merge-control';
@@ -65,6 +67,7 @@ const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineContro
 const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
 const ObservedDrawEllipseControl = ControlVisibilityObserver<DrawEllipseControlProps>(DrawEllipseControl);
 const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
+const ObservedDrawMaskControl = ControlVisibilityObserver<DrawMaskControlProps>(DrawMaskControl);
 const ObservedDrawSkeletonControl = ControlVisibilityObserver<DrawSkeletonControlProps>(DrawSkeletonControl);
 const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
@@ -97,15 +100,17 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     let pointsControlVisible = withUnspecifiedType;
     let ellipseControlVisible = withUnspecifiedType;
     let cuboidControlVisible = withUnspecifiedType;
+    let maskControlVisible = withUnspecifiedType;
     let tagControlVisible = withUnspecifiedType;
-    const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
-    labels.forEach((label: Label) => {
+    const skeletonControlVisible = labels.some((label: LabelOptColor) => label.type === 'skeleton');
+    labels.forEach((label: LabelOptColor) => {
         rectangleControlVisible = rectangleControlVisible || label.type === ShapeType.RECTANGLE;
         polygonControlVisible = polygonControlVisible || label.type === ShapeType.POLYGON;
         polylineControlVisible = polylineControlVisible || label.type === ShapeType.POLYLINE;
         pointsControlVisible = pointsControlVisible || label.type === ShapeType.POINTS;
         ellipseControlVisible = ellipseControlVisible || label.type === ShapeType.ELLIPSE;
         cuboidControlVisible = cuboidControlVisible || label.type === ShapeType.CUBOID;
+        maskControlVisible = maskControlVisible || label.type === ShapeType.MASK;
         tagControlVisible = tagControlVisible || label.type === ObjectType.TAG;
     });
 
@@ -156,11 +161,20 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     ActiveControl.DRAW_CUBOID,
                     ActiveControl.DRAW_ELLIPSE,
                     ActiveControl.DRAW_SKELETON,
+                    ActiveControl.DRAW_MASK,
                     ActiveControl.AI_TOOLS,
                     ActiveControl.OPENCV_TOOLS,
                 ].includes(activeControl);
+                const editing = canvasInstance.mode() === CanvasMode.EDIT;
 
                 if (!drawing) {
+                    if (editing) {
+                        // users probably will press N as they are used to do when they want to finish editing
+                        // in this case, if a mask is being edited we probably want to finish editing first
+                        canvasInstance.edit({ enabled: false });
+                        return;
+                    }
+
                     canvasInstance.cancel();
                     // repeateDrawShapes gets all the latest parameters
                     // and calls canvasInstance.draw() with them
@@ -302,6 +316,15 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     <ObservedDrawCuboidControl
                         canvasInstance={canvasInstance}
                         isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
+                        disabled={controlsDisabled}
+                    />
+                )
+            }
+            {
+                maskControlVisible && (
+                    <ObservedDrawMaskControl
+                        canvasInstance={canvasInstance}
+                        isDrawing={activeControl === ActiveControl.DRAW_MASK}
                         disabled={controlsDisabled}
                     />
                 )

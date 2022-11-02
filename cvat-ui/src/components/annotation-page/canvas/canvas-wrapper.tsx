@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +21,7 @@ import consts from 'consts';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import ImageSetupsContent from './image-setups-content';
+import BrushTools from './brush-tools';
 import ContextImage from '../standard-workspace/context-image/context-image';
 
 const cvat = getCore();
@@ -243,10 +245,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.activatedStateID !== null && prevProps.activatedStateID !== activatedStateID) {
             canvasInstance.activate(null);
-            const el = window.document.getElementById(`cvat_canvas_shape_${prevProps.activatedStateID}`);
-            if (el) {
-                (el as any).instance.fill({ opacity });
-            }
         }
 
         if (gridSize !== prevProps.gridSize) {
@@ -342,7 +340,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
-        canvasInstance.html().removeEventListener('contextmenu', this.onCanvasContextMenu);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().removeEventListener('canvas.dragstart', this.onCanvasDragStart);
@@ -367,7 +364,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
-        canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
 
         window.removeEventListener('resize', this.fitCanvas);
@@ -480,19 +476,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasClicked = (): void => {
-        const { onUpdateContextMenu } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        onUpdateContextMenu(false, 0, 0, ContextMenuType.CANVAS_SHAPE);
         if (!canvasInstance.html().contains(document.activeElement) && document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
-        }
-    };
-
-    private onCanvasContextMenu = (e: MouseEvent): void => {
-        const { activatedStateID, onUpdateContextMenu } = this.props;
-
-        if (e.target && !(e.target as HTMLElement).classList.contains('svg_select_points')) {
-            onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY, ContextMenuType.CANVAS_SHAPE);
         }
     };
 
@@ -653,7 +639,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             activatedStateID,
             activatedAttributeID,
-            selectedOpacity,
             aamZoomMargin,
             workspace,
             annotations,
@@ -671,10 +656,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
             if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
-            }
-            const el = window.document.getElementById(`cvat_canvas_shape_${activatedStateID}`);
-            if (el) {
-                ((el as any) as SVGElement).setAttribute('fill-opacity', `${selectedOpacity}`);
             }
         }
     }
@@ -746,7 +727,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().addEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
-        canvasInstance.html().addEventListener('contextmenu', this.onCanvasContextMenu);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);
@@ -771,7 +751,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
-        canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
     }
 
@@ -826,6 +805,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 />
 
                 <ContextImage />
+                <BrushTools />
 
                 <Dropdown trigger={['click']} placement='topCenter' overlay={<ImageSetupsContent />}>
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />

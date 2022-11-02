@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
+- Mask tools are supported now (brush, eraser, polygon-plus, polygon-minus, returning masks
+from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
 
 ### Changed

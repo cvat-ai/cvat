@@ -317,6 +317,7 @@ export interface Model {
     id: string;
     name: string;
     labels: string[];
+    version: number;
     attributes: Record<string, ModelAttribute[]>;
     framework: string;
     description: string;
@@ -558,6 +559,7 @@ export enum ActiveControl {
     DRAW_POLYLINE = 'draw_polyline',
     DRAW_POINTS = 'draw_points',
     DRAW_ELLIPSE = 'draw_ellipse',
+    DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
     DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
@@ -577,6 +579,7 @@ export enum ShapeType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    MASK = 'mask',
     SKELETON = 'skeleton',
 }
 
@@ -632,6 +635,11 @@ export interface AnnotationState {
             pointID: number | null;
             parentID: number | null;
             clientID: number | null;
+        };
+        brushTools: {
+            visible: boolean;
+            top: number;
+            left: number;
         };
         instance: Canvas | Canvas3d | null;
         ready: boolean;
