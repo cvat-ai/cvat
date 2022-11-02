@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +24,7 @@ import ObjectStateItemComponent from 'components/annotation-page/standard-worksp
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
 import { Label } from 'cvat-core-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface OwnProps {
@@ -141,6 +142,18 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             propagateObject(objectState);
         }
     };
+
+    private edit = (): void => {
+        const { objectState, readonly, canvasInstance } = this.props;
+
+        if (!readonly && canvasInstance instanceof Canvas) {
+            if (canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
+            }
+
+            canvasInstance.edit({ enabled: true, state: objectState });
+        }
+    }
 
     private remove = (): void => {
         const {
@@ -342,6 +355,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 toForeground={this.toForeground}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
+                edit={this.edit}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );

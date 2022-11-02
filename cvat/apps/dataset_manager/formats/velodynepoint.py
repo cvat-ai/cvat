@@ -29,7 +29,7 @@ def _export_images(dst_file, task_data, save_images=False):
 
 
 @importer(name='Kitti Raw Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         if zipfile.is_zipfile(src_file):
             zipfile.ZipFile(src_file).extractall(tmp_dir)
