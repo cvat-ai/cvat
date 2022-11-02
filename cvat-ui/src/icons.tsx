@@ -53,7 +53,13 @@ import SVGCVATAzureProvider from './assets/vscode-icons_file-type-azure.svg';
 import SVGCVATS3Provider from './assets/S3.svg';
 import SVGCVATGoogleCloudProvider from './assets/google-cloud.svg';
 import SVGRestoreIcon from './assets/restore-icon.svg';
+import SVGBrushIcon from './assets/brush-icon.svg';
+import SVGEraserIcon from './assets/eraser-icon.svg';
+import SVGPolygonPlusIcon from './assets/polygon-plus.svg';
+import SVGPolygonMinusIcon from './assets/polygon-minus.svg';
 import SVGMultiPlusIcon from './assets/multi-plus-icon.svg';
+import SVGPlusIcon from './assets/plus-icon.svg';
+import SVGCheckIcon from './assets/check-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -103,4 +109,10 @@ export const AzureProvider = React.memo((): JSX.Element => <SVGCVATAzureProvider
 export const S3Provider = React.memo((): JSX.Element => <SVGCVATS3Provider />);
 export const GoogleCloudProvider = React.memo((): JSX.Element => <SVGCVATGoogleCloudProvider />);
 export const RestoreIcon = React.memo((): JSX.Element => <SVGRestoreIcon />);
+export const BrushIcon = React.memo((): JSX.Element => <SVGBrushIcon />);
+export const EraserIcon = React.memo((): JSX.Element => <SVGEraserIcon />);
+export const PolygonPlusIcon = React.memo((): JSX.Element => <SVGPolygonPlusIcon />);
+export const PolygonMinusIcon = React.memo((): JSX.Element => <SVGPolygonMinusIcon />);
 export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);
+export const PlusIcon = React.memo((): JSX.Element => <SVGPlusIcon />);
+export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);

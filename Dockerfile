@@ -154,9 +154,7 @@ COPY --chown=${USER} cvat/ ${HOME}/cvat
 USER ${USER}
 WORKDIR ${HOME}
 
-RUN mkdir -p data share keys logs /tmp/supervisord static/opa
-RUN find cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | \
-    tar -czf static/opa/bundle.tar.gz --transform 's,^,rules/,' -C cvat/apps/iam/rules/ -T -
+RUN mkdir -p data share keys logs /tmp/supervisord static
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]
