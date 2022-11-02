@@ -2,6 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Before running, please refer to https://docs.datawiza.com/guides/cvat.html for setting up.
+#
+# To run:
+# docker-compose -f docker-compose.yml -f docker-compose.header-auth.yml up -d
+#
+# To shutdown:
+# docker-compose -f docker-compose.yml -f docker-compose.header-auth.yml down
 version: '3.3'
 
 services:
@@ -26,5 +33,10 @@ services:
       HEADER_AUTH_ENABLE: 'true'
 
   traefik:
+    # With Datawiza Access Proxy in front serving as the entry point,
+    # the port 8080 is removed for treafik since it should no longer be exposed to the public.
+    # The port 443 of the Datawiza Access Proxy becomes the publicly facing port.
+    # All traffic will go through the Access Proxy for authentication and then
+    # get passed to the upstream app/service.
     ports:
       - 8090:8090
