@@ -6,6 +6,7 @@
 
 from functools import reduce
 import os.path as osp
+from copy import deepcopy
 import re
 import sys
 import numpy as np
@@ -1892,7 +1893,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
     else:
         for label in dataset.categories()[dm.AnnotationType.label].items:
             if not project_annotation.db_project.label_set.filter(name=label.name).exists():
-                if label.name == 'background':
+                if label.name == "background" and len(deepcopy(dataset).filter("/item[annotation/label=background]")) == 0:
                     continue
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
