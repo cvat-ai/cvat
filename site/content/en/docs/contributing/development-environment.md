@@ -167,6 +167,25 @@ description: 'Installing a development environment for different operating syste
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
+  > Note for Arch Linux users:
+  >
+  > By default pacman will install `docker-compose` [v2](https://archlinux.org/packages/community/x86_64/docker-compose/), however this version is unsupported at the moment.
+  > You need to install `docker-compose` v1 from AUR, for example, this [package](https://aur.archlinux.org/packages/docker-compose-v1-bin).
+  > ```bash
+  > pikaur -S docker-compose-v1-bin
+  > ```
+  > You will also need to either additionally install `libxcrypt-compat`
+  > ```bash
+  > sudo pacman -S libxcrypt-compat
+  > ```
+  > or create a symlink between the newer and older `libcrypt.so` libraries
+  > ```bash
+  > sudo ln -s /usr/lib/libcrypt.so /usr/lib/libcrypt.so.1
+  > ```
+  > because of compatibility [issues](https://stackoverflow.com/questions/71319730/error-loading-python-lib-tmp-meir5krcn-libpython3-7m-so-1-0-dlopen-libcryp).
+  >
+  > Perform these actions before starting `docker.service`.
+
 - Pull and run OpenPolicyAgent Docker image:
 
   ```bash
