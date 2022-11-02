@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,7 +27,7 @@ interface UpdateFlags {
     reset: () => void;
 }
 
-interface SerializedData {
+export interface SerializedData {
     objectType: ObjectType;
     label: Label;
     frame: number;
@@ -333,7 +334,7 @@ export default class ObjectState {
                         }
 
                         if (Array.isArray(data.points)) {
-                            return [...data.points];
+                            return data.points;
                         }
 
                         return [];
@@ -365,7 +366,7 @@ export default class ObjectState {
                             data.updateFlags.points = true;
                         }
 
-                        data.points = [...points];
+                        data.points = points.slice();
                     },
                 },
                 rotation: {

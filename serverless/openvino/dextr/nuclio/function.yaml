@@ -3,6 +3,7 @@ metadata:
   namespace: cvat
   annotations:
     name: DEXTR
+    version: 2
     type: interactor
     spec:
     framework: openvino

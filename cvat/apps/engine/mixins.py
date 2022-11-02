@@ -287,6 +287,7 @@ class AnnotationMixin:
             return self.init_tus_upload(request)
 
         use_default_location = request.query_params.get('use_default_location', True)
+        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
         use_settings = strtobool(str(use_default_location))
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
@@ -307,6 +308,7 @@ class AnnotationMixin:
                 format_name=format_name,
                 location_conf=location_conf,
                 filename=file_name,
+                conv_mask_to_poly=conv_mask_to_poly,
             )
 
         return self.upload_data(request)

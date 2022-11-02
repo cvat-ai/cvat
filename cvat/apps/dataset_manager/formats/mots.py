@@ -14,7 +14,7 @@ from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     find_dataset_root, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import RotatedBoxesToPolygons
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
 
 
@@ -109,12 +109,12 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='MOTS PNG', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'mots', env=dm_env)
-        dataset.transform('masks_to_polygons')
+        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
 

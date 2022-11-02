@@ -7,11 +7,11 @@ import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Select, { BaseOptionType } from 'antd/lib/select';
-import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
+import Switch from 'antd/lib/switch';
 import notification from 'antd/lib/notification';
 
 import { Model, ModelAttribute, StringObject } from 'reducers';
@@ -40,6 +40,7 @@ type MappedLabelsList = Record<string, MappedLabel>;
 export interface DetectorRequestBody {
     mapping: MappedLabelsList;
     cleanup: boolean;
+    convMaskToPoly: boolean;
 }
 
 interface Match {
@@ -57,6 +58,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [threshold, setThreshold] = useState<number>(0.5);
     const [distance, setDistance] = useState<number>(50);
     const [cleanup, setCleanup] = useState<boolean>(false);
+    const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
     const [match, setMatch] = useState<Match>({ model: null, task: null });
     const [attrMatches, setAttrMatch] = useState<Record<string, Match>>({});
 
@@ -352,14 +354,24 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Row>
                 </>
             ) : null}
+            {isDetector && (
+                <div className='detector-runner-convert-masks-to-polygons-wrapper'>
+                    <Switch
+                        checked={convertMasksToPolygons}
+                        onChange={(checked: boolean) => {
+                            setConvertMasksToPolygons(checked);
+                        }}
+                    />
+                    <Text>Convert masks to polygons</Text>
+                </div>
+            )}
             {isDetector && withCleanup ? (
-                <div>
-                    <Checkbox
+                <div className='detector-runner-clean-previous-annotations-wrapper'>
+                    <Switch
                         checked={cleanup}
-                        onChange={(e: CheckboxChangeEvent): void => setCleanup(e.target.checked)}
-                    >
-                        Clean old annotations
-                    </Checkbox>
+                        onChange={(checked: boolean): void => setCleanup(checked)}
+                    />
+                    <Text>Clean previous annotations</Text>
                 </div>
             ) : null}
             {isReId ? (
@@ -414,6 +426,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             const detectorRequestBody: DetectorRequestBody = {
                                 mapping,
                                 cleanup,
+                                convMaskToPoly: convertMasksToPolygons,
                             };
 
                             runInference(
