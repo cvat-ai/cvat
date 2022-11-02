@@ -18,9 +18,6 @@ spec:
 
   build:
     image: cvat/pth.dschoerk.transt
-    #baseImage: ubuntu:20.04
-
-    # GPU only
     baseImage: nvidia/cuda:11.7.0-devel-ubuntu20.04
 
     directives:
@@ -46,10 +43,6 @@ spec:
         - kind: RUN
           value: git clone https://github.com/dschoerk/TransT trans-t
 
-        #- kind: RUN
-        #  value: pip install torch==1.7.1+cpu torchvision==0.8.2+cpu torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
-
-        # GPU only
         - kind: RUN
           value: pip install torch==1.7.0+cu110 torchvision==0.8.1+cu110 -f https://download.pytorch.org/whl/torch_stable.html
 
@@ -75,7 +68,6 @@ spec:
       attributes:
         maxRequestBodySize: 33554432 # 32MB
 
-  # GPU only
   resources:
     limits:
       nvidia.com/gpu: 1
