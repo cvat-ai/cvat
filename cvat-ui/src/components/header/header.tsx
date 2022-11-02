@@ -73,14 +73,13 @@ interface StateToProps {
     isAnalyticsPluginActive: boolean;
     isModelsPluginActive: boolean;
     isGitPluginActive: boolean;
-    isHeaderAuthActive: boolean;
     organizationsFetching: boolean;
     organizationsList: any[];
     currentOrganization: any | null;
 }
 
 interface DispatchToProps {
-    onLogout: (isHeaderAuthActive: boolean) => void;
+    onLogout: () => void;
     switchSettingsDialog: (show: boolean) => void;
     switchChangePasswordDialog: (show: boolean) => void;
 }
@@ -129,7 +128,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
         isGitPluginActive: list.GIT_INTEGRATION,
-        isHeaderAuthActive: list.HEADER_AUTH_ENABLE,
         organizationsFetching,
         currentOrganization,
         organizationsList,
@@ -138,7 +136,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onLogout: (isHeaderAuthActive: boolean): void => dispatch(logoutAsync(isHeaderAuthActive)),
+        onLogout: (): void => dispatch(logoutAsync()),
         switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialogAction(show)),
         switchChangePasswordDialog: (show: boolean): void => dispatch(authActions.switchChangePasswordDialog(show)),
     };
@@ -160,7 +158,6 @@ function HeaderContainer(props: Props): JSX.Element {
         renderChangePasswordItem,
         isAnalyticsPluginActive,
         isModelsPluginActive,
-        isHeaderAuthActive,
         organizationsFetching,
         currentOrganization,
         organizationsList,
@@ -367,7 +364,7 @@ function HeaderContainer(props: Props): JSX.Element {
             <Menu.Item
                 key='logout'
                 icon={logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />}
-                onClick={() => onLogout(isHeaderAuthActive)}
+                onClick={onLogout}
                 disabled={logoutFetching}
             >
                 Logout

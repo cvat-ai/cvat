@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { Webhook } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';

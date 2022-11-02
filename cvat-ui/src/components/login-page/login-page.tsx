@@ -10,6 +10,7 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 
 import LoginForm, { LoginData } from './login-form';
 
@@ -17,6 +18,7 @@ interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
     onLogin: (credential: string, password: string) => void;
+    isHeaderAuthActive: boolean;
 }
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
@@ -28,7 +30,17 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
 
     const { Content } = Layout;
 
-    const { fetching, onLogin, renderResetPassword } = props;
+    const {
+        fetching,
+        onLogin,
+        renderResetPassword,
+        isHeaderAuthActive,
+    } = props;
+
+    if (isHeaderAuthActive) {
+        window.location.href = '/datawiza/login';
+        return <CVATLoadingSpinner size='large' />;
+    }
 
     return (
         <Layout>

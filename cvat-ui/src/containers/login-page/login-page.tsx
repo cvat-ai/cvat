@@ -10,6 +10,7 @@ import { loginAsync } from 'actions/auth-actions';
 interface StateToProps {
     fetching: boolean;
     renderResetPassword: boolean;
+    isHeaderAuthActive: boolean;
 }
 
 interface DispatchToProps {
@@ -20,6 +21,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         fetching: state.auth.fetching,
         renderResetPassword: state.auth.allowResetPassword,
+        isHeaderAuthActive: state.plugins.list.HEADER_AUTH_ENABLE,
     };
 }
 

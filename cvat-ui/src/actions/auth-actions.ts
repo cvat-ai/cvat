@@ -113,20 +113,13 @@ export const loginAsync = (credential: string, password: string): ThunkAction =>
     }
 };
 
-export const logoutAsync = (isHeaderAuthActive: boolean): ThunkAction => async (dispatch) => {
+export const logoutAsync = (): ThunkAction => async (dispatch) => {
     dispatch(authActions.logout());
 
     try {
         await cvat.organizations.deactivate();
         await cvat.server.logout();
-
-        // Determine if user will be logged out through Datawiza Access Broker
-        // https://docs.datawiza.com/overview.html#what-is-datawiza-access-broker
-        if (isHeaderAuthActive) {
-            window.location.href = '/datawiza/ab-logout';
-        } else {
-            dispatch(authActions.logoutSuccess());
-        }
+        dispatch(authActions.logoutSuccess());
     } catch (error) {
         dispatch(authActions.logoutFailed(error));
     }
