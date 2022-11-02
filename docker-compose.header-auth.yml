@@ -34,7 +34,7 @@ services:
 
   traefik:
     # With Datawiza Access Proxy in front serving as the entry point,
-    # the port 8080 is removed for treafik since it should no longer be exposed to the public.
+    # the port 8080 is removed for traefik since it should no longer be exposed to the public.
     # The port 443 of the Datawiza Access Proxy becomes the publicly facing port.
     # All traffic will go through the Access Proxy for authentication and then
     # get passed to the upstream app/service.
