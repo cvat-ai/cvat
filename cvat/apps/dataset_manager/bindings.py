@@ -1894,7 +1894,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
         for label in dataset.categories()[dm.AnnotationType.label].items:
             if not project_annotation.db_project.label_set.filter(name=label.name).exists():
                 if label.name == "background":
-                    dataset.transform("remap_labels",  mapping={"background": ""}, default="keep")
+                    dataset.transform("remap_labels", mapping={"background": ""}, default="keep")
                     continue
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
