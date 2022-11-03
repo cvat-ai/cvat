@@ -1,4 +1,7 @@
 package tasks
+import future.keywords.if
+import future.keywords.in
+
 import data.utils
 import data.organizations
 
@@ -75,80 +78,104 @@ is_task_staff {
     is_task_assignee
 }
 
-default allow = false
-
-allow {
+simple_allow if {
     utils.is_admin
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+# Limits
+USER_TASKS_LIMIT := 10
+ORG_TASKS_LIMIT := 10
+
+# Query rules
+#
+# Use simple rules when no explanation required.
+#
+# For complex rules use the "extended_checks" style. Each check must have a unique name
+# in this format.
+
+default simple_allow = false
+
+extended_checks["user sandbox task create"] = { "allow": allow, "reason": reason } if {
+    input.scope in { utils.CREATE, utils.IMPORT_BACKUP }
     utils.is_sandbox
     utils.has_perm(utils.USER)
-    input.resource.user.num_resources < 10
+
+    allow := input.resource.user.num_resources < USER_TASKS_LIMIT
+    reason := "user task limit is reached"
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+extended_checks["org user supervisor org task create"] = { "allow": allow, "reason": reason } if {
+    input.scope in { utils.CREATE, utils.IMPORT_BACKUP }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
-    input.resource.user.num_resources < 10
+
+    # FIXME: this condition is probably using invalid input
+    allow := input.resource.user.num_resources < ORG_TASKS_LIMIT
+    reason := "org task limit is reached"
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+simple_allow if {
+    input.scope in { utils.CREATE, utils.IMPORT_BACKUP }
     utils.is_sandbox
     utils.has_perm(utils.BUSINESS)
 }
 
-allow {
-    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
+simple_allow if {
+    input.scope in { utils.CREATE, utils.IMPORT_BACKUP }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
 }
 
-allow {
+extended_checks["project user staff sandbox project task create"] = { "allow": allow, "reason": reason } if {
     input.scope == utils.CREATE_IN_PROJECT
     utils.is_sandbox
     utils.has_perm(utils.USER)
-    input.resource.user.num_resources < 10
     is_project_staff
+
+    allow := input.resource.user.num_resources < USER_TASKS_LIMIT
+    reason := "user project limit is reached"
 }
 
-allow {
+extended_checks["org user supervisor org project task create"] = { "allow": allow, "reason": reason } if {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
-    input.resource.user.num_resources < 10
+
+    # FIXME: this condition is probably using invalid input
+    allow := input.resource.user.num_resources < ORG_TASKS_LIMIT
+    reason := "org project limit is reached"
 }
 
-allow {
+extended_checks["org project worker staff org project task create"] = { "allow": allow, "reason": reason } if {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.WORKER)
     is_project_staff
-    input.resource.user.num_resources < 10
+
+    # FIXME: this condition is probably using invalid input
+    allow := input.resource.user.num_resources < ORG_TASKS_LIMIT
+    reason := "project task limit is reached"
 }
 
-allow {
+simple_allow if {
     input.scope == utils.CREATE_IN_PROJECT
     utils.is_sandbox
     utils.has_perm(utils.BUSINESS)
     is_project_staff
 }
 
-allow {
+simple_allow if {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
 }
 
-allow {
+simple_allow if {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
@@ -156,12 +183,12 @@ allow {
     is_project_staff
 }
 
-allow {
+simple_allow if {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-allow {
+simple_allow if {
     input.scope == utils.LIST
     organizations.is_member
 }
@@ -194,93 +221,136 @@ filter = [] { # Django Q object to filter list of entries
         {"project__organization": input.auth.organization.id}, "|", "&"]
 }
 
-allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-      utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
+        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP
+    }
     utils.is_sandbox
     is_task_staff
 }
 
-allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-      utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
+        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP
+    }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-      utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
+        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP
+    }
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_task_staff
 }
 
-allow {
-    { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS
+    }
     utils.is_sandbox
     is_task_staff
     utils.has_perm(utils.WORKER)
 }
 
-allow {
-    { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS
+    }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
-    { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS
+    }
     is_task_staff
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
 }
 
-allow {
-    { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-      utils.DELETE, utils.UPDATE_ORG }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
+        utils.DELETE, utils.UPDATE_ORG
+    }
     utils.is_sandbox
     is_project_staff
     utils.has_perm(utils.WORKER)
 }
 
-allow {
-    { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-      utils.DELETE, utils.UPDATE_ORG }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
+        utils.DELETE, utils.UPDATE_ORG
+    }
     utils.is_sandbox
     is_task_owner
     utils.has_perm(utils.WORKER)
 }
 
-allow {
-    { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-      utils.DELETE, utils.UPDATE_ORG }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
+        utils.DELETE, utils.UPDATE_ORG
+    }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-allow {
-    { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-      utils.DELETE, utils.UPDATE_ORG }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
+        utils.DELETE, utils.UPDATE_ORG
+    }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_task_owner
 }
 
-allow {
-    { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-      utils.DELETE, utils.UPDATE_ORG }[input.scope]
+simple_allow if {
+    input.scope in {
+        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
+        utils.DELETE, utils.UPDATE_ORG
+    }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_project_staff
 }
 
+
+# Create the resulting decision
+# We prioritize allowances over denials here
+
+default result = {
+	"allow": false,
+	"reason": "unauthorized resource access",
+}
+
+result = {"allow": true} if {
+    # there is no "or" operator in rego
+    simple_allow
+} else = {"allow": true} if {
+    some check in extended_checks
+    check.allow == true
+} else = {"allow": false, "reason": check.reason} if {
+	some check in extended_checks
+	check.allow == false
+}
+
+allow = result.allow

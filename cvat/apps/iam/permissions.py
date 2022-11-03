@@ -6,7 +6,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 import operator
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 import requests
 from django.conf import settings
@@ -16,6 +16,10 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.webhooks.models import Webhook
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
+
+
+class RequestNotAllowedError(PermissionDenied):
+    pass
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     @classmethod
@@ -78,7 +82,17 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     def __bool__(self):
         r = requests.post(self.url, json=self.payload)
-        return r.json()['result']
+        result = r.json()['result']
+        if isinstance(result, dict):
+            allow = result['allow']
+            if allow:
+                return allow
+            else:
+                raise RequestNotAllowedError(result.get('reason', ''))
+        elif isinstance(result, bool):
+            return result
+        else:
+            raise ValueError("Unexpected response format")
 
     def filter(self, queryset):
         url = self.url.replace('/allow', '/filter')
@@ -634,7 +648,7 @@ class TaskPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
+        self.url = settings.IAM_OPA_DATA_URL + '/tasks/result'
 
     @staticmethod
     def get_scopes(request, view, obj):
@@ -758,7 +772,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                     },
                 } if project else None,
                 "user": {
-                    "num_resources": Project.objects.filter(
+                    "num_resources": Task.objects.filter(
                         owner_id=self.user_id).count()
                 }
             }
