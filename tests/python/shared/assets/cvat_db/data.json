@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-10-25T10:35:29.084Z",
+    "last_login": "2022-11-03T13:56:42.744Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -2192,7 +2192,7 @@
     ],
     "bug_tracker": "",
     "created_date": "2021-12-14T19:46:37.969Z",
-    "updated_date": "2022-10-25T10:35:53.151Z",
+    "updated_date": "2022-11-03T13:57:25.895Z",
     "status": "annotation",
     "organization": null,
     "source_storage": null,
@@ -2463,7 +2463,7 @@
     ],
     "bug_tracker": "",
     "created_date": "2022-03-05T09:33:10.420Z",
-    "updated_date": "2022-10-25T10:35:53.272Z",
+    "updated_date": "2022-11-03T13:57:26.007Z",
     "overlap": 0,
     "segment_size": 5,
     "status": "annotation",
@@ -3556,7 +3556,7 @@
   "fields": {
     "segment": 14,
     "assignee": null,
-    "updated_date": "2022-10-25T10:35:53.602Z",
+    "updated_date": "2022-11-03T13:57:26.346Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4759,7 +4759,7 @@
     "owner": [
       "business1"
     ],
-    "timestamp": "2022-10-25T10:35:53.282Z",
+    "timestamp": "2022-11-03T13:57:26.015Z",
     "data": {
       "stage": "annotation",
       "state": "new",
@@ -4776,7 +4776,7 @@
     "owner": [
       "business1"
     ],
-    "timestamp": "2022-10-25T10:35:53.609Z",
+    "timestamp": "2022-11-03T13:57:26.351Z",
     "data": {
       "stage": "annotation",
       "state": "in progress",
@@ -4793,7 +4793,7 @@
     "owner": [
       "admin1"
     ],
-    "timestamp": "2022-10-25T10:35:53.613Z",
+    "timestamp": "2022-11-03T13:57:26.356Z",
     "data": {
       "state": "in progress"
     },
@@ -5141,7 +5141,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[62.794050343251, 291.90789473684345, 205.51716247139666, 726.5646453089266]",
+    "points": "[53.062929061787145, 301.6390160183091, 197.94851258581548, 763.3266590389048]",
     "rotation": 0.0,
     "parent": null
   }
@@ -5159,7 +5159,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[200.90000000000146, 91.58072289156735, 293.17710843373607, 130.9301204819294]",
+    "points": "[172.0810546875, 105.990234375, 285.97262095255974, 138.40000000000146]",
     "rotation": 0.0,
     "parent": null
   }
@@ -6022,8 +6022,8 @@
     "event": "update:job",
     "status_code": 200,
     "redelivery": false,
-    "created_date": "2022-10-25T10:35:53.635Z",
-    "updated_date": "2022-10-25T10:35:54.042Z",
+    "created_date": "2022-11-03T13:57:26.380Z",
+    "updated_date": "2022-11-03T13:57:26.908Z",
     "changed_fields": "state",
     "request": {
       "job": {
@@ -6073,7 +6073,7 @@
         "stop_frame": 19,
         "bug_tracker": "",
         "start_frame": 15,
-        "updated_date": "2022-10-25T10:35:53.602913Z",
+        "updated_date": "2022-11-03T13:57:26.346824Z",
         "data_chunk_size": 72,
         "data_compressed_chunk_type": "imageset"
       },
