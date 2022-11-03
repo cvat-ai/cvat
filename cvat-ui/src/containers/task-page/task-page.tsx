@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -65,16 +66,7 @@ function mapDispatchToProps(dispatch: any, own: Props): DispatchToProps {
     return {
         getTask: (): void => {
             dispatch(
-                getTasksAsync({
-                    id,
-                    page: 1,
-                    search: null,
-                    owner: null,
-                    assignee: null,
-                    name: null,
-                    status: null,
-                    mode: null,
-                }),
+                getTasksAsync({ id }),
             );
         },
     };

@@ -3,11 +3,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+import functools
+import hashlib
+
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
 from django.conf import settings
+from django.http import HttpResponse
+from django.views.decorators.http import etag as django_etag
 from rest_framework.response import Response
 from dj_rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
@@ -15,7 +21,6 @@ from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
-
 
 from .authentication import Signer
 
@@ -68,6 +73,7 @@ def get_context(request):
     }
 
     return context
+
 class ContextMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -105,7 +111,6 @@ class SigningView(views.APIView):
         url = furl(url).add({Signer.QUERY_PARAM: sign}).url
         return Response(url)
 
-
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
         data = self.get_serializer(user).data
@@ -116,3 +121,45 @@ class RegisterViewEx(RegisterView):
             data['email_verification_required'] = False
             data['key'] = user.auth_token.key
         return data
+
+def _etag(etag_func):
+    """
+    Decorator to support conditional retrieval (or change)
+    for a Django Rest Framework's ViewSet.
+    It calls Django's original decorator but pass correct request object to it.
+    Django's original decorator doesn't work with DRF request object.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(obj_self, request, *args, **kwargs):
+            drf_request = request
+            wsgi_request = request._request
+
+            @django_etag(etag_func=etag_func)
+            def patched_viewset_method(*_args, **_kwargs):
+                """Call original viewset method with correct type of request"""
+                return func(obj_self, drf_request, *args, **kwargs)
+
+            return patched_viewset_method(wsgi_request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+class RulesView(views.APIView):
+    serializer_class = None
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    iam_organization_field = None
+
+    @staticmethod
+    def _get_bundle_path():
+        return settings.IAM_OPA_BUNDLE_PATH
+
+    @staticmethod
+    def _etag_func(file_path):
+        with open(file_path, 'rb') as f:
+            return hashlib.blake2b(f.read()).hexdigest()
+
+    @_etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path()))
+    def get(self, request):
+        file_obj = open(self._get_bundle_path() ,"rb")
+        return HttpResponse(file_obj, content_type='application/x-tar')

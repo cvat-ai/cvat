@@ -39,6 +39,7 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      IAM_OPA_BUNDLE: '1'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
     command: -c supervisord/server.conf
@@ -53,7 +54,9 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
-      - cvat
+      cvat:
+        aliases:
+          - cvat-server
 
   cvat_utils:
     container_name: cvat_utils
@@ -185,11 +188,15 @@ services:
       cvat:
         aliases:
           - opa
-    volumes:
-      - ./cvat/apps/iam/rules:/rules
-    ports:
-      - '8181:8181'
-    command: run --server --addr :8181 --set=decision_logs.console=true /rules
+    command:
+      - run
+      - --server
+      - --set=decision_logs.console=true
+      - --set=services.cvat.url=http://cvat-server:8080
+      - --set=bundles.cvat.service=cvat
+      - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=5
+      - --set=bundles.cvat.polling.max_delay_seconds=15
 
 volumes:
   cvat_db:

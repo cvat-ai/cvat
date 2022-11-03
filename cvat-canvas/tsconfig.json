@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "emitDeclarationOnly": true,
     "module": "es6",
-    "target": "es2016",
+    "target": "es2019",
     "noImplicitAny": true,
     "preserveConstEnums": true,
     "declaration": true,

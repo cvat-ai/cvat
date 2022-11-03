@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import jsonLogic from 'json-logic-js';
-import { AttributeType, ObjectType } from './enums';
+import { AttributeType, ObjectType, ShapeType } from './enums';
 
 function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
@@ -17,29 +17,35 @@ export default class AnnotationsFilter {
                 return acc;
             }, {});
 
-            let xtl = Number.MAX_SAFE_INTEGER;
-            let xbr = Number.MIN_SAFE_INTEGER;
-            let ytl = Number.MAX_SAFE_INTEGER;
-            let ybr = Number.MIN_SAFE_INTEGER;
             let [width, height] = [null, null];
 
             if (state.objectType !== ObjectType.TAG) {
-                const points = state.points || state.elements.reduce((acc, val) => {
-                    acc.push(val.points);
-                    return acc;
-                }, []).flat();
-                points.forEach((coord, idx) => {
-                    if (idx % 2) {
-                        // y
-                        ytl = Math.min(ytl, coord);
-                        ybr = Math.max(ybr, coord);
-                    } else {
-                        // x
-                        xtl = Math.min(xtl, coord);
-                        xbr = Math.max(xbr, coord);
-                    }
-                });
-                [width, height] = [xbr - xtl, ybr - ytl];
+                if (state.shapeType === ShapeType.MASK) {
+                    const [xtl, ytl, xbr, ybr] = state.points.slice(-4);
+                    [width, height] = [xbr - xtl + 1, ybr - ytl + 1];
+                } else {
+                    let xtl = Number.MAX_SAFE_INTEGER;
+                    let xbr = Number.MIN_SAFE_INTEGER;
+                    let ytl = Number.MAX_SAFE_INTEGER;
+                    let ybr = Number.MIN_SAFE_INTEGER;
+
+                    const points = state.points || state.elements.reduce((acc, val) => {
+                        acc.push(val.points);
+                        return acc;
+                    }, []).flat();
+                    points.forEach((coord, idx) => {
+                        if (idx % 2) {
+                            // y
+                            ytl = Math.min(ytl, coord);
+                            ybr = Math.max(ybr, coord);
+                        } else {
+                            // x
+                            xtl = Math.min(xtl, coord);
+                            xbr = Math.max(xbr, coord);
+                        }
+                    });
+                    [width, height] = [xbr - xtl, ybr - ytl];
+                }
             }
 
             const attributes = {};

@@ -7,4 +7,4 @@
 /db.sqlite3
 /keys
 **/node_modules
-
+/static
