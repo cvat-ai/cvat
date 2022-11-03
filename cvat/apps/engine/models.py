@@ -569,6 +569,7 @@ class ShapeType(str, Enum):
     POINTS = 'points'       # (x0, y0, ..., xn, yn)
     ELLIPSE = 'ellipse'     # (cx, cy, rx, ty)
     CUBOID = 'cuboid'       # (x0, y0, ..., x7, y7)
+    MASK = 'mask'       # (rle mask, left, top, right, bottom)
     SKELETON = 'skeleton'
 
     @classmethod

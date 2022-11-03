@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +9,7 @@ import {
     MergeData,
     SplitData,
     GroupData,
+    MasksEditData,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
     CanvasModel,
@@ -38,6 +40,7 @@ interface Canvas {
 
     interact(interactionData: InteractionData): void;
     draw(drawData: DrawData): void;
+    edit(editData: MasksEditData): void;
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
@@ -127,6 +130,10 @@ class CanvasImpl implements Canvas {
 
     public draw(drawData: DrawData): void {
         this.model.draw(drawData);
+    }
+
+    public edit(editData: MasksEditData): void {
+        this.model.edit(editData);
     }
 
     public split(splitData: SplitData): void {

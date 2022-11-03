@@ -1,134 +1,111 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-/**
- * Class representing a serverless function
- * @memberof module:API.cvat.classes
- */
-class MLModel {
-    constructor(data) {
-        this._id = data.id;
-        this._name = data.name;
-        this._labels = data.labels;
-        this._attributes = data.attributes || [];
-        this._framework = data.framework;
-        this._description = data.description;
-        this._type = data.type;
-        this._tip = {
-            message: data.help_message,
-            gif: data.animated_gif,
-        };
-        this._params = {
-            canvas: {
-                minPosVertices: data.min_pos_points,
-                minNegVertices: data.min_neg_points,
-                startWithBox: data.startswith_box,
-            },
-        };
-    }
+import { ModelType } from './enums';
 
-    /**
-     * @type {string}
-     * @readonly
-     */
-    get id() {
-        return this._id;
-    }
-
-    /**
-     * @type {string}
-     * @readonly
-     */
-    get name() {
-        return this._name;
-    }
-
-    /**
-     * @description labels supported by the model
-     * @type {string[]}
-     * @readonly
-     */
-    get labels() {
-        if (Array.isArray(this._labels)) {
-            return [...this._labels];
-        }
-
-        return [];
-    }
-
-    /**
-     * @typedef ModelAttribute
-     * @property {string} name
-     * @property {string[]} values
-     * @property {'select'|'number'|'checkbox'|'radio'|'text'} input_type
-     */
-    /**
-     * @type {Object<string, ModelAttribute>}
-     * @readonly
-     */
-    get attributes() {
-        return { ...this._attributes };
-    }
-
-    /**
-     * @type {string}
-     * @readonly
-     */
-    get framework() {
-        return this._framework;
-    }
-
-    /**
-     * @type {string}
-     * @readonly
-     */
-    get description() {
-        return this._description;
-    }
-
-    /**
-     * @type {module:API.cvat.enums.ModelType}
-     * @readonly
-     */
-    get type() {
-        return this._type;
-    }
-
-    /**
-     * @type {object}
-     * @readonly
-     */
-    get params() {
-        return {
-            canvas: { ...this._params.canvas },
-        };
-    }
-
-    /**
-     * @type {MlModelTip}
-     * @property {string} message A short message for a user about the model
-     * @property {string} gif A gif URL to be shown to a user as an example
-     * @readonly
-     */
-    get tip() {
-        return { ...this._tip };
-    }
-
-    /**
-     * @typedef onRequestStatusChange
-     * @param {string} event
-     * @global
-    */
-    /**
-     * @param {onRequestStatusChange} onRequestStatusChange
-     * @instance
-     * @description Used to set a callback when the tool is blocked in UI
-     * @returns {void}
-    */
-    set onChangeToolsBlockerState(onChangeToolsBlockerState) {
-        this._params.canvas.onChangeToolsBlockerState = onChangeToolsBlockerState;
-    }
+interface ModelAttribute {
+    name: string;
+    values: string[];
+    input_type: 'select' | 'number' | 'checkbox' | 'radio' | 'text';
 }
 
-module.exports = MLModel;
+interface ModelParams {
+    canvas: {
+        minPosVertices?: number;
+        minNegVertices?: number;
+        startWithBox?: boolean;
+        onChangeToolsBlockerState?: (event: string) => void;
+    };
+}
+
+interface ModelTip {
+    message: string;
+    gif: string;
+}
+
+interface SerializedModel {
+    id: string;
+    name: string;
+    labels: string[];
+    version: number;
+    attributes: Record<string, ModelAttribute>;
+    framework: string;
+    description: string;
+    type: ModelType;
+    help_message?: string;
+    animated_gif?: string;
+    min_pos_points?: number;
+    min_neg_points?: number;
+    startswith_box?: boolean;
+}
+
+export default class MLModel {
+    private serialized: SerializedModel;
+    private changeToolsBlockerStateCallback?: (event: string) => void;
+
+    constructor(serialized: SerializedModel) {
+        this.serialized = { ...serialized };
+    }
+
+    public get id(): string {
+        return this.serialized.id;
+    }
+
+    public get name(): string {
+        return this.serialized.name;
+    }
+
+    public get labels(): string[] {
+        return Array.isArray(this.serialized.labels) ? [...this.serialized.labels] : [];
+    }
+
+    public get version(): number {
+        return this.serialized.version;
+    }
+
+    public get attributes(): Record<string, ModelAttribute> {
+        return this.serialized.attributes || {};
+    }
+
+    public get framework(): string {
+        return this.serialized.framework;
+    }
+
+    public get description(): string {
+        return this.serialized.description;
+    }
+
+    public get type(): ModelType {
+        return this.serialized.type;
+    }
+
+    public get params(): ModelParams {
+        const result: ModelParams = {
+            canvas: {
+                minPosVertices: this.serialized.min_pos_points,
+                minNegVertices: this.serialized.min_neg_points,
+                startWithBox: this.serialized.startswith_box,
+            },
+        };
+
+        if (this.changeToolsBlockerStateCallback) {
+            result.canvas.onChangeToolsBlockerState = this.changeToolsBlockerStateCallback;
+        }
+
+        return result;
+    }
+
+    public get tip(): ModelTip {
+        return {
+            message: this.serialized.help_message,
+            gif: this.serialized.animated_gif,
+        };
+    }
+
+    // Used to set a callback when the tool is blocked in UI
+    public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
+        this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
+    }
+}

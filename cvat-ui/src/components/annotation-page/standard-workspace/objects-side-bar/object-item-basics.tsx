@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,6 +44,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
+    edit(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -75,6 +77,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        edit,
         jobInstance,
     } = props;
 
@@ -150,6 +153,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         toForeground,
                         resetCuboidPerspective,
                         changeColorPickerVisible,
+                        edit,
                     })}
                 >
                     <MoreOutlined />
