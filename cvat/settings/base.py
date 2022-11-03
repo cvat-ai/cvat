@@ -395,6 +395,9 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
+IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
+os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

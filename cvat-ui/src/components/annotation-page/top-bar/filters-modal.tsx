@@ -112,6 +112,7 @@ function FiltersModalComponent(): JSX.Element {
                         { value: 'cuboid', title: 'Cuboid' },
                         { value: 'ellipse', title: 'Ellipse' },
                         { value: 'skeleton', title: 'Skeleton' },
+                        { value: 'mask', title: 'Mask' },
                     ],
                 },
             },
@@ -260,6 +261,7 @@ function FiltersModalComponent(): JSX.Element {
             visible={visible}
             closable={false}
             width={800}
+            destroyOnClose
             centered
             onCancel={() => dispatch(showFilters(false))}
             footer={[

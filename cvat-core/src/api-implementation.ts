@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-const config = require('./config');
+const config = require('./config').default;
 
 (() => {
     const PluginRegistry = require('./plugins').default;
     const serverProxy = require('./server-proxy').default;
-    const lambdaManager = require('./lambda-manager');
+    const lambdaManager = require('./lambda-manager').default;
     const {
         isBoolean,
         isInteger,

@@ -222,9 +222,32 @@ allow {
 }
 
 allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
+    input.scope == utils.UPDATE
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
+    is_issue_staff
+}
+
+allow {
+    input.scope == utils.UPDATE
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.WORKER)
+    organizations.is_member
+    is_issue_staff
+}
+
+allow {
+    input.scope == utils.DELETE
+    utils.is_sandbox
+    utils.has_perm(utils.WORKER)
+    is_issue_admin
+}
+
+allow {
+    input.scope == utils.DELETE
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.WORKER)
+    organizations.is_member
     is_issue_admin
 }
 
@@ -233,12 +256,4 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.is_member
-    is_issue_admin
 }

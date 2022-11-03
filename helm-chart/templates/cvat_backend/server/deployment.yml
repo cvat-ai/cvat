@@ -80,6 +80,8 @@ spec:
                 name: "{{ .Release.Name }}-{{ .Values.cvat.backend.server.secret.name }}"
                 key:  googleClientSecret
           {{- end }}
+          - name: IAM_OPA_BUNDLE
+            value: "1"
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
             value: "{{ .Release.Name }}-redis-master"

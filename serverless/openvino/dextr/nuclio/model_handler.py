@@ -19,6 +19,7 @@ class ModelHandler:
     #   points: [[x1,y1], [x2,y2], [x3,y3], [x4,y4], ...]
     # Output:
     #   polygon: [[x1,y1], [x2,y2], [x3,y3], [x4,y4], ...]
+    #   mask: [[a, a, a, a, a, ...], [a, a, a, a, ...], ...]
     def handle(self, image, points):
         DEXTR_PADDING = 50
         DEXTR_TRESHOLD = 0.8
@@ -76,8 +77,8 @@ class ModelHandler:
         if contours.size < 3 * 2:
             raise Exception('Less then three point have been detected. Can not build a polygon.')
 
-        result = []
+        polygon = []
         for point in contours:
-            result.append([int(point[0]), int(point[1])])
+            polygon.append([int(point[0]), int(point[1])])
 
-        return result
+        return result, polygon

@@ -3,19 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import functools
 import hashlib
-import os.path as osp
-from django_sendfile import sendfile
 
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
 from django.conf import settings
-from django.views import View
-from django.utils.decorators import method_decorator
-from django.views.decorators.http import etag
+from django.http import HttpResponse
+from django.views.decorators.http import etag as django_etag
 from rest_framework.response import Response
 from dj_rest_auth.registration.views import RegisterView
 from dj_rest_auth.views import LoginView
@@ -81,6 +80,7 @@ def get_context(request):
     }
 
     return context
+
 class ContextMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -170,22 +170,47 @@ class RegisterViewEx(RegisterView):
             data['key'] = user.auth_token.key
         return data
 
-# Django Generic View is used here instead of DRF APIView due to native support of etag
-# that doesn't supported by DRF without extra dependencies
-class RulesView(View):
+def _etag(etag_func):
+    """
+    Decorator to support conditional retrieval (or change)
+    for a Django Rest Framework's ViewSet.
+    It calls Django's original decorator but pass correct request object to it.
+    Django's original decorator doesn't work with DRF request object.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(obj_self, request, *args, **kwargs):
+            drf_request = request
+            wsgi_request = request._request
+
+            @django_etag(etag_func=etag_func)
+            def patched_viewset_method(*_args, **_kwargs):
+                """Call original viewset method with correct type of request"""
+                return func(obj_self, drf_request, *args, **kwargs)
+
+            return patched_viewset_method(wsgi_request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+class RulesView(views.APIView):
+    serializer_class = None
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    iam_organization_field = None
+
     @staticmethod
     def _get_bundle_path():
-        return osp.join(settings.STATIC_ROOT, 'opa', 'bundle.tar.gz')
+        return settings.IAM_OPA_BUNDLE_PATH
 
     @staticmethod
     def _etag_func(file_path):
         with open(file_path, 'rb') as f:
             return hashlib.blake2b(f.read()).hexdigest()
 
-    @method_decorator(etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path())))
+    @_etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path()))
     def get(self, request):
-        file_path = self._get_bundle_path()
-        return sendfile(request, file_path)
+        file_obj = open(self._get_bundle_path() ,"rb")
+        return HttpResponse(file_obj, content_type='application/x-tar')
 
 class OAuth2CallbackViewEx(OAuth2CallbackView):
     def dispatch(self, request, *args, **kwargs):
@@ -211,4 +236,3 @@ class ConfirmEmailViewEx(ConfirmEmailView):
             return self.post(*args, **kwargs)
         except Http404:
             return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
-

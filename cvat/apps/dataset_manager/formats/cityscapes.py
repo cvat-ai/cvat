@@ -13,7 +13,7 @@ from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
                                                 import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import RotatedBoxesToPolygons
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
 from .utils import make_colormap
 
@@ -34,7 +34,7 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='Cityscapes', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
@@ -45,7 +45,7 @@ def _import(src_file, instance_data, load_data_callback=None):
             write_label_map(labelmap_file, colormap)
 
         dataset = Dataset.import_from(tmp_dir, 'cityscapes', env=dm_env)
-        dataset.transform('masks_to_polygons')
+        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
