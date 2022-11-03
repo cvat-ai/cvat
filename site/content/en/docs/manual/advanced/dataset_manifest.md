@@ -159,7 +159,7 @@ utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 ### File format
 
 The dataset manifest files are text files in JSONL format. These files have 2 sub-formats:
-*for video* and *for images and 3d data*.
+_for video_ and _for images and 3d data_.
 
 > Each top-level entry enclosed in curly braces must use 1 string, no empty strings is allowed.
 > The formatting in the descriptions below is only for demonstration.
