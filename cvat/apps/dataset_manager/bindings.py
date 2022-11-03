@@ -6,7 +6,6 @@
 
 from functools import reduce
 import os.path as osp
-from copy import deepcopy
 import re
 import sys
 import numpy as np
