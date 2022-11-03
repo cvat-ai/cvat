@@ -26,6 +26,11 @@ Unfortunately, this method will not work for all videos with a valid manifest fi
 in the video for smooth video decoding, the task will be created in another way. Namely, all chunks will be prepared
 during task creation, which may take some time.
 
+#### How to use
+
+To enable or disable this feature for a new task, use the [`Use Cache`](/docs/manual/basics/creating_an_annotation_task/#use-cache)
+toggle in the task configuration.
+
 #### Uploading a manifest with data
 
 When creating a task, you can upload a `manifest.jsonl` file along with the video or dataset with images.
