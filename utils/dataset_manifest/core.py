@@ -26,10 +26,7 @@ class VideoStreamReader:
 
         with closing(av.open(self.source_path, mode='r')) as container:
             video_stream = VideoStreamReader._get_video_stream(container)
-            stop = False
             for packet in container.demux(video_stream):
-                if stop:
-                    break
                 for frame in packet.decode():
                     # check type of first frame
                     if not frame.pict_type.name == 'I':
@@ -45,11 +42,12 @@ class VideoStreamReader:
                             format ='bgr24',
                         )
                     self.height, self.width = (frame.height, frame.width)
+
                     # not all videos contain information about numbers of frames
                     if video_stream.frames:
                         self._frames_number = video_stream.frames
-                    stop = True
-                    break
+
+                    return
 
     @property
     def source_path(self):
@@ -150,7 +148,7 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
 class DatasetImagesReader:
     def __init__(self,
                 sources,
-                *args,
+                *,
                 start = 0,
                 step = 1,
                 stop = None,
@@ -279,7 +277,6 @@ class _Manifest:
         return os.path.basename(self._path) if not self._upload_dir \
             else os.path.relpath(self._path, self._upload_dir)
 
-    @abstractmethod
     def get_header_lines_count(self) -> int:
         if self.TYPE == 'video':
             return 3
@@ -351,12 +348,6 @@ class _Index:
     def __iter__(self):
         yield from self._index.values()
 
-def _set_index(func):
-    def wrapper(self, *args, **kwargs):
-        self.set_index()
-        return func(self, *args,  **kwargs)
-    return wrapper
-
 class _ManifestManager(ABC):
     BASE_INFORMATION = {
         'version' : 1,
@@ -367,7 +358,7 @@ class _ManifestManager(ABC):
         for item in self._required_item_attributes:
             if state.get(item, None) is None:
                 raise MissingFieldError(
-                    f"Invalid '{self.manifest.name} file structure': "
+                    f"Invalid '{self.manifest.name}' file structure: "
                     f"'{item}' is required, but not found"
                 )
 
@@ -424,8 +415,9 @@ class _ManifestManager(ABC):
     def partial_update(self, number, properties):
         ...
 
-    @_set_index
     def __iter__(self):
+        self.set_index()
+
         with open(self._manifest.path, 'r') as manifest_file:
             manifest_file.seek(self._index[0])
             for idx, line_start in enumerate(self._index):
@@ -434,7 +426,6 @@ class _ManifestManager(ABC):
                 item = json.loads(line)
                 self._json_item_is_valid(**item)
                 yield (idx, item)
-
 
     @property
     def manifest(self):
