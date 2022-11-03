@@ -12,7 +12,7 @@ import json
 def json_to_html(path_to_json):
     with open(path_to_json) as json_file:
         data = json.load(json_file)
-    hadolint_html_report = json2html.convert(json = data)
+    hadolint_html_report = json2html.convert(json = data) # pylint: disable=undefined-variable
 
     with open(os.path.splitext(path_to_json)[0] + '.html', 'w') as html_file:
         html_file.write(hadolint_html_report)

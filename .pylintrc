@@ -46,13 +46,16 @@ ignore=CVS
 
 # Add files or directories matching the regex patterns to the ignore-list. The
 # regex matches against paths and can be in Posix or Windows format.
+# Note that Pylint adds both Posix and Windows versions automatically.
 ignore-paths=
-      cvat-sdk\\cvat_sdk\\api_client|cvat-sdk/cvat_sdk/api_client
+      ^.?v?env[^/]*/.*$,
+      ^cvat-sdk/cvat_sdk/api_client/.*$,
+      ^serverless/.*$
 
 # Files or directories matching the regex patterns are skipped. The regex
 # matches against base names, not paths. The default value ignores Emacs file
 # locks
-ignore-patterns=
+ignore-patterns=(?![^\.]+\.py)
 
 # List of module names for which member attributes should not be checked
 # (useful for modules/projects where namespaces are manipulated during runtime
@@ -970,4 +973,4 @@ logging-modules=logging
 [DJANGO FOREIGN KEYS REFERENCED BY STRINGS]
 
 # A module containing Django settings to be used while linting.
-#django-settings-module=
+django-settings-module=cvat.apps.settings

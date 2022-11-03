@@ -20,44 +20,49 @@ module.exports = (stagedFiles) => {
     const pythonFiles = micromatch(stagedFiles, pythonExtensions);
     const mdFiles = micromatch(stagedFiles, mdExtensions);
 
-    const uiTests = containsInPath('/tests/cypress', eslintFiles);
+    const uiTests = containsInPath('/tests/cypress/', eslintFiles);
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
-    const cvatCore = containsInPath('/cvat-core/src', eslintFiles);
+    const cvatCore = containsInPath('/cvat-core/src/', eslintFiles);
     const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
     const cvatCanvas3d = containsInPath('/cvat-canvas3d/', eslintFiles);
     const cvatUI = containsInPath('/cvat-ui/', eslintFiles);
-    const cvatSdk = containsInPath('/cvat-sdk', pythonFiles);
-    const cvatCli = containsInPath('/cvat-cli', pythonFiles);
-    const pythonTests = containsInPath('/tests/python', pythonFiles);
+    const cvatSdk = containsInPath('/cvat-sdk/', pythonFiles);
+    const cvatCli = containsInPath('/cvat-cli/', pythonFiles);
+    const pythonTests = containsInPath('/tests/python/', pythonFiles);
 
-    const tasks = []; // [command, file list] pairs
-    tasks.push(['npx stylelint --fix ', scssFiles.join(' ')]);
-    tasks.push(['yarn run precommit:cvat-tests -- ', uiTests.join(' ')]);
-    tasks.push(['yarn run precommit:cvat-ui -- ', cvatUI.join(' ')]);
-    tasks.push(['yarn run precommit:cvat-data -- ', cvatData.join(' ')]);
-    tasks.push(['yarn run precommit:cvat-core -- ', cvatCore.join(' ')]);
-    tasks.push(['yarn run precommit:cvat-canvas -- ', cvatCanvas.join(' ')]);
-    tasks.push(['yarn run precommit:cvat-canvas3d -- ', cvatCanvas3d.join(' ')]);
+    // [command, file list] pairs
+    // Note that some tools can be missing on the target machine. It is not
+    // expected for js-related/-based tools, because they are installed together with
+    // lint-staged.
+    const tasks = [
+        ['yarn run stylelint --fix', scssFiles],
+        ['yarn run precommit:cvat-tests', uiTests],
+        ['yarn run precommit:cvat-ui', cvatUI],
+        ['yarn run precommit:cvat-data', cvatData],
+        ['yarn run precommit:cvat-core', cvatCore],
+        ['yarn run precommit:cvat-canvas', cvatCanvas],
+        ['yarn run precommit:cvat-canvas3d', cvatCanvas3d],
 
-    // If different components use different Black/isort configs,
-    // we need to run Black/isort for each python component group separately.
-    // Otherwise, they all will use the same config. This will mess up
-    // the current package detection for different modules, leading
-    // to incorrect formatting of module imports.
-    tasks.push(['black', cvatSdk.join(' ')]);
-    tasks.push(['black', cvatCli.join(' ')]);
-    tasks.push(['black', pythonTests.join(' ')]);
-    tasks.push(['isort', cvatSdk.join(' ')]);
-    tasks.push(['isort', cvatCli.join(' ')]);
-    tasks.push(['isort', pythonTests.join(' ')]);
-    tasks.push(['pylint', pythonFiles.join(' ')]);
+        // If different components use different Black/isort configs,
+        // we need to run Black/isort for each python component group separately.
+        // Otherwise, they all will use the same config. This will mess up
+        // the current package detection for different modules, leading
+        // to incorrect formatting of module imports.
+        ['yarn run precommit:black', cvatSdk],
+        ['yarn run precommit:black', cvatCli],
+        ['yarn run precommit:black', pythonTests],
+        ['yarn run precommit:isort', cvatSdk],
+        ['yarn run precommit:isort', cvatCli],
+        ['yarn run precommit:isort', pythonTests],
+        ['yarn run precommit:pylint', pythonFiles],
 
-    tasks.push(['npx remark -q -f --no-stdout --silently-ignore', mdFiles.join(' ')]);
+        ['yarn run remark -q -f --no-stdout --silently-ignore ', mdFiles],
+    ];
 
     const commands = [];
     for (const [command, files] of tasks) {
         if (files.length) {
-            commands.push(`${command} ${files}`);
+            commands.push(`${command} ${files.join(' ')}`);
         }
     }
 
