@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
+- Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
 - An option to supply custom file ordering for task data uploads with TUS (<https://github.com/opencv/cvat/pull/5083>)
 
 ### Changed
@@ -62,6 +63,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
+- Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 - `predefined` sorting method for task data uploads with SDK/CLI (<https://github.com/opencv/cvat/pull/5083>)
 
