@@ -1,9 +1,5 @@
-# pylint: disable=unnecessary-lambda
-import json
-import os
 import random
 import secrets
-from pprint import pprint
 
 import gevent
 import locust
@@ -13,64 +9,13 @@ from faker import Faker
 from locust.env import Environment
 from locust.stats import stats_history, stats_printer
 
-from shared.utils.config import ASSETS_DIR, BASE_URL, USER_PASS
-
-
-class AdminUserNotFoundInDbException(Exception):
-    def __init__(self):
-        print("Can't find any admin user in the test DB")
-
-
-class Container:
-    """
-    We have to recreate the fixtures' data generation,
-    since locust doesn't support using pytest tests as tasks yet
-    """
-
-    def __init__(self, data, key="id"):
-        self.raw_data = data
-        self.map_data = {obj[key]: obj for obj in data}
-
-    @property
-    def raw(self):
-        return self.raw_data
-
-    @property
-    def map(self):
-        return self.map_data
-
-    def __iter__(self):
-        return iter(self.raw_data)
-
-    def __len__(self):
-        return len(self.raw_data)
-
-    def __getitem__(self, key):
-        if isinstance(key, slice):
-            return self.raw_data[key]
-        return self.map_data[key]
-
-
-class GetUser:
-    """
-    We have to recreate the fixtures' data generation,
-    since locust doesn't support using pytest tests as tasks yet
-    """
-
-    @staticmethod
-    def get_admin_user():
-        # getting the user from local db
-        with open(os.path.join(ASSETS_DIR, "users.json")) as f:
-            container = Container(json.load(f)["results"])
-
-            for user in container:
-                if user["is_superuser"] and user["is_active"]:  # getting the admin user
-                    return user["username"]
-
-            raise AdminUserNotFoundInDbException()
+from shared.utils.config import BASE_URL, USER_PASS
 
 
 class PerformTask(locust.SequentialTaskSet):
+    api_exceptions_found = {}  # number of api exceptions caught and their codes
+    api_exceptions_counter = 0
+
     @locust.task
     def perform_random_user_register_task(self):
         # Initializing Faker for data generation
@@ -78,6 +23,7 @@ class PerformTask(locust.SequentialTaskSet):
         username = None
         first_name = fake.first_name()
         last_name = fake.last_name()
+        email = fake.ascii_email()
         username_type = bool(random.getrandbits(1))
 
         if username_type == 0:
@@ -85,17 +31,13 @@ class PerformTask(locust.SequentialTaskSet):
         elif username_type == 1:
             username = last_name + first_name
 
-        email = fake.ascii_email()
-
         # Setting a random passwd
         password_length = random.randrange(13, 24)
         passwd = secrets.token_urlsafe(password_length)
 
         # Setting the config for client auth
         # Needs further dehardcoding
-        config = Configuration(
-            host=LoadUser.host, username=GetUser.get_admin_user(), password=USER_PASS
-        )
+        config = Configuration(host=LoadUser.host, username="admin1", password=USER_PASS)
 
         # Launching the client with randomized data
         with ApiClient(configuration=config) as api_client:
@@ -110,10 +52,14 @@ class PerformTask(locust.SequentialTaskSet):
                     last_name=last_name,
                 )
                 # sending the request
-                (data) = api_client.auth_api.create_register(register_request)
-                pprint(data)
+                api_client.auth_api.create_register(register_request, _check_status=False)
+
             except exceptions.ApiException as e:
-                print("Exception when calling AuthApi.create_register: %s\n" % e)
+                if e.status != 200:
+                    PerformTask.api_exceptions_counter += 1  # count the number of api exceptions
+                    PerformTask.api_exceptions_found[
+                        PerformTask.api_exceptions_counter
+                    ] = e.status  # and their codes
 
 
 class LoadUser(locust.HttpUser):
@@ -138,11 +84,14 @@ def test_load_register():
     env.runner.start(5000, spawn_rate=20)
 
     # in 10 seconds stop the runner
-    gevent.spawn_later(10, lambda: env.runner.quit())
+    gevent.spawn_later(10, lambda: env.runner.quit())  # pylint: disable=unnecessary-lambda
 
     # wait for the greenlets
     env.runner.greenlet.join()
 
+    assert (
+        PerformTask.api_exceptions_found == {}
+    )  # check if api exceptions were found during task execution
     assert env.stats.total.avg_response_time < 5  # testing average response time
     assert env.stats.total.num_failures == 0  # testing for 0 failures
 
