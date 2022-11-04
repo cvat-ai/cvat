@@ -255,9 +255,19 @@ class ServerViewSet(viewsets.ViewSet):
     def advanced_authentication(request):
         use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
         integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
+        google_auth_is_enabled = (
+            'google' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
+        )
+        github_auth_is_enabled = (
+            'github' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
+        )
         response = {
-            'GOOGLE_ACCOUNT_AUTHENTICATION': use_social_auth and 'google' in integrated_auth_providers,
-            'GITHUB_ACCOUNT_AUTHENTICATION': use_social_auth and 'github' in integrated_auth_providers,
+            'GOOGLE_ACCOUNT_AUTHENTICATION': google_auth_is_enabled,
+            'GITHUB_ACCOUNT_AUTHENTICATION': github_auth_is_enabled,
         }
         return Response(response)
 
