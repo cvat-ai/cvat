@@ -1,17 +1,20 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from django.db import models
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.utils import DjangoEnum, StrEnum
+from enum import Enum
 
-class GitStatusChoice(DjangoEnum, StrEnum):
+class GitStatusChoice(Enum):
     NON_SYNCED = '!sync'
     SYNCING = 'syncing'
     SYNCED = 'sync'
     MERGED = 'merged'
+
+    def __str__(self):
+        return self.value
+
 
 class GitData(models.Model):
     task = models.OneToOneField(Task, on_delete = models.CASCADE, primary_key = True)
