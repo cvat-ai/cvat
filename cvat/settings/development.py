@@ -47,6 +47,6 @@ CORS_REPLACE_HTTPS_REFERER = True
 IAM_OPA_DATA_URL = 'http://localhost:8181/v1/data'
 
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
-    GITHUB_CALLBACK_URL = f'{UI_SCHEME}://{UI_HOST}:7000/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = f'{UI_SCHEME}://{UI_HOST}:7000/api/auth/google/login/callback/'
+    GITHUB_CALLBACK_URL = f'{UI_URL}/api/auth/github/login/callback/'
+    GOOGLE_CALLBACK_URL = f'{UI_URL}/api/auth/google/login/callback/'
     SOCIALACCOUNT_CALLBACK_CANCELLED_URL = f'{UI_URL}/auth/login'
