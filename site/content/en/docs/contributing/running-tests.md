@@ -45,7 +45,7 @@ yarn run cypress:run:chrome:canvas3d
    ```
 
    Please check the [SDK developer guide](/docs/api_sdk/sdk/developer-guide)
-   to install it for local development and to run tests.
+   to install `cvat-sdk` and `cvat-cli` packages for local development and to run tests.
 
 **Running tests**
 
