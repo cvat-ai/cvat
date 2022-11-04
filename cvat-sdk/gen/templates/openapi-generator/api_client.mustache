@@ -125,32 +125,6 @@ class ApiClient(object):
     def user_agent(self, value):
         self.default_headers['User-Agent'] = value
 
-    def _serialize_post_parameter(self, obj):
-        if isinstance(obj, (str, int, float, none_type, bool)):
-            return ('', json.dumps(obj), 'application/json')
-        elif isinstance(obj, io.IOBase):
-            return self._serialize_file(obj)
-        raise ApiValueError(
-            'Unable to prepare type {} for serialization'.format(
-                obj.__class__.__name__))
-
-    def _convert_body_to_post_params(self, body):
-        # body must be a flat structure, lists of primitives is possible
-        body = self.sanitize_for_serialization(body, read_files=False)
-        assert isinstance(body, dict), type(body)
-
-        post_params = []
-        for k, v in body.items():
-            if isinstance(v, (tuple, list)):
-                for i, entry in enumerate(v):
-                    post_params.append((
-                        f'{k}[{i}]',
-                        self._serialize_post_parameter(entry)
-                    ))
-            else:
-                post_params.append((k, self._serialize_post_parameter(v)))
-        return post_params
-
     def set_default_header(self, header_name, header_value):
         self.default_headers[header_name] = header_value
 
@@ -208,24 +182,19 @@ class ApiClient(object):
                                                      collection_formats)
 
         # post parameters
-        post_params = post_params if post_params else []
         if post_params or files:
+            post_params = post_params if post_params else []
             post_params = self.sanitize_for_serialization(post_params)
             post_params = self.parameters_to_tuples(post_params,
                                                     collection_formats)
             post_params.extend(self.files_parameters(files))
+            if header_params.get('Content-Type', '').startswith("multipart"):
+                post_params = self.parameters_to_multipart(post_params,
+                                                           (dict))
 
-        if header_params.get('Content-Type', '').startswith("multipart"):
-            if body:
-                post_params.extend(self._convert_body_to_post_params(body))
-                body = None
-
-            if post_params:
-                post_params = self.parameters_to_multipart(post_params, (dict))
-        else:
-            # body
-            if body:
-                body = self.sanitize_for_serialization(body)
+        # body
+        if body:
+            body = self.sanitize_for_serialization(body)
 
         # auth setting
         self.update_params_for_auth(header_params, query_params,
