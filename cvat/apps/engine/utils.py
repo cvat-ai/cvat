@@ -172,11 +172,11 @@ class DjangoEnum(Enum):
         """
         Returns a tuple of (value, label) pairs.
         """
-        return tuple((v, k) for k, v in cls.__members__.items())
+        return tuple((v.value, k) for k, v in cls.__members__.items())
 
     @classmethod
     def values(cls):
-        return tuple(cls.__members__.values())
+        return tuple(v.value for v in cls.__members__.values())
 
     @classmethod
     def names(cls):
