@@ -52,7 +52,7 @@ class PerformTask(locust.SequentialTaskSet):
                     last_name=last_name,
                 )
                 # sending the request
-                api_client.auth_api.create_register(register_request, _check_status=False)
+                api_client.auth_api.create_register(register_request)
 
             except exceptions.ApiException as e:
                 if e.status != 200:
