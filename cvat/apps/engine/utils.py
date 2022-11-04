@@ -138,7 +138,7 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
 
 class StrEnum(str, Enum):
     """
-    A enum with string items.
+    An enum with string items.
     """
 
     def __str__(self):

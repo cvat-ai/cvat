@@ -620,7 +620,7 @@ class DataChunkGetter:
         ORIGINAL = 'original'
 
     def __init__(self, data_type, data_num, data_quality, task_dim):
-        if not data_type or data_type not in self.DataTypeChoices.values():
+        if data_type not in self.DataTypeChoices.values():
             raise ValidationError('Data type not specified or has wrong value')
         elif data_type == 'chunk' or data_type == 'frame':
             if not data_num:
