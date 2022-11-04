@@ -29,6 +29,8 @@ class Uploader:
     Implements common uploading protocols
     """
 
+    _CHUNK_SIZE = 10 * 2**20
+
     def __init__(self, client: Client):
         self._client = client
 
@@ -248,8 +250,6 @@ class Uploader:
         return MyTusUploader(client=client, api_client=api_client, **kwargs)
 
     def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar=None, logger=None):
-        CHUNK_SIZE = 10 * 2**20
-
         file_size = os.stat(filename).st_size
         if pbar is None:
             pbar = NullProgressReporter()
@@ -262,7 +262,7 @@ class Uploader:
                 url=url.rstrip("/") + "/",
                 metadata=meta,
                 file_stream=input_file_with_progress,
-                chunk_size=CHUNK_SIZE,
+                chunk_size=Uploader._CHUNK_SIZE,
                 log_func=logger,
             )
             tus_uploader.upload()

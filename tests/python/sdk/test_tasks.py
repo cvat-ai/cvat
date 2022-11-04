@@ -12,6 +12,7 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.uploading import Uploader
 from PIL import Image
 
 from shared.utils.helpers import generate_image_files
@@ -279,7 +280,7 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
+    def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -291,6 +292,15 @@ class TestTaskUsecases:
         assert "imported sucessfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+    def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
+        self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
+
+    def test_can_create_from_backup_in_chunks(
+        self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
+    ):
+        monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+        self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
 
     def test_can_get_jobs(self, fxt_new_task: Task):
         jobs = fxt_new_task.get_jobs()
