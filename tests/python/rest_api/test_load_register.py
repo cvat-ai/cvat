@@ -60,6 +60,7 @@ class PerformTask(locust.SequentialTaskSet):
                     PerformTask.api_exceptions_found[
                         PerformTask.api_exceptions_counter
                     ] = e.status  # and their codes
+                    raise e
 
 
 class LoadUser(locust.HttpUser):
