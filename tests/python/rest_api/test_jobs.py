@@ -4,14 +4,12 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os
-import os.path as osp
+import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
 from http import HTTPStatus
-from tempfile import NamedTemporaryFile, mkdtemp
+from io import BytesIO
 from typing import List
-from xml.etree import ElementTree
 
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -532,14 +530,8 @@ class TestJobDataset:
 
         response = self._export_annotations(username, jid, format="COCO 1.0")
         assert response.data
-        temp_anno_file_name = None
-        with NamedTemporaryFile(
-            mode="w+b", prefix="cvat", delete=False, suffix=".zip"
-        ) as temp_anno_file:
-            temp_anno_file_name = temp_anno_file.name
-            temp_anno_file.write(response.data)
 
-        with zipfile.ZipFile(temp_anno_file_name, mode="r") as zip_file:
+        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
             exported_annotations = json.loads(zip_file.read(zip_file.namelist()[0]))
 
         assert len(annotations_before["shapes"]) == len(exported_annotations["annotations"])
@@ -549,7 +541,6 @@ class TestJobDataset:
         )
 
         assert task_size > len(exported_annotations["images"])
-        os.remove(temp_anno_file_name)
 
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
     def test_check_exported_cvat_dataset_structure(
@@ -567,19 +558,10 @@ class TestJobDataset:
 
         response = self._export_dataset(username, jid, format="CVAT for images 1.1")
         assert response.data
-        temp_dataset_file_name = None
-        with NamedTemporaryFile(
-            mode="w+b", prefix="cvat", delete=False, suffix=".zip"
-        ) as temp_dataset_file:
-            temp_dataset_file_name = temp_dataset_file.name
-            temp_dataset_file.write(response.data)
 
-        with zipfile.ZipFile(temp_dataset_file_name, mode="r") as zip_file:
+        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
             assert len(zip_file.namelist()) == job_size + 1  # images + annotation file
-            temp_dir = mkdtemp(suffix="cvat")
-            zip_file.extract(annotations_file_name, temp_dir)
-
-        document = ElementTree.parse(osp.join(temp_dir, annotations_file_name))
+            document = ET.fromstring(zip_file.read(annotations_file_name))
         # check meta information
         meta = document.find("meta")
         instance = list(meta)[0]
@@ -595,7 +577,3 @@ class TestJobDataset:
         for image_elem in document.findall("image"):
             assert image_elem.attrib["id"] == str(current_id)
             current_id += 1
-
-        os.remove(temp_dataset_file_name)
-        os.remove(osp.join(temp_dir, annotations_file_name))
-        os.rmdir(temp_dir)
