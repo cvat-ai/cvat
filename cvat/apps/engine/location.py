@@ -1,15 +1,19 @@
-from enum import Enum
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+from typing import Optional
 
 from cvat.apps.engine.models import Location
+from cvat.apps.engine.utils import StrEnum
 
-class StorageType(str, Enum):
+class StorageType(StrEnum):
     TARGET = 'target_storage'
     SOURCE = 'source_storage'
 
-    def __str__(self):
-        return self.value
-
-def get_location_configuration(obj, field_name, use_settings=False):
+def get_location_configuration(
+    obj, *, field_name: Optional[StorageType], use_settings: bool = False
+):
     location_conf = dict()
     if use_settings:
         storage = getattr(obj, field_name)

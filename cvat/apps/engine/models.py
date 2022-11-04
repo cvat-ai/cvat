@@ -6,7 +6,6 @@
 import os
 import re
 import shutil
-from enum import Enum
 from typing import Optional
 
 from django.conf import settings
@@ -17,7 +16,7 @@ from django.db.models.fields import FloatField
 from django.core.serializers.json import DjangoJSONEncoder
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
-from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.utils import DjangoEnum, parse_specific_attributes, StrEnum
 from cvat.apps.organizations.models import Organization
 
 class SafeCharField(models.CharField):
@@ -28,36 +27,18 @@ class SafeCharField(models.CharField):
         return value
 
 
-class DimensionType(str, Enum):
+class DimensionType(DjangoEnum, StrEnum):
     DIM_3D = '3d'
     DIM_2D = '2d'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-class StatusChoice(str, Enum):
+class StatusChoice(DjangoEnum, StrEnum):
     """Deprecated. Use StageChoice and StateChoice instead"""
 
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
     COMPLETED = 'completed'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda x: x.value, cls))
-
-    def __str__(self):
-        return self.value
-
-class LabelType(str, Enum):
+class LabelType(DjangoEnum, StrEnum):
     BBOX = 'bbox'
     ELLIPSE = 'ellipse'
     POLYGON = 'polygon'
@@ -69,89 +50,36 @@ class LabelType(str, Enum):
     TAG = 'tag'
     ANY = 'any'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda x: x.value, cls))
-
-    def __str__(self):
-        return self.value
-
-class StageChoice(str, Enum):
+class StageChoice(DjangoEnum, StrEnum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
     ACCEPTANCE = 'acceptance'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-class StateChoice(str, Enum):
+class StateChoice(DjangoEnum, StrEnum):
     NEW = 'new'
     IN_PROGRESS = 'in progress'
     COMPLETED = 'completed'
     REJECTED = 'rejected'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-class DataChoice(str, Enum):
+class DataChoice(DjangoEnum, StrEnum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
     LIST = 'list'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-class StorageMethodChoice(str, Enum):
+class StorageMethodChoice(DjangoEnum, StrEnum):
     CACHE = 'cache'
     FILE_SYSTEM = 'file_system'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-class StorageChoice(str, Enum):
+class StorageChoice(DjangoEnum, StrEnum):
     CLOUD_STORAGE = 'cloud_storage'
     LOCAL = 'local'
     SHARE = 'share'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-class SortingMethod(str, Enum):
+class SortingMethod(DjangoEnum, StrEnum):
     LEXICOGRAPHICAL = 'lexicographical'
     NATURAL = 'natural'
     PREDEFINED = 'predefined'
     RANDOM = 'random'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
 
 class AbstractArrayField(models.TextField):
     separator = ","
@@ -521,19 +449,12 @@ class Skeleton(models.Model):
         default_permissions = ()
         unique_together = ('root',)
 
-class AttributeType(str, Enum):
+class AttributeType(DjangoEnum, StrEnum):
     CHECKBOX = 'checkbox'
     RADIO = 'radio'
     NUMBER = 'number'
     TEXT = 'text'
     SELECT = 'select'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
 
 class AttributeSpec(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
@@ -561,7 +482,7 @@ class AttributeVal(models.Model):
         abstract = True
         default_permissions = ()
 
-class ShapeType(str, Enum):
+class ShapeType(DjangoEnum, StrEnum):
     RECTANGLE = 'rectangle' # (x0, y0, x1, y1)
     POLYGON = 'polygon'     # (x0, y0, ..., xn, yn)
     POLYLINE = 'polyline'   # (x0, y0, ..., xn, yn)
@@ -571,23 +492,9 @@ class ShapeType(str, Enum):
     MASK = 'mask'       # (rle mask, left, top, right, bottom)
     SKELETON = 'skeleton'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-class SourceType(str, Enum):
+class SourceType(DjangoEnum, StrEnum):
     AUTO = 'auto'
     MANUAL = 'manual'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
 
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -698,40 +605,18 @@ class Comment(models.Model):
     def get_organization_id(self):
         return self.issue.get_organization_id()
 
-class CloudProviderChoice(str, Enum):
+class CloudProviderChoice(DjangoEnum, StrEnum):
     AWS_S3 = 'AWS_S3_BUCKET'
     AZURE_CONTAINER = 'AZURE_CONTAINER'
     GOOGLE_DRIVE = 'GOOGLE_DRIVE'
     GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE'
 
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda x: x.value, cls))
-
-    def __str__(self):
-        return self.value
-
-class CredentialsTypeChoice(str, Enum):
+class CredentialsTypeChoice(DjangoEnum, StrEnum):
     # ignore bandit issues because false positives
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR' # nosec
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda x: x.value, cls))
-
-    def __str__(self):
-        return self.value
 
 class Manifest(models.Model):
     filename = models.CharField(max_length=1024, default='manifest.jsonl')
@@ -740,20 +625,9 @@ class Manifest(models.Model):
     def __str__(self):
         return '{}'.format(self.filename)
 
-class Location(str, Enum):
+class Location(DjangoEnum, StrEnum):
     CLOUD_STORAGE = 'cloud_storage'
     LOCAL = 'local'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-    @classmethod
-    def list(cls):
-        return [i.value for i in cls]
 
 class CloudStorage(models.Model):
     # restrictions:

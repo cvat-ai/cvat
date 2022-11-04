@@ -329,6 +329,7 @@ class SerializeMixin:
 class CreateModelMixin(mixins.CreateModelMixin):
     def perform_create(self, serializer, **kwargs):
         serializer.save(**kwargs)
+
         signal_create.send(self, instance=serializer.instance)
 
 class PartialUpdateModelMixin:

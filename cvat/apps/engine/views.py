@@ -70,7 +70,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
+from cvat.apps.engine.utils import DjangoEnum, StrEnum, av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
@@ -306,12 +306,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
-    def perform_create(self, serializer):
-        super().perform_create(
-            serializer,
-            owner=self.request.user,
-            organization=self.request.iam_context['organization']
-        )
+    def perform_create(self, serializer, **kwargs):
+        kwargs.setdefault('owner', self.request.user)
+        kwargs.setdefault('organization', self.request.iam_context['organization'])
+        super().perform_create(serializer, **kwargs)
 
     @extend_schema(
         summary='Method returns information of the tasks of the project with the selected id',
@@ -345,7 +343,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, enum=['download', 'import_status']),
             OpenApiParameter('location', description='Where need to save downloaded dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to import dataset',
@@ -365,7 +363,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('location', description='Where to import the dataset from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the project to import annotations',
@@ -497,7 +495,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False, enum=['download']),
             OpenApiParameter('location', description='Where need to save downloaded dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to export annotation',
@@ -537,7 +535,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('location', description='Where need to save downloaded backup',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to export backup',
@@ -557,7 +555,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list(), default=Location.LOCAL),
+                enum=Location.values(), default=Location.LOCAL),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('filename', description='Backup file name',
@@ -609,18 +607,24 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return response
 
-
 class DataChunkGetter:
-    def __init__(self, data_type, data_num, data_quality, task_dim):
-        possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
-        possible_quality_values = ('compressed', 'original')
+    class DataTypeChoices(DjangoEnum, StrEnum):
+        CHUNK = 'chunk'
+        FRAME = 'frame'
+        PREVIEW = 'preview'
+        CONTEXT_IMAGE = 'context_image'
 
-        if not data_type or data_type not in possible_data_type_values:
+    class ImageQualityChoices(DjangoEnum, StrEnum):
+        COMPRESSED = 'compressed'
+        ORIGINAL = 'original'
+
+    def __init__(self, data_type, data_num, data_quality, task_dim):
+        if data_type not in self.DataTypeChoices.values():
             raise ValidationError('Data type not specified or has wrong value')
         elif data_type == 'chunk' or data_type == 'frame':
             if not data_num:
                 raise ValidationError('Number is not specified')
-            elif data_quality not in possible_quality_values:
+            elif data_quality not in self.ImageQualityChoices.values():
                 raise ValidationError('Wrong quality value')
 
         self.type = data_type
@@ -748,7 +752,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list(), default=Location.LOCAL),
+                enum=Location.values(), default=Location.LOCAL),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('filename', description='Backup file name',
@@ -786,7 +790,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('location', description='Where need to save downloaded backup',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export backup',
@@ -814,12 +818,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
-    def perform_create(self, serializer):
-        super().perform_create(
-            serializer,
-            owner=self.request.user,
-            organization=self.request.iam_context['organization']
-        )
+    def perform_create(self, serializer, **kwargs):
+        kwargs.setdefault('owner', self.request.user)
+        kwargs.setdefault('organization', self.request.iam_context['organization'])
+        super().perform_create(serializer, **kwargs)
+
         if serializer.instance.project:
             db_project = serializer.instance.project
             db_project.save()
@@ -944,10 +947,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
-                type=OpenApiTypes.STR, enum=['chunk', 'frame', 'preview', 'context_image'],
+                type=OpenApiTypes.STR, enum=DataChunkGetter.DataTypeChoices.values(),
                 description='Specifies the type of the requested data'),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
-                type=OpenApiTypes.STR, enum=['compressed', 'original'],
+                type=OpenApiTypes.STR, enum=DataChunkGetter.ImageQualityChoices.values(),
                 description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
             OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
@@ -1007,7 +1010,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 type=OpenApiTypes.STR, required=False, enum=['download']),
             OpenApiParameter('location', description='Where need to save downloaded dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export annotation',
@@ -1045,7 +1048,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
             OpenApiParameter('location', description='where to import the annotation from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in task to import annotations',
@@ -1243,7 +1246,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
             OpenApiParameter('location', description='Where need to save downloaded dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
         ],
@@ -1362,7 +1365,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 type=OpenApiTypes.STR, required=False, enum=['download']),
             OpenApiParameter('location', description='Where need to save downloaded annotation',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export annotation',
@@ -1385,7 +1388,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
             OpenApiParameter('location', description='where to import the annotation from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
@@ -1526,7 +1529,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True),
             OpenApiParameter('location', description='Where need to save downloaded dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.values()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
         ],
@@ -1741,8 +1744,9 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return IssueWriteSerializer
 
-    def perform_create(self, serializer):
-        super().perform_create(serializer, owner=self.request.user)
+    def perform_create(self, serializer, **kwargs):
+        kwargs.setdefault('owner', self.request.user)
+        super().perform_create(serializer, **kwargs)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
         responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -1816,8 +1820,9 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return CommentWriteSerializer
 
-    def perform_create(self, serializer):
-        super().perform_create(serializer, owner=self.request.user)
+    def perform_create(self, serializer, **kwargs):
+        kwargs.setdefault('owner', self.request.user)
+        super().perform_create(serializer, **kwargs)
 
 @extend_schema(tags=['users'])
 @extend_schema_view(
@@ -1959,15 +1964,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         provider_type = self.request.query_params.get('provider_type', None)
         if provider_type:
-            if provider_type in CloudProviderChoice.list():
+            if provider_type in CloudProviderChoice.values():
                 return queryset.filter(provider_type=provider_type)
             raise ValidationError('Unsupported type of cloud provider')
         return queryset
 
-    def perform_create(self, serializer):
-        serializer.save(
-            owner=self.request.user,
-            organization=self.request.iam_context['organization'])
+    def perform_create(self, serializer, **kwargs):
+        kwargs.setdefault('owner', self.request.user)
+        kwargs.setdefault('organization', self.request.iam_context['organization'])
+        super().perform_create(serializer, **kwargs)
 
     def perform_destroy(self, instance):
         cloud_storage_dirname = instance.get_storage_dirname()
