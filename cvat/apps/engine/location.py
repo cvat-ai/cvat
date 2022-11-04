@@ -2,14 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.engine.models import Location
-from cvat.apps.engine.utils import DjangoEnum, StrEnum
+from typing import Optional
 
-class StorageType(DjangoEnum, StrEnum):
+from cvat.apps.engine.models import Location
+from cvat.apps.engine.utils import StrEnum
+
+class StorageType(StrEnum):
     TARGET = 'target_storage'
     SOURCE = 'source_storage'
 
-def get_location_configuration(obj, field_name, use_settings=False):
+def get_location_configuration(
+    obj, *, field_name: Optional[StorageType], use_settings: bool = False
+):
     location_conf = dict()
     if use_settings:
         storage = getattr(obj, field_name)
