@@ -306,10 +306,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
-    def perform_create(self, serializer, **kwargs):
-        kwargs.setdefault('owner', self.request.user)
-        kwargs.setdefault('organization', self.request.iam_context['organization'])
-        super().perform_create(serializer, **kwargs)
+    def perform_create(self, serializer):
+        super().perform_create(
+            serializer,
+            owner=self.request.user,
+            organization=self.request.iam_context['organization']
+        )
 
     @extend_schema(
         summary='Method returns information of the tasks of the project with the selected id',
@@ -812,11 +814,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
-    def perform_create(self, serializer, **kwargs):
-        kwargs.setdefault('owner', self.request.user)
-        kwargs.setdefault('organization', self.request.iam_context['organization'])
-        super().perform_create(serializer, **kwargs)
-
+    def perform_create(self, serializer):
+        super().perform_create(
+            serializer,
+            owner=self.request.user,
+            organization=self.request.iam_context['organization']
+        )
         if serializer.instance.project:
             db_project = serializer.instance.project
             db_project.save()
@@ -1738,9 +1741,8 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return IssueWriteSerializer
 
-    def perform_create(self, serializer, **kwargs):
-        kwargs.setdefault('owner', self.request.user)
-        super().perform_create(serializer, **kwargs)
+    def perform_create(self, serializer):
+        super().perform_create(serializer, owner=self.request.user)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
         responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -1814,9 +1816,8 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return CommentWriteSerializer
 
-    def perform_create(self, serializer, **kwargs):
-        kwargs.setdefault('owner', self.request.user)
-        super().perform_create(serializer, **kwargs)
+    def perform_create(self, serializer):
+        super().perform_create(serializer, owner=self.request.user)
 
 @extend_schema(tags=['users'])
 @extend_schema_view(
@@ -1963,10 +1964,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             raise ValidationError('Unsupported type of cloud provider')
         return queryset
 
-    def perform_create(self, serializer, **kwargs):
-        kwargs.setdefault('owner', self.request.user)
-        kwargs.setdefault('organization', self.request.iam_context['organization'])
-        super().perform_create(serializer, **kwargs)
+    def perform_create(self, serializer):
+        serializer.save(
+            owner=self.request.user,
+            organization=self.request.iam_context['organization'])
 
     def perform_destroy(self, instance):
         cloud_storage_dirname = instance.get_storage_dirname()
