@@ -1,5 +1,4 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -26,18 +25,29 @@ from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden a
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
-from cvat.apps.engine.utils import DjangoEnum, StrEnum
 
-class Status(DjangoEnum, StrEnum):
+class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
     NOT_FOUND = 'NOT_FOUND'
     FORBIDDEN = 'FORBIDDEN'
 
-class Permissions(DjangoEnum, StrEnum):
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+class Permissions(str, Enum):
     READ = 'read'
     WRITE = 'write'
 
+    @classmethod
+    def all(cls):
+        return {i.value for i in cls}
+
 class _CloudStorage(ABC):
+
     def __init__(self):
         self._files = []
 
@@ -303,7 +313,7 @@ class AWS_S3(_CloudStorage):
             bucket_policy = self._bucket.Policy().policy
         except ClientError as ex:
             if 'NoSuchBucketPolicy' in str(ex):
-                return Permissions.values()
+                return Permissions.all()
             else:
                 raise Exception(str(ex))
         bucket_policy = json.loads(bucket_policy) if isinstance(bucket_policy, str) else bucket_policy
@@ -316,7 +326,7 @@ class AWS_S3(_CloudStorage):
             's3:GetObject': Permissions.READ,
             's3:PutObject': Permissions.WRITE,
         }
-        allowed_actions = set(Permissions.values()) & {access.get(i) for i in allowed_actions}
+        allowed_actions = Permissions.all() & {access.get(i) for i in allowed_actions}
 
         return allowed_actions
 
