@@ -15,7 +15,7 @@ import urllib3
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.helpers import StreamWithProgress, expect_status
-from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
@@ -237,16 +237,17 @@ class Uploader:
         CHUNK_SIZE = 10 * 2**20
 
         file_size = os.stat(filename).st_size
+        if pbar is None:
+            pbar = NullProgressReporter()
 
-        with open(filename, "rb") as input_file:
-            if pbar is not None:
-                input_file = StreamWithProgress(input_file, pbar, length=file_size)
-
+        with open(filename, "rb") as input_file, StreamWithProgress(
+            input_file, pbar, length=file_size
+        ) as input_file_with_progress:
             tus_uploader = self._make_tus_uploader(
                 self._client.api_client,
                 url=url.rstrip("/") + "/",
                 metadata=meta,
-                file_stream=input_file,
+                file_stream=input_file_with_progress,
                 chunk_size=CHUNK_SIZE,
                 log_func=logger,
             )
