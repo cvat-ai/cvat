@@ -36,6 +36,28 @@ class RotatedBoxesToPolygons(ItemTransform):
 
         return item.wrap(annotations=annotations)
 
+class CVATRleToCOCORle(ItemTransform):
+    @staticmethod
+    def convert_mask(shape, img_h, img_w):
+        rle = shape.points[:-4]
+        left, top, right = list(math.trunc(v) for v in shape.points[-4:-1])
+        mat = np.zeros((img_h, img_w), dtype=np.uint8)
+        width = right - left + 1
+        value = 0
+        offset = 0
+        for rleCount in rle:
+            rleCount = math.trunc(rleCount)
+            while rleCount > 0:
+                x, y = offset % width, offset // width
+                mat[y + top][x + left] = value
+                rleCount -= 1
+                offset += 1
+            value = abs(value - 1)
+
+        rle = mask_utils.encode(np.asfortranarray(mat))
+        return dm.RleMask(rle=rle, label=shape.label, z_order=shape.z_order,
+            attributes=shape.attributes, group=shape.group)
+
 class EllipsesToMasks:
     @staticmethod
     def convert_ellipse(ellipse, img_h, img_w):
@@ -50,3 +72,19 @@ class EllipsesToMasks:
         rle = mask_utils.encode(np.asfortranarray(mat))
         return dm.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
             attributes=ellipse.attributes, group=ellipse.group)
+
+class MaskToPolygonTransformation:
+    """
+    Manages common logic for mask to polygons conversion in dataset import.
+    This usecase is supposed for backward compatibility for the transition period.
+    """
+
+    @classmethod
+    def declare_arg_names(cls):
+        return ['conv_mask_to_poly']
+
+    @classmethod
+    def convert_dataset(cls, dataset, **kwargs):
+        if kwargs.get('conv_mask_to_poly', True):
+            dataset.transform('masks_to_polygons')
+        return dataset

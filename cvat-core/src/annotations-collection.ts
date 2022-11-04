@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,10 +13,12 @@
     } = require('./annotations-objects');
     const AnnotationsFilter = require('./annotations-filter').default;
     const { checkObjectType } = require('./common');
-    const Statistics = require('./statistics');
+    const Statistics = require('./statistics').default;
     const { Label } = require('./labels');
     const { ArgumentError, ScriptingError } = require('./exceptions');
     const ObjectState = require('./object-state').default;
+    const { mask2Rle, truncateMask } = require('./object-utils');
+    const config = require('./config').default;
 
     const {
         HistoryActions, ShapeType, ObjectType, colors, Source,
@@ -55,6 +57,8 @@
                 history: this.history,
                 nextClientID: () => ++this.count,
                 groupColors: {},
+                getMasksOnFrame: (frame: number) => this.shapes[frame]
+                    .filter((object) => object.objectShape === ObjectType.MASK),
             };
         }
 
@@ -93,9 +97,8 @@
                 // In this case a corresponded message will be sent to the console
                 if (trackModel) {
                     this.tracks.push(trackModel);
-                    this.objects[clientID] = trackModel;
-
                     result.tracks.push(trackModel);
+                    this.objects[clientID] = trackModel;
                 }
             }
 
@@ -106,15 +109,15 @@
             const data = {
                 tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
                 shapes: Object.values(this.shapes)
-                    .reduce((accumulator, value) => {
-                        accumulator.push(...value);
+                    .reduce((accumulator, frameShapes) => {
+                        accumulator.push(...frameShapes);
                         return accumulator;
                     }, [])
                     .filter((shape) => !shape.removed)
                     .map((shape) => shape.toJSON()),
                 tags: Object.values(this.tags)
-                    .reduce((accumulator, value) => {
-                        accumulator.push(...value);
+                    .reduce((accumulator, frameTags) => {
+                        accumulator.push(...frameTags);
                         return accumulator;
                     }, [])
                     .filter((tag) => !tag.removed)
@@ -354,6 +357,12 @@
                 if (typeof object === 'undefined') {
                     throw new ArgumentError(
                         'The object is not in collection yet. Call ObjectState.put([state]) before you can merge it',
+                    );
+                }
+
+                if (state.shapeType === ShapeType.MASK) {
+                    throw new ArgumentError(
+                        'Merging for masks is not supported',
                     );
                 }
                 return object;
@@ -601,6 +610,7 @@
                     [val]: { shape: 0, track: 0 },
                 }), {})),
 
+                mask: { shape: 0 },
                 tag: 0,
                 manually: 0,
                 interpolated: 0,
@@ -787,7 +797,14 @@
                             group: 0,
                             label_id: state.label.id,
                             occluded: state.occluded || false,
-                            points: [...state.points],
+                            points: state.shapeType === 'mask' ? (() => {
+                                const { width, height } = this.frameMeta[state.frame];
+                                const points = truncateMask(state.points, 0, width, height);
+                                const [left, top, right, bottom] = points.splice(-4);
+                                const rlePoints = mask2Rle(points);
+                                rlePoints.push(left, top, right, bottom);
+                                return rlePoints;
+                            })() : state.points,
                             rotation: state.rotation || 0,
                             type: state.shapeType,
                             z_order: state.zOrder,
@@ -865,6 +882,11 @@
             // eslint-disable-next-line no-unsanitized/method
             const imported = this.import(constructed);
             const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+            for (const object of importedArray) {
+                if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels) {
+                    object.removeUnderlyingPixels(object.frame);
+                }
+            }
 
             if (objectStates.length) {
                 this.history.do(

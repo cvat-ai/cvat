@@ -266,7 +266,7 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFa
     if (expectedFail) {
         cy.get('.cvat-canvas-container').should('not.exist');
     } else {
-        cy.get('.cvat-canvas-container').should('exist');
+        cy.get('.cvat-canvas-container').should('exist').and('be.visible');
     }
     if (removeAnnotations) {
         cy.document().then((doc) => {
@@ -277,6 +277,24 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFa
             }
         });
     }
+});
+
+Cypress.Commands.add('pressSplitControl', () => {
+    cy.document().then((doc) => {
+        const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
+        if (el) {
+            el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+        }
+    });
+
+    cy.get('.cvat-split-track-control').click();
+
+    cy.document().then((doc) => {
+        const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
+        if (el) {
+            el.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+        }
+    });
 });
 
 Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true, expectedFail = false) => {

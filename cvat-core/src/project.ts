@@ -409,7 +409,10 @@ Object.defineProperties(
                     useDefaultSettings: boolean,
                     sourceStorage: Storage,
                     file: File | string,
-                    updateStatusCallback = null,
+                    options?: {
+                        convMaskToPoly?: boolean,
+                        updateStatusCallback?: (s: string, n: number) => void,
+                    },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -418,7 +421,7 @@ Object.defineProperties(
                         useDefaultSettings,
                         sourceStorage,
                         file,
-                        updateStatusCallback,
+                        options,
                     );
                     return result;
                 },
