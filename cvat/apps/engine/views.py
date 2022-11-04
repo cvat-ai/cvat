@@ -1954,10 +1954,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             raise ValidationError('Unsupported type of cloud provider')
         return queryset
 
-    def perform_create(self, serializer, **kwargs):
-        kwargs.setdefault('owner', self.request.user)
-        kwargs.setdefault('organization', self.request.iam_context['organization'])
-        super().perform_create(serializer, **kwargs)
+    def perform_create(self, serializer):
+        serializer.save(
+            owner=self.request.user,
+            organization=self.request.iam_context['organization'])
 
     def perform_destroy(self, instance):
         cloud_storage_dirname = instance.get_storage_dirname()
