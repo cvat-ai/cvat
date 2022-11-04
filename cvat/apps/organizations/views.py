@@ -201,13 +201,11 @@ class InvitationViewSet(viewsets.GenericViewSet,
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
-    def perform_create(self, serializer):
-        extra_kwargs = {
-            'owner': self.request.user,
-            'key': get_random_string(length=64),
-            'organization': self.request.iam_context['organization']
-        }
-        super().perform_create(serializer, **extra_kwargs)
+    def perform_create(self, serializer, **kwargs):
+        kwargs.setdefault('owner', self.request.user)
+        kwargs.setdefault('organization', self.request.iam_context['organization'])
+        kwargs['key'] = get_random_string(length=64)
+        super().perform_create(serializer, **kwargs)
 
     def perform_update(self, serializer):
         if 'accepted' in self.request.query_params:
