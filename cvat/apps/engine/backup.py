@@ -3,9 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
 import io
 import os
-from enum import Enum
 import re
 import shutil
 import tempfile
