@@ -26,7 +26,7 @@ RUN apt-get update && \
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-ENV FFMPEG_VERSION=5.1.2 \
+ENV FFMPEG_VERSION=4.3.1 \
     OPENH264_VERSION=2.1.1
 
 WORKDIR /tmp/openh264

@@ -1,5 +1,5 @@
 attrs==21.4.0
-click==8.1.3
+click==7.1.2
 Django==3.2.16
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
@@ -36,7 +36,7 @@ opencv-python-headless==4.5.5.62
 h5py==3.6.0
 django-cors-headers==3.5.0
 furl==2.1.0
-av==10.0.0 --no-binary=av
+av==8.0.2 --no-binary=av
 tensorflow==2.8.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
