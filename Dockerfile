@@ -142,6 +142,14 @@ ENV PATH="/opt/venv/bin:${PATH}"
 ENV NUMPROCS=1
 COPY --from=build-image /opt/ffmpeg /usr
 
+# These variables are required for supervisord substitutions in files
+# This library allows remote python debugging with VS Code
+ARG CVAT_DEBUG_ENABLED='no'
+ENV CVAT_DEBUG_PORT=''
+RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
+        python3 -m pip install --no-cache-dir debugpy; \
+    fi
+
 # Install and initialize CVAT, copy all necessary files
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
