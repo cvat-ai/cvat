@@ -492,6 +492,34 @@ class TestPatchJob:
                 assert response.status == HTTPStatus.FORBIDDEN
 
 
+def _check_coco_job_annotations(content, values_to_be_checked):
+    exported_annotations = json.loads(content)
+    assert values_to_be_checked["shapes_length"] == len(exported_annotations["annotations"])
+    assert values_to_be_checked["job_size"] == len(exported_annotations["images"])
+    assert values_to_be_checked["task_size"] > len(exported_annotations["images"])
+
+def _check_cvat_job_annotations(content, values_to_be_checked):
+    document = ET.fromstring(content)
+    # check meta information
+    meta = document.find("meta")
+    instance = list(meta)[0]
+    assert instance.tag == "job"
+    assert instance.find("id").text == values_to_be_checked["job_id"]
+    assert instance.find("size").text == str(values_to_be_checked["job_size"])
+    assert instance.find("start_frame").text == str(values_to_be_checked["start_frame"])
+    assert instance.find("stop_frame").text == str(values_to_be_checked["stop_frame"])
+    assert instance.find("mode").text == values_to_be_checked["mode"]
+    assert len(instance.find("segments")) == 1
+
+    # check number of images, their sorting, number of annotations
+    images = document.findall("image")
+    assert len(images) == values_to_be_checked["job_size"]
+    assert len(list(document.iter("box"))) == values_to_be_checked["shapes_length"]
+    current_id = values_to_be_checked["start_frame"]
+    for image_elem in images:
+        assert image_elem.attrib["id"] == str(current_id)
+        current_id += 1
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
     def _export_dataset(self, username, jid, **kwargs):
@@ -515,65 +543,43 @@ class TestJobDataset:
         assert response.data
 
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
-    def test_check_exported_coco_annotations_structure(
+    @pytest.mark.parametrize(
+        "anno_format, anno_file_name, check_func",
+        [
+            ("COCO 1.0", "annotations/instances_default.json", _check_coco_job_annotations),
+            ("CVAT for images 1.1", "annotations.xml", _check_cvat_job_annotations),
+        ],
+    )
+    def test_exported_job_dataset_structure(
         self,
         username,
         jid,
+        anno_format,
+        anno_file_name,
+        check_func,
         tasks,
         jobs,
         annotations,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
-        task_id = job_data["task_id"]
-        task_size = tasks[task_id]["size"]
 
-        response = self._export_annotations(username, jid, format="COCO 1.0")
+        values_to_be_checked = {
+            "task_size": tasks[job_data["task_id"]]["size"],
+            # NOTE: data step is not stored in assets, default = 1
+            "job_size": job_data["stop_frame"] - job_data["start_frame"] + 1,
+            "start_frame": job_data["start_frame"],
+            "stop_frame": job_data["stop_frame"],
+            "shapes_length": len(annotations_before["shapes"]),
+            "job_id": str(jid),
+            "mode": job_data["mode"],
+        }
+
+        response = self._export_dataset(username, jid, format=anno_format)
         assert response.data
-
         with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
-            exported_annotations = json.loads(zip_file.read(zip_file.namelist()[0]))
-
-        assert len(annotations_before["shapes"]) == len(exported_annotations["annotations"])
-        # NOTE: data step is not stored in assets, default = 1
-        assert job_data["stop_frame"] - job_data["start_frame"] + 1 == len(
-            exported_annotations["images"]
-        )
-
-        assert task_size > len(exported_annotations["images"])
-
-    @pytest.mark.parametrize("username, jid", [("admin1", 14)])
-    def test_check_exported_cvat_dataset_structure(
-        self,
-        username,
-        jid,
-        tasks,
-        jobs,
-        annotations,
-    ):
-        annotations_file_name = "annotations.xml"
-        job_data = jobs[jid]
-        # NOTE: data step is not stored in assets, default = 1
-        job_size = job_data["stop_frame"] - job_data["start_frame"] + 1
-
-        response = self._export_dataset(username, jid, format="CVAT for images 1.1")
-        assert response.data
-
-        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
-            assert len(zip_file.namelist()) == job_size + 1  # images + annotation file
-            document = ET.fromstring(zip_file.read(annotations_file_name))
-        # check meta information
-        meta = document.find("meta")
-        instance = list(meta)[0]
-        assert instance.tag == "job"
-        assert instance.find("id").text == str(jid)
-        assert instance.find("size").text == str(job_size)
-        assert instance.find("start_frame").text == str(job_data["start_frame"])
-        assert instance.find("stop_frame").text == str(job_data["stop_frame"])
-        assert instance.find("mode").text == job_data["mode"]
-        assert len(instance.find("segments")) == 1
-        # check images
-        current_id = job_data["start_frame"]
-        for image_elem in document.findall("image"):
-            assert image_elem.attrib["id"] == str(current_id)
-            current_id += 1
+            assert (
+                len(zip_file.namelist()) == values_to_be_checked["job_size"] + 1
+            )  # images + annotation file
+            content = zip_file.read(anno_file_name)
+        check_func(content, values_to_be_checked)
