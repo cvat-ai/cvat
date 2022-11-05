@@ -1,6 +1,6 @@
 ---
-title: 'Cvat intro'
-linkTitle: 'Cvat intro'
+title: 'CVAT intro'
+linkTitle: 'CVAT intro'
 weight: 1
 ---
 
