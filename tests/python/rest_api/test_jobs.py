@@ -498,6 +498,7 @@ def _check_coco_job_annotations(content, values_to_be_checked):
     assert values_to_be_checked["job_size"] == len(exported_annotations["images"])
     assert values_to_be_checked["task_size"] > len(exported_annotations["images"])
 
+
 def _check_cvat_job_annotations(content, values_to_be_checked):
     document = ET.fromstring(content)
     # check meta information
@@ -519,6 +520,7 @@ def _check_cvat_job_annotations(content, values_to_be_checked):
     for image_elem in images:
         assert image_elem.attrib["id"] == str(current_id)
         current_id += 1
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
