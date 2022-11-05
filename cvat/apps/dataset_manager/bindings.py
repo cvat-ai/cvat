@@ -1747,6 +1747,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = ann.points
 
+                    rotation = ann.attributes.pop('rotation', 0.0)
                     # Use safe casting to bool instead of plain reading
                     # because in some formats return type can be different
                     # from bool / None
@@ -1794,6 +1795,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             z_order=ann.z_order if ann.type != dm.AnnotationType.cuboid_3d else 0,
                             group=group_map.get(ann.group, 0),
                             source=source,
+                            rotation=rotation,
                             attributes=attributes,
                             elements=elements,
                         ))
@@ -1818,6 +1820,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             points=points,
                             z_order=ann.z_order if ann.type != dm.AnnotationType.cuboid_3d else 0,
                             source=source,
+                            rotation=rotation,
                             attributes=attributes,
                         )
 
