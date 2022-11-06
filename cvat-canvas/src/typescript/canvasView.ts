@@ -736,7 +736,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .map((id: number): any => this.drawnStates[id]);
 
         if (deleted.length || updated.length || created.length) {
-            this.deleteObjects(deleted);
+            if (deleted.length === Object.keys(this.drawnStates).length) {
+                // Optimized path if we are deleting everything (such as during a frame change)
+                // The normal path is horrifically slow if you have large numbers of objects
+                this.adoptedContent.clear();
+                this.svgShapes = {};
+                this.drawnStates = {};
+            } else {
+                this.deleteObjects(deleted);
+            }
             this.addObjects(created);
 
             const updatedSkeletons = updated.filter((state: any): boolean => state.shapeType === 'skeleton');
