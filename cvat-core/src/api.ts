@@ -171,14 +171,6 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
-            /**
-             * Method returns enabled advanced authentication methods
-             * @method advancedAuthentication
-             * @async
-             * @memberof module:API.cvat.server
-             * @throws {module:API.cvat.exceptions.ServerError}
-             * @throws {module:API.cvat.exceptions.PluginError}
-             */
             async advancedAuthentication() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
                 return result;

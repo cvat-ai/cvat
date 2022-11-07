@@ -210,9 +210,9 @@
             top: 0;
 
             .ant-checkbox-inner {
-                width: $grid-unit-size*4;
-                height: $grid-unit-size*2.25;
-                border-radius: 8px;
+                width: $grid-unit-size*5;
+                height: $grid-unit-size*3;
+                border-radius: 12px;
                 background: #d9d9d9;
                 border: none;
 
@@ -223,23 +223,24 @@
                 &::after {
                     position: absolute;
                     content: "";
-                    height: $grid-unit-size*1.5;
-                    width: $grid-unit-size*1.5;
+                    height: $grid-unit-size*2;
+                    width: $grid-unit-size*2;
                     border-radius: $grid-unit-size;
-                    top: $grid-unit-size*0.4;
-                    left: $grid-unit-size*0.4;
+                    top: $grid-unit-size*0.5;
+                    left: $grid-unit-size*0.5;
                     background-color: white;
                     opacity: 1;
                     transform: none;
+                    border: none;
                 }
             }
         }
 
         .ant-checkbox-checked {
             .ant-checkbox-inner {
-                width: $grid-unit-size*4;
-                height: $grid-unit-size*2.25;
-                border-radius: 8px;
+                width: $grid-unit-size*5;
+                height: $grid-unit-size*3;
+                border-radius: 12px;
                 background: $slider-color;
                 border: none;
 
@@ -250,11 +251,11 @@
                 &::after {
                     position: absolute;
                     content: "";
-                    height: $grid-unit-size*1.5;
-                    width: $grid-unit-size*1.5;
+                    height: $grid-unit-size*2;
+                    width: $grid-unit-size*2;
                     border-radius: $grid-unit-size;
-                    top: $grid-unit-size*0.4;
-                    left: $grid-unit-size*2;
+                    top: $grid-unit-size*0.5;
+                    left: $grid-unit-size*2.5;
                     background-color: white;
                     opacity: 1;
                     transform: none;
