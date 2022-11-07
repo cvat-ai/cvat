@@ -261,6 +261,7 @@ function FiltersModalComponent(): JSX.Element {
             visible={visible}
             closable={false}
             width={800}
+            destroyOnClose
             centered
             onCancel={() => dispatch(showFilters(false))}
             footer={[
