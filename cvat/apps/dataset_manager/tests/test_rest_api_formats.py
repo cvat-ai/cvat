@@ -785,39 +785,41 @@ class TaskDumpUploadTest(_DbTestBase):
             with open(file_zip_name, 'rb') as binary_file:
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v2_dump_annotations_with_objects_type_is_shape_from_several_jobs(self):
+    def test_api_v2_dump_annotations_with_objects_type_from_several_jobs(self):
         test_name = self._testMethodName
-        dump_format_name = "CVAT for images 1.1"
+        dump_formats = ["CVAT for images 1.1", "CVAT for video 1.1"]
         test_cases = ['all', 'first']
 
-        images = self._generate_task_images(10)
-        task = self._create_task(tasks["change overlap and segment size"], images)
-        task_id = task["id"]
+        for dump_format_name in dump_formats:
 
-        for test_case in test_cases:
-            with TestDir() as test_dir:
-                jobs = self._get_jobs(task_id)
-                if test_case == "all":
-                    for job in jobs:
-                        self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
-                else:
-                    self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
+            images = self._generate_task_images(10)
+            task = self._create_task(tasks["change overlap and segment size"], images)
+            task_id = task["id"]
 
-                url = self._generate_url_dump_tasks_annotations(task_id)
+            for test_case in test_cases:
+                with TestDir() as test_dir:
+                    jobs = self._get_jobs(task_id)
+                    if test_case == "all":
+                        for job in jobs:
+                            self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
+                    else:
+                        self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
 
-                file_zip_name = osp.join(test_dir, f'{test_name}.zip')
-                data = {
-                    "format": dump_format_name,
-                    "action": "download",
-                }
-                self._download_file(url, data, self.admin, file_zip_name)
-                self.assertEqual(osp.exists(file_zip_name), True)
+                    url = self._generate_url_dump_tasks_annotations(task_id)
 
-                # remove annotations
-                self._remove_annotations(url, self.admin)
-                url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
-                with open(file_zip_name, 'rb') as binary_file:
-                    self._upload_file(url, binary_file, self.admin)
+                    file_zip_name = osp.join(test_dir, f'{test_name}.zip')
+                    data = {
+                        "format": dump_format_name,
+                        "action": "download",
+                    }
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self.assertEqual(osp.exists(file_zip_name), True)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+                    url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
 
     def test_api_v2_export_dataset(self):
         test_name = self._testMethodName

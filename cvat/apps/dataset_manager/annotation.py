@@ -737,11 +737,14 @@ class TrackManager(ObjectManager):
             return shapes
 
         shapes = []
-        curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
         for shape in track["shapes"]:
+            curr_frame = shape["frame"]
+            if end_frame <= curr_frame:
+                break
+
             if prev_shape:
-                assert shape["frame"] > curr_frame
+                assert shape["frame"] > prev_shape["frame"]
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
                         shape["attributes"].append(deepcopy(attr))
@@ -750,12 +753,7 @@ class TrackManager(ObjectManager):
 
             shape["keyframe"] = True
             shapes.append(shape)
-            curr_frame = shape["frame"]
             prev_shape = shape
-
-            # keep at least 1 shape
-            if end_frame <= curr_frame:
-                break
 
         if not prev_shape["outside"]:
             shape = deepcopy(prev_shape)
