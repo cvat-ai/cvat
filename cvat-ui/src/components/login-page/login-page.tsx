@@ -52,11 +52,12 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                             fetching={fetching}
                             renderResetPassword={renderResetPassword}
                             socialAuthentication={(googleAuthentication || githubAuthentication) ? (
-                                <>
+                                <div className='cvat-social-authentication'>
                                     {githubAuthentication && (
                                         <SocialAccountLink
                                             icon={SocialGithubLogo}
                                             href={`${backendAPI}/auth/github/login`}
+                                            className='cvat-social-authentication-github'
                                         >
                                             Continue with GitHub
                                         </SocialAccountLink>
@@ -70,7 +71,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                             Continue with Google
                                         </SocialAccountLink>
                                     )}
-                                </>
+                                </div>
                             ) : null}
                             onSubmit={(loginData: LoginData): void => {
                                 onLogin(loginData.credential, loginData.password);

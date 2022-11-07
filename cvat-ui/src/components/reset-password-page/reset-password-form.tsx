@@ -76,17 +76,16 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                         onReset={() => inputReset('email')}
                     />
                 </Form.Item>
-            </Form>
-            <Row>
-                <Col className='cvat-password-reset-tip'>
-                    <Text> We will send link to your email </Text>
-                </Col>
-            </Row>
-            <Row>
-                <Col className='cvat-credentials-link' flex='auto'>
+                <Row>
+                    <Col className='cvat-password-reset-tip'>
+                        <Text> We will send link to your email </Text>
+                    </Col>
+                </Row>
+                <Form.Item>
                     <Button
                         className='cvat-credentials-action-button'
                         loading={fetching}
+                        htmlType='submit'
                         onClick={async () => {
                             const resetPasswordData: ResetPasswordData = await form.validateFields();
                             onSubmit(resetPasswordData);
@@ -94,8 +93,8 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                     >
                         Send
                     </Button>
-                </Col>
-            </Row>
+                </Form.Item>
+            </Form>
         </div>
 
     );

@@ -142,15 +142,14 @@ function LoginFormComponent(props: Props): JSX.Element {
                         </Form.Item>
                     )
                 }
-            </Form>
-            {
-                credential || !socialAuthentication ? (
-                    <Row>
-                        <Col flex='auto'>
+                {
+                    credential || !socialAuthentication ? (
+                        <Form.Item>
                             <Button
                                 className='cvat-credentials-action-button'
                                 loading={fetching}
                                 disabled={!credential}
+                                htmlType='submit'
                                 onClick={async () => {
                                     const loginData: LoginData = await form.validateFields();
                                     onSubmit(loginData);
@@ -158,10 +157,11 @@ function LoginFormComponent(props: Props): JSX.Element {
                             >
                                 Next
                             </Button>
-                        </Col>
-                    </Row>
-                ) : socialAuthentication
-            }
+
+                        </Form.Item>
+                    ) : socialAuthentication
+                }
+            </Form>
         </div>
     );
 }

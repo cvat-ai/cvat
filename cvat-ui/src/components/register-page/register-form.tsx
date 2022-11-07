@@ -268,7 +268,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         loading={fetching}
                         disabled={fetching}
                     >
-                        Submit
+                        Create account
                     </Button>
                 </Form.Item>
             </Form>
