@@ -8,34 +8,36 @@
  * @module API
  */
 
+import PluginRegistry from './plugins';
+import loggerStorage from './logger-storage';
+import { Log } from './log';
+import ObjectState from './object-state';
+import Statistics from './statistics';
+import Comment from './comment';
+import Issue from './issue';
+import { Job, Task } from './session';
+import Project from './project';
+import implementProject from './project-implementation';
+import { Attribute, Label } from './labels';
+import MLModel from './ml-model';
+import { FrameData } from './frames';
+import CloudStorage from './cloud-storage';
+import Organization from './organization';
+import Webhook from './webhook';
+
+import * as enums from './enums';
+
+import {
+    Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
+} from './exceptions';
+
+import User from './user';
+import pjson from '../package.json';
+import config from './config';
+
+import implementAPI from './api-implementation';
+
 function build() {
-    const PluginRegistry = require('./plugins').default;
-    const loggerStorage = require('./logger-storage').default;
-    const { Log } = require('./log');
-    const ObjectState = require('./object-state').default;
-    const Statistics = require('./statistics').default;
-    const Comment = require('./comment').default;
-    const Issue = require('./issue').default;
-    const { Job, Task } = require('./session');
-    const Project = require('./project').default;
-    const implementProject = require('./project-implementation').default;
-    const { Attribute, Label } = require('./labels');
-    const MLModel = require('./ml-model').default;
-    const { FrameData } = require('./frames');
-    const CloudStorage = require('./cloud-storage').default;
-    const Organization = require('./organization').default;
-    const Webhook = require('./webhook').default;
-
-    const enums = require('./enums');
-
-    const {
-        Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
-    } = require('./exceptions');
-
-    const User = require('./user').default;
-    const pjson = require('../package.json');
-    const config = require('./config').default;
-
     /**
      * API entrypoint
      * @namespace cvat
@@ -925,9 +927,8 @@ function build() {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
 
-    const implementAPI = require('./api-implementation');
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
 }
 
-module.exports = build();
+export default build();
