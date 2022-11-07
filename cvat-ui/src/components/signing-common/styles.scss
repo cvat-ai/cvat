@@ -121,26 +121,37 @@
     border-radius: $grid-unit-size * 4;
     background: $background-color-1;
     padding: $grid-unit-size * 6;
-    min-height: 620px;
+    height: 710px;
+
+    .cvat-credentials-form-item {
+        height: $grid-unit-size*9.5;
+
+        .ant-form-item-explain {
+            margin-bottom: $grid-unit-size*0.5;
+        }
+    }
 
     .ant-form-item {
-        margin-bottom: $grid-unit-size*5;
+        margin-bottom: 0;
+    }
+
+    .ant-form-item-explain-error:not(:first-child) {
+        display: none;
     }
 }
 
 .cvat-signing-form {
-    margin-top: $grid-unit-size*10;
-    margin-bottom: $grid-unit-size*16;
+    margin-top: $grid-unit-size*8;
+    margin-bottom: $grid-unit-size*27;
     transition: $base-transition;
 }
 
 .cvat-signing-form-empty-socials {
-    margin-bottom: $grid-unit-size*28;
+    margin-bottom: $grid-unit-size*42;
 }
 
 .cvat-signing-form-extended {
-    margin-top: $grid-unit-size*6;
-    margin-bottom: $grid-unit-size*14;
+    margin-bottom: $grid-unit-size*22.5;
 }
 
 .cvat-password-reset-form-wrapper {
@@ -152,7 +163,7 @@
 
     .cvat-password-reset-tip {
         font-weight: bold;
-        margin-bottom: $grid-unit-size*18;
+        margin-bottom: $grid-unit-size*29;
     }
 }
 
@@ -167,14 +178,6 @@
 
 .cvat-register-form-wrapper {
     @extend .cvat-signing-form-wrapper;
-
-    .cvat-credentials-form-item {
-        height: $grid-unit-size*9.5;
-
-        .ant-form-item-explain {
-            margin-bottom: $grid-unit-size*0.5;
-        }
-    }
 
     .cvat-agreements-form-item {
         height: $grid-unit-size*5.5;
@@ -246,14 +249,6 @@
         }
     }
 
-    .ant-form-item {
-        margin-bottom: 0;
-    }
-
-    .ant-form-item-explain-error:not(:first-child) {
-        display: none;
-    }
-
     .ant-form-item:last-child:not(.cvat-credentials-form-item) {
         margin-top: $grid-unit-size*6;
         margin-bottom: 0;
@@ -268,7 +263,7 @@
     }
 
     .cvat-register-form-last-field {
-        margin-bottom: $grid-unit-size*12;
+        margin-bottom: $grid-unit-size*20;
     }
 }
 
