@@ -39,6 +39,7 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      IAM_OPA_BUNDLE: '1'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
       USE_ALLAUTH_SOCIAL_ACCOUNTS: ""

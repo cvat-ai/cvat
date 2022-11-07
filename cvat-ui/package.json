@@ -1,13 +1,13 @@
 {
   "name": "cvat-ui",
-  "version": "1.42.6",
+  "version": "1.43.1",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
     "start": "webpack serve --env API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
     "type-check": "tsc --noEmit",
-    "type-check:watch": "yarn run type-check -- --watch",
+    "type-check:watch": "yarn run type-check --watch",
     "lint": "eslint './src/**/*.{ts,tsx}'",
     "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
   },

@@ -3,9 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { isEmail } from './common';
-import { StorageLocation, WebhookSourceType } from './enums';
+import FormData from 'form-data';
+import store from 'store';
+import Axios from 'axios';
+import * as tus from 'tus-js-client';
 import { Storage } from './storage';
+import { StorageLocation, WebhookSourceType } from './enums';
+import { isEmail } from './common';
+import config from './config';
+import DownloadWorker from './download.worker';
+import { ServerError } from './exceptions';
 
 type Params = {
     org: number | string,
@@ -16,14 +23,6 @@ type Params = {
     filename?: string,
     action?: string,
 };
-
-const FormData = require('form-data');
-const store = require('store');
-const Axios = require('axios');
-const tus = require('tus-js-client');
-const config = require('./config');
-const DownloadWorker = require('./download.worker');
-const { ServerError } = require('./exceptions');
 
 function enableOrganization() {
     return { org: config.organizationID || '' };
@@ -217,7 +216,15 @@ class ServerProxy {
                 return reqConfig;
             }
 
-            reqConfig.params = { ...enableOrganization(), ...(reqConfig.params || {}) };
+            const organization = enableOrganization();
+            // for users when organization is unset
+            // we are interested in getting all the users,
+            // not only those who are not in any organization
+            if (reqConfig.url.endsWith('/users') && !organization.org) {
+                return reqConfig;
+            }
+
+            reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
             return reqConfig;
         });
 
@@ -422,6 +429,21 @@ class ServerProxy {
             } catch (errorData) {
                 throw generateError(errorData);
             }
+        }
+
+        async function getSelf() {
+            const { backendAPI } = config;
+
+            let response = null;
+            try {
+                response = await Axios.get(`${backendAPI}/users/self`, {
+                    proxy: config.proxy,
+                });
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+
+            return response.data;
         }
 
         async function authorized() {
@@ -661,14 +683,18 @@ class ServerProxy {
             useDefaultLocation: boolean,
             sourceStorage: Storage,
             file: File | string,
-            onUpdate,
-        ) {
+            options: {
+                convMaskToPoly: boolean,
+                updateStatusCallback: (s: string, n: number) => void,
+            },
+        ): Promise<void> {
             const { backendAPI, origin } = config;
-            const params: Params = {
+            const params: Params & { conv_mask_to_poly: boolean } = {
                 ...enableOrganization(),
                 ...configureStorage(sourceStorage, useDefaultLocation),
                 format,
                 filename: typeof file === 'string' ? file : file.name,
+                conv_mask_to_poly: options.convMaskToPoly,
             };
 
             const url = `${backendAPI}/projects/${id}/dataset`;
@@ -682,8 +708,8 @@ class ServerProxy {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
-                                if (onUpdate && response.data.message) {
-                                    onUpdate(response.data.message, response.data.progress || 0);
+                                if (response.data.message) {
+                                    options.updateStatusCallback(response.data.message, response.data.progress || 0);
                                 }
                                 setTimeout(requestStatus, 3000);
                             } else if (response.status === 201) {
@@ -717,7 +743,7 @@ class ServerProxy {
                     totalSentSize: 0,
                     totalSize: (file as File).size,
                     onUpdate: (percentage) => {
-                        onUpdate('The dataset is being uploaded to the server', percentage);
+                        options.updateStatusCallback('The dataset is being uploaded to the server', percentage);
                     },
                 };
 
@@ -740,7 +766,7 @@ class ServerProxy {
                 }
             }
             try {
-                return wait();
+                return await wait();
             } catch (errorData) {
                 throw generateError(errorData);
             }
@@ -1270,21 +1296,6 @@ class ServerProxy {
             return response.data.results;
         }
 
-        async function getSelf() {
-            const { backendAPI } = config;
-
-            let response = null;
-            try {
-                response = await Axios.get(`${backendAPI}/users/self`, {
-                    proxy: config.proxy,
-                });
-            } catch (errorData) {
-                throw generateError(errorData);
-            }
-
-            return response.data;
-        }
-
         async function getPreview(tid, jid) {
             const { backendAPI } = config;
 
@@ -1441,13 +1452,15 @@ class ServerProxy {
             useDefaultLocation: boolean,
             sourceStorage: Storage,
             file: File | string,
-        ) {
+            options: { convMaskToPoly: boolean },
+        ): Promise<void> {
             const { backendAPI, origin } = config;
-            const params: Params = {
+            const params: Params & { conv_mask_to_poly: boolean } = {
                 ...enableOrganization(),
                 ...configureStorage(sourceStorage, useDefaultLocation),
                 format,
                 filename: typeof file === 'string' ? file : file.name,
+                conv_mask_to_poly: options.convMaskToPoly,
             };
 
             const url = `${backendAPI}/${session}s/${id}/annotations`;
@@ -1515,7 +1528,7 @@ class ServerProxy {
             }
 
             try {
-                return wait();
+                return await wait();
             } catch (errorData) {
                 throw generateError(errorData);
             }

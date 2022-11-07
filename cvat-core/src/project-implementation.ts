@@ -85,9 +85,12 @@ export default function implementProject(projectClass) {
         useDefaultSettings: boolean,
         sourceStorage: Storage,
         file: File | string,
-        updateStatusCallback,
+        options?: {
+            convMaskToPoly?: boolean,
+            updateStatusCallback?: (s: string, n: number) => void,
+        },
     ) {
-        return importDataset(this, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
+        return importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
     };
 
     projectClass.prototype.backup.implementation = async function (

@@ -910,7 +910,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             expected_ann.init_from_db()
 
             dm.task.import_task_annotations(task["id"],
-                file_path, import_format)
+                file_path, import_format, True)
             actual_ann = TaskAnnotation(task["id"])
             actual_ann.init_from_db()
 
@@ -962,6 +962,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
             task.update()
             task = self._create_task(task, images)
 
-            dm.task.import_task_annotations(task['id'], dataset_path, format_name)
+            dm.task.import_task_annotations(task['id'], dataset_path, format_name, True)
             self._test_can_import_annotations(task, format_name)
 

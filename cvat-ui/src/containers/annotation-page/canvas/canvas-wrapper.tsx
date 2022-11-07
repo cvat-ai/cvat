@@ -232,6 +232,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         switchableAutomaticBordering:
             activeControl === ActiveControl.DRAW_POLYGON ||
             activeControl === ActiveControl.DRAW_POLYLINE ||
+            activeControl === ActiveControl.DRAW_MASK ||
             activeControl === ActiveControl.EDIT,
     };
 }

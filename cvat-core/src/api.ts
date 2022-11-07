@@ -13,14 +13,14 @@ function build() {
     const loggerStorage = require('./logger-storage').default;
     const { Log } = require('./log');
     const ObjectState = require('./object-state').default;
-    const Statistics = require('./statistics');
+    const Statistics = require('./statistics').default;
     const Comment = require('./comment').default;
     const Issue = require('./issue').default;
     const { Job, Task } = require('./session');
     const Project = require('./project').default;
     const implementProject = require('./project-implementation').default;
     const { Attribute, Label } = require('./labels');
-    const MLModel = require('./ml-model');
+    const MLModel = require('./ml-model').default;
     const { FrameData } = require('./frames');
     const CloudStorage = require('./cloud-storage').default;
     const Organization = require('./organization').default;
@@ -34,7 +34,7 @@ function build() {
 
     const User = require('./user').default;
     const pjson = require('../package.json');
-    const config = require('./config');
+    const config = require('./config').default;
 
     /**
      * API entrypoint
@@ -171,6 +171,18 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
+            async advancedAuthentication() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
+                return result;
+            },
+            /**
+             * Method returns enabled advanced authentication methods
+             * @method advancedAuthentication
+             * @async
+             * @memberof module:API.cvat.server
+             * @throws {module:API.cvat.exceptions.ServerError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
             async advancedAuthentication() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
                 return result;
@@ -705,6 +717,9 @@ function build() {
              * @memberof module:API.cvat.config
              * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
+             * @property {number} removeUnderlyingMaskPixels defines if after adding/changing
+             * a mask it should remove overlapped pixels from other objects
+             * @memberof module:API.cvat.config
              */
             get backendAPI() {
                 return config.backendAPI;
@@ -729,6 +744,12 @@ function build() {
             },
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
+            },
+            get removeUnderlyingMaskPixels(): boolean {
+                return config.removeUnderlyingMaskPixels;
+            },
+            set removeUnderlyingMaskPixels(value: boolean) {
+                config.removeUnderlyingMaskPixels = value;
             },
         },
         /**

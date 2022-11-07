@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, \
+from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, TaskData, \
     import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -25,12 +25,13 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='VGGFace2', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'vgg_face2', env=dm_env)
-        dataset.transform('rename', regex=r"|([^/]+/)?(.+)|\2|")
+        if isinstance(instance_data, TaskData):
+            dataset.transform('rename', regex=r"|([^/]+/)?(.+)|\2|")
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)

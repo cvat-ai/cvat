@@ -8,6 +8,7 @@ import { RouteComponentProps, useHistory } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 
+
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
 import { SocialGithubLogo, SocialGoogleLogo } from 'icons';
@@ -29,7 +30,7 @@ interface LoginPageComponentProps {
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
     const history = useHistory();
     const { backendAPI } = cvat.config;
-
+    
     const {
         fetching, renderResetPassword, hasEmailVerificationBeenSent,
         googleAuthentication, githubAuthentication, onLogin, loadAdvancedAuthenticationMethods,

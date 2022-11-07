@@ -255,9 +255,19 @@ class ServerViewSet(viewsets.ViewSet):
     def advanced_authentication(request):
         use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
         integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
+        google_auth_is_enabled = (
+            'google' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
+        )
+        github_auth_is_enabled = (
+            'github' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
+        )
         response = {
-            'GOOGLE_ACCOUNT_AUTHENTICATION': use_social_auth and 'google' in integrated_auth_providers,
-            'GITHUB_ACCOUNT_AUTHENTICATION': use_social_auth and 'github' in integrated_auth_providers,
+            'GOOGLE_ACCOUNT_AUTHENTICATION': google_auth_is_enabled,
+            'GITHUB_ACCOUNT_AUTHENTICATION': github_auth_is_enabled,
         }
         return Response(response)
 
@@ -329,7 +339,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(
             serializer,
             owner=self.request.user,
@@ -412,7 +422,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object() # force to call check_object_permissions
 
         if request.method in {'POST', 'OPTIONS'}:
-
             return self.import_annotations(
                 request=request,
                 pk=pk,
@@ -483,6 +492,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'dataset':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
+            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = self._object.get_tmp_dirname()
             uploaded_file = None
             if os.path.isfile(os.path.join(tmp_dir, filename)):
@@ -494,6 +504,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,
+                conv_mask_to_poly=conv_mask_to_poly
             )
         elif self.action == 'import_backup':
             filename = request.query_params.get("filename", "")
@@ -836,7 +847,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(
             serializer,
             owner=self.request.user,
@@ -888,6 +899,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
+            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = self._object.get_tmp_dirname()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -898,6 +910,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         rq_func=dm.task.import_task_annotations,
                         pk=self._object.pk,
                         format_name=format_name,
+                        conv_mask_to_poly=conv_mask_to_poly,
                     )
             else:
                 return Response(data='No such file were uploaded',
@@ -1122,6 +1135,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             format_name = request.query_params.get('format')
             if format_name:
                 use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
                 obj = self._object if use_settings else request.query_params
                 location_conf = get_location_configuration(
                     obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
@@ -1132,7 +1146,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     rq_func=dm.task.import_task_annotations,
                     pk=pk,
                     format_name=format_name,
-                    location_conf=location_conf
+                    location_conf=location_conf,
+                    conv_mask_to_poly=conv_mask_to_poly
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
@@ -1347,6 +1362,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
+            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = task.get_tmp_dirname()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -1357,6 +1373,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         rq_func=dm.task.import_job_annotations,
                         pk=self._object.pk,
                         format_name=format_name,
+                        conv_mask_to_poly=conv_mask_to_poly,
                     )
             else:
                 return Response(data='No such file were uploaded',
@@ -1472,6 +1489,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             format_name = request.query_params.get('format', '')
             if format_name:
                 use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
                 obj = self._object.segment.task if use_settings else request.query_params
                 location_conf = get_location_configuration(
                     obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
@@ -1482,7 +1500,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     rq_func=dm.task.import_job_annotations,
                     pk=pk,
                     format_name=format_name,
-                    location_conf=location_conf
+                    location_conf=location_conf,
+                    conv_mask_to_poly=conv_mask_to_poly
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
@@ -1755,7 +1774,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return IssueWriteSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
@@ -1830,7 +1849,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return CommentWriteSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
 @extend_schema(tags=['users'])
@@ -2187,7 +2206,7 @@ def _download_file_from_bucket(db_storage, filename, key):
         f.write(data.getbuffer())
 
 def _import_annotations(request, rq_id, rq_func, pk, format_name,
-                        filename=None, location_conf=None):
+                        filename=None, location_conf=None, conv_mask_to_poly=True):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2234,7 +2253,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
         av_scan_paths(filename)
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(pk, filename, format_name),
+            args=(pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
             depends_on=dependent_job
         )
@@ -2354,7 +2373,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, location_conf=None):
+def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2395,7 +2414,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
 
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(pk, filename, format_name),
+            args=(pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,

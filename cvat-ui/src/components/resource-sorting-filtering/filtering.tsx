@@ -129,15 +129,6 @@ export default function ResourceFilterHOC(
             setRecentFilters(receiveRecentFilters());
             setIsMounted(true);
 
-            const listener = (event: MouseEvent): void => {
-                const path: HTMLElement[] = event.composedPath()
-                    .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
-                if (path.some((el: HTMLElement) => el.id === 'root') && !path.some((el: HTMLElement) => el.classList.contains('ant-btn'))) {
-                    onBuilderVisibleChange(false);
-                    onRecentVisibleChange(false);
-                }
-            };
-
             try {
                 if (value) {
                     const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
@@ -152,10 +143,26 @@ export default function ResourceFilterHOC(
             } catch (_: any) {
                 // nothing to do
             }
+        }, []);
+
+        useEffect(() => {
+            const listener = (event: MouseEvent): void => {
+                const path: HTMLElement[] = event.composedPath()
+                    .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
+                if (path.some((el: HTMLElement) => el.id === 'root') && !path.some((el: HTMLElement) => el.classList.contains('ant-btn'))) {
+                    if (builderVisible) {
+                        onBuilderVisibleChange(false);
+                    }
+
+                    if (predefinedVisible) {
+                        onRecentVisibleChange(false);
+                    }
+                }
+            };
 
             window.addEventListener('click', listener);
             return () => window.removeEventListener('click', listener);
-        }, []);
+        }, [builderVisible, predefinedVisible]);
 
         useEffect(() => {
             if (!isMounted) {

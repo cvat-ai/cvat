@@ -266,6 +266,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
+INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
 OLD_PASSWORD_FIELD_ENABLED = True
 
@@ -393,6 +394,9 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
+
+IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
+os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
 
 LOGGING = {
     'version': 1,
@@ -588,6 +592,11 @@ ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
     SOCIALACCOUNT_LOGIN_ON_GET = True
+    # It's required to define email in the case when a user has a private hidden email.
+    # (e.g in github account set keep my email addresses private)
+    # default = ACCOUNT_EMAIL_REQUIRED
+    SOCIALACCOUNT_QUERY_EMAIL = True
+    SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
 
     GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
