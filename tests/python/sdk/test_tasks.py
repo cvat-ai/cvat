@@ -12,7 +12,7 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
-from cvat_sdk.core.uploading import Uploader
+from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 
 from shared.utils.helpers import generate_image_files
@@ -300,7 +300,21 @@ class TestTaskUsecases:
         self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
     ):
         monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+
+        num_requests = 0
+        original_do_request = _MyTusUploader._do_request
+
+        def counting_do_request(uploader):
+            nonlocal num_requests
+            num_requests += 1
+            original_do_request(uploader)
+
+        monkeypatch.setattr(_MyTusUploader, "_do_request", counting_do_request)
+
         self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
+
+        # make sure the upload was actually chunked
+        assert num_requests > 1
 
     def test_can_get_jobs(self, fxt_new_task: Task):
         jobs = fxt_new_task.get_jobs()

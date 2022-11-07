@@ -21,7 +21,114 @@ from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
 
+import tusclient.uploader as tus_uploader
+from tusclient.client import TusClient as _TusClient
+from tusclient.client import Uploader as _TusUploader
+from tusclient.request import TusRequest as _TusRequest
+from tusclient.request import TusUploadFailed as _TusUploadFailed
+
 MAX_REQUEST_SIZE = 100 * 2**20
+
+
+class _RestClientAdapter:
+    # Provides requests.Session-like interface for REST client
+    # only patch is called in the tus client
+
+    def __init__(self, rest_client: RESTClientObject):
+        self.rest_client = rest_client
+
+    def _request(self, method, url, data=None, json=None, **kwargs):
+        raw = self.rest_client.request(
+            method=method,
+            url=url,
+            headers=kwargs.get("headers"),
+            query_params=kwargs.get("params"),
+            post_params=json,
+            body=data,
+            _parse_response=False,
+            _request_timeout=kwargs.get("timeout"),
+            _check_status=False,
+        )
+
+        result = requests.Response()
+        result._content = raw.data
+        result.raw = raw
+        result.headers.update(raw.headers)
+        result.status_code = raw.status
+        result.reason = raw.msg
+        return result
+
+    def patch(self, *args, **kwargs):
+        return self._request("PATCH", *args, **kwargs)
+
+
+class _MyTusUploader(_TusUploader):
+    # Adjusts the library code for CVAT server
+    # Allows to reuse session
+
+    def __init__(self, *_args, api_client: ApiClient, **_kwargs):
+        self._api_client = api_client
+        super().__init__(*_args, **_kwargs)
+
+    def _do_request(self):
+        self.request = _TusRequest(self)
+        self.request.handle = _RestClientAdapter(self._api_client.rest_client)
+        try:
+            self.request.perform()
+            self.verify_upload()
+        except _TusUploadFailed as error:
+            self._retry_or_cry(error)
+
+    @tus_uploader._catch_requests_error
+    def create_url(self):
+        """
+        Return upload url.
+
+        Makes request to tus server to create a new upload url for the required file upload.
+        """
+        headers = self.headers
+        headers["upload-length"] = str(self.file_size)
+        headers["upload-metadata"] = ",".join(self.encode_metadata())
+        resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
+        url = resp.headers.get("location")
+        if url is None:
+            msg = "Attempt to retrieve create file url with status {}".format(resp.status_code)
+            raise tus_uploader.TusCommunicationError(msg, resp.status_code, resp.content)
+        return tus_uploader.urljoin(self.client.url, url)
+
+    @tus_uploader._catch_requests_error
+    def get_offset(self):
+        """
+        Return offset from tus server.
+
+        This is different from the instance attribute 'offset' because this makes an
+        http request to the tus server to retrieve the offset.
+        """
+        try:
+            resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
+        except ApiException as ex:
+            if ex.status == 405:  # Method Not Allowed
+                # In CVAT up to version 2.2.0, HEAD requests were internally
+                # converted to GET by mod_wsgi, and subsequently rejected by the server.
+                # For compatibility with old servers, we'll handle such rejections by
+                # restarting the upload from the beginning.
+                return 0
+
+            raise tus_uploader.TusCommunicationError(
+                f"Attempt to retrieve offset failed with status {ex.status}",
+                ex.status,
+                ex.body,
+            ) from ex
+
+        offset = resp.headers.get("upload-offset")
+        if offset is None:
+            raise tus_uploader.TusCommunicationError(
+                f"Attempt to retrieve offset failed with status {resp.status}",
+                resp.status,
+                resp.data,
+            )
+
+        return int(offset)
 
 
 class Uploader:
@@ -135,119 +242,14 @@ class Uploader:
 
     @staticmethod
     def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
-        import tusclient.uploader as tus_uploader
-        from tusclient.client import TusClient, Uploader
-        from tusclient.request import TusRequest, TusUploadFailed
-
-        class RestClientAdapter:
-            # Provides requests.Session-like interface for REST client
-            # only patch is called in the tus client
-
-            def __init__(self, rest_client: RESTClientObject):
-                self.rest_client = rest_client
-
-            def _request(self, method, url, data=None, json=None, **kwargs):
-                raw = self.rest_client.request(
-                    method=method,
-                    url=url,
-                    headers=kwargs.get("headers"),
-                    query_params=kwargs.get("params"),
-                    post_params=json,
-                    body=data,
-                    _parse_response=False,
-                    _request_timeout=kwargs.get("timeout"),
-                    _check_status=False,
-                )
-
-                result = requests.Response()
-                result._content = raw.data
-                result.raw = raw
-                result.headers.update(raw.headers)
-                result.status_code = raw.status
-                result.reason = raw.msg
-                return result
-
-            def patch(self, *args, **kwargs):
-                return self._request("PATCH", *args, **kwargs)
-
-        class MyTusUploader(Uploader):
-            # Adjusts the library code for CVAT server
-            # Allows to reuse session
-
-            def __init__(self, *_args, api_client: ApiClient, **_kwargs):
-                self._api_client = api_client
-                super().__init__(*_args, **_kwargs)
-
-            def _do_request(self):
-                self.request = TusRequest(self)
-                self.request.handle = RestClientAdapter(self._api_client.rest_client)
-                try:
-                    self.request.perform()
-                    self.verify_upload()
-                except TusUploadFailed as error:
-                    self._retry_or_cry(error)
-
-            @tus_uploader._catch_requests_error
-            def create_url(self):
-                """
-                Return upload url.
-
-                Makes request to tus server to create a new upload url for the required file upload.
-                """
-                headers = self.headers
-                headers["upload-length"] = str(self.file_size)
-                headers["upload-metadata"] = ",".join(self.encode_metadata())
-                resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
-                url = resp.headers.get("location")
-                if url is None:
-                    msg = "Attempt to retrieve create file url with status {}".format(
-                        resp.status_code
-                    )
-                    raise tus_uploader.TusCommunicationError(msg, resp.status_code, resp.content)
-                return tus_uploader.urljoin(self.client.url, url)
-
-            @tus_uploader._catch_requests_error
-            def get_offset(self):
-                """
-                Return offset from tus server.
-
-                This is different from the instance attribute 'offset' because this makes an
-                http request to the tus server to retrieve the offset.
-                """
-                try:
-                    resp = self._api_client.rest_client.HEAD(self.url, headers=self.headers)
-                except ApiException as ex:
-                    if ex.status == 405:  # Method Not Allowed
-                        # In CVAT up to version 2.2.0, HEAD requests were internally
-                        # converted to GET by mod_wsgi, and subsequently rejected by the server.
-                        # For compatibility with old servers, we'll handle such rejections by
-                        # restarting the upload from the beginning.
-                        return 0
-
-                    raise tus_uploader.TusCommunicationError(
-                        f"Attempt to retrieve offset failed with status {ex.status}",
-                        ex.status,
-                        ex.body,
-                    ) from ex
-
-                offset = resp.headers.get("upload-offset")
-                if offset is None:
-                    raise tus_uploader.TusCommunicationError(
-                        f"Attempt to retrieve offset failed with status {resp.status}",
-                        resp.status,
-                        resp.data,
-                    )
-
-                return int(offset)
-
         # Add headers required by CVAT server
         headers = {}
         headers["Origin"] = api_client.configuration.host
         headers.update(api_client.get_common_headers())
 
-        client = TusClient(url, headers=headers)
+        client = _TusClient(url, headers=headers)
 
-        return MyTusUploader(client=client, api_client=api_client, **kwargs)
+        return _MyTusUploader(client=client, api_client=api_client, **kwargs)
 
     def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar=None, logger=None):
         file_size = os.stat(filename).st_size
