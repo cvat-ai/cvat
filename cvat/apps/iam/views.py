@@ -226,7 +226,6 @@ github_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GitHubAdapter)
 google_oauth2_login = OAuth2LoginView.adapter_view(GoogleAdapter)
 google_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GoogleAdapter)
 
-
 class ConfirmEmailViewEx(ConfirmEmailView):
     template_name = 'account/email/email_confirmation_signup_message.html'
 

@@ -67,7 +67,6 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 
-
 interface CVATAppProps {
     loadFormats: () => void;
     loadAbout: () => void;

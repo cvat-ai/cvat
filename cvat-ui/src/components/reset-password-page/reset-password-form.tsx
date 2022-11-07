@@ -96,7 +96,6 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                 </Form.Item>
             </Form>
         </div>
-
     );
 }
 

@@ -67,7 +67,6 @@ import SVGSocialGoogleLogo from './assets/social-google-logo.svg';
 import SVGPlusIcon from './assets/plus-icon.svg';
 import SVGCheckIcon from './assets/check-icon.svg';
 
-
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -129,4 +128,3 @@ export const SocialGithubLogo = React.memo((): JSX.Element => <SVGSocialGithubLo
 export const SocialGoogleLogo = React.memo((): JSX.Element => <SVGSocialGoogleLogo />);
 export const PlusIcon = React.memo((): JSX.Element => <SVGPlusIcon />);
 export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);
-
