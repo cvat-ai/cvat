@@ -194,7 +194,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                             const { value } = event.target;
                             if (!usernameEdited) {
                                 const [username] = value.split('@');
-                                form.setFieldsValue({ username });
+                                form.setFieldsValue({ username: username.replace(/\./g, '-') });
                             }
                         }}
                     />
