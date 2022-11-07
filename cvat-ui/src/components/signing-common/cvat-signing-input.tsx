@@ -8,6 +8,7 @@ import { ClearIcon } from 'icons';
 import { Input } from 'antd';
 
 interface SocialAccountLinkProps {
+    id?: string;
     prefix: string;
     autoComplete?: string;
     placeholder: string;
@@ -18,7 +19,7 @@ interface SocialAccountLinkProps {
 
 function CVATSigningInput(props: SocialAccountLinkProps): JSX.Element {
     const {
-        prefix, autoComplete, onReset, placeholder, value, onChange,
+        id, prefix, autoComplete, onReset, placeholder, value, onChange,
     } = props;
     const [valueNonEmpty, setValueNonEmpty] = useState(false);
     return (
@@ -27,6 +28,7 @@ function CVATSigningInput(props: SocialAccountLinkProps): JSX.Element {
             autoComplete={autoComplete}
             placeholder={placeholder}
             prefix={<Text>{prefix}</Text>}
+            id={id}
             suffix={(
                 valueNonEmpty ? (
                     <Icon

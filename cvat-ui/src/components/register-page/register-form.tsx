@@ -145,6 +145,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                             ]}
                         >
                             <CVATSigningInput
+                                id='firstName'
                                 placeholder='enter your first name'
                                 prefix='First name'
                                 onReset={() => inputReset('firstName')}
@@ -164,6 +165,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                             ]}
                         >
                             <CVATSigningInput
+                                id='lastName'
                                 placeholder='enter your last name'
                                 prefix='Last name'
                                 onReset={() => inputReset('lastName')}
@@ -186,6 +188,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     ]}
                 >
                     <CVATSigningInput
+                        id='email'
                         autoComplete='email'
                         placeholder='enter your email'
                         prefix='Email'
@@ -213,6 +216,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     ]}
                 >
                     <CVATSigningInput
+                        id='username'
                         placeholder='enter your username'
                         prefix='Username'
                         onReset={() => inputReset('username')}

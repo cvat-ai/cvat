@@ -88,6 +88,9 @@ function LoginFormComponent(props: Props): JSX.Element {
             <Form
                 className={`cvat-signing-form ${!credential && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''} ${credential ? 'cvat-signing-form-extended' : ''}`}
                 form={form}
+                onFinish={(loginData: LoginData) => {
+                    onSubmit(loginData);
+                }}
             >
                 <Form.Item
                     className='cvat-credentials-form-item'
@@ -151,8 +154,6 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 disabled={!credential}
                                 htmlType='submit'
                                 onClick={async () => {
-                                    const loginData: LoginData = await form.validateFields();
-                                    onSubmit(loginData);
                                 }}
                             >
                                 Next
