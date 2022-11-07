@@ -230,6 +230,30 @@ Cypress.Commands.add(
     },
 );
 
+Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
+    cy.window().then(async ($win) => {
+        const task = new $win.cvat.classes.Task({
+            ...taskSpec,
+            ...dataSpec,
+        });
+
+        if (dataSpec.server_files) {
+            task.serverFiles = dataSpec.server_files;
+        }
+        if (dataSpec.client_files) {
+            task.clientFiles = dataSpec.client_files;
+        }
+
+        if (dataSpec.remote_files) {
+            task.remoteFiles = dataSpec.remote_files;
+        }
+
+        const result = await task.save();
+        cy.log(result);
+        return cy.wrap({ taskID: result.id, jobID: result.jobs.map((job) => job.id) });
+    });
+});
+
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     cy.contains('strong', new RegExp(`^${taskName}$`))
         .parents('.cvat-tasks-list-item')
