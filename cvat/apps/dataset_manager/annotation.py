@@ -741,6 +741,10 @@ class TrackManager(ObjectManager):
         for shape in track["shapes"]:
             curr_frame = shape["frame"]
             if end_frame <= curr_frame:
+                if not prev_shape:
+                    shape["keyframe"] = True
+                    shapes.append(shape)
+                    prev_shape = shape
                 break
 
             if prev_shape:
