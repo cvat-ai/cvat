@@ -458,10 +458,11 @@ class TestImportExportDatasetProject:
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-    @pytest.mark.parametrize("format_name", ("ImageNet 1.0", "Datumaro 1.0"))
+    @pytest.mark.parametrize("format_name", ("Datumaro 1.0", "ImageNet 1.0", "PASCAL VOC 1.1"))
     def test_can_import_export_dataset_with_some_format(self, format_name):
         # https://github.com/opencv/cvat/issues/4410
         # https://github.com/opencv/cvat/issues/4850
+        # https://github.com/opencv/cvat/issues/4621
         username = "admin1"
         project_id = 4
 

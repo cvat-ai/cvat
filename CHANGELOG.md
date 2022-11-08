@@ -64,6 +64,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Extra rerenders of different pages with each click (<https://github.com/opencv/cvat/pull/5178>)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
+- PASCAL VOC 1.1 can't import dataset (<https://github.com/opencv/cvat/pull/4647>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
 - Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
