@@ -77,14 +77,18 @@ function LoginFormComponent(props: Props): JSX.Element {
                     !credential && renderResetPassword && forgotPasswordLink
                 }
             </Row>
-            <Row>
-                <Col className='cvat-credentials-link'>
-                    <Text strong>
-                        New user?&nbsp;
-                        <Link to='/auth/register'>Create an account</Link>
-                    </Text>
-                </Col>
-            </Row>
+            {
+                !credential && (
+                    <Row>
+                        <Col className='cvat-credentials-link'>
+                            <Text strong>
+                                New user?&nbsp;
+                                <Link to='/auth/register'>Create an account</Link>
+                            </Text>
+                        </Col>
+                    </Row>
+                )
+            }
             <Form
                 className={`cvat-signing-form ${!credential && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''} ${credential ? 'cvat-signing-form-extended' : ''}`}
                 form={form}
@@ -153,8 +157,6 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 loading={fetching}
                                 disabled={!credential}
                                 htmlType='submit'
-                                onClick={async () => {
-                                }}
                             >
                                 Next
                             </Button>

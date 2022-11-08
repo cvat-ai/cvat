@@ -108,7 +108,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
         form.setFieldsValue({ [name]: '' });
     }, [form]);
     return (
-        <div className={`cvat-register-form-wrapper ${!userAgreements.length ? 'cvat-register-form-wrapper-extended' : ''}`}>
+        <div className={`cvat-register-form-wrapper ${userAgreements.length ? 'cvat-register-form-wrapper-extended' : ''}`}>
             <Row justify='space-between' className='cvat-credentials-navigation'>
                 <Col>
                     <Link to='/auth/login'><Icon component={BackArrowIcon} /></Link>
@@ -197,7 +197,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                             const { value } = event.target;
                             if (!usernameEdited) {
                                 const [username] = value.split('@');
-                                form.setFieldsValue({ username: username.replace(/\./g, '-') });
+                                form.setFieldsValue({ username });
                             }
                         }}
                     />

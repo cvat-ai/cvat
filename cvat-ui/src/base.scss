@@ -14,8 +14,6 @@ $layout-lg-grid-color: rgba(0, 0, 0, 0.15);
 
 $header-color: #d8d8d8;
 $text-color: #303030;
-$text-color-2: white;
-$error-color: #ff4d4f;
 $text-color-secondary: rgba(0, 0, 0, 0.45);
 $hover-menu-color: rgba(24, 144, 255, 0.05);
 $completed-progress-color: #61c200;
@@ -40,19 +38,9 @@ $objects-bar-icons-color: #242424; // #6e6e6e
 $active-label-background-color: #d8ecff;
 $object-item-border-color: rgba(0, 0, 0, 0.7);
 $slider-color: #1890ff;
-$action-button-color-1: black;
-$action-button-color-2: gray;
-$action-button-color-3: #d4d4d4;
-
-$base-transition: all 0.8s ease;
-
-$social-google-background: #4286f5;
 
 $box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08),
     0 9px 28px 8px rgba(0, 0, 0, 0.05);
-
-$heading-font: 'Sora', sans-serif;
-$signing-font: 'Roboto Flex', sans-serif;
 
 $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono,
     Courier New, monospace;
