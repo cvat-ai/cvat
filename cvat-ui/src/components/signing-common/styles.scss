@@ -24,7 +24,7 @@ $social-google-background: #4286f5;
     .ant-typography {
         color: $heading-color;
         margin: 0;
-        font-size: $grid-unit-size*8.5;
+        font-size: 68px;
         font-family: $heading-font;
         font-weight: 400;
     }
@@ -43,7 +43,7 @@ $social-google-background: #4286f5;
     position: absolute;
     width: 100%;
     height: 100%;
-    min-width: 1024px;
+    min-width: $grid-unit-size*128;
 }
 
 .cvat-credentials-link {
@@ -83,7 +83,7 @@ $social-google-background: #4286f5;
     }
 
     .ant-input {
-        font-size: $grid-unit-size * 2.5;
+        font-size: 20px;
         padding: $grid-unit-size * 1.5 0 $grid-unit-size * 0.75 0 !important;
 
         &:-webkit-autofill,
@@ -97,7 +97,7 @@ $social-google-background: #4286f5;
     .ant-typography {
         text-transform: uppercase;
         color: $border-color-1;
-        font-size: $grid-unit-size * 1.5;
+        font-size: 12px;
         letter-spacing: 1px;
     }
 }
@@ -126,7 +126,7 @@ $social-google-background: #4286f5;
     background-color: $action-button-color-1;
     height: $grid-unit-size*11;
     color: white;
-    font-size: $grid-unit-size*2;
+    font-size: 16px;
     font-weight: bold;
     border: none;
     box-shadow: none;
@@ -142,7 +142,7 @@ $social-google-background: #4286f5;
     border-radius: $grid-unit-size * 4;
     background: $background-color-1;
     padding: $grid-unit-size * 6;
-    height: 648px;
+    height: $grid-unit-size*81;
 
     .cvat-credentials-form-item {
         height: $grid-unit-size*9.5;
@@ -196,7 +196,7 @@ $social-google-background: #4286f5;
 
     .cvat-password-reset-tip {
         font-weight: bold;
-        margin-bottom: $grid-unit-size*18;
+        margin-bottom: $grid-unit-size*20;
     }
 }
 
@@ -295,7 +295,7 @@ $social-google-background: #4286f5;
 .cvat-register-form-wrapper-extended {
     @extend .cvat-signing-form-wrapper;
 
-    height: 704px;
+    height: $grid-unit-size*88;
 
     .cvat-credentials-action-button {
         margin-top: $grid-unit-size*3;
