@@ -54,6 +54,9 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                 initialValues={{
                     email: defaultCredential,
                 }}
+                onFinish={(resetPasswordData: ResetPasswordData) => {
+                    onSubmit(resetPasswordData);
+                }}
             >
                 <Form.Item
                     className='cvat-credentials-form-item'
@@ -86,10 +89,6 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                         className='cvat-credentials-action-button'
                         loading={fetching}
                         htmlType='submit'
-                        onClick={async () => {
-                            const resetPasswordData: ResetPasswordData = await form.validateFields();
-                            onSubmit(resetPasswordData);
-                        }}
                     >
                         Send
                     </Button>

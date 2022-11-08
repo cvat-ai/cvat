@@ -321,7 +321,8 @@ class ServerProxy {
                     first_name: firstName,
                     last_name: lastName,
                     email,
-                    password,
+                    password1: password,
+                    password2: password,
                     confirmations,
                 });
                 response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
