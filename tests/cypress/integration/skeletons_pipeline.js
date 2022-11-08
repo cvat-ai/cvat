@@ -169,8 +169,14 @@ context('Manipulations with skeletons', () => {
             cy.get(selector).should('not.exist');
         }
 
-        it('Creating and removing a skeleton shape', () => {
+        it('Creating, checking occluded for a single point, and removing a skeleton shape', () => {
             createSkeletonObject('shape');
+
+            cy.get('#cvat-objects-sidebar-state-item-element-2').within(() => {
+                cy.get('span[aria-label="user"]').click();
+            });
+            cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_occluded');
+
             deleteSkeleton('#cvat_canvas_shape_1', 'shape', false);
             cy.removeAnnotations();
         });
