@@ -105,7 +105,7 @@ class AnnotationIR:
             if scoped_shapes:
                 if not scoped_shapes[0]['keyframe']:
                     segment_shapes.insert(0, scoped_shapes[0])
-                if not scoped_shapes[-1]['keyframe'] and \
+                if scoped_shapes[-1]['keyframe'] and \
                         scoped_shapes[-1]['outside']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif stop + 1 < len(interpolated_shapes) and \
