@@ -63,7 +63,9 @@ import showPlatformNotification, {
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
-import EmailConfirmationPage from './email-confirmation-page/email-confirmed';
+import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
+import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
+import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -427,6 +429,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 <GlobalErrorBoundary>
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
+                        <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
+                        <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
                         <Route
                             exact

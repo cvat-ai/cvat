@@ -13,6 +13,11 @@ if MASK_RCNN_DIR:
 from mrcnn import model as modellib
 from mrcnn.config import Config
 
+def to_cvat_mask(box: list, mask):
+    xtl, ytl, xbr, ybr = box
+    flattened = mask[ytl:ybr + 1, xtl:xbr + 1].flat[:].tolist()
+    flattened.extend([xtl, ytl, xbr, ybr])
+    return flattened
 
 class ModelLoader:
     def __init__(self, labels):
@@ -65,11 +70,18 @@ class ModelLoader:
                     continue
                 label = self.labels[class_id]
 
+                Xmin = int(np.min(contour[:,0]))
+                Xmax = int(np.max(contour[:,0]))
+                Ymin = int(np.min(contour[:,1]))
+                Ymax = int(np.max(contour[:,1]))
+                cvat_mask = to_cvat_mask((Xmin, Ymin, Xmax, Ymax), mask)
+
                 results.append({
                     "confidence": str(score),
                     "label": label,
                     "points": contour.ravel().tolist(),
-                    "type": "polygon",
+                    "mask": cvat_mask,
+                    "type": "mask",
                 })
 
         return results

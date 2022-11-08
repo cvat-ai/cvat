@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -740,19 +741,19 @@
         return frameDataCache[jobID].frameBuffer.require(frame, jobID, isPlaying, step);
     }
 
-    async function getDeletedFrames(sessionType, id) {
-        if (sessionType === 'job') {
+    async function getDeletedFrames(instanceType, id) {
+        if (instanceType === 'job') {
             const { meta } = frameDataCache[id];
             return meta.deleted_frames;
         }
 
-        if (sessionType === 'task') {
+        if (instanceType === 'task') {
             const meta = await serverProxy.frames.getMeta('job', id);
             meta.deleted_frames = Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true]));
             return meta;
         }
 
-        throw Exception('getDeletedFrames is not implemented for tasks');
+        throw new Exception(`getDeletedFrames is not implemented for ${instanceType}`);
     }
 
     function deleteFrame(jobID, frame) {

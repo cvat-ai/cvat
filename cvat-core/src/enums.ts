@@ -172,6 +172,7 @@ export enum ShapeType {
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
     SKELETON = 'skeleton',
+    MASK = 'mask',
 }
 
 /**

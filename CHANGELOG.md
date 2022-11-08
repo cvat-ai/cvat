@@ -15,7 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
+- Mask tools are supported now (brush, eraser, polygon-plus, polygon-minus, returning masks
+from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
+- Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>)
+- REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
@@ -60,9 +64,14 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Extra rerenders of different pages with each click (<https://github.com/opencv/cvat/pull/5178>)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
+- PASCAL VOC 1.1 can't import dataset (<https://github.com/opencv/cvat/pull/4647>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
 - Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
+- Cannot assign a resource to a user who has an organization (<https://github.com/opencv/cvat/pull/5218>)
+- Oriented bounding boxes broken with COCO format ss(<https://github.com/opencv/cvat/pull/5219>)
+- Fixed upload resumption in production environments
+  (<https://github.com/opencv/cvat/issues/4839>)
 
 ### Security
 - TDB
@@ -144,6 +153,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
 - Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
 - Fixed build of retinanet function image (<https://github.com/cvat-ai/cvat/pull/54>)
+- Dataset import for Datumaro, KITTI and VGGFace2 formats (<https://github.com/opencv/cvat/pull/4544>)
 - Bug: Import dataset of Imagenet format fail (<https://github.com/opencv/cvat/issues/4850>)
 
 ## \[2.0.0] - 2022-03-04

@@ -8,7 +8,7 @@ const config = require('./config').default;
 (() => {
     const PluginRegistry = require('./plugins').default;
     const serverProxy = require('./server-proxy').default;
-    const lambdaManager = require('./lambda-manager');
+    const lambdaManager = require('./lambda-manager').default;
     const {
         isBoolean,
         isInteger,
@@ -86,6 +86,11 @@ const config = require('./config').default;
 
         cvat.server.logout.implementation = async () => {
             await serverProxy.server.logout();
+        };
+
+        cvat.server.advancedAuthentication.implementation = async () => {
+            const result = await serverProxy.server.advancedAuthentication();
+            return result;
         };
 
         cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {

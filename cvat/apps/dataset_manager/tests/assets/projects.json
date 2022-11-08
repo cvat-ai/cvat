@@ -3,6 +3,11 @@
     "name": "Main project",
     "labels": [
       {
+        "name": "background",
+        "color": "#5c5eba",
+        "attributes": []
+      },
+      {
         "name": "car",
         "color": "#2080c0",
         "attributes": [
