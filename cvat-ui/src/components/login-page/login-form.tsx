@@ -50,10 +50,10 @@ function LoginFormComponent(props: Props): JSX.Element {
         </Col>
     );
     return (
-        <div className='cvat-signing-form-wrapper'>
-            {
-                credential && (
-                    <Row justify='space-between' className='cvat-credentials-navigation'>
+        <div className='cvat-login-form-wrapper'>
+            <Row justify='space-between' className='cvat-credentials-navigation'>
+                {
+                    credential && (
                         <Col>
                             <Icon
                                 component={BackArrowIcon}
@@ -63,34 +63,29 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 }}
                             />
                         </Col>
-                        {
-                            renderResetPassword && forgotPasswordLink
-                        }
-                    </Row>
-                )
-            }
-            <Row justify='space-between'>
-                <Col>
-                    <Title level={2}> Sign in </Title>
-                </Col>
+                    )
+                }
                 {
-                    !credential && renderResetPassword && forgotPasswordLink
+                    !credential && (
+                        <Row>
+                            <Col className='cvat-credentials-link'>
+                                <Text strong>
+                                    New user?&nbsp;
+                                    <Link to='/auth/register'>Create an account</Link>
+                                </Text>
+                            </Col>
+                        </Row>
+                    )
+                }
+                {
+                    renderResetPassword && forgotPasswordLink
                 }
             </Row>
-            {
-                !credential && (
-                    <Row>
-                        <Col className='cvat-credentials-link'>
-                            <Text strong>
-                                New user?&nbsp;
-                                <Link to='/auth/register'>Create an account</Link>
-                            </Text>
-                        </Col>
-                    </Row>
-                )
-            }
+            <Col>
+                <Title level={2}> Sign in </Title>
+            </Col>
             <Form
-                className={`cvat-signing-form ${!credential && !socialAuthentication ? 'cvat-signing-form-empty-socials' : ''} ${credential ? 'cvat-signing-form-extended' : ''}`}
+                className={`cvat-login-form ${credential ? 'cvat-login-form-extended' : ''}`}
                 form={form}
                 onFinish={(loginData: LoginData) => {
                     onSubmit(loginData);
@@ -99,12 +94,6 @@ function LoginFormComponent(props: Props): JSX.Element {
                 <Form.Item
                     className='cvat-credentials-form-item'
                     name='credential'
-                    rules={[
-                        {
-                            required: true,
-                            message: 'Please specify a email or username',
-                        },
-                    ]}
                 >
                     <Input
                         autoComplete='credential'
@@ -124,6 +113,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                         onChange={(event) => {
                             const { value } = event.target;
                             setCredential(value);
+                            if (!value) inputReset('credential');
                         }}
                     />
                 </Form.Item>
@@ -160,7 +150,6 @@ function LoginFormComponent(props: Props): JSX.Element {
                             >
                                 Next
                             </Button>
-
                         </Form.Item>
                     ) : socialAuthentication
                 }

@@ -130,6 +130,7 @@ $social-google-background: #4286f5;
     font-weight: bold;
     border: none;
     box-shadow: none;
+    transition: $base-transition;
 
     &:hover,
     &:focus {
@@ -138,7 +139,7 @@ $social-google-background: #4286f5;
     }
 }
 
-.cvat-signing-form-wrapper {
+.cvat-login-form-wrapper {
     border-radius: $grid-unit-size * 4;
     background: $background-color-1;
     padding: $grid-unit-size * 6;
@@ -159,36 +160,38 @@ $social-google-background: #4286f5;
     .ant-form-item-explain-error:not(:first-child) {
         display: none;
     }
-
-    .cvat-credentials-action-button {
-        transition: none;
-    }
 }
 
 .cvat-signing-form {
-    margin-top: $grid-unit-size*12;
+    position: relative;
+    height: $grid-unit-size*52;
 
-    .cvat-social-authentication {
-        margin-top: $grid-unit-size*15;
+    .ant-form-item:last-child:not(.cvat-credentials-form-item) {
+        position: absolute;
+        bottom: $grid-unit-size*6;
+        width: 100%;
+        box-sizing: border-box;
     }
 }
 
-.cvat-signing-form-empty-socials {
-    .cvat-credentials-action-button {
-        margin-top: $grid-unit-size*26;
+.cvat-login-form {
+    @extend .cvat-signing-form;
+
+    margin-top: $grid-unit-size*10;
+
+    .ant-form-item:first-child {
+        margin-bottom: $grid-unit-size*15;
     }
 }
 
-.cvat-signing-form-extended {
-    margin-top: $grid-unit-size*8;
-
-    .cvat-credentials-action-button {
-        margin-top: $grid-unit-size*16.5;
+.cvat-login-form-extended {
+    .ant-form-item:first-child {
+        margin-bottom: 0;
     }
 }
 
 .cvat-password-reset-form-wrapper {
-    @extend .cvat-signing-form-wrapper;
+    @extend .cvat-login-form-wrapper;
 
     h2 {
         margin-bottom: 0;
@@ -201,16 +204,23 @@ $social-google-background: #4286f5;
 }
 
 .cvat-password-reset-form {
+    @extend .cvat-signing-form;
+
     .cvat-credentials-form-item {
         margin-bottom: $grid-unit-size*3;
     }
 
     margin-top: $grid-unit-size*6;
-    transition: $base-transition;
 }
 
 .cvat-register-form-wrapper {
-    @extend .cvat-signing-form-wrapper;
+    @extend .cvat-login-form-wrapper;
+
+    .cvat-register-form {
+        @extend .cvat-signing-form;
+
+        height: $grid-unit-size*68;
+    }
 
     .cvat-agreements-form-item {
         height: $grid-unit-size*5.5;
@@ -286,24 +296,21 @@ $social-google-background: #4286f5;
     .cvat-register-form-last-field {
         margin-bottom: 0;
     }
-
-    .cvat-credentials-action-button {
-        margin-top: $grid-unit-size*12;
-    }
 }
 
 .cvat-register-form-wrapper-extended {
-    @extend .cvat-signing-form-wrapper;
+    @extend .cvat-login-form-wrapper;
 
     height: $grid-unit-size*88;
 
-    .cvat-credentials-action-button {
-        margin-top: $grid-unit-size*3;
-        margin-bottom: 0;
-    }
-
     .cvat-register-form-last-field {
         margin-bottom: $grid-unit-size;
+    }
+
+    .cvat-register-form {
+        @extend .cvat-signing-form;
+
+        height: $grid-unit-size*76;
     }
 }
 

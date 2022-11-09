@@ -129,7 +129,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         confirmations,
                     });
                 }}
-                className='register-form'
+                className='cvat-register-form'
             >
                 <Row gutter={8}>
                     <Col span={12}>
