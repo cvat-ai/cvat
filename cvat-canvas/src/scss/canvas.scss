@@ -148,9 +148,22 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.cvat_canvas_shape_occluded_point {
+    stroke-dasharray: 1 !important;
+    stroke: white;
+}
+
+circle.cvat_canvas_shape_occluded {
+    @extend .cvat_canvas_shape_occluded_point;
+}
+
 g.cvat_canvas_shape_occluded {
     > rect {
         stroke-dasharray: 5;
+    }
+
+    > circle {
+        @extend .cvat_canvas_shape_occluded_point;
     }
 }
 

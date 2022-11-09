@@ -1916,10 +1916,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (drawnState.occluded !== state.occluded) {
+                const instance = state.shapeType === 'points' ? this.svgShapes[clientID].remember('_selectHandler').nested : shape;
                 if (state.occluded) {
-                    shape.addClass('cvat_canvas_shape_occluded');
+                    instance.addClass('cvat_canvas_shape_occluded');
                 } else {
-                    shape.removeClass('cvat_canvas_shape_occluded');
+                    instance.removeClass('cvat_canvas_shape_occluded');
                 }
             }
 
@@ -3386,6 +3387,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             group.addClass('cvat_canvas_hidden');
+        }
+
+        if (state.occluded) {
+            group.addClass('cvat_canvas_shape_occluded');
         }
 
         shape.remove = (): SVG.PolyLine => {

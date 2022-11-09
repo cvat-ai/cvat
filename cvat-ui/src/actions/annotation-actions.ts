@@ -1223,7 +1223,7 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             const states = await Promise.all(promises);
 
             const needToUpdateAll = states
-                .some((state: any) => [ShapeType.MASK, ShapeType.SKELETON].includes(state.shapeType));
+                .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
             if (needToUpdateAll) {
                 dispatch(fetchAnnotationsAsync());
                 return;
