@@ -12,7 +12,7 @@
   },
   "testFiles": [
     "auth_page.js",
-    "skeletons_pipeline.js",
+    "skeletons/*.js",
     "webhooks.js",
     "masks/*.js",
     "actions_tasks/**/*.js",
