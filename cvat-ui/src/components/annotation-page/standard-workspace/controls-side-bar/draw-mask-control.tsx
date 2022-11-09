@@ -8,8 +8,9 @@ import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { BrushIcon } from 'icons';
+import { ShapeType } from 'reducers';
 
-import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-mask-popover';
+import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';
 
 export interface Props {
@@ -43,7 +44,7 @@ function DrawPointsControl(props: Props): JSX.Element {
             {...dynamicPopoverProps}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
-            content={<DrawShapePopoverContainer />}
+            content={<DrawShapePopoverContainer shapeType={ShapeType.MASK} />}
         >
             <Icon {...dynamicIconProps} component={BrushIcon} />
         </CustomPopover>
