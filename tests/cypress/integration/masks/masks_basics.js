@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Manipulations with masks', () => {
+context('Manipulations with masks', { scrollBehavior: false }, () => {
     const taskName = 'Basic actions with masks';
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
     const drawingActions = [{

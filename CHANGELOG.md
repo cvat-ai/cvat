@@ -70,6 +70,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 - Cannot assign a resource to a user who has an organization (<https://github.com/opencv/cvat/pull/5218>)
 - Logs and annotations are not saved when logout from a job page (<https://github.com/opencv/cvat/pull/5266>)
+- Occluded not applied on canvas instantly for a skeleton elements (<https://github.com/opencv/cvat/pull/5259>)
 - Oriented bounding boxes broken with COCO format ss(<https://github.com/opencv/cvat/pull/5219>)
 - Fixed upload resumption in production environments
   (<https://github.com/opencv/cvat/issues/4839>)
