@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Manipulations with skeletons', () => {
+context('Manipulations with skeletons', { scrollBehavior: false }, () => {
     const skeletonSize = 5;
     const labelName = 'skeleton';
     const taskName = 'skeletons main pipeline';
