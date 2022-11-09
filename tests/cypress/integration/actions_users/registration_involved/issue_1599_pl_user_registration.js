@@ -25,27 +25,23 @@ context('Issue 1599 (Polish alphabet).', () => {
 
     describe('User registration using the Polish alphabet.', () => {
         it('Filling in the placeholder "First name"', () => {
-            cy.get('[placeholder="First name"]').type(firstName).should('not.have.class', 'has-error');
+            cy.get('[placeholder="enter your first name"]').type(firstName).should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Last name"', () => {
-            cy.get('[placeholder="Last name"]').type(lastName).should('not.have.class', 'has-error');
+            cy.get('[placeholder="enter your last name"]').type(lastName).should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Username"', () => {
-            cy.get('[placeholder="Username"]').type(userName);
+            cy.get('[placeholder="enter your username"]').type(userName);
         });
 
         it('Filling in the placeholder "Email address"', () => {
-            cy.get('[placeholder="Email address"]').type(email);
+            cy.get('[placeholder="enter your email"]').type(email);
         });
 
         it('Filling in the placeholder "Password"', () => {
-            cy.get('[placeholder="Password"]').type(password);
-        });
-
-        it('Filling in the placeholder "Confirm password"', () => {
-            cy.get('[placeholder="Confirm password"]').type(password);
+            cy.get('[placeholder="enter your password"]').type(password);
         });
 
         it('Click to "Submit" button', () => {

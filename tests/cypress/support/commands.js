@@ -20,9 +20,9 @@ require('cy-verify-downloads').addCustomCommand();
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
-    cy.get('[placeholder="Email or Username"]').type(username);
-    cy.get('[placeholder="Password"]').type(password);
-    cy.get('[type="submit"]').click();
+    cy.get('[placeholder="enter your email or username"]').type(username);
+    cy.get('[placeholder="enter your password"]').type(password);
+    cy.get('.cvat-credentials-action-button').click();
     cy.url().should('contain', `/${page}`);
     cy.document().then((doc) => {
         const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
@@ -40,7 +40,7 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.url().should('include', '/auth/login');
     cy.visit('/auth/login');
     cy.url().should('not.include', '?next=');
-    cy.contains('Login').should('exist');
+    cy.contains('Sign in').should('exist');
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
@@ -48,9 +48,8 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     cy.get('#lastName').type(lastName);
     cy.get('#username').type(userName);
     cy.get('#email').type(emailAddr);
-    cy.get('#password1').type(password);
-    cy.get('#password2').type(password);
-    cy.get('.register-form-button').click();
+    cy.get('#password').type(password);
+    cy.get('.cvat-credentials-action-button').click();
     if (Cypress.browser.family === 'chromium') {
         cy.url().should('include', '/tasks');
     }
