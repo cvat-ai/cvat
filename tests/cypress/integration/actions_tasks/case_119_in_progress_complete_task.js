@@ -84,7 +84,7 @@ context('Task status change.', () => {
             cy.setJobStage(2, 'acceptance');
             cy.goToTaskList();
             checkTaskStatus('Completed');
-            checkCompletedJobs(3, 4);
+            checkCompletedJobs(3, 3);
         });
     });
 });
