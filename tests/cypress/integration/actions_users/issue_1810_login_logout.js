@@ -46,7 +46,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
                     .trigger('mouseover', { which: 1 });
             });
             cy.get('span[aria-label="logout"]').click();
-            cy.url().should('include', `/auth/login/?next=/tasks/${taskId}`);
+            cy.url().should('include', `/auth/login?next=/tasks/${taskId}`);
             // login to task
             login(Cypress.env('user'), Cypress.env('password'));
             cy.url().should('include', `/tasks/${taskId}`).and('not.include', '/auth/login');

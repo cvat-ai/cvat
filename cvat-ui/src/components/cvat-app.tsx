@@ -449,7 +449,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
 
                         <Redirect
-                            to={location.pathname.length > 1 && !location.pathname.includes('/auth/logout') ? `/auth/login/?next=${location.pathname}` : '/auth/login'}
+                            to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
                         />
                     </Switch>
                 </GlobalErrorBoundary>
