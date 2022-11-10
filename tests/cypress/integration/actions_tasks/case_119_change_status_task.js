@@ -62,7 +62,7 @@ context('Task status change.', () => {
             checkTaskStatus('In Progress');
         });
 
-        it('Not vhanged task status "In progress".', () => {
+        it('Not changed task status "In progress".', () => {
             cy.openTask(taskName);
             cy.setJobStage(1, 'acceptance');
             cy.goToTaskList();
