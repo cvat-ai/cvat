@@ -785,7 +785,7 @@ class TaskDumpUploadTest(_DbTestBase):
             with open(file_zip_name, 'rb') as binary_file:
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v2_dump_annotations_with_objects_type_from_several_jobs(self):
+    def test_api_v2_dump_annotations_from_several_jobs(self):
         test_name = self._testMethodName
         dump_formats = ["CVAT for images 1.1", "CVAT for video 1.1"]
         test_cases = ['all', 'first']
