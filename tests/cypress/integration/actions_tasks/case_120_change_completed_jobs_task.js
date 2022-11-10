@@ -4,8 +4,8 @@
 
 /// <reference types="cypress" />
 
-context('Task status change.', () => {
-    const caseId = '119';
+context('Task change completed jobs.', () => {
+    const caseId = '120';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
     const attrName = `Attr for ${labelName}`;
@@ -40,21 +40,12 @@ context('Task status change.', () => {
             false,
             advancedConfigurationParams,
         );
-
-        cy.openTask(taskName);
     });
 
     after(() => {
         cy.goToTaskList();
         cy.deleteTask(taskName);
     });
-
-    function checkTaskStatus(status) {
-        cy.get('.cvat-tasks-list-item')
-            .within(() => {
-                cy.get('div').eq(3).should('contain.text', status);
-            });
-    }
 
     function checkCompletedJobs(count, total) {
         cy.get('.cvat-tasks-list-item')
@@ -64,26 +55,19 @@ context('Task status change.', () => {
     }
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Change task status to "In progress".', () => {
+        it('Changed numbers of completed job.', () => {
+            checkCompletedJobs(0, 3);
+            cy.openTask(taskName);
             cy.setJobStage(0, 'acceptance');
             cy.goToTaskList();
-            checkTaskStatus('In Progress');
             checkCompletedJobs(1, 3);
-        });
-
-        it('Changed only numbers of completed job.', () => {
             cy.openTask(taskName);
             cy.setJobStage(1, 'acceptance');
             cy.goToTaskList();
-            checkTaskStatus('In Progress');
             checkCompletedJobs(2, 3);
-        });
-
-        it('Change task status to "Completed".', () => {
             cy.openTask(taskName);
             cy.setJobStage(2, 'acceptance');
             cy.goToTaskList();
-            checkTaskStatus('Completed');
             checkCompletedJobs(3, 3);
         });
     });

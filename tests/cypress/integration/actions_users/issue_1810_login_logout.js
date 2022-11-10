@@ -20,6 +20,39 @@ context('When clicking on the Logout button, get the user session closed.', () =
         cy.visit('auth/login');
     });
 
+    function loginWithoutCredentials(userName, password) {
+        const locators = {
+            submitButton: '[type="submit"]',
+            userField: '[placeholder="Email or Username"]',
+            passwordField: '[placeholder="Password"]',
+            notification : {
+                message: '.ant-notification-notice-content',
+                close: '.ant-notification-notice-close-x',
+            }
+        }
+        const userMessage = 'Please specify a email or username';
+        const passwordMessage = 'Please specify a password';
+        if (userName) {
+            cy.get(locators.userField).type(userName);
+            cy.get(locators.submitButton).click();
+            cy.contains(passwordMessage).should('exist');
+        }
+        else if (password) {
+            cy.get(locators.passwordField).type(password);
+            cy.get(locators.submitButton).click();
+            cy.contains(userMessage).should('exist');
+        }
+        else {
+            cy.get(locators.userField).clear();
+            cy.get(locators.passwordField).clear();
+            cy.get(locators.submitButton).click();
+            cy.contains(userMessage).should('exist');
+            cy.contains(passwordMessage).should('exist');
+        }
+        cy.get(locators.userField).clear();
+        cy.get(locators.passwordField).clear();
+    }
+
     describe(`Testing issue "${issueId}"`, () => {
         it('Login', () => {
             cy.login();
@@ -96,6 +129,26 @@ context('When clicking on the Logout button, get the user session closed.', () =
             login('randomUser123', 'randomPassword123');
             cy.url().should('include', '/auth/login');
             cy.closeNotification('.cvat-notification-notice-login-failed');
+        });
+
+        it('Empty user and empty password', () => {
+            loginWithoutCredentials(false, false);
+        });
+
+        it('Correct user and empty password', () => {
+            loginWithoutCredentials(Cypress.env('user'), false);
+        });
+
+        it('Empty user and correct password', () => {
+            loginWithoutCredentials(false, Cypress.env('password'));
+        });
+
+        it('Incorrect user and empty password', () => {
+            loginWithoutCredentials('randomUser123', false);
+        });
+
+        it('Empty user and incorrect password', () => {
+            loginWithoutCredentials(false, 'randomPassword123');
         });
     });
 });
