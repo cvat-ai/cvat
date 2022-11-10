@@ -12,7 +12,8 @@ import Icon, { VerticalAlignBottomOutlined } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 
-import { getCore } from 'cvat-core-wrapper';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
+import { getCore, Label } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
@@ -44,6 +45,7 @@ function BrushTools(): React.ReactPortal | null {
     const [brushForm, setBrushForm] = useState<'circle' | 'square'>('circle');
     const [[top, left], setTopLeft] = useState([0, 0]);
     const [brushSize, setBrushSize] = useState(10);
+    const [applicableLabels, setApplicableLabels] = useState<Label[]>([]);
 
     const [removeUnderlyingPixels, setRemoveUnderlyingPixels] = useState(false);
     const dragBar = useDraggable(
@@ -98,6 +100,10 @@ function BrushTools(): React.ReactPortal | null {
             }
         }
     }, [currentTool, brushSize, brushForm, visible, defaultLabelID, editableState]);
+
+    useEffect(() => {
+        setApplicableLabels(filterApplicableForType(ShapeType.MASK, labels));
+    }, [labels]);
 
     useEffect(() => {
         const canvasContainer = window.document.getElementsByClassName('cvat-canvas-container')[0];
@@ -254,9 +260,9 @@ function BrushTools(): React.ReactPortal | null {
                 icon={<VerticalAlignBottomOutlined />}
                 onClick={() => setRemoveUnderlyingPixels(!removeUnderlyingPixels)}
             />
-            { !editableState && (
+            { !editableState && !!applicableLabels.length && (
                 <LabelSelector
-                    labels={labels}
+                    labels={applicableLabels}
                     value={defaultLabelID}
                     onChange={({ id: labelID }: { id: number }) => {
                         if (Number.isInteger(labelID)) {

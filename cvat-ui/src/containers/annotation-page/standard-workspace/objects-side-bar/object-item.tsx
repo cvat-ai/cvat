@@ -23,9 +23,9 @@ import {
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
-import { Label } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 
 interface OwnProps {
     readonly: boolean;
@@ -326,15 +326,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobInstance,
         } = this.props;
 
-        let applicableLabels = labels.filter((label: Label) => (
-            [objectState.shapeType || objectState.objectType, 'any'].includes(label.type)
-        ));
-
-        // for example when label type has been changed, existing objects may not to have applicable labels any more
-        // in this case current label is considered applicable
-        if (!applicableLabels.length) {
-            applicableLabels = [objectState.label];
-        }
+        const applicableLabels = filterApplicableLabels(objectState, labels);
 
         return (
             <ObjectStateItemComponent
