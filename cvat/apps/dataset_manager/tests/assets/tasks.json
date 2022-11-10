@@ -235,7 +235,7 @@
             "mutable": false,
             "input_type": "number",
             "default_value": "1",
-            "values": ["0", "1"]
+            "values": ["0", "1", "1"]
           }
         ]
       },
