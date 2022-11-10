@@ -1178,7 +1178,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
-    def test_api_v2_check_mot_with_only_shapes(self):
+    def test_api_v2_check_mot_with_shapes_only(self):
         test_name = self._testMethodName
         format_name = "MOT 1.1"
 
@@ -1187,7 +1187,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 # create task with annotations
                 images = self._generate_task_images(3)
                 task = self._create_task(tasks[format_name], images)
-                self._create_annotations(task, f'{format_name} only shapes', "random")
+                self._create_annotations(task, f'{format_name} shapes only', "default")
 
                 task_id = task["id"]
                 data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
