@@ -135,6 +135,10 @@ class LabelSerializer(SublabelSerializer):
             except models.Label.DoesNotExist:
                 raise exceptions.NotFound(detail='Not found label with id #{} to change'.format(validated_data['id']))
             db_label.name = validated_data.get('name', db_label.name)
+            updated_type = validated_data.get('type', db_label.type)
+            if 'skeleton' not in [db_label.type, updated_type]:
+                # do not permit to change types from/to "skeleton"
+                db_label.type = updated_type
             logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
         else:
             db_label = models.Label.objects.create(name=validated_data.get('name'), type=validated_data.get('type'),

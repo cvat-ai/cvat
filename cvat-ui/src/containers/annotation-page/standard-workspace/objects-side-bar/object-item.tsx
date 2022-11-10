@@ -326,6 +326,16 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobInstance,
         } = this.props;
 
+        let applicableLabels = labels.filter((label: Label) => (
+            [objectState.shapeType || objectState.objectType, 'any'].includes(label.type)
+        ));
+
+        // for example when label type has been changed, existing objects may not to have applicable labels any more
+        // in this case current label is considered applicable
+        if (!applicableLabels.length) {
+            applicableLabels = [objectState.label];
+        }
+
         return (
             <ObjectStateItemComponent
                 jobInstance={jobInstance}
@@ -341,9 +351,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attributes={attributes}
                 elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}
-                labels={labels.filter((label: Label) => (
-                    [objectState.shapeType || objectState.objectType, 'any'].includes(label.type)
-                ))}
+                labels={applicableLabels}
                 colorBy={colorBy}
                 activate={this.activate}
                 remove={this.remove}
