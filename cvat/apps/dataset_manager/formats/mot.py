@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from tempfile import TemporaryDirectory
-
+import datumaro as dm
 import datumaro.components.extractor as datumaro
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
@@ -28,18 +28,23 @@ def _import_to_task(dataset, instance_data):
             if ann.type != datumaro.AnnotationType.bbox:
                 continue
 
-            track_id = ann.attributes.get('track_id')
+            occluded = dm.util.cast(ann.attributes.pop('occluded', None), bool) is True
+            track_id = ann.attributes.pop('track_id', None)
+            attributes = [
+                instance_data.Attribute(name=n, value=str(v))
+                for n, v in ann.attributes.items()
+            ]
             if track_id is None:
                 # Extension. Import regular boxes:
                 instance_data.add_shape(instance_data.LabeledShape(
                     type='rectangle',
                     label=label_cat.items[ann.label].name,
                     points=ann.points,
-                    occluded=ann.attributes.get('occluded') is True,
+                    occluded=occluded,
                     z_order=ann.z_order,
                     group=0,
                     frame=frame_number,
-                    attributes=[],
+                    attributes=attributes,
                     source='manual',
                 ))
                 continue
@@ -47,12 +52,12 @@ def _import_to_task(dataset, instance_data):
             shape = instance_data.TrackedShape(
                 type='rectangle',
                 points=ann.points,
-                occluded=ann.attributes.get('occluded') is True,
+                occluded=occluded,
                 outside=False,
                 keyframe=True,
                 z_order=ann.z_order,
                 frame=frame_number,
-                attributes=[],
+                attributes=attributes,
                 source='manual',
             )
 
@@ -99,7 +104,7 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='MOT', ext='ZIP', version='1.1')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
@@ -113,4 +118,3 @@ def _import(src_file, instance_data, load_data_callback=None, **kwargs):
                 _import_to_task(sub_dataset, task_data)
         else:
             _import_to_task(dataset, instance_data)
-

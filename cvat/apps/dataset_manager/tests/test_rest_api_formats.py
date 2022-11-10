@@ -223,10 +223,10 @@ class _DbTestBase(APITestCase):
 
                         if key_get_values == "random":
                             if attribute["input_type"] == "number":
-                                start = int(attribute["values"][0])
-                                stop = int(attribute["values"][1]) + 1
-                                step = int(attribute["values"][2])
-                                value = str(random.randrange(start, stop, step))
+                                start = float(attribute["values"][0])
+                                stop = float(attribute["values"][1]) + 1
+                                step = float(attribute["values"][2])
+                                value = str(random.randint(0, int((stop - start) / step)) * step + start)
                             else:
                                 value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
                         elif key_get_values == "default":
@@ -397,14 +397,14 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
                     if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0", \
+                        "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
                         "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0", \
@@ -459,7 +459,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             if upload_format_name in [
                                 "Market-1501 1.0", "Cityscapes 1.0", \
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], images)
                             else:
@@ -502,7 +502,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], video)
                     else:
@@ -510,7 +510,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     task_id = task["id"]
 
                     if dump_format_name in [
-                            "MOT 1.1", "MOTS PNG 1.0", \
+                            "MOTS PNG 1.0", \
                             "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                             "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
                             "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0" \
@@ -563,7 +563,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             if upload_format_name in [
                                 "Market-1501 1.0", "Cityscapes 1.0", \
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], video)
                             else:
@@ -785,39 +785,41 @@ class TaskDumpUploadTest(_DbTestBase):
             with open(file_zip_name, 'rb') as binary_file:
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v2_dump_annotations_with_objects_type_is_shape_from_several_jobs(self):
+    def test_api_v2_dump_annotations_with_objects_type_from_several_jobs(self):
         test_name = self._testMethodName
-        dump_format_name = "CVAT for images 1.1"
+        dump_formats = ["CVAT for images 1.1", "CVAT for video 1.1"]
         test_cases = ['all', 'first']
 
-        images = self._generate_task_images(10)
-        task = self._create_task(tasks["change overlap and segment size"], images)
-        task_id = task["id"]
+        for dump_format_name in dump_formats:
 
-        for test_case in test_cases:
-            with TestDir() as test_dir:
-                jobs = self._get_jobs(task_id)
-                if test_case == "all":
-                    for job in jobs:
-                        self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
-                else:
-                    self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
+            images = self._generate_task_images(10)
+            task = self._create_task(tasks["change overlap and segment size"], images)
+            task_id = task["id"]
 
-                url = self._generate_url_dump_tasks_annotations(task_id)
+            for test_case in test_cases:
+                with TestDir() as test_dir:
+                    jobs = self._get_jobs(task_id)
+                    if test_case == "all":
+                        for job in jobs:
+                            self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
+                    else:
+                        self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
 
-                file_zip_name = osp.join(test_dir, f'{test_name}.zip')
-                data = {
-                    "format": dump_format_name,
-                    "action": "download",
-                }
-                self._download_file(url, data, self.admin, file_zip_name)
-                self.assertEqual(osp.exists(file_zip_name), True)
+                    url = self._generate_url_dump_tasks_annotations(task_id)
 
-                # remove annotations
-                self._remove_annotations(url, self.admin)
-                url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
-                with open(file_zip_name, 'rb') as binary_file:
-                    self._upload_file(url, binary_file, self.admin)
+                    file_zip_name = osp.join(test_dir, f'{test_name}.zip')
+                    data = {
+                        "format": dump_format_name,
+                        "action": "download",
+                    }
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self.assertEqual(osp.exists(file_zip_name), True)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+                    url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
 
     def test_api_v2_export_dataset(self):
         test_name = self._testMethodName
@@ -844,7 +846,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0", "Cityscapes 1.0", \
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0","COCO Keypoints 1.0",
+                        "ICDAR Segmentation 1.0","COCO Keypoints 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -1171,6 +1173,43 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # upload annotations
                     url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
+
+                    # equals annotations
+                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+
+    def test_api_v2_check_mot_with_only_shapes(self):
+        test_name = self._testMethodName
+        format_name = "MOT 1.1"
+
+        for include_images in (False, True):
+            with self.subTest():
+                # create task with annotations
+                images = self._generate_task_images(3)
+                task = self._create_task(tasks[format_name], images)
+                self._create_annotations(task, f'{format_name} only shapes', "random")
+
+                task_id = task["id"]
+                data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
+
+                # dump annotations
+                url = self._generate_url_dump_tasks_annotations(task_id)
+                data = {
+                    "format": format_name,
+                    "action": "download",
+                }
+                with TestDir() as test_dir:
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._check_downloaded_file(file_zip_name)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+
+                    # upload annotations
+                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
                     with open(file_zip_name, 'rb') as binary_file:
                         self._upload_file(url, binary_file, self.admin)
 
