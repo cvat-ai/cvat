@@ -11,8 +11,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
     let taskId;
 
     function login(credential, password) {
-        cy.get('[placeholder="Email or Username"]').clear().type(credential);
-        cy.get('[placeholder="Password"]').clear().type(password);
+        cy.get('[placeholder="enter your email or username"]').clear().type(credential);
+        cy.get('[placeholder="enter your password"]').clear().type(password);
         cy.get('[type="submit"]').click();
     }
 

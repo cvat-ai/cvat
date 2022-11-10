@@ -127,22 +127,20 @@ function build() {
              * @param {string} firstName A first name for the new account
              * @param {string} lastName A last name for the new account
              * @param {string} email A email address for the new account
-             * @param {string} password1 A password for the new account
-             * @param {string} password2 The confirmation password for the new account
+             * @param {string} password A password for the new account
              * @param {Object} userConfirmations An user confirmations of terms of use if needed
              * @returns {Object} response data
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async register(username, firstName, lastName, email, password1, password2, userConfirmations) {
+            async register(username, firstName, lastName, email, password, userConfirmations) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.server.register,
                     username,
                     firstName,
                     lastName,
                     email,
-                    password1,
-                    password2,
+                    password,
                     userConfirmations,
                 );
                 return result;
@@ -171,6 +169,10 @@ function build() {
              */
             async logout() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
+                return result;
+            },
+            async advancedAuthentication() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
                 return result;
             },
             /**
