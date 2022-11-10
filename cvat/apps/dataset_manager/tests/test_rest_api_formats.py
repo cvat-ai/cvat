@@ -223,10 +223,10 @@ class _DbTestBase(APITestCase):
 
                         if key_get_values == "random":
                             if attribute["input_type"] == "number":
-                                start = float(attribute["values"][0])
-                                stop = float(attribute["values"][1]) + 1
-                                step = float(attribute["values"][2])
-                                value = str(random.randint(0, int((stop - start) / step)) * step + start)
+                                start = int(attribute["values"][0])
+                                stop = int(attribute["values"][1]) + 1
+                                step = int(attribute["values"][2])
+                                value = str(random.randrange(start, stop, step))
                             else:
                                 value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
                         elif key_get_values == "default":
