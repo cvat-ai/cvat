@@ -4,9 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 from tempfile import TemporaryDirectory
+
 import datumaro as dm
-import datumaro.components.extractor as datumaro
-from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor
@@ -14,9 +13,10 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 
+
 def _import_to_task(dataset, instance_data):
     tracks = {}
-    label_cat = dataset.categories()[datumaro.AnnotationType.label]
+    label_cat = dataset.categories()[dm.AnnotationType.label]
 
     for item in dataset:
         # NOTE: MOT frames start from 1
@@ -25,7 +25,7 @@ def _import_to_task(dataset, instance_data):
         frame_number = instance_data.abs_frame_id(frame_number)
 
         for ann in item.annotations:
-            if ann.type != datumaro.AnnotationType.bbox:
+            if ann.type != dm.AnnotationType.bbox:
                 continue
 
             occluded = dm.util.cast(ann.attributes.pop('occluded', None), bool) is True
@@ -96,7 +96,7 @@ def _import_to_task(dataset, instance_data):
 
 @exporter(name='MOT', ext='ZIP', version='1.1')
 def _export(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+    dataset = dm.Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'mot_seq_gt', save_images=save_images)
@@ -104,11 +104,11 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='MOT', ext='ZIP', version='1.1')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
-        dataset = Dataset.import_from(tmp_dir, 'mot_seq', env=dm_env)
+        dataset = dm.Dataset.import_from(tmp_dir, 'mot_seq', env=dm_env)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
 

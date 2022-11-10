@@ -395,20 +395,20 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     # create task with annotations
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
                     if dump_format_name in [
-                        "MOTS PNG 1.0", \
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0", \
-                        "Datumaro 1.0"\
+                        "Cityscapes 1.0", "Datumaro 1.0",
+                        "ImageNet 1.0", "MOTS PNG 1.0",
+                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
+                        "TFRecord 1.0", "VGGFace2 1.0",
+                        "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -457,9 +457,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             # remove all annotations from task (create new task without annotation)
                             images = self._generate_task_images(3)
                             if upload_format_name in [
-                                "Market-1501 1.0", "Cityscapes 1.0", \
-                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
+                                "Cityscapes 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], images)
                             else:
@@ -500,9 +500,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     # create task with annotations
                     video = self._generate_task_videos(1)
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], video)
                     else:
@@ -510,10 +510,10 @@ class TaskDumpUploadTest(_DbTestBase):
                     task_id = task["id"]
 
                     if dump_format_name in [
-                            "MOTS PNG 1.0", \
-                            "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                            "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                            "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0" \
+                            "Cityscapes 1.0", "ImageNet 1.0",
+                            "MOTS PNG 1.0", "PASCAL VOC 1.1",
+                            "Segmentation mask 1.1", "TFRecord 1.0",
+                            "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -561,9 +561,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             # remove all annotations from task (create new task without annotation)
                             video = self._generate_task_videos(1)
                             if upload_format_name in [
-                                "Market-1501 1.0", "Cityscapes 1.0", \
-                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "MOT 1.1"
+                                "Cityscapes 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], video)
                             else:
@@ -785,41 +785,39 @@ class TaskDumpUploadTest(_DbTestBase):
             with open(file_zip_name, 'rb') as binary_file:
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v2_dump_annotations_with_objects_type_from_several_jobs(self):
+    def test_api_v2_dump_annotations_with_objects_type_is_shape_from_several_jobs(self):
         test_name = self._testMethodName
-        dump_formats = ["CVAT for images 1.1", "CVAT for video 1.1"]
+        dump_format_name = "CVAT for images 1.1"
         test_cases = ['all', 'first']
 
-        for dump_format_name in dump_formats:
+        images = self._generate_task_images(10)
+        task = self._create_task(tasks["change overlap and segment size"], images)
+        task_id = task["id"]
 
-            images = self._generate_task_images(10)
-            task = self._create_task(tasks["change overlap and segment size"], images)
-            task_id = task["id"]
+        for test_case in test_cases:
+            with TestDir() as test_dir:
+                jobs = self._get_jobs(task_id)
+                if test_case == "all":
+                    for job in jobs:
+                        self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
+                else:
+                    self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
 
-            for test_case in test_cases:
-                with TestDir() as test_dir:
-                    jobs = self._get_jobs(task_id)
-                    if test_case == "all":
-                        for job in jobs:
-                            self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
-                    else:
-                        self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
+                url = self._generate_url_dump_tasks_annotations(task_id)
 
-                    url = self._generate_url_dump_tasks_annotations(task_id)
+                file_zip_name = osp.join(test_dir, f'{test_name}.zip')
+                data = {
+                    "format": dump_format_name,
+                    "action": "download",
+                }
+                self._download_file(url, data, self.admin, file_zip_name)
+                self.assertEqual(osp.exists(file_zip_name), True)
 
-                    file_zip_name = osp.join(test_dir, f'{test_name}.zip')
-                    data = {
-                        "format": dump_format_name,
-                        "action": "download",
-                    }
-                    self._download_file(url, data, self.admin, file_zip_name)
-                    self.assertEqual(osp.exists(file_zip_name), True)
-
-                    # remove annotations
-                    self._remove_annotations(url, self.admin)
-                    url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
-                    with open(file_zip_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                # remove annotations
+                self._remove_annotations(url, self.admin)
+                url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
+                with open(file_zip_name, 'rb') as binary_file:
+                    self._upload_file(url, binary_file, self.admin)
 
     def test_api_v2_export_dataset(self):
         test_name = self._testMethodName
@@ -844,9 +842,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     # create task with annotations
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0","COCO Keypoints 1.0", "MOT 1.1"
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
