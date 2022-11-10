@@ -6,6 +6,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 import operator
+
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
 import requests
@@ -13,13 +14,14 @@ from django.conf import settings
 from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
-from cvat.apps.webhooks.models import Webhook
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
+from cvat.apps.limit_manager.core.limits import LimitManager, ConsumableCapability, WebhookCreateContext
 
 
 class RequestNotAllowedError(PermissionDenied):
     pass
+
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     @classmethod
@@ -170,8 +172,8 @@ class OrganizationPermission(OpenPolicyAgentPermission):
                     'id': self.user_id
                 },
                 'user': {
-                    'num_resources': Organization.objects.filter(
-                        owner_id=self.user_id).count(),
+                    'num_resources': LimitManager().get_used_resources(user_id=self.user_id,
+                        capability=ConsumableCapability.ORG_CREATE),
                     'role': 'owner'
                 }
             }
@@ -440,14 +442,31 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = None
         if self.scope.startswith('create'):
+            # TODO: allow uniform unconditional invocation in future.
+            # Send (context, operation) to LM
+            limit_manager = LimitManager()
             data = {
                 'owner': { 'id': self.user_id },
                 'organization': {
-                    'id': self.org_id
+                    'id': self.org_id,
+                    'num_resources': limit_manager.get_used_resources(
+                        org_id=self.org_id,
+                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
+                    ),
+                    'max_resources': limit_manager.get_limits(
+                        org_id=self.org_id,
+                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
+                    )
                 } if self.org_id is not None else None,
                 'user': {
-                    'num_resources': Organization.objects.filter(
-                        owner=self.user_id).count()
+                    'num_resources': limit_manager.get_used_resources(
+                        user_id=self.user_id,
+                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
+                    ),
+                    'max_resources': limit_manager.get_limits(
+                        user_id=self.user_id,
+                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
+                    )
                 }
             }
         elif self.obj:
@@ -593,11 +612,25 @@ class ProjectPermission(OpenPolicyAgentPermission):
                     "id": self.assignee_id
                 },
                 'organization': {
-                    "id": self.org_id
-                },
+                    "id": self.org_id,
+                    "num_resources": LimitManager().get_used_resources(
+                        org_id=self.org_id,
+                        capability=ConsumableCapability.PROJECT_CREATE,
+                    ),
+                    "max_resources": LimitManager().get_limits(
+                        org_id=self.org_id,
+                        capability=ConsumableCapability.PROJECT_CREATE,
+                    ),
+                } if self.org_id else None,
                 "user": {
-                    "num_resources": Project.objects.filter(
-                        owner_id=self.user_id).count()
+                    "num_resources": LimitManager().get_used_resources(
+                        user_id=self.user_id,
+                        capability=ConsumableCapability.PROJECT_CREATE,
+                    ),
+                    "max_resources": LimitManager().get_limits(
+                        user_id=self.user_id,
+                        capability=ConsumableCapability.PROJECT_CREATE,
+                    ),
                 }
             }
 
@@ -755,6 +788,8 @@ class TaskPermission(OpenPolicyAgentPermission):
                 except Project.DoesNotExist as ex:
                     raise ValidationError(str(ex))
 
+            limit_manager = LimitManager()
+
             data = {
                 "id": None,
                 "owner": { "id": self.user_id },
@@ -768,12 +803,26 @@ class TaskPermission(OpenPolicyAgentPermission):
                     "owner": { "id": getattr(project.owner, 'id', None) },
                     "assignee": { "id": getattr(project.assignee, 'id', None) },
                     'organization': {
-                        "id": getattr(project.organization, 'id', None)
-                    },
-                } if project else None,
+                        "id": getattr(project.organization, 'id', None),
+                        "num_resources": limit_manager.get_used_resources(
+                            org_id=project.organization.id,
+                            capability=ConsumableCapability.TASK_CREATE,
+                        ),
+                        "max_resources": limit_manager.get_limits(
+                            org_id=project.organization.id,
+                            capability=ConsumableCapability.TASK_CREATE,
+                        ),
+                    } if project.organization is not None else None,
+                } if project is not None else None,
                 "user": {
-                    "num_resources": Task.objects.filter(
-                        owner_id=self.user_id).count()
+                    "num_resources": limit_manager.get_used_resources(
+                        user_id=self.user_id,
+                        capability=ConsumableCapability.TASK_CREATE,
+                    ),
+                    "max_resources": limit_manager.get_limits(
+                        user_id=self.user_id,
+                        capability=ConsumableCapability.TASK_CREATE,
+                    ),
                 }
             }
 
@@ -844,7 +893,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 data['project'] = {
                     'owner': {'id': getattr(self.obj.project.owner, 'id', None)}
                 }
-        elif self.scope in ['create@project', 'create@organization']:
+        elif self.scope in ['create', 'create@project', 'create@organization']:
             project = None
             if self.project_id:
                 try:
@@ -852,22 +901,41 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 except Project.DoesNotExist:
                     raise ValidationError(f"Could not find project with provided id: {self.project_id}")
 
-            num_resources = Webhook.objects.filter(project=self.project_id).count() if project \
-                else Webhook.objects.filter(organization=self.org_id, project=None).count()
-
+            limit_manager = LimitManager()
             data = {
                 'id': None,
                 'owner': self.user_id,
+                'project': {
+                    'owner': {
+                        'id': project.owner.id,
+                    } if project.owner else None,
+                } if project else None,
                 'organization': {
-                    'id': self.org_id
-                },
-                'num_resources': num_resources
-            }
-
-            data['project'] = None if project is None else {
-                'owner': {
-                    'id': getattr(project.owner, 'id', None)
-                },
+                    'id': self.org_id,
+                    'num_resources': limit_manager.get_used_resources(
+                        org_id=self.org_id,
+                        context=WebhookCreateContext(project_id=self.project_id),
+                        capability=ConsumableCapability.WEBHOOK_CREATE,
+                    ),
+                    'max_resources': limit_manager.get_limits(
+                        org_id=self.org_id,
+                        context=WebhookCreateContext(project_id=self.project_id),
+                        capability=ConsumableCapability.WEBHOOK_CREATE,
+                    ),
+                } if self.org_id is not None else None,
+                'user': {
+                    'id': self.user_id,
+                    'num_resources': limit_manager.get_used_resources(
+                        user_id=self.user_id,
+                        context=WebhookCreateContext(project_id=self.project_id),
+                        capability=ConsumableCapability.WEBHOOK_CREATE,
+                    ),
+                    'max_resources': limit_manager.get_limits(
+                        user_id=self.user_id,
+                        context=WebhookCreateContext(project_id=self.project_id),
+                        capability=ConsumableCapability.WEBHOOK_CREATE,
+                    ),
+                }
             }
 
         return data
