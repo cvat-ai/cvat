@@ -539,15 +539,15 @@ class TestJobDataset:
         response = self._export_dataset(admin_user, job["id"], format="CVAT for images 1.1")
         assert response.data
 
-    def test_non_admin_can_export_dataset(self, tasks, users, jobs_with_shapes):
+    def test_non_admin_can_export_dataset(self, tasks, jobs_with_shapes):
         job = jobs_with_shapes[0]
-        username = users[tasks[job["task_id"]]["owner"]]["username"]
+        username = tasks[job["task_id"]]["owner"]["username"]
         response = self._export_dataset(username, job["id"], format="CVAT for images 1.1")
         assert response.data
 
-    def test_non_admin_can_export_annotations(self, tasks, users, jobs_with_shapes):
+    def test_non_admin_can_export_annotations(self, tasks, jobs_with_shapes):
         job = jobs_with_shapes[0]
-        username = users[tasks[job["task_id"]]["owner"]]["username"]
+        username = tasks[job["task_id"]]["owner"]["username"]
         response = self._export_annotations(username, job["id"], format="CVAT for images 1.1")
         assert response.data
 
