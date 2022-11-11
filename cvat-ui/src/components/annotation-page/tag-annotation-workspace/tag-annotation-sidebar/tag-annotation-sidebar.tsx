@@ -117,7 +117,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     };
 
     const [applicableLabels, setApplicableLabels] = useState<Label[]>(
-        filterApplicableForType(c, labels),
+        filterApplicableForType(LabelType.TAG, labels),
     );
     const controlsDisabled = !applicableLabels.length || frameData.deleted;
     const defaultLabelID = applicableLabels.length ? applicableLabels[0].id as number : null;
