@@ -14,12 +14,11 @@ import Form, { FormInstance } from 'antd/lib/form';
 import Badge from 'antd/lib/badge';
 import { Store } from 'antd/lib/form/interface';
 
-import { RawAttribute } from 'cvat-core-wrapper';
+import { RawAttribute, LabelType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
-import { ShapeType } from 'reducers';
 import consts from 'consts';
 import {
     equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
@@ -457,8 +456,8 @@ export default class LabelForm extends React.Component<Props> {
         const { onSkeletonSubmit } = this.props;
         const isSkeleton = !!onSkeletonSubmit;
 
-        const types = ['any', ...Object.values(ShapeType), 'tag']
-            .filter((type: string) => type !== ShapeType.SKELETON);
+        const types = Object.values(LabelType)
+            .filter((type: string) => type !== LabelType.SKELETON);
         const { label } = this.props;
         const defaultType = isSkeleton ? 'skeleton' : 'any';
         const value = label ? label.type : defaultType;

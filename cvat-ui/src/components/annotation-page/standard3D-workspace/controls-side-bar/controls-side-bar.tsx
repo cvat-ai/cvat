@@ -5,8 +5,8 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
-import { ActiveControl, ShapeType } from 'reducers';
-import { Label } from 'cvat-core-wrapper';
+import { ActiveControl } from 'reducers';
+import { Label, LabelType } from 'cvat-core-wrapper';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 import MoveControl, {
     Props as MoveControlProps,
@@ -58,7 +58,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
-    const applicableLabels = filterApplicableForType(ShapeType.CUBOID, labels);
+    const applicableLabels = filterApplicableForType(LabelType.CUBOID, labels);
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
             event.preventDefault();

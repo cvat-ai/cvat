@@ -24,7 +24,7 @@ import {
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { getCore, Label } from 'cvat-core-wrapper';
+import { getCore, Label, LabelType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
@@ -117,7 +117,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     };
 
     const [applicableLabels, setApplicableLabels] = useState<Label[]>(
-        filterApplicableForType('tag', labels),
+        filterApplicableForType(c, labels),
     );
     const controlsDisabled = !applicableLabels.length || frameData.deleted;
     const defaultLabelID = applicableLabels.length ? applicableLabels[0].id as number : null;
@@ -134,7 +134,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     }, []);
 
     useEffect(() => {
-        setApplicableLabels(filterApplicableForType('tag', labels));
+        setApplicableLabels(filterApplicableForType(LabelType.TAG, labels));
     }, [labels]);
 
     useEffect(() => {

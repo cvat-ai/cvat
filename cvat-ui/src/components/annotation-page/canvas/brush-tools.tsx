@@ -13,7 +13,7 @@ import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
-import { getCore, Label } from 'cvat-core-wrapper';
+import { getCore, Label, LabelType } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
@@ -102,7 +102,7 @@ function BrushTools(): React.ReactPortal | null {
     }, [currentTool, brushSize, brushForm, visible, defaultLabelID, editableState]);
 
     useEffect(() => {
-        setApplicableLabels(filterApplicableForType(ShapeType.MASK, labels));
+        setApplicableLabels(filterApplicableForType(LabelType.MASK, labels));
     }, [labels]);
 
     useEffect(() => {
