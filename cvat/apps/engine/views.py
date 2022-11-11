@@ -676,7 +676,7 @@ class DataChunkGetter:
             return HttpResponse(buf.getvalue(), content_type=mime)
 
         elif self.type == 'preview':
-            path = db_object.get_preview_path()
+            path = db_data.get_preview_path()
             if os.path.exists(path):
                 return sendfile(request, path)
             try:
@@ -1011,7 +1011,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 self._object.dimension)
 
             return data_getter(request, self._object.data.start_frame,
-                self._object.data.stop_frame, self._object.data, self._object.data)
+                self._object.data.stop_frame, self._object.data)
 
     @extend_schema(methods=['PATCH'],
         operation_id='tasks_partial_update_data_file',
@@ -1615,7 +1615,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_job.segment.task.dimension)
 
         return data_getter(request, db_job.segment.start_frame,
-            db_job.segment.stop_frame, db_job.segment.task.data, db_job)
+            db_job.segment.stop_frame, db_job.segment.task.data)
 
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',

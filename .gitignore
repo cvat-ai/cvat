@@ -64,6 +64,6 @@ cvat-core/reports
 .husky
 
 .s3
-.db
 .env.local*
+.db
 venv

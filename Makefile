@@ -3,12 +3,27 @@ VERSION ?= latest
 build:
 	./build.sh ${VERSION}
 
-SERVICES ?= cvat
+build-cvat:
+	./build.sh ${VERSION} cvat
+
+build-opa:
+	./build.sh ${VERSION} opa
+
+build-analytics:
+	./build.sh ${VERSION} analytics
+
+SERVICES ?= cvat_server
 up:
 	docker-compose -f rebotics/docker-compose.yml up ${SERVICES}
 
+up-analytics:
+	docker-compose -f rebotics/docker-compose.yml -f rebotics/components/analytics/docker-compose.analytics.yml up ${SERVICES} logstash
+
 down:
 	docker-compose -f rebotics/docker-compose.yml down
+
+down-analytics:
+	docker-compose -f rebotics/docker-compose.yml -f rebotics/components/analytics/docker-compose.analytics.yml down
 
 shell:
 	docker exec -it -u root reb_cvat bash -i
