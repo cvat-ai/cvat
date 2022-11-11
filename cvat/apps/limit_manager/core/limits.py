@@ -2,15 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum, auto
 from typing import Optional, Tuple, cast
 
 from attrs import define
 
 from cvat.apps.engine.models import CloudStorage, Project, Task
-from cvat.apps.limit_manager.models import ConsumableCapability
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
 
+
+class ConsumableCapability(str, Enum):
+    TASK_CREATE = auto()
+    PROJECT_CREATE = auto()
+    ORG_CREATE = auto()
+    CLOUD_STORAGE_CREATE = auto()
+    WEBHOOK_CREATE = auto()
 
 class CapabilityContext:
     pass
@@ -61,7 +68,8 @@ class LimitManager:
             )
 
         elif capability == ConsumableCapability.PROJECT_CREATE:
-            # The context doesn't affect results - we limit task count independently of project
+            # The context doesn't affect results -
+            # we limit task count in total, independently of project
             return (
                 Project.objects.filter(owner=user_id, organization=org_id).count(),
                 5

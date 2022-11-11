@@ -2,16 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import auto
-
 from django.db import models
 
+import cvat.apps.limit_manager.core.limits as core
 
-class ConsumableCapability(models.TextChoices):
-    TASK_CREATE = auto()
-    PROJECT_CREATE = auto()
-    ORG_CREATE = auto()
-    CLOUD_STORAGE_CREATE = auto()
-    WEBHOOK_CREATE = auto()
+
+class ConsumableCapability(core.ConsumableCapability, models.TextChoices):
+    pass
 
 # class Limit

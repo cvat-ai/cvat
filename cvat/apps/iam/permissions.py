@@ -1207,6 +1207,50 @@ class IssuePermission(OpenPolicyAgentPermission):
         return data
 
 
+class LimitPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = [
+            cls.create_base_perm(request, view, obj)
+        ]
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/limits/result'
+
+    @classmethod
+    def get_scopes(cls, request, view, obj):
+        return [{
+            cls._capability_to_scope(cap) for cap in ConsumableCapability.__members__
+        }]
+
+    def get_resource(self):
+        limit_manager = LimitManager()
+
+        capability = self._scope_to_capability(self.scope)
+        return {
+            'user': {
+                'used': limit_manager.get_used_resources(
+                        capability=capability, user_id=self.user_id, org_id=self.org_id
+                    ),
+                'limit': limit_manager.get_limits(
+                        capability=capability, user_id=self.user_id, org_id=self.org_id
+                    ),
+            },
+        }
+
+    @classmethod
+    def _scope_to_capability(cls, scope) -> ConsumableCapability:
+        pass
+
+    @classmethod
+    def _capability_to_scope(cls, capability: ConsumableCapability) -> str:
+        pass
+
+
+
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):

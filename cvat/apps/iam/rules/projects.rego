@@ -49,14 +49,12 @@ allow {
 allow {
     { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     utils.is_sandbox
-    input.resource.user.num_resources < 3
     utils.has_perm(utils.USER)
 }
 
 allow {
     { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
-    input.resource.user.num_resources < 3
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
 }

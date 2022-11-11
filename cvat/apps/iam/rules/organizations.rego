@@ -68,7 +68,6 @@ allow {
 
 allow {
     input.scope == utils.CREATE
-    input.resource.user.num_resources == 0
     utils.has_perm(utils.USER)
 }
 
