@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -152,7 +152,6 @@ function HeaderContainer(props: Props): JSX.Element {
         changePasswordFetching,
         settingsDialogShown,
         switchSettingsShortcut,
-        onLogout,
         switchSettingsDialog,
         switchChangePasswordDialog,
         renderChangePasswordItem,
@@ -364,7 +363,9 @@ function HeaderContainer(props: Props): JSX.Element {
             <Menu.Item
                 key='logout'
                 icon={logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />}
-                onClick={onLogout}
+                onClick={() => {
+                    history.push('/auth/logout');
+                }}
                 disabled={logoutFetching}
             >
                 Logout
