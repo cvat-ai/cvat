@@ -2,9 +2,10 @@ import logging
 
 import requests
 from django.conf import settings
+from django.contrib.auth.models import User
+from random import randint
 from rest_framework import authentication, exceptions
 
-from cvat.apps.rebotics.models import ClassificationRetailer
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +37,17 @@ class RetailerInAdminAuthentication(authentication.BaseAuthentication):
 
         try:
             data = res.json()
-            retailer, created = ClassificationRetailer.objects.get_or_create(
-                title=data['title'],
-                code=data['code']
-            )
-            return retailer, None
+
+            try:
+                user = User.objects.get(username=data['code'])
+            except User.DoesNotExist:
+                user = User(username=f'{data["code"]}_import',
+                            first_name=f'{data["title"]}',
+                            last_name='Import')
+                random_pass = ''.join([chr(randint(33, 126)) for _ in range(12)])
+                user.set_password(random_pass)
+                user.save()
+
+            return user, None
         except (KeyError, AssertionError) as e:
             raise exceptions.AuthenticationFailed('Admin did not validate your retailer. {}'.format(e))
