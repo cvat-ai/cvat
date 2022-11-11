@@ -540,20 +540,24 @@ class TestJobDataset:
         assert response.data
 
     def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
-        job_id, username = next((
-            (job["id"], tasks[job["task_id"]]["owner"]["username"])
-            for job in jobs_with_shapes
-            if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
-        ))
+        job_id, username = next(
+            (
+                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                for job in jobs_with_shapes
+                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            )
+        )
         response = self._export_dataset(username, job_id, format="CVAT for images 1.1")
         assert response.data
 
     def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
-        job_id, username = next((
-            (job["id"], tasks[job["task_id"]]["owner"]["username"])
-            for job in jobs_with_shapes
-            if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
-        ))
+        job_id, username = next(
+            (
+                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                for job in jobs_with_shapes
+                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            )
+        )
         response = self._export_annotations(username, job_id, format="CVAT for images 1.1")
         assert response.data
 
