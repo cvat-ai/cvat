@@ -10,10 +10,14 @@ Before you start, open the drop-down list in the top panel and select `Tag annot
 ![](/images/image183.jpg)
 
 The objects sidebar will be replaced with a special panel for working with tags.
-Here you can select a label for a tag and add it by clicking on the `Add tag` button.
+Here you can select a label for a tag and add it by clicking on the `Plus` button.
 You can also customize hotkeys for each label.
 
 ![](/images/image181.jpg)
 
 If you need to use only one label for one frame, then enable the `Automatically go to the next frame`
 checkbox, then after you add the tag the frame will automatically switch to the next.
+
+Tags will be shown in the top left corner of the canvas. You can show/hide them in the settings.
+
+![](/images/image249.jpg)

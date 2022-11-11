@@ -1,0 +1,82 @@
+name: isort
+on: pull_request
+jobs:
+  Linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
+
+      - name: Run checks
+        env:
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
+        run: |
+          # If different modules use different isort configs,
+          # we need to run isort for each python component group separately.
+          # Otherwise, they all will use the same config.
+          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python")
+
+          isValueIn () {
+            # Checks if a value is in an array
+            # https://stackoverflow.com/a/8574392
+            # args: value, array
+            local e match="$1"
+            shift
+            for e; do
+              [[ "$e" == "$match" ]] && return 0;
+            done
+            return 1
+          }
+
+          startswith () {
+            # Inspired by https://stackoverflow.com/a/2172367
+            # Checks if the first arg starts with the second one
+            local value="$1"
+            local beginning="$2"
+            return $([[ $value == ${beginning}* ]])
+          }
+
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          UPDATED_DIRS=""
+          for FILE in $PR_FILES; do
+              EXTENSION="${FILE##*.}"
+              DIRECTORY="$(dirname $FILE)"
+              if [[ "$EXTENSION" == "py" ]]; then
+                  for EDIR in ${ENABLED_DIRS[@]}; do
+                      if startswith "${DIRECTORY}/" "${EDIR}/" && ! isValueIn "${EDIR}" ${UPDATED_DIRS[@]};
+                      then
+                          UPDATED_DIRS+=" ${EDIR}"
+                      fi
+                  done
+              fi
+          done
+
+          if [[ ! -z $UPDATED_DIRS ]]; then
+            sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv
+            python3 -m venv .env
+            . .env/bin/activate
+            pip install -U pip wheel setuptools
+            pip install $(egrep "isort.*" ./cvat-cli/requirements/development.txt)
+            mkdir -p isort_report
+
+            echo "isort version: "$(isort --version)
+            echo "The dirs will be checked: $UPDATED_DIRS"
+            EXIT_CODE=0
+            for DIR in $UPDATED_DIRS; do
+              isort --check $DIR >> ./isort_report/isort_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
+            done
+            deactivate
+            exit $EXIT_CODE
+          else
+            echo "No files with the \"py\" extension found"
+          fi
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: isort_report
+          path: isort_report

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ import Empty from 'antd/lib/empty';
 import { EventDataNode } from 'antd/lib/tree';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Divider from 'antd/lib/divider';
-import { CloudStorage, CombinedState } from 'reducers/interfaces';
+import { CloudStorage, CombinedState } from 'reducers';
 import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
 
 interface Props {
@@ -117,18 +117,17 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
         return data;
     };
 
-    const onLoadData = (key: string): Promise<void> =>
-        new Promise((resolve) => {
-            if (initialData.children === null) {
-                resolve();
-                return;
-            }
-            setInitialData({
-                ...initialData,
-                children: updateData(key, initialData.children),
-            });
+    const onLoadData = (key: string): Promise<void> => new Promise((resolve) => {
+        if (initialData.children === null) {
             resolve();
+            return;
+        }
+        setInitialData({
+            ...initialData,
+            children: updateData(key, initialData.children),
         });
+        resolve();
+    });
 
     useEffect(() => {
         if (content) {

@@ -49,7 +49,7 @@ item {
 ...
 ```
 
-- supported annotations: Rectangles, Polygons (as masks, manually over [Datumaro](https://github.com/openvinotoolkit/datumaro/blob/develop/docs/user_manual.md))
+- supported annotations: Rectangles, Polygons (as masks, manually over [Datumaro](https://github.com/cvat-ai/datumaro/blob/develop/docs/user_manual.md))
 
 How to export masks:
 1. Export annotations in `Datumaro` format

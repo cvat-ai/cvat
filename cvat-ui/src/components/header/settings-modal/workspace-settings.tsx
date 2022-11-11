@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,8 +27,10 @@ interface Props {
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
     textFontSize: number;
+    controlPointsSize: number;
     textPosition: 'center' | 'auto';
     textContent: string;
+    showTagsOnFrame: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
@@ -38,8 +40,10 @@ interface Props {
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
+    onChangeControlPointsSize(pointsSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
+    onSwitchShowingTagsOnFrame(enabled: boolean): void;
 }
 
 function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -53,8 +57,10 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
         textFontSize,
+        controlPointsSize,
         textPosition,
         textContent,
+        showTagsOnFrame,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -64,14 +70,18 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchIntelligentPolygonCrop,
         onChangeDefaultApproxPolyAccuracy,
         onChangeTextFontSize,
+        onChangeControlPointsSize,
         onChangeTextPosition,
         onChangeTextContent,
+        onSwitchShowingTagsOnFrame,
     } = props;
 
     const minAutoSaveInterval = 1;
     const maxAutoSaveInterval = 60;
     const minAAMMargin = 0;
     const maxAAMMargin = 1000;
+    const minControlPointsSize = 4;
+    const maxControlPointsSize = 8;
 
     return (
         <div className='cvat-workspace-settings'>
@@ -107,20 +117,22 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'> minutes </Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-show-interpolated'>
-                <Col span={24}>
-                    <Checkbox
-                        className='cvat-text-color'
-                        checked={showAllInterpolationTracks}
-                        onChange={(event: CheckboxChangeEvent): void => {
-                            onSwitchShowingInterpolatedTracks(event.target.checked);
-                        }}
-                    >
-                        Show all interpolation tracks
-                    </Checkbox>
-                </Col>
-                <Col span={24}>
-                    <Text type='secondary'> Show hidden interpolated objects in the side panel </Text>
+            <Row>
+                <Col span={12} className='cvat-workspace-settings-show-interpolated'>
+                    <Row>
+                        <Checkbox
+                            className='cvat-text-color'
+                            checked={showAllInterpolationTracks}
+                            onChange={(event: CheckboxChangeEvent): void => {
+                                onSwitchShowingInterpolatedTracks(event.target.checked);
+                            }}
+                        >
+                            Show all interpolation tracks
+                        </Checkbox>
+                    </Row>
+                    <Row>
+                        <Text type='secondary'> Show hidden interpolated objects in the side panel</Text>
+                    </Row>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-show-text-always'>
@@ -221,6 +233,22 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'>Try to crop polygons automatically when editing</Text>
                 </Col>
             </Row>
+            <Row className='cvat-workspace-settings-show-frame-tags'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={showTagsOnFrame}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchShowingTagsOnFrame(event.target.checked);
+                        }}
+                    >
+                        Show tags on frame
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>Show frame tags in the corner of the workspace</Text>
+                </Col>
+            </Row>
             <Row className='cvat-workspace-settings-aam-zoom-margin'>
                 <Col>
                     <Text className='cvat-text-color'> Attribute annotation mode (AAM) zoom margin </Text>
@@ -231,6 +259,23 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         onChange={(value: number | undefined | string): void => {
                             if (typeof value !== 'undefined') {
                                 onChangeAAMZoomMargin(Math.floor(clamp(+value, minAAMMargin, maxAAMMargin)));
+                            }
+                        }}
+                    />
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-control-points-size'>
+                <Col>
+                    <Text className='cvat-text-color'> Control points size </Text>
+                    <InputNumber
+                        min={minControlPointsSize}
+                        max={maxControlPointsSize}
+                        value={controlPointsSize}
+                        onChange={(value: number | undefined | string): void => {
+                            if (typeof value !== 'undefined') {
+                                onChangeControlPointsSize(
+                                    Math.floor(clamp(+value, minControlPointsSize, maxControlPointsSize)),
+                                );
                             }
                         }}
                     />

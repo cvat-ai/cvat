@@ -347,6 +347,7 @@ class Task3DTest(_DbTestBase):
                 {
                     "type": "cuboid",
                     "occluded": False,
+                    "outside": False,
                     "z_order": 0,
                     "points": [0.16, 0.20, -0.26, 0, -0.14, 0, 4.84, 4.48, 4.12, 0, 0, 0, 0, 0, 0, 0],
                     "rotation": 0,
@@ -354,6 +355,7 @@ class Task3DTest(_DbTestBase):
                     "label_id": None,
                     "group": 0,
                     "source": "manual",
+                    "elements": [],
                     "attributes": []
                 },
             ],

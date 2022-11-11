@@ -11,6 +11,7 @@ RUN apt-get update && \
         apache2-dev \
         build-essential \
         curl \
+        libgeos-dev \
         libldap2-dev \
         libsasl2-dev \
         nasm \
@@ -46,8 +47,6 @@ RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 RUN python3 -m pip install --no-cache-dir -U pip==22.0.2 setuptools==60.6.0 wheel==0.37.1
 COPY cvat/requirements/ /tmp/requirements/
-# Takes forever on low-speed connection to install if not here.
-RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/heavy.txt
 RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 
 # Install rebotics requirements
@@ -72,16 +71,17 @@ ENV TERM=xterm \
     LC_ALL='C.UTF-8'
 
 # Install dependencies
-COPY package*.json /tmp/
-COPY cvat-core/package*.json /tmp/cvat-core/
-COPY cvat-canvas/package*.json /tmp/cvat-canvas/
-COPY cvat-canvas3d/package*.json /tmp/cvat-canvas3d/
-COPY cvat-ui/package*.json /tmp/cvat-ui/
-COPY cvat-data/package*.json /tmp/cvat-data/
+COPY package.json /tmp/
+COPY yarn.lock /tmp/
+COPY cvat-core/package.json /tmp/cvat-core/
+COPY cvat-canvas/package.json /tmp/cvat-canvas/
+COPY cvat-canvas3d/package.json /tmp/cvat-canvas3d/
+COPY cvat-ui/package.json /tmp/cvat-ui/
+COPY cvat-data/package.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN npm ci --ignore-scripts
+RUN yarn install --ignore-scripts --frozen-lockfile
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
@@ -89,8 +89,7 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
-RUN npm run build:cvat-ui
-
+RUN yarn run build:cvat-ui
 
 FROM ubuntu:20.04
 
@@ -119,6 +118,7 @@ RUN apt-get update && \
         apache2 \
         ca-certificates \
         libapache2-mod-xsendfile \
+        libgeos-dev \
         libgomp1 \
         libgl1 \
         supervisor \
@@ -153,22 +153,52 @@ RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
+ARG CLAM_AV="no"
+RUN if [ "$CLAM_AV" = "yes" ]; then \
+        apt-get update && \
+        apt-get --no-install-recommends install -yq \
+            clamav \
+            libclamunrar9 && \
+        sed -i 's/ReceiveTimeout 30/ReceiveTimeout 300/g' /etc/clamav/freshclam.conf && \
+        freshclam && \
+        chown -R ${USER}:${USER} /var/lib/clamav && \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
+
+ARG INSTALL_SOURCES='no'
+WORKDIR ${HOME}/sources
+RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
+        sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list && \
+        apt-get update && \
+        dpkg --get-selections | while read -r line; do        \
+            package=$(echo "$line" | awk '{print $1}');       \
+            mkdir "$package";                                 \
+            (                                                 \
+                cd "$package";                                \
+                apt-get -q --download-only source "$package"; \
+            )                                                 \
+            done &&                                           \
+        rm -rf /var/lib/apt/lists/*;                          \
+    fi
+COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.gz ${HOME}/sources/
+
 # Copy python virtual environment and FFmpeg binaries from build-image
 COPY --from=build-image /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
+ENV NUMPROCS=1
 COPY --from=build-image /opt/ffmpeg /usr
 
 # Install and initialize CVAT, copy all necessary files
 COPY --chown=${USER} components /tmp/components
+COPY --chown=${USER} supervisord/ ${HOME}/supervisord
 COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
-COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
-COPY --chown=${USER} tests/ ${HOME}/tests
+COPY --chown=${USER} cvat/ ${HOME}/cvat
 
 # Install UI and setup nginx proxy
 COPY --from=cvat-ui --chown=${USER} /tmp/cvat-ui/dist ${HOME}/static
-COPY --chown=${USER} rebotics/supervisord.conf ${HOME}/
+COPY --chown=${USER} rebotics/supervisord.conf ${HOME}/supervisord/all.conf
 COPY rebotics/nginx_proxy.conf /etc/nginx/conf.d/default.conf
 RUN sed -i "s#\${HOME}#${HOME}#g" /etc/nginx/conf.d/default.conf && \
     sed -i "s#pid /run#pid ${HOME}#" /etc/nginx/nginx.conf && \
@@ -188,3 +218,4 @@ RUN mkdir data share media keys logs /tmp/supervisord
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]
+CMD ["-c", "supervisord/all.conf"]

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
-import { Model } from 'reducers/interfaces';
+import { Model } from 'reducers';
 import DeployedModelItem from './deployed-model-item';
 
 interface Props {
@@ -29,13 +29,13 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
                         <Col span={3}>
                             <Text strong>Name</Text>
                         </Col>
-                        <Col span={3}>
+                        <Col span={3} offset={1}>
                             <Text strong>Type</Text>
                         </Col>
-                        <Col span={10}>
+                        <Col span={8}>
                             <Text strong>Description</Text>
                         </Col>
-                        <Col span={5}>
+                        <Col span={5} offset={1}>
                             <Text strong>Labels</Text>
                         </Col>
                     </Row>

@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,15 +18,15 @@ import Button from 'antd/lib/button';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Menu from 'antd/lib/menu';
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { User } from 'components/task-page/user-selector';
 
 interface ResourceFilterProps {
-    predefinedVisible: boolean;
+    predefinedVisible?: boolean;
     recentVisible: boolean;
     builderVisible: boolean;
     value: string | null;
-    onPredefinedVisibleChange(visible: boolean): void;
+    onPredefinedVisibleChange?: (visible: boolean) => void;
     onBuilderVisibleChange(visible: boolean): void;
     onRecentVisibleChange(visible: boolean): void;
     onApplyFilter(filter: string | null): void;
@@ -35,7 +36,7 @@ export default function ResourceFilterHOC(
     filtrationCfg: Partial<Config>,
     localStorageRecentKeyword: string,
     localStorageRecentCapacity: number,
-    predefinedFilterValues: Record<string, string>,
+    predefinedFilterValues?: Record<string, string>,
 ): React.FunctionComponent<ResourceFilterProps> {
     const config: Config = { ...AntdConfig, ...filtrationCfg };
     const defaultTree = QbUtils.checkTree(
@@ -100,9 +101,10 @@ export default function ResourceFilterHOC(
         return filters[0];
     }
 
-    function getPredefinedFilters(user: User): Record<string, string> {
-        const result: Record<string, string> = {};
-        if (user) {
+    function getPredefinedFilters(user: User): Record<string, string> | null {
+        let result: Record <string, string> | null = null;
+        if (user && predefinedFilterValues) {
+            result = {};
             for (const key of Object.keys(predefinedFilterValues)) {
                 result[key] = predefinedFilterValues[key].replace('<username>', `${user.username}`);
             }
@@ -190,50 +192,54 @@ export default function ResourceFilterHOC(
         const predefinedFilters = getPredefinedFilters(user);
         return (
             <div className='cvat-resource-page-filters'>
-                <Dropdown
-                    destroyPopupOnHide
-                    visible={predefinedVisible}
-                    placement='bottomLeft'
-                    overlay={(
-                        <div className='cvat-resource-page-predefined-filters-list'>
-                            {Object.keys(predefinedFilters).map((key: string): JSX.Element => (
-                                <Checkbox
-                                    checked={appliedFilter.predefined?.includes(predefinedFilters[key])}
-                                    onChange={(event: CheckboxChangeEvent) => {
-                                        let updatedValue: string[] | null = appliedFilter.predefined || [];
-                                        if (event.target.checked) {
-                                            updatedValue.push(predefinedFilters[key]);
-                                        } else {
-                                            updatedValue = updatedValue
-                                                .filter((appliedValue: string) => (
-                                                    appliedValue !== predefinedFilters[key]
-                                                ));
-                                        }
+                {
+                    predefinedFilters && onPredefinedVisibleChange ? (
+                        <Dropdown
+                            destroyPopupOnHide
+                            visible={predefinedVisible}
+                            placement='bottomLeft'
+                            overlay={(
+                                <div className='cvat-resource-page-predefined-filters-list'>
+                                    {Object.keys(predefinedFilters).map((key: string): JSX.Element => (
+                                        <Checkbox
+                                            checked={appliedFilter.predefined?.includes(predefinedFilters[key])}
+                                            onChange={(event: CheckboxChangeEvent) => {
+                                                let updatedValue: string[] | null = appliedFilter.predefined || [];
+                                                if (event.target.checked) {
+                                                    updatedValue.push(predefinedFilters[key]);
+                                                } else {
+                                                    updatedValue = updatedValue
+                                                        .filter((appliedValue: string) => (
+                                                            appliedValue !== predefinedFilters[key]
+                                                        ));
+                                                }
 
-                                        if (!updatedValue.length) {
-                                            updatedValue = null;
-                                        }
+                                                if (!updatedValue.length) {
+                                                    updatedValue = null;
+                                                }
 
-                                        setAppliedFilter({
-                                            ...defaultAppliedFilter,
-                                            predefined: updatedValue,
-                                        });
-                                    }}
-                                    key={key}
-                                >
-                                    {key}
-                                </Checkbox>
-                            )) }
-                        </div>
-                    )}
-                >
-                    <Button type='default' onClick={() => onPredefinedVisibleChange(!predefinedVisible)}>
-                        Quick filters
-                        { appliedFilter.predefined ?
-                            <FilterFilled /> :
-                            <FilterOutlined />}
-                    </Button>
-                </Dropdown>
+                                                setAppliedFilter({
+                                                    ...defaultAppliedFilter,
+                                                    predefined: updatedValue,
+                                                });
+                                            }}
+                                            key={key}
+                                        >
+                                            {key}
+                                        </Checkbox>
+                                    )) }
+                                </div>
+                            )}
+                        >
+                            <Button type='default' onClick={() => onPredefinedVisibleChange(!predefinedVisible)}>
+                                Quick filters
+                                { appliedFilter.predefined ?
+                                    <FilterFilled /> :
+                                    <FilterOutlined />}
+                            </Button>
+                        </Dropdown>
+                    ) : null
+                }
                 <Dropdown
                     placement='bottomRight'
                     visible={builderVisible}

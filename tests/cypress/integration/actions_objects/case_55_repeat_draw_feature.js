@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -138,13 +138,6 @@ context('Repeat draw feature.', () => {
             cy.get('#cvat_canvas_shape_10').should('exist');
             checkCountShapes(10);
             checkShapeType('#cvat-objects-sidebar-state-item-10', 'CUBOID SHAPE');
-        });
-
-        it('Cteate and repeat the creating of the tag.', () => {
-            cy.createTag(labelName);
-            repeatDrawningStart(); // Repeat the creating the tag
-            cy.get('#cvat-objects-sidebar-state-item-12').should('exist');
-            checkShapeType('#cvat-objects-sidebar-state-item-12', 'TAG');
         });
     });
 });

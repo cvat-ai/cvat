@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -45,10 +45,10 @@ def get_git_changeset():
     so it's sufficient for generating the development version numbers.
     """
     repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    git_log = subprocess.Popen(
-        'git log --pretty=format:%ct --quiet -1 HEAD',
+    git_log = subprocess.Popen( # nosec: B603, B607
+        ['git', 'log', '--pretty=format:%ct', '--quiet', '-1', 'HEAD'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        shell=True, cwd=repo_dir, universal_newlines=True,
+        cwd=repo_dir, universal_newlines=True,
     )
     timestamp = git_log.communicate()[0]
     try:
@@ -56,4 +56,3 @@ def get_git_changeset():
     except ValueError:
         return None
     return timestamp.strftime('%Y%m%d%H%M%S')
-

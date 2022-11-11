@@ -3,32 +3,472 @@ on:
   schedule:
     - cron: '0 22 * * *'
   workflow_dispatch:
+
+env:
+  SERVER_IMAGE_TEST_REPO: cvat_server
+  UI_IMAGE_TEST_REPO: instrumentation_cvat_ui
+
 jobs:
+  check_updates:
+    runs-on: ubuntu-latest
+    env:
+      REPO: ${{ github.repository }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      last_commit_time: ${{ steps.check_updates.outputs.last_commit_time }}
+      last_night_time: ${{ steps.check_updates.outputs.last_night_time }}
+    steps:
+      - id: check_updates
+        run: |
+          default_branch=$(gh api /repos/$REPO | jq -r '.default_branch')
+
+          last_commit_date=$(gh api /repos/${REPO}/branches/${default_branch} | jq -r '.commit.commit.author.date')
+
+          last_night_date=$(gh api /repos/${REPO}/actions/workflows/schedule.yml/runs | \
+            jq -r '.workflow_runs[]? | select((.status == "completed")) | .updated_at' \
+            | sort | tail -1)
+
+          last_night_time=$(date +%s -d $last_night_date)
+          last_commit_time=$(date +%s -d $last_commit_date)
+
+          echo Last CI-nightly workflow run time: $last_night_date
+          echo Last commit time in develop branch: $last_commit_date
+
+          echo ::set-output name=last_commit_time::${last_commit_time}
+          echo ::set-output name=last_night_time::${last_night_time}
+
+  search_cache:
+    needs: check_updates
+    if:
+      needs.check_updates.outputs.last_commit_time > needs.check_updates.outputs.last_night_time
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.get-sha.outputs.sha}}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Getting SHA with cache from the default branch
+        id: get-sha
+        run: |
+          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
+          for sha in $(gh api "/repos/$REPO/commits?per_page=100&sha=$DEFAULT_BRANCH" | jq -r '.[].sha');
+          do
+            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
+              jq -r ".workflow_runs[]? | select((.head_sha == \"${sha}\") and (.conclusion == \"success\")) | .status")
+
+            if [[ ${RUN_status} == "completed" ]]; then
+              SHA=$sha
+              break
+            fi
+          done
+
+          echo Default branch is ${DEFAULT_BRANCH}
+          echo Workflow will try to get cache from commit: ${SHA}
+
+          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
+          echo ::set-output name=sha::${SHA}
+
   build:
+    needs: search_cache
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
+
+      - name: CVAT server. Getting cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
+
+      - name: CVAT UI. Getting cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_ui
+          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
+
+      - name: CVAT server. Extract metadata (tags, labels) for Docker
+        id: meta-server
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: CVAT UI. Extract metadata (tags, labels) for Docker
+        id: meta-ui
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.UI_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: CVAT server. Build and push
+        uses: docker/build-push-action@v3
+        with:
+          cache-from: type=local,src=/tmp/cvat_cache_server
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta-server.outputs.tags }}
+          labels: ${{ steps.meta-server.outputs.labels }}
+
+      - name: Instrumentation of the code then rebuilding the CVAT UI
+        run: |
+          yarn --frozen-lockfile
+          yarn run coverage
+
+      - name: CVAT UI. Build and push
+        uses: docker/build-push-action@v3
+        with:
+          cache-from: type=local,src=/tmp/cvat_cache_ui
+          context: .
+          file: Dockerfile.ui
+          push: true
+          tags: ${{ steps.meta-ui.outputs.tags }}
+          labels: ${{ steps.meta-ui.outputs.labels }}
+
+  unit_testing:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Getting CVAT UI cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_ui
+          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
+
+      - name: Getting CVAT Logstash cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_logstash
+          key: ${{ runner.os }}-build-logstash-${{ needs.search_cache.outputs.sha }}
+
+      - name: Getting CVAT Elasticsearch cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_elasticsearch
+          key: ${{ runner.os }}-build-elasticsearch-${{ needs.search_cache.outputs.sha }}
+
+      - name: Building CVAT UI image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.ui
+          cache-from: type=local,src=/tmp/cvat_cache_ui
+          tags: cvat/ui:latest
+          load: true
+
+      - name: Building CVAT Logstash image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./components/analytics/logstash/
+          file: ./components/analytics/logstash/Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache_logstash
+          build-args: ELK_VERSION=6.8.23
+          tags: cvat_logstash
+          load: true
+
+      - name: Building CVAT Elasticsearch image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./components/analytics/elasticsearch/
+          file: ./components/analytics/elasticsearch/Dockerfile
+          cache-from: type=local,src=/tmp/cvat_cache_elasticsearch
+          build-args: ELK_VERSION=6.8.23
+          tags: cvat_elasticsearch
+          load: true
+
+      - name: CVAT server. Extract metadata (tags, labels) for Docker
+        id: meta-server
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
+
+      - name: Pull CVAT server image
+        run: |
+          docker pull ${{ steps.meta-server.outputs.tags }}
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:latest
+          docker tag cvat/ui:latest cvat/ui:dev
+
+      - name: OPA tests
+        run: |
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+          chmod +x ./opa
+          ./opa test cvat/apps/iam/rules
+
+      - name: REST API and SDK tests
+        run: |
+          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
+            --entrypoint /bin/bash -u root cvat/server \
+            -c 'python manage.py spectacular --file /transfer/schema.yml'
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          cd cvat-sdk/
+          gen/generate.sh
+          cd ..
+
+          pip3 install --user cvat-sdk/
+          pip3 install --user cvat-cli/
+          pip3 install --user -r tests/python/requirements.txt
+          pytest tests/python/
+          pytest tests/python/ --stop-services
+
+      - name: Unit tests
+        env:
+          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+          max_tries=12
+          while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
+
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          -c 'coverage run -a manage.py test cvat/apps && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
+
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
+
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/lcov.info
+            ${{ github.workspace }}/.coverage
+
+  e2e_testing:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+                'actions_objects', 'actions_objects2', 'actions_users',
+                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
+                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2']
+    steps:
+      - uses: actions/checkout@v2
+
       - uses: actions/setup-node@v2
         with:
             node-version: '16.x'
-      - name: Build CVAT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
+
+      - name: CVAT server. Extract metadata (tags, labels) for Docker
+        id: meta-server
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: CVAT UI. Extract metadata (tags, labels) for Docker
+        id: meta-ui
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_USERNAME }}/${{ env.UI_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: Pull CVAT UI image
+        run: |
+          docker pull ${{ steps.meta-server.outputs.tags }}
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+
+          docker pull ${{ steps.meta-ui.outputs.tags }}
+          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui:dev
+
+      - name: Run CVAT instance
+        run: |
+          docker-compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            -f tests/docker-compose.file_share.yml \
+            -f tests/docker-compose.minio.yml \
+            -f components/serverless/docker-compose.serverless.yml up -d
+
+      - name: Waiting for server
+        id: wait-server
+        env:
+          API_ABOUT_PAGE: "localhost:8080/api/server/about"
+        run: |
+          max_tries=60
+          status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
+          do
+            echo Number of attempts left: $max_tries
+            echo Status code of response: $status_code
+
+            sleep 5
+            status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
+            (( max_tries-- ))
+          done
+
+          if [[ $status_code != "200" ]]; then
+             echo Response from server is incorrect, output:
+             cat /tmp/server_response
+          fi
+          echo ::set-output name=status_code::${status_code}
+
+      - name: Fail on bad response from server
+        if: steps.wait-server.outputs.status_code != '200'
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('Workflow failed: incorrect response from server. See logs artifact to get more info')
+
+      - name: Add user for tests
         env:
           DJANGO_SU_NAME: "admin"
           DJANGO_SU_EMAIL: "admin@localhost.company"
           DJANGO_SU_PASSWORD: "12qwaszx"
-          API_ABOUT_PAGE: "localhost:8080/api/server/about"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f ./tests/docker-compose.email.yml -f tests/docker-compose.file_share.yml -f components/serverless/docker-compose.serverless.yml up -d --build
-          /bin/bash -c 'while [[ $(curl -s -o /dev/null -w "%{http_code}" ${API_ABOUT_PAGE}) != "401" ]]; do sleep 5; done'
-          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-      - name: End-to-end testing
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+
+      - name: Run tests
         run: |
           cd ./tests
-          npm ci
-          npm run cypress:run:firefox
+          yarn --frozen-lockfile
+
+          shopt -s extglob
+          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --config-file cypress_canvas3d.json \
+              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+            mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
+          else
+            npx cypress run \
+              --browser chrome \
+              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+            mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
+          fi
+
+      - name: Creating a log file from "cvat" container logs
+        if: failure()
+        run: |
+            docker logs cvat_server > ${{ github.workspace }}/tests/cvat.log
+
       - name: Uploading cypress screenshots as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: cypress_screenshots
           path: ${{ github.workspace }}/tests/cypress/screenshots
+
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: cvat_container_logs
+          path: ${{ github.workspace }}/tests/cvat.log
+
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage_results
+          path: ${{ github.workspace }}/tests/.nyc_output
+
+  coveralls:
+    runs-on: ubuntu-latest
+    needs: [unit_testing, e2e_testing]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: CVAT server. Extract metadata (tags, labels) for Docker
+        id: meta-server
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+          tags:
+            type=raw,value=nightly
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
+
+      - name: Pull CVAT server image
+        run: |
+          docker pull ${{ steps.meta-server.outputs.tags }}
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+
+      - name: Downloading coverage results
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage_results
+
+      - name: Combining coverage results
+        run: |
+          mkdir -p ./nyc_output_tmp
+          mv ./out_*.json ./nyc_output_tmp
+          mkdir -p ./.nyc_output
+          yarn --frozen-lockfile
+          npx nyc merge ./nyc_output_tmp ./.nyc_output/out.json
+
+      - name: Sending results to Coveralls
+        env:
+          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
+          COVERALLS_SERVICE_NAME: github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
+
+            docker-compose \
+              -f docker-compose.yml \
+              -f docker-compose.dev.yml \
+              -f docker-compose.ci.yml \
+              run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
+
+            docker-compose \
+              -f docker-compose.yml \
+              -f docker-compose.dev.yml \
+              -f docker-compose.ci.yml \
+              run cvat_ci /bin/bash -c '\
+                ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . \
+                && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . \
+                && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . \
+                && coveralls --merge=coverage.json'

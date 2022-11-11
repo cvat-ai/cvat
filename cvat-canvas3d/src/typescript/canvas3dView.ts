@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -287,7 +287,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     (_state: any): boolean => _state.clientID === Number(intersects[0].object.name),
                 );
                 if (item.length !== 0) {
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                     // @ts-ignore
                     this.model.data.groupData.grouped = this.model.data.groupData.grouped.filter(
                         (_state: any): boolean => _state.clientID !== Number(intersects[0].object.name),
@@ -782,12 +781,43 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.model.data.drawData.enabled = false;
             }
             this.views.perspective.renderer.dispose();
-            this.model.mode = Mode.BUSY;
+            if (!this.controller.imageIsDeleted) {
+                this.model.mode = Mode.BUSY;
+            }
             this.action.loading = true;
             const loader = new PCDLoader();
             const objectURL = URL.createObjectURL(model.data.image.imageData);
             this.clearScene();
-            loader.load(objectURL, this.addScene.bind(this));
+            if (this.controller.imageIsDeleted) {
+                this.render();
+                const [container] = window.document.getElementsByClassName('cvat-canvas-container');
+                const overlay = window.document.createElement('canvas');
+                overlay.classList.add('cvat_3d_canvas_deleted_overlay');
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.position = 'absolute';
+                overlay.style.top = '0px';
+                overlay.style.left = '0px';
+                container.appendChild(overlay);
+                const { clientWidth: width, clientHeight: height } = overlay;
+                overlay.width = width;
+                overlay.height = height;
+                const canvasContext = overlay.getContext('2d');
+                const fontSize = width / 10;
+                canvasContext.font = `bold ${fontSize}px serif`;
+                canvasContext.textAlign = 'center';
+                canvasContext.lineWidth = fontSize / 20;
+                canvasContext.strokeStyle = 'white';
+                canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
+                canvasContext.fillStyle = 'black';
+                canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+            } else {
+                loader.load(objectURL, this.addScene.bind(this));
+                const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+            }
             URL.revokeObjectURL(objectURL);
             this.dispatchEvent(new CustomEvent('canvas.setup'));
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {

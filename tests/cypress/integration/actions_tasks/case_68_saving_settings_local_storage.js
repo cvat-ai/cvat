@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,9 +17,11 @@ context('Saving setting to local storage.', () => {
             '.cvat-workspace-settings-show-text-always',
             '.cvat-workspace-settings-autoborders',
         ]) {
-            checked
-                ? cy.get(ws).find('[type="checkbox"]').should('be.checked')
-                : cy.get(ws).find('[type="checkbox"]').should('not.be.checked').check().should('be.checked');
+            if (checked) {
+                cy.get(ws).find('[type="checkbox"]').should('be.checked');
+            } else {
+                cy.get(ws).find('[type="checkbox"]').should('not.be.checked').check().should('be.checked');
+            }
         }
     }
 
@@ -37,7 +39,6 @@ context('Saving setting to local storage.', () => {
                 .click();
             cy.closeSettings();
             cy.reload();
-            cy.closeModalUnsupportedPlatform(); // If the Firefox browser closes the modal window after reload
             testCheckedSettings(true);
         });
     });

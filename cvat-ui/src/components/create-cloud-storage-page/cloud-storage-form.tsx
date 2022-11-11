@@ -14,7 +14,7 @@ import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
 
-import { CombinedState, CloudStorage } from 'reducers/interfaces';
+import { CombinedState, CloudStorage } from 'reducers';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
@@ -74,7 +74,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const fakeCredentialsData = {
         accountName: 'X'.repeat(24),
         sessionToken: 'X'.repeat(300),
-        key: 'X'.repeat(20),
+        key: 'X'.repeat(128),
         secretKey: 'X'.repeat(40),
         keyFile: new File([], 'fakeKey.json'),
     };
@@ -203,10 +203,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
     }, []);
 
-    const onSubmit = async (): Promise<void> => {
-        let cloudStorageData: Record<string, any> = {};
-        const formValues = await form.validateFields();
-        cloudStorageData = { ...formValues };
+    const handleOnFinish = (formValues: CloudStorageForm): void => {
+        const cloudStorageData: Record<string, any> = { ...formValues };
         // specific attributes
         const specificAttributes = new URLSearchParams();
 
@@ -332,7 +330,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={20}
+                            maxLength={128}
                             visibilityToggle={keyVisibility}
                             onChange={() => setKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('key', 'key')}
@@ -346,7 +344,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={40}
+                            maxLength={44}
                             visibilityToggle={secretKeyVisibility}
                             onChange={() => setSecretKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('secretKey', 'secret_key')}
@@ -607,7 +605,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     };
 
     return (
-        <Form className='cvat-cloud-storage-form' layout='vertical' form={form}>
+        <Form
+            className='cvat-cloud-storage-form'
+            layout='vertical'
+            form={form}
+            onFinish={(values: CloudStorageForm): void => handleOnFinish(values)}
+        >
             <Form.Item
                 {...commonProps}
                 label='Display name'
@@ -672,7 +675,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Button
                         type='primary'
                         htmlType='submit'
-                        onClick={onSubmit}
                         className='cvat-cloud-storage-submit-button'
                         loading={loading}
                         disabled={loading}

@@ -1,0 +1,686 @@
+{
+  "count": 12,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 18,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 26,
+          "name": "4",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "val1",
+              "id": 3,
+              "input_type": "select",
+              "mutable": false,
+              "name": "attr",
+              "values": [
+                "val1",
+                "val2"
+              ]
+            }
+          ],
+          "color": "#59a8fe",
+          "has_parent": true,
+          "id": 25,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4925ec",
+          "has_parent": true,
+          "id": 24,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#d53957",
+          "has_parent": true,
+          "id": 23,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "white",
+              "id": 2,
+              "input_type": "select",
+              "mutable": false,
+              "name": "color",
+              "values": [
+                "white",
+                "black"
+              ]
+            }
+          ],
+          "color": "#0c81b5",
+          "has_parent": false,
+          "id": 22,
+          "name": "s2",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#4a649f",
+              "has_parent": true,
+              "id": 26,
+              "name": "4",
+              "type": "points"
+            },
+            {
+              "attributes": [
+                {
+                  "default_value": "val1",
+                  "id": 3,
+                  "input_type": "select",
+                  "mutable": false,
+                  "name": "attr",
+                  "values": [
+                    "val1",
+                    "val2"
+                  ]
+                }
+              ],
+              "color": "#59a8fe",
+              "has_parent": true,
+              "id": 25,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#4925ec",
+              "has_parent": true,
+              "id": 24,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#d53957",
+              "has_parent": true,
+              "id": 23,
+              "name": "1",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"65.6380615234375\" y1=\"18.394649505615234\" x2=\"22.327028274536133\" y2=\"54.8494987487793\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"77.34375\" y1=\"55.18394470214844\" x2=\"65.6380615234375\" y2=\"18.394649505615234\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"4.434051036834717\" y1=\"27.257524490356445\" x2=\"77.34375\" y2=\"55.18394470214844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"4.434051036834717\" cy=\"27.257524490356445\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"23\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.327028274536133\" cy=\"54.8494987487793\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"24\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"65.6380615234375\" cy=\"18.394649505615234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"25\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"77.34375\" cy=\"55.18394470214844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"26\"></circle>",
+          "type": "skeleton"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 21,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 20,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 19,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#5c5eba",
+          "has_parent": false,
+          "id": 18,
+          "name": "s1",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#479ffe",
+              "has_parent": true,
+              "id": 21,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#350dea",
+              "has_parent": true,
+              "id": 20,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#d12345",
+              "has_parent": true,
+              "id": 19,
+              "name": "1",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"36.37385177612305\" y1=\"50.334449768066406\" x2=\"70.15311431884766\" y2=\"21.237457275390625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"29.517663955688477\" y1=\"15.050167083740234\" x2=\"36.37385177612305\" y2=\"50.334449768066406\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"29.517663955688477\" cy=\"15.050167083740234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"50.334449768066406\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"21.237457275390625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>",
+          "type": "skeleton"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 5,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 7,
+      "task_id": 14,
+      "updated_date": "2022-09-23T11:57:02.302000Z",
+      "url": "http://localhost:8080/api/jobs/18"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 17,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#406040",
+          "has_parent": false,
+          "id": 17,
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 16,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 4,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 4,
+      "task_id": 13,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/17"
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      },
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 16,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#406040",
+          "has_parent": false,
+          "id": 8,
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 7,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 2,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 10,
+      "task_id": 11,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/16"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 14,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "has_parent": false,
+          "id": 6,
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "has_parent": false,
+          "id": 5,
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 1,
+      "stage": "annotation",
+      "start_frame": 15,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 19,
+      "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/14"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 13,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "has_parent": false,
+          "id": 6,
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "has_parent": false,
+          "id": 5,
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 1,
+      "stage": "acceptance",
+      "start_frame": 10,
+      "state": "new",
+      "status": "validation",
+      "stop_frame": 14,
+      "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/13"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 12,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "has_parent": false,
+          "id": 6,
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "has_parent": false,
+          "id": 5,
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 1,
+      "stage": "validation",
+      "start_frame": 5,
+      "state": "new",
+      "status": "validation",
+      "stop_frame": 9,
+      "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/12"
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      },
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 11,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "has_parent": false,
+          "id": 6,
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "has_parent": false,
+          "id": 5,
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 1,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 4,
+      "task_id": 9,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/11"
+    },
+    {
+      "assignee": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 10,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 13,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "has_parent": false,
+          "id": 14,
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 13,
+      "task_id": 8,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/10"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 9,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 11,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "has_parent": false,
+          "id": 12,
+          "name": "dog",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 10,
+      "task_id": 7,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/9"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "3d",
+      "id": 8,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "has_parent": false,
+          "id": 10,
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 0,
+      "task_id": 6,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/8"
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      },
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 7,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "has_parent": false,
+          "id": 9,
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "interpolation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 24,
+      "task_id": 5,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/7"
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 6,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/6",
+        "username": "worker1"
+      },
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 2,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "has_parent": false,
+          "id": 3,
+          "name": "car",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "has_parent": false,
+          "id": 4,
+          "name": "person",
+          "sublabels": [],
+          "type": "any"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 22,
+      "task_id": 2,
+      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "url": "http://localhost:8080/api/jobs/2"
+    }
+  ]
+}

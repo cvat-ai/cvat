@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -208,9 +208,10 @@
     }
 }
 
-.cvat-objects-sidebar-state-item-collapse {
-    border: 0;
-    background: inherit;
+.cvat-objects-sidebar-state-item-collapse,
+.cvat-objects-sidebar-state-item-elements-collapse {
+    border: unset;
+    background: unset;
     width: 100%;
 
     > .ant-collapse-item {
@@ -218,7 +219,7 @@
         border: none;
 
         > .ant-collapse-header {
-            background: inherit;
+            align-items: baseline;
             padding-top: 2px;
             padding-bottom: 2px;
 
@@ -230,9 +231,10 @@
 
         > .ant-collapse-content {
             > .ant-collapse-content-box {
-                padding: 3px;
+                padding: 0;
             }
 
+            border: unset;
             background: inherit;
         }
     }
@@ -422,4 +424,23 @@
         margin-top: 4px;
         pointer-events: none;
     }
+}
+
+.cvat-objects-sidebar-state-item-elements {
+    padding: $grid-unit-size * 0.5;
+    border: 1px solid $object-item-border-color;
+    border-bottom: 0;
+    padding-top: 1px;
+    padding-left: 1px;
+    padding-right: 1px;
+    padding-bottom: 2px;
+
+    &:last-child {
+        border-bottom: 1px solid $object-item-border-color;
+    }
+}
+
+.cvat-objects-sidebar-state-item-elements.cvat-objects-sidebar-state-active-element {
+    border: 2px dashed $object-item-border-color;
+    padding: 0;
 }

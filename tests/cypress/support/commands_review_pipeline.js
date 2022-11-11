@@ -7,9 +7,9 @@
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
         if (user !== '') {
-            cy.get('.cvat-user-search-field').find('[type="search"]').type(`${user}{Enter}`);
+            cy.get('.cvat-user-search-field').find('input').type(`${user}{Enter}`);
         } else {
-            cy.get('.cvat-user-search-field').find('[type="search"]').clear().type('{Enter}');
+            cy.get('.cvat-user-search-field').find('input').clear().type('{Enter}');
         }
     });
 });

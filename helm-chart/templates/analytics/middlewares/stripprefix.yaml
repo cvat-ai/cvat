@@ -1,0 +1,15 @@
+{{- if and .Values.ingress.enabled .Values.analytics.enabled }}
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: stripprefix
+  namespace: {{ .Release.Namespace }}
+  annotations:
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - /analytics
+{{- end }}

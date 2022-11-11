@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,12 +25,16 @@ module.exports = (env) => ({
         publicPath: '/',
     },
     devServer: {
-        contentBase: path.join(__dirname, 'dist'),
         compress: false,
-        inline: true,
         host: process.env.CVAT_UI_HOST || 'localhost',
+        client: {
+            overlay: false,
+        },
         port: 3000,
         historyApiFallback: true,
+        static: {
+            directory: path.join(__dirname, 'dist'),
+        },
         proxy: [
             {
                 context: (param) =>
@@ -46,6 +50,9 @@ module.exports = (env) => ({
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
         plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
+        fallback: {
+            fs: false,
+        },
     },
     module: {
         rules: [
@@ -95,7 +102,7 @@ module.exports = (env) => ({
                     'babel-loader',
                     {
                         loader: 'react-svg-loader',
-                        query: {
+                        options: {
                             svgo: {
                                 plugins: [{ pretty: true }, { cleanupIDs: false }],
                             },
@@ -109,7 +116,8 @@ module.exports = (env) => ({
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: 'assets/3rdparty/[name].[contenthash].js',
+                        filename: 'assets/3rdparty/[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
@@ -120,7 +128,8 @@ module.exports = (env) => ({
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: 'assets/[name].[contenthash].js',
+                        filename: 'assets/[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
@@ -134,12 +143,13 @@ module.exports = (env) => ({
         new Dotenv({
             systemvars: true,
         }),
-        new CopyPlugin([
-            {
-                from: '../cvat-data/src/js/3rdparty/avc.wasm',
-                to: 'assets/3rdparty/',
-            },
-        ]),
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: '../cvat-data/src/ts/3rdparty/avc.wasm',
+                    to: 'assets/3rdparty/',
+                },
+            ],
+        }),
     ],
-    node: { fs: 'empty' },
 });
