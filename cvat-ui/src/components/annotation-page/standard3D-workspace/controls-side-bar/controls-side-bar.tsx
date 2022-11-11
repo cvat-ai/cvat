@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Layout from 'antd/lib/layout';
 import { ActiveControl, ShapeType } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
@@ -57,12 +57,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
-    const [applicableLabels, setApplicableLabels] = useState<Label[]>([]);
-
-    useEffect(() => {
-        setApplicableLabels(filterApplicableForType(ShapeType.CUBOID, labels));
-    }, [labels]);
-
+    const applicableLabels = filterApplicableForType(ShapeType.CUBOID, labels);
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
             event.preventDefault();
