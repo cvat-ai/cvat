@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,43 +8,49 @@ context('Task change completed jobs.', () => {
     const caseId = '120';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
-    const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some default value for type Text';
-    const imagesCount = 15;
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 800;
-    const height = 800;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
-    const archiveName = `${imageFileName}.zip`;
-    const archivePath = `cypress/fixtures/${archiveName}`;
-    const imagesFolder = `cypress/fixtures/${imageFileName}`;
-    const directoryToArchive = imagesFolder;
-    const advancedConfigurationParams = {
-        multiJobs: true,
-        segmentSize: 5,
-    };
+    const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
+    let taskId;
+    let jobId;
 
     before(() => {
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-        cy.createZipArchive(directoryToArchive, archivePath);
         cy.visit('auth/login');
         cy.login();
-        cy.createAnnotationTask(
-            taskName,
-            labelName,
-            attrName,
-            textDefaultValue,
-            archiveName,
-            false,
-            advancedConfigurationParams,
-        );
+
+        cy.headlessCreateTask({
+            labels: [{ name: labelName, attributes: [], type: 'any' }],
+            name: taskName,
+            project_id: null,
+            segmentSize: 5,
+            source_storage: { location: 'local' },
+            target_storage: { location: 'local' },
+        }, {
+            server_files: serverFiles,
+            image_quality: 70,
+            use_zip_chunks: true,
+            use_cache: true,
+            sorting_method: 'lexicographical',
+            segment_size: 1,
+            multi_jobs: false,
+        }).then((response) => {
+            taskId = response.taskID;
+            jobId = response.jobID;
+        }).then(() => {
+            cy.visit(`/tasks/`);
+        });
     });
 
     after(() => {
-        cy.goToTaskList();
-        cy.deleteTask(taskName);
+        cy.logout();
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.request({
+                method: 'DELETE',
+                url: `/api/tasks/${taskId}`,
+                headers: {
+                    Authorization: `Token ${authKey}`,
+                },
+            });
+        });
     });
 
     function checkCompletedJobs(count, total) {
@@ -57,18 +63,13 @@ context('Task change completed jobs.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Changed numbers of completed job.', () => {
             checkCompletedJobs(0, 3);
-            cy.openTask(taskName);
-            cy.setJobStage(0, 'acceptance');
-            cy.goToTaskList();
-            checkCompletedJobs(1, 3);
-            cy.openTask(taskName);
-            cy.setJobStage(1, 'acceptance');
-            cy.goToTaskList();
-            checkCompletedJobs(2, 3);
-            cy.openTask(taskName);
-            cy.setJobStage(2, 'acceptance');
-            cy.goToTaskList();
-            checkCompletedJobs(3, 3);
+
+            for (let i = 0; i < 3; i++) {
+                cy.openTask(taskName);
+                cy.setJobStage(i, 'acceptance');
+                cy.goToTaskList();
+                checkCompletedJobs(i + 1, 3);
+            }
         });
     });
 });

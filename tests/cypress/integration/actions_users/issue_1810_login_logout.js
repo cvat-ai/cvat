@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,9 @@ import { taskName } from '../../support/const';
 context('When clicking on the Logout button, get the user session closed.', () => {
     const issueId = '1810';
     let taskId;
+    const correctPassword =  Cypress.env('password');
+    const correctUser =  Cypress.env('user');
+    const correctEmail = Cypress.env('email');
 
     function login(credential, password) {
         cy.get('[placeholder="Email or Username"]').clear().type(credential);
@@ -18,6 +21,19 @@ context('When clicking on the Logout button, get the user session closed.', () =
 
     before(() => {
         cy.visit('auth/login');
+    });
+
+    after(() => {
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.request({
+                method: 'DELETE',
+                url: `/api/tasks/${taskId}`,
+                headers: {
+                    Authorization: `Token ${authKey}`,
+                },
+            });
+        });
     });
 
     function loginWithoutCredentials(userName, password) {
@@ -36,13 +52,11 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.get(locators.userField).type(userName);
             cy.get(locators.submitButton).click();
             cy.contains(passwordMessage).should('exist');
-        }
-        else if (password) {
+        } else if (password) {
             cy.get(locators.passwordField).type(password);
             cy.get(locators.submitButton).click();
             cy.contains(userMessage).should('exist');
-        }
-        else {
+        } else {
             cy.get(locators.userField).clear();
             cy.get(locators.passwordField).clear();
             cy.get(locators.submitButton).click();
@@ -75,13 +89,13 @@ context('When clicking on the Logout button, get the user session closed.', () =
             // logout from task
             cy.get('.cvat-right-header').within(() => {
                 cy.get('.cvat-header-menu-user-dropdown')
-                    .should('have.text', Cypress.env('user'))
+                    .should('have.text', correctUser)
                     .trigger('mouseover', { which: 1 });
             });
             cy.get('span[aria-label="logout"]').click();
             cy.url().should('include', `/auth/login/?next=/tasks/${taskId}`);
             // login to task
-            login(Cypress.env('user'), Cypress.env('password'));
+            login(correctUser, correctPassword);
             cy.url().should('include', `/tasks/${taskId}`).and('not.include', '/auth/login');
             cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
         });
@@ -93,9 +107,9 @@ context('When clicking on the Logout button, get the user session closed.', () =
                 method: 'POST',
                 url: '/api/auth/login',
                 body: {
-                    username: Cypress.env('user'),
-                    email: Cypress.env('email'),
-                    password: Cypress.env('password'),
+                    username: correctUser,
+                    email: correctEmail,
+                    password: correctPassword,
                 },
             }).then(async (response) => {
                 const cookies = await response.headers['set-cookie'];
@@ -108,47 +122,38 @@ context('When clicking on the Logout button, get the user session closed.', () =
 
         it('Login via email', () => {
             cy.logout();
-            login(Cypress.env('email'), Cypress.env('password'));
+            login(correctEmail, correctPassword);
             cy.url().should('contain', '/tasks');
         });
 
-        it('Incorrect user and correct password', () => {
+        it('Incorect one of the credentials', () => {
             cy.logout();
-            login('randomUser123', Cypress.env('password'));
-            cy.url().should('include', '/auth/login');
-            cy.closeNotification('.cvat-notification-notice-login-failed');
+
+            const data = [
+                {userName: 'randomUser123', password: correctPassword},
+                {userName: correctUser, password: 'randomPassword123'},
+                {userName: 'randomUser123', password: 'randomPassword123'}
+            ];
+
+            data.forEach((item) => {
+                login(item.userName, item.password);
+                cy.url().should('include', '/auth/login');
+                cy.closeNotification('.cvat-notification-notice-login-failed');
+            });
         });
 
-        it('Correct user and incorrect password', () => {
-            login(Cypress.env('user'), 'randomPassword123');
-            cy.url().should('include', '/auth/login');
-            cy.closeNotification('.cvat-notification-notice-login-failed');
-        });
+        it('Empty one of the fields', () => {
+            const data = [
+                { userName: false, password: false},
+                { userName: correctUser, password: false},
+                { userName: false, password: correctPassword},
+                { userName: 'randomUser123', password: false},
+                { userName: false, password: 'randomPassword123'},
+            ];
 
-        it('Incorrect user and incorrect password', () => {
-            login('randomUser123', 'randomPassword123');
-            cy.url().should('include', '/auth/login');
-            cy.closeNotification('.cvat-notification-notice-login-failed');
-        });
-
-        it('Empty user and empty password', () => {
-            loginWithoutCredentials(false, false);
-        });
-
-        it('Correct user and empty password', () => {
-            loginWithoutCredentials(Cypress.env('user'), false);
-        });
-
-        it('Empty user and correct password', () => {
-            loginWithoutCredentials(false, Cypress.env('password'));
-        });
-
-        it('Incorrect user and empty password', () => {
-            loginWithoutCredentials('randomUser123', false);
-        });
-
-        it('Empty user and incorrect password', () => {
-            loginWithoutCredentials(false, 'randomPassword123');
+            data.forEach((item) => {
+                loginWithoutCredentials(item.userName, item.password);
+            });
         });
     });
 });
