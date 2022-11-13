@@ -5,11 +5,11 @@ weight: 13
 description: 'Guide to annotating tasks using brush tools.'
 ---
 
-Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks.
+
 
 With brush tool you can create masks for disjoint objects, that have multiple parts, such as a house hiding behind trees, a car behind a pedestrian, or a pillar behind a traffic sign. The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
 
-For more information about segmentation masks in CVAT, see [Creating masks](/docs/manual/advanced/annotation-with-polygons/creating-mask/).
+Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. For more information about segmentation masks in CVAT, see [Creating masks](/docs/manual/advanced/annotation-with-polygons/creating-mask/).
 
 See:
 
