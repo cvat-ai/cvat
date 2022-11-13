@@ -1,13 +1,13 @@
 ---
 title: 'Annotation with brush tool'
-linkTitle: 'Annotation with brush tools'
+linkTitle: 'Annotation with brush tool'
 weight: 13
 description: 'Guide to annotating tasks using brush tools.'
 ---
 
 
 
-With brush tool you can create masks for disjoint objects, that have multiple parts, such as a house hiding behind trees, a car behind a pedestrian, or a pillar behind a traffic sign. The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
+With a brush tool, you can create masks for disjoint objects, that have multiple parts, such as a house hiding behind trees, a car behind a pedestrian, or a pillar behind a traffic sign. The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
 
 Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. For more information about segmentation masks in CVAT, see [Creating masks](/docs/manual/advanced/annotation-with-polygons/creating-mask/).
 
@@ -30,8 +30,8 @@ It has the following elements:
 |Element|Description|
 |----|-----|
 |![Tick icon](/images/tick_icon.png)| **Save mask** saves the created  mask. The saved mask will appear on the object sidebar|
-|![Save mask and continue](/images/brushing_tools_add_label.png)| **Save mask and continue** adds a new mask to the object sidebar, and allows you to draw a new one immediately.|
-|![Brush](/images/brushing_tools_icon.png)| **Brush**  adds new mask mask/ new regions to the previously added mask).|
+|![Save mask and continue](/images/brushing_tools_add_label.png)| **Save mask and continue** adds a new mask to the object sidebar and allows you to draw a new one immediately.|
+|![Brush](/images/brushing_tools_icon.png)| **Brush**  adds new mask/ new regions to the previously added mask).|
 |![Eraser](/images/brushing_tools_erase.png)|**Eraser** removes part of the mask.|
 |![Add poly](/images/brushing_tools_add_poly.png)|**Polygon**  selection tool. Selection will become a mask.|
 |![Remove poly](/images/brushing_tools_remove_poly.png)|**Remove polygon selection** substracts part of the polygon selection.|
@@ -85,7 +85,7 @@ Do the following:
    ![Brushing](/images/brushing_tools_polygon.gif)
 
 6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) to finish the process (or **N** on the keyboard).
-7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). Added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
+7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). The added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
 To add the next object, repeat steps 1 to 5. All added objects will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
@@ -94,7 +94,7 @@ To save the job with all added objects, on the top menu click **Save** ![Save](/
 
 ## Remove underlying pixels
 
-Use **Remove underlying pixels** tool  when you want to add mask and simultaneously delete the pixels of other masks that are located at the same positions. It is highly useful feature to avoid meticulous drawing edge twice between two different objects.
+Use **Remove underlying pixels** tool when you want to add a mask and simultaneously delete the pixels of other masks that are located at the same positions. It is a highly useful feature to avoid meticulous drawing edges twice between two different objects.
 
 
 ![Remove pixel](/images/brushing_tools_pixel_underlying.gif)
@@ -110,11 +110,3 @@ Import follows the general [import dataset](/docs/manual/advanced/export-import-
 To use it, when uploading the dataset, switch the **Convert masks to polygon** toggle to the right:
 
 ![Remove pixel](/images/brushing_tools_import.png)
-
-
-
-
-
-
-
-
