@@ -13,13 +13,13 @@ Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. Fo
 
 See:
 
-- [Brush tools menu](#brush-tools-menu)
+- [Brush tool menu](#brush-tool-menu)
 - [Annotation with brush](#annotation-with-brush)
 - [Annotation with polygon-to-mask](#annotation-with-polygon-to-mask)
 - [Remove underlying pixels](#remove-underlying-pixels)
 - [Import and export](#import-and-export)
 
-## Brush tools menu
+## Brush tool menu
 
 The brush tool menu appears on the top of the screen after you click **Shape**:
 
