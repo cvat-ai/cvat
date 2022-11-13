@@ -3,14 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Icon from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import { BackArrowIcon } from 'icons';
 import { Col, Row } from 'antd/lib/grid';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import CVATSigningInput from 'components/signing-common/cvat-signing-input';
 
@@ -25,17 +25,26 @@ interface Props {
 
 function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element {
     const [form] = Form.useForm();
-    const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const defaultCredential = params.get('credential');
-    const inputReset = useCallback((name: string):void => {
-        form.setFieldsValue({ [name]: '' });
-    }, [form]);
+
+    const defaultCredential = sessionStorage.getItem('mail');
+
+    useEffect(() => () => sessionStorage.clear(), []);
+
+    const inputReset = useCallback(
+        (name: string): void => {
+            form.setFieldsValue({ [name]: '' });
+        },
+        [form],
+    );
     return (
         <div className='cvat-password-reset-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
                 <Icon
-                    component={() => <Link to='/auth/login'><BackArrowIcon /></Link>}
+                    component={() => (
+                        <Link to='/auth/login'>
+                            <BackArrowIcon />
+                        </Link>
+                    )}
                 />
             </Row>
             <Row>
@@ -85,11 +94,7 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                     </Col>
                 </Row>
                 <Form.Item>
-                    <Button
-                        className='cvat-credentials-action-button'
-                        loading={fetching}
-                        htmlType='submit'
-                    >
+                    <Button className='cvat-credentials-action-button' loading={fetching} htmlType='submit'>
                         Send
                     </Button>
                 </Form.Item>

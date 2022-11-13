@@ -30,11 +30,8 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
     const ref = useRef<HTMLElement>(null);
 
     useEffect(() => {
-        if (!resolved) {
-            setTimeout(highlight);
-        } else {
-            setTimeout(blur);
-        }
+        const timeout = setTimeout(!resolved ? highlight : blur);
+        return () => clearTimeout(timeout);
     }, [resolved]);
 
     const elementID = `cvat-hidden-issue-label-${id}`;

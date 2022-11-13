@@ -3,10 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useState,
-    useEffect,
-    useRef,
-    useCallback,
+    useState, useEffect, useRef, useCallback,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
@@ -61,11 +58,8 @@ export default function IssueDialog(props: Props): JSX.Element {
     } = props;
 
     useEffect(() => {
-        if (!resolved) {
-            setTimeout(highlight);
-        } else {
-            setTimeout(blur);
-        }
+        const timeout = setTimeout(!resolved ? highlight : blur);
+        return () => clearTimeout(timeout);
     }, [resolved]);
 
     const onDeleteIssue = useCallback((): void => {
@@ -84,26 +78,24 @@ export default function IssueDialog(props: Props): JSX.Element {
         });
     }, []);
 
-    const lines = comments.map(
-        (_comment: any): JSX.Element => {
-            const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
-            const diff = created.fromNow();
+    const lines = comments.map((_comment: any): JSX.Element => {
+        const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
+        const diff = created.fromNow();
 
-            return (
-                <Comment
-                    avatar={null}
-                    key={_comment.id}
-                    author={<Text strong>{_comment.owner ? _comment.owner.username : 'Unknown'}</Text>}
-                    content={<p>{_comment.message}</p>}
-                    datetime={(
-                        <CVATTooltip title={created.format('MMMM Do YYYY')}>
-                            <span>{diff}</span>
-                        </CVATTooltip>
-                    )}
-                />
-            );
-        },
-    );
+        return (
+            <Comment
+                avatar={null}
+                key={_comment.id}
+                author={<Text strong>{_comment.owner ? _comment.owner.username : 'Unknown'}</Text>}
+                content={<p>{_comment.message}</p>}
+                datetime={(
+                    <CVATTooltip title={created.format('MMMM Do YYYY')}>
+                        <span>{diff}</span>
+                    </CVATTooltip>
+                )}
+            />
+        );
+    });
 
     const resolveButton = resolved ? (
         <Button loading={isFetching} type='primary' onClick={reopen}>
@@ -116,7 +108,11 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     return ReactDOM.createPortal(
-        <div style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }} ref={ref} className='cvat-issue-dialog'>
+        <div
+            style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
+            ref={ref}
+            className='cvat-issue-dialog'
+        >
             <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
                     <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>

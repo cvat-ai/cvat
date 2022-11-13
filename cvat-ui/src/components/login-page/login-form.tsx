@@ -3,14 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import Icon from '@ant-design/icons';
-import {
-    BackArrowIcon, ClearIcon,
-} from 'icons';
+import { BackArrowIcon, ClearIcon } from 'icons';
 import { Col, Row } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
@@ -33,53 +31,57 @@ function LoginFormComponent(props: Props): JSX.Element {
         fetching, onSubmit, renderResetPassword, socialAuthentication,
     } = props;
     const [form] = Form.useForm();
-    const [credential, setCredential] = useState('');
+    const [credential, setCredential] = useState(false);
+    const mail = useRef<string>('');
 
-    const inputReset = useCallback((name: string):void => {
-        form.setFieldsValue({ [name]: '' });
-    }, [form]);
+    const inputReset = useCallback(
+        (name: string): void => {
+            form.setFieldsValue({ [name]: '' });
+        },
+        [form],
+    );
+
     const forgotPasswordLink = (
         <Col className='cvat-credentials-link'>
             <Text strong>
-                <Link to={credential.includes('@') ?
-                    `/auth/password/reset?credential=${credential}` : '/auth/password/reset'}
-                >
-                    Forgot password?
-                </Link>
+                <nav>
+                    <Link
+                        to='/auth/password/reset'
+                        onClick={() => {
+                            if (mail.current) sessionStorage.setItem('mail', mail.current);
+                        }}
+                    >
+                        Forgot password?
+                    </Link>
+                </nav>
             </Text>
         </Col>
     );
     return (
         <div className='cvat-login-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
-                {
-                    credential && (
-                        <Col>
-                            <Icon
-                                component={BackArrowIcon}
-                                onClick={() => {
-                                    setCredential('');
-                                    form.setFieldsValue({ credential: '' });
-                                }}
-                            />
+                {credential && (
+                    <Col>
+                        <Icon
+                            component={BackArrowIcon}
+                            onClick={() => {
+                                setCredential(false);
+                                form.setFieldsValue({ credential: '' });
+                            }}
+                        />
+                    </Col>
+                )}
+                {!credential && (
+                    <Row>
+                        <Col className='cvat-credentials-link'>
+                            <Text strong>
+                                New user?&nbsp;
+                                <Link to='/auth/register'>Create an account</Link>
+                            </Text>
                         </Col>
-                    )
-                }
-                {
-                    !credential && (
-                        <Row>
-                            <Col className='cvat-credentials-link'>
-                                <Text strong>
-                                    New user?&nbsp;
-                                    <Link to='/auth/register'>Create an account</Link>
-                                </Text>
-                            </Col>
-                        </Row>
-                    )
-                }
-                {
-                    renderResetPassword && forgotPasswordLink
-                }
+                    </Row>
+                )}
+                {renderResetPassword && forgotPasswordLink}
             </Row>
             <Col>
                 <Title level={2}> Sign in </Title>
@@ -91,68 +93,62 @@ function LoginFormComponent(props: Props): JSX.Element {
                     onSubmit(loginData);
                 }}
             >
-                <Form.Item
-                    className='cvat-credentials-form-item'
-                    name='credential'
-                >
+                <Form.Item className='cvat-credentials-form-item' name='credential'>
                     <Input
                         autoComplete='credential'
                         placeholder='enter your email or username'
                         prefix={<Text>Email or username</Text>}
-                        suffix={(
+                        suffix={
                             credential && (
                                 <Icon
                                     component={ClearIcon}
                                     onClick={() => {
-                                        setCredential('');
+                                        setCredential(false);
                                         inputReset('credential');
                                     }}
                                 />
                             )
-                        )}
+                        }
                         onChange={(event) => {
                             const { value } = event.target;
-                            setCredential(value);
+                            setCredential(!!value);
+                            mail.current = value.includes('@') ? value : '';
                             if (!value) inputReset('credential');
                         }}
                     />
                 </Form.Item>
-                {
-                    credential && (
-                        <Form.Item
-                            className='cvat-credentials-form-item'
-                            name='password'
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please specify a password',
-                                },
-                            ]}
+                {credential && (
+                    <Form.Item
+                        className='cvat-credentials-form-item'
+                        name='password'
+                        rules={[
+                            {
+                                required: true,
+                                message: 'Please specify a password',
+                            },
+                        ]}
+                    >
+                        <Input.Password
+                            autoComplete='current-password'
+                            placeholder='enter your password'
+                            prefix={<Text>Password</Text>}
+                        />
+                    </Form.Item>
+                )}
+                {credential || !socialAuthentication ? (
+                    <Form.Item>
+                        <Button
+                            className='cvat-credentials-action-button'
+                            loading={fetching}
+                            disabled={!credential}
+                            htmlType='submit'
                         >
-                            <Input.Password
-                                autoComplete='current-password'
-                                placeholder='enter your password'
-                                prefix={
-                                    <Text>Password</Text>
-                                }
-                            />
-                        </Form.Item>
-                    )
-                }
-                {
-                    credential || !socialAuthentication ? (
-                        <Form.Item>
-                            <Button
-                                className='cvat-credentials-action-button'
-                                loading={fetching}
-                                disabled={!credential}
-                                htmlType='submit'
-                            >
-                                Next
-                            </Button>
-                        </Form.Item>
-                    ) : socialAuthentication
-                }
+                            Next
+                        </Button>
+                    </Form.Item>
+                ) : (
+                    socialAuthentication
+                )}
             </Form>
         </div>
     );
