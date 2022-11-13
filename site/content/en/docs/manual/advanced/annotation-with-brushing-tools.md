@@ -5,11 +5,11 @@ weight: 13
 description: 'Guide to annotating tasks using  brushing tools.'
 ---
 
-The brushing tool creates a segmentation mask (further - mask) on the top of the image. Use it, when you need to add a label to an object that has several separated parts, but must be counted as one, for example - a house hiding behind trees or a pillar behind a traffic sign.
+The brushing tool creates a segmentation mask (further - mask).
 
-You can annotate images manually or upload already annotated images, you can also convert polygon annotation to masks and the other way around.
+Use it, when you need to add a label to an object that has several separated parts, but must be counted as one, for example - a house hiding behind trees or a pillar behind a traffic sign.
 
-You can use annotation with brush together with polygon-to-mask annotation on the same image.
+You can annotate images manually or upload already annotated images, you can use both: brush and polygon tools on the same image.
 
 See:
 
@@ -21,7 +21,7 @@ See:
 
 ## Brushing tools menu
 
-The brushing tool menu appears on the top of the screen after you click **Draw a mask**:
+The brushing tool menu appears on the top of the screen after you click **Shape**:
 
 ![BT Menu](/images/brushing_tool_menu.png)
 
@@ -30,15 +30,15 @@ It has the following elements:
 |Element|Description|
 |----|-----|
 |![Tick icon](/images/tick_icon.png)| **Save mask** saves the created  mask. The saved mask will appear on the object sidebar|
-|![Add label](/images/brushing_tools_add_label.png)| **Add label** adds a new label to the object sidebar, brushing tool menu switches to **Brush**.|
-|![Brush](/images/brushing_tools_icon.png)| **Brush** applies the mask to the object on the image.|
-|![Eraser](/images/brushing_tools_erase.png)|**Eraser** removes part of the mask from the image.|
-|![Add poly](/images/brushing_tools_add_poly.png)|**Polygon**  selection tool. Selection will be converted to the mask.|
-|![Remove poly](/images/brushing_tools_remove_poly.png)|**Remove polygon selection** removes a part of the polygon selection.|
-|![Brush size](/images/brushing_tools_brush_size.png)|**Brush size** in pixels. <br>**Note:** Visible only when **Brush** is selected.|
-|![Brush shape](/images/brushing_tools_brush_shape.png)|**Brush shape** with two options: circle and square. <br>**Note:** Visible only when **Brush** is selected.|
+|![Save mask and continue](/images/brushing_tools_add_label.png)| **Save mask and continue** adds a new mask to the object sidebar, and allows you to draw a new one immediately.|
+|![Brush](/images/brushing_tools_icon.png)| **Brush**  applies the mask to the object.|
+|![Eraser](/images/brushing_tools_erase.png)|**Eraser** removes part of the mask.|
+|![Add poly](/images/brushing_tools_add_poly.png)|**Polygon**  selection tool. Selection will become a mask.|
+|![Remove poly](/images/brushing_tools_remove_poly.png)|**Remove polygon selection** substracts part of the polygon selection.|
+|![Brush size](/images/brushing_tools_brush_size.png)|**Brush size** in pixels. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.|
+|![Brush shape](/images/brushing_tools_brush_shape.png)|**Brush shape** with two options: circle and square. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.|
 |![Pixel remove](/images/brushing_tools_pixels.png)|**Remove underlying pixels**. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted.|
-|![Label](/images/brushing_tools_label_drop.png)|**Label** that will be assigned to the  mask|
+|![Label](/images/brushing_tools_label_drop.png)|**Label** that will be assigned to the newly created mask||
 |![Move](/images/brushing_tools_brush_move.png)|**Move**. Click and hold to move the menu bar to the other place on the screen|
 
 
@@ -50,7 +50,7 @@ Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), 
 Do the following:
 
 1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
-2. In the **Draw new mask** menu, select label for your mask, and click **Draw a mask**. <br>The **Brush**![Brush](/images/brushing_tools_icon.png) tool will be selected by default.
+2. In the **Draw new mask** menu, select label for your mask, and click **Shape**. <br>The **Brush**![Brush](/images/brushing_tools_icon.png) tool will be selected by default.
 
    ![BT context menu](/images/brushing_tools_context_menu.png)
 
@@ -59,11 +59,11 @@ Do the following:
    ![Brushing](/images/brushing_tools.gif)
 
 4. After you applied the mask, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) to finish the process (or **N** on the keyboard).
-5. Added label will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
+5. Added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
 To add the next label, repeat steps 1 to 5. All added labels will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
-To save the project with all added labels, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
+To save the job  with all added labels, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 
 
 
@@ -73,8 +73,8 @@ Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), 
 
 Do the following:
 
-1. From the From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
-2. In the **Draw new mask** menu, select label for your mask, and click **Draw a mask**.
+1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
+2. In the **Draw new mask** menu, select label for your mask, and click **Shape**.
 
    ![BT context menu](/images/brushing_tools_context_menu.png)
 
@@ -85,18 +85,17 @@ Do the following:
    ![Brushing](/images/brushing_tools_polygon.gif)
 
 6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) to finish the process (or **N** on the keyboard).
-7. Added label will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
+7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). Added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
 To add the next label, repeat steps 1 to 5. All added labels will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
-To save the project with all added labels, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
+To save the job  with all added labels, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 
 
 ## Remove underlying pixels
 
-Use **Remove underlying pixels** tool when you want to draw a new mask on top of the other masks and simultaneously delete the pixels of other masks that are located at the same positions.
+Use **Remove underlying pixels** tool  when you want to add mask and simultaneously delete the pixels of other masks that are located at the same positions. It is highly useful feature to avoid meticulous drawing edge twice between two different objects
 
-You can use this tool with both: brush and polygon-to-mask options.
 
 ![Remove pixel](/images/brushing_tools_pixel_underlying.gif)
 
