@@ -54,7 +54,7 @@ Do the following:
 
    ![BT context menu](/images/brushing_tools_context_menu.png)
 
-3. With the brush, draw a mask on the object you want to label. <br>To correct selection, use **Eraser** ![Eraser](/images/brushing_tools_erase.png)
+3. With the brush, draw a mask on the object you want to label. <br>To erase selection, use **Eraser** ![Eraser](/images/brushing_tools_erase.png)
 
    ![Brushing](/images/brushing_tools.gif)
 
