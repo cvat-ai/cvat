@@ -17,6 +17,7 @@ See:
 - [Annotation with brush](#annotation-with-brush)
 - [Annotation with polygon-to-mask](#annotation-with-polygon-to-mask)
 - [Remove underlying pixels](#remove-underlying-pixels)
+- [AI Tools](#ai-tools)
 - [Import and export](#import-and-export)
 
 ## Brush tool menu
@@ -98,6 +99,17 @@ Use **Remove underlying pixels** tool when you want to add a mask and simultaneo
 
 
 ![Remove pixel](/images/brushing_tools_pixel_underlying.gif)
+
+## AI Tools
+
+You can convert [AI tool](/docs/manual/advanced/ai-tools/) masks to polygons. To do this, use the following [AI tool](/docs/manual/advanced/ai-tools/) menu:
+
+![Save](/images/brushing_tool_ai.jpg)
+
+1. Go to the **Detectors** tab.
+2. Switch toggle **Masks to polygons** to the right.
+3. Add source and destination labels from the drop-down lists.
+4. Click **Annotate**.
 
 ## Import and export
 
