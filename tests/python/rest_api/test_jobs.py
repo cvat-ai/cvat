@@ -545,6 +545,8 @@ class TestJobDataset:
                 (job["id"], tasks[job["task_id"]]["owner"]["username"])
                 for job in jobs_with_shapes
                 if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and tasks[job["task_id"]]["target_storage"] is None
+                and tasks[job["task_id"]]["organization"] is None
             )
         )
         response = self._export_dataset(username, job_id, format="CVAT for images 1.1")
@@ -556,6 +558,8 @@ class TestJobDataset:
                 (job["id"], tasks[job["task_id"]]["owner"]["username"])
                 for job in jobs_with_shapes
                 if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and tasks[job["task_id"]]["target_storage"] is None
+                and tasks[job["task_id"]]["organization"] is None
             )
         )
         response = self._export_annotations(username, job_id, format="CVAT for images 1.1")
