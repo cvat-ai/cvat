@@ -7,6 +7,7 @@ import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
+import { LabelType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
@@ -76,14 +77,16 @@ function LabelsListComponent(): JSX.Element {
                 if (Number.isInteger(activatedStateID)) {
                     const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
                     const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === ObjectType.TAG;
-                    const labelIsApplicable = label.type === 'any' || activatedState.shapeType === label.type || bothAreTags;
+                    const labelIsApplicable = label.type === LabelType.ANY ||
+                        activatedState.shapeType === label.type || bothAreTags;
                     if (activatedState && labelIsApplicable) {
                         activatedState.label = label;
                         dispatch(updateAnnotationsAsync([activatedState]));
                     }
                 } else {
                     const bothAreTags = activeObjectType === ObjectType.TAG && label.type === ObjectType.TAG;
-                    const labelIsApplicable = label.type === 'any' || activeShapeType === label.type || bothAreTags;
+                    const labelIsApplicable = label.type === LabelType.ANY ||
+                        activeShapeType === label.type || bothAreTags;
                     if (labelIsApplicable) {
                         dispatch(rememberObject({ activeLabelID: labelID }));
                         message.destroy();
