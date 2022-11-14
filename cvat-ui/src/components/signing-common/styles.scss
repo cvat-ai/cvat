@@ -36,7 +36,13 @@ $social-google-background: #4286f5;
 
 .cvat-signing-header {
     background: transparent;
-    position: absolute;
+    position: fixed;
+    padding: $grid-unit-size*2 0 0 0;
+    width: 100%;
+
+    svg {
+        transform: none;
+    }
 }
 
 .cvat-signing-background {
@@ -322,8 +328,8 @@ $social-google-background: #4286f5;
     }
 
     letter-spacing: 1px;
+    padding: 0 $grid-unit-size*4 !important;
     margin-bottom: $grid-unit-size;
-    padding: $grid-unit-size $grid-unit-size*4;
     display: flex;
 }
 
