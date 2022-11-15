@@ -588,6 +588,17 @@
         "group": 0,
         "source": "manual",
         "attributes": []
+      },
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [2.4, 4.9, 15.24, 13.21],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
       }
     ],
     "tracks": []

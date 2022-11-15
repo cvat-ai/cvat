@@ -28,7 +28,7 @@ def _import_to_task(dataset, instance_data):
             if ann.type != dm.AnnotationType.bbox:
                 continue
 
-            occluded = dm.util.cast(ann.attributes.pop('occluded', None), bool) is True
+            occluded = ann.attributes.pop('occluded', False) is True
             track_id = ann.attributes.pop('track_id', None)
             attributes = [
                 instance_data.Attribute(name=n, value=str(v))

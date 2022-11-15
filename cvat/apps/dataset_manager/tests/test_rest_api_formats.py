@@ -1213,7 +1213,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)\
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
