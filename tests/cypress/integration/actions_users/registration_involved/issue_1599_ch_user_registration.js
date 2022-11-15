@@ -41,7 +41,7 @@ context('Issue 1599 (Chinese alphabet).', () => {
         });
 
         it('Filling in the placeholder "Password"', () => {
-            cy.get('#password').type(password);
+            cy.get('#password1').type(password);
         });
 
         it('Click to "Submit" button', () => {

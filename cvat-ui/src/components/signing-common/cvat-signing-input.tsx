@@ -38,6 +38,7 @@ function CVATSigningInput(props: SocialAccountLinkProps): JSX.Element {
                 autoComplete={autoComplete}
                 className={valueNonEmpty ? 'cvat-input-floating-label-above' : 'cvat-input-floating-label'}
                 prefix={<Text>{placeholder}</Text>}
+                id={id}
                 onChange={onChange}
             />
         );

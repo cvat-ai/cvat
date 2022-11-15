@@ -229,7 +229,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                 >
                     <CVATSigningInput
                         type={CVATInputType.PASSWORD}
-                        id='password'
+                        id='password1'
                         placeholder='Password'
                         autoComplete='new-password'
                     />

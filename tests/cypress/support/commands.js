@@ -48,7 +48,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     cy.get('#lastName').type(lastName);
     cy.get('#username').type(userName);
     cy.get('#email').type(emailAddr);
-    cy.get('#password').type(password);
+    cy.get('#password1').type(password);
     cy.get('.cvat-credentials-action-button').click();
     if (Cypress.browser.family === 'chromium') {
         cy.url().should('include', '/tasks');
