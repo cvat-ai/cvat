@@ -1,10 +1,12 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
 import { ActiveControl } from 'reducers';
+import { Label, LabelType } from 'cvat-core-wrapper';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 import MoveControl, {
     Props as MoveControlProps,
@@ -20,13 +22,14 @@ import GroupControl, {
 } from 'components/annotation-page/standard-workspace/controls-side-bar/group-control';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ControlVisibilityObserver from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
 
 interface Props {
     keyMap: KeyMap;
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
-    labels: any[];
+    labels: Label[];
     jobInstance: any;
     repeatDrawShape(): void;
     redrawShape(): void;
@@ -55,6 +58,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
+    const applicableLabels = filterApplicableForType(LabelType.CUBOID, labels);
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
             event.preventDefault();
@@ -74,7 +78,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
     };
 
-    if (labels.length) {
+    if (applicableLabels.length) {
         handlers = {
             ...handlers,
             PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
@@ -138,7 +142,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <ObservedDrawCuboidControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
-                disabled={!labels.length}
+                disabled={!applicableLabels.length}
             />
             <ObservedGroupControl
                 switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
@@ -146,7 +150,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 groupObjects={groupObjects}
-                disabled={!labels.length}
+                disabled={!applicableLabels.length}
                 jobInstance={jobInstance}
             />
         </Layout.Sider>
