@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
@@ -15,6 +15,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Link } from 'react-router-dom';
+import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
 
 export interface LoginData {
     credential: string;
@@ -35,8 +36,12 @@ function LoginFormComponent(props: Props): JSX.Element {
     const [form] = Form.useForm();
     const [credential, setCredential] = useState('');
 
-    const inputReset = useCallback((name: string):void => {
-        form.setFieldsValue({ [name]: '' });
+    const inputReset = useCallback((...names: string[]):void => {
+        const fieldsValue = names.reduce((acc: Record<string, string>, name: string) => {
+            acc[name] = '';
+            return acc;
+        }, {});
+        form.setFieldsValue(fieldsValue);
     }, [form]);
     const forgotPasswordLink = (
         <Col className='cvat-credentials-link'>
@@ -97,23 +102,21 @@ function LoginFormComponent(props: Props): JSX.Element {
                 >
                     <Input
                         autoComplete='credential'
-                        placeholder='enter your email or username'
                         prefix={<Text>Email or username</Text>}
-                        suffix={(
-                            credential && (
-                                <Icon
-                                    component={ClearIcon}
-                                    onClick={() => {
-                                        setCredential('');
-                                        inputReset('credential');
-                                    }}
-                                />
-                            )
+                        className={credential ? 'cvat-input-floating-label-above' : 'cvat-input-floating-label'}
+                        suffix={credential && (
+                            <Icon
+                                component={ClearIcon}
+                                onClick={() => {
+                                    setCredential('');
+                                    inputReset('credential', 'password');
+                                }}
+                            />
                         )}
                         onChange={(event) => {
                             const { value } = event.target;
                             setCredential(value);
-                            if (!value) inputReset('credential');
+                            if (!value) inputReset('credential', 'password');
                         }}
                     />
                 </Form.Item>
@@ -129,12 +132,11 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 },
                             ]}
                         >
-                            <Input.Password
-                                autoComplete='current-password'
-                                placeholder='enter your password'
-                                prefix={
-                                    <Text>Password</Text>
-                                }
+                            <CVATSigningInput
+                                type={CVATInputType.PASSWORD}
+                                id='password'
+                                placeholder='Password'
+                                autoComplete='password'
                             />
                         </Form.Item>
                     )

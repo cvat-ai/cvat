@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Icon from '@ant-design/icons';
@@ -28,9 +28,6 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     const defaultCredential = params.get('credential');
-    const inputReset = useCallback((name: string):void => {
-        form.setFieldsValue({ [name]: '' });
-    }, [form]);
     return (
         <div className='cvat-password-reset-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
@@ -74,9 +71,8 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                 >
                     <CVATSigningInput
                         autoComplete='email'
-                        placeholder='enter your email'
-                        prefix='Email'
-                        onReset={() => inputReset('email')}
+                        placeholder='Email'
+                        onReset={() => form.setFieldsValue({ email: '' })}
                     />
                 </Form.Item>
                 <Row>

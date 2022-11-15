@@ -20,8 +20,8 @@ require('cy-verify-downloads').addCustomCommand();
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
-    cy.get('[placeholder="enter your email or username"]').type(username);
-    cy.get('[placeholder="enter your password"]').type(password);
+    cy.get('#credential').type(username);
+    cy.get('#password').type(password);
     cy.get('.cvat-credentials-action-button').click();
     cy.url().should('contain', `/${page}`);
     cy.document().then((doc) => {
