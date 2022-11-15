@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
@@ -36,13 +36,6 @@ function LoginFormComponent(props: Props): JSX.Element {
     const [form] = Form.useForm();
     const [credential, setCredential] = useState('');
 
-    const inputReset = useCallback((...names: string[]):void => {
-        const fieldsValue = names.reduce((acc: Record<string, string>, name: string) => {
-            acc[name] = '';
-            return acc;
-        }, {});
-        form.setFieldsValue(fieldsValue);
-    }, [form]);
     const forgotPasswordLink = (
         <Col className='cvat-credentials-link'>
             <Text strong>
@@ -109,14 +102,14 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 component={ClearIcon}
                                 onClick={() => {
                                     setCredential('');
-                                    inputReset('credential', 'password');
+                                    form.setFieldsValue({ credential: '', password: '' });
                                 }}
                             />
                         )}
                         onChange={(event) => {
                             const { value } = event.target;
                             setCredential(value);
-                            if (!value) inputReset('credential', 'password');
+                            if (!value) form.setFieldsValue({ credential: '', password: '' });
                         }}
                     />
                 </Form.Item>
