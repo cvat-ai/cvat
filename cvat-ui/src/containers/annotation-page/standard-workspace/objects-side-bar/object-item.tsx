@@ -23,9 +23,9 @@ import {
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
-import { Label } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 
 interface OwnProps {
     readonly: boolean;
@@ -326,6 +326,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobInstance,
         } = this.props;
 
+        const applicableLabels = filterApplicableLabels(objectState, labels);
+
         return (
             <ObjectStateItemComponent
                 jobInstance={jobInstance}
@@ -341,9 +343,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attributes={attributes}
                 elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}
-                labels={labels.filter((label: Label) => (
-                    [objectState.shapeType || objectState.objectType, 'any'].includes(label.type)
-                ))}
+                labels={applicableLabels}
                 colorBy={colorBy}
                 activate={this.activate}
                 remove={this.remove}
