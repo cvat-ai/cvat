@@ -738,7 +738,7 @@ class TrackManager(ObjectManager):
 
         shapes = []
         prev_shape = {}
-        for shape in track["shapes"]:
+        for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
             if end_frame <= curr_frame:
                 if not prev_shape:
