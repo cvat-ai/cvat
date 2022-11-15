@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mask tools are supported now (brush, eraser, polygon-plus, polygon-minus, returning masks
 from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
-- Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>)
+- Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 
 ### Changed
@@ -69,6 +69,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 - Cannot assign a resource to a user who has an organization (<https://github.com/opencv/cvat/pull/5218>)
+- Logs and annotations are not saved when logout from a job page (<https://github.com/opencv/cvat/pull/5266>)
+- Added "type" field for all the labels, allows to reduce number of controls on annotation view (<https://github.com/opencv/cvat/pull/5273>)
 - Occluded not applied on canvas instantly for a skeleton elements (<https://github.com/opencv/cvat/pull/5259>)
 - Oriented bounding boxes broken with COCO format ss(<https://github.com/opencv/cvat/pull/5219>)
 - Can't dump annotations with objects type is track from several jobs (<https://github.com/opencv/cvat/pull/5250>)

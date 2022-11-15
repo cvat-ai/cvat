@@ -1,14 +1,16 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Select, { SelectValue } from 'antd/lib/select';
+import { Label } from 'cvat-core-wrapper';
+import LabelSelector from 'components/label-selector/label-selector';
 
 interface Props {
-    currentLabel: string;
-    labels: any[];
-    changeLabel(value: SelectValue): void;
+    currentLabel: number;
+    labels: Label[];
+    changeLabel(value: Label): void;
 }
 
 function ObjectBasicsEditor(props: Props): JSX.Element {
@@ -16,15 +18,12 @@ function ObjectBasicsEditor(props: Props): JSX.Element {
 
     return (
         <div className='cvat-attribute-annotation-sidebar-basics-editor'>
-            <Select value={currentLabel} onChange={changeLabel} style={{ width: '50%' }}>
-                {labels.map(
-                    (label: any): JSX.Element => (
-                        <Select.Option value={label.name} key={label.name}>
-                            {label.name}
-                        </Select.Option>
-                    ),
-                )}
-            </Select>
+            <LabelSelector
+                style={{ width: '50%' }}
+                labels={labels}
+                value={currentLabel}
+                onChange={changeLabel}
+            />
         </div>
     );
 }
