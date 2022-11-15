@@ -8,7 +8,7 @@ import Webhook from 'cvat-core/src/webhook';
 import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
-import { ShapeType } from 'cvat-core/src/enums';
+import { ShapeType, LabelType } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 
 const cvat: any = _cvat;
@@ -28,6 +28,7 @@ export {
     Label,
     Attribute,
     ShapeType,
+    LabelType,
     Storage,
     Webhook,
 };

@@ -91,8 +91,7 @@ export const registerAsync = (
     firstName: string,
     lastName: string,
     email: string,
-    password1: string,
-    password2: string,
+    password: string,
     confirmations: UserConfirmation[],
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.register());
@@ -103,8 +102,7 @@ export const registerAsync = (
             firstName,
             lastName,
             email,
-            password1,
-            password2,
+            password,
             confirmations,
         );
 

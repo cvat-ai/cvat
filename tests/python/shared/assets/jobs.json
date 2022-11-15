@@ -326,11 +326,11 @@
       "project_id": 1,
       "stage": "annotation",
       "start_frame": 15,
-      "state": "new",
+      "state": "in progress",
       "status": "annotation",
       "stop_frame": 19,
       "task_id": 9,
-      "updated_date": "2022-06-22T09:18:45.296000Z",
+      "updated_date": "2022-11-03T13:57:26.346000Z",
       "url": "http://localhost:8080/api/jobs/14"
     },
     {
