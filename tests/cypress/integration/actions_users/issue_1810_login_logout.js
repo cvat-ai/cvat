@@ -13,7 +13,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
 
     function login(credential, password) {
         cy.get('#credential').clear().type(credential);
-        cy.get('#password1').clear().type(password);
+        cy.get('#password').clear().type(password);
         cy.get('[type="submit"]').click();
     }
 
