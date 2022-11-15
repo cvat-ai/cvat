@@ -59,11 +59,23 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
         xl: { span: 8 },
         xxl: { span: 10 },
     };
+    const logoSizes = {
+        xs: { span: 21 },
+        sm: { span: 21 },
+        md: { span: 21 },
+        lg: { span: 21 },
+        xl: { span: 21 },
+        xxl: { span: 22 },
+    };
     return (
         <Layout>
             <SVGSigningBackground className='cvat-signing-background' />
             <Header className='cvat-signing-header'>
-                <Icon className='cvat-logo-icon' component={CVATMinimalisticLogo} />
+                <Row justify='center' align='middle'>
+                    <Col {...logoSizes}>
+                        <Icon className='cvat-logo-icon' component={CVATMinimalisticLogo} />
+                    </Col>
+                </Row>
             </Header>
             <Layout className='cvat-signing-layout'>
                 <Content>

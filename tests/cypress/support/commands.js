@@ -20,8 +20,8 @@ require('cy-verify-downloads').addCustomCommand();
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
-    cy.get('[placeholder="enter your email or username"]').type(username);
-    cy.get('[placeholder="enter your password"]').type(password);
+    cy.get('#credential').type(username);
+    cy.get('#password').type(password);
     cy.get('.cvat-credentials-action-button').click();
     cy.url().should('contain', `/${page}`);
     cy.document().then((doc) => {
@@ -48,7 +48,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     cy.get('#lastName').type(lastName);
     cy.get('#username').type(userName);
     cy.get('#email').type(emailAddr);
-    cy.get('#password').type(password);
+    cy.get('#password1').type(password);
     cy.get('.cvat-credentials-action-button').click();
     if (Cypress.browser.family === 'chromium') {
         cy.url().should('include', '/tasks');
