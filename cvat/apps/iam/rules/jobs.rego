@@ -4,7 +4,8 @@ import data.organizations
 
 # input: {
 #     "scope": <"view"|"list"|"update:state"|"update:stage"|"update:assignee""delete"|
-#         "view:annotations"|"update:annotations"|"delete:annotations"|"view:data"|"export:dataset"> or null,
+#         "view:annotations"|"update:annotations"|"delete:annotations"|"view:data"|
+#         "export:annotations" | "export:dataset" |> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
