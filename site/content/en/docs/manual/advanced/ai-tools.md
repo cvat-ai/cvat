@@ -150,20 +150,6 @@ Supported DL models are not bound to the label and can be used for any objects.
 
 Fast online Object Tracking and Segmentation. Tracker is able to track different objects in one server request.
 Trackable object will be tracked automatically if the previous frame was
-a latest keyframe for the object. Has a tracker indication on canvas. `SiamMask` tracker supported CUDA.
+a latest keyframe for the object. Have tracker indication on canvas. `SiamMask` tracker supported CUDA.
 
 > If you plan to track simple non-overlapping objects consider using fast client-side [TrackerMIL from OpenCV](/docs/manual/advanced/opencv-tools/#trackermil).
-
-![Siam Mask](/images/tracker_siammask.jpg)
-
-## Transformer Tracking (TransT)
-
-Simple and efficient online object tracking and segmentation tool. Able to track different objects in one server request.
-Trackable object will be tracked automatically if the previous frame was a latest keyframe for the object.
-Has tracker indication on canvas.
-
-For more information, see [TransT Github](https://github.com/chenxin-dlut/TransT)
-
-![Siam Mask](/images/tracker_TransT.jpg)
-
-
