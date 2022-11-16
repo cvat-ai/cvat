@@ -454,7 +454,7 @@ class StorageSerializer(serializers.ModelSerializer):
         fields = ('id', 'location', 'cloud_storage_id')
 
 class TaskReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
+    labels = LabelSerializer(many=True, source='get_labels')
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -483,11 +483,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'overlap': { 'allow_null': True },
         }
 
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-        if instance.project_id:
-            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
-        return response
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
