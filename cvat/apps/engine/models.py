@@ -364,6 +364,10 @@ class Task(models.Model):
     class Meta:
         default_permissions = ()
 
+    def get_labels(self):
+        project = self.project
+        return project.label_set if project else self.label_set
+
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
 
