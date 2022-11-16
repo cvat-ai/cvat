@@ -692,7 +692,7 @@ export interface AnnotationState {
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
-        activeLabelID: number;
+        activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
     };
