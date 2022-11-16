@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +15,7 @@ import { DimensionType, ShapeType } from 'reducers';
 import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Label } from 'components/labels-editor/common';
+import { Label } from 'cvat-core-wrapper';
 
 interface Props {
     shapeType: ShapeType;
@@ -154,7 +155,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         <Button onClick={onDrawShape}>Shape</Button>
                     </CVATTooltip>
                 </Col>
-                {is2D && (
+                {is2D && shapeType !== ShapeType.MASK && (
                     <Col span={12}>
                         <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
                             <Button onClick={onDrawTrack}>Track</Button>

@@ -1,14 +1,15 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
-import { CombinedState, DimensionType } from 'reducers';
+import { DimensionType } from 'reducers';
+import { Label } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { shift } from 'utils/math';
 
@@ -18,6 +19,7 @@ interface ShortcutLabelMap {
 
 type Props = {
     onShortcutPress(event: KeyboardEvent | undefined, labelID: number): void;
+    labels: Label[];
 };
 
 const defaultShortcutLabelMap = {
@@ -34,8 +36,7 @@ const defaultShortcutLabelMap = {
 } as ShortcutLabelMap;
 
 const ShortcutsSelect = (props: Props): JSX.Element => {
-    const { onShortcutPress } = props;
-    const { labels } = useSelector((state: CombinedState) => state.annotation.job);
+    const { labels, onShortcutPress } = props;
     const [shortcutLabelMap, setShortcutLabelMap] = useState(defaultShortcutLabelMap);
 
     const keyMap: KeyMap = {};
@@ -69,7 +70,7 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
                 if (event) {
                     event.preventDefault();
                 }
-                onShortcutPress(event, label.id);
+                onShortcutPress(event, label.id as number);
             };
         });
 
