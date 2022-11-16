@@ -76,6 +76,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Oriented bounding boxes broken with COCO format ss(<https://github.com/opencv/cvat/pull/5219>)
 - Fixed upload resumption in production environments
   (<https://github.com/opencv/cvat/issues/4839>)
+- Fixed job exporting (<https://github.com/opencv/cvat/pull/5282>)
 - Visibility and ignored information fail to be loaded (MOT dataset format) (<https://github.com/opencv/cvat/pull/5270>)
 
 ### Security
