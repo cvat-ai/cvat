@@ -574,6 +574,35 @@
       }
     ]
   },
+  "MOT 1.1 shapes only": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [9.4, 12.09, 17.2, 18.19],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [2.4, 4.9, 15.24, 13.21],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "MOTS PNG 1.0": {
     "version": 0,
     "tags": [],
