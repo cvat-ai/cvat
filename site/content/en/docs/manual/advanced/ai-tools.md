@@ -160,7 +160,7 @@ a latest keyframe for the object. Has a tracker indication on canvas. `SiamMask`
 
 Simple and efficient online object tracking and segmentation tool. Able to track different objects in one server request.
 Trackable object will be tracked automatically if the previous frame was a latest keyframe for the object.
-Has tracker indication on canvas. This is a modified version of the python framework PyTracking based on Pytorch.
+Has tracker indication on canvas.
 
 For more information, see [TransT Github](https://github.com/chenxin-dlut/TransT)
 
