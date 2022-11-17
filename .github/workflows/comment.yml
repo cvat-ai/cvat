@@ -25,7 +25,7 @@ jobs:
           then
             ALLOW="true"
           fi
-          echo ::set-output name=allow::${ALLOW}
+          echo "allow=${ALLOW}" >> $GITHUB_OUTPUT
 
       - name: Verify that author of comment is collaborator
         if: steps.check-author.outputs.allow == ''
@@ -38,7 +38,7 @@ jobs:
         id: get-ref
         run: |
           SHA=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }} | jq -r '.head.sha')
-          echo ::set-output name=ref::${SHA}
+          echo "ref=${SHA}" >> $GITHUB_OUTPUT
 
       - name: Send comment. Test are executing
         id: send-status
@@ -51,7 +51,7 @@ jobs:
             /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
             -f body="${BODY}" | jq '.id')
 
-          echo ::set-output name=cid::${COMMENT_ID}
+          echo "cid=${COMMENT_ID}" >> $GITHUB_OUTPUT
 
   run-full:
     needs: verify_author

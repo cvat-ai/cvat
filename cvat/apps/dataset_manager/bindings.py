@@ -4,9 +4,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from functools import reduce
 import os.path as osp
 import re
 import sys
+import numpy as np
 from collections import namedtuple
 from pathlib import Path
 from types import SimpleNamespace
@@ -26,7 +28,7 @@ from cvat.apps.engine.models import Image as Img
 from cvat.apps.engine.models import Label, LabelType, Project, ShapeType, Task
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import EllipsesToMasks
+from .formats.transformations import EllipsesToMasks, CVATRleToCOCORle
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -1568,6 +1570,15 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 "group": anno_group,
                 "attributes": anno_attr,
             }), cvat_frame_anno.height, cvat_frame_anno.width)
+        elif shape_obj.type == ShapeType.MASK:
+            anno = CVATRleToCOCORle.convert_mask(SimpleNamespace(**{
+                "points": shape_obj.points,
+                "label": anno_label,
+                "z_order": shape_obj.z_order,
+                "rotation": shape_obj.rotation,
+                "group": anno_group,
+                "attributes": anno_attr,
+            }), cvat_frame_anno.height, cvat_frame_anno.width)
         elif shape_obj.type == ShapeType.POLYLINE:
             anno = dm.PolyLine(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
@@ -1671,7 +1682,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.polyline: ShapeType.POLYLINE,
         dm.AnnotationType.points: ShapeType.POINTS,
         dm.AnnotationType.cuboid_3d: ShapeType.CUBOID,
-        dm.AnnotationType.skeleton: ShapeType.SKELETON
+        dm.AnnotationType.skeleton: ShapeType.SKELETON,
+        dm.AnnotationType.mask: ShapeType.MASK
     }
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
@@ -1715,9 +1727,27 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     points = []
                     if ann.type == dm.AnnotationType.cuboid_3d:
                         points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
+                    elif ann.type == dm.AnnotationType.mask:
+                        istrue = np.argwhere(ann.image == 1).transpose()
+                        top = int(istrue[0].min())
+                        left = int(istrue[1].min())
+                        bottom = int(istrue[0].max())
+                        right = int(istrue[1].max())
+                        points = ann.image[top:bottom + 1, left:right + 1]
+
+                        def reduce_fn(acc, v):
+                            if v == acc['val']:
+                                acc['res'][-1] += 1
+                            else:
+                                acc['val'] = v
+                                acc['res'].append(1)
+                            return acc
+                        points = reduce(reduce_fn, points.reshape(np.prod(points.shape)), { 'res': [0], 'val': False })['res']
+                        points.extend([int(left), int(top), int(right), int(bottom)])
                     elif ann.type != dm.AnnotationType.skeleton:
                         points = ann.points
 
+                    rotation = ann.attributes.pop('rotation', 0.0)
                     # Use safe casting to bool instead of plain reading
                     # because in some formats return type can be different
                     # from bool / None
@@ -1765,6 +1795,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             z_order=ann.z_order if ann.type != dm.AnnotationType.cuboid_3d else 0,
                             group=group_map.get(ann.group, 0),
                             source=source,
+                            rotation=rotation,
                             attributes=attributes,
                             elements=elements,
                         ))
@@ -1789,6 +1820,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                             points=points,
                             z_order=ann.z_order if ann.type != dm.AnnotationType.cuboid_3d else 0,
                             source=source,
+                            rotation=rotation,
                             attributes=attributes,
                         )
 
@@ -1863,6 +1895,9 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
     else:
         for label in dataset.categories()[dm.AnnotationType.label].items:
             if not project_annotation.db_project.label_set.filter(name=label.name).exists():
+                if label.name == "background":
+                    dataset.transform("remap_labels", mapping={"background": ""}, default="keep")
+                    continue
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()
@@ -1885,17 +1920,24 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
             'data_root': dataset.data_path + osp.sep,
         }
 
+        root_paths = set()
         for dataset_item in subset_dataset:
             if dataset_item.image and dataset_item.image.has_data:
                 dataset_files['media'].append(dataset_item.image.path)
+                data_root = dataset_item.image.path.rsplit(dataset_item.id, 1)
+                if len(data_root) == 2:
+                    root_paths.add(data_root[0])
             elif dataset_item.point_cloud:
                 dataset_files['media'].append(dataset_item.point_cloud)
+                data_root = dataset_item.point_cloud.rsplit(dataset_item.id, 1)
+                if len(data_root) == 2:
+                    root_paths.add(data_root[0])
+
             if isinstance(dataset_item.related_images, list):
                 dataset_files['media'] += \
                     list(map(lambda ri: ri.path, dataset_item.related_images))
 
-        shortes_path = min(dataset_files['media'], key=lambda x: len(Path(x).parts), default=None)
-        if shortes_path is not None:
-            dataset_files['data_root'] = str(Path(shortes_path).parent.absolute()) + osp.sep
+        if len(root_paths):
+            dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)

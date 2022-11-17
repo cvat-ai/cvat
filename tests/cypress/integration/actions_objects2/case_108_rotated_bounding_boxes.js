@@ -117,7 +117,7 @@ context('Rotated bounding boxes.', () => {
 
             cy.goCheckFrameNumber(3);
             // Split tracks
-            cy.get('.cvat-split-track-control').click();
+            cy.pressSplitControl();
             // A single click does not reproduce the split a track scenario in cypress test.
             cy.get('#cvat_canvas_shape_2').click().click();
 

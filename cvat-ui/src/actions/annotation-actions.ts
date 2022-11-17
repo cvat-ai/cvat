@@ -208,6 +208,7 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME = 'RESTORE_FRAME',
     RESTORE_FRAME_SUCCESS = 'RESTORE_FRAME_SUCCESS',
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
+    UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -316,6 +317,15 @@ export function updateCanvasContextMenu(
             type,
             pointID,
         },
+    };
+}
+
+export function updateCanvasBrushTools(config: {
+    visible?: boolean, left?: number, top?: number
+}): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_BRUSH_TOOLS_CONFIG,
+        payload: config,
     };
 }
 
@@ -1212,8 +1222,9 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
             const states = await Promise.all(promises);
 
-            const withSkeletonElements = states.some((state: any) => state.parentID !== null);
-            if (withSkeletonElements) {
+            const needToUpdateAll = states
+                .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
+            if (needToUpdateAll) {
                 dispatch(fetchAnnotationsAsync());
                 return;
             }
@@ -1458,6 +1469,7 @@ const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
     [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
     [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
     [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
 };
 
 export function pasteShapeAsync(): ThunkAction {

@@ -14,6 +14,15 @@ export type StringObject = {
     [index: string]: string;
 };
 
+enum AdvancedAuthMethods {
+    GOOGLE_ACCOUNT_AUTHENTICATION = 'GOOGLE_ACCOUNT_AUTHENTICATION',
+    GITHUB_ACCOUNT_AUTHENTICATION = 'GITHUB_ACCOUNT_AUTHENTICATION',
+}
+
+export type AdvancedAuthMethodsList = {
+    [name in AdvancedAuthMethods]: boolean;
+};
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -23,6 +32,10 @@ export interface AuthState {
     showChangePasswordDialog: boolean;
     allowChangePassword: boolean;
     allowResetPassword: boolean;
+    hasEmailVerificationBeenSent: boolean;
+    advancedAuthFetching: boolean;
+    advancedAuthInitialized: boolean;
+    advancedAuthList: AdvancedAuthMethodsList;
 }
 
 export interface ProjectsQuery {
@@ -317,6 +330,7 @@ export interface Model {
     id: string;
     name: string;
     labels: string[];
+    version: number;
     attributes: Record<string, ModelAttribute[]>;
     framework: string;
     description: string;
@@ -558,6 +572,7 @@ export enum ActiveControl {
     DRAW_POLYLINE = 'draw_polyline',
     DRAW_POINTS = 'draw_points',
     DRAW_ELLIPSE = 'draw_ellipse',
+    DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
     DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
@@ -577,6 +592,7 @@ export enum ShapeType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    MASK = 'mask',
     SKELETON = 'skeleton',
 }
 
@@ -590,6 +606,7 @@ export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
+    Z_ORDER = 'Z Order',
 }
 
 export enum ContextMenuType {
@@ -632,6 +649,11 @@ export interface AnnotationState {
             parentID: number | null;
             clientID: number | null;
         };
+        brushTools: {
+            visible: boolean;
+            top: number;
+            left: number;
+        };
         instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
@@ -670,7 +692,7 @@ export interface AnnotationState {
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
-        activeLabelID: number;
+        activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
     };

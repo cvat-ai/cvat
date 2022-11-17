@@ -303,7 +303,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2022-06-08T08:33:20.808000Z",
+      "updated_date": "2022-10-17T17:09:36.570000Z",
       "url": "http://localhost:8080/api/tasks/13"
     },
     {
@@ -550,7 +550,7 @@
               "assignee": null,
               "id": 14,
               "stage": "annotation",
-              "state": "new",
+              "state": "in progress",
               "status": "annotation",
               "url": "http://localhost:8080/api/jobs/14"
             }
@@ -564,7 +564,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2022-03-05T09:47:49.667000Z",
+      "updated_date": "2022-11-03T13:57:26.007000Z",
       "url": "http://localhost:8080/api/tasks/9"
     },
     {

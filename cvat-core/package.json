@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "7.0.1",
+  "version": "7.2.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "src/api.ts",
   "scripts": {
@@ -9,7 +9,7 @@
     "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs",
     "coveralls": "cat ./reports/coverage/lcov.info | coveralls",
     "type-check": "tsc --noEmit",
-    "type-check:watch": "yarn run type-check -- --watch"
+    "type-check:watch": "yarn run type-check --watch"
   },
   "author": "CVAT.ai",
   "license": "MIT",

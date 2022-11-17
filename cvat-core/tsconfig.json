@@ -8,6 +8,7 @@
       "isolatedModules": true,
       "noEmit": true,
       "baseUrl": "src",
+      "resolveJsonModule": true,
     },
     "include": ["src/*.ts"]
 }

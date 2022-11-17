@@ -25,3 +25,7 @@ services:
         no_proxy:
         socks_proxy:
       dockerfile: Dockerfile.ui
+
+  cvat_opa:
+    ports:
+      - '8181:8181'

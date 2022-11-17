@@ -19,6 +19,15 @@ cvat:
       envs:
         ALLOWED_HOSTS: "*"
         DJANGO_MODWSGI_EXTRA_ARGS: ""
+        USE_ALLAUTH_SOCIAL_ACCOUNTS: false
+      secret:
+        create: true
+        name: cvat-server-secret
+        socialAccountAuthentication:
+          googleClientId: ""
+          googleClientSecret: ""
+          githubClientId: ""
+          githubClientSecret: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
@@ -43,6 +52,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      webhooks:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
@@ -55,7 +74,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: latest
+    tag: dev
     permissionFix:
       enabled: true
     service:
@@ -74,7 +93,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: latest
+    tag: dev
     labels: {}
     #  test: test
     annotations: {}
@@ -156,8 +175,6 @@ cvat:
           targetPort: 8181
           protocol: TCP
           name: http
-    defaultStorage:
-        enabled: true
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
@@ -272,7 +289,7 @@ ingress:
           service:
             name: backend-service
             port: 8080
-        - path: /static/admin
+        - path: /static
           pathType: "Prefix"
           service:
             name: backend-service

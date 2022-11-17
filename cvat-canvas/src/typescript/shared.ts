@@ -361,4 +361,46 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
     }
 }
 
+export function imageDataToDataURL(
+    imageBitmap: Uint8ClampedArray,
+    width: number,
+    height: number,
+    handleResult: (dataURL: string) => Promise<void>,
+): void {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    canvas.getContext('2d').putImageData(
+        new ImageData(imageBitmap, width, height), 0, 0,
+    );
+
+    canvas.toBlob((blob) => {
+        const dataURL = URL.createObjectURL(blob);
+        handleResult(dataURL).finally(() => {
+            URL.revokeObjectURL(dataURL);
+        });
+    }, 'image/png');
+}
+
+export function alphaChannelOnly(imageData: Uint8ClampedArray): number[] {
+    const alpha = new Array(imageData.length / 4);
+    for (let i = 3; i < imageData.length; i += 4) {
+        alpha[Math.floor(i / 4)] = imageData[i] > 0 ? 1 : 0;
+    }
+    return alpha;
+}
+
+export function expandChannels(r: number, g: number, b: number, alpha: number[], endOffset = 0): Uint8ClampedArray {
+    const imageBitmap = new Uint8ClampedArray((alpha.length - endOffset) * 4);
+    for (let i = 0; i < alpha.length - endOffset; i++) {
+        const val = alpha[i] ? 1 : 0;
+        imageBitmap[i * 4] = r;
+        imageBitmap[i * 4 + 1] = g;
+        imageBitmap[i * 4 + 2] = b;
+        imageBitmap[i * 4 + 3] = val * 255;
+    }
+    return imageBitmap;
+}
+
 export type PropType<T, Prop extends keyof T> = T[Prop];
