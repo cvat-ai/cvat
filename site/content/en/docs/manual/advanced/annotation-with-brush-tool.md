@@ -7,7 +7,10 @@ description: 'Guide to annotating tasks using brush tools.'
 
 
 
-With a brush tool, you can create masks for disjoint objects, that have multiple parts, such as a house hiding behind trees, a car behind a pedestrian, or a pillar behind a traffic sign. The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
+With a brush tool, you can create masks for disjoint objects, that have multiple parts,
+such as a house hiding behind trees, a car behind a pedestrian, or a pillar behind a
+traffic sign.
+The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
 
 Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. For more information about segmentation masks in CVAT, see [Creating masks](/docs/manual/advanced/annotation-with-polygons/creating-mask/).
 
@@ -46,7 +49,8 @@ It has the following elements:
 
 ## Annotation with brush
 
-Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, add labels, and open the workspace.
+Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, add labels,
+and open the workspace.
 
 Do the following:
 
@@ -59,10 +63,11 @@ Do the following:
 
    ![Brushing](/images/brushing_tools.gif)
 
-4. After you applied the mask, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) to finish the process (or **N** on the keyboard).
+4. After you applied the mask, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
 5. Added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
-To add the next object, repeat steps 1 to 5. All added objects will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
+To add the next object, repeat steps 1 to 5.
+All added objects will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
 To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 
@@ -85,24 +90,27 @@ Do the following:
 
    ![Brushing](/images/brushing_tools_polygon.gif)
 
-6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) to finish the process (or **N** on the keyboard).
+6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
 7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). The added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
-To add the next object, repeat steps 1 to 5. All added objects will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
+To add the next object, repeat steps 1 to 5.
+
+All added objects will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
 To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
 
 
 ## Remove underlying pixels
 
-Use **Remove underlying pixels** tool when you want to add a mask and simultaneously delete the pixels of other masks that are located at the same positions. It is a highly useful feature to avoid meticulous drawing edges twice between two different objects.
+Use **Remove underlying pixels** tool when you want to add a mask and simultaneously delete the pixels of <br>other masks that are located at the same positions. It is a highly useful feature to avoid meticulous drawing edges twice between two different objects.
 
 
 ![Remove pixel](/images/brushing_tools_pixel_underlying.gif)
 
 ## AI Tools
 
-You can convert [AI tool](/docs/manual/advanced/ai-tools/) masks to polygons. To do this, use the following [AI tool](/docs/manual/advanced/ai-tools/) menu:
+You can convert [AI tool](/docs/manual/advanced/ai-tools/) masks to polygons.
+To do this, use the following [AI tool](/docs/manual/advanced/ai-tools/) menu:
 
 ![Save](/images/brushing_tool_ai.jpg)
 
@@ -115,7 +123,8 @@ You can convert [AI tool](/docs/manual/advanced/ai-tools/) masks to polygons. To
 
 For export, see [Export dataset](/docs/manual/advanced/export-import-datasets/)
 
-Import follows the general [import dataset](/docs/manual/advanced/export-import-datasets/) procedure, with the additional option of converting masks to polygons.
+Import follows the general [import dataset](/docs/manual/advanced/export-import-datasets/) procedure,
+with the additional option of converting masks to polygons.
 
 >**Note:** This option is available for formats that work with masks only.
 
