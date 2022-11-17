@@ -90,7 +90,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             if allow:
                 return allow
             else:
-                raise RequestNotAllowedError(result.get('reason', ''))
+                raise RequestNotAllowedError(result.get('reasons', []))
         elif isinstance(result, bool):
             return result
         else:

@@ -1,72 +1,50 @@
 package limits
+
 import future.keywords.if
 import future.keywords.in
 
-# Limits
-USER_TASKS_LIMIT := 10
-ORG_TASKS_LIMIT := 10
 
-limit_checks["project user staff sandbox project task create"] = reason if {
-    input.resource.user.num_resources < USER_TASKS_LIMIT
+user_tasks_limit := { "allow": true, "reason": "" } if {
+    null != input.resource.user.max_resources
+    input.resource.user.num_resources < input.resource.user.max_resources
+} else := { "allow": false, "reason": "user tasks limit reached" }
 
-    reason := "user project limit is reached"
-}
+user_projects_limit := { "allow": true, "reason": "" } if {
+    null != input.resource.user.max_resources
+    input.resource.user.num_resources < input.resource.user.max_resources
+} else := { "allow": false, "reason": "user projects limit reached" }
 
-limit_checks["org user supervisor org project task create"] = reason if {
-    # FIXME: this condition is probably using invalid input
-    input.resource.user.num_resources < ORG_TASKS_LIMIT
+user_project_tasks_limit := { "allow": true, "reason": "" } if {
+    null != input.resource.project.organization.max_resources
+    input.resource.project.organization.num_resources < input.resource.project.organization.max_resources
+} else := { "allow": false, "reason": "user project tasks limit reached" }
 
-    reason := "org project limit is reached"
-}
+org_tasks_limit = { "allow": true, "reason": "" } if {
+    null != input.resource.organization.max_resources
+    input.resource.organization.num_resources < input.resource.organization.max_resources
+} else := { "allow": false, "reason": "org tasks limit reached" }
 
-limit_checks["org project worker staff org project task create"] = reason if {
-    # FIXME: this condition is probably using invalid input
-    input.resource.user.num_resources < ORG_TASKS_LIMIT
+org_projects_limit := { "allow": true, "reason": "" } if {
+    null != input.resource.organization.max_resources
+    input.resource.organization.num_resources < input.resource.organization.max_resources
+} else := { "allow": false, "reason": "org projects limit reached" }
 
-    reason := "project task limit is reached"
-}
+org_project_tasks_limit := { "allow": true, "reason": "" } if {
+    null != input.resource.project.organization.max_resources
+    input.resource.project.organization.num_resources < input.resource.project.organization.max_resources
+} else := { "allow": false, "reason": "org project tasks limit reached" }
 
-limit_checks["user sandbox task create"] = reason if {
-    input.resource.user.num_resources < USER_TASKS_LIMIT
+project_webhooks := { "allow": true, "reason": "" } if {
+    null != input.resource.user.max_resources
+    input.resource.user.num_resources < input.resource.user.max_resources
+} else := { "allow": false, "reason": "project webhooks limit reached" }
 
-    reason := "user task limit is reached"
-}
+org_webhooks := { "allow": true, "reason": "" } if {
+    null != input.resource.organization.max_resources
+    input.resource.organization.num_resources < input.resource.organization.max_resources
+} else := { "allow": false, "reason": "org webhooks limit reached" }
 
-limit_checks["org user supervisor org task create"] = reason if {
-    # FIXME: this condition is probably using invalid input
-    input.resource.user.num_resources < ORG_TASKS_LIMIT
-
-    reason := "org task limit is reached"
-}
-
-limit_checks["project webhooks"] = reason if {
-    input.resource.num_resources < PROJECT_WEBHOOKS_LIMIT
-
-    reason := "project webhooks limit reached"
-}
-
-limit_checks["org webhooks"] = reason if {
-    input.resource.num_resources < ORG_WEBHOOKS_LIMIT
-
-    reason := "org webhooks limit reached"
-}
-
-limit_checks["user projects"] = reason if {
-    input.resource.user.num_resources < USER_PROJECTS_LIMIT
-
-    reason := "user projects limit reached"
-}
-
-limit_checks["org projects"] = reason if {
-    input.resource.user.num_resources < ORG_PROJECTS_LIMIT
-
-    reason := "org projects limit reached"
-}
-
-limit_checks["user orgs"] = reason if {
-    input.resource.user.num_resources < USER_ORGS_LIMIT
-
-    reason := "user orgs limit reached"
-}
-
-
+user_orgs := { "allow": true, "reason": "" } if {
+    null != input.resource.user.max_resources
+    input.resource.user.num_resources < input.resource.user.max_resources
+} else := { "allow": false, "reason": "user orgs limit reached" }
