@@ -18,6 +18,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import os
+
 from django.apps import apps
 from django.contrib import admin
 from django.urls import path, include
@@ -45,3 +47,9 @@ if apps.is_installed('cvat.apps.webhooks'):
 
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
+
+if apps.is_installed('cvat.apps.service_unavailable') and \
+    'service_unavailable' == os.environ.get('DJANGO_CONFIGURATION'):
+    urlpatterns = [
+        path('', include('cvat.apps.service_unavailable.urls'))
+    ]
