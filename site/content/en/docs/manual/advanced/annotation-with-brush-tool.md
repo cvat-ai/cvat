@@ -5,14 +5,12 @@ weight: 13
 description: 'Guide to annotating tasks using brush tools.'
 ---
 
-
-
 With a brush tool, you can create masks for disjoint objects, that have multiple parts,
 such as a house hiding behind trees, a car behind a pedestrian, or a pillar behind a
 traffic sign.
 The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
 
-Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. For more information about segmentation masks in CVAT, see [Creating masks](/docs/manual/advanced/annotation-with-polygons/creating-mask/).
+Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see [Creating masks](/docs/manual/advanced/annotation-with-polygons/creating-mask/).
 
 See:
 
@@ -75,7 +73,7 @@ To save the job with all added objects, on the top menu click **Save** ![Save](/
 
 ## Annotation with polygon-to-mask
 
-Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, add labels, and open the workspace.
+Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, <br>add labels, and open the workspace.
 
 Do the following:
 
@@ -86,12 +84,12 @@ Do the following:
 
 3. In the brush tool menu, select **Polygon** ![Add poly](/images/brushing_tools_add_poly.png).
 4. With the **Polygon**![Add poly](/images/brushing_tools_add_poly.png) tool, draw a mask for the object you want to label. <br>To correct selection, use **Remove polygon selection** ![Remove poly](/images/brushing_tools_remove_poly.png).
-5. Use **Save mask** ![Tick icon](/images/tick_icon.png) (or **N** on the keyboard) to switch between add/remove polygon tools:
+5. Use **Save mask** ![Tick icon](/images/tick_icon.png) (or **N** on the keyboard) <br>to switch between add/remove polygon tools:
 
    ![Brushing](/images/brushing_tools_polygon.gif)
 
 6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
-7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). The added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
+7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). <br>The added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
 
 To add the next object, repeat steps 1 to 5.
 
