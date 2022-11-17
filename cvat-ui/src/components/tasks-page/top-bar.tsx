@@ -1,19 +1,23 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
+
 import { Row, Col } from 'antd/lib/grid';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Upload from 'antd/lib/upload';
 import Input from 'antd/lib/input';
-
+import { importActions } from 'actions/import-actions';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
-import { TasksQuery } from 'reducers/interfaces';
+import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
+import { MutliPlusIcon } from 'icons';
+import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
@@ -23,7 +27,6 @@ const FilteringComponent = ResourceFilterHOC(
 );
 
 interface VisibleTopBarProps {
-    onImportTask(file: File): void;
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
@@ -32,8 +35,9 @@ interface VisibleTopBarProps {
 }
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
+    const dispatch = useDispatch();
     const {
-        importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportTask,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
@@ -90,7 +94,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                     <Dropdown
                         trigger={['click']}
                         overlay={(
-                            <div className='cvat-tasks-page-control-buttons-wrapper'>
+                            <CvatDropdownMenuPaper>
                                 <Button
                                     className='cvat-create-task-button'
                                     type='primary'
@@ -99,27 +103,25 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                 >
                                     Create a new task
                                 </Button>
-                                <Upload
-                                    accept='.zip'
-                                    multiple={false}
-                                    showUploadList={false}
-                                    beforeUpload={(file: File): boolean => {
-                                        onImportTask(file);
-                                        return false;
-                                    }}
-                                    className='cvat-import-task'
+                                <Button
+                                    className='cvat-create-multi-tasks-button'
+                                    type='primary'
+                                    onClick={(): void => history.push('/tasks/create?many=true')}
+                                    icon={<span className='anticon'><MutliPlusIcon /></span>}
                                 >
-                                    <Button
-                                        className='cvat-import-task-button'
-                                        type='primary'
-                                        disabled={importing}
-                                        icon={<UploadOutlined />}
-                                    >
-                                        Create from backup
-                                        {importing && <LoadingOutlined />}
-                                    </Button>
-                                </Upload>
-                            </div>
+                                    Create multi tasks
+                                </Button>
+                                <Button
+                                    className='cvat-import-task-button'
+                                    type='primary'
+                                    disabled={importing}
+                                    icon={<UploadOutlined />}
+                                    onClick={() => dispatch(importActions.openImportBackupModal('task'))}
+                                >
+                                    Create from backup
+                                    {importing && <LoadingOutlined />}
+                                </Button>
+                            </CvatDropdownMenuPaper>
                         )}
                     >
                         <Button type='primary' className='cvat-create-task-dropdown' icon={<PlusOutlined />} />

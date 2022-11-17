@@ -49,8 +49,13 @@ or create a new project by clicking on the `+` button and select `Create New Pro
 > Read more about [organizations](/docs/manual/advanced/organization/).
 
 You can change: the name of the project, the list of labels
-(which will be used for tasks created as parts of this project) and a link to the issue.
-Learn more about [creating a label list](/docs/manual/basics/creating_an_annotation_task/#labels).
+(which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
+In advanced configuration also you can specify: a link to the issue, source and target storages.
+Learn more about [creating a label list](/docs/manual/basics/creating_an_annotation_task/#labels),
+[creating the skeleton](/docs/manual/advanced/annotation-with-skeletons/creating-the-skeleton/) and [attach cloud storage](/docs/manual/basics/attach-cloud-storage/).
+
+To save and open project click on `Submit & Open` button. Also you
+can click on `Submit & Continue` button for creating several projects in sequence
 
 ![](/images/image191.jpg)
 
@@ -68,9 +73,11 @@ Here you can do the following:
    - `Backup project` - make a backup of the project read more in the [backup](/docs/manual/advanced/backup/) section.
    - `Delete` - remove the project and all related tasks.
 1. Change issue tracker or open issue tracker if it is specified.
-1. Change labels.
+1. Change labels and skeleton.
    You can add new labels or add attributes for the existing labels in the `Raw` mode or the `Constructor` mode.
-   You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
+   You can also change the color for different labels.
+   By clicking `Setup skeleton` you can create a skeleton for this project.
+
 1. Assigned to — is used to assign a project to a person.
    Start typing an assignee's name and/or choose the right person out of the dropdown list.
 1. `Tasks` — is a list of all tasks for a particular project, with the ability to search,

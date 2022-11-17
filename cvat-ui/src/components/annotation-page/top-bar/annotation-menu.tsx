@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,22 +15,16 @@ import Collapse from 'antd/lib/collapse';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-
 import CVATTooltip from 'components/common/cvat-tooltip';
-import LoadSubmenu from 'components/actions-menu/load-submenu';
-import getCore from 'cvat-core-wrapper';
-import { JobStage } from 'reducers/interfaces';
+import { getCore } from 'cvat-core-wrapper';
+import { JobStage } from 'reducers';
 
 const core = getCore();
 
 interface Props {
     taskMode: string;
-    loaders: any[];
-    dumpers: any[];
-    loadActivity: string | null;
     jobInstance: any;
     onClickMenu(params: MenuInfo): void;
-    onUploadAnnotations(format: string, file: File): void;
     stopFrame: number;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -38,7 +33,7 @@ interface Props {
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
-    EXPORT_TASK_DATASET = 'export_task_dataset',
+    EXPORT_JOB_DATASET = 'export_job_dataset',
     REMOVE_ANNO = 'remove_anno',
     OPEN_TASK = 'open_task',
     FINISH_JOB = 'finish_job',
@@ -47,13 +42,10 @@ export enum Actions {
 
 function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Element {
     const {
-        loaders,
-        loadActivity,
         jobInstance,
         stopFrame,
         history,
         onClickMenu,
-        onUploadAnnotations,
         removeAnnotations,
         setForceExitAnnotationFlag,
         saveAnnotations,
@@ -192,30 +184,8 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
 
     return (
         <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
-            {LoadSubmenu({
-                loaders,
-                loadActivity,
-                onFileUpload: (format: string, file: File): void => {
-                    if (file) {
-                        Modal.confirm({
-                            title: 'Current annotation will be lost',
-                            content: 'You are going to upload new annotations to this job. Continue?',
-                            className: 'cvat-modal-content-load-job-annotation',
-                            onOk: () => {
-                                onUploadAnnotations(format, file);
-                            },
-                            okButtonProps: {
-                                type: 'primary',
-                                danger: true,
-                            },
-                            okText: 'Update',
-                        });
-                    }
-                },
-                menuKey: Actions.LOAD_JOB_ANNO,
-                taskDimension: jobInstance.dimension,
-            })}
-            <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
+            <Menu.Item key={Actions.LOAD_JOB_ANNO}>Upload annotations</Menu.Item>
+            <Menu.Item key={Actions.EXPORT_JOB_DATASET}>Export job dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
                 <a

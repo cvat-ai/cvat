@@ -2,7 +2,7 @@ version: '3.3'
 services:
   nuclio:
     container_name: nuclio
-    image: quay.io/nuclio/dashboard:1.5.16-amd64
+    image: quay.io/nuclio/dashboard:1.8.14-amd64
     restart: always
     networks:
       - cvat
@@ -17,10 +17,18 @@ services:
       NUCLIO_DASHBOARD_DEFAULT_FUNCTION_MOUNT_MODE: 'volume'
     ports:
       - '8070:8070'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "3"
 
-  cvat:
+  cvat_server:
     environment:
       CVAT_SERVERLESS: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-volumes:
-  cvat_events:
+  cvat_worker_low:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

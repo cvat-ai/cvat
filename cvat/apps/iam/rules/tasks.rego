@@ -195,14 +195,14 @@ filter = [] { # Django Q object to filter list of entries
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET,
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
     utils.is_sandbox
     is_task_staff
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET,
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -210,7 +210,7 @@ allow {
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET,
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
@@ -219,7 +219,7 @@ allow {
 
 allow {
     { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.UPLOAD_DATA, utils.IMPORT_ANNOTATIONS }[input.scope]
+      utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
     utils.is_sandbox
     is_task_staff
     utils.has_perm(utils.WORKER)
@@ -227,7 +227,7 @@ allow {
 
 allow {
     { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.UPLOAD_DATA, utils.IMPORT_ANNOTATIONS }[input.scope]
+      utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
@@ -235,7 +235,7 @@ allow {
 
 allow {
     { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.UPLOAD_DATA, utils.IMPORT_ANNOTATIONS }[input.scope]
+      utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
     is_task_staff
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)

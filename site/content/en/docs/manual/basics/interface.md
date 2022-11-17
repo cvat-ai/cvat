@@ -1,7 +1,7 @@
 ---
 title: 'Interface of the annotation tool'
 linkTitle: 'Interface'
-weight: 5
+weight: 7
 ---
 
 ## Main user interface
@@ -52,4 +52,4 @@ If you perform impossible actions, you may receive an error message.
 The message may contain information about the error
 or a prompt to open the browser console (shortcut `F12`) for information.
 If you encounter a bug that you can't solve yourself,
-you can [create an issue on GitHub](https://github.com/openvinotoolkit/cvat/issues/new).
+you can [create an issue on GitHub](https://github.com/cvat-ai/cvat/issues/new).

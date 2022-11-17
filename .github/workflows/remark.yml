@@ -1,21 +1,21 @@
-name: Linter
+name: Remark
 on: pull_request
 jobs:
-  Remark:
+  Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 
       - name: Run checks
         run: |
-          npm ci
+          yarn install --frozen-lockfile
           mkdir -p remark_report
 
           echo "Remark version: "`npx remark --version`
-          npx remark --quiet --report json --no-stdout . 2> ./remark_report/remark_report.json
+          npx remark --quiet --report json --no-stdout -i .remarkignore . 2> ./remark_report/remark_report.json
           get_report=`cat ./remark_report/remark_report.json  | jq -r '.[] | select(.messages | length > 0)'`
           if [[ ! -z ${get_report} ]]; then
             pip install json2html
@@ -25,7 +25,7 @@ jobs:
 
       - name: Upload artifacts
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: remark_report
           path: remark_report

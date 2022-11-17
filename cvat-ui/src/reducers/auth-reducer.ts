@@ -1,10 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import { AuthState } from './interfaces';
+import { AuthState } from '.';
 
 const defaultState: AuthState = {
     initialized: false,
@@ -15,6 +15,13 @@ const defaultState: AuthState = {
     allowChangePassword: false,
     showChangePasswordDialog: false,
     allowResetPassword: false,
+    hasEmailVerificationBeenSent: false,
+    advancedAuthFetching: false,
+    advancedAuthInitialized: false,
+    advancedAuthList: {
+        GOOGLE_ACCOUNT_AUTHENTICATION: false,
+        GITHUB_ACCOUNT_AUTHENTICATION: false,
+    },
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
@@ -40,12 +47,16 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 fetching: false,
                 user: action.payload.user,
+                hasEmailVerificationBeenSent: false,
             };
-        case AuthActionTypes.LOGIN_FAILED:
+        case AuthActionTypes.LOGIN_FAILED: {
+            const { hasEmailVerificationBeenSent } = action.payload;
             return {
                 ...state,
                 fetching: false,
+                hasEmailVerificationBeenSent,
             };
+        }
         case AuthActionTypes.LOGOUT:
             return {
                 ...state,
@@ -149,6 +160,29 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 allowChangePassword: false,
                 allowResetPassword: false,
             };
+        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION: {
+            return {
+                ...state,
+                advancedAuthFetching: true,
+                advancedAuthInitialized: false,
+            };
+        }
+        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS: {
+            const { list } = action.payload;
+            return {
+                ...state,
+                advancedAuthFetching: false,
+                advancedAuthInitialized: true,
+                advancedAuthList: list,
+            };
+        }
+        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_FAILED: {
+            return {
+                ...state,
+                advancedAuthFetching: false,
+                advancedAuthInitialized: true,
+            };
+        }
         case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };
         }

@@ -139,21 +139,23 @@ COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.g
 # Copy python virtual environment and FFmpeg binaries from build-image
 COPY --from=build-image /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
+ENV NUMPROCS=1
 COPY --from=build-image /opt/ffmpeg /usr
 
 # Install and initialize CVAT, copy all necessary files
 COPY --chown=${USER} components /tmp/components
+COPY --chown=${USER} supervisord/ ${HOME}/supervisord
 COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
-COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
-COPY --chown=${USER} tests/ ${HOME}/tests
+COPY --chown=${USER} cvat/ ${HOME}/cvat
 
 # RUN all commands below as 'django' user
 USER ${USER}
 WORKDIR ${HOME}
 
-RUN mkdir data share media keys logs /tmp/supervisord
+RUN mkdir -p data share keys logs /tmp/supervisord static
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]
+CMD ["-c", "supervisord/all.conf"]

@@ -1,95 +1,85 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-import React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { Link, withRouter } from 'react-router-dom';
-import Title from 'antd/lib/typography/Title';
-import Text from 'antd/lib/typography/Text';
+import React, { useEffect } from 'react';
+import { RouteComponentProps, useHistory } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
-import Button from 'antd/lib/button';
-import Divider from 'antd/lib/divider';
-import Layout from 'antd/lib/layout';
 
-import FooterDrawer from 'components/login-page/intel-footer-drawer';
-
-import consts from 'consts';
-import { OpenVINOIcon } from 'icons';
+import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
+import SocialAccountLink from 'components/signing-common/social-account-link';
+import { SocialGithubLogo, SocialGoogleLogo } from 'icons';
 import LoginForm, { LoginData } from './login-form';
+import { getCore } from '../../cvat-core-wrapper';
+
+const cvat = getCore();
 
 interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
-    onLogin: (username: string, password: string) => void;
+    hasEmailVerificationBeenSent: boolean;
+    googleAuthentication: boolean;
+    githubAuthentication: boolean;
+    onLogin: (credential: string, password: string) => void;
+    loadAdvancedAuthenticationMethods: () => void;
 }
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
-    const sizes = {
-        style: {
-            width: 400,
-        },
-    };
+    const history = useHistory();
+    const { backendAPI } = cvat.config;
+    const {
+        fetching, renderResetPassword, hasEmailVerificationBeenSent,
+        googleAuthentication, githubAuthentication, onLogin, loadAdvancedAuthenticationMethods,
+    } = props;
 
-    const { Content } = Layout;
+    if (hasEmailVerificationBeenSent) {
+        history.push('/auth/email-verification-sent');
+    }
 
-    const { fetching, onLogin, renderResetPassword } = props;
+    useEffect(() => {
+        loadAdvancedAuthenticationMethods();
+    }, []);
 
     return (
-        <Layout>
-            <Content>
-                <Row style={{ height: '33%' }} />
-                <Row justify='center' align='middle'>
-                    <Col {...sizes}>
-                        <Title level={2}> Login </Title>
+        <SigningLayout>
+            <Col {...formSizes.wrapper}>
+                <Row justify='center'>
+                    <Col {...formSizes.form}>
                         <LoginForm
                             fetching={fetching}
+                            renderResetPassword={renderResetPassword}
+                            socialAuthentication={(googleAuthentication || githubAuthentication) ? (
+                                <div className='cvat-social-authentication'>
+                                    {githubAuthentication && (
+                                        <SocialAccountLink
+                                            icon={SocialGithubLogo}
+                                            href={`${backendAPI}/auth/github/login`}
+                                            className='cvat-social-authentication-github'
+                                        >
+                                            Continue with GitHub
+                                        </SocialAccountLink>
+                                    )}
+                                    {googleAuthentication && (
+                                        <SocialAccountLink
+                                            icon={SocialGoogleLogo}
+                                            href={`${backendAPI}/auth/google/login`}
+                                            className='cvat-social-authentication-google'
+                                        >
+                                            Continue with Google
+                                        </SocialAccountLink>
+                                    )}
+                                </div>
+                            ) : null}
                             onSubmit={(loginData: LoginData): void => {
-                                onLogin(loginData.username, loginData.password);
+                                onLogin(loginData.credential, loginData.password);
                             }}
                         />
-                        <Row justify='start' align='top'>
-                            <Col>
-                                <Text strong>
-                                    New to CVAT? Create
-                                    <Link to='/auth/register'> an account</Link>
-                                </Text>
-                            </Col>
-                        </Row>
-                        {renderResetPassword && (
-                            <Row justify='start' align='top'>
-                                <Col>
-                                    <Text strong>
-                                        <Link to='/auth/password/reset'>Forgot your password?</Link>
-                                    </Text>
-                                </Col>
-                            </Row>
-                        )}
-
                     </Col>
                 </Row>
-                <Row className='cvat-login-openvino-block' justify='center'>
-                    <Col {...sizes}>
-                        <Divider />
-                        <Text type='secondary'>
-                            Learn more about products of
-                            {/* It is important to keep the referer header here */}
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a target='_blank' rel='noopener' href={consts.OPENVINO_URL}> OpenVINO™ Toolkit </a>
-                        </Text>
-                        <Button
-                            href={consts.OPENVINO_URL}
-                            icon={<OpenVINOIcon />}
-                            block
-                            type='link'
-                            target='_blank'
-                        />
-                    </Col>
-                </Row>
-            </Content>
-            <FooterDrawer />
-        </Layout>
+            </Col>
+        </SigningLayout>
     );
 }
 
