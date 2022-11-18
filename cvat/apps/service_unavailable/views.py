@@ -16,7 +16,7 @@ class DBFailureView(APIView):
     @staticmethod
     def _get_response():
         return Response(''.join(["Cannot connect to the database. ",
-            "If you upgraded from v2.3.0 or earlier, ",
+            "If you upgraded from v2.2.0 or earlier, ",
             "see the Upgrade Guide section of the documentation."]),
             status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
