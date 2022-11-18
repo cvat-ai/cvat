@@ -1,0 +1,29 @@
+# The purpose of this workflow: update yarn.lock file for PRs that come from Snyk
+name: Update yarn.lock file
+on:
+  pull_request:
+    types: ['opened', 'reopened']
+    paths:
+      - '**/package.json'
+      - 'package.json'
+    branches:
+      - 'develop'
+
+jobs:
+  update:
+    if: startsWith(github.event.pull_request.head.ref, 'snyk-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+            node-version: '16.x'
+
+      - name: Update yarn.lock file
+        run: yarn
+
+      - uses: stefanzweifel/git-auto-commit-action@v4.15.2
+        with:
+          commit_message: Update yarn.lock file
+          file_pattern: yarn.lock

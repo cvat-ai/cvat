@@ -784,6 +784,105 @@ const tasksDummyData = {
             frame_filter: '',
         },
         {
+            url: 'http://localhost:7000/api/tasks/40',
+            id: 40,
+            name: 'test',
+            project_id: null,
+            mode: 'annotation',
+            owner: {
+                url: 'http://localhost:7000/api/users/1',
+                id: 1,
+                username: 'admin',
+                first_name: '',
+                last_name: '',
+            },
+            assignee: null,
+            bug_tracker: '',
+            created_date: '2022-08-25T12:10:45.471663Z',
+            updated_date: '2022-08-25T12:10:45.993989Z',
+            overlap: 0,
+            segment_size: 4,
+            status: 'annotation',
+            labels: [{
+                id: 54,
+                name: 'star skeleton',
+                color: '#9cb75a',
+                attributes: [],
+                type: 'skeleton',
+                sublabels: [{
+                    id: 55,
+                    name: '1',
+                    color: '#d12345',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 56,
+                    name: '2',
+                    color: '#350dea',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 57,
+                    name: '3',
+                    color: '#479ffe',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 58,
+                    name: '4',
+                    color: '#4a649f',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }, {
+                    id: 59,
+                    name: '5',
+                    color: '#478144',
+                    attributes: [],
+                    type: 'points',
+                    has_parent: true
+                }],
+                has_parent: false,
+                svg:
+                    `<line x1="65.11705780029297" y1="18.267141342163086" x2="27.49163818359375" y2="39.504600524902344" stroke="black" data-type="edge" data-node-from="3" stroke-width="0.5" data-node-to="5"></line>
+                    <line x1="21.806020736694336" y1="18.099916458129883" x2="65.11705780029297" y2="18.267141342163086" stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="3"></line>
+                    <line x1="61.10367965698242" y1="40.00627136230469" x2="21.806020736694336" y2="18.099916458129883" stroke="black" data-type="edge" data-node-from="4" stroke-width="0.5" data-node-to="1"></line>
+                    <line x1="44.38127136230469" y1="7.397575378417969" x2="61.10367965698242" y2="40.00627136230469" stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="4"></line>
+                    <line x1="27.49163818359375" y1="39.504600524902344" x2="44.38127136230469" y2="7.397575378417969" stroke="black" data-type="edge" data-node-from="5" stroke-width="0.5" data-node-to="2"></line>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="21.806020736694336" cy="18.099916458129883" stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-id="55"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="44.38127136230469" cy="7.397575378417969" stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-id="56"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="65.11705780029297" cy="18.267141342163086" stroke-width="0.1" data-type="element node" data-element-id="3" data-node-id="3" data-label-id="57"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="61.10367965698242" cy="40.00627136230469" stroke-width="0.1" data-type="element node" data-element-id="4" data-node-id="4" data-label-id="58"></circle>
+                    <circle r="1.5" stroke="black" fill="#b3b3b3" cx="27.49163818359375" cy="39.504600524902344" stroke-width="0.1" data-type="element node" data-element-id="5" data-node-id="5" data-label-id="59"></circle>`
+            }],
+            segments: [{
+                start_frame: 0,
+                stop_frame: 3,
+                jobs: [{
+                    url: 'http://localhost:7000/api/jobs/40',
+                    id: 40,
+                    assignee: null,
+                    status: 'annotation',
+                    stage: 'annotation',
+                    state: 'new',
+                }]
+            }],
+            data_chunk_size: 17,
+            data_compressed_chunk_type: 'imageset',
+            data_original_chunk_type: 'imageset',
+            size: 4,
+            image_quality: 70,
+            data: 12,
+            dimension: '2d',
+            subset: '',
+            organization: null,
+            target_storage: null,
+            source_storage: null
+        },
+        {
             url: 'http://localhost:7000/api/tasks/3',
             id: 3,
             name: 'Test Task',
@@ -2532,6 +2631,230 @@ const taskAnnotationsDummyData = {
         ],
         tracks: [],
     },
+    40: {
+        version: 0,
+        tags: [],
+        shapes: [{
+            type: 'skeleton',
+            occluded: false,
+            outside: false,
+            z_order: 0,
+            rotation: 0.0,
+            points: [],
+            id: 23,
+            frame: 0,
+            label_id: 54,
+            group: 0,
+            source: 'manual',
+            attributes: [],
+            elements: [{
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    908.0654296875,
+                    768.8268729552019
+                ],
+                id: 24,
+                frame: 0,
+                label_id: 55,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: "points",
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    1230.1533057030483,
+                    523.7802734375
+                ],
+                id: 25,
+                frame: 0,
+                label_id: 56,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    1525.9969940892624,
+                    772.6557444966547
+                ],
+                id: 26,
+                frame: 0,
+                label_id: 57,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    1468.7369236136856,
+                    1270.4066429432623
+                ],
+                id: 27,
+                frame: 0,
+                label_id: 58,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }, {
+                type: 'points',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [
+                    989.1838401839595,
+                    1258.9201156622657
+                ],
+                id: 28,
+                frame: 0,
+                label_id: 59,
+                group: 0,
+                source: 'manual',
+                attributes: []
+            }]
+        }],
+        tracks: [{
+            id: 1,
+            frame: 0,
+            label_id: 54,
+            group: 0,
+            source: 'manual',
+            shapes: [{
+                type: 'skeleton',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                rotation: 0.0,
+                points: [],
+                id: 1,
+                frame: 0,
+                attributes: []
+            }],
+            attributes: [],
+            elements: [{
+                id: 2,
+                frame: 0,
+                label_id: 55,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        88.4140625,
+                        332.85145482411826
+                    ],
+                    id: 2,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 3,
+                frame: 0,
+                label_id: 56,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        437.3386217629577,
+                        96.447265625
+                    ],
+                    id: 3,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 4,
+                frame: 0,
+                label_id: 57,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        757.8323014937105,
+                        336.54528805456357
+                    ],
+                    id: 4,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 5,
+                frame: 0,
+                label_id: 58,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        695.8012648051717,
+                        816.7412907822327
+                    ],
+                    id: 5,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }, {
+                id: 6,
+                frame: 0,
+                label_id: 59,
+                group: 0,
+                source: 'manual',
+                shapes: [{
+                    type: 'points',
+                    occluded: false,
+                    outside: false,
+                    z_order: 0,
+                    rotation: 0.0,
+                    points: [
+                        176.29133990867558,
+                        805.659875353811
+                    ],
+                    id: 6,
+                    frame: 0,
+                    attributes: []
+                }],
+                attributes: []
+            }]
+        }]
+    }
 };
 
 const jobAnnotationsDummyData = JSON.parse(JSON.stringify(taskAnnotationsDummyData));
@@ -2544,6 +2867,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2590,6 +2914,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 74,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2602,14 +2927,60 @@ const frameMetaDummyData = {
         size: 5002,
         image_quality: 50,
         start_frame: 0,
-        stop_frame: 5001,
+        stop_frame: 4999,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1888,
                 height: 1408,
             },
         ],
+    },
+    4: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 4995,
+        stop_frame: 5001,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    40: {
+        chunk_size: 17,
+        size: 4,
+        image_quality: 70,
+        start_frame: 0,
+        stop_frame: 3,
+        frame_filter: '',
+        frames: [{
+            width: 2560,
+            height: 1703,
+            name: '1598296101_1033667.jpg',
+            has_related_context: false
+        }, {
+            width: 1600,
+            height: 1200,
+            name: '30fdce7f27b9c7b1d50108d7c16d23ef.jpg',
+            has_related_context: false
+        }, {
+            width: 2880,
+            height: 1800,
+            name: '567362-ily-comedy-drama-1finding-3.jpg',
+            has_related_context: false
+        }, {
+            width: 1920,
+            height: 1080,
+            name: '730443-under-the-sea-wallpapers-1920x1080-windows-10.jpg',
+            has_related_context: false
+        }],
+        deleted_frames: []
     },
     100: {
         chunk_size: 36,
@@ -2618,6 +2989,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
+        deleted_frames: [7, 8],
         frames: [
             {
                 width: 1920,
@@ -2662,8 +3034,9 @@ const frameMetaDummyData = {
         size: 5002,
         image_quality: 50,
         start_frame: 0,
-        stop_frame: 5001,
+        stop_frame: 499,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1888,
@@ -2673,11 +3046,162 @@ const frameMetaDummyData = {
     },
     102: {
         chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 495,
+        stop_frame: 994,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    103: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 990,
+        stop_frame: 1489,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    104: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 1485,
+        stop_frame: 1984,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    105: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 1980,
+        stop_frame: 2479,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    106: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 2475,
+        stop_frame: 2974,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    107: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 2970,
+        stop_frame: 3469,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    108: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 3465,
+        stop_frame: 3964,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    109: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 3960,
+        stop_frame: 4459,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    110: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 4455,
+        stop_frame: 4954,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    111: {
+        chunk_size: 36,
+        size: 5002,
+        image_quality: 50,
+        start_frame: 4950,
+        stop_frame: 5001,
+        frame_filter: '',
+        deleted_frames: [],
+        frames: [
+            {
+                width: 1888,
+                height: 1408,
+            },
+        ],
+    },
+    112: {
+        chunk_size: 36,
         size: 1,
         image_quality: 50,
         start_frame: 0,
         stop_frame: 0,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2758,6 +3282,165 @@ const cloudStoragesDummyData = {
     ]
 };
 
+const webhooksDummyData = {
+    count: 3,
+    next: null,
+    previous: null,
+    results: [
+        {
+            id: 1,
+            url: "http://localhost:7000/api/webhooks/1",
+            target_url: "https://localhost:3001/project/hook",
+            description: "Project webhook",
+            type: "project",
+            content_type: "application/json",
+            is_active: true,
+            enable_ssl: true,
+            created_date: "2022-09-23T06:29:12.337276Z",
+            updated_date: "2022-09-23T06:29:12.337316Z",
+            owner: {
+                url: "http://localhost:7000/api/users/1",
+                id: 1,
+                username: "kirill",
+                first_name: "",
+                last_name: ""
+            },
+            project: 1,
+            organization: 1,
+            events: [
+                "create:comment",
+                "create:issue",
+                "create:task",
+                "delete:comment",
+                "delete:issue",
+                "delete:task",
+                "update:comment",
+                "update:job",
+                "update:project",
+                "update:task"
+            ],
+            last_status: "Failed to connect to target url",
+            last_delivery_date: "2022-09-23T06:28:48.313010Z"
+        },
+        {
+            id: 2,
+            url: "http://localhost:7000/api/webhooks/2",
+            target_url: "https://localhost:3001/example/route",
+            description: "Second webhook",
+            type: "organization",
+            content_type: "application/json",
+            is_active: true,
+            enable_ssl: true,
+            created_date: "2022-09-23T06:28:32.430437Z",
+            updated_date: "2022-09-23T06:28:32.430474Z",
+            owner: {
+                url: "http://localhost:7000/api/users/1",
+                id: 1,
+                username: "kirill",
+                first_name: "",
+                last_name: ""
+            },
+            project: 1,
+            organization: 1,
+            events: [
+                "create:project",
+                "create:task",
+                "delete:project",
+                "delete:task",
+                "update:job",
+                "update:project",
+                "update:task"
+            ],
+            last_status: "200",
+            last_delivery_date: "2022-09-23T06:28:48.313010Z"
+        },
+        {
+            id: 3,
+            url: "http://localhost:7000/api/webhooks/3",
+            target_url: "https://localhost:3001/example1",
+            description: "Example webhook",
+            type: "organization",
+            content_type: "application/json",
+            is_active: true,
+            enable_ssl: true,
+            created_date: "2022-09-23T06:27:52.888204Z",
+            updated_date: "2022-09-23T06:27:52.888245Z",
+            owner: {
+                url: "http://localhost:7000/api/users/1",
+                id: 1,
+                username: "kirill",
+                first_name: "",
+                last_name: ""
+            },
+            project: 1,
+            organization: 1,
+            events: [
+                "create:comment",
+                "create:invitation",
+                "create:issue",
+                "create:project",
+                "create:task",
+                "delete:comment",
+                "delete:invitation",
+                "delete:issue",
+                "delete:membership",
+                "delete:project",
+                "delete:task",
+                "update:comment",
+                "update:invitation",
+                "update:job",
+                "update:membership",
+                "update:organization",
+                "update:project",
+                "update:task"
+            ],
+            last_status: "200",
+            last_delivery_date: "2022-09-23T06:28:48.283962Z"
+        }
+    ]
+};
+
+const webhooksEventsDummyData = {
+    project: {
+        webhook_type: "project",
+        events: [
+          "create:comment",
+          "create:issue",
+          "create:task",
+          "delete:comment",
+          "delete:issue",
+          "delete:task",
+          "update:comment",
+          "update:job",
+          "update:project",
+          "update:task"
+        ]
+      },
+    organization: {
+        webhook_type: "organization",
+        events: [
+          "create:comment",
+          "create:invitation",
+          "create:issue",
+          "create:project",
+          "create:task",
+          "delete:comment",
+          "delete:invitation",
+          "delete:issue",
+          "delete:membership",
+          "delete:project",
+          "delete:task",
+          "update:comment",
+          "update:invitation",
+          "update:job",
+          "update:membership",
+          "update:organization",
+          "update:project",
+          "update:task"
+        ]
+      },
+}
+
 module.exports = {
     tasksDummyData,
     projectsDummyData,
@@ -2769,4 +3452,6 @@ module.exports = {
     frameMetaDummyData,
     formatsDummyData,
     cloudStoragesDummyData,
+    webhooksDummyData,
+    webhooksEventsDummyData,
 };

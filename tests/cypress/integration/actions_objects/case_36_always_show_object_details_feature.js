@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ context('Always show object details feature', () => {
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 400,
         firstY: 100,
         secondX: 500,
@@ -20,7 +20,7 @@ context('Always show object details feature', () => {
     const polygonTrack = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 400, y: 300 },
             { x: 500, y: 300 },

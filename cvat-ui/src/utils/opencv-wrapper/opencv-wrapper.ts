@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
@@ -30,13 +30,17 @@ export interface Tracking {
 export class OpenCVWrapper {
     private initialized: boolean;
     private cv: any;
+    private onProgress: ((percent: number) => void) | null;
+    private injectionProcess: Promise<void> | null;
 
     public constructor() {
         this.initialized = false;
         this.cv = null;
+        this.onProgress = null;
+        this.injectionProcess = null;
     }
 
-    public async initialize(onProgress: (percent: number) => void): Promise<void> {
+    private async inject(): Promise<void> {
         const response = await fetch(`${baseURL}/opencv/opencv.js`);
         if (response.status !== 200) {
             throw new Error(`Response status ${response.status}. ${response.statusText}`);
@@ -67,7 +71,7 @@ export class OpenCVWrapper {
                 // Cypress workaround: content-length is always zero in cypress, it is done optional here
                 // Just progress bar will be disabled
                 const percentage = contentLength ? (receivedLength * 100) / +(contentLength as string) : 0;
-                onProgress(+percentage.toFixed(0));
+                if (this.onProgress) this.onProgress(+percentage.toFixed(0));
             }
         }
 
@@ -79,11 +83,30 @@ export class OpenCVWrapper {
         const global = window as any;
 
         this.cv = await global.cv;
+    }
+
+    public async initialize(onProgress: (percent: number) => void): Promise<void> {
+        this.onProgress = onProgress;
+
+        if (!this.injectionProcess) {
+            this.injectionProcess = this.inject();
+        }
+        await this.injectionProcess;
+
+        this.injectionProcess = null;
         this.initialized = true;
+    }
+
+    public removeProgressCallback(): void {
+        this.onProgress = null;
     }
 
     public get isInitialized(): boolean {
         return this.initialized;
+    }
+
+    public get initializationInProgress(): boolean {
+        return !!this.injectionProcess;
     }
 
     public get contours(): Contours {

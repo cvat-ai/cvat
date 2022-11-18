@@ -31,7 +31,7 @@
 
     .cvat-job-page-list-item {
         width: 25%;
-        border-width: 4px;
+        border-width: $grid-unit-size * 0.5;
         display: flex;
         flex-direction: column;
 
@@ -60,6 +60,10 @@
         }
 
         .cvat-jobs-page-job-item-card-preview {
+            .ant-empty-image {
+                height: $grid-unit-size * 10;
+            }
+
             height: 100%;
             display: flex;
             align-items: center;

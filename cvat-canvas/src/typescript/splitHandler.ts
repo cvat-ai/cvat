@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ export class SplitHandlerImpl implements SplitHandler {
     private onSplitDone: (object: any) => void;
     private onFindObject: (event: MouseEvent) => void;
     private canvas: SVG.Container;
-    private highlightedShape: SVG.Shape;
+    private highlightedShape: SVG.Shape | null;
     private initialized: boolean;
     private splitDone: boolean;
 

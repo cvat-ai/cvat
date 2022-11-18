@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +14,7 @@ Cypress.Commands.add('сheckFiltersModalOpened', () => {
 });
 
 Cypress.Commands.add('collectGroupID', () => {
-    let groupDataID = [];
+    const groupDataID = [];
     cy.get('.group').then(($group) => {
         for (let i = 0; i < $group.length; i++) {
             groupDataID.push($group[i].dataset.id);
@@ -24,7 +24,7 @@ Cypress.Commands.add('collectGroupID', () => {
 });
 
 Cypress.Commands.add('collectRuleID', () => {
-    let ruleDataID = [];
+    const ruleDataID = [];
     cy.get('.rule').then(($rule) => {
         for (let i = 0; i < $rule.length; i++) {
             ruleDataID.push($rule[i].dataset.id);
@@ -37,7 +37,7 @@ Cypress.Commands.add('clearFilters', () => {
     cy.сheckFiltersModalOpened();
     cy.contains('button', 'Clear filters').click();
     cy.get('.cvat-filters-modal-visible').should('not.exist');
-    cy.get('.cvat-filters-modal').should('be.hidden');
+    cy.get('.cvat-filters-modal').should('not.exist');
 });
 
 Cypress.Commands.add('addFiltersGroup', (groupIndex) => {
@@ -66,7 +66,9 @@ Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
 
 Cypress.Commands.add(
     'setFilter',
-    ({ groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit }) => {
+    ({
+        groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit,
+    }) => {
         cy.сheckFiltersModalOpened();
         cy.collectGroupID().then((groupIdIndex) => {
             cy.collectRuleID().then((ruleIdIndex) => {
@@ -104,16 +106,14 @@ Cypress.Commands.add(
                     .within(() => {
                         if (field === 'Attributes') {
                             cy.get('[placeholder="Enter string"]').last().type(`${value}{Enter}`);
-                        } else {
-                            if (!valueSource) {
-                                if (field === 'ObjectID' || field === 'Width' || field === 'Height') {
-                                    cy.get('[placeholder="Enter number"]').type(`${value}{Enter}`);
-                                } else {
-                                    cy.get('[type="search"]').last().type(`${value}{Enter}`);
-                                }
+                        } else if (!valueSource) {
+                            if (field === 'ObjectID' || field === 'Width' || field === 'Height') {
+                                cy.get('[placeholder="Enter number"]').type(`${value}{Enter}`);
                             } else {
-                                cy.contains('[type="button"]', 'Select field ').click();
+                                cy.get('[type="search"]').last().type(`${value}{Enter}`);
                             }
+                        } else {
+                            cy.contains('[type="button"]', 'Select field ').click();
                         }
                     });
                 if (valueSource) {
@@ -124,7 +124,7 @@ Cypress.Commands.add(
                         cy.contains('button', 'Submit').click();
                     });
                     cy.get('.cvat-filters-modal-visible').should('not.exist');
-                    cy.get('.cvat-filters-modal').should('be.hidden');
+                    cy.get('.cvat-filters-modal').should('not.exist');
                 }
             });
         });
@@ -143,5 +143,5 @@ Cypress.Commands.add('selectFilterValue', (filterValue) => {
         cy.contains('button', 'Submit').click();
     });
     cy.get('.cvat-filters-modal-visible').should('not.exist');
-    cy.get('.cvat-filters-modal').should('be.hidden');
+    cy.get('.cvat-filters-modal').should('not.exist');
 });
