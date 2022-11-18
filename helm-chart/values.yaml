@@ -73,14 +73,9 @@ cvat:
       additionalVolumes: []
       additionalVolumeMounts: []
     replicas: 1
-<<<<<<< HEAD
-    image: openvino/cvat_server
-    tag: latest
-    imagepullploicy: IfNotPresent
-=======
     image: cvat/server
     tag: dev
->>>>>>> origin/develop
+    imagepullploicy: IfNotPresent
     permissionFix:
       enabled: true
     service:
