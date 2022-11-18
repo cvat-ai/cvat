@@ -539,9 +539,30 @@ class TestJobDataset:
         response = self._export_dataset(admin_user, job["id"], format="CVAT for images 1.1")
         assert response.data
 
-    def test_can_export_annotations(self, admin_user: str, jobs_with_shapes: List):
-        job = jobs_with_shapes[0]
-        response = self._export_annotations(admin_user, job["id"], format="CVAT for images 1.1")
+    def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
+        job_id, username = next(
+            (
+                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                for job in jobs_with_shapes
+                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and tasks[job["task_id"]]["target_storage"] is None
+                and tasks[job["task_id"]]["organization"] is None
+            )
+        )
+        response = self._export_dataset(username, job_id, format="CVAT for images 1.1")
+        assert response.data
+
+    def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
+        job_id, username = next(
+            (
+                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                for job in jobs_with_shapes
+                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and tasks[job["task_id"]]["target_storage"] is None
+                and tasks[job["task_id"]]["organization"] is None
+            )
+        )
+        response = self._export_annotations(username, job_id, format="CVAT for images 1.1")
         assert response.data
 
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
