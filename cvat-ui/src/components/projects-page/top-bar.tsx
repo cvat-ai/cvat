@@ -1,18 +1,19 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
+import { useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Input from 'antd/lib/input';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
-import Upload from 'antd/lib/upload';
-
+import { importActions } from 'actions/import-actions';
 import { usePrevious } from 'utils/hooks';
-import { ProjectsQuery } from 'reducers/interfaces';
+import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
 import {
@@ -24,7 +25,6 @@ const FilteringComponent = ResourceFilterHOC(
 );
 
 interface Props {
-    onImportProject(file: File): void;
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
@@ -33,8 +33,9 @@ interface Props {
 }
 
 function TopBarComponent(props: Props): JSX.Element {
+    const dispatch = useDispatch();
     const {
-        importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportProject,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const prevImporting = usePrevious(importing);
@@ -101,26 +102,16 @@ function TopBarComponent(props: Props): JSX.Element {
                                 >
                                     Create a new project
                                 </Button>
-                                <Upload
-                                    accept='.zip'
-                                    multiple={false}
-                                    showUploadList={false}
-                                    beforeUpload={(file: File): boolean => {
-                                        onImportProject(file);
-                                        return false;
-                                    }}
-                                    className='cvat-import-project'
+                                <Button
+                                    className='cvat-import-project-button'
+                                    type='primary'
+                                    disabled={importing}
+                                    icon={<UploadOutlined />}
+                                    onClick={() => dispatch(importActions.openImportBackupModal('project'))}
                                 >
-                                    <Button
-                                        className='cvat-import-project-button'
-                                        type='primary'
-                                        disabled={importing}
-                                        icon={<UploadOutlined />}
-                                    >
-                                        Create from backup
-                                        {importing && <LoadingOutlined className='cvat-import-project-button-loading' />}
-                                    </Button>
-                                </Upload>
+                                    Create from backup
+                                    {importing && <LoadingOutlined className='cvat-import-project-button-loading' />}
+                                </Button>
                             </div>
                         )}
                     >

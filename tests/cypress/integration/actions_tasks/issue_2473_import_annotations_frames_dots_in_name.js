@@ -36,9 +36,27 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     let annotationArchiveName = '';
 
     function confirmUpdate(modalWindowClassName) {
-        cy.get(modalWindowClassName).within(() => {
+        cy.get(modalWindowClassName).should('be.visible').within(() => {
             cy.contains('button', 'Update').click();
         });
+    }
+
+    function uploadAnnotation(format, file, confirmModalClassName) {
+        cy.get('.cvat-modal-import-dataset').should('be.visible');
+        cy.get('.cvat-modal-import-select').click();
+        cy.get('.ant-select-dropdown')
+            .not('.ant-select-dropdown-hidden').within(() => {
+                cy.get('.rc-virtual-list-holder')
+                    .contains('.cvat-modal-import-dataset-option-item', format)
+                    .click();
+            });
+        cy.get('.cvat-modal-import-select').should('contain.text', format);
+        cy.get('input[type="file"]').attachFile(file, { subjectType: 'drag-n-drop' });
+        cy.get(`[title="${file}"]`).should('be.visible');
+        cy.contains('button', 'OK').click();
+        confirmUpdate(confirmModalClassName);
+        cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
+        cy.closeNotification('.cvat-notification-notice-import-annotation-start');
     }
 
     before(() => {
@@ -65,23 +83,21 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     describe(`Testing case "${issueId}"`, () => {
         it('Save job. Dump annotation to YOLO format. Remove annotation. Save job.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
-            cy.intercept('GET', '/api/tasks/**/annotations**').as('dumpAnnotations');
-            cy.interactMenu('Export task dataset');
-            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
+            cy.intercept('GET', '/api/jobs/**/annotations**').as('dumpAnnotations');
+            cy.interactMenu('Export job dataset');
+            cy.get('.cvat-modal-export-select').click();
             cy.get('.ant-select-dropdown')
-                .not('.ant-select-dropdown-hidden')
-                .within(() => {
-                    cy.get('.rc-virtual-list-holder')
-                        .trigger('wheel', { deltaY: 1000 })
-                        .trigger('wheel', { deltaY: 1000 })
-                        .contains('.cvat-modal-export-option-item', dumpType)
-                        .should('be.visible')
-                        .click();
-                });
+                .not('.ant-select-dropdown-hidden');
+            cy.get('.rc-virtual-list-holder')
+                .contains('.cvat-modal-export-option-item', dumpType)
+                .click();
             cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
-            cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
+            cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
+            cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-export-job-start');
             cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);
+            cy.verifyNotification();
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');
@@ -96,18 +112,15 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
 
         it('Upload annotation with YOLO format to job.', () => {
             cy.interactMenu('Upload annotations');
-            cy.contains('.cvat-menu-load-submenu-item', dumpType.split(' ')[0])
-                .scrollIntoView()
-                .should('be.visible')
-                .within(() => {
-                    cy.get('.cvat-menu-load-submenu-item-button')
-                        .click()
-                        .get('input[type=file]')
-                        .attachFile(annotationArchiveName);
-                });
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
-            confirmUpdate('.cvat-modal-content-load-job-annotation');
+            uploadAnnotation(
+                dumpType.split(' ')[0],
+                annotationArchiveName,
+                '.cvat-modal-content-load-job-annotation',
+            );
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+            cy.contains('Annotations have been loaded').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-info');
             cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');

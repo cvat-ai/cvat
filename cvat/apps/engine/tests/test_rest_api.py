@@ -80,8 +80,8 @@ def create_db_task(data):
 
     labels = data.pop('labels', None)
     db_task = Task.objects.create(**data)
-    shutil.rmtree(db_task.get_task_dirname(), ignore_errors=True)
-    os.makedirs(db_task.get_task_dirname())
+    shutil.rmtree(db_task.get_dirname(), ignore_errors=True)
+    os.makedirs(db_task.get_dirname())
     os.makedirs(db_task.get_task_logs_dirname())
     os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
@@ -117,8 +117,8 @@ def create_db_task(data):
 def create_db_project(data):
     labels = data.pop('labels', None)
     db_project = Project.objects.create(**data)
-    shutil.rmtree(db_project.get_project_dirname(), ignore_errors=True)
-    os.makedirs(db_project.get_project_dirname())
+    shutil.rmtree(db_project.get_dirname(), ignore_errors=True)
+    os.makedirs(db_project.get_dirname())
     os.makedirs(db_project.get_project_logs_dirname())
 
     if not labels is None:
@@ -313,7 +313,7 @@ class JobGetAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class JobUpdateAPITestCase(APITestCase):
+class JobPartialUpdateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.task = create_dummy_db_tasks(self)[0]
@@ -327,7 +327,7 @@ class JobUpdateAPITestCase(APITestCase):
 
     def _run_api_v2_jobs_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put('/api/jobs/{}'.format(jid), data=data, format='json')
+            response = self.client.patch('/api/jobs/{}'.format(jid), data=data, format='json')
 
         return response
 
@@ -382,13 +382,6 @@ class JobUpdateAPITestCase(APITestCase):
         response = self._run_api_v2_jobs_id(self.job.id + 10, None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
-    def _run_api_v2_jobs_id(self, jid, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.patch('/api/jobs/{}'.format(jid), data=data, format='json')
-
-        return response
-
     def test_api_v2_jobs_id_annotator_partial(self):
         data = {"stage": StageChoice.ANNOTATION}
         response = self._run_api_v2_jobs_id(self.job.id, self.annotator, data)
@@ -398,6 +391,77 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         data = {"assignee_id": self.user.id}
         response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
+
+class JobUpdateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.task = create_dummy_db_tasks(self)[0]
+        self.job = Job.objects.filter(segment__task_id=self.task.id).first()
+        self.job.assignee = self.annotator
+        self.job.save()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _run_api_v2_jobs_id(self, jid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.put('/api/jobs/{}'.format(jid), data=data, format='json')
+
+        return response
+
+    def test_api_v2_jobs_id_annotator(self):
+        data = {"stage": StageChoice.ANNOTATION}
+        response = self._run_api_v2_jobs_id(self.job.id, self.annotator, data)
+        self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
+
+    def test_api_v2_jobs_id_admin(self):
+        data = {"assignee_id": self.user.id}
+        response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
+        self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
+
+class JobDataMetaPartialUpdateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.task = create_dummy_db_tasks(self)[0]
+        self.job = Job.objects.filter(segment__task_id=self.task.id).first()
+        self.job.assignee = self.annotator
+        self.job.save()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _run_api_v1_jobs_data_meta_id(self, jid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/jobs/{}/data/meta'.format(jid), data=data, format='json')
+
+        return response
+
+    def _check_response(self, response, db_data, data):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        deleted_frames = data.get("deleted_frames", db_data.deleted_frames)
+        self.assertEqual(response.data["deleted_frames"], deleted_frames)
+
+    def _check_api_v1_jobs_data_meta_id(self, user, data):
+        response = self._run_api_v1_jobs_data_meta_id(self.job.id, user, data)
+        if user is None:
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        elif user == self.job.segment.task.owner or user == self.job.segment.task.assignee or user == self.job.assignee or user.is_superuser:
+            self._check_response(response, self.job.segment.task.data, data)
+        else:
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_jobss_data_meta(self):
+        data = {
+            "deleted_frames": [1,2,3]
+        }
+        self._check_api_v1_jobs_data_meta_id(self.admin, data)
+
+        data = {
+            "deleted_frames": []
+        }
+        self._check_api_v1_jobs_data_meta_id(self.admin, data)
 
 class ServerAboutAPITestCase(APITestCase):
     ACCEPT_HEADER_TEMPLATE = 'application/vnd.cvat+json; version={}'
@@ -440,7 +504,7 @@ class ServerAboutAPITestCase(APITestCase):
 
     def test_api_v2_server_about_no_auth(self):
         response = self._run_api_v2_server_about(None)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_api_server_about_versions_admin(self):
         for version in settings.REST_FRAMEWORK['ALLOWED_VERSIONS']:
@@ -1936,15 +2000,14 @@ class TaskDeleteAPITestCase(APITestCase):
 
     def test_api_v2_tasks_delete_task_data_after_delete_task(self):
         for task in self.tasks:
-            task_dir = task.get_task_dirname()
+            task_dir = task.get_dirname()
             self.assertTrue(os.path.exists(task_dir))
         self._check_api_v2_tasks_id(self.admin)
         for task in self.tasks:
-            task_dir = task.get_task_dirname()
+            task_dir = task.get_dirname()
             self.assertFalse(os.path.exists(task_dir))
 
 class TaskUpdateAPITestCase(APITestCase):
-
     def setUp(self):
         self.client = APIClient()
 
@@ -1959,6 +2022,39 @@ class TaskUpdateAPITestCase(APITestCase):
                 data=data, format="json")
 
         return response
+
+    def _check_api_v2_tasks_id(self, user, data):
+        for db_task in self.tasks:
+            response = self._run_api_v2_tasks_id(db_task.id, user, data)
+            if user is None:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_api_v2_tasks_id_admin(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(self.admin, data)
+
+    def test_api_v2_tasks_id_user(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(self.user, data)
+
+    def test_api_v2_tasks_id_somebody(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(self.somebody, data)
+
+    def test_api_v2_tasks_id_no_auth(self):
+        data = { "name": "new name for the task" }
+        self._check_api_v2_tasks_id(None, data)
+
+class TaskPartialUpdateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
 
     def _check_response(self, response, db_task, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -1990,6 +2086,13 @@ class TaskUpdateAPITestCase(APITestCase):
                 [label.name for label in db_task.label_set.all()],
                 [label["name"] for label in response.data["labels"]]
             )
+
+    def _run_api_v2_tasks_id(self, tid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/tasks/{}'.format(tid),
+                data=data, format="json")
+
+        return response
 
     def _check_api_v2_tasks_id(self, user, data):
         for db_task in self.tasks:
@@ -2033,32 +2136,6 @@ class TaskUpdateAPITestCase(APITestCase):
             }]
         }
         self._check_api_v2_tasks_id(self.user, data)
-
-    def test_api_v2_tasks_id_somebody(self):
-        data = {
-            "name": "new name for the task",
-            "labels": [{
-                "name": "test",
-            }]
-        }
-        self._check_api_v2_tasks_id(self.somebody, data)
-
-    def test_api_v2_tasks_id_no_auth(self):
-        data = {
-            "name": "new name for the task",
-            "labels": [{
-                "name": "test",
-            }]
-        }
-        self._check_api_v2_tasks_id(None, data)
-
-class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
-    def _run_api_v2_tasks_id(self, tid, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.patch('/api/tasks/{}'.format(tid),
-                data=data, format="json")
-
-        return response
 
     def test_api_v2_tasks_id_admin_partial(self):
         data = {
@@ -2111,6 +2188,49 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
             }]
         }
         self._check_api_v2_tasks_id(None, data)
+
+class TaskDataMetaPartialUpdateAPITestCase(APITestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
+
+    def _run_api_v1_task_data_meta_id(self, tid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/tasks/{}/data/meta'.format(tid),
+                data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, db_data, data):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        deleted_frames = data.get("deleted_frames", db_data.deleted_frames)
+        self.assertEqual(response.data["deleted_frames"], deleted_frames)
+
+    def _check_api_v1_task_data_id(self, user, data):
+        for db_task in self.tasks:
+            response = self._run_api_v1_task_data_meta_id(db_task.id, user, data)
+            if user is None:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user == db_task.assignee or user.is_superuser:
+                self._check_response(response, db_task.data, data)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_tasks_data_meta(self):
+        data = {
+            "deleted_frames": [1,2,3]
+        }
+        self._check_api_v1_task_data_id(self.user, data)
+
+        data = {
+            "deleted_frames": []
+        }
+        self._check_api_v1_task_data_id(self.user, data)
 
 class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     @classmethod
@@ -2332,7 +2452,7 @@ class TaskMoveAPITestCase(APITestCase):
     def _check_api_v2_tasks(self, tid, data, expected_status=status.HTTP_200_OK):
         response = self._run_api_v2_tasks_id(tid, data)
         self.assertEqual(response.status_code, expected_status)
-        if (expected_status == status.HTTP_200_OK):
+        if expected_status == status.HTTP_200_OK:
             self._check_response(response, data)
 
     def test_move_task_bad_request(self):
@@ -2850,6 +2970,8 @@ class TaskImportExportAPITestCase(APITestCase):
                             "created_date",
                             "updated_date",
                             "data",
+                            "source_storage",
+                            "target_storage",
                         ),
                     )
 
@@ -5294,6 +5416,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "COCO 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
+            elif annotation_format == "COCO Keypoints 1.0":
+                annotations["shapes"] = points_wo_attrs
+
             elif annotation_format == "Segmentation mask 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
@@ -5649,7 +5774,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))
-        elif format_name == "COCO 1.0":
+        elif format_name in ["COCO 1.0", "COCO Keypoints 1.0"]:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 zipfile.ZipFile(content).extractall(tmp_dir)
                 jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)

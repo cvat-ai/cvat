@@ -1,12 +1,16 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { PercentageOutlined } from '@ant-design/icons';
+import { PercentageOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Select from 'antd/lib/select';
+import Space from 'antd/lib/space';
+import Switch from 'antd/lib/switch';
+import Tooltip from 'antd/lib/tooltip';
 import Radio from 'antd/lib/radio';
 import Checkbox from 'antd/lib/checkbox';
 import Form, { FormInstance, RuleObject, RuleRender } from 'antd/lib/form';
@@ -14,6 +18,13 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
+import { StorageLocation } from 'reducers';
+import SourceStorageField from 'components/storage/source-storage-field';
+import TargetStorageField from 'components/storage/target-storage-field';
+
+import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+
+const core = getCore();
 
 const { Option } = Select;
 
@@ -40,6 +51,10 @@ export interface AdvancedConfiguration {
     useCache: boolean;
     copyData?: boolean;
     sortingMethod: SortingMethod;
+    useProjectSourceStorage: boolean;
+    useProjectTargetStorage: boolean;
+    sourceStorage: StorageData;
+    targetStorage: StorageData;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -49,13 +64,33 @@ const initialValues: AdvancedConfiguration = {
     useCache: true,
     copyData: false,
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
+    useProjectSourceStorage: true,
+    useProjectTargetStorage: true,
+
+    sourceStorage: {
+        location: StorageLocation.LOCAL,
+        cloudStorageId: undefined,
+    },
+    targetStorage: {
+        location: StorageLocation.LOCAL,
+        cloudStorageId: undefined,
+    },
 };
 
 interface Props {
     onSubmit(values: AdvancedConfiguration): void;
+    onChangeUseProjectSourceStorage(value: boolean): void;
+    onChangeUseProjectTargetStorage(value: boolean): void;
+    onChangeSourceStorageLocation: (value: StorageLocation) => void;
+    onChangeTargetStorageLocation: (value: StorageLocation) => void;
     installedGit: boolean;
+    projectId: number | null;
+    useProjectSourceStorage: boolean;
+    useProjectTargetStorage: boolean;
     activeFileManagerTab: string;
-    dumpers: []
+    dumpers: [];
+    sourceStorageLocation: StorageLocation;
+    targetStorageLocation: StorageLocation;
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -146,10 +181,15 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public submit(): Promise<void> {
-        const { onSubmit } = this.props;
+        const { onSubmit, projectId } = this.props;
+
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then(
-                (values: Store): Promise<void> => {
+            if (projectId) {
+                return Promise.all([
+                    core.projects.get({ id: projectId }),
+                    this.formRef.current.validateFields(),
+                ]).then(([getProjectResponse, values]) => {
+                    const [project] = getProjectResponse;
                     const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
                     const entries = Object.entries(values).filter(
                         (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
@@ -158,10 +198,33 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
+                        sourceStorage: values.useProjectSourceStorage ?
+                            new Storage(project.sourceStorage || { location: StorageLocation.LOCAL }) :
+                            new Storage(values.sourceStorage),
+                        targetStorage: values.useProjectTargetStorage ?
+                            new Storage(project.targetStorage || { location: StorageLocation.LOCAL }) :
+                            new Storage(values.targetStorage),
                     });
                     return Promise.resolve();
-                },
-            );
+                });
+            }
+            return this.formRef.current.validateFields()
+                .then(
+                    (values: Store): Promise<void> => {
+                        const frameFilter = values.frameStep ? `step=${values.frameStep}` : undefined;
+                        const entries = Object.entries(values).filter(
+                            (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
+                        );
+
+                        onSubmit({
+                            ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
+                            frameFilter,
+                            sourceStorage: new Storage(values.sourceStorage),
+                            targetStorage: new Storage(values.targetStorage),
+                        });
+                        return Promise.resolve();
+                    },
+                );
         }
 
         return Promise.reject(new Error('Form ref is empty'));
@@ -201,15 +264,15 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
                 help='Specify how to sort images. It is not relevant for videos.'
             >
-                <Radio.Group>
-                    <Radio value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
+                <Radio.Group buttonStyle='solid'>
+                    <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
                         Lexicographical
-                    </Radio>
-                    <Radio value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio>
-                    <Radio value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
+                    </Radio.Button>
+                    <Radio.Button value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio.Button>
+                    <Radio.Button value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
                         Predefined
-                    </Radio>
-                    <Radio value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio>
+                    </Radio.Button>
+                    <Radio.Button value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio.Button>
                 </Radio.Group>
             </Form.Item>
         );
@@ -291,15 +354,19 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderGitLFSBox(): JSX.Element {
         return (
-            <Form.Item
-                help='If annotation files are large, you can use git LFS feature'
-                name='lfs'
-                valuePropName='checked'
-            >
-                <Checkbox>
-                    <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
-                </Checkbox>
-            </Form.Item>
+            <Space>
+                <Form.Item
+                    name='lfs'
+                    valuePropName='checked'
+                    className='cvat-settings-switch'
+                >
+                    <Switch />
+                </Form.Item>
+                <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
+                <Tooltip title='If annotation files are large, you can use git LFS feature.'>
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                </Tooltip>
+            </Space>
         );
     }
 
@@ -374,25 +441,37 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderUzeZipChunks(): JSX.Element {
         return (
-            <Form.Item
-                help='Force to use zip chunks as compressed data. Actual for videos only.'
-                name='useZipChunks'
-                valuePropName='checked'
-            >
-                <Checkbox>
-                    <Text className='cvat-text-color'>Use zip chunks</Text>
-                </Checkbox>
-            </Form.Item>
+            <Space>
+                <Form.Item
+                    name='useZipChunks'
+                    valuePropName='checked'
+                    className='cvat-settings-switch'
+                >
+                    <Switch />
+                </Form.Item>
+                <Text className='cvat-text-color'>Use zip/video chunks</Text>
+                <Tooltip title='Force to use zip chunks as compressed data. Cut out content for videos only.'>
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                </Tooltip>
+            </Space>
         );
     }
 
     private renderCreateTaskMethod(): JSX.Element {
         return (
-            <Form.Item help='Using cache to store data.' name='useCache' valuePropName='checked'>
-                <Checkbox>
-                    <Text className='cvat-text-color'>Use cache</Text>
-                </Checkbox>
-            </Form.Item>
+            <Space>
+                <Form.Item
+                    name='useCache'
+                    valuePropName='checked'
+                    className='cvat-settings-switch'
+                >
+                    <Switch defaultChecked />
+                </Form.Item>
+                <Text className='cvat-text-color'>Use cache</Text>
+                <Tooltip title='Using cache to store data.'>
+                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
+                </Tooltip>
+            </Space>
         );
     }
 
@@ -423,6 +502,48 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderSourceStorage(): JSX.Element {
+        const {
+            projectId,
+            useProjectSourceStorage,
+            sourceStorageLocation,
+            onChangeUseProjectSourceStorage,
+            onChangeSourceStorageLocation,
+        } = this.props;
+        return (
+            <SourceStorageField
+                instanceId={projectId}
+                locationValue={sourceStorageLocation}
+                switchDescription='Use project source storage'
+                storageDescription='Specify source storage for import resources like annotation, backups'
+                useDefaultStorage={useProjectSourceStorage}
+                onChangeUseDefaultStorage={onChangeUseProjectSourceStorage}
+                onChangeLocationValue={onChangeSourceStorageLocation}
+            />
+        );
+    }
+
+    private renderTargetStorage(): JSX.Element {
+        const {
+            projectId,
+            useProjectTargetStorage,
+            targetStorageLocation,
+            onChangeUseProjectTargetStorage,
+            onChangeTargetStorageLocation,
+        } = this.props;
+        return (
+            <TargetStorageField
+                instanceId={projectId}
+                locationValue={targetStorageLocation}
+                switchDescription='Use project target storage'
+                storageDescription='Specify target storage for export resources like annotation, backups                '
+                useDefaultStorage={useProjectTargetStorage}
+                onChangeUseDefaultStorage={onChangeUseProjectTargetStorage}
+                onChangeLocationValue={onChangeTargetStorageLocation}
+            />
+        );
+    }
+
     public render(): JSX.Element {
         const { installedGit, activeFileManagerTab } = this.props;
         return (
@@ -436,10 +557,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     </Row>
                 ) : null}
                 <Row>
-                    <Col>{this.renderUzeZipChunks()}</Col>
-                </Row>
-                <Row>
-                    <Col>{this.renderCreateTaskMethod()}</Col>
+                    <Col span={12}>{this.renderUzeZipChunks()}</Col>
+                    <Col span={12}>{this.renderCreateTaskMethod()}</Col>
                 </Row>
                 <Row justify='start'>
                     <Col span={7}>{this.renderImageQuality()}</Col>
@@ -469,6 +588,14 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row>
                     <Col span={24}>{this.renderBugTracker()}</Col>
+                </Row>
+                <Row justify='space-between'>
+                    <Col span={11}>
+                        {this.renderSourceStorage()}
+                    </Col>
+                    <Col span={11} offset={1}>
+                        {this.renderTargetStorage()}
+                    </Col>
                 </Row>
             </Form>
         );

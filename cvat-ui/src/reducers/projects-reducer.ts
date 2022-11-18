@@ -1,14 +1,14 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { omit } from 'lodash';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
-import { Project, ProjectsState } from './interfaces';
+import { Project, ProjectsState } from '.';
 
 const defaultState: ProjectsState = {
     initialized: false,
@@ -37,9 +37,7 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
-        backups: {},
     },
-    restoring: false,
 };
 
 export default (state: ProjectsState = defaultState, action: AnyAction): ProjectsState => {
@@ -204,48 +202,6 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
-        case ProjectsActionTypes.BACKUP_PROJECT: {
-            const { projectId } = action.payload;
-            const { backups } = state.activities;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    backups: {
-                        ...backups,
-                        ...Object.fromEntries([[projectId, true]]),
-                    },
-                },
-            };
-        }
-        case ProjectsActionTypes.BACKUP_PROJECT_FAILED:
-        case ProjectsActionTypes.BACKUP_PROJECT_SUCCESS: {
-            const { projectID } = action.payload;
-            const { backups } = state.activities;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    backups: omit(backups, [projectID]),
-                },
-            };
-        }
-        case ProjectsActionTypes.RESTORE_PROJECT: {
-            return {
-                ...state,
-                restoring: true,
-            };
-        }
-        case ProjectsActionTypes.RESTORE_PROJECT_FAILED:
-        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
-            return {
-                ...state,
-                restoring: false,
-            };
-        }
-
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

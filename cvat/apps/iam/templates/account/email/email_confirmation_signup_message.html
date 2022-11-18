@@ -1,14 +1,1 @@
-{% load account %}{% user_display user as user_display %}{% load i18n %}{% autoescape off %}
-{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}
-Hello from {{ site_name }}!
-
-<p>
-    You're receiving this e-mail because user <strong>{{ user_display }}</strong> has given yours as an e-mail address
-    to connect their account.
-</p>
-
-<p>To confirm this is correct, go to <a href="{{ activate_url }}">{{ activate_url }}</a></p>
-{% endblocktrans %}
-{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}
-<strong>{{ site_domain }}</strong>
-{% endblocktrans %} {% endautoescape %}
+{% include "account/email/email_confirmation_message.html" %}

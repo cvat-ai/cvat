@@ -1,4 +1,5 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,27 +18,35 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from django_sendfile import sendfile
+from distutils.util import strtobool
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
-    LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer,
-    ProjectSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice, Task, Project
+    LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
+    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
+from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
+from cvat.apps.engine.models import (
+    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
+    CloudStorage as CloudStorageModel)
 from cvat.apps.engine.task import _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
+from cvat.apps.engine.cloud_provider import (
+    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage
+)
 
+from cvat.apps.engine.location import StorageType, get_location_configuration
 
 class Version(Enum):
-        V1 = '1.0'
+    V1 = '1.0'
 
 
 def _get_label_mapping(db_labels):
@@ -67,13 +76,24 @@ class _BackupBase():
 
         return meta
 
-    def _prepare_label_meta(self, labels):
+    def _prepare_label_meta(self, label):
         allowed_fields = {
             'name',
             'color',
             'attributes',
+            'type',
+            'svg',
+            'sublabels',
         }
-        return self._prepare_meta(allowed_fields, labels)
+        self._prepare_meta(allowed_fields, label)
+        for sublabel in label['sublabels']:
+            sublabel_id = sublabel['id']
+            sublabel_name = sublabel['name']
+            label['svg'] = label['svg'].replace(f'data-label-id="{sublabel_id}"', f'data-label-name="{sublabel_name}"')
+
+            self._prepare_meta(allowed_fields, sublabel)
+            sublabel['attributes'] = [self._prepare_attribute_meta(a) for a in sublabel['attributes']]
+        return label
 
     def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
@@ -113,6 +133,7 @@ class _TaskBackupBase(_BackupBase):
             'storage_method',
             'storage',
             'sorting_method',
+            'deleted_frames',
         }
 
         self._prepare_meta(allowed_fields, data)
@@ -142,6 +163,7 @@ class _TaskBackupBase(_BackupBase):
             'source',
             'attributes',
             'shapes',
+            'elements',
         }
 
         def _update_attribute(attribute, label):
@@ -151,14 +173,39 @@ class _TaskBackupBase(_BackupBase):
                 source, dest = attribute.pop('spec_id'), 'name'
             attribute[dest] = label_mapping[label]['attributes'][source]
 
-        def _update_label(shape):
+        def _update_label(shape, parent_label=''):
             if 'label_id' in shape:
-                source, dest = shape.pop('label_id'), 'label'
+                source = shape.pop('label_id')
+                shape['label'] = label_mapping[source]['value']
             elif 'label' in shape:
-                source, dest = shape.pop('label'), 'label_id'
-            shape[dest] = label_mapping[source]['value']
+                source = parent_label + shape.pop('label')
+                shape['label_id'] = label_mapping[source]['value']
 
             return source
+
+        def _prepare_shapes(shapes, parent_label=''):
+            for shape in shapes:
+                label = _update_label(shape, parent_label)
+                for attr in shape['attributes']:
+                    _update_attribute(attr, label)
+
+                _prepare_shapes(shape.get('elements', []), label)
+
+                self._prepare_meta(allowed_fields, shape)
+
+        def _prepare_tracks(tracks, parent_label=''):
+            for track in tracks:
+                label = _update_label(track, parent_label)
+                for shape in track['shapes']:
+                    for attr in shape['attributes']:
+                        _update_attribute(attr, label)
+                    self._prepare_meta(allowed_fields, shape)
+
+                _prepare_tracks(track.get('elements', []), label)
+
+                for attr in track['attributes']:
+                    _update_attribute(attr, label)
+                self._prepare_meta(allowed_fields, track)
 
         for tag in annotations['tags']:
             label = _update_label(tag)
@@ -166,22 +213,8 @@ class _TaskBackupBase(_BackupBase):
                 _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, tag)
 
-        for shape in annotations['shapes']:
-            label = _update_label(shape)
-            for attr in shape['attributes']:
-                _update_attribute(attr, label)
-            self._prepare_meta(allowed_fields, shape)
-
-        for track in annotations['tracks']:
-            label = _update_label(track)
-            for shape in track['shapes']:
-                for attr in shape['attributes']:
-                    _update_attribute(attr, label)
-                self._prepare_meta(allowed_fields, shape)
-
-            for attr in track['attributes']:
-                _update_attribute(attr, label)
-            self._prepare_meta(allowed_fields, track)
+        _prepare_shapes(annotations['shapes'])
+        _prepare_tracks(annotations['tracks'])
 
         return annotations
 
@@ -265,7 +298,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             raise NotImplementedError()
 
     def _write_task(self, zip_object, target_dir=None):
-        task_dir = self._db_task.get_task_dirname()
+        task_dir = self._db_task.get_dirname()
         target_task_dir = os.path.join(target_dir, self.TASK_DIRNAME) if target_dir else self.TASK_DIRNAME
         self._write_directory(
             source_dir=task_dir,
@@ -276,12 +309,12 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
     def _write_manifest(self, zip_object, target_dir=None):
         def serialize_task():
-            task_serializer = TaskSerializer(self._db_task)
+            task_serializer = TaskReadSerializer(self._db_task)
             for field in ('url', 'owner', 'assignee', 'segments'):
                 task_serializer.fields.pop(field)
 
             task = self._prepare_task_meta(task_serializer.data)
-            task['labels'] = [self._prepare_label_meta(l) for l in task['labels']]
+            task['labels'] = [self._prepare_label_meta(l) for l in task['labels'] if not l['has_parent']]
             for label in task['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
 
@@ -310,6 +343,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             data_serializer = DataSerializer(self._db_data)
             data = data_serializer.data
             data['chunk_type'] = data.pop('compressed_chunk_type')
+            # There are no deleted frames in DataSerializer so we need to pick it
+            data['deleted_frames'] = self._db_data.deleted_frames
             return self._prepare_data_meta(data)
 
         task = serialize_task()
@@ -345,8 +380,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
     def export_to(self, file, target_dir=None):
         if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
-           self._db_task.data.storage == StorageChoice.SHARE:
-           raise Exception('The task cannot be exported because it does not contain any raw data')
+                self._db_task.data.storage == StorageChoice.SHARE:
+            raise Exception('The task cannot be exported because it does not contain any raw data')
 
         if isinstance(file, str):
             with ZipFile(file, 'w') as zf:
@@ -374,8 +409,7 @@ class _ImporterBase():
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
 
-    @staticmethod
-    def _create_labels(labels, db_task=None, db_project=None):
+    def _create_labels(self, labels, db_task=None, db_project=None, parent_label=None):
         label_mapping = {}
         if db_task:
             label_relation = {
@@ -390,18 +424,28 @@ class _ImporterBase():
         for label in labels:
             label_name = label['name']
             attributes = label.pop('attributes', [])
-            db_label = models.Label.objects.create(**label_relation, **label)
-            label_mapping[label_name] = {
+            svg = label.pop('svg', '')
+            sublabels  = label.pop('sublabels', [])
+
+            db_label = models.Label.objects.create(**label_relation, parent=parent_label, **label)
+            label_mapping[(parent_label.name if parent_label else '') + label_name] = {
                 'value': db_label.id,
                 'attributes': {},
             }
+
+            label_mapping.update(self._create_labels(sublabels, db_task, db_project, db_label))
+
+            if db_label.type == str(models.LabelType.SKELETON):
+                for db_sublabel in list(db_label.sublabels.all()):
+                    svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                models.Skeleton.objects.create(root=db_label, svg=svg)
 
             for attribute in attributes:
                 attribute_name = attribute['name']
                 attribute_serializer = AttributeSerializer(data=attribute)
                 attribute_serializer.is_valid(raise_exception=True)
                 db_attribute = attribute_serializer.save(label=db_label)
-                label_mapping[label_name]['attributes'][attribute_name] = db_attribute.id
+                label_mapping[(parent_label.name if parent_label else '') + label_name]['attributes'][attribute_name] = db_attribute.id
 
         return label_mapping
 
@@ -481,7 +525,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._manifest['project_id'] = self._project_id
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
-        task_path = self._db_task.get_task_dirname()
+        task_path = self._db_task.get_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
@@ -511,8 +555,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         db_data.start_frame = data['start_frame']
         db_data.stop_frame = data['stop_frame']
         db_data.frame_filter = data['frame_filter']
+        db_data.deleted_frames = data_serializer.initial_data.get('deleted_frames', [])
         db_data.storage = StorageChoice.LOCAL
-        db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage'])
+        db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage', 'deleted_frames'])
 
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job['status']
@@ -565,12 +610,12 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
     def _write_manifest(self, zip_object):
         def serialize_project():
-            project_serializer = ProjectSerializer(self._db_project)
+            project_serializer = ProjectReadSerializer(self._db_project)
             for field in ('assignee', 'owner', 'tasks', 'url'):
                 project_serializer.fields.pop(field)
 
             project = self._prepare_project_meta(project_serializer.data)
-            project['labels'] = [self._prepare_label_meta(l) for l in project['labels']]
+            project['labels'] = [self._prepare_label_meta(l) for l in project['labels'] if not l['has_parent']]
             for label in project['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
 
@@ -587,7 +632,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
             self._write_manifest(output_file)
 
 class ProjectImporter(_ImporterBase, _ProjectBackupBase):
-    TASKNAME_RE = 'task_(\d+)/'
+    TASKNAME_RE = r'task_(\d+)/'
 
     def __init__(self, filename, user_id, org_id=None):
         super().__init__(logger=slogger.glob)
@@ -612,7 +657,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._manifest["owner_id"] = self._user_id
 
         self._db_project = models.Project.objects.create(**self._manifest, organization_id=self._org_id)
-        project_path = self._db_project.get_project_dirname()
+        project_path = self._db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
         os.makedirs(self._db_project.get_project_logs_dirname())
@@ -689,6 +734,8 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
 
 def export(db_instance, request):
     action = request.query_params.get('action', None)
+    filename = request.query_params.get('filename', None)
+
     if action not in (None, 'download'):
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
@@ -698,14 +745,23 @@ def export(db_instance, request):
         logger = slogger.task[db_instance.pk]
         Exporter = TaskExporter
         cache_ttl = TASK_CACHE_TTL
+        use_target_storage_conf = request.query_params.get('use_default_location', True)
     elif isinstance(db_instance, Project):
         filename_prefix = 'project'
         logger = slogger.project[db_instance.pk]
         Exporter = ProjectExporter
         cache_ttl = PROJECT_CACHE_TTL
+        use_target_storage_conf = request.query_params.get('use_default_location', True)
     else:
         raise Exception(
             "Unexpected type of db_isntance: {}".format(type(db_instance)))
+    use_settings = strtobool(str(use_target_storage_conf))
+    obj = db_instance if use_settings else request.query_params
+    location_conf = get_location_configuration(
+        obj=obj,
+        use_settings=use_settings,
+        field_name=StorageType.TARGET
+    )
 
     queue = django_rq.get_queue("default")
     rq_id = "/api/{}s/{}/backup".format(filename_prefix, db_instance.pk)
@@ -724,11 +780,28 @@ def export(db_instance, request):
 
                     timestamp = datetime.strftime(last_project_update_time,
                         "%Y_%m_%d_%H_%M_%S")
-                    filename = "{}_{}_backup_{}{}".format(
+                    filename = filename or "{}_{}_backup_{}{}".format(
                         filename_prefix, db_instance.name, timestamp,
-                        os.path.splitext(file_path)[1])
-                    return sendfile(request, file_path, attachment=True,
-                        attachment_filename=filename.lower())
+                        os.path.splitext(file_path)[1]).lower()
+
+                    location = location_conf.get('location')
+                    if location == Location.LOCAL:
+                        return sendfile(request, file_path, attachment=True,
+                            attachment_filename=filename)
+                    elif location == Location.CLOUD_STORAGE:
+                        try:
+                            storage_id = location_conf['storage_id']
+                        except KeyError:
+                            raise serializers.ValidationError(
+                                'Cloud storage location was selected for destination'
+                                ' but cloud storage id was not specified')
+                        db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                        storage = db_storage_to_storage_instance(db_storage)
+
+                        export_to_cloud_storage(storage, file_path, filename)
+                        return Response(status=status.HTTP_200_OK)
+                    else:
+                        raise NotImplementedError()
                 else:
                     if os.path.exists(file_path):
                         return Response(status=status.HTTP_201_CREATED)
@@ -749,19 +822,49 @@ def export(db_instance, request):
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import(importer, request, rq_id, Serializer, file_field_name):
+
+def _download_file_from_bucket(db_storage, filename, key):
+    storage = db_storage_to_storage_instance(db_storage)
+
+    data = import_from_cloud_storage(storage, key)
+    with open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
+
+def _import(importer, request, rq_id, Serializer, file_field_name, location_conf, filename=None):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        serializer = Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        payload_file = serializer.validated_data[file_field_name]
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        fd, filename = mkstemp(prefix='cvat_')
-        with open(filename, 'wb+') as f:
-            for chunk in payload_file.chunks():
-                f.write(chunk)
+        fd = None
+        dependent_job = None
+
+        location = location_conf.get('location')
+        if location == Location.LOCAL:
+            if not filename:
+                serializer = Serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                payload_file = serializer.validated_data[file_field_name]
+                fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+                with open(filename, 'wb+') as f:
+                    for chunk in payload_file.chunks():
+                        f.write(chunk)
+        else:
+            file_name = request.query_params.get('filename')
+            assert file_name, "The filename wasn't specified"
+            try:
+                storage_id = location_conf['storage_id']
+            except KeyError:
+                raise serializers.ValidationError(
+                    'Cloud storage location was selected for destination'
+                    ' but cloud storage id was not specified')
+            db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+            key = filename
+            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+            dependent_job = configure_dependent_job(
+                queue, rq_id, _download_file_from_bucket,
+                db_storage, filename, key)
+
         rq_job = queue.enqueue_call(
             func=importer,
             args=(filename, request.user.id, org_id),
@@ -770,20 +873,18 @@ def _import(importer, request, rq_id, Serializer, file_field_name):
                 'tmp_file': filename,
                 'tmp_file_descriptor': fd,
             },
+            depends_on=dependent_job
         )
     else:
         if rq_job.is_finished:
             project_id = rq_job.return_value
-            os.close(rq_job.meta['tmp_file_descriptor'])
+            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
-            exc_info = str(rq_job.exc_info)
-            rq_job.delete()
-
+        elif rq_job.is_failed or \
+                rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+            exc_info = process_failed_job(rq_job)
             # RQ adds a prefix with exception class name
             import_error_prefix = '{}.{}'.format(
                 CvatImportError.__module__, CvatImportError.__name__)
@@ -797,7 +898,10 @@ def _import(importer, request, rq_id, Serializer, file_field_name):
 
     return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
 
-def import_project(request):
+def get_backup_dirname():
+    return settings.TMP_FILES_ROOT
+
+def import_project(request, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
@@ -805,15 +909,22 @@ def import_project(request):
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
+    location_conf = get_location_configuration(
+        obj=request.query_params,
+        field_name=StorageType.SOURCE,
+    )
+
     return _import(
         importer=_import_project,
         request=request,
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
+        location_conf=location_conf,
+        filename=filename
     )
 
-def import_task(request):
+def import_task(request, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
@@ -821,10 +932,17 @@ def import_task(request):
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 
+    location_conf = get_location_configuration(
+        obj=request.query_params,
+        field_name=StorageType.SOURCE
+    )
+
     return _import(
         importer=_import_task,
         request=request,
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
+        location_conf=location_conf,
+        filename=filename
     )

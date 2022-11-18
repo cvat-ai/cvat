@@ -1,13 +1,16 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os
 import boto3
+import functools
+import json
 
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
+from rest_framework import serializers
 
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
@@ -34,6 +37,14 @@ class Status(str, Enum):
 
     def __str__(self):
         return self.value
+
+class Permissions(str, Enum):
+    READ = 'read'
+    WRITE = 'write'
+
+    @classmethod
+    def all(cls):
+        return {i.value for i in cls}
 
 class _CloudStorage(ABC):
 
@@ -86,7 +97,11 @@ class _CloudStorage(ABC):
             raise NotImplementedError("Unsupported type {} was found".format(type(file_obj)))
 
     @abstractmethod
-    def upload_file(self, file_obj, file_name):
+    def upload_fileobj(self, file_obj, file_name):
+        pass
+
+    @abstractmethod
+    def upload_file(self, file_path, file_name=None):
         pass
 
     def __contains__(self, file_name):
@@ -98,6 +113,18 @@ class _CloudStorage(ABC):
     @property
     def content(self):
         return list(map(lambda x: x['name'] , self._files))
+
+    @abstractproperty
+    def supported_actions(self):
+        pass
+
+    @property
+    def read_access(self):
+        return Permissions.READ in self.access
+
+    @property
+    def write_access(self):
+        return Permissions.WRITE in self.access
 
 def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_attributes=None, endpoint=None):
     instance = None
@@ -133,6 +160,12 @@ class AWS_S3(_CloudStorage):
     transfer_config = {
         'max_io_queue': 10,
     }
+
+    class Effect(str, Enum):
+        ALLOW = 'Allow'
+        DENY = 'Deny'
+
+
     def __init__(self,
                 bucket,
                 region,
@@ -209,12 +242,26 @@ class AWS_S3(_CloudStorage):
     def get_file_last_modified(self, key):
         return self._head_file(key).get('LastModified')
 
-    def upload_file(self, file_obj, file_name):
+    def upload_fileobj(self, file_obj, file_name):
         self._bucket.upload_fileobj(
             Fileobj=file_obj,
             Key=file_name,
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
+
+    def upload_file(self, file_path, file_name=None):
+        if not file_name:
+            file_name = os.path.basename(file_path)
+        try:
+            self._bucket.upload_file(
+                file_path,
+                file_name,
+                Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
+            )
+        except ClientError as ex:
+            msg = str(ex)
+            slogger.glob.error(msg)
+            raise Exception(msg)
 
     def initialize_content(self):
         files = self._bucket.objects.all()
@@ -251,8 +298,45 @@ class AWS_S3(_CloudStorage):
             slogger.glob.info(msg)
             raise Exception(msg)
 
+    def delete_file(self, file_name: str):
+        try:
+            self._client_s3.delete_object(Bucket=self.name, Key=file_name)
+        except Exception as ex:
+            msg = str(ex)
+            slogger.glob.info(msg)
+            raise
+
+    @property
+    def supported_actions(self):
+        allowed_actions = set()
+        try:
+            bucket_policy = self._bucket.Policy().policy
+        except ClientError as ex:
+            if 'NoSuchBucketPolicy' in str(ex):
+                return Permissions.all()
+            else:
+                raise Exception(str(ex))
+        bucket_policy = json.loads(bucket_policy) if isinstance(bucket_policy, str) else bucket_policy
+        for statement in bucket_policy['Statement']:
+            effect = statement.get('Effect') # Allow | Deny
+            actions = statement.get('Action', set())
+            if effect == self.Effect.ALLOW:
+                allowed_actions.update(actions)
+        access = {
+            's3:GetObject': Permissions.READ,
+            's3:PutObject': Permissions.WRITE,
+        }
+        allowed_actions = Permissions.all() & {access.get(i) for i in allowed_actions}
+
+        return allowed_actions
+
 class AzureBlobContainer(_CloudStorage):
     MAX_CONCURRENCY = 3
+
+
+    class Effect:
+        pass
+
     def __init__(self, container, account_name, sas_token=None):
         super().__init__()
         self._account_name = account_name
@@ -317,9 +401,18 @@ class AzureBlobContainer(_CloudStorage):
             else:
                 return Status.NOT_FOUND
 
-    def upload_file(self, file_obj, file_name):
+    def upload_fileobj(self, file_obj, file_name):
         self._container_client.upload_blob(name=file_name, data=file_obj)
 
+    def upload_file(self, file_path, file_name=None):
+        if not file_name:
+            file_name = os.path.basename(file_path)
+        try:
+            with open(file_path, 'r') as f:
+                self.upload_fileobj(f, file_name)
+        except Exception as ex:
+            slogger.glob.error(str(ex))
+            raise
 
     # TODO:
     # def multipart_upload(self, file_obj):
@@ -342,6 +435,10 @@ class AzureBlobContainer(_CloudStorage):
         buf.seek(0)
         return buf
 
+    @property
+    def supported_actions(self):
+        pass
+
 class GOOGLE_DRIVE(_CloudStorage):
     pass
 
@@ -360,6 +457,9 @@ def _define_gcs_status(func):
     return wrapper
 
 class GoogleCloudStorage(_CloudStorage):
+
+    class Effect:
+        pass
 
     def __init__(self, bucket_name, prefix=None, service_account_json=None, anonymous_access=False, project=None, location=None):
         super().__init__()
@@ -416,8 +516,17 @@ class GoogleCloudStorage(_CloudStorage):
         buf.seek(0)
         return buf
 
-    def upload_file(self, file_obj, file_name):
+    def upload_fileobj(self, file_obj, file_name):
         self.bucket.blob(file_name).upload_from_file(file_obj)
+
+    def upload_file(self, file_path, file_name=None):
+        if not file_name:
+            file_name = os.path.basename(file_path)
+        try:
+            self.bucket.blob(file_name).upload_from_filename(file_path)
+        except Exception as ex:
+            slogger.glob.info(str(ex))
+            raise
 
     def create(self):
         try:
@@ -440,6 +549,10 @@ class GoogleCloudStorage(_CloudStorage):
         blob = self.bucket.blob(key)
         blob.reload()
         return blob.updated
+
+    @property
+    def supported_actions(self):
+        pass
 
 class Credentials:
     __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
@@ -502,3 +615,44 @@ class Credentials:
 
     def values(self):
         return [self.key, self.secret_key, self.session_token, self.account_name, self.key_file_path]
+
+
+def validate_bucket_status(func):
+    @functools.wraps(func)
+    def wrapper(storage, *args, **kwargs):
+        try:
+            res = func(storage, *args, **kwargs)
+        except Exception as ex:
+            # check that cloud storage exists
+            storage_status = storage.get_status() if storage is not None else None
+            if storage_status == Status.FORBIDDEN:
+                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
+            elif storage_status == Status.NOT_FOUND:
+                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+            else:
+                msg = str(ex)
+            raise serializers.ValidationError(msg)
+        return res
+    return wrapper
+
+
+def db_storage_to_storage_instance(db_storage):
+    credentials = Credentials()
+    credentials.convert_from_db({
+        'type': db_storage.credentials_type,
+        'value': db_storage.credentials,
+    })
+    details = {
+        'resource': db_storage.resource,
+        'credentials': credentials,
+        'specific_attributes': db_storage.get_specific_attributes()
+    }
+    return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+
+@validate_bucket_status
+def import_from_cloud_storage(storage, file_name):
+    return storage.download_fileobj(file_name)
+
+@validate_bucket_status
+def export_to_cloud_storage(storage, file_path, file_name):
+    storage.upload_file(file_path, file_name)

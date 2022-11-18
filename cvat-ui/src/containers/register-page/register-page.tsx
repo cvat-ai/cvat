@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import { registerAsync } from 'actions/auth-actions';
 import RegisterPageComponent from 'components/register-page/register-page';
 import { UserConfirmation } from 'components/register-page/register-form';
-import { CombinedState, UserAgreement } from 'reducers/interfaces';
+import { CombinedState, UserAgreement } from 'reducers';
 
 interface StateToProps {
     fetching: boolean;
@@ -20,8 +20,7 @@ interface DispatchToProps {
         firstName: string,
         lastName: string,
         email: string,
-        password1: string,
-        password2: string,
+        password: string,
         userAgreement: UserConfirmation[],
     ) => void;
 }

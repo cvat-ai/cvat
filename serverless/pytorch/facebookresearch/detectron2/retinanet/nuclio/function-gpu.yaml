@@ -1,5 +1,5 @@
 metadata:
-  name: pth.facebookresearch.detectron2.retinanet_r101
+  name: pth.facebookresearch.detectron2.retinanet-r101
   namespace: cvat
   annotations:
     name: RetinaNet R101
@@ -96,7 +96,7 @@ spec:
   eventTimeout: 30s
 
   build:
-    image: cvat/pth.facebookresearch.detectron2.retinanet_r101
+    image: cvat.pth.facebookresearch.detectron2.retinanet_r101
     baseImage: ubuntu:20.04
 
     directives:
@@ -114,7 +114,7 @@ spec:
         - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
         - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/local/bin/pip
+          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
 
   triggers:
     myHttpTrigger:
