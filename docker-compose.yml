@@ -7,7 +7,7 @@ version: '3.3'
 services:
   cvat_db:
     container_name: cvat_db
-    image: postgres:10-alpine
+    image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_USER: root
