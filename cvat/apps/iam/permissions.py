@@ -1258,7 +1258,7 @@ class LimitPermission(OpenPolicyAgentPermission):
             scope_handler
             for ctx, _ in cls._supported_capabilities().keys()
             for scope_handler in ctx.create(request, view, obj)
-            if isinstance(scope_handler, ctx)
+            if cls._get_capabilities(scope_handler)
         ]
 
     def get_resource(self):
