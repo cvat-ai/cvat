@@ -3,9 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from enum import Enum
 import operator
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -16,7 +19,8 @@ from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
-from cvat.apps.limit_manager.core.limits import LimitManager, ConsumableCapability, WebhookCreateContext
+from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
+    ConsumableCapability, TaskCreateInProjectContext, WebhookCreateContext, TaskCreateContext)
 
 
 class RequestNotAllowedError(PermissionDenied):
@@ -24,6 +28,20 @@ class RequestNotAllowedError(PermissionDenied):
 
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
+    url: str
+    user_id: int
+    group_name: Optional[str]
+    org_id: Optional[int]
+    org_owner_id: Optional[int]
+    org_role: Optional[str]
+    scope: str
+    obj: Optional[Any]
+
+    @classmethod
+    @abstractmethod
+    def create(cls, request, view, obj) -> Sequence[OpenPolicyAgentPermission]:
+        ...
+
     @classmethod
     def create_base_perm(cls, request, view, scope, obj=None, **kwargs):
         return cls(
@@ -613,14 +631,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 },
                 'organization': {
                     "id": self.org_id,
-                    "num_resources": LimitManager().get_used_resources(
-                        org_id=self.org_id,
-                        capability=ConsumableCapability.PROJECT_CREATE,
-                    ),
-                    "max_resources": LimitManager().get_limits(
-                        org_id=self.org_id,
-                        capability=ConsumableCapability.PROJECT_CREATE,
-                    ),
                 } if self.org_id else None,
                 "user": {
                     "num_resources": LimitManager().get_used_resources(
@@ -644,6 +654,13 @@ class TaskPermission(OpenPolicyAgentPermission):
             project_id = request.data.get('project_id') or request.data.get('project')
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
             for scope in cls.get_scopes(request, view, obj):
+                if scope == __class__.Scopes.UPDATE_ORGANIZATION:
+                    org_id = request.data.get('organization')
+                    if obj is not None and obj.project is not None:
+                        raise ValidationError('Cannot change the organization for '
+                            'a task inside a project')
+                    permissions.append(TaskPermission.create_scope_create(request, org_id))
+
                 self = cls.create_base_perm(request, view, scope, obj,
                     project_id=project_id, assignee_id=assignee_id)
                 permissions.append(self)
@@ -665,92 +682,121 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = ProjectPermission.create_scope_view(request, project_id)
                 permissions.append(perm)
 
-            if 'organization' in request.data:
-                org_id = request.data.get('organization')
-                perm = TaskPermission.create_scope_create(request, org_id)
-                # We don't create a project, just move it. Thus need to decrease
-                # the number of resources.
-                if obj is not None:
-                    perm.payload['input']['resource']['user']['num_resources'] -= 1
-                    if obj.project is not None:
-                        ValidationError('Cannot change the organization for '
-                            'a task inside a project')
-                permissions.append(perm)
-
         return permissions
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/result'
 
+    class Scopes(str, Enum):
+        LIST = 'list'
+        CREATE = 'create'
+        CREATE_IN_PROJECT = 'create@project'
+        VIEW = 'view'
+        UPDATE = 'update'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_ORGANIZATION = 'update:organization'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_PROJECT = 'update:project'
+        UPDATE_OWNER = 'update:owner'
+        DELETE = 'delete'
+        VIEW_ANNOTATIONS = 'view:annotations'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        DELETE_ANNOTATIONS = 'delete:annotations'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        EXPORT_ANNOTATIONS = 'export:annotations'
+        EXPORT_DATASET = 'export:dataset'
+        VIEW_METADATA = 'view:metadata'
+        UPDATE_METADATA = 'update:metadata'
+        VIEW_DATA = 'view:data'
+        UPLOAD_DATA = 'upload:data'
+        IMPORT_BACKUP = 'import:backup'
+        EXPORT_BACKUP = 'export:backup'
+
+        def __str__(self) -> str:
+            return self.value
+
     @staticmethod
-    def get_scopes(request, view, obj):
+    def get_scopes(request, view, obj) -> Scopes:
+        Scopes = __class__.Scopes
         scope = {
-            ('list', 'GET'): 'list',
-            ('create', 'POST'): 'create',
-            ('retrieve', 'GET'): 'view',
-            ('status', 'GET'): 'view',
-            ('partial_update', 'PATCH'): 'update',
-            ('update', 'PUT'): 'update',
-            ('destroy', 'DELETE'): 'delete',
-            ('annotations', 'GET'): 'view:annotations',
-            ('annotations', 'PATCH'): 'update:annotations',
-            ('annotations', 'DELETE'): 'delete:annotations',
-            ('annotations', 'PUT'): 'update:annotations',
-            ('annotations', 'POST'): 'import:annotations',
-            ('append_annotations_chunk', 'PATCH'): 'update:annotations',
-            ('append_annotations_chunk', 'HEAD'): 'update:annotations',
-            ('dataset_export', 'GET'): 'export:dataset',
-            ('metadata', 'GET'): 'view:metadata',
-            ('metadata', 'PATCH'): 'update:metadata',
-            ('data', 'GET'): 'view:data',
-            ('data', 'POST'): 'upload:data',
-            ('append_data_chunk', 'PATCH'): 'upload:data',
-            ('append_data_chunk', 'HEAD'): 'upload:data',
-            ('jobs', 'GET'): 'view',
-            ('import_backup', 'POST'): 'import:backup',
-            ('append_backup_chunk', 'PATCH'): 'import:backup',
-            ('append_backup_chunk', 'HEAD'): 'import:backup',
-            ('export_backup', 'GET'): 'export:backup',
+            ('list', 'GET'): Scopes.LIST,
+            ('create', 'POST'): Scopes.CREATE,
+            ('retrieve', 'GET'): Scopes.VIEW,
+            ('status', 'GET'): Scopes.VIEW,
+            ('partial_update', 'PATCH'): Scopes.UPDATE,
+            ('update', 'PUT'): Scopes.UPDATE,
+            ('destroy', 'DELETE'): Scopes.DELETE,
+            ('annotations', 'GET'): Scopes.VIEW_ANNOTATIONS,
+            ('annotations', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
+            ('annotations', 'DELETE'): Scopes.DELETE_ANNOTATIONS,
+            ('annotations', 'PUT'): Scopes.UPDATE_ANNOTATIONS,
+            ('annotations', 'POST'): Scopes.IMPORT_ANNOTATIONS,
+            ('append_annotations_chunk', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
+            ('append_annotations_chunk', 'HEAD'): Scopes.UPDATE_ANNOTATIONS,
+            ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('metadata', 'GET'): Scopes.VIEW_METADATA,
+            ('metadata', 'PATCH'): Scopes.UPDATE_METADATA,
+            ('data', 'GET'): Scopes.VIEW_DATA,
+            ('data', 'POST'): Scopes.UPLOAD_DATA,
+            ('append_data_chunk', 'PATCH'): Scopes.UPLOAD_DATA,
+            ('append_data_chunk', 'HEAD'): Scopes.UPLOAD_DATA,
+            ('jobs', 'GET'): Scopes.VIEW,
+            ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
+            ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
+            ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
+            ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
         }.get((view.action, request.method))
 
         scopes = []
-        if scope == 'create':
+        if scope == Scopes.CREATE:
             project_id = request.data.get('project_id') or request.data.get('project')
             if project_id:
-                scope = scope + '@project'
+                scope = Scopes.CREATE_IN_PROJECT
 
             scopes.append(scope)
-        elif scope == 'update':
+
+        elif scope == Scopes.UPDATE:
             if any(k in request.data for k in ('owner_id', 'owner')):
                 owner_id = request.data.get('owner_id') or request.data.get('owner')
                 if owner_id != getattr(obj.owner, 'id', None):
-                    scopes.append(scope + ':owner')
+                    scopes.append(Scopes.UPDATE_OWNER)
+
             if any(k in request.data for k in ('assignee_id', 'assignee')):
                 assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
                 if assignee_id != getattr(obj.assignee, 'id', None):
-                    scopes.append(scope + ':assignee')
+                    scopes.append(Scopes.UPDATE_ASSIGNEE)
+
             if any(k in request.data for k in ('project_id', 'project')):
                 project_id = request.data.get('project_id') or request.data.get('project')
                 if project_id != getattr(obj.project, 'id', None):
-                    scopes.append(scope + ':project')
+                    scopes.append(Scopes.UPDATE_PROJECT)
+
             if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
-                scopes.append(scope + ':desc')
+                scopes.append(Scopes.UPDATE_DESC)
+
             if request.data.get('organization'):
-                scopes.append(scope + ':organization')
+                scopes.append(Scopes.UPDATE_ORGANIZATION)
 
-        elif scope == 'view:annotations':
+        elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:
-                scope = 'export:annotations'
+                scope = Scopes.EXPORT_ANNOTATIONS
 
             scopes.append(scope)
-        elif scope == 'update:annotations':
+
+        elif scope == Scopes.UPDATE_ANNOTATIONS:
             if 'format' in request.query_params and request.method == 'PUT':
-                scope = 'import:annotations'
+                scope = Scopes.IMPORT_ANNOTATIONS
 
             scopes.append(scope)
-        else:
+
+        elif scope is not None:
             scopes.append(scope)
+
+        else:
+            # TODO: think if we can protect from missing endpoints
+            # assert False, "Unknown scope"
+            pass
 
         return scopes
 
@@ -760,7 +806,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             obj = Task.objects.get(id=task_id)
         except Task.DoesNotExist as ex:
             raise ValidationError(str(ex))
-        return cls(**cls.unpack_context(request), obj=obj, scope='view:data')
+        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW_DATA)
 
     def get_resource(self):
         data = None
@@ -780,15 +826,17 @@ class TaskPermission(OpenPolicyAgentPermission):
                     },
                 } if self.obj.project else None
             }
-        elif self.scope in ['create', 'create@project', 'import:backup']:
+        elif self.scope in [
+            __class__.Scopes.CREATE,
+            __class__.Scopes.CREATE_IN_PROJECT,
+            __class__.Scopes.IMPORT_BACKUP
+        ]:
             project = None
             if self.project_id:
                 try:
                     project = Project.objects.get(id=self.project_id)
                 except Project.DoesNotExist as ex:
                     raise ValidationError(str(ex))
-
-            limit_manager = LimitManager()
 
             data = {
                 "id": None,
@@ -804,26 +852,8 @@ class TaskPermission(OpenPolicyAgentPermission):
                     "assignee": { "id": getattr(project.assignee, 'id', None) },
                     'organization': {
                         "id": getattr(project.organization, 'id', None),
-                        "num_resources": limit_manager.get_used_resources(
-                            org_id=project.organization.id,
-                            capability=ConsumableCapability.TASK_CREATE,
-                        ),
-                        "max_resources": limit_manager.get_limits(
-                            org_id=project.organization.id,
-                            capability=ConsumableCapability.TASK_CREATE,
-                        ),
                     } if project.organization is not None else None,
                 } if project is not None else None,
-                "user": {
-                    "num_resources": limit_manager.get_used_resources(
-                        user_id=self.user_id,
-                        capability=ConsumableCapability.TASK_CREATE,
-                    ),
-                    "max_resources": limit_manager.get_limits(
-                        user_id=self.user_id,
-                        capability=ConsumableCapability.TASK_CREATE,
-                    ),
-                }
             }
 
         return data
@@ -1210,51 +1240,105 @@ class IssuePermission(OpenPolicyAgentPermission):
 class LimitPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
-        permissions = [
-            cls.create_base_perm(request, view, obj)
+        return [
+            cls.create_base_perm(request, view, str(scope_handler.scope), obj,
+                scope_handler=scope_handler
+            )
+            for scope_handler in cls.get_scopes(request, view, obj)
         ]
 
-        return permissions
-
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/limits/result'
+        self.scope_handler = kwargs.pop('scope_handler')
+        super().__init__(**kwargs)
 
     @classmethod
     def get_scopes(cls, request, view, obj):
-        return [{
-            cls._capability_to_scope(cap) for cap in ConsumableCapability.__members__
-        }]
+        return [
+            scope_handler
+            for ctx, _ in cls._supported_capabilities().keys()
+            for scope_handler in ctx.create(request, view, obj)
+            if isinstance(scope_handler, ctx)
+        ]
 
     def get_resource(self):
+        data = {}
         limit_manager = LimitManager()
 
-        capability = self._scope_to_capability(self.scope)
+        def _get_capability_status(
+            capability: ConsumableCapability, capability_params: Optional[CapabilityContext]
+        ) -> dict:
+            status = limit_manager.get_status(capability=capability, context=capability_params)
+            return { 'used': status[0], 'max': status[1] }
+
+        for capability in self._get_capabilities(self.scope_handler):
+            data[self._get_capability_name(capability)] = _get_capability_status(
+                capability=capability,
+                capability_params=self._parse_capability_params(self.scope_handler, capability)
+            )
+
+        return { 'limits': data }
+
+    @classmethod
+    def _get_capability_name(cls, capability: ConsumableCapability) -> str:
+        return capability.name.lower()
+
+    @classmethod
+    def _get_capabilities(
+        cls, scope_handler: OpenPolicyAgentPermission
+    ) -> List[ConsumableCapability]:
+        return cls._supported_capabilities().get(
+            (type(scope_handler), str(scope_handler.scope)),
+            []
+        )
+
+    @classmethod
+    def _supported_capabilities(cls) -> Dict[
+        Tuple[Type[OpenPolicyAgentPermission], str], List[ConsumableCapability]
+    ]:
         return {
-            'user': {
-                'used': limit_manager.get_used_resources(
-                        capability=capability, user_id=self.user_id, org_id=self.org_id
-                    ),
-                'limit': limit_manager.get_limits(
-                        capability=capability, user_id=self.user_id, org_id=self.org_id
-                    ),
-            },
+            (TaskPermission, TaskPermission.Scopes.CREATE.value): [
+                ConsumableCapability.TASK_CREATE
+            ],
+            (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT.value): [
+                # TaskPermissions outputs both parent scope and this one
+                # no need to copy this logic here
+                ConsumableCapability.TASK_CREATE_IN_PROJECT
+            ],
         }
 
     @classmethod
-    def _scope_to_capability(cls, scope) -> ConsumableCapability:
-        pass
+    def _parse_capability_params(cls,
+        scope: OpenPolicyAgentPermission, capability: ConsumableCapability
+    ) -> CapabilityContext:
+        scope_id = (type(scope), scope.scope)
+        if scope_id == (TaskPermission, TaskPermission.Scopes.CREATE.value):
+            assert capability == ConsumableCapability.TASK_CREATE
+            capability_params = TaskCreateContext(org_id=scope.org_id, user_id=scope.user_id)
 
-    @classmethod
-    def _capability_to_scope(cls, capability: ConsumableCapability) -> str:
-        pass
+        elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT.value):
+            assert capability == ConsumableCapability.TASK_CREATE_IN_PROJECT
+            capability_params = TaskCreateInProjectContext(org_id=scope.org_id,
+                user_id=scope.user_id, project_id=scope.project_id)
 
+        elif scope_id == (WebhookPermission, 'create'):
+            assert capability == ConsumableCapability.WEBHOOK_CREATE
+            capability_params = WebhookCreateContext(
+                user_id=scope.user_id,
+                project_id=scope.project_id,
+                org_id=scope.org_id
+            )
+        else:
+            raise NotImplementedError(f"Unknown scope {scope_id}")
+
+        return capability_params
 
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
         permissions = []
+
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
         # request and replace the http method). To avoid handling

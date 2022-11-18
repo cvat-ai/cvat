@@ -38,9 +38,6 @@ import data.limits
 #             "assignee": { "id": <num> },
 #             "organization": { "id": <num> } or null,
 #         } or null,
-#         "user": {
-#             "num_resources": <num>
-#         }
 #     }
 # }
 
@@ -80,134 +77,88 @@ is_task_staff {
     is_task_assignee
 }
 
-default status = false
+default allow = false
 
-status {
+allow {
     utils.is_admin
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.USER)
-
-    subchecks := [
-        limits.user_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
-
-    subchecks := [
-        limits.org_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.BUSINESS)
-
-    subchecks := [
-        limits.user_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
-
-    subchecks := [
-        limits.org_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     input.scope == utils.CREATE_IN_PROJECT
     utils.is_sandbox
     utils.has_perm(utils.USER)
     is_project_staff
-
-    subchecks := [
-        limits.user_tasks_limit,
-        limits.user_project_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
-
-    subchecks := [
-        limits.org_tasks_limit,
-        limits.org_project_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.WORKER)
     is_project_staff
-
-    subchecks := [
-        limits.org_tasks_limit,
-        limits.org_project_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     input.scope == utils.CREATE_IN_PROJECT
     utils.is_sandbox
     utils.has_perm(utils.BUSINESS)
     is_project_staff
-
-    subchecks := [
-        limits.user_tasks_limit,
-        limits.user_projects_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
-
-    subchecks := [
-        limits.org_tasks_limit,
-        limits.org_project_tasks_limit,
-    ]
 }
 
-status := { "allow": true, "subchecks": subchecks } {
+allow {
     input.scope == utils.CREATE_IN_PROJECT
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.WORKER)
     is_project_staff
-
-    subchecks := [
-        limits.org_tasks_limit,
-        limits.org_project_tasks_limit,
-    ]
 }
 
-status {
+allow {
     input.scope == utils.LIST
     utils.is_sandbox
 }
 
-status {
+allow {
     input.scope == utils.LIST
     organizations.is_member
 }
@@ -240,14 +191,14 @@ filter = [] { # Django Q object to filter list of entries
         {"project__organization": input.auth.organization.id}, "|", "&"]
 }
 
-status {
+allow {
     { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
     utils.is_sandbox
     is_task_staff
 }
 
-status {
+allow {
     { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
@@ -255,7 +206,7 @@ status {
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-status {
+allow {
     { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
@@ -263,7 +214,7 @@ status {
     is_task_staff
 }
 
-status {
+allow {
     { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
       utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
     utils.is_sandbox
@@ -271,7 +222,7 @@ status {
     utils.has_perm(utils.WORKER)
 }
 
-status {
+allow {
     { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
       utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
@@ -279,7 +230,7 @@ status {
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-status {
+allow {
     { utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
       utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS }[input.scope]
     is_task_staff
@@ -288,7 +239,7 @@ status {
     organizations.has_perm(organizations.WORKER)
 }
 
-status {
+allow {
     { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
       utils.DELETE, utils.UPDATE_ORG }[input.scope]
     utils.is_sandbox
@@ -296,7 +247,7 @@ status {
     utils.has_perm(utils.WORKER)
 }
 
-status {
+allow {
     { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
       utils.DELETE, utils.UPDATE_ORG }[input.scope]
     utils.is_sandbox
@@ -304,7 +255,7 @@ status {
     utils.has_perm(utils.WORKER)
 }
 
-status {
+allow {
     { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
       utils.DELETE, utils.UPDATE_ORG }[input.scope]
     input.auth.organization.id == input.resource.organization.id
@@ -312,7 +263,7 @@ status {
     organizations.has_perm(organizations.MAINTAINER)
 }
 
-status {
+allow {
     { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
       utils.DELETE, utils.UPDATE_ORG }[input.scope]
     input.auth.organization.id == input.resource.organization.id
@@ -321,7 +272,7 @@ status {
     is_task_owner
 }
 
-status {
+allow {
     { utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
       utils.DELETE, utils.UPDATE_ORG }[input.scope]
     input.auth.organization.id == input.resource.organization.id
@@ -330,18 +281,3 @@ status {
     is_project_staff
 }
 
-
-
-default result = { "allow": false, "reasons": [] }
-
-result := { "allow": true, "reasons": [] } if {
-	is_boolean(status)
-    status
-} else := { "allow": allow, "reasons": reasons } if {
-	status.allow
-
-    reasons := [ sc.reason | sc := status.subchecks[_]; not sc.allow ]
-    allow := count(reasons) == 0
-}
-
-allow = result.allow
