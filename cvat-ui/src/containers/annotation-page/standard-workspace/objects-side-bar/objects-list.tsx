@@ -319,12 +319,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             }
         };
 
-        const activatedState = (): ObjectState | null => {
+        const activatedState = (ignoreElements = false): ObjectState | null => {
             if (activatedStateID !== null) {
                 const state = objectStates
                     .find((objectState: ObjectState): boolean => objectState.clientID === activatedStateID);
 
-                if (state && activatedElementID !== null) {
+                if (state && activatedElementID !== null && !ignoreElements) {
                     const element = state.elements
                         .find((_element: ObjectState): boolean => _element.clientID === activatedElementID);
                     return element || null;
@@ -399,7 +399,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly) {
                     removeObject(state, event ? event.shiftKey : false);
                 }

@@ -28,7 +28,7 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema
+    extend_schema_view, extend_schema, inline_serializer
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
@@ -234,7 +234,40 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
-            'PREDICT':False # FIXME: it is unused anymore (for UI only)
+            'PREDICT': False, # FIXME: it is unused anymore (for UI only)
+        }
+        return Response(response)
+
+    @staticmethod
+    @extend_schema(
+        summary='Method provides a list with advanced integrated authentication methods (e.g. social accounts)',
+        responses={
+            '200': OpenApiResponse(response=inline_serializer(
+                name='AdvancedAuthentication',
+                fields={
+                    'GOOGLE_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
+                    'GITHUB_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
+                }
+            )),
+        }
+    )
+    @action(detail=False, methods=['GET'], url_path='advanced-auth', permission_classes=[])
+    def advanced_authentication(request):
+        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
+        google_auth_is_enabled = (
+            'google' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
+        )
+        github_auth_is_enabled = (
+            'github' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
+        )
+        response = {
+            'GOOGLE_ACCOUNT_AUTHENTICATION': google_auth_is_enabled,
+            'GITHUB_ACCOUNT_AUTHENTICATION': github_auth_is_enabled,
         }
         return Response(response)
 
@@ -275,9 +308,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
-        queryset=models.Label.objects.order_by('id')
-    ))
+    queryset = models.Project.objects.select_related('assignee', 'owner',
+        'target_storage', 'source_storage').prefetch_related(
+        'tasks', 'label_set__sublabels__attributespec_set',
+        'label_set__attributespec_set')
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
@@ -304,7 +338,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(
             serializer,
             owner=self.request.user,
@@ -717,10 +751,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = Task.objects.prefetch_related(
-            Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
-            "label_set__attributespec_set",
-            "segment_set__job_set")
+    queryset = Task.objects.all().select_related('data', 'assignee', 'owner',
+        'target_storage', 'source_storage').prefetch_related(
+        'segment_set__job_set__assignee', 'label_set__attributespec_set',
+        'project__label_set__attributespec_set',
+        'label_set__sublabels__attributespec_set',
+        'project__label_set__sublabels__attributespec_set')
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -812,7 +848,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(
             serializer,
             owner=self.request.user,
@@ -1283,10 +1319,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
 )
+
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
-    queryset = Job.objects.all()
+    queryset = Job.objects.all().select_related('segment__task__data').prefetch_related(
+        'segment__task__label_set', 'segment__task__project__label_set',
+        'segment__task__label_set__sublabels__attributespec_set',
+        'segment__task__project__label_set__sublabels__attributespec_set',
+        'segment__task__label_set__attributespec_set',
+        'segment__task__project__label_set__attributespec_set')
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
@@ -1739,7 +1781,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return IssueWriteSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
@@ -1814,7 +1856,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return CommentWriteSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
 @extend_schema(tags=['users'])

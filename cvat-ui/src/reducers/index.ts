@@ -14,6 +14,15 @@ export type StringObject = {
     [index: string]: string;
 };
 
+enum AdvancedAuthMethods {
+    GOOGLE_ACCOUNT_AUTHENTICATION = 'GOOGLE_ACCOUNT_AUTHENTICATION',
+    GITHUB_ACCOUNT_AUTHENTICATION = 'GITHUB_ACCOUNT_AUTHENTICATION',
+}
+
+export type AdvancedAuthMethodsList = {
+    [name in AdvancedAuthMethods]: boolean;
+};
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -23,6 +32,10 @@ export interface AuthState {
     showChangePasswordDialog: boolean;
     allowChangePassword: boolean;
     allowResetPassword: boolean;
+    hasEmailVerificationBeenSent: boolean;
+    advancedAuthFetching: boolean;
+    advancedAuthInitialized: boolean;
+    advancedAuthList: AdvancedAuthMethodsList;
 }
 
 export interface ProjectsQuery {
@@ -679,7 +692,7 @@ export interface AnnotationState {
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
-        activeLabelID: number;
+        activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
     };

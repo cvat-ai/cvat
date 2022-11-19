@@ -14,6 +14,7 @@ import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 import 'antd/dist/antd.css';
 
+import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
 import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import RegisterPageContainer from 'containers/register-page/register-page';
@@ -63,7 +64,9 @@ import showPlatformNotification, {
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
-import EmailConfirmationPage from './email-confirmation-page/email-confirmed';
+import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
+import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
+import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -371,6 +374,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ShortcutsDialog />
                                     <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                         <Switch>
+                                            <Route exact path='/auth/logout' component={LogoutComponent} />
                                             <Route exact path='/projects' component={ProjectsPageComponent} />
                                             <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                             <Route exact path='/projects/:id' component={ProjectPageComponent} />
@@ -427,6 +431,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 <GlobalErrorBoundary>
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
+                        <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
+                        <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
                         <Route
                             exact
@@ -443,7 +449,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
 
                         <Redirect
-                            to={location.pathname.length > 1 ? `/auth/login/?next=${location.pathname}` : '/auth/login'}
+                            to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
                         />
                     </Switch>
                 </GlobalErrorBoundary>

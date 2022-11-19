@@ -126,7 +126,7 @@ context('Hotkeys to change labels feature.', () => {
                 cy.contains('button', 'Shape').click();
             });
             cy.get('body').type('{Ctrl}2');
-            cy.contains(`Default label was changed to "${secondLabelCurrentVal}"`).should('exist');
+            cy.contains(`Default label has been changed to "${secondLabelCurrentVal}"`).should('exist');
             cy.get('.cvat-canvas-container').click(500, 500).click(600, 600);
             cy.get('#cvat-objects-sidebar-state-item-2')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
