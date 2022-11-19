@@ -135,6 +135,10 @@ class LabelSerializer(SublabelSerializer):
             except models.Label.DoesNotExist:
                 raise exceptions.NotFound(detail='Not found label with id #{} to change'.format(validated_data['id']))
             db_label.name = validated_data.get('name', db_label.name)
+            updated_type = validated_data.get('type', db_label.type)
+            if 'skeleton' not in [db_label.type, updated_type]:
+                # do not permit to change types from/to "skeleton"
+                db_label.type = updated_type
             logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
         else:
             db_label = models.Label.objects.create(name=validated_data.get('name'), type=validated_data.get('type'),
@@ -450,7 +454,7 @@ class StorageSerializer(serializers.ModelSerializer):
         fields = ('id', 'location', 'cloud_storage_id')
 
 class TaskReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
+    labels = LabelSerializer(many=True, source='get_labels')
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -479,11 +483,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'overlap': { 'allow_null': True },
         }
 
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-        if instance.project_id:
-            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
-        return response
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)

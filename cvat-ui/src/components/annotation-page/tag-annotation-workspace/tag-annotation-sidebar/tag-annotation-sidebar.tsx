@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,10 +24,11 @@ import {
 } from 'actions/annotation-actions';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { getCore, Label, LabelType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
-import { getCore } from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ShortcutsSelect from './shortcuts-select';
@@ -114,12 +116,15 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const controlsDisabled = !labels.length || frameData.deleted;
-    const defaultLabelID = labels.length ? labels[0].id : null;
+    const [applicableLabels, setApplicableLabels] = useState<Label[]>(
+        filterApplicableForType(LabelType.TAG, labels),
+    );
+    const controlsDisabled = !applicableLabels.length || frameData.deleted;
+    const defaultLabelID = applicableLabels.length ? applicableLabels[0].id as number : null;
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [frameTags, setFrameTags] = useState([] as any[]);
-    const [selectedLabelID, setSelectedLabelID] = useState<number>(defaultLabelID);
+    const [selectedLabelID, setSelectedLabelID] = useState<number | null>(defaultLabelID);
     const [skipFrame, setSkipFrame] = useState(false);
 
     useEffect(() => {
@@ -127,6 +132,10 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
             document.activeElement.blur();
         }
     }, []);
+
+    useEffect(() => {
+        setApplicableLabels(filterApplicableForType(LabelType.TAG, labels));
+    }, [labels]);
 
     useEffect(() => {
         const listener = (event: Event): void => {
@@ -211,7 +220,9 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     const handlers = {
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
-            onShortcutPress(event, selectedLabelID);
+            if (selectedLabelID !== null) {
+                onShortcutPress(event, selectedLabelID);
+            }
         },
     };
 
@@ -259,7 +270,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 <Row justify='start' className='cvat-tag-annotation-sidebar-label-select'>
                     <Col>
                         <LabelSelector
-                            labels={labels}
+                            labels={applicableLabels}
                             value={selectedLabelID}
                             onChange={onChangeLabel}
                             onEnterPress={onAddTag}
@@ -267,7 +278,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         <Button
                             type='primary'
                             className='cvat-add-tag-button'
-                            onClick={() => onAddTag(selectedLabelID)}
+                            onClick={() => onAddTag(selectedLabelID as number)}
                             icon={<PlusOutlined />}
                         />
                     </Col>
@@ -286,7 +297,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 </Row>
                 <Row>
                     <Col>
-                        <ShortcutsSelect onShortcutPress={onShortcutPress} />
+                        <ShortcutsSelect labels={applicableLabels} onShortcutPress={onShortcutPress} />
                     </Col>
                 </Row>
                 <Row justify='center' className='cvat-tag-annotation-sidebar-shortcut-help'>

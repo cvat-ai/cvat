@@ -3,16 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
-import { Link, withRouter } from 'react-router-dom';
-import Title from 'antd/lib/typography/Title';
-import Text from 'antd/lib/typography/Text';
+import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
-import Layout from 'antd/lib/layout';
 
 import { UserAgreement } from 'reducers';
+import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
 interface RegisterPageComponentProps {
@@ -23,28 +20,19 @@ interface RegisterPageComponentProps {
         firstName: string,
         lastName: string,
         email: string,
-        password1: string,
-        password2: string,
+        password: string,
         confirmations: UserConfirmation[],
     ) => void;
 }
 
 function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps): JSX.Element {
-    const sizes = {
-        style: {
-            width: 400,
-        },
-    };
-
     const { fetching, userAgreements, onRegister } = props;
-    const { Content } = Layout;
 
     return (
-        <Layout>
-            <Content>
-                <Row justify='center' align='middle' style={{ height: '100%' }}>
-                    <Col {...sizes}>
-                        <Title level={2}> Create an account </Title>
+        <SigningLayout>
+            <Col {...formSizes.wrapper}>
+                <Row justify='center'>
+                    <Col {...formSizes.form}>
                         <RegisterForm
                             fetching={fetching}
                             userAgreements={userAgreements}
@@ -54,24 +42,15 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
                                     registerData.firstName,
                                     registerData.lastName,
                                     registerData.email,
-                                    registerData.password1,
-                                    registerData.password2,
+                                    registerData.password,
                                     registerData.confirmations,
                                 );
                             }}
                         />
-                        <Row justify='start' align='top'>
-                            <Col>
-                                <Text strong>
-                                    Already have an account?
-                                    <Link to='/auth/login'> Login </Link>
-                                </Text>
-                            </Col>
-                        </Row>
                     </Col>
                 </Row>
-            </Content>
-        </Layout>
+            </Col>
+        </SigningLayout>
     );
 }
 

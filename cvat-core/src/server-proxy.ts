@@ -313,7 +313,7 @@ class ServerProxy {
             }
         }
 
-        async function register(username, firstName, lastName, email, password1, password2, confirmations) {
+        async function register(username, firstName, lastName, email, password, confirmations) {
             let response = null;
             try {
                 const data = JSON.stringify({
@@ -321,8 +321,8 @@ class ServerProxy {
                     first_name: firstName,
                     last_name: lastName,
                     email,
-                    password1,
-                    password2,
+                    password1: password,
+                    password2: password,
                     confirmations,
                 });
                 response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
