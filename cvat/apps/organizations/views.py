@@ -191,7 +191,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         extra_kwargs = {
             'owner': self.request.user,
             'key': get_random_string(length=64),
