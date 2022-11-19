@@ -39,17 +39,18 @@ from .signals import signal_ping, signal_redelivery
     ),
     update=extend_schema(
         summary="Method updates a webhook by id",
-        request=WebhookWriteSerializer, # check WebhookWriteSerializer.to_representation
-        responses={"200": WebhookReadSerializer},
+        request=WebhookWriteSerializer,
+        responses={"200": WebhookReadSerializer}, # check WebhookWriteSerializer.to_representation
     ),
     partial_update=extend_schema(
         summary="Methods does a partial update of chosen fields in a webhook",
-        request=WebhookWriteSerializer, # check WebhookWriteSerializer.to_representation
-        responses={"200": WebhookReadSerializer},
+        request=WebhookWriteSerializer,
+        responses={"200": WebhookReadSerializer}, # check WebhookWriteSerializer.to_representation
     ),
     create=extend_schema(
-        request=WebhookWriteSerializer, # check WebhookWriteSerializer.to_representation
-        summary="Method creates a webhook", responses={"201": WebhookReadSerializer}
+        request=WebhookWriteSerializer,
+        summary="Method creates a webhook",
+        responses={"201": WebhookReadSerializer} # check WebhookWriteSerializer.to_representation
     ),
     destroy=extend_schema(
         summary="Method deletes a webhook",
