@@ -24,7 +24,7 @@ export class MergeHandlerImpl implements MergeHandler {
     private constraints: {
         labelID: number;
         shapeType: string;
-    };
+    } | null;
 
     private addConstraints(): void {
         const shape = this.statesToBeMerged[0];
@@ -103,6 +103,10 @@ export class MergeHandlerImpl implements MergeHandler {
     }
 
     public select(objectState: any): void {
+        if (objectState.shapeType === 'mask') {
+            // masks can not be merged
+            return;
+        }
         const stateIndexes = this.statesToBeMerged.map((state): number => state.clientID);
         const stateFrames = this.statesToBeMerged.map((state): number => state.frame);
         const includes = stateIndexes.indexOf(objectState.clientID);

@@ -8,7 +8,7 @@ enableRobotsTXT = true
 theme = ["docsy"]
 
 # Will give values to .Lastmod etc.
-enableGitInfo = true
+enableGitInfo = false
 
 # Language settings
 contentDir = "content/en"
@@ -87,9 +87,8 @@ weight = 1
 section = ["HTML", "print"]
 
 [params]
-intel_terms_of_use = "https://www.intel.com/content/www/us/en/legal/terms-of-use.html"
-intel_privacy_notice = "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html"
-cvat_terms_of_use = "https://cvat.org/api/restrictions/terms-of-use"
+cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"
+cvat_privacy_notice = "https://www.cvat.ai/privacy"
 
 # First one is picked as the Twitter card image if not set on page.
 # images = ["images/project-illustration.png"]

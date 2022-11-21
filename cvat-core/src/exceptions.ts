@@ -1,10 +1,10 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import Platform from 'platform';
 import ErrorStackParser from 'error-stack-parser';
-// import config from './config';
 
 /**
  * Base exception class
@@ -171,7 +171,7 @@ export class Exception extends Error {
         };
 
         try {
-            const serverProxy = require('./server-proxy');
+            const serverProxy = require('./server-proxy').default;
             await serverProxy.server.exception(exceptionObject);
         } catch (exception) {
             // add event

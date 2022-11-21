@@ -2,23 +2,23 @@
 //
 // SPDX-License-Identifier: MIT
 
-const { Mutex } = require('async-mutex');
+import { Mutex } from 'async-mutex';
 // eslint-disable-next-line max-classes-per-file
-const { MP4Reader, Bytestream } = require('./3rdparty/mp4');
-const ZipDecoder = require('./unzip_imgs.worker');
-const H264Decoder = require('./3rdparty/Decoder.worker');
+import { MP4Reader, Bytestream } from './3rdparty/mp4';
+import ZipDecoder from './unzip_imgs.worker';
+import H264Decoder from './3rdparty/Decoder.worker';
 
-const BlockType = Object.freeze({
+export const BlockType = Object.freeze({
     MP4VIDEO: 'mp4video',
     ARCHIVE: 'archive',
 });
 
-const DimensionType = Object.freeze({
+export const DimensionType = Object.freeze({
     DIM_3D: '3d',
     DIM_2D: '2d',
 });
 
-class FrameProvider {
+export class FrameProvider {
     constructor(
         blockType,
         blockSize,
@@ -373,9 +373,3 @@ class FrameProvider {
         return [...this._blocksRanges].sort((a, b) => a.split(':')[0] - b.split(':')[0]);
     }
 }
-
-module.exports = {
-    FrameProvider,
-    BlockType,
-    DimensionType,
-};

@@ -43,8 +43,14 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      IAM_OPA_BUNDLE: '1'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
+      USE_ALLAUTH_SOCIAL_ACCOUNTS: ""
+      SOCIAL_AUTH_GOOGLE_CLIENT_ID: ""
+      SOCIAL_AUTH_GOOGLE_CLIENT_SECRET: ""
+      SOCIAL_AUTH_GITHUB_CLIENT_ID: ""
+      SOCIAL_AUTH_GITHUB_CLIENT_SECRET: ""
     command: -c supervisord/server.conf
     labels:
       - traefik.enable=true
@@ -58,7 +64,9 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
-      - cvat
+      cvat:
+        aliases:
+          - cvat-server-${CVAT_HOST:-localhost}-${CVAT_EXT_PORT:-8080}
 
   cvat_utils:
     container_name: cvat_utils
@@ -122,6 +130,27 @@ services:
     networks:
       - cvat
 
+  cvat_worker_webhooks:
+    container_name: cvat_worker_webhooks
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/worker.webhooks.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
   cvat_ui:
     container_name: cvat_ui_http_${CVAT_HOST:-localhost}_${CVAT_EXT_PORT:-8080}
     image: cvat/ui:${CVAT_VERSION:-dev}
@@ -174,12 +203,15 @@ services:
       cvat:
         aliases:
           - opa
-    volumes:
-      - ./cvat/apps/iam/rules:/rules
-    # Uncomment to expose opa on your system.
-    # ports:
-    #   - '8181:8181'
-    command: run --server --addr :8181 --set=decision_logs.console=true /rules
+    command:
+      - run
+      - --server
+      - --set=decision_logs.console=true
+      - --set=services.cvat.url=http://cvat-server-${CVAT_HOST:-localhost}-${CVAT_EXT_PORT:-8080}:8080
+      - --set=bundles.cvat.service=cvat
+      - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=5
+      - --set=bundles.cvat.polling.max_delay_seconds=15
 
 volumes:
   cvat_db:

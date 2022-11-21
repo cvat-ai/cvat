@@ -29,8 +29,8 @@ const validationPatterns = {
     },
 
     validateUsernameCharacters: {
-        pattern: /^[a-zA-Z0-9_-]{5,}$/,
-        message: 'Only characters (a-z), (A-Z), (0-9), -, _ are available',
+        pattern: /^[a-zA-Z0-9_\-.]{5,}$/,
+        message: 'Only characters (a-z), (A-Z), (0-9), -, _, . are available',
     },
 
     /*

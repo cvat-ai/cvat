@@ -1,7 +1,7 @@
 ---
 title: 'Objects sidebar'
 linkTitle: 'Objects sidebar'
-weight: 9
+weight: 11
 description: 'Overview of available functions on the objects sidebar of the annotation tool.'
 ---
 
@@ -55,7 +55,7 @@ The action menu contains:
 - `Create object URL` - puts a link to an object on the clipboard.
   After you open the link, this object will be filtered.
 - `Make a copy`- copies an object. The keyboard shortcut is `Ctrl + C` `Ctrl + V`.
-- `Propagate` - Сopies the form to several frames,
+- `Propagate` - Copies the form to several frames,
   invokes a dialog box in which you can specify the number of copies
   or the frame onto which you want to copy the object. The keyboard shortcut `Ctrl + B`.
 

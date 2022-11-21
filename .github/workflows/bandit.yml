@@ -4,7 +4,7 @@ jobs:
   Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: files
         uses: jitterbit/get-changed-files@v1
         continue-on-error: true
@@ -41,7 +41,7 @@ jobs:
 
       - name: Upload artifacts
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: bandit_report
           path: bandit_report

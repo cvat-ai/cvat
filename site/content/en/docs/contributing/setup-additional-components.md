@@ -53,7 +53,7 @@ nuctl deploy --project-name cvat \
 ```bash
 nuctl deploy --project-name cvat \
     --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --volume `pwd`/serverless/common:/opt/nuclio/common \
     --platform local
 ```
 
@@ -140,7 +140,7 @@ Server = nuclio
 </details>
 
 ## Run Cypress tests
-- Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
+- Install Cypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
 - Run cypress tests:
 ```bash
     cd <cvat_local_repository>/tests

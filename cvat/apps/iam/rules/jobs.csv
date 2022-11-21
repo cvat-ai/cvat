@@ -21,6 +21,14 @@ view:annotations,Job,Sandbox,None,,GET,/jobs/{id}/annotations,Admin,N/A
 view:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations,None,N/A
 view:annotations,Job,Organization,None,,GET,/jobs/{id}/annotations,User,Maintainer
 view:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations,None,Worker
+export:annotations,Job,Sandbox,None,,GET,/jobs/{id}/annotations?format={format},Admin,N/A
+export:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations?format={format},None,N/A
+export:annotations,Job,Organization,None,,GET,/jobs/{id}/annotations?format={format},User,Maintainer
+export:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations?format={format},None,Worker
+export:dataset,Job,Sandbox,None,,GET,/jobs/{id}/dataset,Admin,N/A
+export:dataset,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/dataset,None,N/A
+export:dataset,Job,Organization,None,,GET,/jobs/{id}/dataset,User,Maintainer
+export:dataset,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/dataset,None,Worker
 update:annotations,Job,Sandbox,None,,PATCH,/jobs/{id}/annotations,Admin,N/A
 update:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/annotations,Worker,N/A
 update:annotations,Job,Organization,None,,PATCH,/jobs/{id}/annotations,User,Maintainer

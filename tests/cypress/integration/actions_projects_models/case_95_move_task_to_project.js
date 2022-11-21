@@ -21,7 +21,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         name3d: `Case ${caseID} 3D`,
         label3d: 'Bus',
         attrName3d: 'Type',
-        attrValue3d: 'Сity bus',
+        attrValue3d: 'City bus',
     };
 
     const project = {
@@ -50,7 +50,9 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, task.name, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToTaskList();
-        cy.createAnnotationTask(task.nameSecond, task.labelSecond, task.attrNameSecons, task.attrValueSecond, archiveName);
+        cy.createAnnotationTask(
+            task.nameSecond, task.labelSecond, task.attrNameSecons, task.attrValueSecond, archiveName,
+        );
         cy.createAnnotationTask(task.name3d, task.label3d, task.attrName3d, task.attrValue3d, archiveName3d);
     });
 

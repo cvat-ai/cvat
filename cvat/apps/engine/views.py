@@ -28,7 +28,7 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema
+    extend_schema_view, extend_schema, inline_serializer
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
@@ -44,12 +44,15 @@ from django_sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, validate_bucket_status, Status as CloudStorageStatus)
+    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage,
+    Status as CloudStorageStatus
+)
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
@@ -67,9 +70,10 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
 from .log import clogger, slogger
@@ -93,7 +97,9 @@ class ServerViewSet(viewsets.ViewSet):
         responses={
             '200': AboutSerializer,
         })
-    @action(detail=False, methods=['GET'], serializer_class=AboutSerializer)
+    @action(detail=False, methods=['GET'], serializer_class=AboutSerializer,
+        permission_classes=[] # This endpoint is available for everyone
+    )
     def about(request):
         from cvat import __version__ as cvat_version
         about = {
@@ -183,13 +189,20 @@ class ServerViewSet(viewsets.ViewSet):
             content = os.scandir(directory)
             for entry in content:
                 entry_type = None
+                entry_mime_type = None
                 if entry.is_file():
                     entry_type = "REG"
+                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
                 elif entry.is_dir():
                     entry_type = "DIR"
+                    entry_mime_type = "DIR"
 
                 if entry_type:
-                    data.append({"name": entry.name, "type": entry_type})
+                    data.append({
+                        "name": entry.name,
+                        "type": entry_type,
+                        "mime_type": entry_mime_type,
+                    })
 
             serializer = FileInfoSerializer(many=True, data=data)
             if serializer.is_valid(raise_exception=True):
@@ -221,7 +234,40 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
-            'PREDICT':False # FIXME: it is unused anymore (for UI only)
+            'PREDICT': False, # FIXME: it is unused anymore (for UI only)
+        }
+        return Response(response)
+
+    @staticmethod
+    @extend_schema(
+        summary='Method provides a list with advanced integrated authentication methods (e.g. social accounts)',
+        responses={
+            '200': OpenApiResponse(response=inline_serializer(
+                name='AdvancedAuthentication',
+                fields={
+                    'GOOGLE_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
+                    'GITHUB_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
+                }
+            )),
+        }
+    )
+    @action(detail=False, methods=['GET'], url_path='advanced-auth', permission_classes=[])
+    def advanced_authentication(request):
+        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
+        google_auth_is_enabled = (
+            'google' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
+            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
+        )
+        github_auth_is_enabled = (
+            'github' in integrated_auth_providers
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
+            and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
+        )
+        response = {
+            'GOOGLE_ACCOUNT_AUTHENTICATION': google_auth_is_enabled,
+            'GITHUB_ACCOUNT_AUTHENTICATION': github_auth_is_enabled,
         }
         return Response(response)
 
@@ -259,12 +305,13 @@ class ServerViewSet(viewsets.ViewSet):
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
-        queryset=models.Label.objects.order_by('id')
-    ))
+    queryset = models.Project.objects.select_related('assignee', 'owner',
+        'target_storage', 'source_storage').prefetch_related(
+        'tasks', 'label_set__sublabels__attributespec_set',
+        'label_set__attributespec_set')
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
@@ -293,9 +340,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user,
-            organization=self.request.iam_context['organization'])
+    def perform_create(self, serializer, **kwargs):
+        super().perform_create(
+            serializer,
+            owner=self.request.user,
+            organization=self.request.iam_context['organization']
+        )
 
     @extend_schema(
         summary='Method returns information of the tasks of the project with the selected id',
@@ -373,7 +423,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object() # force to call check_object_permissions
 
         if request.method in {'POST', 'OPTIONS'}:
-
             return self.import_annotations(
                 request=request,
                 pk=pk,
@@ -392,14 +441,16 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 elif rq_job.is_finished:
                     if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
+                    if rq_job.dependency:
+                        rq_job.dependency.delete()
                     rq_job.delete()
                     return Response(status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed:
-                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-                    os.remove(rq_job.meta['tmp_file'])
-                    rq_job.delete()
+                elif rq_job.is_failed or \
+                        rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+                    exc_info = process_failed_job(rq_job)
+
                     return Response(
-                        data=str(rq_job.exc_info),
+                        data=str(exc_info),
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
                 else:
@@ -442,6 +493,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'dataset':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
+            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = self._object.get_tmp_dirname()
             uploaded_file = None
             if os.path.isfile(os.path.join(tmp_dir, filename)):
@@ -453,6 +505,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,
+                conv_mask_to_poly=conv_mask_to_poly
             )
         elif self.action == 'import_backup':
             filename = request.query_params.get("filename", "")
@@ -697,13 +750,15 @@ class DataChunkGetter:
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = Task.objects.prefetch_related(
-            Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
-            "label_set__attributespec_set",
-            "segment_set__job_set")
+    queryset = Task.objects.all().select_related('data', 'assignee', 'owner',
+        'target_storage', 'source_storage').prefetch_related(
+        'segment_set__job_set__assignee', 'label_set__attributespec_set',
+        'project__label_set__attributespec_set',
+        'label_set__sublabels__attributespec_set',
+        'project__label_set__sublabels__attributespec_set')
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -785,19 +840,26 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_update(self, serializer):
         instance = serializer.instance
-        updated_instance = serializer.save()
+
+        super().perform_update(serializer)
+
+        updated_instance = serializer.instance
+
         if instance.project:
             instance.project.save()
         if updated_instance.project:
             updated_instance.project.save()
 
-    def perform_create(self, serializer):
-        instance = serializer.save(owner=self.request.user,
-            organization=self.request.iam_context['organization'])
-        if instance.project:
-            db_project = instance.project
+    def perform_create(self, serializer, **kwargs):
+        super().perform_create(
+            serializer,
+            owner=self.request.user,
+            organization=self.request.iam_context['organization']
+        )
+        if serializer.instance.project:
+            db_project = serializer.instance.project
             db_project.save()
-            assert instance.organization == db_project.organization
+            assert serializer.instance.organization == db_project.organization
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_dirname()
@@ -809,6 +871,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if instance.project:
             db_project = instance.project
             db_project.save()
+
 
     @extend_schema(summary='Method returns a list of jobs for a specific task',
         responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -837,9 +900,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     # UploadMixin method
     def upload_finished(self, request):
         if self.action == 'annotations':
-            # db_task = self.get_object()
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
+            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = self._object.get_tmp_dirname()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -850,6 +913,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         rq_func=dm.task.import_task_annotations,
                         pk=self._object.pk,
                         format_name=format_name,
+                        conv_mask_to_poly=conv_mask_to_poly,
                     )
             else:
                 return Response(data='No such file were uploaded',
@@ -1073,12 +1137,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PUT':
             format_name = request.query_params.get('format')
             if format_name:
+                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+                obj = self._object if use_settings else request.query_params
+                location_conf = get_location_configuration(
+                    obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
+                )
                 return _import_annotations(
                     request=request,
                     rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_task_annotations,
                     pk=pk,
                     format_name=format_name,
+                    location_conf=location_conf,
+                    conv_mask_to_poly=conv_mask_to_poly
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
@@ -1249,10 +1321,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
 )
+
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
-    queryset = Job.objects.all()
+    queryset = Job.objects.all().select_related('segment__task__data').prefetch_related(
+        'segment__task__label_set', 'segment__task__project__label_set',
+        'segment__task__label_set__sublabels__attributespec_set',
+        'segment__task__project__label_set__sublabels__attributespec_set',
+        'segment__task__label_set__attributespec_set',
+        'segment__task__project__label_set__attributespec_set')
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
@@ -1293,6 +1371,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
+            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = task.get_tmp_dirname()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -1303,6 +1382,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         rq_func=dm.task.import_job_annotations,
                         pk=self._object.pk,
                         format_name=format_name,
+                        conv_mask_to_poly=conv_mask_to_poly,
                     )
             else:
                 return Response(data='No such file were uploaded',
@@ -1417,12 +1497,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
+                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
+                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+                obj = self._object.segment.task if use_settings else request.query_params
+                location_conf = get_location_configuration(
+                    obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
+                )
                 return _import_annotations(
                     request=request,
                     rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_job_annotations,
                     pk=pk,
-                    format_name=format_name
+                    format_name=format_name,
+                    location_conf=location_conf,
+                    conv_mask_to_poly=conv_mask_to_poly
                 )
             else:
                 serializer = LabeledDataSerializer(data=request.data)
@@ -1448,6 +1536,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+
     @extend_schema(methods=['PATCH'],
         operation_id='jobs_partial_update_annotations_file',
         summary="Allows to upload an annotation file chunk. "
@@ -1462,6 +1551,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
+
 
     @extend_schema(summary='Export job as a dataset in a specific format',
         parameters=[
@@ -1515,6 +1605,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return Response(serializer.data)
 
+
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
@@ -1541,6 +1632,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data, db_job)
+
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
         responses={
@@ -1576,7 +1668,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     lambda frame: frame >= start_frame and frame <= stop_frame,
                     serializer.validated_data['deleted_frames']
                 )) + list(filter(
-                    lambda frame: frame < start_frame and frame > stop_frame,
+                    lambda frame: frame < start_frame or frame > stop_frame,
                     db_data.deleted_frames,
                 ))
                 db_data = serializer.save()
@@ -1661,7 +1753,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Issue.objects.all().order_by('-id')
@@ -1691,8 +1783,8 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return IssueWriteSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+    def perform_create(self, serializer, **kwargs):
+        super().perform_create(serializer, owner=self.request.user)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
         responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -1741,7 +1833,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Comment.objects.all().order_by('-id')
@@ -1766,8 +1858,8 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return CommentWriteSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+    def perform_create(self, serializer, **kwargs):
+        super().perform_create(serializer, owner=self.request.user)
 
 @extend_schema(tags=['users'])
 @extend_schema_view(
@@ -2115,16 +2207,15 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
-@validate_bucket_status
-def _export_to_cloud_storage(storage, file_path, file_name):
-    storage.upload_file(file_path, file_name)
+def _download_file_from_bucket(db_storage, filename, key):
+    storage = db_storage_to_storage_instance(db_storage)
 
-@validate_bucket_status
-def _import_from_cloud_storage(storage, file_name):
-    return storage.download_fileobj(file_name)
+    data = import_from_cloud_storage(storage, key)
+    with open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
 
 def _import_annotations(request, rq_id, rq_func, pk, format_name,
-                        filename=None, location_conf=None):
+                        filename=None, location_conf=None, conv_mask_to_poly=True):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2141,6 +2232,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
         # Then we dont need to create temporary file
         # Or filename specify key in cloud storage so we need to download file
         fd = None
+        dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
         if not filename or location == Location.CLOUD_STORAGE:
@@ -2153,28 +2245,26 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                         for chunk in anno_file.chunks():
                             f.write(chunk)
             else:
-                # download annotation file from cloud storage
+                assert filename, 'The filename was not spesified'
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
-                    raise serializer.ValidationError(
+                    raise serializers.ValidationError(
                         'Cloud storage location was selected for destination'
                         ' but cloud storage id was not specified')
                 db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
-                storage = db_storage_to_storage_instance(db_storage)
-                assert filename, 'filename was not spesified'
-
-                data = _import_from_cloud_storage(storage, filename)
-
+                key = filename
                 fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
-                    f.write(data.getbuffer())
+                dependent_job = configure_dependent_job(
+                    queue, rq_id, _download_file_from_bucket,
+                    db_storage, filename, key)
 
         av_scan_paths(filename)
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(pk, filename, format_name),
-            job_id=rq_id
+            args=(pk, filename, format_name, conv_mask_to_poly),
+            job_id=rq_id,
+            depends_on=dependent_job
         )
         rq_job.meta['tmp_file'] = filename
         rq_job.meta['tmp_file_descriptor'] = fd
@@ -2185,12 +2275,9 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
-            exc_info = str(rq_job.exc_info)
-            rq_job.delete()
-
+        elif rq_job.is_failed or \
+                rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+            exc_info = process_failed_job(rq_job)
             # RQ adds a prefix with exception class name
             import_error_prefix = '{}.{}'.format(
                 CvatImportError.__module__, CvatImportError.__name__)
@@ -2243,13 +2330,13 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             db_instance.__class__.__name__.lower(),
                             db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
                             timestamp, format_name, osp.splitext(file_path)[1]
-                        )
+                        ).lower()
 
                     # save annotation to specified location
                     location = location_conf.get('location')
                     if location == Location.LOCAL:
                         return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
+                            attachment_filename=filename)
                     elif location == Location.CLOUD_STORAGE:
                         try:
                             storage_id = location_conf['storage_id']
@@ -2261,7 +2348,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                         storage = db_storage_to_storage_instance(db_storage)
 
-                        _export_to_cloud_storage(storage, file_path, filename)
+                        export_to_cloud_storage(storage, file_path, filename)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()
@@ -2295,7 +2382,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, location_conf=None):
+def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2309,6 +2396,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
 
     if not rq_job:
         fd = None
+        dependent_job = None
         location = location_conf.get('location') if location_conf else None
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
@@ -2319,9 +2407,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
         elif location == Location.CLOUD_STORAGE:
-            assert filename
-
-            # download project file from cloud storage
+            assert filename, 'The filename was not spesified'
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
@@ -2329,23 +2415,22 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
                     'Cloud storage location was selected for destination'
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
-            storage = db_storage_to_storage_instance(db_storage)
-
-            data = _import_from_cloud_storage(storage, filename)
-
-            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
-            with open(filename, 'wb+') as f:
-                f.write(data.getbuffer())
+            key = filename
+            fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+            dependent_job = configure_dependent_job(
+                queue, rq_id, _download_file_from_bucket,
+                db_storage, filename, key)
 
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(pk, filename, format_name),
+            args=(pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
-                    'tmp_file': filename,
-                    'tmp_file_descriptor': fd,
-                },
-            )
+                'tmp_file': filename,
+                'tmp_file_descriptor': fd,
+            },
+            depends_on=dependent_job
+        )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

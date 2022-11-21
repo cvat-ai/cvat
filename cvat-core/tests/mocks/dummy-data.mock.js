@@ -2723,7 +2723,7 @@ const taskAnnotationsDummyData = {
                 ],
                 id: 28,
                 frame: 0,
-                label_id:59,
+                label_id: 59,
                 group: 0,
                 source: 'manual',
                 attributes: []
@@ -2989,7 +2989,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
-        deleted_frames: [7,8],
+        deleted_frames: [7, 8],
         frames: [
             {
                 width: 1920,
@@ -3282,6 +3282,165 @@ const cloudStoragesDummyData = {
     ]
 };
 
+const webhooksDummyData = {
+    count: 3,
+    next: null,
+    previous: null,
+    results: [
+        {
+            id: 1,
+            url: "http://localhost:7000/api/webhooks/1",
+            target_url: "https://localhost:3001/project/hook",
+            description: "Project webhook",
+            type: "project",
+            content_type: "application/json",
+            is_active: true,
+            enable_ssl: true,
+            created_date: "2022-09-23T06:29:12.337276Z",
+            updated_date: "2022-09-23T06:29:12.337316Z",
+            owner: {
+                url: "http://localhost:7000/api/users/1",
+                id: 1,
+                username: "kirill",
+                first_name: "",
+                last_name: ""
+            },
+            project: 1,
+            organization: 1,
+            events: [
+                "create:comment",
+                "create:issue",
+                "create:task",
+                "delete:comment",
+                "delete:issue",
+                "delete:task",
+                "update:comment",
+                "update:job",
+                "update:project",
+                "update:task"
+            ],
+            last_status: "Failed to connect to target url",
+            last_delivery_date: "2022-09-23T06:28:48.313010Z"
+        },
+        {
+            id: 2,
+            url: "http://localhost:7000/api/webhooks/2",
+            target_url: "https://localhost:3001/example/route",
+            description: "Second webhook",
+            type: "organization",
+            content_type: "application/json",
+            is_active: true,
+            enable_ssl: true,
+            created_date: "2022-09-23T06:28:32.430437Z",
+            updated_date: "2022-09-23T06:28:32.430474Z",
+            owner: {
+                url: "http://localhost:7000/api/users/1",
+                id: 1,
+                username: "kirill",
+                first_name: "",
+                last_name: ""
+            },
+            project: 1,
+            organization: 1,
+            events: [
+                "create:project",
+                "create:task",
+                "delete:project",
+                "delete:task",
+                "update:job",
+                "update:project",
+                "update:task"
+            ],
+            last_status: "200",
+            last_delivery_date: "2022-09-23T06:28:48.313010Z"
+        },
+        {
+            id: 3,
+            url: "http://localhost:7000/api/webhooks/3",
+            target_url: "https://localhost:3001/example1",
+            description: "Example webhook",
+            type: "organization",
+            content_type: "application/json",
+            is_active: true,
+            enable_ssl: true,
+            created_date: "2022-09-23T06:27:52.888204Z",
+            updated_date: "2022-09-23T06:27:52.888245Z",
+            owner: {
+                url: "http://localhost:7000/api/users/1",
+                id: 1,
+                username: "kirill",
+                first_name: "",
+                last_name: ""
+            },
+            project: 1,
+            organization: 1,
+            events: [
+                "create:comment",
+                "create:invitation",
+                "create:issue",
+                "create:project",
+                "create:task",
+                "delete:comment",
+                "delete:invitation",
+                "delete:issue",
+                "delete:membership",
+                "delete:project",
+                "delete:task",
+                "update:comment",
+                "update:invitation",
+                "update:job",
+                "update:membership",
+                "update:organization",
+                "update:project",
+                "update:task"
+            ],
+            last_status: "200",
+            last_delivery_date: "2022-09-23T06:28:48.283962Z"
+        }
+    ]
+};
+
+const webhooksEventsDummyData = {
+    project: {
+        webhook_type: "project",
+        events: [
+          "create:comment",
+          "create:issue",
+          "create:task",
+          "delete:comment",
+          "delete:issue",
+          "delete:task",
+          "update:comment",
+          "update:job",
+          "update:project",
+          "update:task"
+        ]
+      },
+    organization: {
+        webhook_type: "organization",
+        events: [
+          "create:comment",
+          "create:invitation",
+          "create:issue",
+          "create:project",
+          "create:task",
+          "delete:comment",
+          "delete:invitation",
+          "delete:issue",
+          "delete:membership",
+          "delete:project",
+          "delete:task",
+          "update:comment",
+          "update:invitation",
+          "update:job",
+          "update:membership",
+          "update:organization",
+          "update:project",
+          "update:task"
+        ]
+      },
+}
+
 module.exports = {
     tasksDummyData,
     projectsDummyData,
@@ -3293,4 +3452,6 @@ module.exports = {
     frameMetaDummyData,
     formatsDummyData,
     cloudStoragesDummyData,
+    webhooksDummyData,
+    webhooksEventsDummyData,
 };

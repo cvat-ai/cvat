@@ -12,9 +12,9 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 
-from shared.utils.config import USER_PASS
 from shared.utils.helpers import generate_image_files
 
 from .util import make_pbar
@@ -24,19 +24,20 @@ class TestTaskUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
+        fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
-        fxt_client: Client,
         fxt_stdout: io.StringIO,
-        admin_user: str,
     ):
         self.tmp_path = tmp_path
-        _, self.logger_stream = fxt_logger
-        self.client = fxt_client
+        logger, self.logger_stream = fxt_logger
         self.stdout = fxt_stdout
-        self.user = admin_user
-        self.client.login((self.user, USER_PASS))
+        self.client, self.user = fxt_login
+        self.client.logger = logger
+
+        api_client = self.client.api_client
+        for k in api_client.configuration.logger:
+            api_client.configuration.logger[k] = logger
 
         yield
 
@@ -124,6 +125,23 @@ class TestTaskUsecases:
 
         assert task.size == 7
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_create_task_with_remote_data(self):
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": "test_task",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+            resource_type=ResourceType.SHARE,
+            resources=["images/image_1.jpg", "images/image_2.jpg"],
+            # make sure string fields are transferred correctly;
+            # see https://github.com/opencv/cvat/issues/4962
+            data_params={"sorting_method": "lexicographical"},
+        )
+
+        assert task.size == 2
+        assert task.get_frames_info()[0].name == "images/image_1.jpg"
         assert self.stdout.getvalue() == ""
 
     def test_cant_create_task_with_no_data(self):
@@ -262,7 +280,7 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
+    def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -274,6 +292,29 @@ class TestTaskUsecases:
         assert "imported sucessfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+    def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
+        self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
+
+    def test_can_create_from_backup_in_chunks(
+        self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
+    ):
+        monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+
+        num_requests = 0
+        original_do_request = _MyTusUploader._do_request
+
+        def counting_do_request(uploader):
+            nonlocal num_requests
+            num_requests += 1
+            original_do_request(uploader)
+
+        monkeypatch.setattr(_MyTusUploader, "_do_request", counting_do_request)
+
+        self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
+
+        # make sure the upload was actually chunked
+        assert num_requests > 1
 
     def test_can_get_jobs(self, fxt_new_task: Task):
         jobs = fxt_new_task.get_jobs()
