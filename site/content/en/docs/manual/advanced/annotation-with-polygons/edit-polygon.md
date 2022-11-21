@@ -8,7 +8,7 @@ To edit a polygon you have to click on it while holding `Shift`, it will open th
 
 - In the editor you can create new points or delete part of a polygon by closing the line on another point.
 - When `Intelligent polygon cropping` option is activated in the settings,
-  СVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.
+  CVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.
   - The first criteria is a number of cut points.
   - The second criteria is a length of a cut curve.
 
