@@ -23,7 +23,7 @@ To register as a non-admin user, do the following:
 
 1. Go to the login page, and click **Create an account**.
 
-     ![](/images/image002.jpg)
+   ![](/images/image002.jpg)
 
 2. Fill in all blank fields, accept terms of use, and click the **Create an account** button.
 
