@@ -140,7 +140,7 @@ Server = nuclio
 </details>
 
 ## Run Cypress tests
-- Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
+- Install Cypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
 - Run cypress tests:
 ```bash
     cd <cvat_local_repository>/tests
