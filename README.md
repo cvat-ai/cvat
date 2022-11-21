@@ -228,6 +228,7 @@ questions and get our support.
 
 ## Links
 
+- [Computer Vision Annotation Tool (CVAT) has a New Home](https://opencv.org/opencv-and-cvat-computer-vision-annotation-tool-intel/)
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
 - [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
 - [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
