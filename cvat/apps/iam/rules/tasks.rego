@@ -5,7 +5,6 @@ import future.keywords.in
 
 import data.utils
 import data.organizations
-import data.limits
 
 # input: {
 #     "scope": <"create"|"create@project"|"view"|"list"|"update:desc"|

@@ -7,8 +7,9 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from enum import Enum
+from functools import cached_property
 import operator
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, List, Optional, Sequence, Tuple
 
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -20,7 +21,9 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
 from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
-    ConsumableCapability, TaskCreateInProjectContext, WebhookCreateContext, TaskCreateContext)
+    ConsumableCapability, OrgTasksContext, ProjectWebhooksContext,
+    OrgCommonWebhooksContext,
+    TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserSandboxTasksContext)
 
 
 class RequestNotAllowedError(PermissionDenied):
@@ -73,7 +76,16 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         for name, val in kwargs.items():
             setattr(self, name, val)
 
-        self.payload = {
+    @abstractmethod
+    def get_resource(self):
+        return None
+
+    @cached_property
+    def payload(self) -> dict:
+        return self.build_payload()
+
+    def build_payload(self) -> dict:
+        payload = {
             'input': {
                 'scope': self.scope,
                 'auth': {
@@ -94,11 +106,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             }
         }
 
-        self.payload['input']['resource'] = self.get_resource()
+        payload['input']['resource'] = self.get_resource()
 
-    @abstractmethod
-    def get_resource(self):
-        return None
+        return payload
 
     def __bool__(self):
         r = requests.post(self.url, json=self.payload)
@@ -686,7 +696,7 @@ class TaskPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/tasks/result'
+        self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
     class Scopes(str, Enum):
         LIST = 'list'
@@ -944,12 +954,12 @@ class WebhookPermission(OpenPolicyAgentPermission):
                     'id': self.org_id,
                     'num_resources': limit_manager.get_used_resources(
                         org_id=self.org_id,
-                        context=WebhookCreateContext(project_id=self.project_id),
+                        context=OrgCommonWebhooksContext(project_id=self.project_id),
                         capability=ConsumableCapability.WEBHOOK_CREATE,
                     ),
                     'max_resources': limit_manager.get_limits(
                         org_id=self.org_id,
-                        context=WebhookCreateContext(project_id=self.project_id),
+                        context=OrgCommonWebhooksContext(project_id=self.project_id),
                         capability=ConsumableCapability.WEBHOOK_CREATE,
                     ),
                 } if self.org_id is not None else None,
@@ -957,12 +967,12 @@ class WebhookPermission(OpenPolicyAgentPermission):
                     'id': self.user_id,
                     'num_resources': limit_manager.get_used_resources(
                         user_id=self.user_id,
-                        context=WebhookCreateContext(project_id=self.project_id),
+                        context=OrgCommonWebhooksContext(project_id=self.project_id),
                         capability=ConsumableCapability.WEBHOOK_CREATE,
                     ),
                     'max_resources': limit_manager.get_limits(
                         user_id=self.user_id,
-                        context=WebhookCreateContext(project_id=self.project_id),
+                        context=OrgCommonWebhooksContext(project_id=self.project_id),
                         capability=ConsumableCapability.WEBHOOK_CREATE,
                     ),
                 }
@@ -1256,9 +1266,10 @@ class LimitPermission(OpenPolicyAgentPermission):
     def get_scopes(cls, request, view, obj):
         return [
             scope_handler
-            for ctx, _ in cls._supported_capabilities().keys()
+            for ctx in OpenPolicyAgentPermission.__subclasses__()
+            if not issubclass(ctx, cls)
             for scope_handler in ctx.create(request, view, obj)
-            if cls._get_capabilities(scope_handler)
+            if cls._prepare_capability_params(scope_handler) # TODO: remove duplication
         ]
 
     def get_resource(self):
@@ -1271,67 +1282,69 @@ class LimitPermission(OpenPolicyAgentPermission):
             status = limit_manager.get_status(capability=capability, context=capability_params)
             return { 'used': status[0], 'max': status[1] }
 
-        for capability in self._get_capabilities(self.scope_handler):
+        for capability, capability_params in self._prepare_capability_params(self.scope_handler):
             data[self._get_capability_name(capability)] = _get_capability_status(
                 capability=capability,
-                capability_params=self._parse_capability_params(self.scope_handler, capability)
+                capability_params=capability_params,
             )
 
         return { 'limits': data }
 
     @classmethod
     def _get_capability_name(cls, capability: ConsumableCapability) -> str:
-        return capability.name.lower()
+        return capability.name
 
     @classmethod
-    def _get_capabilities(
-        cls, scope_handler: OpenPolicyAgentPermission
-    ) -> List[ConsumableCapability]:
-        return cls._supported_capabilities().get(
-            (type(scope_handler), str(scope_handler.scope)),
-            []
-        )
-
-    @classmethod
-    def _supported_capabilities(cls) -> Dict[
-        Tuple[Type[OpenPolicyAgentPermission], str], List[ConsumableCapability]
-    ]:
-        return {
-            (TaskPermission, TaskPermission.Scopes.CREATE.value): [
-                ConsumableCapability.TASK_CREATE
-            ],
-            (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT.value): [
-                # TaskPermissions outputs both parent scope and this one
-                # no need to copy this logic here
-                ConsumableCapability.TASK_CREATE_IN_PROJECT
-            ],
-        }
-
-    @classmethod
-    def _parse_capability_params(cls,
-        scope: OpenPolicyAgentPermission, capability: ConsumableCapability
-    ) -> CapabilityContext:
+    def _prepare_capability_params(cls, scope: OpenPolicyAgentPermission
+    ) -> List[Tuple[ConsumableCapability, CapabilityContext]]:
         scope_id = (type(scope), scope.scope)
+        results = []
         if scope_id == (TaskPermission, TaskPermission.Scopes.CREATE.value):
-            assert capability == ConsumableCapability.TASK_CREATE
-            capability_params = TaskCreateContext(org_id=scope.org_id, user_id=scope.user_id)
+            if getattr(scope, 'org_id') is not None:
+                results.append((
+                    ConsumableCapability.ORG_TASKS,
+                    OrgTasksContext(org_id=scope.org_id)
+                ))
+            else:
+                results.append((
+                    ConsumableCapability.USER_SANDBOX_TASKS,
+                    UserSandboxTasksContext(user_id=scope.user_id)
+                ))
 
         elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT.value):
-            assert capability == ConsumableCapability.TASK_CREATE_IN_PROJECT
-            capability_params = TaskCreateInProjectContext(org_id=scope.org_id,
-                user_id=scope.user_id, project_id=scope.project_id)
+            project = Project.objects.get(scope.project_id)
+
+            if getattr(project, 'organization') is not None:
+                results.append((
+                    ConsumableCapability.TASKS_IN_ORG_PROJECT,
+                    TasksInOrgProjectContext(
+                        org_id=project.organization.id,
+                        project_id=project.id,
+                    )
+                ))
+            else:
+                results.append((
+                    ConsumableCapability.TASKS_IN_USER_SANDBOX_PROJECT,
+                    TasksInUserSandboxProjectContext(
+                        user_id=project.owner.id,
+                        project_id=project.id
+                    )
+                ))
 
         elif scope_id == (WebhookPermission, 'create'):
-            assert capability == ConsumableCapability.WEBHOOK_CREATE
-            capability_params = WebhookCreateContext(
-                user_id=scope.user_id,
-                project_id=scope.project_id,
-                org_id=scope.org_id
-            )
-        else:
-            raise NotImplementedError(f"Unknown scope {scope_id}")
+            if getattr(scope, 'org_id') is not None:
+                results.append((
+                    ConsumableCapability.ORG_COMMON_WEBHOOKS,
+                    OrgCommonWebhooksContext()
+                ))
+            elif getattr(scope, 'project_id') is not None:
+                project = Project.objects.get(scope_id.project_id)
+                results.append((
+                    ConsumableCapability.PROJECT_WEBHOOKS,
+                    ProjectWebhooksContext()
+                ))
 
-        return capability_params
+        return results
 
 
 class PolicyEnforcer(BasePermission):

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum, auto
-from typing import Optional, Tuple, cast
+from typing import Optional, cast
 
 from attrs import define
 
@@ -13,18 +13,18 @@ from cvat.apps.webhooks.models import Webhook
 
 
 class ConsumableCapability(str, Enum):
-    TASK_CREATE = auto()
-    TASK_CREATE_IN_PROJECT = auto()
-    PROJECT_CREATE = auto()
-    ORG_CREATE = auto()
-    CLOUD_STORAGE_CREATE = auto()
-    WEBHOOK_CREATE = auto()
+    """
+    Represents a capability, which has an upper limit, and can be consumed.
 
-class CapabilityContext:
+    Each capability is also supposed to have a separate CapabilityContext class,
+    representing its parameters. Different parameter combinations should each have
+    a different enum member, no member reuse is supposed for different limits.
+    """
+
     # TODO: for a capability with N params, there are O(k^N)
     # possible limitation combinations. Not all are meaningful, but even though
     # it is quite a large number. Example:
-    #
+
     # A "task create" capability [user_id, org_id, project_id]
     # yields the following possible limitations:
     # - tasks from the user
@@ -38,39 +38,76 @@ class CapabilityContext:
     #
     # Currently, we will cover all of this with a single request to the limit manager.
     # For each meaningful combination class a capability enum entry is supposed.
+
+    USER_SANDBOX_TASKS = auto()
+    USER_SANDBOX_PROJECTS = auto()
+    TASKS_IN_USER_SANDBOX_PROJECT = auto()
+    USER_OWNED_ORGS = auto()
+    USER_SANDBOX_CLOUD_STORAGES = auto()
+
+    ORG_TASKS = auto()
+    ORG_PROJECTS = auto()
+    TASKS_IN_ORG_PROJECT = auto()
+    ORG_CLOUD_STORAGES = auto()
+    ORG_COMMON_WEBHOOKS = auto()
+
+    PROJECT_WEBHOOKS = auto()
+
+class CapabilityContext:
     pass
 
 @define(kw_only=True)
 class UserCapabilityContext(CapabilityContext):
-    user_id: Optional[int] = None
+    user_id: int
 
+# TODO: refactor parameter classes
 @define(kw_only=True)
 class OrgCapabilityContext(CapabilityContext):
-    org_id: Optional[int] = None
+    org_id: int
 
 @define(kw_only=True)
-class TaskCreateContext(UserCapabilityContext, OrgCapabilityContext):
+class UserSandboxTasksContext(UserCapabilityContext):
     pass
 
 @define(kw_only=True)
-class TaskCreateInProjectContext(TaskCreateContext):
-    project_id: int = None
-
-@define(kw_only=True)
-class ProjectCreateContext(UserCapabilityContext, OrgCapabilityContext):
+class OrgTasksContext(OrgCapabilityContext):
     pass
 
 @define(kw_only=True)
-class CloudStorageCreateContext(UserCapabilityContext, OrgCapabilityContext):
+class TasksInUserSandboxProjectContext(UserCapabilityContext):
+    project_id: int
+
+@define(kw_only=True)
+class TasksInOrgProjectContext(OrgCapabilityContext):
+    project_id: int
+
+@define(kw_only=True)
+class UserSandboxProjectsContext(UserCapabilityContext):
     pass
 
 @define(kw_only=True)
-class OrgCreateContext(UserCapabilityContext):
+class OrgProjectsContext(OrgCapabilityContext):
     pass
 
 @define(kw_only=True)
-class WebhookCreateContext(UserCapabilityContext, OrgCapabilityContext):
-    project_id: Optional[int] = None
+class UserSandboxCloudStoragesContext(UserCapabilityContext):
+    pass
+
+@define(kw_only=True)
+class OrgCloudStoragesContext(OrgCapabilityContext):
+    pass
+
+@define(kw_only=True)
+class UserOrgsContext(UserCapabilityContext):
+    pass
+
+@define(kw_only=True)
+class ProjectWebhooksContext(CapabilityContext):
+    project_id: int
+
+@define(kw_only=True)
+class OrgCommonWebhooksContext(OrgCapabilityContext):
+    pass
 
 ConsumableLimit = Optional[int]
 
@@ -84,91 +121,110 @@ class LimitManager:
         capability: ConsumableCapability, *,
         context: Optional[CapabilityContext] = None,
     ) -> CapabilityStatus:
-        if capability == ConsumableCapability.ORG_CREATE:
+        if capability == ConsumableCapability.USER_OWNED_ORGS:
             assert context is not None
-            context = cast(OrgCreateContext, context)
-            if context.user_id is None:
-                raise ValueError("user_id must be provided")
+            context = cast(UserOrgsContext, context)
 
             return (
                 Organization.objects.filter(owner_id=context.user_id).count(),
                 1
             )
 
-        elif capability == ConsumableCapability.PROJECT_CREATE:
+        elif capability == ConsumableCapability.USER_SANDBOX_PROJECTS:
             assert context is not None
-            context = cast(ProjectCreateContext, context)
-            if context.user_id is None and context.org_id is None:
-                raise ValueError("user_id and/or org_id must be provided")
+            context = cast(UserSandboxProjectsContext, context)
 
             return (
-                Project.objects.filter(
-                    owner=context.user_id,
-                    organization=context.org_id
-                ).count(),
-                5 if context.org_id is not None else None
+                # TODO: check about active/removed projects
+                Project.objects.filter(owner=context.user_id, organization=None).count(),
+                5
             )
 
-        elif capability == ConsumableCapability.TASK_CREATE:
+        elif capability == ConsumableCapability.ORG_PROJECTS:
             assert context is not None
-            context = cast(TaskCreateContext, context)
-            if context.user_id is None and context.org_id is None:
-                raise ValueError("user_id and/or org_id must be provided")
+            context = cast(OrgProjectsContext, context)
 
             return (
-                Task.objects.filter(
-                    owner=context.user_id,
-                    organization=context.org_id
-                ).count(),
-                10 if context.org_id is not None else None
+                # TODO: check about active/removed projects
+                Project.objects.filter(organization=context.org_id).count(),
+                5
             )
 
-        elif capability == ConsumableCapability.TASK_CREATE_IN_PROJECT:
+        elif capability == ConsumableCapability.USER_SANDBOX_TASKS:
             assert context is not None
-            context = cast(TaskCreateInProjectContext, context)
-            if context.user_id is None and context.org_id is None:
-                raise ValueError("user_id and/or org_id must be provided")
+            context = cast(UserSandboxTasksContext, context)
 
             return (
-                # TODO: find the correct filter
-                Task.objects.filter(
-                    owner=context.user_id,
-                    organization=context.org_id,
-                    project=context.project_id,
-                ).count(),
-                5 if context.org_id is not None else 5
+                # TODO: check about active/removed tasks
+                Task.objects.filter(owner=context.user_id, organization=None).count(),
+                10
             )
 
-        elif capability == ConsumableCapability.WEBHOOK_CREATE:
+        elif capability == ConsumableCapability.ORG_TASKS:
             assert context is not None
-            context = cast(WebhookCreateContext, context)
-            if context.user_id is None and context.org_id is None:
-                raise ValueError("user_id and/or org_id must be provided")
+            context = cast(OrgTasksContext, context)
 
-            if context.project_id is not None:
+            return (
+                # TODO: check about active/removed tasks
+                Task.objects.filter(organization=context.org_id).count(),
+                10
+            )
+
+        elif capability == ConsumableCapability.TASKS_IN_USER_SANDBOX_PROJECT:
+            assert context is not None
+            context = cast(TasksInUserSandboxProjectContext, context)
+
+            return (
+                # TODO: check about active/removed tasks
+                Task.objects.filter(project=context.project_id).count(),
+                5
+            )
+
+        elif capability == ConsumableCapability.TASKS_IN_ORG_PROJECT:
+            assert context is not None
+            context = cast(TasksInOrgProjectContext, context)
+
+            return (
+                # TODO: check about active/removed tasks
+                Task.objects.filter(project=context.project_id).count(),
+                5
+            )
+
+        elif capability == ConsumableCapability.PROJECT_WEBHOOKS:
+            assert context is not None
+            context = cast(ProjectWebhooksContext, context)
+
+            return (
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
-                return (
-                    Webhook.objects.filter(project=context.project_id).count(),
-                    10
-                )
-            else:
-                return (
-                    Webhook.objects.filter(organization=context.org_id, project=None).count(),
-                    20
-                )
+                Webhook.objects.filter(project=context.project_id).count(),
+                10
+            )
 
-        elif capability == ConsumableCapability.CLOUD_STORAGE_CREATE:
+        elif capability == ConsumableCapability.ORG_COMMON_WEBHOOKS:
             assert context is not None
-            context = cast(CloudStorageCreateContext, context)
-            if context.user_id is None and context.org_id is None:
-                raise ValueError("user_id and/or org_id must be provided")
+            context = cast(OrgCommonWebhooksContext, context)
 
             return (
-                CloudStorage.objects.filter(
-                    owner=context.user_id,
-                    organization=context.org_id
-                ).count(),
+                Webhook.objects.filter(organization=context.org_id, project=None).count(),
+                20
+            )
+
+        elif capability == ConsumableCapability.USER_SANDBOX_CLOUD_STORAGES:
+            assert context is not None
+            context = cast(UserSandboxCloudStoragesContext, context)
+
+            return (
+                CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
+                10
+            )
+
+        elif capability == ConsumableCapability.ORG_CLOUD_STORAGES:
+            assert context is not None
+            context = cast(OrgCloudStoragesContext, context)
+
+            return (
+                CloudStorage.objects.filter(organization=context.org_id).count(),
                 10
             )
 
