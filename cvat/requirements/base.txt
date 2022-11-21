@@ -20,7 +20,7 @@ rq-scheduler==0.10.0
 sqlparse==0.4.2
 django-sendfile2==0.7.0
 dj-pagination==2.5.0
-python-logstash-async==2.5.0
+python-logstash-async==2.2.0
 rules==2.2
 GitPython==3.1.27
 coreapi==2.3.3
@@ -50,4 +50,3 @@ urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
 natsort==8.0.0
 mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
 dnspython==2.2.0
-setuptools==65.5.1

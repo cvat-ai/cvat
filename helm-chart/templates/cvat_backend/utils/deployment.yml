@@ -46,7 +46,6 @@ spec:
       containers:
         - name: cvat-app-backend-utils-container
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
-          imagePullPolicy: {{ .Values.cvat.backend.imagepullpolicy }}
           {{- with .Values.cvat.backend.utils.resources }}
           resources:
           {{- toYaml . | nindent 12 }}

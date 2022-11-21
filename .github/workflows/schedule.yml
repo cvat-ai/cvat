@@ -7,7 +7,6 @@ on:
 env:
   SERVER_IMAGE_TEST_REPO: cvat_server
   UI_IMAGE_TEST_REPO: instrumentation_cvat_ui
-  CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
 
 jobs:
   check_updates:

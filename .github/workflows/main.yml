@@ -10,9 +10,6 @@ on:
       - 'site/**'
       - '**/*.md'
 
-env:
-  CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
-
 jobs:
   search_cache:
     if: |
