@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import serverProxy from './server-proxy';
+import PluginRegistry from './plugins';
 import { ModelType } from './enums';
 
 interface ModelAttribute {
@@ -34,6 +36,8 @@ interface SerializedModel {
     framework: string;
     description: string;
     type: ModelType;
+    owner: string;
+    provider: string;
     help_message?: string;
     animated_gif?: string;
     min_pos_points?: number;
@@ -104,8 +108,40 @@ export default class MLModel {
         };
     }
 
+    public get owner(): string {
+        return 'admin';
+    }
+
+    public get provider(): string {
+        return 'cvat';
+    }
+
     // Used to set a callback when the tool is blocked in UI
     public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
         this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
     }
+
+    public async save(): Promise<MLModel> {
+        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.save);
+        return result;
+    }
 }
+
+Object.defineProperties(MLModel.prototype.save, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(): Promise<MLModel> {
+            const initialData = {
+                provider_type: this.provider,
+            };
+
+            const modelData = {
+                ...initialData,
+            };
+
+            const cloudStorage = await serverProxy.lambda.create(modelData);
+            return new MLModel(cloudStorage);
+        },
+    },
+});

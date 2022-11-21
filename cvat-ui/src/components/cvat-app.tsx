@@ -67,6 +67,7 @@ import '../styles.scss';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
+import CreateModelPage from './create-model-page/create-model-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -405,7 +406,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
-                                                <Route exact path='/models' component={ModelsPageContainer} />
+                                                <>
+                                                    <Route exact path='/models' component={ModelsPageContainer} />
+                                                    <Route exact path='/models/create' component={CreateModelPage} />
+                                                </>
                                             )}
                                             <Redirect
                                                 push

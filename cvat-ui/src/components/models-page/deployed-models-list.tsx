@@ -22,20 +22,23 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
         <>
             <Row justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14} className='cvat-models-list'>
-                    <Row align='middle' style={{ padding: '10px' }}>
-                        <Col span={3}>
-                            <Text strong>Framework</Text>
+                    <Row align='middle' className='cvat-models-heading'>
+                        <Col span={2}>
+                            <Text strong>Provider</Text>
                         </Col>
                         <Col span={3}>
                             <Text strong>Name</Text>
                         </Col>
-                        <Col span={3} offset={1}>
+                        <Col span={3}>
+                            <Text strong>Owner</Text>
+                        </Col>
+                        <Col span={3}>
                             <Text strong>Type</Text>
                         </Col>
                         <Col span={8}>
                             <Text strong>Description</Text>
                         </Col>
-                        <Col span={5} offset={1}>
+                        <Col span={5}>
                             <Text strong>Labels</Text>
                         </Col>
                     </Row>

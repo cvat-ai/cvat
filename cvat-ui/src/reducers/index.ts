@@ -335,6 +335,8 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
+    provider: string;
+    owner: string;
     onChangeToolsBlockerState: (event: string) => void;
     tip: {
         message: string;
@@ -343,6 +345,14 @@ export interface Model {
     params: {
         canvas: Record<string, number | boolean>;
     };
+}
+
+export interface ModelsQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
 }
 
 export type OpenCVTool = IntelligentScissors | OpenCVTracker;
@@ -392,6 +402,7 @@ export interface ModelsState {
     };
     modelRunnerIsVisible: boolean;
     modelRunnerTask: any;
+    query: ModelsQuery;
 }
 
 export interface ErrorState {

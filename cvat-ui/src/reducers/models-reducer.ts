@@ -18,6 +18,13 @@ const defaultState: ModelsState = {
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
     inferences: {},
+    query: {
+        page: 1,
+        id: null,
+        search: null,
+        filter: null,
+        sort: null,
+    },
 };
 
 export default function (state = defaultState, action: ModelsActions | AuthActions | BoundariesActions): ModelsState {

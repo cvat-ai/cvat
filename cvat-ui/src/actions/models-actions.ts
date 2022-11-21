@@ -1,15 +1,23 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { Model, ActiveInference, RQStatus } from 'reducers';
+import {
+    Model, ActiveInference, RQStatus, ModelsQuery, Indexable,
+} from 'reducers';
 import { getCore } from 'cvat-core-wrapper';
+
+const cvat = getCore();
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
     GET_MODELS_SUCCESS = 'GET_MODELS_SUCCESS',
     GET_MODELS_FAILED = 'GET_MODELS_FAILED',
+    CREATE_MODEL = 'CREATE_MODEL',
+    CREATE_MODEL_SUCCESS = 'CREATE_MODEL_SUCCESS',
+    CREATE_MODEL_FAILED = 'CREATE_MODEL_FAILED',
     START_INFERENCE_FAILED = 'START_INFERENCE_FAILED',
     GET_INFERENCE_STATUS_SUCCESS = 'GET_INFERENCE_STATUS_SUCCESS',
     GET_INFERENCE_STATUS_FAILED = 'GET_INFERENCE_STATUS_FAILED',
@@ -21,13 +29,16 @@ export enum ModelsActionTypes {
 }
 
 export const modelsActions = {
-    getModels: () => createAction(ModelsActionTypes.GET_MODELS),
+    getModels: (query?: ModelsQuery) => createAction(ModelsActionTypes.GET_MODELS, { query }),
     getModelsSuccess: (models: Model[]) => createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
         models,
     }),
     getModelsFailed: (error: any) => createAction(ModelsActionTypes.GET_MODELS_FAILED, {
         error,
     }),
+    createModel: () => createAction(ModelsActionTypes.CREATE_MODEL),
+    createModelSuccess: () => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS),
+    createModelFailed: (error: any) => createAction(ModelsActionTypes.CREATE_MODEL_FAILED, { error }),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
@@ -70,15 +81,38 @@ export type ModelsActions = ActionUnion<typeof modelsActions>;
 
 const core = getCore();
 
-export function getModelsAsync(): ThunkAction {
+export function getModelsAsync(query?: ModelsQuery): ThunkAction {
     return async (dispatch): Promise<void> => {
-        dispatch(modelsActions.getModels());
+        dispatch(modelsActions.getModels(query));
+
+        const filteredQuery = { ...query };
+        if (query) {
+            for (const key of Object.keys(query)) {
+                if ((filteredQuery as Indexable)[key] === null) {
+                    delete (filteredQuery as Indexable)[key];
+                }
+            }
+        }
 
         try {
-            const models = await core.lambda.list();
+            const models = await core.lambda.list(filteredQuery);
             dispatch(modelsActions.getModelsSuccess(models));
         } catch (error) {
             dispatch(modelsActions.getModelsFailed(error));
+        }
+    };
+}
+
+export function createModelAsync(modelData: Store): ThunkAction {
+    return async function (dispatch) {
+        const model = new cvat.classes.MLModel(modelData);
+
+        dispatch(modelsActions.createModel());
+        try {
+            dispatch(modelsActions.createModelSuccess(model));
+        } catch (error) {
+            dispatch(modelsActions.createModelFailed(error));
+            throw error;
         }
     };
 }

@@ -1670,6 +1670,24 @@ class ServerProxy {
             }
         }
 
+        async function createLambdaFunction(labdaFunctionData: any) {
+            const params = enableOrganization();
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(labdaFunctionData), {
+                    proxy: config.proxy,
+                    params,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
         function predictorStatus(projectId) {
             const { backendAPI } = config;
 
@@ -2313,6 +2331,7 @@ class ServerProxy {
                         run: runLambdaRequest,
                         call: callLambdaFunction,
                         cancel: cancelLambdaRequest,
+                        create: createLambdaFunction,
                     }),
                     writable: false,
                 },
