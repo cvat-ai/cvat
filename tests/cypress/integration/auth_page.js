@@ -14,19 +14,30 @@ describe('Check server availability', () => {
     });
 
     it('"Sign in" button is exists', () => {
-        cy.get('[type="submit"]');
+        cy.get('button[type="submit"]').should('exist');
     });
 
     it('Check placeholder "Username"', () => {
-        cy.get('input').invoke('attr', 'placeholder').should('contain', 'Username');
+        cy.get('#credential').prev().should('contain', 'Email or username');
+    });
+
+    it('Enter value ib login field', () => {
+        cy.get('#credential').type('Email or username');
     });
 
     it('Check placeholder "Password"', () => {
-        cy.get('[type="password"]');
+        cy.get('#password').should('exist');
     });
 
-    it('Click to "Sign in" button', () => {
-        cy.get('[type="submit"]').click();
-        cy.wait(1000);
+    it('Clear field username', () => {
+        cy.get('#credential').clear();
+    });
+
+    it('Log in', () => {
+        cy.login();
+    });
+
+    it('Log out', () => {
+        cy.logout();
     });
 });

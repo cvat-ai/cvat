@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
-
 const fs = require('fs');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
@@ -12,7 +11,10 @@ const { createZipArchive } = require('./createZipArchive/addPlugin');
 const { compareImages } = require('./compareImages/addPlugin');
 const { unpackZipArchive } = require('./unpackZipArchive/addPlugin');
 
-module.exports = (on, config) => {
+// eslint-disable-next-line import/order,import/no-extraneous-dependencies
+const cucumber = require('cypress-cucumber-preprocessor').default;
+
+module.exports = async (on, config) => {
     // eslint-disable-next-line import/no-extraneous-dependencies
     require('@cypress/code-coverage/task')(on, config);
     on('task', { imageGenerator });
@@ -27,6 +29,7 @@ module.exports = (on, config) => {
     });
     on('task', {
         listFiles(folderName) {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
             return fs.readdirSync(folderName);
         },
     });
@@ -41,5 +44,6 @@ module.exports = (on, config) => {
         }
         return launchOptions;
     });
+    on('file:preprocessor', cucumber());
     return config;
 };

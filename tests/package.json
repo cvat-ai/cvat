@@ -17,5 +17,8 @@
     "fs-extra": "^10.1.0",
     "jimp": "^0.16.1"
   },
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "devDependencies": {
+    "cypress-cucumber-preprocessor": "^4.3.1"
+  }
 }

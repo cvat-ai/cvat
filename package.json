@@ -37,6 +37,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "coveralls": "^3.1.0",
     "css-loader": "^3.4.2",
+    "cypress-cucumber-preprocessor": "^4.3.1",
     "eslint": "^7.11.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-airbnb-base": "14.2.1",
@@ -126,5 +127,8 @@
     "@types/react-redux": "^7.1.24",
     "@types/react-router-dom": "^5.3.3",
     "@types/prettier": "2.4.1"
+  },
+  "dependencies": {
+    "yarn": "^1.22.19"
   }
 }

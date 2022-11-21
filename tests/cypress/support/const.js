@@ -3,6 +3,47 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+import { globalTheme as theme } from './theme';
+
+export const testData = {
+    image1: 'images/image_1.jpg',
+    image2: 'images/image_2.jpg',
+    image3: 'images/image_3.jpg',
+};
+export const nameTask = 'Basic actions with masks';
+export const serverFiles = [`${testData.image1}`, `${testData.image2}`, `${testData.image3}`];
+export const editingActions = [
+    {
+        method: `${theme.methodPolygonMinus}`,
+        coordinates: [[50, 400], [800, 400], [800, 800], [50, 800]],
+    },
+];
+export const drawingActions = [
+    {
+        method: `${theme.methodBrush}`,
+        coordinates: [[300, 300], [700, 300], [700, 700], [300, 700]],
+    },
+    {
+        method: `${theme.methodPolygonPlus}`,
+        coordinates: [[450, 210], [650, 400], [450, 600], [260, 400]],
+    },
+    {
+        method: `${theme.methodBrushSize}`,
+        value: 150,
+    },
+    {
+        method: `${theme.methodEraser}`,
+        coordinates: [[500, 500]],
+    },
+    {
+        method: `${theme.methodBrushSize}`,
+        value: 10,
+    },
+    {
+        method: `${theme.methodPolygonMinus}`,
+        coordinates: [[450, 400], [600, 400], [450, 550], [310, 400]],
+    },
+];
 
 export const labelName = 'Main task';
 export const taskName = `New annotation task for ${labelName}`;

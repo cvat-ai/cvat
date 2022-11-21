@@ -6,14 +6,16 @@
   "defaultCommandTimeout": 25000,
   "downloadsFolder": "cypress/fixtures",
   "env": {
+    "url": "http://localhost:8080",
     "user": "admin",
     "email": "admin@localhost.company",
     "password": "12qwaszx"
   },
   "testFiles": [
-    "auth_page.js",
-    "canvas3d_functionality/*.js",
-    "canvas3d_functionality_2/*.js",
-    "remove_users_tasks_projects_organizations.js"
+      "auth_page.js",
+      "canvas3d_functionality/*.js",
+      "canvas3d_functionality_2/*.js",
+      "remove_users_tasks_projects_organizations.js",
+      "**/*.feature"
   ]
 }
