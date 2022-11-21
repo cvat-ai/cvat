@@ -1,14 +1,16 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
-import { SelectValue } from 'antd/lib/select';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import Text from 'antd/lib/typography/Text';
 
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
+import { Label } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { LogType } from 'cvat-logger';
@@ -147,6 +149,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         activatedStateID === null || activatedIndex === -1 ? null : filteredStates[activatedIndex];
 
     const activeAttribute = activeObjectState ? labelAttrMap[activeObjectState.label.id] : null;
+    const applicableLabels = activeObjectState ? filterApplicableLabels(activeObjectState, labels) : [];
 
     if (canvasIsReady) {
         if (activeObjectState) {
@@ -308,12 +311,10 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     nextObject={nextObject}
                 />
                 <ObjectBasicsEditor
-                    currentLabel={activeObjectState.label.name}
-                    labels={labels}
-                    changeLabel={(value: SelectValue): void => {
-                        const labelName = value as string;
-                        const [newLabel] = labels.filter((_label): boolean => _label.name === labelName);
-                        activeObjectState.label = newLabel;
+                    currentLabel={activeObjectState.label.id}
+                    labels={applicableLabels}
+                    changeLabel={(value: Label): void => {
+                        activeObjectState.label = value;
                         updateAnnotations([activeObjectState]);
                     }}
                 />

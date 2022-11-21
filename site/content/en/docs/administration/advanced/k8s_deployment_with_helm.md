@@ -56,7 +56,7 @@ helm dependency update
      traefik:
        service:
          externalIPs:
-           - "your minikube IP (can be obtained with `minicube ip` command)"
+           - "your minikube IP (can be obtained with `minikube ip` command)"
      ```
    - Also ensure that your CVAT ingress appears on your hosts file (/etc/hosts).
      You can do this by running this command:

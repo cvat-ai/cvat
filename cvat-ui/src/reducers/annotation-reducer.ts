@@ -81,7 +81,7 @@ const defaultState: AnnotationState = {
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
-        activeLabelID: 0,
+        activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
     },
     annotations: {
@@ -222,7 +222,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 drawing: {
                     ...state.drawing,
-                    activeLabelID: job.labels.length ? job.labels[0].id : null,
+                    activeLabelID: defaultLabel ? defaultLabel.id : null,
                     activeObjectType: job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                     activeShapeType,
                 },

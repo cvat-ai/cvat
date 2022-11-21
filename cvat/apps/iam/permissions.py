@@ -275,7 +275,8 @@ class ServerPermission(OpenPolicyAgentPermission):
             'plugins': 'view',
             'exception': 'send:exception',
             'logs': 'send:logs',
-            'share': 'list:content'
+            'share': 'list:content',
+            'advanced_authentication': 'view',
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -891,6 +892,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('update', 'PUT'): 'update', # TODO: do we need the method?
             ('destroy', 'DELETE'): 'delete',
             ('annotations', 'GET'): 'view:annotations',
+            ('dataset_export', 'GET'): 'export:dataset',
             ('annotations', 'PATCH'): 'update:annotations',
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',

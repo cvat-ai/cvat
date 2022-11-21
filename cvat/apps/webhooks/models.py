@@ -2,20 +2,37 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
+
 from django.contrib.auth.models import User
 from django.db import models
 
 from cvat.apps.engine.models import Project
-from cvat.apps.engine.utils import DjangoEnum, StrEnum
 from cvat.apps.organizations.models import Organization
 
 
-class WebhookTypeChoice(DjangoEnum, StrEnum):
+class WebhookTypeChoice(str, Enum):
     ORGANIZATION = "organization"
     PROJECT = "project"
 
-class WebhookContentTypeChoice(DjangoEnum, StrEnum):
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+
+class WebhookContentTypeChoice(str, Enum):
     JSON = "application/json"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 
 class Webhook(models.Model):
     target_url = models.URLField()

@@ -1,9 +1,11 @@
+
 # Copyright (C) 2019-2022 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
+from enum import Enum
 
 from django.db import transaction
 from django.db.models.query import Prefetch
@@ -12,7 +14,6 @@ from django.utils import timezone
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
-from cvat.apps.engine.utils import DjangoEnum, StrEnum
 
 from .annotation import AnnotationIR, AnnotationManager
 from .bindings import TaskData, JobData
@@ -28,10 +29,17 @@ class dotdict(OrderedDict):
     __eq__ = lambda self, other: self.id == other.id
     __hash__ = lambda self: self.id
 
-class PatchAction(DjangoEnum, StrEnum):
+class PatchAction(str, Enum):
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
+
+    @classmethod
+    def values(cls):
+        return [item.value for item in cls]
+
+    def __str__(self):
+        return self.value
 
 def _merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
@@ -62,9 +70,18 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 class JobAnnotation:
-    def __init__(self, pk):
-        self.db_job = models.Job.objects.select_related('segment__task') \
-            .select_for_update().get(id=pk)
+    def __init__(self, pk, is_prefetched=False):
+        if is_prefetched:
+            self.db_job = models.Job.objects.select_related('segment__task') \
+                .select_for_update().get(id=pk)
+        else:
+            self.db_job = models.Job.objects.prefetch_related(
+                'segment',
+                'segment__task',
+                Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                    Prefetch('images', queryset=models.Image.objects.order_by('frame'))
+                ))
+            ).get(pk=pk)
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -622,7 +639,7 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
-            annotation = JobAnnotation(db_job.id)
+            annotation = JobAnnotation(db_job.id, is_prefetched=True)
             annotation.init_from_db()
             if annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = annotation.ir_data.version

@@ -306,7 +306,7 @@ context('Filters functionality.', () => {
         });
 
         it('Verify to show all filters', () => {
-            cy.сheckFiltersModalOpened();
+            cy.checkFiltersModalOpened();
             cy.get('.recently-used-wrapper').trigger('mouseover');
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')

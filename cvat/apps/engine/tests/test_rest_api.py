@@ -1,5 +1,4 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,6 +12,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
+from enum import Enum
 from glob import glob
 from io import BytesIO
 from unittest import mock
@@ -28,7 +28,6 @@ from PIL import Image
 from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
-from cvat.apps.engine.utils import StrEnum
 
 from datumaro.util.test_utils import TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
@@ -3098,9 +3097,12 @@ def generate_manifest_file(data_type, manifest_path, sources):
 class TaskDataAPITestCase(APITestCase):
     _image_sizes = {}
 
-    class ChunkType(StrEnum):
+    class ChunkType(str, Enum):
         IMAGESET = 'imageset'
         VIDEO = 'video'
+
+        def __str__(self):
+            return self.value
 
     def setUp(self):
         self.client = APIClient()

@@ -6,6 +6,7 @@
 import base64
 import json
 from functools import wraps
+from enum import Enum
 from copy import deepcopy
 
 import django_rq
@@ -27,14 +28,15 @@ from cvat.apps.engine.models import ShapeType, SourceType
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
-from cvat.apps.engine.utils import StrEnum
-
-class LambdaType(StrEnum):
+class LambdaType(Enum):
     DETECTOR = "detector"
     INTERACTOR = "interactor"
     REID = "reid"
     TRACKER = "tracker"
     UNKNOWN = "unknown"
+
+    def __str__(self):
+        return self.value
 
 class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'

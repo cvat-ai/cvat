@@ -13,7 +13,7 @@ jest.mock('../../src/server-proxy', () => {
 });
 
 // Initialize api
-window.cvat = require('../../src/api');
+window.cvat = require('../../src/api').default;
 const serverProxy = require('../../src/server-proxy').default;
 
 // Test cases

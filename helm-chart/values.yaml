@@ -19,6 +19,15 @@ cvat:
       envs:
         ALLOWED_HOSTS: "*"
         DJANGO_MODWSGI_EXTRA_ARGS: ""
+        USE_ALLAUTH_SOCIAL_ACCOUNTS: false
+      secret:
+        create: true
+        name: cvat-server-secret
+        socialAccountAuthentication:
+          googleClientId: ""
+          googleClientSecret: ""
+          githubClientId: ""
+          githubClientSecret: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
@@ -66,6 +75,7 @@ cvat:
     replicas: 1
     image: cvat/server
     tag: dev
+    imagepullploicy: IfNotPresent
     permissionFix:
       enabled: true
     service:
@@ -85,6 +95,7 @@ cvat:
     replicas: 1
     image: cvat/ui
     tag: dev
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -127,6 +138,7 @@ cvat:
     replicas: 1
     image: openpolicyagent/opa
     tag: 0.34.2-rootless
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}

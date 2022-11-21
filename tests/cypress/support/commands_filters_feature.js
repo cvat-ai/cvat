@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-Cypress.Commands.add('сheckFiltersModalOpened', () => {
+Cypress.Commands.add('checkFiltersModalOpened', () => {
     cy.document().then((doc) => {
         const filterModal = Array.from(doc.querySelectorAll('.cvat-filters-modal-visible'));
         if (filterModal.length === 0) {
@@ -34,28 +34,28 @@ Cypress.Commands.add('collectRuleID', () => {
 });
 
 Cypress.Commands.add('clearFilters', () => {
-    cy.сheckFiltersModalOpened();
+    cy.checkFiltersModalOpened();
     cy.contains('button', 'Clear filters').click();
     cy.get('.cvat-filters-modal-visible').should('not.exist');
     cy.get('.cvat-filters-modal').should('not.exist');
 });
 
 Cypress.Commands.add('addFiltersGroup', (groupIndex) => {
-    cy.сheckFiltersModalOpened();
+    cy.checkFiltersModalOpened();
     cy.collectGroupID().then((groupIdIndex) => {
         cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).contains('button', 'Add group').first().click();
     });
 });
 
 Cypress.Commands.add('addFiltersRule', (groupIndex) => {
-    cy.сheckFiltersModalOpened();
+    cy.checkFiltersModalOpened();
     cy.collectGroupID().then((groupIdIndex) => {
         cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).contains('button', 'Add rule').click();
     });
 });
 
 Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
-    cy.сheckFiltersModalOpened();
+    cy.checkFiltersModalOpened();
     cy.collectGroupID().then((groupIdIndex) => {
         cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).within(() => {
             cy.get('.group--header').first().trigger('mouseover');
@@ -69,7 +69,7 @@ Cypress.Commands.add(
     ({
         groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit,
     }) => {
-        cy.сheckFiltersModalOpened();
+        cy.checkFiltersModalOpened();
         cy.collectGroupID().then((groupIdIndex) => {
             cy.collectRuleID().then((ruleIdIndex) => {
                 cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
@@ -132,7 +132,7 @@ Cypress.Commands.add(
 );
 
 Cypress.Commands.add('selectFilterValue', (filterValue) => {
-    cy.сheckFiltersModalOpened();
+    cy.checkFiltersModalOpened();
     cy.get('.recently-used-wrapper').trigger('mouseover');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
