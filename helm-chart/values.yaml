@@ -75,6 +75,7 @@ cvat:
     replicas: 1
     image: cvat/server
     tag: dev
+    imagepullploicy: IfNotPresent
     permissionFix:
       enabled: true
     service:
@@ -94,6 +95,7 @@ cvat:
     replicas: 1
     image: cvat/ui
     tag: dev
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -136,6 +138,7 @@ cvat:
     replicas: 1
     image: openpolicyagent/opa
     tag: 0.34.2-rootless
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
