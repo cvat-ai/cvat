@@ -6,7 +6,9 @@ from google.cloud import storage
 from google.oauth2 import service_account
 from cvat.apps.dataset_manager.bindings import TaskData
 from cvat.apps.dataset_manager.formats.cvat import dump_task_anno, dump_as_cvat_interpolation
-
+from google.cloud.secretmanager import SecretManagerServiceClient
+import json
+import boto3
 
 class SyncLabels(VoxelCommand):
     """Syncs task labels to Google Cloud."""
@@ -29,12 +31,22 @@ class SyncLabels(VoxelCommand):
     def _sync_cvat_xml_to_gcs(self, cvat_xml: str):
         """Pushes CVAT XML to Google Cloud Storage bucket."""
         project = os.getenv("VOXEL_GCP_PROJECT", "missing_env_var_VOXEL_GCP_PROJECT")
-        client = storage.Client(
-            credentials=self.credentials, project=project)
+        secret_manager_client = SecretManagerServiceClient(credentials=self.credentials)
+        name = f"projects/{project}/secrets/S3_ACCESS/versions/"
+        response = secret_manager_client.access_secret_version(request={"name": name})
+        payload = response.payload.data.decode("UTF-8")
+        s3_access = json.loads(payload)
+        os.env["AWS_ACCESS_KEY_ID"] = s3_access["AWS_ACCESS_KEY_ID"]
+        os.env["AWS_SECRET_ACCESS_KEY"] = s3_access["AWS_ACCESS_SECRET"]
+
         bucket = client.bucket(settings.VOXEL_LABEL_BUCKET_NAME)
+        client = boto3.client("s3")
         blob_name = f"{self.video_uuid}.xml"
-        blob = bucket.blob(blob_name)
-        blob.upload_from_string(cvat_xml, content_type='text/xml')
+        client.put_object(
+            Bucket=bucket,
+            Body=cvat_xml,
+            Key=blob_name
+        )
 
     def execute(self, task_data: TaskData):
         xml_stream = io.StringIO()
