@@ -293,7 +293,7 @@ class Data(models.Model):
     ############# same paths on s3
 
     def get_s3_data_dirname(self):
-        return os.path.join(settings.S3_UPLOAD_ROOT, str(self.pk))
+        return os.path.join(settings.S3_DATA_ROOT, str(self.pk))
 
     def get_s3_cache_base_dirname(self):
         return os.path.join(settings.S3_CACHE_ROOT, str(self.pk))
@@ -540,8 +540,13 @@ class Job(models.Model):
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
 
+    preview_file_name = 'preview.jpeg'
+
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
+
+    def get_s3_dirname(self):
+        return os.path.join(settings.S3_JOBS_ROOT, str(self.id))
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
@@ -570,7 +575,10 @@ class Job(models.Model):
         db_commit.save()
 
     def get_preview_path(self):
-        return os.path.join(self.get_dirname(), "preview.jpeg")
+        return os.path.join(self.get_dirname(), self.preview_file_name)
+
+    def get_s3_preview_path(self):
+        return os.path.join(self.get_s3_dirname(), self.preview_file_name)
 
     class Meta:
         default_permissions = ()

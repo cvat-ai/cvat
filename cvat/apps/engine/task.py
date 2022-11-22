@@ -323,38 +323,62 @@ def _move_manifest_to_s3(db_data: models.Data):
     os.remove(path)
 
 
-def _move_files_to_s3(db_data: models.Data):
-    # TODO: add some try-catch
-    client_files = db_data.client_files.all()
-    for client_file in client_files:
-        path = client_file.file.path
-        if os.path.exists(path):
-            slogger.glob.info(path)
-            name = path.rsplit('/', 1)[-1]
-            with open(path, 'rb') as f:
-                models.S3File.objects.create(
-                    file=File(f, name=name),
-                    data=db_data,
-                )
-            os.remove(path)
-    client_files.delete()
+def _move_file_to_s3(path, db_data):
+    if os.path.exists(path):
+        slogger.glob.info(path)
+        name = path.rsplit('/', 1)[-1]
+        with open(path, 'rb') as f:
+            models.S3File.objects.create(
+                file=File(f, name=name),
+                data=db_data,
+            )
+        os.remove(path)
 
 
-def _move_preview_to_s3(db_data: models.Data):
-    # TODO: add some try-catch
-    path = db_data.get_preview_path()
-    key = db_data.get_s3_preview_path()
+def _move_preview_to_s3(path, key):
     slogger.glob.info('{} -> {}'.format(path, key))
     s3_client.upload_from_path(path, key)
     os.remove(path)
 
 
-def _move_data_to_s3(db_data: models.Data):
+def _move_client_files_to_s3(db_data: models.Data):
+    client_files = db_data.client_files.all()
+    for client_file in client_files:
+        path = client_file.file.path
+        _move_file_to_s3(path, db_data)
+    client_files.delete()
+
+
+def _move_remote_files_to_s3(db_data: models.Data, raw_data: dict):
+    upload_dirname = db_data.get_upload_dirname()
+    for remote_file in raw_data['remote_files']:
+        path = os.path.join(upload_dirname, remote_file)
+        _move_file_to_s3(path, db_data)
+    db_data.remote_files.all().delete()
+
+
+def _move_task_preview_to_s3(db_data: models.Data):
+    path = db_data.get_preview_path()
+    key = db_data.get_s3_preview_path()
+    _move_preview_to_s3(path, key)
+
+
+def _move_job_previews_to_s3(db_task: models.Task):
+    db_jobs = models.Job.objects.filter(segment__task=db_task)
+    for db_job in db_jobs:
+        path = db_job.get_preview_path()
+        key = db_job.get_s3_preview_path()
+        _move_preview_to_s3(path, key)
+
+
+def _move_data_to_s3(db_task: models.Task, db_data: models.Data, raw_data: dict):
     # This does not apply to video, cloud storages or share uploads.
     slogger.glob.info('Moving files to s3 for data {}:'.format(db_data.id))
     _move_manifest_to_s3(db_data)
-    _move_files_to_s3(db_data)
-    _move_preview_to_s3(db_data)
+    _move_client_files_to_s3(db_data)
+    _move_remote_files_to_s3(db_data, raw_data)
+    _move_task_preview_to_s3(db_data)
+    _move_job_previews_to_s3(db_task)
     slogger.glob.info('Done.')
 
 
@@ -763,7 +787,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
 
-    if settings.USE_S3:
-        _move_data_to_s3(db_data)
-
     _save_task_to_db(db_task, extractor)
+
+    if settings.USE_S3:
+        _move_data_to_s3(db_task, db_data, data)

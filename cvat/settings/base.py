@@ -666,5 +666,6 @@ AWS_S3_OBJECT_PARAMETERS = {
 USE_S3 = True
 USE_CACHE_S3 = True
 
-S3_UPLOAD_ROOT = 'data'
+S3_DATA_ROOT = 'data'
 S3_CACHE_ROOT = 'cache'
+S3_JOBS_ROOT = 'jobs'
