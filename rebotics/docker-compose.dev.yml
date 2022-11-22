@@ -44,10 +44,3 @@ services:
       - ../.s3:/data
     ports:
       - 9003:9003
-
-#  cvat:
-#    env_file:
-#      # create this if it does not exist, based on example
-#      .env.local
-#    environment:
-#      no_proxy: 'elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}'
