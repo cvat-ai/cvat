@@ -6,11 +6,11 @@
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from enum import Enum
-from functools import cached_property
+from enum import Enum, auto
 import operator
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple, cast
 
+from attrs import define, field
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
 import requests
@@ -29,6 +29,10 @@ from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager
 class RequestNotAllowedError(PermissionDenied):
     pass
 
+@define
+class PermissionResult:
+    allow: bool
+    reasons: List[str] = field(factory=list)
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
@@ -76,16 +80,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         for name, val in kwargs.items():
             setattr(self, name, val)
 
-    @abstractmethod
-    def get_resource(self):
-        return None
-
-    @cached_property
-    def payload(self) -> dict:
-        return self.build_payload()
-
-    def build_payload(self) -> dict:
-        payload = {
+        self.payload = {
             'input': {
                 'scope': self.scope,
                 'auth': {
@@ -106,23 +101,27 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             }
         }
 
-        payload['input']['resource'] = self.get_resource()
+        self.payload['input']['resource'] = self.get_resource()
 
-        return payload
+    @abstractmethod
+    def get_resource(self):
+        return None
 
-    def __bool__(self):
-        r = requests.post(self.url, json=self.payload)
-        result = r.json()['result']
-        if isinstance(result, dict):
-            allow = result['allow']
-            if allow:
-                return allow
-            else:
-                raise RequestNotAllowedError(result.get('reasons', []))
-        elif isinstance(result, bool):
-            return result
+    def check_access(self) -> PermissionResult:
+        response = requests.post(self.url, json=self.payload)
+        output = response.json()['result']
+
+        allow = False
+        reasons = []
+        if isinstance(output, dict):
+            allow = output['allow']
+            reasons = output.get('reasons', [])
+        elif isinstance(output, bool):
+            allow = output
         else:
             raise ValueError("Unexpected response format")
+
+        return PermissionResult(allow=allow, reasons=reasons)
 
     def filter(self, queryset):
         url = self.url.replace('/allow', '/filter')
@@ -642,16 +641,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 'organization': {
                     "id": self.org_id,
                 } if self.org_id else None,
-                "user": {
-                    "num_resources": LimitManager().get_used_resources(
-                        user_id=self.user_id,
-                        capability=ConsumableCapability.PROJECT_CREATE,
-                    ),
-                    "max_resources": LimitManager().get_limits(
-                        user_id=self.user_id,
-                        capability=ConsumableCapability.PROJECT_CREATE,
-                    ),
-                }
             }
 
         return data
@@ -1312,7 +1301,7 @@ class LimitPermission(OpenPolicyAgentPermission):
                 ))
 
         elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT.value):
-            project = Project.objects.get(scope.project_id)
+            project = Project.objects.get(id=scope.project_id)
 
             if getattr(project, 'organization') is not None:
                 results.append((
@@ -1322,6 +1311,10 @@ class LimitPermission(OpenPolicyAgentPermission):
                         project_id=project.id,
                     )
                 ))
+                results.append((
+                    ConsumableCapability.ORG_TASKS,
+                    OrgTasksContext(org_id=project.organization.id)
+                ))
             else:
                 results.append((
                     ConsumableCapability.TASKS_IN_USER_SANDBOX_PROJECT,
@@ -1329,6 +1322,64 @@ class LimitPermission(OpenPolicyAgentPermission):
                         user_id=project.owner.id,
                         project_id=project.id
                     )
+                ))
+                results.append((
+                    ConsumableCapability.USER_SANDBOX_TASKS,
+                    UserSandboxTasksContext(user_id=project.owner.id)
+                ))
+
+        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_PROJECT.value):
+            task = cast(Task, scope.obj)
+            project = Project.objects.get(id=scope.project_id)
+
+            class OwnerType(Enum):
+                org = auto()
+                user = auto()
+
+            if getattr(task, 'organization'):
+                old_owner = (OwnerType.org, task.organization.id)
+            else:
+                old_owner = (OwnerType.user, task.owner.id)
+
+            if getattr(project, 'organization') is not None:
+                results.append((
+                    ConsumableCapability.TASKS_IN_ORG_PROJECT,
+                    TasksInOrgProjectContext(
+                        org_id=project.organization.id,
+                        project_id=project.id,
+                    )
+                ))
+
+                if old_owner != (OwnerType.org, project.organization.id):
+                    results.append((
+                        ConsumableCapability.ORG_TASKS,
+                        OrgTasksContext(org_id=project.organization.id)
+                    ))
+            else:
+                results.append((
+                    ConsumableCapability.TASKS_IN_USER_SANDBOX_PROJECT,
+                    TasksInUserSandboxProjectContext(
+                        user_id=project.owner.id,
+                        project_id=project.id
+                    )
+                ))
+
+                if old_owner != (OwnerType.user, project.owner.id):
+                    results.append((
+                        ConsumableCapability.USER_SANDBOX_TASKS,
+                        UserSandboxTasksContext(user_id=project.owner.id)
+                    ))
+
+        elif scope_id == (ProjectPermission, 'create'):
+            if getattr(scope, 'org_id') is not None:
+                results.append((
+                    ConsumableCapability.ORG_PROJECTS,
+                    OrgTasksContext(org_id=scope.org_id)
+                ))
+            else:
+                results.append((
+                    ConsumableCapability.USER_SANDBOX_PROJECTS,
+                    UserSandboxTasksContext(user_id=scope.user_id)
                 ))
 
         elif scope_id == (WebhookPermission, 'create'):
@@ -1350,7 +1401,7 @@ class LimitPermission(OpenPolicyAgentPermission):
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
-        permissions = []
+        permissions: List[OpenPolicyAgentPermission] = []
 
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
@@ -1361,7 +1412,17 @@ class PolicyEnforcer(BasePermission):
             for perm in OpenPolicyAgentPermission.__subclasses__():
                 permissions.extend(perm.create(request, view, obj))
 
-        return all(permissions)
+        allow = True
+        reasons = []
+        for perm in permissions:
+            result = perm.check_access()
+            allow &= result.allow
+            reasons.extend(result.reasons)
+
+        if allow:
+            return True
+        else:
+            raise RequestNotAllowedError(reasons or "not authorized")
 
     def has_permission(self, request, view):
         if not view.detail:
