@@ -3,13 +3,11 @@
   "version": "0.0.1",
   "description": "Hugo dependencies that should be installed separately",
   "main": "none.js",
-  "dependencies": {
-    "jq": "^1.7.2"
-  },
+  "dependencies": {},
   "devDependencies": {
     "autoprefixer": "^10.2.5",
-    "postcss": "^8.2.15",
-    "postcss-cli": "^8.3.1"
+    "postcss-cli": "^8.3.1",
+    "postcss": "^8.2.15"
   },
   "repository": {
     "type": "git",

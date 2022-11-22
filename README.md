@@ -13,18 +13,15 @@
 
 CVAT is an interactive video and image annotation
 tool for computer vision. It is used by tens of thousands of users and
-companies around the world. Our mission is to help developers, companies, and
+companies around the world. CVAT is free and open-source.
+
+**A new repo**: CVAT core team moved the active development of the tool
+to this new repository. Our mission is to help developers, companies and
 organizations around the world to solve real problems using the Data-centric
 AI approach.
 
-CVAT is free and open-source.
-
-**A new repo**: CVAT core team moved the active development of the tool
-to this new repository.
-
-Start using CVAT online for free: [cvat.ai](https://cvat.ai).
-Or set it up as a self-hosted solution:
-[Self-hosted Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/).
+Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a self-hosted solution:
+[read here](https://opencv.github.io/cvat/docs/administration/basics/installation/).
 
 ![CVAT screencast](site/content/en/images/cvat-ai-screencast.gif)
 
@@ -44,27 +41,25 @@ Or set it up as a self-hosted solution:
 
 ## Partners ❤️
 
-CVAT is used by teams all over the world. In the list, you can find key companies which
-help us support the product or an essential part of our ecosystem. If you use us,
+CVAT is used by teams all over the world. In the list you can find key companies which
+help us support the product or an essensial part of our ecosystem. If you use us,
 please drop us a line at [contact@cvat.ai](mailto:contact+github@cvat.ai).
 
 - [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the Human Protocol.
 - [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis
-tool for visualizing, exploring, and improving computer vision datasets and models that are
+tool for visualizing, exploring, and improving computer vision datasets and models that is
 [tightly integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT
 for annotation and label refinement.
 
 ## Public datasets
 
-[ATLANTIS](https://github.com/smhassanerfani/atlantis), an open-source dataset for semantic segmentation
-of waterbody images, developed by [iWERS](http://ce.sc.edu/iwers/) group in the
-Department of Civil and Environmental Engineering at the University of South Carolina is using CVAT.
-
-For developing a semantic segmentation dataset using CVAT, see:
-
-- [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391)
-- [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk)
-- [ATLANTIS annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
+- [ATLANTIS](https://github.com/smhassanerfani/atlantis), an open-source dataset for semantic segmentation
+  of waterbody images, depeloped by [iWERS](http://ce.sc.edu/iwers/) group in the
+  Department of Civil and Environmental Engineering at University of South Carolina, is using CVAT.
+  For developing a semantic segmentation dataset using CVAT, please check
+  [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391),
+  [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk)
+  and [annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
 
 ## CVAT online: [cvat.ai](https://cvat.ai)
 
@@ -72,7 +67,7 @@ This is an online version of CVAT. It's free, efficient, and easy to use.
 
 [cvat.ai](https://cvat.ai) runs the latest version of the tool. You can create up
 to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
-visible to you or the people you assign to it.
+visible to you or people you assign to it.
 
 For now, it does not have [analytics features](https://opencv.github.io/cvat/docs/administration/advanced/analytics/)
 like management and monitoring the data annotation team.
@@ -92,20 +87,15 @@ The images have been downloaded more than 1M times so far.
 
 Here are some screencasts showing how to use CVAT.
 
-<!--lint disable maximum-line-length-->
-
-[Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN): we introduce our course series designed to help you annotate data faster and better using CVAT. This course is about CVAT deployment and integrations, it includes presentations and covers the following topics:
-
-- **Speeding up your data annotation process: introduction to CVAT and Datumaro**. What problems do CVAT and Datumaro solve, and how they can speed up your model training process. Some resources you can use to learn more about how to use them.
-- **Deployment and use CVAT**. Use of the app online at [app.cvat.ai](app.cvat.ai). A local deployment. A containerized local deployment with docker-compose (for regular use), and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how to deploy CVAT using docker-compose.
-
-
-[Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
-
-- **Pipeline**. In this video, we show how to use [app.cvat.ai](app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
-
-<!--lint enable maximum-line-length-->
-For feedback, please see [Contact us](#contact-us)
+- [Introduction](https://youtu.be/JERohTFp-NI)
+- [Annotation mode](https://youtu.be/vH_639N67HI)
+- [Interpolation of bounding boxes](https://youtu.be/Hc3oudNuDsY)
+- [Interpolation of polygons](https://youtu.be/K4nis9lk92s)
+- [Tag annotation video](https://youtu.be/62bI4mF-Xfk)
+- [Attribute mode](https://youtu.be/iIkJsOkDzVA)
+- [Segmentation mode](https://youtu.be/9Fe_GzMLo3E)
+- [Tutorial for polygons](https://youtu.be/C7-r9lZbjBw)
+- [Semi-automatic segmentation](https://youtu.be/9HszWP_qsRQ)
 
 ## API
 
@@ -125,13 +115,13 @@ For feedback, please see [Contact us](#contact-us)
 
 ## Supported annotation formats
 
-CVAT supports multiple annotation formats. You can select the format
-after clicking the **Upload annotation** and **Dump annotation** buttons.
-[Datumaro](https://github.com/cvat-ai/datumaro) dataset framework allows
-additional dataset transformations with its command line tool and Python library.
+CVAT supports multiple annotation formats. You can select the format after clicking the "Upload annotation" and "Dump
+annotation" buttons. [Datumaro](https://github.com/cvat-ai/datumaro)
+dataset framework allows additional dataset transformations via its command
+line tool and Python library.
 
-For more information about the supported formats, see:
-[Annotation Formats](https://opencv.github.io/cvat/docs/manual/advanced/formats/).
+For more information about the supported formats, look at the
+[documentation](https://opencv.github.io/cvat/docs/manual/advanced/formats/).
 
 <!--lint disable maximum-line-length-->
 
@@ -166,8 +156,9 @@ For more information about the supported formats, see:
 
 ## Deep learning serverless functions for automatic labeling
 
-CVAT supports automatic labeling. It can speed up the annotation process
-up to 10x. Here is a list of the algorithms we support, and the platforms they can be run on:
+CVAT supports automatic labelling. It can speed up the annotation process
+up to 10x. Here is a list of the algorithms we support, and the platforms they
+can be ran on:
 
 <!--lint disable maximum-line-length-->
 
@@ -197,34 +188,30 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 
 The code is released under the [MIT License](https://opensource.org/licenses/MIT).
 
-This software uses LGPL-licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
+This software uses LGPL licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
 The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
 
-FFmpeg is an open-source framework licensed under LGPL and GPL.
+FFmpeg is an open source framework licensed under LGPL and GPL.
 See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
 for determining if your use of FFmpeg requires any
 additional licenses. CVAT.ai Corporation is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in
 connection with your use of FFmpeg.
 
-## Contact us
+## Where to ask questions
 
-[Gitter](https://gitter.im/opencv-cvat/public) to ask CVAT usage-related questions.
-Typically questions get answered fast by the core team or community. There you can also browse other common questions.
+[Gitter chat][gitter-url]: you can post CVAT usage related questions there.
+Typically they get answered fast by the core team or community. There you can also browse other common questions.
 
-[Discord](https://discord.gg/S6sRHhuQ7K) is the place to also ask questions or discuss any other stuff related to CVAT.
+[Discord][discord-url] is the place to also ask questions or discuss any other stuff related to CVAT.
 
-[LinkedIn](https://www.linkedin.com/company/cvat-ai/) for the company and work-related questions.
-
-[YouTube](https://www.youtube.com/@cvat-ai) to see screencast and tutorials about the CVAT.
-
-[GitHub issues](https://github.com/cvat-ai/cvat/issues) for feature requests or bug reports.
+[GitHub issues](https://github.com/cvat-ai/cvat/issues): please post them for feature requests or bug reports.
 If it's a bug, please add the steps to reproduce it.
 
-[#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
+[\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
 questions and get our support.
 
-[contact@cvat.ai](mailto:contact+github@cvat.ai) to reach out to us with feedback, comments, or inquiries.
+[contact@cvat.ai](mailto:contact+github@cvat.ai): reach out to us with feedback, comments, or inquiries.
 
 ## Links
 
