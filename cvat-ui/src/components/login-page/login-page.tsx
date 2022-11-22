@@ -22,7 +22,7 @@ interface LoginPageComponentProps {
     hasEmailVerificationBeenSent: boolean;
     googleAuthentication: boolean;
     githubAuthentication: boolean;
-    onLogin: (credential: string, password: string) => void;
+    onLogin: (credential?: string, password?: string, socialProvider?: string) => void;
     loadAdvancedAuthenticationMethods: () => void;
 }
 
@@ -56,7 +56,9 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                         <SocialAccountLink
                                             icon={SocialGithubLogo}
                                             href={`${backendAPI}/auth/github/login`}
+                                            provider='github'
                                             className='cvat-social-authentication-github'
+                                            onLogin={onLogin}
                                         >
                                             Continue with GitHub
                                         </SocialAccountLink>
@@ -64,8 +66,10 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                     {googleAuthentication && (
                                         <SocialAccountLink
                                             icon={SocialGoogleLogo}
-                                            href={`${backendAPI}/auth/google/login`}
+                                            // href={`${backendAPI}/auth/google/login`}
+                                            provider='google'
                                             className='cvat-social-authentication-google'
+                                            onLogin={onLogin}
                                         >
                                             Continue with Google
                                         </SocialAccountLink>
