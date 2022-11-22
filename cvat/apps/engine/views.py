@@ -25,6 +25,9 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 
+from dj_rest_auth.models import get_token_model
+from dj_rest_auth.app_settings import create_token
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
@@ -1939,6 +1942,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         """
         Method returns an instance of a user who is currently authorized
         """
+        token_model = get_token_model()
+        token = create_token(token_model, request.user, None)
+        request.user.key = token
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)

@@ -157,8 +157,8 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async login(username?: string, password?: string, provider?: string) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.login, username, password, provider);
+            async login(username, password) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.login, username, password);
                 return result;
             },
             /**

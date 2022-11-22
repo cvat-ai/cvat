@@ -338,36 +338,22 @@ class ServerProxy {
             return response.data;
         }
 
-        async function login(credential?: string, password?: string, provider?: string) {
-            let authenticationResponse = null;
+        async function login(credential, password) {
+            const authenticationData = [
+                `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
+                `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
+            ]
+                .join('&')
+                .replace(/%20/g, '+');
+
             removeToken();
-
-            if (!provider) {
-                const authenticationData = [
-                    `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
-                    `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
-                ]
-                    .join('&')
-                    .replace(/%20/g, '+');
-
-                try {
-                    authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData, {
-                        proxy: config.proxy,
-                    });
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-            } else {
-                authenticationResponse = await Axios
-                    .get(
-                        `${config.backendAPI}/auth/${provider}/login`,
-                        {
-                            headers: {
-                                'Referrer-Policy': 'strict-origin-when-cross-origin',
-                                'Access-Control-Allow-Origin': '*',
-                            },
-                        },
-                    );
+            let authenticationResponse = null;
+            try {
+                authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData, {
+                    proxy: config.proxy,
+                });
+            } catch (errorData) {
+                throw generateError(errorData);
             }
 
             if (authenticationResponse.headers['set-cookie']) {
@@ -378,7 +364,6 @@ class ServerProxy {
             }
 
             token = authenticationResponse.data.key;
-            console.log(token);
             store.set('token', token);
             Axios.defaults.headers.common.Authorization = `Token ${token}`;
         }
@@ -464,7 +449,11 @@ class ServerProxy {
 
         async function authorized() {
             try {
-                await getSelf();
+                const response = await getSelf();
+                if (!store.get('token')) {
+                    store.set('token', response.key);
+                    Axios.defaults.headers.common.Authorization = `Token ${response.key}`;
+                }
             } catch (serverError) {
                 if (serverError.code === 401) {
                     removeToken();

@@ -11,27 +11,20 @@ import { CustomIconComponentProps } from '@ant-design/icons/lib/components/Icon'
 interface SocialAccountLinkProps {
     children: string;
     className?: string;
-    provider: string;
-    href?: string;
+    href: string;
     icon: React.ForwardRefExoticComponent<CustomIconComponentProps>;
-    onLogin: (credential?: string, password?: string, socialProvider?: string) => void;
 }
 
 function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
     const {
-        children, className, provider, href, icon, onLogin,
+        children, className, href, icon,
     } = props;
     return (
         <Row>
             <Col flex='auto'>
                 <Button
+                    href={href}
                     className={`cvat-social-authentication-button ${className}`}
-                    onClick={() => onLogin(undefined, undefined, provider)}
-                    // onClick={async () => {
-                    //     const result = await window.cvat.server.request(href, { method: 'GET' });
-                    //     console.log(result);
-                    // }}
-                    // href={href}
                 >
                     <Row align='middle' style={{ width: '100%' }}>
                         <Col>

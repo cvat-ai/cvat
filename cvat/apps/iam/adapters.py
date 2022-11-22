@@ -5,10 +5,6 @@
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.conf import settings
-from rest_framework.response import Response
-
-from dj_rest_auth.app_settings import create_token
-from http import HTTPStatus
 
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.adapter import DefaultAccountAdapter
@@ -22,34 +18,6 @@ UserModel = get_user_model()
 class DefaultAccountAdapterEx(DefaultAccountAdapter):
     def respond_email_verification_sent(self, request, user):
         return HttpResponseRedirect(settings.ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL)
-
-    def post_login(
-        self,
-        request,
-        user,
-        *,
-        email_verification,
-        signal_kwargs,
-        email,
-        signup,
-        redirect_url
-    ):
-        hook_kwargs = dict(
-            email_verification=email_verification,
-            redirect_url=redirect_url,
-            signal_kwargs=signal_kwargs,
-            signup=signup,
-            email=email,
-        )
-        response = super().post_login(request, user, **hook_kwargs)
-        if signup:
-            return response
-        else:
-            from dj_rest_auth.models import get_token_model
-            token_model = get_token_model()
-
-            token = create_token(token_model, user, None)
-            return Response(data={'key': token}, status=HTTPStatus.OK)
 
 class SocialAccountAdapterEx(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
