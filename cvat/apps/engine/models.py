@@ -545,8 +545,10 @@ class Job(models.Model):
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
 
-    def get_s3_dirname(self):
-        return os.path.join(settings.S3_JOBS_ROOT, str(self.id))
+    def get_s3_dirname(self, data: Data = None):
+        if data is None:
+            data = self.segment.task.data
+        return os.path.join(data.get_s3_data_dirname(), 'jobs', str(self.id))
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
@@ -577,8 +579,11 @@ class Job(models.Model):
     def get_preview_path(self):
         return os.path.join(self.get_dirname(), self.preview_file_name)
 
-    def get_s3_preview_path(self):
-        return os.path.join(self.get_s3_dirname(), self.preview_file_name)
+    def get_s3_preview_path(self, data: Data = None):
+        if data is None:
+            data = self.segment.task.data
+        return os.path.join(data.get_s3_data_dirname(), 'jobs',
+                            str(self.pk), self.preview_file_name)
 
     class Meta:
         default_permissions = ()

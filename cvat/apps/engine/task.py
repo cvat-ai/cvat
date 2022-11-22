@@ -363,12 +363,13 @@ def _move_task_preview_to_s3(db_data: models.Data):
     _move_preview_to_s3(path, key)
 
 
-def _move_job_previews_to_s3(db_task: models.Task):
+def _move_job_previews_to_s3(db_task: models.Task, db_data: models.Data):
     db_jobs = models.Job.objects.filter(segment__task=db_task)
     for db_job in db_jobs:
         path = db_job.get_preview_path()
-        key = db_job.get_s3_preview_path()
+        key = db_job.get_s3_preview_path(data=db_data)
         _move_preview_to_s3(path, key)
+        shutil.rmtree(db_job.get_dirname())
 
 
 def _move_data_to_s3(db_task: models.Task, db_data: models.Data, raw_data: dict):
@@ -378,7 +379,9 @@ def _move_data_to_s3(db_task: models.Task, db_data: models.Data, raw_data: dict)
     _move_client_files_to_s3(db_data)
     _move_remote_files_to_s3(db_data, raw_data)
     _move_task_preview_to_s3(db_data)
-    _move_job_previews_to_s3(db_task)
+    _move_job_previews_to_s3(db_task, db_data)
+    shutil.rmtree(db_data.get_data_dirname())
+    shutil.rmtree(db_task.get_dirname())
     slogger.glob.info('Done.')
 
 
