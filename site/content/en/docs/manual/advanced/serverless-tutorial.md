@@ -6,11 +6,11 @@ weight: 32
 
 ## Introduction
 
-Computers have now become our partners. They help us to solve routine problems,
-fix mistakes, find information, etc. It is a natural idea to use their
-compute power to annotate datasets. There are multiple DL models for
-classification, object detection, semantic segmentation which can do
-data annotation for us. And it is relatively simple to integrate your
+Computers have now become our partners. They help us solve routine problems,
+fix mistakes, find information, etc. It is natural idea to use this
+computing power to annotate datasets. There are multiple DL models for
+classification, object detection, semantic segmentation, and these can be
+used for data annotation. And it is relatively simple to integrate your
 own ML/DL solution into CVAT.
 
 But the world is not perfect and we don't have a silver bullet which can
