@@ -24,9 +24,9 @@ Even if you have a DL solution which can
 _perfectly_ annotate 50% of your data, it means that manual work will only be
 reduced in half.
 
-When we know that DL models can help us to annotate data faster, the next
-question is how to use them? In CVAT all such DL models are implemented
-as serverless functions for the [Nuclio][nuclio-homepage] serverless platform.
+Knowing that DL models can help us annotate data faster, how do we do this then?
+In CVAT, these DL models are implemented
+as serverless functions from the [Nuclio][nuclio-homepage] serverless platform.
 And there are multiple implemented functions which can be
 found in the [serverless][cvat-builtin-serverless] directory such as _Mask RCNN,
 Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
