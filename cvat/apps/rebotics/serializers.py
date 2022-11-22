@@ -1,31 +1,17 @@
-import requests
-from io import BytesIO
-from urllib.parse import urlparse
-
 from rest_framework import serializers
-from django.core.files import File
-
-from cvat.rebotics.utils import fix_between
-import exceptions
+from cvat.apps.engine.models import Data, RemoteFile
 
 
-class BaseImportSerializer(serializers.Serializer):
+class _BaseImportSerializer(serializers.Serializer):
 
-    def create(self, **kwargs):
+    def create(self, validated_data):
         raise NotImplementedError('Creating export data is not allowed')
 
     def update(self, instance, validated_data):
         raise NotImplementedError('Updating export data is not allowed')
 
 
-class ImportResponseSerializer(BaseImportSerializer):
-    id = ...        # image id in cvat.
-    image = ...     # image link
-    preview = ...   # preview link
-    training = ...  # ?
-
-
-class ImportAnnotationSerializer(BaseImportSerializer):
+class _ImportAnnotationSerializer(_BaseImportSerializer):
     lowerx = serializers.FloatField()
     lowery = serializers.FloatField()
     upperx = serializers.FloatField()
@@ -35,33 +21,31 @@ class ImportAnnotationSerializer(BaseImportSerializer):
     points = serializers.CharField(max_length=255, required=False, allow_null=True)
     type = serializers.CharField(max_length=255, required=False, allow_null=True)
 
-    # fix coordinates somewhere so they are not out of bounds.
-    # fix_between(), etc.
 
-
-class ImportPriceTagSerializer(ImportAnnotationSerializer):
+class _ImportPriceTagSerializer(_ImportAnnotationSerializer):
     upc = serializers.CharField(max_length=128, allow_blank=True, allow_null=True, required=False)
 
 
-class ImportSerializer(BaseImportSerializer):
-    items = serializers.ListSerializer(child=ImportAnnotationSerializer())
+class ImportSerializer(_BaseImportSerializer):
+    items = serializers.ListSerializer(child=_ImportAnnotationSerializer())
     image = serializers.URLField()
     export_by = serializers.CharField(required=False, allow_null=True)
     planogram_title = serializers.CharField(required=False, allow_null=True)
     retailer_codename = serializers.CharField(required=False, allow_null=True)
     processing_action_id = serializers.IntegerField(required=False, allow_null=True)
     price_tags = serializers.ListSerializer(
-        child=ImportPriceTagSerializer(),
+        child=_ImportPriceTagSerializer(),
         required=False,
         allow_null=True
     )
 
-    # may need it.
-    @staticmethod
-    def __get_image_from_url(image_url):
-        image_response = requests.get(image_url, verify=False)
-        if image_response.status_code != requests.codes.ok:
-            raise exceptions.ImportByAPIError('Getting image by URL error')
-        img_tmp_file = BytesIO(image_response.content)
-        img_tmp_name = urlparse(image_url).path.split('/')[-1]
-        return File(img_tmp_file, img_tmp_name)
+
+class _ImportResponseImageSerializer(_BaseImportSerializer):
+    id = serializers.IntegerField()
+    image = serializers.URLField()
+    preview = serializers.URLField()
+
+
+class ImportResponseSerializer(_BaseImportSerializer):
+    images = serializers.ListSerializer(child=_ImportResponseImageSerializer())
+    task_id = serializers.IntegerField()
