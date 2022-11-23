@@ -26,7 +26,7 @@ class _ImportPriceTagSerializer(_ImportAnnotationSerializer):
     upc = serializers.CharField(max_length=128, allow_blank=True, allow_null=True, required=False)
 
 
-class ImportSerializer(_BaseImportSerializer):
+class ImportImageSerializer(_BaseImportSerializer):
     items = serializers.ListSerializer(child=_ImportAnnotationSerializer())
     image = serializers.URLField()
     export_by = serializers.CharField(required=False, allow_null=True)
@@ -40,12 +40,7 @@ class ImportSerializer(_BaseImportSerializer):
     )
 
 
-class _ImportResponseImageSerializer(_BaseImportSerializer):
+class ImportResponseSerializer(_BaseImportSerializer):
     id = serializers.IntegerField()
     image = serializers.URLField()
     preview = serializers.URLField()
-
-
-class ImportResponseSerializer(_BaseImportSerializer):
-    images = serializers.ListSerializer(child=_ImportResponseImageSerializer())
-    task_id = serializers.IntegerField()

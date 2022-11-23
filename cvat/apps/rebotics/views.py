@@ -6,8 +6,8 @@ from rest_framework.response import Response
 
 from .admin_auth import RetailerInAdminAuthentication
 from .serializers import ImportSerializer, ImportResponseSerializer
-from apps.rebotics import task as task_api
-from apps.engine.serializers import RqStatusSerializer
+from cvat.apps.rebotics import task as task_api
+from cvat.apps.engine.serializers import RqStatusSerializer
 
 from django.http.response import Http404
 
