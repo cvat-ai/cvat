@@ -456,7 +456,11 @@ class ServerProxy {
                 }
             } catch (serverError) {
                 if (serverError.code === 401) {
-                    removeToken();
+                    // In CVAT app we use two types of authentication,
+                    // So here we are forcing user have both credential types
+                    // First request will fail if session is expired, then we check
+                    // for precense of token
+                    await logout();
                     return false;
                 }
 
