@@ -6,13 +6,13 @@
 
 import { taskName, advancedConfigurationParams, labelName } from '../../support/const';
 
-context("Point coordinates are not duplicated while polygon's interpolation.", () => {
+context('Point coordinates are not duplicated while polygon\'s interpolation.', () => {
     const issueId = '1886';
-    let pointsСoordinates = [];
+    const pointsCoordinates = [];
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 300, y: 450 },
             { x: 400, y: 450 },
@@ -49,15 +49,15 @@ context("Point coordinates are not duplicated while polygon's interpolation.", (
             });
             cy.get('#cvat_canvas_shape_1')
                 .should('have.prop', 'animatedPoints')
-                .then(($pointsСoordinates) => {
-                    for (let i of $pointsСoordinates) {
-                        pointsСoordinates.push(`${i.x}, ${i.y}`);
+                .then(($pointsCoordinates) => {
+                    for (const i of $pointsCoordinates) {
+                        pointsCoordinates.push(`${i.x}, ${i.y}`);
                     }
                 });
         });
         it('The coordinates of the points are not duplicated', () => {
-            for (let i = 0; i < pointsСoordinates.length - 1; i++) {
-                cy.expect(pointsСoordinates[i]).not.equal(pointsСoordinates[i + 1]);
+            for (let i = 0; i < pointsCoordinates.length - 1; i++) {
+                cy.expect(pointsCoordinates[i]).not.equal(pointsCoordinates[i + 1]);
             }
         });
     });

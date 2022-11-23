@@ -11,11 +11,11 @@ description: 'This section explains how to download and upload datasets
 You can export a dataset to a project, task or job.
 
 1. To download the latest annotations, you have to save all changes first.
-   Сlick the `Save` button. There is a `Ctrl+S` shortcut to save annotations quickly.
+   Click the `Save` button. There is a `Ctrl+S` shortcut to save annotations quickly.
 
    ![](/images/image028.jpg)
 
-1. After that, сlick the `Menu` button.
+1. After that, click the `Menu` button.
    Exporting and importing of task and project datasets takes place through the `Action` menu.
 1. Press the `Export task dataset` button.
 
