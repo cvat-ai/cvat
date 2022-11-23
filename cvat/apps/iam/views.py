@@ -236,3 +236,32 @@ class ConfirmEmailViewEx(ConfirmEmailView):
             return self.post(*args, **kwargs)
         except Http404:
             return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
+
+from dj_rest_auth.registration.views import SocialLoginView
+from dj_rest_auth.registration.serializers import SocialLoginSerializer
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+
+import urllib.parse
+
+class GitHubLogin(SocialLoginView):
+    adapter_class = GitHubAdapter
+    client_class = OAuth2Client
+    serializer_class = SocialLoginSerializer
+
+    @property
+    def callback_url(self):
+        return settings.GITHUB_CALLBACK_URL
+
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        kwargs['context'] = self.get_serializer_context()
+        return serializer_class(*args, **kwargs)
+
+def github_callback(request):
+    try:
+        code = request.GET['code']
+        state = request.GET['state']
+    except KeyError:
+        raise ValidationError(urllib.parse.urlencode(request.GET))
+    return HttpResponseRedirect(
+        f'http://localhost:3000/auth/login-with-social-app/github/{code}/{state}')
