@@ -449,7 +449,11 @@ class ServerProxy {
 
         async function authorized() {
             try {
-                await getSelf();
+                const response = await getSelf();
+                if (!store.get('token')) {
+                    store.set('token', response.key);
+                    Axios.defaults.headers.common.Authorization = `Token ${response.key}`;
+                }
             } catch (serverError) {
                 if (serverError.code === 401) {
                     removeToken();
