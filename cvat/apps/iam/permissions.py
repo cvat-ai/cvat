@@ -892,6 +892,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('update', 'PUT'): 'update', # TODO: do we need the method?
             ('destroy', 'DELETE'): 'delete',
             ('annotations', 'GET'): 'view:annotations',
+            ('dataset_export', 'GET'): 'export:dataset',
             ('annotations', 'PATCH'): 'update:annotations',
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',

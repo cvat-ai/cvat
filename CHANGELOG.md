@@ -34,6 +34,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
 
 ### Fixed
+- Significantly optimized access to DB for api/jobs, api/tasks, and api/projects.
 - Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
 non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Removed unnecessary volumes defined in docker-compose.serverless.yml
@@ -76,6 +77,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Can't dump annotations with objects type is track from several jobs (<https://github.com/opencv/cvat/pull/5250>)
 - Fixed upload resumption in production environments
   (<https://github.com/opencv/cvat/issues/4839>)
+- Fixed job exporting (<https://github.com/opencv/cvat/pull/5282>)
+- Visibility and ignored information fail to be loaded (MOT dataset format) (<https://github.com/opencv/cvat/pull/5270>)
 
 ### Security
 - TDB

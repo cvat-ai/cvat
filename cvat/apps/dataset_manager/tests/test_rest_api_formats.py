@@ -395,20 +395,20 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     # create task with annotations
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
                     if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0", \
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0", \
-                        "Datumaro 1.0"\
+                        "Cityscapes 1.0", "Datumaro 1.0",
+                        "ImageNet 1.0", "MOTS PNG 1.0",
+                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
+                        "TFRecord 1.0", "VGGFace2 1.0",
+                        "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -457,9 +457,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             # remove all annotations from task (create new task without annotation)
                             images = self._generate_task_images(3)
                             if upload_format_name in [
-                                "Market-1501 1.0", "Cityscapes 1.0", \
-                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                                "Cityscapes 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], images)
                             else:
@@ -500,9 +500,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     # create task with annotations
                     video = self._generate_task_videos(1)
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], video)
                     else:
@@ -510,10 +510,10 @@ class TaskDumpUploadTest(_DbTestBase):
                     task_id = task["id"]
 
                     if dump_format_name in [
-                            "MOT 1.1", "MOTS PNG 1.0", \
-                            "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                            "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                            "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0" \
+                            "Cityscapes 1.0", "ImageNet 1.0",
+                            "MOTS PNG 1.0", "PASCAL VOC 1.1",
+                            "Segmentation mask 1.1", "TFRecord 1.0",
+                            "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -561,9 +561,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             # remove all annotations from task (create new task without annotation)
                             video = self._generate_task_videos(1)
                             if upload_format_name in [
-                                "Market-1501 1.0", "Cityscapes 1.0", \
-                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                                "Cityscapes 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], video)
                             else:
@@ -844,9 +844,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     # create task with annotations
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0","COCO Keypoints 1.0",
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -1178,7 +1178,44 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)\
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+
+    def test_api_v2_check_mot_with_shapes_only(self):
+        test_name = self._testMethodName
+        format_name = "MOT 1.1"
+
+        for include_images in (False, True):
+            with self.subTest():
+                # create task with annotations
+                images = self._generate_task_images(3)
+                task = self._create_task(tasks[format_name], images)
+                self._create_annotations(task, f'{format_name} shapes only', "default")
+
+                task_id = task["id"]
+                data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
+
+                # dump annotations
+                url = self._generate_url_dump_tasks_annotations(task_id)
+                data = {
+                    "format": format_name,
+                    "action": "download",
+                }
+                with TestDir() as test_dir:
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._check_downloaded_file(file_zip_name)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+
+                    # upload annotations
+                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
+
+                    # equals annotations
+                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
