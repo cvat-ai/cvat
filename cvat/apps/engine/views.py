@@ -63,7 +63,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
+    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer, SelfUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
@@ -1920,21 +1920,21 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return UserSerializer
 
         user = self.request.user
+        is_self = int(self.kwargs.get("pk", 0)) == user.id or \
+            self.action == "self"
         if user.is_staff:
-            return UserSerializer
+            return UserSerializer if not is_self else SelfUserSerializer
         else:
-            is_self = int(self.kwargs.get("pk", 0)) == user.id or \
-                self.action == "self"
             if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
+                return SelfUserSerializer
             else:
                 return BasicUserSerializer
 
     @extend_schema(summary='Method returns an instance of a user who is currently authorized',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(component_name='MetaSelfUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
+                    SelfUserSerializer, BasicUserSerializer,
                 ], resource_type_field_name=None),
         })
     @action(detail=False, methods=['GET'])

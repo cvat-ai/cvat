@@ -41,18 +41,23 @@ class BasicUserSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
-    key = serializers.CharField(allow_blank=True, required=False)
 
     class Meta:
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
             'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
-            'date_joined', 'key')
+            'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
         extra_kwargs = {
             'last_login': { 'allow_null': True }
         }
+
+class SelfUserSerializer(UserSerializer):
+    key = serializers.CharField(allow_blank=True, required=False)
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('key',)
 
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
