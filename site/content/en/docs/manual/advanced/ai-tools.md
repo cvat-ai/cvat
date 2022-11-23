@@ -135,10 +135,12 @@ how to make automatic annotations of all frames.
 ### Detectors models
 
 <!--lint disable maximum-line-length-->
+
 |Model|Description|
 |----|----|
 |Mask RCNN|The model generates polygons for each instance of an object in the image.|
 |Faster RCNN|The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network.|
+
 <!--lint enable maximum-line-length-->
 
 ### Trackers
