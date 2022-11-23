@@ -381,7 +381,6 @@ def _move_data_to_s3(db_task: models.Task, db_data: models.Data, raw_data: dict)
     _move_task_preview_to_s3(db_data)
     _move_job_previews_to_s3(db_task, db_data)
     shutil.rmtree(db_data.get_data_dirname())
-    shutil.rmtree(db_task.get_dirname())
     slogger.glob.info('Done.')
 
 
