@@ -199,8 +199,6 @@ class OrganizationPermission(OpenPolicyAgentPermission):
                     'id': self.user_id
                 },
                 'user': {
-                    'num_resources': LimitManager().get_used_resources(user_id=self.user_id,
-                        capability=ConsumableCapability.ORG_CREATE),
                     'role': 'owner'
                 }
             }
@@ -469,32 +467,11 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = None
         if self.scope.startswith('create'):
-            # TODO: allow uniform unconditional invocation in future.
-            # Send (context, operation) to LM
-            limit_manager = LimitManager()
             data = {
                 'owner': { 'id': self.user_id },
                 'organization': {
                     'id': self.org_id,
-                    'num_resources': limit_manager.get_used_resources(
-                        org_id=self.org_id,
-                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
-                    ),
-                    'max_resources': limit_manager.get_limits(
-                        org_id=self.org_id,
-                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
-                    )
                 } if self.org_id is not None else None,
-                'user': {
-                    'num_resources': limit_manager.get_used_resources(
-                        user_id=self.user_id,
-                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
-                    ),
-                    'max_resources': limit_manager.get_limits(
-                        user_id=self.user_id,
-                        capability=ConsumableCapability.CLOUD_STORAGE_CREATE
-                    )
-                }
             }
         elif self.obj:
             data = {
@@ -534,9 +511,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
             if 'organization' in request.data:
                 org_id = request.data.get('organization')
                 perm = ProjectPermission.create_scope_create(request, org_id)
-                # We don't create a project, just move it. Thus need to decrease
-                # the number of resources.
-                perm.payload['input']['resource']['user']['num_resources'] -= 1
                 permissions.append(perm)
 
         return permissions
@@ -930,7 +904,6 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 except Project.DoesNotExist:
                     raise ValidationError(f"Could not find project with provided id: {self.project_id}")
 
-            limit_manager = LimitManager()
             data = {
                 'id': None,
                 'owner': self.user_id,
@@ -941,29 +914,9 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 } if project else None,
                 'organization': {
                     'id': self.org_id,
-                    'num_resources': limit_manager.get_used_resources(
-                        org_id=self.org_id,
-                        context=OrgCommonWebhooksContext(project_id=self.project_id),
-                        capability=ConsumableCapability.WEBHOOK_CREATE,
-                    ),
-                    'max_resources': limit_manager.get_limits(
-                        org_id=self.org_id,
-                        context=OrgCommonWebhooksContext(project_id=self.project_id),
-                        capability=ConsumableCapability.WEBHOOK_CREATE,
-                    ),
                 } if self.org_id is not None else None,
                 'user': {
                     'id': self.user_id,
-                    'num_resources': limit_manager.get_used_resources(
-                        user_id=self.user_id,
-                        context=OrgCommonWebhooksContext(project_id=self.project_id),
-                        capability=ConsumableCapability.WEBHOOK_CREATE,
-                    ),
-                    'max_resources': limit_manager.get_limits(
-                        user_id=self.user_id,
-                        context=OrgCommonWebhooksContext(project_id=self.project_id),
-                        capability=ConsumableCapability.WEBHOOK_CREATE,
-                    ),
                 }
             }
 
@@ -1288,6 +1241,8 @@ class LimitPermission(OpenPolicyAgentPermission):
     ) -> List[Tuple[ConsumableCapability, CapabilityContext]]:
         scope_id = (type(scope), scope.scope)
         results = []
+
+        # TODO: Refactor into classes to share implementation
         if scope_id == (TaskPermission, TaskPermission.Scopes.CREATE.value):
             if getattr(scope, 'org_id') is not None:
                 results.append((

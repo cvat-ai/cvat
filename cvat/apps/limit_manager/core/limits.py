@@ -60,7 +60,6 @@ class CapabilityContext:
 class UserCapabilityContext(CapabilityContext):
     user_id: int
 
-# TODO: refactor parameter classes
 @define(kw_only=True)
 class OrgCapabilityContext(CapabilityContext):
     org_id: int
