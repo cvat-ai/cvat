@@ -78,6 +78,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/issues/4839>)
 - Fixed job exporting (<https://github.com/opencv/cvat/pull/5282>)
 - Visibility and ignored information fail to be loaded (MOT dataset format) (<https://github.com/opencv/cvat/pull/5270>)
+- Missed token with using social account authentication (<https://github.com/opencv/cvat/pull/5344>)
 
 ### Security
 - TDB
