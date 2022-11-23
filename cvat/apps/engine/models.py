@@ -511,6 +511,7 @@ class S3File(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name='s3_files', null=True)
     file = models.FileField(upload_to=s3_upload_path_handler, max_length=1024,
                             storage=CustomAWSMediaStorage)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
