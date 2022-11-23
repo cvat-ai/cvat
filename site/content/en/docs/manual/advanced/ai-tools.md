@@ -269,6 +269,8 @@ If you change the frame, it will be equalized too.
 Trackers are used to automatically annotate an object on video.
 The TrackerMIL model is not bound to labels and can be used for any object.
 
+For more information about how TrackerMIL works, see [Object Tracking using OpenCV (C++/Python)](https://learnopencv.com/tag/mil/)
+
 1. In the **OpenCV** menu, go to the **Trackers** tab.
   <br>![Start tracking an object](/images/image242.jpg)
 2. From the **Label** drop-down, select the label for the object.
