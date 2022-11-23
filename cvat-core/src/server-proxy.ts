@@ -449,17 +449,18 @@ class ServerProxy {
 
         async function authorized() {
             try {
-                await getSelf();
-                // In CVAT app we use two types of authentication,
-                // So here we are forcing user have both credential types
-                // First request will fail if session is expired, then we check for precense of token
-                if (!token) {
-                    await logout();
-                    return false;
+                const response = await getSelf();
+                if (!store.get('token')) {
+                    store.set('token', response.key);
+                    Axios.defaults.headers.common.Authorization = `Token ${response.key}`;
                 }
             } catch (serverError) {
                 if (serverError.code === 401) {
-                    removeToken();
+                    // In CVAT app we use two types of authentication,
+                    // So here we are forcing user have both credential types
+                    // First request will fail if session is expired, then we check
+                    // for precense of token
+                    await logout();
                     return false;
                 }
 
