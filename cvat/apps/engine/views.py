@@ -25,6 +25,9 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 
+from dj_rest_auth.models import get_token_model
+from dj_rest_auth.app_settings import create_token
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
@@ -60,7 +63,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
+    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer, SelfUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
@@ -1917,21 +1920,21 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return UserSerializer
 
         user = self.request.user
+        is_self = int(self.kwargs.get("pk", 0)) == user.id or \
+            self.action == "self"
         if user.is_staff:
-            return UserSerializer
+            return UserSerializer if not is_self else SelfUserSerializer
         else:
-            is_self = int(self.kwargs.get("pk", 0)) == user.id or \
-                self.action == "self"
             if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
+                return SelfUserSerializer
             else:
                 return BasicUserSerializer
 
     @extend_schema(summary='Method returns an instance of a user who is currently authorized',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(component_name='MetaSelfUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
+                    SelfUserSerializer, BasicUserSerializer,
                 ], resource_type_field_name=None),
         })
     @action(detail=False, methods=['GET'])
@@ -1939,6 +1942,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         """
         Method returns an instance of a user who is currently authorized
         """
+        token_model = get_token_model()
+        token = create_token(token_model, request.user, None)
+        request.user.key = token
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
