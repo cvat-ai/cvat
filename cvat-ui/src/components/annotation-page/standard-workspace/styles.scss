@@ -333,9 +333,15 @@
 }
 
 .cvat-propagate-confirm {
-    > .ant-input-number {
-        width: 70px;
-        margin: 0 5px;
+    > .ant-row {
+        align-items: center;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .ant-input-number {
+        margin-left: $grid-unit-size;
+        margin-right: $grid-unit-size;
+        width: $grid-unit-size * 7;
     }
 }
 
