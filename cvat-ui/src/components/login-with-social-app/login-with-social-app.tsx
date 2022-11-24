@@ -24,10 +24,11 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                 method: 'POST',
                 data: {
                     code,
-                    state,
                 },
             };
-            cvat.server.request(`${cvat.config.backendAPI}/auth/${provider}/login/token`, req)
+            cvat.server.request(
+                `${cvat.config.backendAPI}/auth/${provider}/login/token?state=${state}`, req,
+            )
                 .then((result: any) => {
                     localStorage.setItem('token', result.key);
                     return window.location.reload();

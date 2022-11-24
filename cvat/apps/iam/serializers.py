@@ -3,12 +3,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dj_rest_auth.registration.serializers import RegisterSerializer
+from dj_rest_auth.registration.serializers import RegisterSerializer, SocialLoginSerializer
 from dj_rest_auth.serializers import PasswordResetSerializer, LoginSerializer
 from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
 from allauth.account import app_settings
 from allauth.account.utils import filter_users_by_email
+from allauth.socialaccount.models import SocialLogin
+from allauth.utils import get_request_param
 
 from django.conf import settings
 
@@ -79,3 +81,19 @@ class LoginSerializerEx(LoginSerializer):
                 raise ValidationError('Unable to login with provided credentials')
 
         return self._validate_username_email(username, email, password)
+
+
+class SocialLoginSerializerEx(SocialLoginSerializer):
+    def get_social_login(self, adapter, app, token, response):
+        request = self._get_request()
+        social_login = adapter.complete_login(request, app, token, response=response)
+        social_login.token = token
+
+        if adapter.supports_state:
+            social_login.state = SocialLogin.verify_and_unstash_state(
+                request, get_request_param(request, "state")
+            )
+        else:
+            social_login.state = SocialLogin.unstash_state(request)
+
+        return social_login

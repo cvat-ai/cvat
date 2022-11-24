@@ -21,7 +21,9 @@ from dj_rest_auth.views import LoginView
 from allauth.account import app_settings as allauth_settings
 from allauth.account.views import ConfirmEmailView
 from allauth.account.utils import has_verified_email, send_email_confirmation
+from allauth.account.adapter import get_adapter
 from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView, OAuth2LoginView
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
@@ -30,6 +32,7 @@ from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from cvat.apps.iam.adapters import GitHubAdapter, GoogleAdapter
 from .authentication import Signer
+from  cvat.apps.iam.serializers import SocialLoginSerializerEx
 
 def get_context(request):
     from cvat.apps.organizations.models import Organization, Membership
@@ -215,10 +218,17 @@ class RulesView(views.APIView):
 class OAuth2CallbackViewEx(OAuth2CallbackView):
     def dispatch(self, request, *args, **kwargs):
         # Distinguish cancel from error
-        if (auth_error := request.GET.get('error', None)) and \
-            auth_error == self.adapter.login_cancelled_error:
-            return HttpResponseRedirect(settings.SOCIALACCOUNT_CALLBACK_CANCELLED_URL)
-        return super().dispatch(request, *args, **kwargs)
+        if (auth_error := request.GET.get('error', None)):
+            if auth_error == self.adapter.login_cancelled_error:
+                return HttpResponseRedirect(settings.SOCIALACCOUNT_CALLBACK_CANCELLED_URL)
+            else: # unknown error
+                raise ValidationError(auth_error)
+
+        code = request.GET.get('code')
+        state = request.GET.get('state')
+        assert code and state, 'Parameters code and state not found in request'
+        return HttpResponseRedirect(
+            f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider={self.adapter.provider_id}&code={code}&state={state}')
 
 github_oauth2_login = OAuth2LoginView.adapter_view(GitHubAdapter)
 github_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GitHubAdapter)
@@ -237,48 +247,18 @@ class ConfirmEmailViewEx(ConfirmEmailView):
         except Http404:
             return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
 
-from dj_rest_auth.registration.views import SocialLoginView
-from dj_rest_auth.registration.serializers import SocialLoginSerializer
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+class SocialLoginViewEx(LoginViewEx):
+    serializer_class = SocialLoginSerializerEx
 
-import urllib.parse
+    def process_login(self):
+        get_adapter(self.request).login(self.request, self.user)
 
-class GitHubLogin(SocialLoginView):
+class GitHubLogin(SocialLoginViewEx):
     adapter_class = GitHubAdapter
     client_class = OAuth2Client
-    serializer_class = SocialLoginSerializer
     callback_url = settings.GITHUB_CALLBACK_URL
 
-    def get_serializer(self, *args, **kwargs):
-        serializer_class = self.get_serializer_class()
-        kwargs['context'] = self.get_serializer_context()
-        return serializer_class(*args, **kwargs)
-
-def github_callback(request):
-    try:
-        code = request.GET['code']
-        state = request.GET['state']
-    except KeyError:
-        raise ValidationError(urllib.parse.urlencode(request.GET))
-    return HttpResponseRedirect(
-        f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider=github&code={code}&state={state}')
-
-def google_callback(request):
-    try:
-        code = request.GET['code']
-        state = request.GET['state']
-    except KeyError:
-        raise ValidationError(urllib.parse.urlencode(request.GET))
-    return HttpResponseRedirect(
-        f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider=google&code={code}&state={state}')
-
-class GoogleLogin(SocialLoginView):
+class GoogleLogin(SocialLoginViewEx):
     adapter_class = GoogleAdapter
-    callback_url = settings.GOOGLE_CALLBACK_URL
     client_class = OAuth2Client
-    serializer_class = SocialLoginSerializer
-
-    def get_serializer(self, *args, **kwargs):
-        serializer_class = self.get_serializer_class()
-        kwargs['context'] = self.get_serializer_context()
-        return serializer_class(*args, **kwargs)
+    callback_url = settings.GOOGLE_CALLBACK_URL
