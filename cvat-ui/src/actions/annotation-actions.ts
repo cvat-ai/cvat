@@ -445,9 +445,10 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
             });
 
             const copy = getCopyFromState(objectState);
-            await sessionInstance.logger.log(LogType.propagateObject, { count: to - from + 1 });
+            await sessionInstance.logger.log(LogType.propagateObject, { count: Math.abs(to - from) + 1 });
             const states = [];
-            for (let frame = from; frame <= to; frame++) {
+            const sign = Math.sign(to - from);
+            for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += 1 * sign) {
                 copy.frame = frame;
                 copy.elements.forEach((element: any) => { element.frame = frame; });
                 const newState = new cvat.classes.ObjectState(copy);

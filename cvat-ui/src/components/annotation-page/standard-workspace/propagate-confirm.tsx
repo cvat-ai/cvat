@@ -47,7 +47,8 @@ function PropagateConfirmComponent(): JSX.Element {
             okText='Yes'
             cancelText='Cancel'
             onOk={() => {
-                dispatch(propagateObjectAsync(frameNumber, targetFrame));
+                dispatch(propagateObjectAsync(frameNumber, targetFrame))
+                    .then(() => dispatch(switchPropagateVisibility(false)));
             }}
             onCancel={() => dispatch(switchPropagateVisibility(false))}
             title='Confirm propagation'
