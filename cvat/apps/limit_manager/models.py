@@ -7,7 +7,5 @@ from django.db import models
 import cvat.apps.limit_manager.core.limits as core
 
 
-class ConsumableCapability(core.ConsumableCapability, models.TextChoices):
+class Limits(core.Limits, models.TextChoices):
     pass
-
-# class Limit

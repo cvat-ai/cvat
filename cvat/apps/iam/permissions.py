@@ -21,10 +21,15 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
 from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
-    ConsumableCapability, OrgTasksContext, ProjectWebhooksContext,
+    Limits, OrgCloudStoragesContext, OrgTasksContext, ProjectWebhooksContext,
     OrgCommonWebhooksContext,
-    TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserSandboxTasksContext)
+    TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
+    UserSandboxCloudStoragesContext, UserSandboxTasksContext)
 
+
+class StrEnum(str, Enum):
+    def __str__(self) -> str:
+        return self.value
 
 class RequestNotAllowedError(PermissionDenied):
     pass
@@ -155,6 +160,13 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         return queryset.filter(q_objects[0]).distinct()
 
 class OrganizationPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE = 'create'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        VIEW = 'view'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -171,12 +183,13 @@ class OrganizationPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'list': 'list',
-            'create': 'create',
-            'destroy': 'delete',
-            'partial_update': 'update',
-            'retrieve': 'view'
+            'list': Scopes.LIST,
+            'create': Scopes.CREATE,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -192,7 +205,7 @@ class OrganizationPermission(OpenPolicyAgentPermission):
                     'role': membership.role if membership else None
                 }
             }
-        elif self.scope.startswith('create'):
+        elif self.scope.startswith(__class__.Scopes.CREATE.value):
             return {
                 'id': None,
                 'owner': {
@@ -206,6 +219,14 @@ class OrganizationPermission(OpenPolicyAgentPermission):
             return None
 
 class InvitationPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE = 'create'
+        DELETE = 'delete'
+        ACCEPT = 'accept'
+        RESEND = 'resend'
+        VIEW = 'view'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -224,13 +245,14 @@ class InvitationPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'list': 'list',
-            'create': 'create',
-            'destroy': 'delete',
-            'partial_update': 'accept' if 'accepted' in
-                request.query_params else 'resend',
-            'retrieve': 'view'
+            'list': Scopes.LIST,
+            'create': Scopes.CREATE,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.ACCEPT if 'accepted' in
+                request.query_params else Scopes.RESEND,
+            'retrieve': Scopes.VIEW,
         }.get(view.action)]
 
     def get_resource(self):
@@ -244,7 +266,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                     'id': self.obj.membership.organization.id
                 }
             }
-        elif self.scope.startswith('create'):
+        elif self.scope.startswith(__class__.Scopes.CREATE.value):
             data = {
                 'owner': { 'id': self.user_id },
                 'invitee': {
@@ -259,12 +281,23 @@ class InvitationPermission(OpenPolicyAgentPermission):
         return data
 
 class MembershipPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        UPDATE = 'change'
+        UPDATE_ROLE = 'change:role'
+        VIEW = 'view'
+        DELETE = 'delete'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'membership':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                params = {}
+                if scope == 'change:role':
+                    params['role'] = request.data.get('role')
+
+                self = cls.create_base_perm(request, view, scope, obj, **params)
                 permissions.append(self)
 
         return permissions
@@ -275,12 +308,23 @@ class MembershipPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
-        return [{
-            'list': 'list',
-            'partial_update': 'change:role',
-            'retrieve': 'view',
-            'destroy': 'delete'
-        }.get(view.action)]
+        Scopes = __class__.Scopes
+        scopes = []
+
+        scope = {
+            'list': Scopes.LIST,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
+            'destroy': Scopes.DELETE,
+        }.get(view.action)
+
+        if scope == Scopes.UPDATE:
+            if request.data.get('role') != cast(Membership, obj).role:
+                scopes.append(Scopes.UPDATE_ROLE)
+        elif scope:
+            scopes.append(scope)
+
+        return scopes
 
     def get_resource(self):
         if self.obj:
@@ -294,6 +338,12 @@ class MembershipPermission(OpenPolicyAgentPermission):
             return None
 
 class ServerPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        VIEW = 'view'
+        SEND_EXCEPTION = 'send:exception'
+        SEND_LOGS = 'send:logs'
+        LIST_CONTENT = 'list:content'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -310,19 +360,23 @@ class ServerPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'annotation_formats': 'view',
-            'about': 'view',
-            'plugins': 'view',
-            'exception': 'send:exception',
-            'logs': 'send:logs',
-            'share': 'list:content'
+            'annotation_formats': Scopes.VIEW,
+            'about': Scopes.VIEW,
+            'plugins': Scopes.VIEW,
+            'exception': Scopes.SEND_EXCEPTION,
+            'logs': Scopes.SEND_LOGS,
+            'share': Scopes.LIST_CONTENT,
         }.get(view.action, None)]
 
     def get_resource(self):
         return None
 
 class LogViewerPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        VIEW = 'view'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -339,8 +393,9 @@ class LogViewerPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'list': 'view',
+            'list': Scopes.VIEW,
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -349,6 +404,12 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         }
 
 class UserPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        VIEW = 'view'
+        UPDATE = 'update'
+        DELETE = 'delete'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -365,18 +426,19 @@ class UserPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'list': 'list',
-            'self': 'view',
-            'retrieve': 'view',
-            'partial_update': 'update',
-            'destroy': 'delete'
+            'list': Scopes.LIST,
+            'self': Scopes.VIEW,
+            'retrieve': Scopes.VIEW,
+            'partial_update': Scopes.UPDATE,
+            'destroy': Scopes.DELETE,
         }.get(view.action)]
 
     @classmethod
     def create_scope_view(cls, request, user_id):
         obj = namedtuple('User', ['id'])(id=int(user_id))
-        return cls(**cls.unpack_context(request), scope='view', obj=obj)
+        return cls(**cls.unpack_context(request), scope=__class__.Scopes.VIEW, obj=obj)
 
     def get_resource(self):
         data = None
@@ -385,7 +447,7 @@ class UserPermission(OpenPolicyAgentPermission):
             data = {
                 'id': self.obj.id
             }
-        elif self.scope == 'view': # self
+        elif self.scope == __class__.Scopes.VIEW: # self
             data = {
                 'id': self.user_id
             }
@@ -401,6 +463,12 @@ class UserPermission(OpenPolicyAgentPermission):
         return data
 
 class LambdaPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        VIEW = 'view'
+        CALL_ONLINE = 'call:online'
+        CALL_OFFLINE = 'call:offline'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -422,20 +490,29 @@ class LambdaPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            ('function', 'list'): 'list',
-            ('function', 'retrieve'): 'view',
-            ('function', 'call'): 'call:online',
-            ('request', 'create'): 'call:offline',
-            ('request', 'list'): 'call:offline',
-            ('request', 'retrieve'): 'call:offline',
-            ('request', 'destroy'): 'call:offline',
+            ('function', 'list'): Scopes.LIST,
+            ('function', 'retrieve'): Scopes.VIEW,
+            ('function', 'call'): Scopes.CALL_ONLINE,
+            ('request', 'create'): Scopes.CALL_OFFLINE,
+            ('request', 'list'): Scopes.CALL_OFFLINE,
+            ('request', 'retrieve'): Scopes.CALL_OFFLINE,
+            ('request', 'destroy'): Scopes.CALL_OFFLINE,
         }.get((view.basename, view.action), None)]
 
     def get_resource(self):
         return None
 
 class CloudStoragePermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        LIST_CONTENT = 'list:content'
+        CREATE = 'create'
+        VIEW = 'view'
+        UPDATE = 'update'
+        DELETE = 'delete'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -452,16 +529,17 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'list': 'list',
-            'create': 'create',
-            'retrieve': 'view',
-            'partial_update': 'update',
-            'destroy': 'delete',
-            'content': 'list:content',
-            'preview': 'view',
-            'status': 'view',
-            'actions': 'view',
+            'list': Scopes.LIST,
+            'create': Scopes.CREATE,
+            'retrieve': Scopes.VIEW,
+            'partial_update': Scopes.UPDATE,
+            'destroy': Scopes.DELETE,
+            'content': Scopes.LIST_CONTENT,
+            'preview': Scopes.VIEW,
+            'status': Scopes.VIEW,
+            'actions': Scopes.VIEW,
         }.get(view.action)]
 
     def get_resource(self):
@@ -485,6 +563,22 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         return data
 
 class ProjectPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE = 'create'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        UPDATE_OWNER = 'update:owner'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_ORG = 'update:organization'
+        VIEW = 'view'
+        IMPORT_DATASET = 'import:dataset'
+        EXPORT_ANNOTATIONS = 'export:annotations'
+        EXPORT_DATASET = 'export:dataset'
+        EXPORT_BACKUP = 'export:backup'
+        IMPORT_BACKUP = 'import:backup'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -508,11 +602,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 perm = UserPermission.create_scope_view(request, assignee_id)
                 permissions.append(perm)
 
-            if 'organization' in request.data:
-                org_id = request.data.get('organization')
-                perm = ProjectPermission.create_scope_create(request, org_id)
-                permissions.append(perm)
-
         return permissions
 
     def __init__(self, **kwargs):
@@ -521,40 +610,41 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         scope = {
-            ('list', 'GET'): 'list',
-            ('create', 'POST'): 'create',
-            ('destroy', 'DELETE'): 'delete',
-            ('partial_update', 'PATCH'): 'update',
-            ('retrieve', 'GET'): 'view',
-            ('tasks', 'GET'): 'view',
-            ('dataset', 'POST'): 'import:dataset',
-            ('append_dataset_chunk', 'HEAD'): 'import:dataset',
-            ('append_dataset_chunk', 'PATCH'): 'import:dataset',
-            ('annotations', 'GET'): 'export:annotations',
-            ('dataset', 'GET'): 'export:dataset',
-            ('export_backup', 'GET'): 'export:backup',
-            ('import_backup', 'POST'): 'import:backup',
-            ('append_backup_chunk', 'PATCH'): 'import:backup',
-            ('append_backup_chunk', 'HEAD'): 'import:backup',
+            ('list', 'GET'): Scopes.LIST,
+            ('create', 'POST'): Scopes.CREATE,
+            ('destroy', 'DELETE'): Scopes.DELETE,
+            ('partial_update', 'PATCH'): Scopes.UPDATE,
+            ('retrieve', 'GET'): Scopes.VIEW,
+            ('tasks', 'GET'): Scopes.VIEW,
+            ('dataset', 'POST'): Scopes.IMPORT_DATASET,
+            ('append_dataset_chunk', 'HEAD'): Scopes.IMPORT_DATASET,
+            ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
+            ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
+            ('dataset', 'GET'): Scopes.EXPORT_DATASET,
+            ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
+            ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
+            ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
         }.get((view.action, request.method))
 
         scopes = []
-        if scope == 'update':
+        if scope == Scopes.UPDATE:
             if any(k in request.data for k in ('owner_id', 'owner')):
                 owner_id = request.data.get('owner_id') or request.data.get('owner')
                 if owner_id != getattr(obj.owner, 'id', None):
-                    scopes.append(scope + ':owner')
+                    scopes.append(Scopes.UPDATE_OWNER)
             if any(k in request.data for k in ('assignee_id', 'assignee')):
                 assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
                 if assignee_id != getattr(obj.assignee, 'id', None):
-                    scopes.append(scope + ':assignee')
+                    scopes.append(Scopes.UPDATE_ASSIGNEE)
             for field in ('name', 'labels', 'bug_tracker'):
                 if field in request.data:
-                    scopes.append(scope + ':desc')
+                    scopes.append(Scopes.UPDATE_DESC)
                     break
             if 'organization' in request.data:
-                scopes.append(scope + ':organization')
+                scopes.append(Scopes.UPDATE_ORG)
         else:
             scopes.append(scope)
 
@@ -566,7 +656,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             obj = Project.objects.get(id=project_id)
         except Project.DoesNotExist as ex:
             raise ValidationError(str(ex))
-        return cls(**cls.unpack_context(request), obj=obj, scope='view')
+        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW)
 
     @classmethod
     def create_scope_create(cls, request, org_id):
@@ -592,7 +682,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             org_owner_id=getattr(organization.owner, 'id', None)
                 if organization else None,
             org_role=getattr(membership, 'role', None),
-            scope='create')
+            scope=__class__.Scopes.CREATE)
 
     def get_resource(self):
         data = None
@@ -605,13 +695,13 @@ class ProjectPermission(OpenPolicyAgentPermission):
                     "id": getattr(self.obj.organization, 'id', None)
                 }
             }
-        elif self.scope in ['create', 'import:backup']:
+        elif self.scope in [__class__.Scopes.CREATE, __class__.Scopes.IMPORT_BACKUP]:
             data = {
                 "id": None,
                 "owner": { "id": self.user_id },
                 "assignee": {
-                    "id": self.assignee_id
-                },
+                    "id": self.assignee_id,
+                } if getattr(self, 'assignee_id', None) else None,
                 'organization': {
                     "id": self.org_id,
                 } if self.org_id else None,
@@ -620,6 +710,31 @@ class ProjectPermission(OpenPolicyAgentPermission):
         return data
 
 class TaskPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE = 'create'
+        CREATE_IN_PROJECT = 'create@project'
+        VIEW = 'view'
+        UPDATE = 'update'
+        UPDATE_DESC = 'update:desc'
+        UPDATE_ORGANIZATION = 'update:organization'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_PROJECT = 'update:project'
+        UPDATE_OWNER = 'update:owner'
+        DELETE = 'delete'
+        VIEW_ANNOTATIONS = 'view:annotations'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        DELETE_ANNOTATIONS = 'delete:annotations'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        EXPORT_ANNOTATIONS = 'export:annotations'
+        EXPORT_DATASET = 'export:dataset'
+        VIEW_METADATA = 'view:metadata'
+        UPDATE_METADATA = 'update:metadata'
+        VIEW_DATA = 'view:data'
+        UPLOAD_DATA = 'upload:data'
+        IMPORT_BACKUP = 'import:backup'
+        EXPORT_BACKUP = 'export:backup'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -660,34 +775,6 @@ class TaskPermission(OpenPolicyAgentPermission):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
-
-    class Scopes(str, Enum):
-        LIST = 'list'
-        CREATE = 'create'
-        CREATE_IN_PROJECT = 'create@project'
-        VIEW = 'view'
-        UPDATE = 'update'
-        UPDATE_DESC = 'update:desc'
-        UPDATE_ORGANIZATION = 'update:organization'
-        UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_PROJECT = 'update:project'
-        UPDATE_OWNER = 'update:owner'
-        DELETE = 'delete'
-        VIEW_ANNOTATIONS = 'view:annotations'
-        UPDATE_ANNOTATIONS = 'update:annotations'
-        DELETE_ANNOTATIONS = 'delete:annotations'
-        IMPORT_ANNOTATIONS = 'import:annotations'
-        EXPORT_ANNOTATIONS = 'export:annotations'
-        EXPORT_DATASET = 'export:dataset'
-        VIEW_METADATA = 'view:metadata'
-        UPDATE_METADATA = 'update:metadata'
-        VIEW_DATA = 'view:data'
-        UPLOAD_DATA = 'upload:data'
-        IMPORT_BACKUP = 'import:backup'
-        EXPORT_BACKUP = 'export:backup'
-
-        def __str__(self) -> str:
-            return self.value
 
     @staticmethod
     def get_scopes(request, view, obj) -> Scopes:
@@ -833,11 +920,19 @@ class TaskPermission(OpenPolicyAgentPermission):
 
 
 class WebhookPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        CREATE = 'create'
+        CREATE_IN_PROJECT = 'create_in_project'
+        CREATE_IN_ORG = 'create_in_org'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        LIST = 'list'
+        VIEW = 'view'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'webhook':
-
             project_id = request.data.get('project_id')
             for scope in cls.get_scopes(request, view, obj):
                 self = cls.create_base_perm(request, view, scope, obj,
@@ -861,22 +956,23 @@ class WebhookPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         scope = {
-            ('create', 'POST'): 'create',
-            ('destroy', 'DELETE'): 'delete',
-            ('partial_update', 'PATCH'): 'update',
-            ('update', 'PUT'): 'update',
-            ('list', 'GET'): 'list',
-            ('retrieve', 'GET'): 'view',
+            ('create', 'POST'): Scopes.CREATE,
+            ('destroy', 'DELETE'): Scopes.DELETE,
+            ('partial_update', 'PATCH'): Scopes.UPDATE,
+            ('update', 'PUT'): Scopes.UPDATE,
+            ('list', 'GET'): Scopes.LIST,
+            ('retrieve', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
         scopes = []
-        if scope == 'create':
+        if scope == Scopes.CREATE:
             webhook_type = request.data.get('type')
             if webhook_type:
-                scope += f'@{webhook_type}'
+                scope = Scopes[str(scope) + f'@{webhook_type}']
                 scopes.append(scope)
-        elif scope in ['update', 'delete', 'list', 'view']:
+        elif scope in [Scopes.UPDATE, Scopes.DELETE, Scopes.LIST, Scopes.VIEW]:
             scopes.append(scope)
 
         return scopes
@@ -896,7 +992,11 @@ class WebhookPermission(OpenPolicyAgentPermission):
                 data['project'] = {
                     'owner': {'id': getattr(self.obj.project.owner, 'id', None)}
                 }
-        elif self.scope in ['create', 'create@project', 'create@organization']:
+        elif self.scope in [
+            __class__.Scopes.CREATE,
+            __class__.Scopes.CREATE_IN_PROJECT,
+            __class__.Scopes.CREATE_IN_ORG
+        ]:
             project = None
             if self.project_id:
                 try:
@@ -923,6 +1023,27 @@ class WebhookPermission(OpenPolicyAgentPermission):
         return data
 
 class JobPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        VIEW = 'view'
+        UPDATE = 'update'
+        UPDATE_ASSIGNEE = 'update:assignee'
+        UPDATE_OWNER = 'update:owner'
+        UPDATE_PROJECT = 'update:project'
+        UPDATE_STAGE = 'update:stage'
+        UPDATE_STATE = 'update:state'
+        UPDATE_DESC = 'update:desc'
+        DELETE = 'delete'
+        VIEW_ANNOTATIONS = 'view:annotations'
+        UPDATE_ANNOTATIONS = 'update:annotations'
+        DELETE_ANNOTATIONS = 'delete:annotations'
+        IMPORT_ANNOTATIONS = 'import:annotations'
+        EXPORT_ANNOTATIONS = 'export:annotations'
+        VIEW_COMMITS = 'view:commits'
+        VIEW_DATA = 'view:data'
+        VIEW_METADATA = 'view:metadata'
+        UPDATE_METADATA = 'update:metadata'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -948,55 +1069,56 @@ class JobPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         scope = {
-            ('list', 'GET'): 'list', # TODO: need to add the method
-            ('retrieve', 'GET'): 'view',
-            ('partial_update', 'PATCH'): 'update',
-            ('update', 'PUT'): 'update', # TODO: do we need the method?
-            ('destroy', 'DELETE'): 'delete',
-            ('annotations', 'GET'): 'view:annotations',
-            ('annotations', 'PATCH'): 'update:annotations',
-            ('annotations', 'DELETE'): 'delete:annotations',
-            ('annotations', 'PUT'): 'update:annotations',
-            ('annotations', 'POST'): 'import:annotations',
-            ('append_annotations_chunk', 'PATCH'): 'update:annotations',
-            ('append_annotations_chunk', 'HEAD'): 'update:annotations',
-            ('data', 'GET'): 'view:data',
-            ('metadata','GET'): 'view:metadata',
-            ('metadata','PATCH'): 'update:metadata',
-            ('issues', 'GET'): 'view',
-            ('commits', 'GET'): 'view:commits'
+            ('list', 'GET'): Scopes.LIST, # TODO: need to add the method
+            ('retrieve', 'GET'): Scopes.VIEW,
+            ('partial_update', 'PATCH'): Scopes.UPDATE,
+            ('update', 'PUT'): Scopes.UPDATE, # TODO: do we need the method?
+            ('destroy', 'DELETE'): Scopes.DELETE,
+            ('annotations', 'GET'): Scopes.VIEW_ANNOTATIONS,
+            ('annotations', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
+            ('annotations', 'DELETE'): Scopes.DELETE_ANNOTATIONS,
+            ('annotations', 'PUT'): Scopes.UPDATE_ANNOTATIONS,
+            ('annotations', 'POST'): Scopes.IMPORT_ANNOTATIONS,
+            ('append_annotations_chunk', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
+            ('append_annotations_chunk', 'HEAD'): Scopes.UPDATE_ANNOTATIONS,
+            ('data', 'GET'): Scopes.VIEW_DATA,
+            ('metadata','GET'): Scopes.VIEW_METADATA,
+            ('metadata','PATCH'): Scopes.UPDATE_METADATA,
+            ('issues', 'GET'): Scopes.VIEW,
+            ('commits', 'GET'): Scopes.VIEW_COMMITS,
         }.get((view.action, request.method))
 
         scopes = []
-        if scope == 'update':
+        if scope == Scopes.UPDATE:
             if any(k in request.data for k in ('owner_id', 'owner')):
                 owner_id = request.data.get('owner_id') or request.data.get('owner')
                 if owner_id != getattr(obj.owner, 'id', None):
-                    scopes.append(scope + ':owner')
+                    scopes.append(Scopes.UPDATE_OWNER)
             if any(k in request.data for k in ('assignee_id', 'assignee')):
                 assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
                 if assignee_id != getattr(obj.assignee, 'id', None):
-                    scopes.append(scope + ':assignee')
+                    scopes.append(Scopes.UPDATE_ASSIGNEE)
             if any(k in request.data for k in ('project_id', 'project')):
                 project_id = request.data.get('project_id') or request.data.get('project')
                 if project_id != getattr(obj.project, 'id', None):
-                    scopes.append(scope + ':project')
+                    scopes.append(Scopes.UPDATE_PROJECT)
             if 'stage' in request.data:
-                scopes.append(scope + ':stage')
+                scopes.append(Scopes.UPDATE_STAGE)
             if 'state' in request.data:
-                scopes.append(scope + ':state')
+                scopes.append(Scopes.UPDATE_STATE)
 
             if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
-                scopes.append(scope + ':desc')
-        elif scope == 'view:annotations':
+                scopes.append(Scopes.UPDATE_DESC)
+        elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:
-                scope = 'export:annotations'
+                scope = Scopes.EXPORT_ANNOTATIONS
 
             scopes.append(scope)
-        elif scope == 'update:annotations':
+        elif scope == Scopes.UPDATE_ANNOTATIONS:
             if 'format' in request.query_params and request.method == 'PUT':
-                scope = 'import:annotations'
+                scope = Scopes.IMPORT_ANNOTATIONS
 
             scopes.append(scope)
         else:
@@ -1031,6 +1153,14 @@ class JobPermission(OpenPolicyAgentPermission):
         return data
 
 class CommentPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE  = 'create'
+        CREATE_IN_ISSUE  = 'create@issue'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        VIEW = 'view'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -1048,12 +1178,13 @@ class CommentPermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'list': 'list',
-            'create': 'create@issue',
-            'destroy': 'delete',
-            'partial_update': 'update',
-            'retrieve': 'view'
+            'list': Scopes.LIST,
+            'create': Scopes.CREATE_IN_ISSUE,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -1094,7 +1225,7 @@ class CommentPermission(OpenPolicyAgentPermission):
                 "id": self.obj.id,
                 "owner": { "id": getattr(self.obj.owner, 'id', None) }
             })
-        elif self.scope.startswith('create'):
+        elif self.scope.startswith(__class__.Scopes.CREATE):
             try:
                 db_issue = Issue.objects.get(id=self.issue_id)
             except Issue.DoesNotExist as ex:
@@ -1107,6 +1238,14 @@ class CommentPermission(OpenPolicyAgentPermission):
         return data
 
 class IssuePermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE  = 'create'
+        CREATE_IN_JOB  = 'create@job'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        VIEW = 'view'
+
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
@@ -1130,13 +1269,14 @@ class IssuePermission(OpenPolicyAgentPermission):
 
     @staticmethod
     def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
         return [{
-            'list': 'list',
-            'create': 'create@job',
-            'destroy': 'delete',
-            'partial_update': 'update',
-            'retrieve': 'view',
-            'comments': 'view'
+            'list': Scopes.LIST,
+            'create': Scopes.CREATE_IN_JOB,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
+            'comments': Scopes.VIEW,
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -1174,7 +1314,7 @@ class IssuePermission(OpenPolicyAgentPermission):
                 "owner": { "id": getattr(self.obj.owner, 'id', None) },
                 "assignee": { "id": getattr(self.obj.assignee, 'id', None) }
             })
-        elif self.scope.startswith('create'):
+        elif self.scope.startswith(__class__.Scopes.CREATE):
             job_id = self.job_id
             try:
                 db_job = Job.objects.get(id=job_id)
@@ -1194,24 +1334,29 @@ class LimitPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         return [
             cls.create_base_perm(request, view, str(scope_handler.scope), obj,
-                scope_handler=scope_handler
+                scope_handler=scope_handler, capabilities=capabilities,
             )
-            for scope_handler in cls.get_scopes(request, view, obj)
+            for scope_handler, capabilities in cls.get_scopes(request, view, obj)
         ]
 
     def __init__(self, **kwargs):
         self.url = settings.IAM_OPA_DATA_URL + '/limits/result'
-        self.scope_handler = kwargs.pop('scope_handler')
+        self.scope_handler: OpenPolicyAgentPermission = kwargs.pop('scope_handler')
+        self.capabilities: Tuple[Limits, CapabilityContext] = kwargs.pop('capabilities')
         super().__init__(**kwargs)
 
     @classmethod
     def get_scopes(cls, request, view, obj):
-        return [
-            scope_handler
+        scopes = [
+            (scope_handler, cls._prepare_capability_params(scope_handler))
             for ctx in OpenPolicyAgentPermission.__subclasses__()
             if not issubclass(ctx, cls)
             for scope_handler in ctx.create(request, view, obj)
-            if cls._prepare_capability_params(scope_handler) # TODO: remove duplication
+        ]
+        return [
+            (scope, capabilities)
+            for scope, capabilities in scopes
+            if capabilities
         ]
 
     def get_resource(self):
@@ -1219,71 +1364,69 @@ class LimitPermission(OpenPolicyAgentPermission):
         limit_manager = LimitManager()
 
         def _get_capability_status(
-            capability: ConsumableCapability, capability_params: Optional[CapabilityContext]
+            capability: Limits, context: Optional[CapabilityContext]
         ) -> dict:
-            status = limit_manager.get_status(capability=capability, context=capability_params)
+            status = limit_manager.get_status(limit=capability, context=context)
             return { 'used': status[0], 'max': status[1] }
 
-        for capability, capability_params in self._prepare_capability_params(self.scope_handler):
+        for capability, context in self.capabilities:
             data[self._get_capability_name(capability)] = _get_capability_status(
-                capability=capability,
-                capability_params=capability_params,
+                capability=capability, context=context,
             )
 
         return { 'limits': data }
 
     @classmethod
-    def _get_capability_name(cls, capability: ConsumableCapability) -> str:
+    def _get_capability_name(cls, capability: Limits) -> str:
         return capability.name
 
     @classmethod
     def _prepare_capability_params(cls, scope: OpenPolicyAgentPermission
-    ) -> List[Tuple[ConsumableCapability, CapabilityContext]]:
+    ) -> List[Tuple[Limits, CapabilityContext]]:
         scope_id = (type(scope), scope.scope)
         results = []
 
-        # TODO: Refactor into classes to share implementation
-        if scope_id == (TaskPermission, TaskPermission.Scopes.CREATE.value):
+        if scope_id == (TaskPermission, TaskPermission.Scopes.CREATE):
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    ConsumableCapability.ORG_TASKS,
+                    Limits.ORG_TASKS,
                     OrgTasksContext(org_id=scope.org_id)
                 ))
             else:
                 results.append((
-                    ConsumableCapability.USER_SANDBOX_TASKS,
+                    Limits.USER_SANDBOX_TASKS,
                     UserSandboxTasksContext(user_id=scope.user_id)
                 ))
 
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT.value):
+        elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT):
             project = Project.objects.get(id=scope.project_id)
 
             if getattr(project, 'organization') is not None:
                 results.append((
-                    ConsumableCapability.TASKS_IN_ORG_PROJECT,
+                    Limits.TASKS_IN_ORG_PROJECT,
                     TasksInOrgProjectContext(
                         org_id=project.organization.id,
                         project_id=project.id,
                     )
                 ))
                 results.append((
-                    ConsumableCapability.ORG_TASKS,
+                    Limits.ORG_TASKS,
                     OrgTasksContext(org_id=project.organization.id)
                 ))
             else:
                 results.append((
-                    ConsumableCapability.TASKS_IN_USER_SANDBOX_PROJECT,
+                    Limits.TASKS_IN_USER_SANDBOX_PROJECT,
                     TasksInUserSandboxProjectContext(
                         user_id=project.owner.id,
                         project_id=project.id
                     )
                 ))
                 results.append((
-                    ConsumableCapability.USER_SANDBOX_TASKS,
+                    Limits.USER_SANDBOX_TASKS,
                     UserSandboxTasksContext(user_id=project.owner.id)
                 ))
 
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_PROJECT.value):
+        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_PROJECT):
             task = cast(Task, scope.obj)
             project = Project.objects.get(id=scope.project_id)
 
@@ -1298,7 +1441,7 @@ class LimitPermission(OpenPolicyAgentPermission):
 
             if getattr(project, 'organization') is not None:
                 results.append((
-                    ConsumableCapability.TASKS_IN_ORG_PROJECT,
+                    Limits.TASKS_IN_ORG_PROJECT,
                     TasksInOrgProjectContext(
                         org_id=project.organization.id,
                         project_id=project.id,
@@ -1307,12 +1450,12 @@ class LimitPermission(OpenPolicyAgentPermission):
 
                 if old_owner != (OwnerType.org, project.organization.id):
                     results.append((
-                        ConsumableCapability.ORG_TASKS,
+                        Limits.ORG_TASKS,
                         OrgTasksContext(org_id=project.organization.id)
                     ))
             else:
                 results.append((
-                    ConsumableCapability.TASKS_IN_USER_SANDBOX_PROJECT,
+                    Limits.TASKS_IN_USER_SANDBOX_PROJECT,
                     TasksInUserSandboxProjectContext(
                         user_id=project.owner.id,
                         project_id=project.id
@@ -1321,19 +1464,19 @@ class LimitPermission(OpenPolicyAgentPermission):
 
                 if old_owner != (OwnerType.user, project.owner.id):
                     results.append((
-                        ConsumableCapability.USER_SANDBOX_TASKS,
+                        Limits.USER_SANDBOX_TASKS,
                         UserSandboxTasksContext(user_id=project.owner.id)
                     ))
 
-        elif scope_id == (ProjectPermission, 'create'):
+        elif scope_id == (ProjectPermission, ProjectPermission.Scopes.CREATE):
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    ConsumableCapability.ORG_PROJECTS,
+                    Limits.ORG_PROJECTS,
                     OrgTasksContext(org_id=scope.org_id)
                 ))
             else:
                 results.append((
-                    ConsumableCapability.USER_SANDBOX_PROJECTS,
+                    Limits.USER_SANDBOX_PROJECTS,
                     UserSandboxTasksContext(user_id=scope.user_id)
                 ))
 
@@ -1359,13 +1502,13 @@ class LimitPermission(OpenPolicyAgentPermission):
             results.append((
                 Limits.ORG_COMMON_WEBHOOKS,
                 OrgCommonWebhooksContext(org_id=scope.org_id)
-                ))
+            ))
 
         elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_PROJECT):
-                results.append((
+            results.append((
                 Limits.PROJECT_WEBHOOKS,
                 ProjectWebhooksContext(project_id=scope.project_id)
-                ))
+            ))
 
         return results
 

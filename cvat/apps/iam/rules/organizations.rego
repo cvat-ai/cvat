@@ -15,10 +15,6 @@ import data.utils
 #         "owner": {
 #             "id": <num>
 #         },
-#         "user": {
-#             "num_resources": <num>,
-#             "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
-#         }
 #     }
 # }
 

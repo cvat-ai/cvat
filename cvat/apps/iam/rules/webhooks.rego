@@ -27,7 +27,6 @@ import data.organizations
 #         "project": {
 #             "owner": { "id": num },
 #         } or null,
-#         "num_resources": <num>
 #     }
 # }
 #

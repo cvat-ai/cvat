@@ -26,9 +26,6 @@ import data.organizations
 #         "owner": { "id": <num> },
 #         "assignee": { "id": <num> },
 #         "organization": { "id": <num> } or null,
-#         "user": {
-#             "num_resources": <num>
-#         }
 #     }
 # }
 

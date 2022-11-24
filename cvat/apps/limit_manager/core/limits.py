@@ -12,9 +12,9 @@ from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
 
 
-class ConsumableCapability(str, Enum):
+class Limits(Enum):
     """
-    Represents a capability, which has an upper limit, and can be consumed.
+    Represents a capability which has an upper limit, and can be consumed.
 
     Each capability is also supposed to have a separate CapabilityContext class,
     representing its parameters. Different parameter combinations should each have
@@ -108,19 +108,18 @@ class ProjectWebhooksContext(CapabilityContext):
 class OrgCommonWebhooksContext(OrgCapabilityContext):
     pass
 
-ConsumableLimit = Optional[int]
 
 @define(frozen=True)
-class CapabilityStatus:
-    used: ConsumableLimit
-    max: ConsumableLimit
+class LimitStatus:
+    used: Optional[int]
+    max: Optional[int]
 
 class LimitManager:
     def get_status(self,
-        capability: ConsumableCapability, *,
+        limit: Limits, *,
         context: Optional[CapabilityContext] = None,
-    ) -> CapabilityStatus:
-        if capability == ConsumableCapability.USER_OWNED_ORGS:
+    ) -> LimitStatus:
+        if limit == Limits.USER_OWNED_ORGS:
             assert context is not None
             context = cast(UserOrgsContext, context)
 
@@ -129,7 +128,7 @@ class LimitManager:
                 1
             )
 
-        elif capability == ConsumableCapability.USER_SANDBOX_PROJECTS:
+        elif limit == Limits.USER_SANDBOX_PROJECTS:
             assert context is not None
             context = cast(UserSandboxProjectsContext, context)
 
@@ -139,7 +138,7 @@ class LimitManager:
                 5
             )
 
-        elif capability == ConsumableCapability.ORG_PROJECTS:
+        elif limit == Limits.ORG_PROJECTS:
             assert context is not None
             context = cast(OrgProjectsContext, context)
 
@@ -149,7 +148,7 @@ class LimitManager:
                 5
             )
 
-        elif capability == ConsumableCapability.USER_SANDBOX_TASKS:
+        elif limit == Limits.USER_SANDBOX_TASKS:
             assert context is not None
             context = cast(UserSandboxTasksContext, context)
 
@@ -159,7 +158,7 @@ class LimitManager:
                 10
             )
 
-        elif capability == ConsumableCapability.ORG_TASKS:
+        elif limit == Limits.ORG_TASKS:
             assert context is not None
             context = cast(OrgTasksContext, context)
 
@@ -169,7 +168,7 @@ class LimitManager:
                 10
             )
 
-        elif capability == ConsumableCapability.TASKS_IN_USER_SANDBOX_PROJECT:
+        elif limit == Limits.TASKS_IN_USER_SANDBOX_PROJECT:
             assert context is not None
             context = cast(TasksInUserSandboxProjectContext, context)
 
@@ -179,7 +178,7 @@ class LimitManager:
                 5
             )
 
-        elif capability == ConsumableCapability.TASKS_IN_ORG_PROJECT:
+        elif limit == Limits.TASKS_IN_ORG_PROJECT:
             assert context is not None
             context = cast(TasksInOrgProjectContext, context)
 
@@ -189,7 +188,7 @@ class LimitManager:
                 5
             )
 
-        elif capability == ConsumableCapability.PROJECT_WEBHOOKS:
+        elif limit == Limits.PROJECT_WEBHOOKS:
             assert context is not None
             context = cast(ProjectWebhooksContext, context)
 
@@ -200,7 +199,7 @@ class LimitManager:
                 10
             )
 
-        elif capability == ConsumableCapability.ORG_COMMON_WEBHOOKS:
+        elif limit == Limits.ORG_COMMON_WEBHOOKS:
             assert context is not None
             context = cast(OrgCommonWebhooksContext, context)
 
@@ -209,7 +208,7 @@ class LimitManager:
                 20
             )
 
-        elif capability == ConsumableCapability.USER_SANDBOX_CLOUD_STORAGES:
+        elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
             assert context is not None
             context = cast(UserSandboxCloudStoragesContext, context)
 
@@ -218,7 +217,7 @@ class LimitManager:
                 10
             )
 
-        elif capability == ConsumableCapability.ORG_CLOUD_STORAGES:
+        elif limit == Limits.ORG_CLOUD_STORAGES:
             assert context is not None
             context = cast(OrgCloudStoragesContext, context)
 
@@ -227,4 +226,4 @@ class LimitManager:
                 10
             )
 
-        raise NotImplementedError(f"Unknown capability {capability.name}")
+        raise NotImplementedError(f"Unknown capability {limit.name}")
