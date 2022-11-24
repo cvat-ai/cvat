@@ -36,7 +36,7 @@ See:
 
 ### Interactors
 
-Use interactors, to create a polygon semi-automatically. <!--unclear: add what exactly we mean under "semi-automatically"-->
+Use interactors, to create a polygon semi-automatically.
 
 Supported DL models are not bound to the label, you can use them to track any object.
 
