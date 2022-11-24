@@ -247,10 +247,7 @@ class GitHubLogin(SocialLoginView):
     adapter_class = GitHubAdapter
     client_class = OAuth2Client
     serializer_class = SocialLoginSerializer
-
-    @property
-    def callback_url(self):
-        return settings.GITHUB_CALLBACK_URL
+    callback_url = settings.GITHUB_CALLBACK_URL
 
     def get_serializer(self, *args, **kwargs):
         serializer_class = self.get_serializer_class()
@@ -264,4 +261,24 @@ def github_callback(request):
     except KeyError:
         raise ValidationError(urllib.parse.urlencode(request.GET))
     return HttpResponseRedirect(
-        f'http://localhost:3000/auth/login-with-social-app/github/{code}/{state}')
+        f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider=github&code={code}&state={state}')
+
+def google_callback(request):
+    try:
+        code = request.GET['code']
+        state = request.GET['state']
+    except KeyError:
+        raise ValidationError(urllib.parse.urlencode(request.GET))
+    return HttpResponseRedirect(
+        f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider=google&code={code}&state={state}')
+
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleAdapter
+    callback_url = settings.GOOGLE_CALLBACK_URL
+    client_class = OAuth2Client
+    serializer_class = SocialLoginSerializer
+
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        kwargs['context'] = self.get_serializer_context()
+        return serializer_class(*args, **kwargs)

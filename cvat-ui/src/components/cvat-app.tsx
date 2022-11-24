@@ -442,7 +442,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         />
                         <Route
                             exact
-                            path='/auth/login-with-social-app/:provider/:code/:state/'
+                            path='/auth/login-with-social-app/'
                             component={LoginWithSocialAppComponent}
                         />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />

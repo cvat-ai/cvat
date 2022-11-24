@@ -19,6 +19,23 @@ class DefaultAccountAdapterEx(DefaultAccountAdapter):
     def respond_email_verification_sent(self, request, user):
         return HttpResponseRedirect(settings.ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL)
 
+    # FIXME required only if OAuth2CallbackViewEx.adapter_view(Adapter) is used for the callback
+    def get_login_redirect_url(self, request):
+        """
+        Returns the default URL to redirect to after logging in.  Note
+        that URLs passed explicitly (e.g. by passing along a `next`
+        GET parameter) take precedence over the value returned here.
+        """
+        assert request.user.is_authenticated
+        url = getattr(settings, "SOCIAL_APP_LOGIN_REDIRECT_URL", None)
+        if url and (code := request.GET.get('code', None)) and (state := request.GET.get('state', None)):
+            # define current provider
+            provider = request.path.strip('/').split('/')[2]
+            assert provider in settings.SOCIALACCOUNT_PROVIDERS.keys()
+            return f'{url}/?provider={provider}&code={code}&state={state}'
+
+        return super().get_login_redirect_url(request)
+
 class SocialAccountAdapterEx(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
         """

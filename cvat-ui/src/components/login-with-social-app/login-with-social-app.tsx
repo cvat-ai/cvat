@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { Redirect, useParams, useLocation } from 'react-router';
+import { Redirect, useLocation } from 'react-router';
 
 import { getCore } from '../../cvat-core-wrapper';
 
@@ -13,10 +13,13 @@ type AxiosRequestConfig = any;
 
 export default function LoginWithSocialAppComponent(): JSX.Element {
     const location = useLocation();
-    const { provider, code, state } = useParams<{ provider: string, code: string, state: string }>();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     const search = new URLSearchParams(location.search);
+    const provider = search.get('provider');
+    const code = search.get('code');
+    const state = search.get('state');
+    console.log('values: ', provider, code, state);
 
     useEffect(() => {
         if (provider && code && state) {
@@ -33,7 +36,8 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                     console.log('result:', result);
                     localStorage.setItem('token', result.key);
                     setIsAuthenticated(true);
-                });
+                })
+                .catch((exception: Error) => Promise.reject(exception));
         }
     }, [provider, code, state]);
 
