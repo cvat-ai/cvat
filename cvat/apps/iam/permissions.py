@@ -1337,17 +1337,34 @@ class LimitPermission(OpenPolicyAgentPermission):
                     UserSandboxTasksContext(user_id=scope.user_id)
                 ))
 
-        elif scope_id == (WebhookPermission, 'create'):
+        elif scope_id == (CloudStoragePermission, CloudStoragePermission.Scopes.CREATE):
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    ConsumableCapability.ORG_COMMON_WEBHOOKS,
-                    OrgCommonWebhooksContext()
+                    Limits.ORG_CLOUD_STORAGES,
+                    OrgCloudStoragesContext(org_id=scope.org_id)
                 ))
-            elif getattr(scope, 'project_id') is not None:
-                project = Project.objects.get(scope_id.project_id)
+            else:
                 results.append((
-                    ConsumableCapability.PROJECT_WEBHOOKS,
-                    ProjectWebhooksContext()
+                    Limits.USER_SANDBOX_CLOUD_STORAGES,
+                    UserSandboxCloudStoragesContext(user_id=scope.user_id)
+                ))
+
+        elif scope_id == (OrganizationPermission, OrganizationPermission.Scopes.CREATE):
+            results.append((
+                Limits.USER_OWNED_ORGS,
+                UserOrgsContext(user_id=scope.user_id)
+            ))
+
+        elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_ORG):
+            results.append((
+                Limits.ORG_COMMON_WEBHOOKS,
+                OrgCommonWebhooksContext(org_id=scope.org_id)
+                ))
+
+        elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_PROJECT):
+                results.append((
+                Limits.PROJECT_WEBHOOKS,
+                ProjectWebhooksContext(project_id=scope.project_id)
                 ))
 
         return results
