@@ -108,6 +108,7 @@ function PropagateConfirmComponent(): JSX.Element {
                     </Col>
                     <Col span={4}>
                         <InputNumber
+                            className='cvat-propagate-confirm-up-to-backward'
                             min={startFrame}
                             max={frameNumber}
                             value={targetFrame > frameNumber ? undefined : targetFrame}
@@ -140,6 +141,7 @@ function PropagateConfirmComponent(): JSX.Element {
                     </Col>
                     <Col span={4}>
                         <InputNumber
+                            className='cvat-propagate-confirm-up-to-forward'
                             min={frameNumber}
                             max={stopFrame}
                             value={targetFrame < frameNumber ? undefined : targetFrame}

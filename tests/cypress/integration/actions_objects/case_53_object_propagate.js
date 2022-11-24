@@ -38,8 +38,10 @@ context('Object propagate.', () => {
             cy.get('.cvat-propagate-confirm-object-on-frames') // Change value in the "copy of the object on frame" field
                 .find('input')
                 .clear()
+                .type(propagateOnOneFrame)
+                .blur()
                 .should('have.value', 1);
-            cy.get('.cvat-propagate-confirm-object-up-to-frame') // Value of "up to the frame" field should be same
+            cy.get('.cvat-propagate-confirm-up-to-forward') // Value of "up to the frame" field should be same
                 .find('input')
                 .should('have.attr', 'value', propagateOnOneFrame);
             cy.contains('button', 'Yes').click();
@@ -59,10 +61,11 @@ context('Object propagate.', () => {
 
         it('From the 1st frame propagate again on 2 frames.', () => {
             startPropagation();
-            cy.get('.cvat-propagate-confirm-object-up-to-frame') // Change value in the "up to the frame" field
+            cy.get('.cvat-propagate-confirm-up-to-forward') // Change value in the "up to the frame" field
                 .find('input')
                 .clear()
                 .type(propagateOnTwoFrames)
+                .blur()
                 .should('have.attr', 'value', propagateOnTwoFrames);
             cy.get('.cvat-propagate-confirm-object-on-frames') // Value of "copy of the object on frames" field should be same
                 .find('input')

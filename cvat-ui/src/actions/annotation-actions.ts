@@ -445,7 +445,7 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
             });
 
             const copy = getCopyFromState(objectState);
-            await sessionInstance.logger.log(LogType.propagateObject, { count: Math.abs(to - from) + 1 });
+            await sessionInstance.logger.log(LogType.propagateObject, { count: Math.abs(to - from) });
             const states = [];
             const sign = Math.sign(to - from);
             for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += 1 * sign) {

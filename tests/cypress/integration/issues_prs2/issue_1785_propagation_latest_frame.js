@@ -11,7 +11,7 @@ context('Check propagation work from the latest frame', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -35,7 +35,9 @@ context('Check propagation work from the latest frame', () => {
         it('Try to propagate', () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('body').type('{ctrl}b');
-            cy.get('.ant-modal-content').find('.ant-btn-primary').click();
+            cy.get('.cvat-propagate-confirm-up-to-forward').type(advancedConfigurationParams.segmentSize - 1);
+            cy.get('.ant-modal-content').find('.ant-btn-primary').should('be.disabled');
+            cy.get('.ant-modal-content').find('.ant-btn-default').click();
             cy.get('.ant-notification-notice').should('not.exist');
         });
     });
