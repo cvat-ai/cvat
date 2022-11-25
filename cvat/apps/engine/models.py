@@ -191,6 +191,7 @@ class FloatArrayField(AbstractArrayField):
 class IntArrayField(AbstractArrayField):
     converter = int
 
+
 class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
@@ -471,6 +472,7 @@ def related_file_upload_path_handler(instance, filename):
 class ClientFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='client_files')
     file = models.FileField(upload_to=client_file_upload_path_handler, max_length=1024)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -480,6 +482,7 @@ class ClientFile(models.Model):
 class ServerFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='server_files')
     file = models.CharField(max_length=1024)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -488,6 +491,7 @@ class ServerFile(models.Model):
 class RemoteFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='remote_files')
     file = models.CharField(max_length=1024)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
