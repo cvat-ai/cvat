@@ -156,6 +156,19 @@ class SortingMethod(str, Enum):
     def __str__(self):
         return self.value
 
+
+class ModeChoice(str, Enum):
+    ANNOTATION = 'annotation'
+    INTERPOLATION = 'interpolation'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str(self):
+        return self.value
+
+
 class AbstractArrayField(models.TextField):
     separator = ","
     converter = lambda x: x

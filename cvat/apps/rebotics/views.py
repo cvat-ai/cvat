@@ -19,7 +19,7 @@ class ImportTrainingDataViewSet(GenericViewSet):
     def create(self, request, *args, **kwargs):
         serializer = ImportSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
-        task_id = task_api.create(serializer.data)
+        task_id = task_api.create(serializer.data, request.user)
         return Response(data={'task_id': task_id}, status=status.HTTP_202_ACCEPTED)
 
     def retrieve(self, request, *args, **kwargs):
