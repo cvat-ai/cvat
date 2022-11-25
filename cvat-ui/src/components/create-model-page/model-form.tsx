@@ -12,9 +12,10 @@ import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 
+import { CombinedState } from 'reducers';
 import { ModelsProviderType } from 'utils/enums';
 import { useHistory } from 'react-router';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { createModelAsync } from 'actions/models-actions';
 import RoboflowConfiguration from './providers/roboflow-configuration';
 
@@ -26,6 +27,7 @@ function ModelForm(): JSX.Element {
     const [form] = Form.useForm();
     const history = useHistory();
     const dispatch = useDispatch();
+    const fetching = useSelector((state: CombinedState) => state.models.fetching);
     const [currentProvider, setCurrentProvider] = useState<JSX.Element | null>(null);
     const onChangeProviderValue = useCallback((provider: ModelsProviderType) => {
         setCurrentProvider(modelProviders[provider]);
@@ -87,7 +89,7 @@ function ModelForm(): JSX.Element {
                         </Button>
                     </Col>
                     <Col offset={1}>
-                        <Button type='primary' onClick={handleSubmit}>
+                        <Button type='primary' onClick={handleSubmit} loading={fetching}>
                             Submit
                         </Button>
                     </Col>

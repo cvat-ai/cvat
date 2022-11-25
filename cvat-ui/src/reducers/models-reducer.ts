@@ -54,6 +54,24 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 fetching: false,
             };
         }
+        case ModelsActionTypes.CREATE_MODEL: {
+            return {
+                ...state,
+                fetching: true,
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL_FAILED: {
+            return {
+                ...state,
+                fetching: false,
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL_SUCCESS: {
+            return {
+                ...state,
+                fetching: false,
+            };
+        }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
             return {
                 ...state,
