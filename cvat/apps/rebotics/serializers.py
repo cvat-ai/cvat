@@ -26,7 +26,7 @@ class _ImportPriceTagSerializer(_ImportAnnotationSerializer):
     upc = serializers.CharField(max_length=128, allow_blank=True, allow_null=True, required=False)
 
 
-class ImportImageSerializer(_BaseImportSerializer):
+class ImportSerializer(_BaseImportSerializer):
     items = serializers.ListSerializer(child=_ImportAnnotationSerializer())
     image = serializers.URLField()
     export_by = serializers.CharField(required=False, allow_null=True)
