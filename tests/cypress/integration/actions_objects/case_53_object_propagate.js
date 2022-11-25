@@ -17,8 +17,6 @@ context('Object propagate.', () => {
         secondX: 350,
         secondY: 450,
     };
-    const propagateOnOneFrame = 1;
-    const propagateOnTwoFrames = 2;
 
     function startPropagation() {
         cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
@@ -27,64 +25,88 @@ context('Object propagate.', () => {
         });
     }
 
+    function setupUpToFrame(value, direction = 'forward') {
+        cy.get(`.cvat-propagate-confirm-up-to-${direction}`)
+            .find('input')
+            .clear()
+            .type(value)
+            .blur()
+            .should('have.value', value);
+    }
+
+    function setupPropagateFrames(value) {
+        cy.get('.cvat-propagate-confirm-object-on-frames') // Change value in the "copy of the object on frame" field
+            .find('input')
+            .clear()
+            .type(value)
+            .blur()
+            .should('have.value', value);
+    }
+
     before(() => {
         cy.openTaskJob(taskName);
+    });
+
+    beforeEach(() => {
+        cy.removeAnnotations();
+        cy.goCheckFrameNumber(0);
         cy.createCuboid(createCuboidShape2Points);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('On the 1st frame propagate object on 1 frame.', () => {
+            const FROM_FRAME = 0;
+            const PROPAGATE_FRAMES = 1;
+
             startPropagation();
-            cy.get('.cvat-propagate-confirm-object-on-frames') // Change value in the "copy of the object on frame" field
-                .find('input')
-                .clear()
-                .type(propagateOnOneFrame)
-                .blur()
-                .should('have.value', 1);
+            setupPropagateFrames(PROPAGATE_FRAMES);
             cy.get('.cvat-propagate-confirm-up-to-forward') // Value of "up to the frame" field should be same
                 .find('input')
-                .should('have.attr', 'value', propagateOnOneFrame);
+                .should('have.attr', 'value', FROM_FRAME + PROPAGATE_FRAMES);
             cy.contains('button', 'Yes').click();
-        });
 
-        it('On the 1st and 2nd frames, the number of objects is equal to 1. On the 3rd frame is 0.', () => {
-            cy.get('.cvat_canvas_shape_cuboid').then(($cuboidCountFirstFrame) => {
-                cy.goCheckFrameNumber(1); // Go to 2nd frame
-                cy.get('.cvat_canvas_shape_cuboid').then(($cuboidCountSecondFrame) => {
-                    expect($cuboidCountFirstFrame.length).to.be.equal($cuboidCountSecondFrame.length);
-                });
-            });
-            cy.goCheckFrameNumber(2); // Go to 3rd frame
+            for (let i = FROM_FRAME; i <= FROM_FRAME + PROPAGATE_FRAMES; i++) {
+                cy.goCheckFrameNumber(i);
+                cy.get('.cvat_canvas_shape_cuboid').should('have.length', 1);
+            }
+            cy.goCheckFrameNumber(FROM_FRAME + PROPAGATE_FRAMES + 1);
             cy.get('.cvat_canvas_shape_cuboid').should('not.exist');
-            cy.get('.cvat-player-first-button').click();
         });
 
         it('From the 1st frame propagate again on 2 frames.', () => {
+            const FROM_FRAME = 0;
+            const PROPAGATE_FRAMES = 2;
+
             startPropagation();
-            cy.get('.cvat-propagate-confirm-up-to-forward') // Change value in the "up to the frame" field
-                .find('input')
-                .clear()
-                .type(propagateOnTwoFrames)
-                .blur()
-                .should('have.attr', 'value', propagateOnTwoFrames);
+            setupUpToFrame(FROM_FRAME + PROPAGATE_FRAMES);
             cy.get('.cvat-propagate-confirm-object-on-frames') // Value of "copy of the object on frames" field should be same
                 .find('input')
-                .should('have.attr', 'value', propagateOnTwoFrames);
+                .should('have.attr', 'value', FROM_FRAME + PROPAGATE_FRAMES);
             cy.contains('button', 'Yes').click();
+
+            for (let i = FROM_FRAME; i <= FROM_FRAME + PROPAGATE_FRAMES; i++) {
+                cy.goCheckFrameNumber(i);
+                cy.get('.cvat_canvas_shape_cuboid').should('have.length', 1);
+            }
+            cy.goCheckFrameNumber(FROM_FRAME + PROPAGATE_FRAMES + 1);
+            cy.get('.cvat_canvas_shape_cuboid').should('not.exist');
         });
 
-        it('On the 1st and 3rd frames the number of objects is equal to 1. On the 2nd frame equal to 2. On the 4th frame equal to 0', () => {
-            cy.get('.cvat_canvas_shape_cuboid').then(($cuboidCountFirstFrame) => {
-                cy.goCheckFrameNumber(2); // Go to 3rd frame
-                cy.get('.cvat_canvas_shape_cuboid').then(($cuboidCountThirdFrame) => {
-                    expect($cuboidCountFirstFrame.length).to.be.equal($cuboidCountThirdFrame.length);
-                });
-            });
-            cy.goCheckFrameNumber(1); // Go to 2nd frame
-            cy.get('.cvat_canvas_shape_cuboid').then(($cuboidCountSecondFrame) => {
-                expect($cuboidCountSecondFrame.length).to.be.equal(2);
-            });
-            cy.goCheckFrameNumber(3); // Go to 4th frame
+        it('Testing propagate backward', () => {
+            cy.removeAnnotations();
+            const FROM_FRAME = 4;
+            const UP_TO_FRAME = 1;
+            cy.goCheckFrameNumber(FROM_FRAME);
+            cy.createCuboid(createCuboidShape2Points);
+            startPropagation();
+            setupUpToFrame(UP_TO_FRAME, 'backward');
+            cy.contains('button', 'Yes').click();
+
+            for (let i = FROM_FRAME - 1; i >= UP_TO_FRAME; i--) {
+                cy.goCheckFrameNumber(i);
+                cy.get('.cvat_canvas_shape_cuboid').should('have.length', 1);
+            }
+            cy.goCheckFrameNumber(UP_TO_FRAME - 1);
             cy.get('.cvat_canvas_shape_cuboid').should('not.exist');
         });
     });
