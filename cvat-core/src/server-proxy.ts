@@ -448,17 +448,13 @@ async function getSelf() {
 async function authorized() {
     try {
         await getSelf();
-        if (!token) {
+    } catch (serverError) {
+        if (serverError.code === 401) {
             // In CVAT app we use two types of authentication,
             // So here we are forcing user have both credential types
             // First request will fail if session is expired, then we check
             // for precense of token
             await logout();
-            return false;
-        }
-    } catch (serverError) {
-        if (serverError.code === 401) {
-            removeToken();
             return false;
         }
 
