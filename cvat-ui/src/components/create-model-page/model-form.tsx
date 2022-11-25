@@ -10,10 +10,13 @@ import { Row, Col } from 'antd/lib/grid';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
+import notification from 'antd/lib/notification';
 
 import { ModelsProviderType } from 'utils/enums';
-import RoboflowConfiguration from './providers/roboflow-configuration';
 import { useHistory } from 'react-router';
+import { useDispatch } from 'react-redux';
+import { createModelAsync } from 'actions/models-actions';
+import RoboflowConfiguration from './providers/roboflow-configuration';
 
 const modelProviders = {
     [ModelsProviderType.ROBOFLOW]: <RoboflowConfiguration />,
@@ -22,6 +25,7 @@ const modelProviders = {
 function ModelForm(): JSX.Element {
     const [form] = Form.useForm();
     const history = useHistory();
+    const dispatch = useDispatch();
     const [currentProvider, setCurrentProvider] = useState<JSX.Element | null>(null);
     const onChangeProviderValue = useCallback((provider: ModelsProviderType) => {
         setCurrentProvider(modelProviders[provider]);
@@ -30,11 +34,17 @@ function ModelForm(): JSX.Element {
     const handleSubmit = useCallback(async (): Promise<void> => {
         try {
             const values: Store = await form.validateFields();
-            const notificationConfig = {
-                message: 'Webhook has been successfully updated',
-                className: 'cvat-notification-update-webhook-success',
+            const rawModelData = {
+                api_key: values.apiKey,
+                provider: values.provider.toLowerCase(),
+                url: values.url,
             };
-            console.log(values);
+            await dispatch(createModelAsync(rawModelData));
+            form.resetFields();
+            notification.info({
+                message: 'Model has been successfully created',
+                className: 'cvat-notification-create-model-success',
+            });
         } catch (e) {
             console.log(e);
         }
@@ -49,7 +59,7 @@ function ModelForm(): JSX.Element {
                 >
                     <Form.Item
                         label='Provider'
-                        name='provider_type'
+                        name='provider'
                         rules={[{ required: true, message: 'Please, specify model provider' }]}
                     >
                         <Select

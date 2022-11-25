@@ -9,14 +9,14 @@ function RoboflowConfiguration(): JSX.Element {
     return (
         <>
             <Form.Item
-                name='model_url'
+                name='url'
                 label='Model URL'
                 rules={[{ required: true, message: 'Please, specify model URL' }]}
             >
                 <Input />
             </Form.Item>
             <Form.Item
-                name='api_key'
+                name='apiKey'
                 label='API key'
                 rules={[{ required: true, message: 'Please, specify API key' }]}
             >

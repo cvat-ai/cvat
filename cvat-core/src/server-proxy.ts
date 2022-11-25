@@ -1597,11 +1597,41 @@ class ServerProxy {
             }
         }
 
+        async function getFunctions() {
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.get(`${backendAPI}/functions`, {
+                    proxy: config.proxy,
+                });
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
         async function runLambdaRequest(body) {
             const { backendAPI } = config;
 
             try {
                 const response = await Axios.post(`${backendAPI}/lambda/requests`, JSON.stringify(body), {
+                    proxy: config.proxy,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function runFunctionRequest(body) {
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.post(`${backendAPI}/functions/requests/`, JSON.stringify(body), {
                     proxy: config.proxy,
                     headers: {
                         'Content-Type': 'application/json',
@@ -1631,11 +1661,42 @@ class ServerProxy {
             }
         }
 
+        async function callFunction(funId, body) {
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, JSON.stringify(body), {
+                    proxy: config.proxy,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
         async function getLambdaRequests() {
             const { backendAPI } = config;
 
             try {
                 const response = await Axios.get(`${backendAPI}/lambda/requests`, {
+                    proxy: config.proxy,
+                });
+
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function getFunctionsRequests() {
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.get(`${backendAPI}/functions/requests/`, {
                     proxy: config.proxy,
                 });
 
@@ -1658,6 +1719,19 @@ class ServerProxy {
             }
         }
 
+        async function getFunctionRequestStatus(requestID) {
+            const { backendAPI } = config;
+
+            try {
+                const response = await Axios.get(`${backendAPI}/functions/requests/${requestID}`, {
+                    proxy: config.proxy,
+                });
+                return response.data;
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
         async function cancelLambdaRequest(requestId) {
             const { backendAPI } = config;
 
@@ -1670,12 +1744,24 @@ class ServerProxy {
             }
         }
 
-        async function createLambdaFunction(labdaFunctionData: any) {
+        async function cancelFunctionRequest(requestId) {
+            const { backendAPI } = config;
+
+            try {
+                await Axios.delete(`${backendAPI}/functions/requests/${requestId}`, {
+                    method: 'DELETE',
+                });
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+        }
+
+        async function createFunction(functionData: any) {
             const params = enableOrganization();
             const { backendAPI } = config;
 
             try {
-                const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(labdaFunctionData), {
+                const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(functionData), {
                     proxy: config.proxy,
                     params,
                     headers: {
@@ -2331,7 +2417,19 @@ class ServerProxy {
                         run: runLambdaRequest,
                         call: callLambdaFunction,
                         cancel: cancelLambdaRequest,
-                        create: createLambdaFunction,
+                    }),
+                    writable: false,
+                },
+
+                functions: {
+                    value: Object.freeze({
+                        list: getFunctions,
+                        status: getFunctionRequestStatus,
+                        requests: getFunctionsRequests,
+                        create: createFunction,
+                        run: runFunctionRequest,
+                        call: callFunction,
+                        cancel: cancelFunctionRequest,
                     }),
                     writable: false,
                 },
@@ -2345,7 +2443,6 @@ class ServerProxy {
                     }),
                     writable: false,
                 },
-
                 comments: {
                     value: Object.freeze({
                         create: createComment,

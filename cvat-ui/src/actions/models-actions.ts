@@ -109,7 +109,8 @@ export function createModelAsync(modelData: Store): ThunkAction {
 
         dispatch(modelsActions.createModel());
         try {
-            dispatch(modelsActions.createModelSuccess(model));
+            const createdModel = await model.save();
+            dispatch(modelsActions.createModelSuccess(createdModel));
         } catch (error) {
             dispatch(modelsActions.createModelFailed(error));
             throw error;

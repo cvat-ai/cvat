@@ -29,7 +29,7 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
                         <Col span={3}>
                             <Text strong>Name</Text>
                         </Col>
-                        <Col span={3}>
+                        <Col span={2} offset={1}>
                             <Text strong>Owner</Text>
                         </Col>
                         <Col span={3}>

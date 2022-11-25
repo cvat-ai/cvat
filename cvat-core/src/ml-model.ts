@@ -6,6 +6,7 @@
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
 import { ModelType } from './enums';
+import User from './user';
 
 interface ModelAttribute {
     name: string;
@@ -28,16 +29,18 @@ interface ModelTip {
 }
 
 interface SerializedModel {
-    id: string;
-    name: string;
-    labels: string[];
-    version: number;
-    attributes: Record<string, ModelAttribute>;
-    framework: string;
-    description: string;
-    type: ModelType;
-    owner: string;
-    provider: string;
+    id?: string;
+    name?: string;
+    labels?: string[];
+    version?: number;
+    attributes?: Record<string, ModelAttribute>;
+    framework?: string;
+    description?: string;
+    type?: ModelType;
+    owner?: any;
+    provider?: string;
+    api_key?: string;
+    url?: string;
     help_message?: string;
     animated_gif?: string;
     min_pos_points?: number;
@@ -109,11 +112,11 @@ export default class MLModel {
     }
 
     public get owner(): string {
-        return 'admin';
+        return this.serialized?.owner?.username || 'admin';
     }
 
     public get provider(): string {
-        return 'cvat';
+        return this.serialized.provider ? this.serialized.provider : 'cvat';
     }
 
     // Used to set a callback when the tool is blocked in UI
@@ -132,16 +135,14 @@ Object.defineProperties(MLModel.prototype.save, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<MLModel> {
-            const initialData = {
-                provider_type: this.provider,
-            };
-
             const modelData = {
-                ...initialData,
+                provider: this.provider,
+                url: this.serialized.url,
+                api_key: this.serialized.api_key,
             };
 
-            const cloudStorage = await serverProxy.lambda.create(modelData);
-            return new MLModel(cloudStorage);
+            const model = await serverProxy.functions.create(modelData);
+            return new MLModel(model);
         },
     },
 });

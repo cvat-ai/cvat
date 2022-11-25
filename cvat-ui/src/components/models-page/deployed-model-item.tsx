@@ -28,7 +28,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     <Text className='cvat-text-color'>{model.name}</Text>
                 </CVATTooltip>
             </Col>
-            <Col span={3}>
+            <Col span={2} offset={1}>
                 <Tag color='purple'>{model.owner}</Tag>
             </Col>
             <Col span={3}>
