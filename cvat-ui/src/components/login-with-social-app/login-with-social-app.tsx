@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router';
+import { useLocation, useHistory } from 'react-router';
 
 import { getCore } from '../../cvat-core-wrapper';
 
@@ -13,6 +13,7 @@ type AxiosRequestConfig = any;
 
 export default function LoginWithSocialAppComponent(): JSX.Element {
     const location = useLocation();
+    const history = useHistory();
     const search = new URLSearchParams(location.search);
     const provider = search.get('provider');
     const code = search.get('code');
@@ -33,7 +34,12 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                     localStorage.setItem('token', result.key);
                     return window.location.reload();
                 })
-                .catch((exception: Error) => Promise.reject(exception));
+                .catch((exception: Error) => {
+                    if (exception.message.includes('Unverified email')) {
+                        history.push('/auth/email-verification-sent');
+                    }
+                    Promise.reject(exception);
+                });
         }
     }, [provider, code, state]);
 

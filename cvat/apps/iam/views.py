@@ -247,11 +247,31 @@ class ConfirmEmailViewEx(ConfirmEmailView):
         except Http404:
             return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
 
-class SocialLoginViewEx(LoginViewEx):
+class SocialLoginViewEx(LoginView):
     serializer_class = SocialLoginSerializerEx
 
     def process_login(self):
         get_adapter(self.request).login(self.request, self.user)
+
+    def post(self, request, *args, **kwargs):
+        # we have to re-implement this method because
+        # there is one case not covered by dj_rest_auth but covered by allauth
+        # if for some reason (e.g. the provider doesn't provide information about email verification)
+        # user will be logged in with social account and "unverified" email
+
+        self.request = request
+        self.serializer = self.get_serializer(data=self.request.data)
+        try:
+            self.serializer.is_valid(raise_exception=True)
+        except Exception as ex:
+            raise ValidationError(ex)
+
+        if allauth_settings.EMAIL_VERIFICATION == allauth_settings.EmailVerificationMethod.MANDATORY and \
+            not has_verified_email(self.serializer.validated_data.get('user')):
+            return HttpResponseBadRequest('Unverified email')
+
+        self.login()
+        return self.get_response()
 
 class GitHubLogin(SocialLoginViewEx):
     adapter_class = GitHubAdapter
