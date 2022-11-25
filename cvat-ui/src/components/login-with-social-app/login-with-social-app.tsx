@@ -4,6 +4,7 @@
 
 import React, { useEffect } from 'react';
 import { useLocation, useHistory } from 'react-router';
+import notification from 'antd/lib/notification';
 
 import { getCore } from '../../cvat-core-wrapper';
 
@@ -38,7 +39,12 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                     if (exception.message.includes('Unverified email')) {
                         history.push('/auth/email-verification-sent');
                     }
-                    Promise.reject(exception);
+                    history.push('/auth/login');
+                    notification.error({
+                        message: 'Could not log in with social account',
+                        description: 'Go to developer console',
+                    });
+                    return Promise.reject(exception);
                 });
         }
     }, [provider, code, state]);

@@ -16,12 +16,11 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.http import etag as django_etag
 from rest_framework.response import Response
-from dj_rest_auth.registration.views import RegisterView
+from dj_rest_auth.registration.views import RegisterView, SocialLoginView
 from dj_rest_auth.views import LoginView
 from allauth.account import app_settings as allauth_settings
 from allauth.account.views import ConfirmEmailView
 from allauth.account.utils import has_verified_email, send_email_confirmation
-from allauth.account.adapter import get_adapter
 from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView, OAuth2LoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from furl import furl
@@ -247,24 +246,18 @@ class ConfirmEmailViewEx(ConfirmEmailView):
         except Http404:
             return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
 
-class SocialLoginViewEx(LoginView):
+class SocialLoginViewEx(SocialLoginView):
     serializer_class = SocialLoginSerializerEx
-
-    def process_login(self):
-        get_adapter(self.request).login(self.request, self.user)
 
     def post(self, request, *args, **kwargs):
         # we have to re-implement this method because
         # there is one case not covered by dj_rest_auth but covered by allauth
-        # if for some reason (e.g. the provider doesn't provide information about email verification)
-        # user will be logged in with social account and "unverified" email
+        # user can be logged in with social account and "unverified" email
+        # (e.g. the provider doesn't provide information about email verification)
 
         self.request = request
         self.serializer = self.get_serializer(data=self.request.data)
-        try:
-            self.serializer.is_valid(raise_exception=True)
-        except Exception as ex:
-            raise ValidationError(ex)
+        self.serializer.is_valid(raise_exception=True)
 
         if allauth_settings.EMAIL_VERIFICATION == allauth_settings.EmailVerificationMethod.MANDATORY and \
             not has_verified_email(self.serializer.validated_data.get('user')):
@@ -276,9 +269,10 @@ class SocialLoginViewEx(LoginView):
 class GitHubLogin(SocialLoginViewEx):
     adapter_class = GitHubAdapter
     client_class = OAuth2Client
-    callback_url = settings.GITHUB_CALLBACK_URL
+    callback_url = getattr(settings, 'GITHUB_CALLBACK_URL', None)
+
 
 class GoogleLogin(SocialLoginViewEx):
     adapter_class = GoogleAdapter
     client_class = OAuth2Client
-    callback_url = settings.GOOGLE_CALLBACK_URL
+    callback_url = getattr(settings, 'GOOGLE_CALLBACK_URL', None)
