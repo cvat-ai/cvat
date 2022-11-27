@@ -31,7 +31,7 @@ to perform a specific action.
 All CSV files which describe permissions have the same set of columns:
 
 - `Scope` is the action which is performed on the resource. For example, `list` - get the list of users,
-  `update` - change information about a user, `view` - get information about a user and so on.
+  `update` - change information about a user, `view` - get information about a user, and so on.
 
 - `Resource` describes the object on which the action is performed.
 
