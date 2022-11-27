@@ -11,7 +11,7 @@ description: 'This guide explains how to use IAM system roles to configure user 
 
 CVAT system roles are based on the [Open Policy Agent](https://www.openpolicyagent.org/)(OPA) microservice having [REST API](https://www.openpolicyagent.org/docs/latest/rest-api/).
 Thus, CVAT sends HTTP requests (Query) to OPA that replies with "allow" or "deny" in the simplest case (Decision).
-OPA is the Policy Decision Point (PDP), and it makes decisions, and CVAT is the Policy Enforcement Point (PEP),
+OPA is the Policy Decision Point (PDP) -— it makes decisions, and CVAT is the Policy Enforcement Point (PEP),
 and enforces these decisions by providing information about requested resources or responding with an error.
 
 OPA provides a high-level declarative language that lets specify the policy as code and simple APIs to offload
