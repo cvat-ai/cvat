@@ -42,7 +42,7 @@ All CSV files which describe permissions have the same set of columns:
   role and ownership. If a user creates an object inside an `organization`, the user delegates some rights for the object
   to members with maintainer and owner roles in the `organization`.
 
-- `Ownership` describes how the user and the specific resource are connected together.
+- `Ownership` describes how the user and the specific resource are connected.
   For example, the `N/A` value means that the property isn't applicable to the query.
   Some possible values can be self, owner, assignee, etc.
   None value means that the user who is making the query doesn't have any relationships with the resource.
