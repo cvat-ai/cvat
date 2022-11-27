@@ -74,7 +74,7 @@ it is possible to modify the policies defined in the `.rego` files and restart t
 
 ### Example of changing rules
 
-By default, CVAT has a system of rules described in the organisation section.
+By default, CVAT has a system of rules described in the organization section.
 But you can change them by editing the CSV files in the CVAT repository.
 
 #### Example 1
