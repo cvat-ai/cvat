@@ -57,7 +57,7 @@ All CSV files which describe permissions have the same set of columns:
   the resource is the user, and the context is the sandbox.
 
 - `Privilege` corresponds to the group for the current user with the maximum level of permissions.
-  It can be empty if the user doesn't belong to any groups or equal to worker, user, business, or admin.
+  It can be empty if the user doesn't belong to any groups or equal to a worker, user, business, or admin.
   The primary idea is to delimit the fundamental rights of the user on the platform.
   For example, users with the privilege less than or equal to worker cannot create tasks and projects.
   At the same time a user with the maximum privilege admin doesn't have any restrictions.
