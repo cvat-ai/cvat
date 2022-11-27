@@ -92,7 +92,7 @@ so if you want to insert the table from the directory above use `.. /..`
 depending on the location of the file in which the shortcode is used).
 You can also set the separator (the default is `,`).
 By default, the table is inserted in a hidden form
-so that the table is inserted in an expanded form, add `details="false"`.
+to change the form to an expanded, add `details="false"`.
 
 #### Repolink
 
