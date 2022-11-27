@@ -43,7 +43,7 @@ All CSV files which describe permissions have the same set of columns:
   to members with maintainer and owner roles in the `organization`.
 
 - `Ownership` describes how the user and the specific resource are connected together.
-  For example, `N/A` value means that the property isn't applicable for the query.
+  For example, the `N/A` value means that the property isn't applicable to the query.
   Some possible values can be self, owner, assignee, etc.
   None value means that the user who is making the query doesn't have any relationships with the resource.
 
