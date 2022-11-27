@@ -1,7 +1,8 @@
 ---
 title: 'Registration'
-linkTitle: 'Registration'
+linkTitle: 'egistration'
 weight: 1
+description: 'App CVAT user registration and account access'
 ---
 
 To start to annotate in CVAT, you need to

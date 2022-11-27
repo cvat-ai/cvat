@@ -1,8 +1,8 @@
 ---
-itle: 'Superuser registration'
+title: 'Superuser registration'
 linkTitle: 'Superuser registration'
 weight: 2
-description: 'A CVAT installation guide to create a superuser'
+description: 'A CVAT installation guide to create a superuser.'
 ---
 
 This section is for users who whant to be a bit more flexible with CVAT use.
