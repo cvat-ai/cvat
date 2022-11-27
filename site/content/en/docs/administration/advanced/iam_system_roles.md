@@ -70,7 +70,7 @@ All CSV files which describe permissions have the same set of columns:
   but not be able to create tasks and projects in the organization.
 
 If somebody needs to change the default behavior,
-it is possible to modify the policies defined in `.rego` files and restart the OPA microservice.
+it is possible to modify the policies defined in the `.rego` files and restart the OPA microservice.
 
 ### Example of changing rules
 
