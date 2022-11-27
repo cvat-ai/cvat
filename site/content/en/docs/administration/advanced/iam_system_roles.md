@@ -23,7 +23,7 @@ After a query is processed by OPA in accordance with implemented policies, OPA r
 In the {{< repolink text="CVAT repository" path="/cvat/apps/iam/rules/" >}} for each resource, there is a CSV file
 which describes all permissions in a simple and readable form.
 For example, the {{< repolink text="users.csv" path="/cvat/apps/iam/rules/users.csv" >}} file describes permissions
-for working with information about users. Every line in the file is a primitive rule which tells us who has rights
+for working with information about users. Every line in the file is a primitive rule which tells us who has the rights
 to perform a specific action.
 
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/users.csv" >}}
