@@ -105,5 +105,5 @@ You must specify the text that will be displayed in the documentation, you can s
 (if you do not specify the path the link will lead to the root of the repository).
 If you want the link to be different from other links in the documentation you can include the GitHub icon
 for this add `icon="true"` (by default the icon is not displayed).
-In order to set a link to a folder, the path must end with `/`
+To set a link to a folder, the path must end with `/`
 The repository link is specified by the `github_repo` parameter in the `config.toml` file.
