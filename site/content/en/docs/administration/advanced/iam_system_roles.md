@@ -53,7 +53,7 @@ All CSV files which describe permissions have the same set of columns:
 
 - `Method` and URL contain data for information purposes only and are not used.
   They help to connect rules with the REST API. If a user makes a `GET /api/users/1` call,
-  it is easy to locate corresponding permissions in the table. Thus, the scope is view,
+  it is easy to locate corresponding permissions in the table. Thus, the scope is the view,
   the resource is user, and the context is sandbox.
 
 - `Privilege` corresponds to the group for the current user with the maximum level of permissions.
