@@ -1,3 +1,4 @@
+<!--lint disable maximum-heading-length-->
 ---
 title: 'Social auth configuration'
 linkTitle: 'Social auth configuration'
@@ -5,6 +6,7 @@ weight: 3
 description: 'Social accounts configuration guide'
 ---
 
+<!--lint disable maximum-line-length-->
 ## Enable authentication with a Google account
 
 To enable authentication, do the following:
