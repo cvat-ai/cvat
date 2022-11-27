@@ -65,7 +65,7 @@ All CSV files which describe permissions have the same set of columns:
 - `Membership` is the user's role inside the organization like worker, supervisor, maintainer, or owner.
   The column makes sense only if a request is made in the context of an organization and allows
   to delimit access to resources of the organization.
-  For example, if a user has the maintainer role in an organization,
+  For example, if a user has the `maintainer` role in an organization,
   but the privilege is worker, he/she will be able to see all resources in the organization
   but not be able to create tasks and projects in the organization.
 
