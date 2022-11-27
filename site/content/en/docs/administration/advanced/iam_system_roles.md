@@ -80,7 +80,7 @@ But you can change them by editing the CSV files in the CVAT repository.
 #### Example 1
 
 For example, if you want users with the supervisor role to be able to update in organizations
-cloud storage edit cloudstorages.csv
+cloud storage, edit cloudstorages.csv
 
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/cloudstorages.csv" >}}
 
