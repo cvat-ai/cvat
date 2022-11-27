@@ -1,5 +1,5 @@
 ---
-title: 'Superuser registration'
+itle: 'Superuser registration'
 linkTitle: 'Superuser registration'
 weight: 2
 description: 'A CVAT installation guide to create a superuser'
