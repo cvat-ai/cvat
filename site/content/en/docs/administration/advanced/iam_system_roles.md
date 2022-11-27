@@ -48,7 +48,7 @@ All CSV files which describe permissions have the same set of columns:
   None value means that the user who is making the query doesn't have any relationships with the resource.
 
 - `Limit` covers constraints for the query. 
-  it easy for the code generation. This will probably be solved in future releases. Typical constrains are the number
+ Typical constraints are the number
   of tasks and projects which a regular user can create.
 
 - `Method` and URL contain data for information purposes only and are not used.
