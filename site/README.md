@@ -48,7 +48,7 @@ By default, your site will be available at <http://localhost:1313/docs/>.
 
 Instead of a "hugo server" command, you can use the "hugo" command that generates the site into a "public" folder.
 
-To build or update your site's CSS resources you will need [PostCSS](https://postcss.org/) to create final assets.
+To build or update your site's CSS resources, you will need [PostCSS](https://postcss.org/) to create final assets.
 To install it you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine,
 so you can use npm, the Node package manager.
 By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
