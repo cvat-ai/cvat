@@ -28,13 +28,14 @@ In the process of installation you need to create a superuser:
 
 1. In the Git Bash run the following command:
 
-  ```bash
-    docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
-  ```
+```bash
+  docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
+```
+
 2. Set up username, email adress, and password.
 3. Go to [`localhost:8080`](http://localhost:8080), and log in with credentials from step 2.
 4. (Optional) Go to [Django administration panel](http://localhost:8080/admin) panel to:
    - Create / edit/delete users
    - Control permissions of users and access to the tool.
 
-  ![Django panel](/images/image115.jpg)
+![Django panel](/images/image115.jpg)

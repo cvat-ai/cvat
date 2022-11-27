@@ -2,7 +2,7 @@
 title: 'Registration'
 linkTitle: 'egistration'
 weight: 1
-description: 'App CVAT user registration and account access'
+description: 'App CVAT user registration and account access.'
 ---
 
 To start to annotate in CVAT, you need to
@@ -23,12 +23,11 @@ See:
 - [User registration](#user-registration)
 - [Account access](#account-access)
 
-
 To creata account or log in, go to the [App CVAT](https://app.cvat.ai/) login page:
 
- ![](/images/image001.jpg)
+![](/images/image001.jpg)
 
- > **Note:** By default authentincation and registration with Google and Git works only for [App CVAT](https://app.cvat.ai/). <br>If you want to use Google and Git authentication on local installation, see [Social auth configuration](/docs/administration/basics/social-accounts-configuration/).
+> **Note:** By default authentincation and registration with Google and Git works only for [App CVAT](https://app.cvat.ai/). <br>If you want to use Google and Git authentication on local installation, see [Social auth configuration](/docs/administration/basics/social-accounts-configuration/).
 
 ### User registration
 
@@ -41,12 +40,11 @@ To register as a non-admin user, do the following:
 2. Fill in all blank fields, accept terms of use, and
    click the **Create an account** button.
 
-  ![Account form](/images/image003.jpg)
+![Account form](/images/image003.jpg)
 
-  <br>A username generates from the email automatically. You can edit it if needed.
+<br>A username generates from the email automatically. You can edit it if needed.
 
-  ![Usernname generation](/images/filling_email.gif)
-
+![Usernname generation](/images/filling_email.gif)
 
 To register with Google or Github, click the button with the name of the service, and folow instructions on the screen.
 
