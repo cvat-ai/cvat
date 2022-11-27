@@ -1,10 +1,8 @@
 ---
-
 title: 'Social auth configuration'
 linkTitle: 'Social auth configuration'
 weight: 3
 description: 'Social accounts configuration guide'
-
 ---
 
 ## Enable authentication with a Google account
@@ -76,5 +74,5 @@ There are 2 basic steps to enable Github account authentication.
   > **Note:** You can also configure [Github App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
   but don't forget to add required permissions (permissions & events -> account permissions -> email addresses set to read).
 
-
-You can also configure OAuth with other services, see [Social Auth with Django services](https://django-allauth.readthedocs.io/en/latest/providers.html)
+You can also configure OAuth with other services,
+see [Social Auth with Django services](https://django-allauth.readthedocs.io/en/latest/providers.html)
