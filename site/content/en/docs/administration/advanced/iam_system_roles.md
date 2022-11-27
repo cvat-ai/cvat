@@ -39,7 +39,7 @@ All CSV files which describe permissions have the same set of columns:
   if it is created outside of any `organization`. 
  An `organization` can have users with different roles and resources.
   Resources are shared between members of the `organization`, but each member has permissions in accordance with their
-  role and ownership. If a user creates an object inside an `organization`, he/she delegates some rights for the object
+  role and ownership. If a user creates an object inside an `organization`, the user delegates some rights for the object
   to members with maintainer and owner roles in the `organization`.
 
 - `Ownership` describes how the user and the specific resource are connected together.
