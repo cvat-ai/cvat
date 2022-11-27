@@ -86,7 +86,7 @@ You can insert a `CSV` spreadsheet in the documentation. To do this, use the sho
 
     {{< get-csv url="<ur_or_path_to_csv_file>" sep="<sep>" details="<false>" >}}
 
-You need to set the url of the csv file or the path in the repository
+You need to set the URL of the CSV file or the path in the repository
 (note that the root in this case will be the `site` folder,
 so if you want to insert the table from the directory above use `.. /..`
 depending on the location of the file in which the shortcode is used).
