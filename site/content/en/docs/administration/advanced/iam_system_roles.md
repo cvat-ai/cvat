@@ -36,7 +36,7 @@ All CSV files which describe permissions have the same set of columns:
 - `Resource` describes the object on which the action is performed.
 
 - `Context` can take one of two values: `sandbox` or `organization`. An object is in the `sandbox`
-  if it is created outside of any `organization`. In theory it is possible to make an object in the `sandbox` visible
+  if it is created outside of any `organization`. 
  An `organization` can have users with different roles and resources.
   Resources are shared between members of the `organization`, but each member has permissions in accordance with their
   role and ownership. If a user creates an object inside an `organization`, he/she delegates some rights for the object
