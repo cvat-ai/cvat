@@ -77,7 +77,7 @@ In case you used **Mask to polygon** , when the object is finished,
 you can edit it like a polygon.
 
 You can change the number of points in the
-polygon, by using the slider:
+polygon with slider:
 
 ![](/images/image224.jpg)
 
@@ -248,12 +248,12 @@ When tracking:
   [creating a polygon](/docs/manual/advanced/annotation-with-polygons/manual-drawing/))
   by temporarily disabling the automatic line creation. To do that, click `Ctrl`.
 
-- You can change the number of points in the polygon, by using the slider:
+- You can change the number of points in the polygon with slider:
 
   ![](/images/image224.jpg)
 
 - To change polygon opacity, on the [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance)
-  use **Selected opacity** slider.
+  use the **Selected opacity** slider.
 
 ### Histogram Equalization
 
