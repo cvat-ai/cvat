@@ -74,10 +74,13 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Added "type" field for all the labels, allows to reduce number of controls on annotation view (<https://github.com/opencv/cvat/pull/5273>)
 - Occluded not applied on canvas instantly for a skeleton elements (<https://github.com/opencv/cvat/pull/5259>)
 - Oriented bounding boxes broken with COCO format ss(<https://github.com/opencv/cvat/pull/5219>)
+- Can't dump annotations with objects type is track from several jobs (<https://github.com/opencv/cvat/pull/5250>)
 - Fixed upload resumption in production environments
   (<https://github.com/opencv/cvat/issues/4839>)
 - Fixed job exporting (<https://github.com/opencv/cvat/pull/5282>)
 - Visibility and ignored information fail to be loaded (MOT dataset format) (<https://github.com/opencv/cvat/pull/5270>)
+- Added force logout on CVAT app start if token is missing (<https://github.com/opencv/cvat/pull/5331>)
+- Missed token with using social account authentication (<https://github.com/opencv/cvat/pull/5344>)
 
 ### Security
 - TDB

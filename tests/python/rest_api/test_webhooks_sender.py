@@ -5,6 +5,7 @@
 import json
 import os.path as osp
 from http import HTTPStatus
+from time import sleep
 
 import pytest
 from deepdiff import DeepDiff
@@ -63,13 +64,21 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
 
 
 def get_deliveries(webhook_id):
-    response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
-    assert response.status_code == HTTPStatus.OK
+    delivery_response = {}
+    for _ in range(10):
+        response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
+        assert response.status_code == HTTPStatus.OK
 
-    deliveries = response.json()
-    last_payload = json.loads(deliveries["results"][0]["response"])
+        deliveries = response.json()
+        delivery = json.loads(deliveries["results"][0]["response"])
 
-    return deliveries, last_payload
+        if delivery:
+            delivery_response = delivery
+            break
+
+        sleep(1)
+
+    return deliveries, delivery_response
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
