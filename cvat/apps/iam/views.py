@@ -21,8 +21,10 @@ from dj_rest_auth.views import LoginView
 from allauth.account import app_settings as allauth_settings
 from allauth.account.views import ConfirmEmailView
 from allauth.account.utils import has_verified_email, send_email_confirmation
+from allauth.socialaccount.models import SocialLogin
 from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView, OAuth2LoginView
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.utils import get_request_param
 from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
@@ -224,10 +226,21 @@ class OAuth2CallbackViewEx(OAuth2CallbackView):
                 raise ValidationError(auth_error)
 
         code = request.GET.get('code')
-        state = request.GET.get('state')
-        assert code and state, 'Parameters code and state not found in request'
+
+        # verify request state
+        if self.adapter.supports_state:
+            state = SocialLogin.verify_and_unstash_state(
+                request, get_request_param(request, 'state')
+            )
+        else:
+            state = SocialLogin.unstash_state(request)
+
+        if not code:
+            return HttpResponseBadRequest('Parameter code not found in request')
         return HttpResponseRedirect(
-            f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider={self.adapter.provider_id}&code={code}&state={state}')
+            f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider={self.adapter.provider_id}&code={code}'
+            f'&auth_params={state.get("auth_params")}&process={state.get("process")}'
+            f'&scope={state.get("scope")}')
 
 github_oauth2_login = OAuth2LoginView.adapter_view(GitHubAdapter)
 github_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GitHubAdapter)
@@ -266,12 +279,27 @@ class SocialLoginViewEx(SocialLoginView):
         self.login()
         return self.get_response()
 
+@extend_schema(
+    methods=['POST'],
+    summary='Method returns an authentication token based on code parameter',
+    description="After successful authentication on the Github side, "
+                "the provider returns the 'code' parameter used to receive "
+                "an authentication token required for CVAT authentication.",
+    responses=get_token_serializer_class()
+)
 class GitHubLogin(SocialLoginViewEx):
     adapter_class = GitHubAdapter
     client_class = OAuth2Client
     callback_url = getattr(settings, 'GITHUB_CALLBACK_URL', None)
 
-
+@extend_schema(
+    methods=['POST'],
+    summary='Method returns an authentication token based on code parameter',
+    description="After successful authentication on the Google side, "
+                "the provider returns the 'code' parameter used to receive "
+                "an authentication token required for CVAT authentication.",
+    responses=get_token_serializer_class()
+)
 class GoogleLogin(SocialLoginViewEx):
     adapter_class = GoogleAdapter
     client_class = OAuth2Client

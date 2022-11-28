@@ -84,16 +84,19 @@ class LoginSerializerEx(LoginSerializer):
 
 
 class SocialLoginSerializerEx(SocialLoginSerializer):
+    auth_params = serializers.CharField(required=False, allow_blank=True, default='')
+    process = serializers.CharField(required=False, allow_blank=True, default='login')
+    scope = serializers.CharField(required=False, allow_blank=True, default='')
+
     def get_social_login(self, adapter, app, token, response):
         request = self._get_request()
         social_login = adapter.complete_login(request, app, token, response=response)
         social_login.token = token
 
-        if adapter.supports_state:
-            social_login.state = SocialLogin.verify_and_unstash_state(
-                request, get_request_param(request, "state")
-            )
-        else:
-            social_login.state = SocialLogin.unstash_state(request)
+        social_login.state = {
+            'process': self.initial_data.get('process'),
+            'scope': self.initial_data.get('scope'),
+            'auth_params': self.initial_data.get('auth_params'),
+        }
 
         return social_login

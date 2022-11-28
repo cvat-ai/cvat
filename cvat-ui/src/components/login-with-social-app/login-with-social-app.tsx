@@ -5,8 +5,9 @@
 import React, { useEffect } from 'react';
 import { useLocation, useHistory } from 'react-router';
 import notification from 'antd/lib/notification';
+import Spin from 'antd/lib/spin';
 
-import { getCore } from '../../cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -16,20 +17,26 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
     const location = useLocation();
     const history = useHistory();
     const search = new URLSearchParams(location.search);
-    const provider = search.get('provider');
-    const code = search.get('code');
-    const state = search.get('state');
 
     useEffect(() => {
-        if (provider && code && state) {
+        const provider = search.get('provider');
+        const code = search.get('code');
+        const process = search.get('process');
+        const scope = search.get('scope');
+        const authParams = search.get('auth_params');
+
+        if (provider && code) {
             const req: AxiosRequestConfig = {
                 method: 'POST',
                 data: {
                     code,
+                    ...(process ? { process } : {}),
+                    ...(scope ? { scope } : {}),
+                    ...(authParams ? { auth_params: authParams } : {}),
                 },
             };
             cvat.server.request(
-                `${cvat.config.backendAPI}/auth/${provider}/login/token?state=${state}`, req,
+                `${cvat.config.backendAPI}/auth/${provider}/login/token`, req,
             )
                 .then((result: any) => {
                     localStorage.setItem('token', result.key);
@@ -47,7 +54,11 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                     return Promise.reject(exception);
                 });
         }
-    }, [provider, code, state]);
+    }, []);
 
-    return <></>;
+    return (
+        <div className='cvat-login-page cvat-spinner-container'>
+            <Spin size='large' className='cvat-spinner' />
+        </div>
+    );
 }
