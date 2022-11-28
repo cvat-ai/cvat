@@ -70,10 +70,10 @@ def get_deliveries(webhook_id):
         assert response.status_code == HTTPStatus.OK
 
         deliveries = response.json()
-        delivery = json.loads(deliveries["results"][0]["response"])
+        delivery = deliveries["results"][0]["response"]
 
         if delivery:
-            delivery_response = delivery
+            delivery_response = json.loads(delivery)
             break
 
         sleep(1)
