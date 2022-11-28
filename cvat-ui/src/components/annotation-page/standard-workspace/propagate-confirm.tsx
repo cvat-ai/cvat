@@ -106,20 +106,6 @@ function PropagateConfirmComponent(): JSX.Element {
                     <Col span={24}>
                         <Text>Or specify a range where copies will be created </Text>
                     </Col>
-                    <Col span={4}>
-                        <InputNumber
-                            size='small'
-                            className='cvat-propagate-confirm-up-to-backward'
-                            min={startFrame}
-                            max={frameNumber}
-                            value={targetFrame > frameNumber ? undefined : targetFrame}
-                            onChange={(value: number) => {
-                                if (typeof value !== 'undefined') {
-                                    setTargetFrame(clamp(+value, startFrame, frameNumber));
-                                }
-                            }}
-                        />
-                    </Col>
                     <Col className='cvat-propagate-slider-wrapper' span={12} offset={1}>
                         <Slider
                             range
@@ -143,13 +129,19 @@ function PropagateConfirmComponent(): JSX.Element {
                     <Col span={4}>
                         <InputNumber
                             size='small'
-                            className='cvat-propagate-confirm-up-to-forward'
-                            min={frameNumber}
+                            className='cvat-propagate-confirm-up-to-input'
+                            min={startFrame}
                             max={stopFrame}
-                            value={targetFrame < frameNumber ? undefined : targetFrame}
+                            value={targetFrame}
                             onChange={(value: number) => {
                                 if (typeof value !== 'undefined') {
-                                    setTargetFrame(clamp(+value, frameNumber, stopFrame));
+                                    if (value > frameNumber) {
+                                        setTargetFrame(clamp(+value, frameNumber, stopFrame));
+                                    } else if (value < frameNumber) {
+                                        setTargetFrame(clamp(+value, startFrame, frameNumber));
+                                    } else {
+                                        setTargetFrame(frameNumber);
+                                    }
                                 }
                             }}
                         />

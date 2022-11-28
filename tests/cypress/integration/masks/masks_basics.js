@@ -171,7 +171,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-object-item-menu').within(() => {
                 cy.contains('button', 'Propagate').click();
             });
-            cy.get('.cvat-propagate-confirm-up-to-forward').find('input')
+            cy.get('.cvat-propagate-confirm-up-to-input').find('input')
                 .should('have.attr', 'value', serverFiles.length - 1);
             cy.contains('button', 'Yes').click();
             for (let i = 1; i < serverFiles.length; i++) {

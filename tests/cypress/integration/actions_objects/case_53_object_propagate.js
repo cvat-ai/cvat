@@ -26,8 +26,8 @@ context('Object propagate.', () => {
         });
     }
 
-    function setupUpToFrame(value, direction = 'forward') {
-        cy.get(`.cvat-propagate-confirm-up-to-${direction}`)
+    function setupUpToFrame(value) {
+        cy.get('.cvat-propagate-confirm-up-to-input')
             .find('input')
             .clear()
             .type(value)
@@ -61,7 +61,7 @@ context('Object propagate.', () => {
 
             startPropagation();
             setupPropagateFrames(PROPAGATE_FRAMES);
-            cy.get('.cvat-propagate-confirm-up-to-forward') // Value of "up to the frame" field should be same
+            cy.get('.cvat-propagate-confirm-up-to-input') // Value of "up to the frame" field should be same
                 .find('input')
                 .should('have.attr', 'value', FROM_FRAME + PROPAGATE_FRAMES);
             cy.contains('button', 'Yes').click();
@@ -100,7 +100,7 @@ context('Object propagate.', () => {
             cy.goCheckFrameNumber(FROM_FRAME);
             cy.createCuboid(createCuboidShape2Points);
             startPropagation();
-            setupUpToFrame(UP_TO_FRAME, 'backward');
+            setupUpToFrame(UP_TO_FRAME);
             cy.contains('button', 'Yes').click();
 
             for (let i = FROM_FRAME - 1; i >= UP_TO_FRAME; i--) {
