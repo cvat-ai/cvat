@@ -165,7 +165,7 @@ Use trackers to automatically annotate an object with the bounding box.
 
    ![Annotation using a tracker](/images/tracker_ai_tools.gif)
 
-5. For tracking, go to the top menu, and click **Next** (or the **F** on the keyboard)
+5. For tracking, go to the top menu and click **Next** (or the **F** on the keyboard)
    to move on to the next frame.
    <br>All annotated objects will be automatically tracked when you move to the next frame.
 
@@ -236,7 +236,7 @@ To use **Intelligent scissors**, do the following:
 5. To finish placing points, on the top menu**Done** (or **N** on the keyboard).
 
 As a result, a polygon will be created
-For more infromation, see [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).
+For more information, see [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).
 
 To increase or lower the action threshold, hold **Ctrl** and scroll the mouse wheel.
 Increasing the action threshold will affect the performance.
