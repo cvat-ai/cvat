@@ -11,6 +11,11 @@ from cvat.apps.engine.models import CloudStorage, Project, Task
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
 
+from cvat.apps.limit_manager.models import Limitation
+from cvat.apps.limit_manager.serializers import (
+    OrgLimitationWriteSerializer,
+    UserLimitationWriteSerializer,
+)
 
 class Limits(Enum):
     """
@@ -115,17 +120,43 @@ class LimitStatus:
     max: Optional[int]
 
 class LimitManager:
+    def _get_or_create_limitation(
+        self, user_id: Optional[int] = None, org_id: Optional[int] = None
+    ) -> Limitation:
+        if org_id:
+            serializer = OrgLimitationWriteSerializer(data={"org_id": org_id})
+        elif user_id:
+            serializer = UserLimitationWriteSerializer(data={"user_id": user_id})
+        serializer.is_valid(raise_exception=True)
+        return serializer.save()
+
     def get_status(self,
         limit: Limits, *,
         context: Optional[CapabilityContext] = None,
     ) -> LimitStatus:
+
+        # TO-DO: remove this duplication
+        limitation = None
+        org_id = getattr(context, "org_id", None)
+        if org_id:
+            limitation = Limitation.objects.filter(org_id=org_id).first()
+            if limitation is None:
+                limitation = self._create_limitation(org_id=org_id)
+        user_id = getattr(context, "user_id", None)
+        if user_id:
+            limitation = Limitation.objects.filter(user_id=user_id).first()
+            if limitation is None:
+                limitation = self._create_limitation(user_id=user_id)
+
+        assert limitation is not None
+
         if limit == Limits.USER_OWNED_ORGS:
             assert context is not None
             context = cast(UserOrgsContext, context)
 
             return (
                 Organization.objects.filter(owner_id=context.user_id).count(),
-                1
+                limitation.organizations
             )
 
         elif limit == Limits.USER_SANDBOX_PROJECTS:
@@ -135,7 +166,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed projects
                 Project.objects.filter(owner=context.user_id, organization=None).count(),
-                5
+                limitation.projects
             )
 
         elif limit == Limits.ORG_PROJECTS:
@@ -145,7 +176,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
-                5
+                limitation.projects
             )
 
         elif limit == Limits.USER_SANDBOX_TASKS:
@@ -155,7 +186,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(owner=context.user_id, organization=None).count(),
-                10
+                limitation.tasks
             )
 
         elif limit == Limits.ORG_TASKS:
@@ -165,7 +196,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(organization=context.org_id).count(),
-                10
+                limitation.tasks
             )
 
         elif limit == Limits.TASKS_IN_USER_SANDBOX_PROJECT:
@@ -175,7 +206,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                5
+                limitation.tasks_per_project
             )
 
         elif limit == Limits.TASKS_IN_ORG_PROJECT:
@@ -185,7 +216,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                5
+                limitation.tasks_per_project
             )
 
         elif limit == Limits.PROJECT_WEBHOOKS:
@@ -196,7 +227,7 @@ class LimitManager:
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
                 Webhook.objects.filter(project=context.project_id).count(),
-                10
+                limitation.webhooks_per_project
             )
 
         elif limit == Limits.ORG_COMMON_WEBHOOKS:
@@ -205,7 +236,7 @@ class LimitManager:
 
             return (
                 Webhook.objects.filter(organization=context.org_id, project=None).count(),
-                20
+                limitation.webhooks_per_organization
             )
 
         elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
@@ -214,7 +245,7 @@ class LimitManager:
 
             return (
                 CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
-                10
+                limitation.cloud_storages
             )
 
         elif limit == Limits.ORG_CLOUD_STORAGES:
@@ -223,7 +254,7 @@ class LimitManager:
 
             return (
                 CloudStorage.objects.filter(organization=context.org_id).count(),
-                10
+                limitation.cloud_storages
             )
 
         raise NotImplementedError(f"Unknown capability {limit.name}")
