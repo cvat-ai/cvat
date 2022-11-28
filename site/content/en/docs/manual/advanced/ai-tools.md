@@ -57,7 +57,7 @@ To annotate with interactors, do the following:
 3. From the **Interactor** drop-down, select a model (see [Interactors Models](#interactors-models)).
    <br>Click the **Question mark** to see information about each model:
    <br>![](/images/image114_detrac.jpg)
-4. (Optional) If the model returns masks, and you need to convert masks to polygon, use the **Mask to polygon** toggle.
+4. (Optional) If the model returns masks, and you need to convert masks to polygon, use the **Convert masks to polygons** toggle.
 5. Click **Interact**.
 6. Use the left click to add positive points and the right click to add negative points.
    <br>Number of points you can add depends on the model.
@@ -124,7 +124,7 @@ To annotate with detectors, do the following:
 
    ![](/images/image187.jpg)
 
-4. (Optional) If the model returns masks, and you need to convert masks to polygon, use the **Mask to polygon** toggle.
+4. (Optional) If the model returns masks, and you need to convert masks to polygon, use the **Convert masks to polygons** toggle.
 5. Click **Annotate**.
 
 Some of the models support attribute annotation like facial emotions,
