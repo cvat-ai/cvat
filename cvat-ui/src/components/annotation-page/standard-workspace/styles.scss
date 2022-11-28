@@ -335,7 +335,7 @@
 
 .cvat-propagate-confirm {
     > .ant-row {
-        align-items: center;
+        align-items: flex-start;
         margin-bottom: $grid-unit-size * 2;
     }
 
@@ -343,6 +343,14 @@
         margin-left: $grid-unit-size;
         margin-right: $grid-unit-size;
         width: $grid-unit-size * 7;
+    }
+
+    .cvat-propagate-slider-wrapper {
+        height: $grid-unit-size;
+    }
+
+    .cvat-propagate-up-to-wrapper > div:first-child {
+        margin-bottom: $grid-unit-size;
     }
 }
 

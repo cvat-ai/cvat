@@ -42,6 +42,14 @@ function PropagateConfirmComponent(): JSX.Element {
         }
     }, [visible]);
 
+    const updateTargetFrame = (direction: PropagateDirection, _propagateFrames: number): void => {
+        if (direction === PropagateDirection.FORWARD) {
+            setTargetFrame(clamp(frameNumber + _propagateFrames, startFrame, stopFrame));
+        } else {
+            setTargetFrame(clamp(frameNumber - _propagateFrames, startFrame, stopFrame));
+        }
+    };
+
     return (
         <Modal
             okType='primary'
@@ -64,14 +72,9 @@ function PropagateConfirmComponent(): JSX.Element {
                     </Col>
                     <Col offset={1}>
                         <Radio.Group
+                            size='small'
                             value={propagateDirection}
-                            onChange={(e: RadioChangeEvent) => {
-                                if (e.target.value === PropagateDirection.FORWARD) {
-                                    setTargetFrame(clamp(frameNumber + propagateFrames, startFrame, stopFrame));
-                                } else {
-                                    setTargetFrame(clamp(frameNumber - propagateFrames, startFrame, stopFrame));
-                                }
-                            }}
+                            onChange={(e: RadioChangeEvent) => updateTargetFrame(e.target.value, propagateFrames)}
                         >
                             <Radio.Button disabled={frameNumber === startFrame} value={PropagateDirection.BACKWARD}>
                                 <ArrowLeftOutlined />
@@ -92,35 +95,32 @@ function PropagateConfirmComponent(): JSX.Element {
                             value={propagateFrames}
                             onChange={(value: number) => {
                                 if (typeof value !== 'undefined') {
-                                    if (propagateDirection === PropagateDirection.FORWARD) {
-                                        setTargetFrame(clamp(frameNumber + +value, startFrame, stopFrame));
-                                    } else {
-                                        setTargetFrame(clamp(frameNumber - +value, startFrame, stopFrame));
-                                    }
+                                    updateTargetFrame(propagateDirection, +value);
                                 }
                             }}
                         />
                     </Col>
                 </Row>
                 <hr />
-                <Row>
+                <Row className='cvat-propagate-up-to-wrapper'>
                     <Col span={24}>
                         <Text>Or specify a range where copies will be created </Text>
                     </Col>
                     <Col span={4}>
                         <InputNumber
+                            size='small'
                             className='cvat-propagate-confirm-up-to-backward'
                             min={startFrame}
                             max={frameNumber}
                             value={targetFrame > frameNumber ? undefined : targetFrame}
                             onChange={(value: number) => {
                                 if (typeof value !== 'undefined') {
-                                    setTargetFrame(Math.floor(clamp(+value, startFrame, frameNumber)));
+                                    setTargetFrame(clamp(+value, startFrame, frameNumber));
                                 }
                             }}
                         />
                     </Col>
-                    <Col span={12} offset={1}>
+                    <Col className='cvat-propagate-slider-wrapper' span={12} offset={1}>
                         <Slider
                             range
                             min={startFrame}
@@ -132,9 +132,9 @@ function PropagateConfirmComponent(): JSX.Element {
                             onChange={([value1, value2]: [number, number]) => {
                                 const value = value1 === frameNumber || value1 === targetFrame ? value2 : value1;
                                 if (value < frameNumber) {
-                                    setTargetFrame(Math.floor(clamp(value, startFrame, frameNumber)));
+                                    setTargetFrame(clamp(value, startFrame, frameNumber));
                                 } else {
-                                    setTargetFrame(Math.floor(clamp(value, frameNumber, stopFrame)));
+                                    setTargetFrame(clamp(value, frameNumber, stopFrame));
                                 }
                             }}
                             value={[frameNumber, targetFrame] as [number, number]}
@@ -142,13 +142,14 @@ function PropagateConfirmComponent(): JSX.Element {
                     </Col>
                     <Col span={4}>
                         <InputNumber
+                            size='small'
                             className='cvat-propagate-confirm-up-to-forward'
                             min={frameNumber}
                             max={stopFrame}
                             value={targetFrame < frameNumber ? undefined : targetFrame}
                             onChange={(value: number) => {
                                 if (typeof value !== 'undefined') {
-                                    setTargetFrame(Math.floor(clamp(+value, frameNumber, stopFrame)));
+                                    setTargetFrame(clamp(+value, frameNumber, stopFrame));
                                 }
                             }}
                         />
