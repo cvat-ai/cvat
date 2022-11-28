@@ -7,8 +7,8 @@ import os.path as osp
 from http import HTTPStatus
 
 import pytest
+import time
 from deepdiff import DeepDiff
-from time import sleep
 
 from shared.fixtures.init import CVAT_ROOT_DIR, _run
 from shared.utils.config import delete_method, get_method, patch_method, post_method
@@ -76,7 +76,7 @@ def get_deliveries(webhook_id):
             delivery_response = delivery
             break
 
-        sleep(1)
+        time.sleep(1)
 
     return deliveries, delivery_response
 
