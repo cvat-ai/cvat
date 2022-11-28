@@ -129,6 +129,7 @@ INSTALLED_APPS = [
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
+    'cvat.apps.limit_manager'
 ]
 
 SITE_ID = 1
