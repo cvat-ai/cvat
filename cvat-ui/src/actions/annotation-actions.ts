@@ -661,6 +661,13 @@ export function getPredictionsAsync(): ThunkAction {
     };
 }
 
+export function confirmCanvasReady(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        payload: {},
+    };
+}
+
 export function changeFrameAsync(
     toFrame: number,
     fillBuffer?: boolean,
@@ -685,9 +692,9 @@ export function changeFrameAsync(
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
-            const abortAction = (): AnyAction => {
+            const abortAction = (): void => {
                 const currentState = getState();
-                return ({
+                dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
                         number: currentState.annotation.player.frame.number,
@@ -702,6 +709,8 @@ export function changeFrameAsync(
                         curZ: currentState.annotation.annotations.zLayer.cur,
                     },
                 });
+
+                dispatch(confirmCanvasReady());
             };
 
             dispatch({
@@ -710,7 +719,7 @@ export function changeFrameAsync(
             });
 
             if (toFrame === frame && !forceUpdate) {
-                dispatch(abortAction());
+                abortAction();
                 return;
             }
 
@@ -720,7 +729,7 @@ export function changeFrameAsync(
             if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
                 // while doing async actions above, canvas can become used by a user in another way
                 // so, we need an additional check and if it is used, we do not update state
-                dispatch(abortAction());
+                abortAction();
                 return;
             }
 
@@ -937,13 +946,6 @@ export function zoomCanvas(enabled: boolean): AnyAction {
 export function resetCanvas(): AnyAction {
     return {
         type: AnnotationActionTypes.RESET_CANVAS,
-        payload: {},
-    };
-}
-
-export function confirmCanvasReady(): AnyAction {
-    return {
-        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
         payload: {},
     };
 }
