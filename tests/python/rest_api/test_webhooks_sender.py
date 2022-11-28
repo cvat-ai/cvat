@@ -5,9 +5,9 @@
 import json
 import os.path as osp
 from http import HTTPStatus
+from time import sleep
 
 import pytest
-import time
 from deepdiff import DeepDiff
 
 from shared.fixtures.init import CVAT_ROOT_DIR, _run
@@ -76,7 +76,7 @@ def get_deliveries(webhook_id):
             delivery_response = delivery
             break
 
-        time.sleep(1)
+        sleep(1)
 
     return deliveries, delivery_response
 
