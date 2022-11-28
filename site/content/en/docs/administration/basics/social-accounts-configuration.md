@@ -27,21 +27,25 @@ To enable authentication, do the following:
    to authorized JS origins and `https://localhost:8080/api/auth/google/login/callback/` to redirect URIs.
    <br>Please make sure this URL matches `GOOGLE_CALLBACK_URL` settings variable on the server.
 
-8. Set environment variables in CVAT (use `docker-compose.override.yml`):
+8. Set environment variables in CVAT:
 
-```yaml
-version: '3.3'
-services:
-  cvat_server:
-    environment:
-      USE_ALLAUTH_SOCIAL_ACCOUNTS: 'True'
-      SOCIAL_AUTH_GOOGLE_CLIENT_ID: '<YOUR_GOOGLE_CLIENT_ID>'
-      SOCIAL_AUTH_GOOGLE_CLIENT_SECRET: '<YOUR_GOOGLE_CLIENT_SECRET>'
-```
+   1. Create `docker-compose.override.yml` with the following code:
 
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
-```
+   ```yaml
+   version: '3.3'
+   services:
+     cvat_server:
+       environment:
+         USE_ALLAUTH_SOCIAL_ACCOUNTS: 'True'
+         SOCIAL_AUTH_GOOGLE_CLIENT_ID: '<YOUR_GOOGLE_CLIENT_ID>'
+         SOCIAL_AUTH_GOOGLE_CLIENT_SECRET: '<YOUR_GOOGLE_CLIENT_SECRET>'
+   ```
+
+   2. In Git Bash, run the following command:
+
+   ```bash
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+   ```
 
 ## Enable authentication with a Github account
 
@@ -53,25 +57,29 @@ There are 2 basic steps to enable Github account authentication.
 3. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
    and authorization callback URL (for example: `https://localhost:8080/api/auth/github/login/callback/`).
    <br>Please make sure this URL matches `GITHUB_CALLBACK_URL` settings variable on the server.
-4. Set environment variables and up CVAT (use `docker-compose.override.yml`).
+4. Set environment variables in CVAT:
 
-```yaml
-version: '3.3'
-services:
-  cvat_server:
-    environment:
-      USE_ALLAUTH_SOCIAL_ACCOUNTS: 'True'
-      SOCIAL_AUTH_GITHUB_CLIENT_ID: '<YOUR_GITHUB_CLIENT_ID>'
-      SOCIAL_AUTH_GITHUB_CLIENT_SECRET: '<YOUR_GITHUB_CLIENT_SECRET>'
-```
+   1. Create `docker-compose.override.yml` with the following code:
 
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
-```
+   ```yaml
+   version: '3.3'
+   services:
+     cvat_server:
+       environment:
+         USE_ALLAUTH_SOCIAL_ACCOUNTS: 'True'
+         SOCIAL_AUTH_GITHUB_CLIENT_ID: '<YOUR_GITHUB_CLIENT_ID>'
+         SOCIAL_AUTH_GITHUB_CLIENT_SECRET: '<YOUR_GITHUB_CLIENT_SECRET>'
+   ```
+
+   2. In Git Bash, run the following command:
+
+   ```bash
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+   ```
 
 > **Note:** You can also configure [Github App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
-> but don't forget to add required permissions
-> permissions & events -> account permissions -> email addresses set to read).
+> but don't forget to add required permissions.
+> <br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.
 
 You can also configure OAuth with other services,
 see [Social Auth with Django services](https://django-allauth.readthedocs.io/en/latest/providers.html)

@@ -39,3 +39,9 @@ In the process of installation you need to create a superuser:
    - Control permissions of users and access to the tool.
 
 ![Django panel](/images/image115.jpg)
+
+To manage users' permission, in the [Django administration panel](http://localhost:8080/admin):
+
+1. On the left menu click **Users**.
+2. On the main pane click **Admin** and scroll down to **Permissions** section.
+3. Select user groups and add/remove permissions.
