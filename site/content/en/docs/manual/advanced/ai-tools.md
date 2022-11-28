@@ -164,6 +164,7 @@ Use trackers to automatically annotate an object with the bounding box.
    <br>Then annotate the desired objects with the bounding box in the first frame:
 
    ![Annotation using a tracker](/images/tracker_ai_tools.gif)
+
 5. For tracking, go to the top menu, and click **Next** (or the **F** on the keyboard)
    to move on to the next frame.
    <br>All annotated objects will be automatically tracked when you move to the next frame.
@@ -172,19 +173,19 @@ When tracking:
 
 - Enable/disable tracking using **Tracker switcher** on the objects sidebar.
 
-   ![Tracker switcher](/images/tracker_switcher.jpg)
+  ![Tracker switcher](/images/tracker_switcher.jpg)
 
 - Trackable objects have an indication on canvas with a model indication.
 
-   ![Tracker indication](/images/tracker_indication_detrac.jpg)
+  ![Tracker indication](/images/tracker_indication_detrac.jpg)
 
 - You can monitor the process by the messages appearing at the top.
-If you change one or more objects, before moving to the next frame, you will see a message, that
-the object states initialization is taking place.
-The objects that you do not change are already on the server
-and therefore do not require initialization. After the objects are initialized, tracking will occur.
+  If you change one or more objects, before moving to the next frame, you will see a message, that
+  the object states initialization is taking place.
+  The objects that you do not change are already on the server
+  and therefore do not require initialization. After the objects are initialized, tracking will occur.
 
-   ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
+  ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
 
 ### Tracker models
 
@@ -237,7 +238,6 @@ To use **Intelligent scissors**, do the following:
 As a result, a polygon will be created
 For more infromation, see [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).
 
-
 To increase or lower the action threshold, hold **Ctrl** and scroll the mouse wheel.
 Increasing the action threshold will affect the performance.
 During the drawing process, you can remove the last point by clicking on it with the left mouse button.
@@ -246,15 +246,14 @@ When tracking:
 
 - You can create a boundary manually (like when
   [creating a polygon](/docs/manual/advanced/annotation-with-polygons/manual-drawing/))
-  by temporarily disabling  the automatic line creation. To do that, click `Ctrl`.
+  by temporarily disabling the automatic line creation. To do that, click `Ctrl`.
 
 - You can change the number of points in the polygon, by using the slider:
 
   ![](/images/image224.jpg)
 
-- To change polygon opacity, on the  [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance)
+- To change polygon opacity, on the [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance)
   use **Selected opacity** slider.
-
 
 ### Histogram Equalization
 
@@ -266,7 +265,7 @@ It is useful in images with backgrounds and foregrounds that are both bright or 
 
 1. In the **OpenCV** menu, go to the **Image** tab.
 2. Click on **Histogram equalization** button.
-  <br>![](/images/image221.jpg)
+   <br>![](/images/image221.jpg)
 
 Then contrast of the current frame will be improved.
 If you change the frame, it will be equalized too.
@@ -291,18 +290,18 @@ For more information about how TrackerMIL works, see [Object Tracking using Open
 
 All annotated objects will be automatically tracked when you move to the next frame.
 
-  ![Annotation using a tracker](/images/tracker_mil_detrac.gif)
+![Annotation using a tracker](/images/tracker_mil_detrac.gif)
 
 When tracking:
 
 - You can enable/disable tracking using **Tracker switcher** on the sidebar.
 
-   ![Tracker switcher](/images/tracker_switcher.jpg)
+  ![Tracker switcher](/images/tracker_switcher.jpg)
 
 - Trackable objects have an indication on canvas with a model indication.
 
-   ![Tracker indication](/images/tracker_indication_detrac.jpg)
+  ![Tracker indication](/images/tracker_indication_detrac.jpg)
 
 - You can follow the tracking by the messages appearing at the top.
 
-   ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
+  ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
