@@ -17,6 +17,7 @@ from cvat.apps.limit_manager.serializers import (
     UserLimitationWriteSerializer,
 )
 
+
 class Limits(Enum):
     """
     Represents a capability which has an upper limit, and can be consumed.
@@ -58,56 +59,70 @@ class Limits(Enum):
 
     PROJECT_WEBHOOKS = auto()
 
+
 class CapabilityContext:
     pass
+
 
 @define(kw_only=True)
 class UserCapabilityContext(CapabilityContext):
     user_id: int
 
+
 @define(kw_only=True)
 class OrgCapabilityContext(CapabilityContext):
     org_id: int
+
 
 @define(kw_only=True)
 class UserSandboxTasksContext(UserCapabilityContext):
     pass
 
+
 @define(kw_only=True)
 class OrgTasksContext(OrgCapabilityContext):
     pass
+
 
 @define(kw_only=True)
 class TasksInUserSandboxProjectContext(UserCapabilityContext):
     project_id: int
 
+
 @define(kw_only=True)
 class TasksInOrgProjectContext(OrgCapabilityContext):
     project_id: int
+
 
 @define(kw_only=True)
 class UserSandboxProjectsContext(UserCapabilityContext):
     pass
 
+
 @define(kw_only=True)
 class OrgProjectsContext(OrgCapabilityContext):
     pass
+
 
 @define(kw_only=True)
 class UserSandboxCloudStoragesContext(UserCapabilityContext):
     pass
 
+
 @define(kw_only=True)
 class OrgCloudStoragesContext(OrgCapabilityContext):
     pass
+
 
 @define(kw_only=True)
 class UserOrgsContext(UserCapabilityContext):
     pass
 
+
 @define(kw_only=True)
 class ProjectWebhooksContext(CapabilityContext):
     project_id: int
+
 
 @define(kw_only=True)
 class OrgCommonWebhooksContext(OrgCapabilityContext):
@@ -118,6 +133,7 @@ class OrgCommonWebhooksContext(OrgCapabilityContext):
 class LimitStatus:
     used: Optional[int]
     max: Optional[int]
+
 
 class LimitManager:
     def _get_or_create_limitation(
@@ -130,8 +146,10 @@ class LimitManager:
         serializer.is_valid(raise_exception=True)
         return serializer.save()
 
-    def get_status(self,
-        limit: Limits, *,
+    def get_status(
+        self,
+        limit: Limits,
+        *,
         context: Optional[CapabilityContext] = None,
     ) -> LimitStatus:
 
@@ -156,7 +174,7 @@ class LimitManager:
 
             return (
                 Organization.objects.filter(owner_id=context.user_id).count(),
-                limitation.organizations
+                limitation.organizations,
             )
 
         elif limit == Limits.USER_SANDBOX_PROJECTS:
@@ -165,8 +183,10 @@ class LimitManager:
 
             return (
                 # TODO: check about active/removed projects
-                Project.objects.filter(owner=context.user_id, organization=None).count(),
-                limitation.projects
+                Project.objects.filter(
+                    owner=context.user_id, organization=None
+                ).count(),
+                limitation.projects,
             )
 
         elif limit == Limits.ORG_PROJECTS:
@@ -176,7 +196,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
-                limitation.projects
+                limitation.projects,
             )
 
         elif limit == Limits.USER_SANDBOX_TASKS:
@@ -186,7 +206,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(owner=context.user_id, organization=None).count(),
-                limitation.tasks
+                limitation.tasks,
             )
 
         elif limit == Limits.ORG_TASKS:
@@ -196,7 +216,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(organization=context.org_id).count(),
-                limitation.tasks
+                limitation.tasks,
             )
 
         elif limit == Limits.TASKS_IN_USER_SANDBOX_PROJECT:
@@ -206,7 +226,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                limitation.tasks_per_project
+                limitation.tasks_per_project,
             )
 
         elif limit == Limits.TASKS_IN_ORG_PROJECT:
@@ -216,7 +236,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                limitation.tasks_per_project
+                limitation.tasks_per_project,
             )
 
         elif limit == Limits.PROJECT_WEBHOOKS:
@@ -227,7 +247,7 @@ class LimitManager:
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
                 Webhook.objects.filter(project=context.project_id).count(),
-                limitation.webhooks_per_project
+                limitation.webhooks_per_project,
             )
 
         elif limit == Limits.ORG_COMMON_WEBHOOKS:
@@ -235,8 +255,10 @@ class LimitManager:
             context = cast(OrgCommonWebhooksContext, context)
 
             return (
-                Webhook.objects.filter(organization=context.org_id, project=None).count(),
-                limitation.webhooks_per_organization
+                Webhook.objects.filter(
+                    organization=context.org_id, project=None
+                ).count(),
+                limitation.webhooks_per_organization,
             )
 
         elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
@@ -244,8 +266,10 @@ class LimitManager:
             context = cast(UserSandboxCloudStoragesContext, context)
 
             return (
-                CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
-                limitation.cloud_storages
+                CloudStorage.objects.filter(
+                    owner=context.user_id, organization=None
+                ).count(),
+                limitation.cloud_storages,
             )
 
         elif limit == Limits.ORG_CLOUD_STORAGES:
@@ -254,7 +278,7 @@ class LimitManager:
 
             return (
                 CloudStorage.objects.filter(organization=context.org_id).count(),
-                limitation.cloud_storages
+                limitation.cloud_storages,
             )
 
         raise NotImplementedError(f"Unknown capability {limit.name}")
