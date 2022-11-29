@@ -27,92 +27,103 @@ check_limit_exceeded(current, max) {
 
 
 
-checks contains "user tasks limit reached" if {
+problems contains "user tasks limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_TASKS].used,
         input.resource.limits[CAP_USER_SANDBOX_TASKS].max
     )
 }
 
-checks contains "user projects limit reached" if {
+problems contains "user projects limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_PROJECTS].used,
         input.resource.limits[CAP_USER_SANDBOX_PROJECTS].max
     )
 }
 
-checks contains "user project tasks limit reached" if {
+problems contains "user project tasks limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].max
     )
 }
 
-checks contains "org tasks limit reached" if {
+problems contains "org tasks limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_TASKS].used,
         input.resource.limits[CAP_ORG_TASKS].max
     )
 }
 
-checks contains "org projects limit reached" if {
+problems contains "org projects limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_PROJECTS].used,
         input.resource.limits[CAP_ORG_PROJECTS].max
     )
 }
 
-checks contains "org project tasks limit reached" if {
+problems contains "org project tasks limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].max
     )
 }
 
-checks contains "project webhooks limit reached" if {
+problems contains "project webhooks limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_PROJECT_WEBHOOKS].used,
         input.resource.limits[CAP_PROJECT_WEBHOOKS].max
     )
 }
 
-checks contains "org webhooks limit reached" if {
+problems contains "org webhooks limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_COMMON_WEBHOOKS].used,
         input.resource.limits[CAP_ORG_COMMON_WEBHOOKS].max
     )
 }
 
-checks contains "user orgs limit reached" if {
+problems contains "user orgs limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_OWNED_ORGS].used,
         input.resource.limits[CAP_USER_OWNED_ORGS].max
     )
 }
 
-checks contains "user cloud storages limit reached" if {
+problems contains "user cloud storages limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_CLOUD_STORAGES].used,
         input.resource.limits[CAP_USER_SANDBOX_CLOUD_STORAGES].max
     )
 }
 
-checks contains "org cloud storages limit reached" if {
+problems contains "org cloud storages limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].used,
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].max
     )
 }
 
+# In the case of invalid input or no applicable limits,
+# we deny the request. We suppose that we always check at least 1
+# limit, and this package is queried by IAM only when there are
+# limits to check in the input scope.
+default result = {
+    "allow": false,
+    "reasons": []
+}
 
 result := {
-    "allow": count(checks) == 0,
-    "reasons": checks
-} if {
-    not utils.is_admin
-} else := {
     "allow": true,
     "reasons": [],
+} if {
+    utils.is_admin
+} else := {
+    "allow": count(problems) == 0,
+    "reasons": problems
+} if {
+    not utils.is_admin
+    count(input.resource.limits) != 0
 }
 
 allow := result.allow
