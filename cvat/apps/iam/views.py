@@ -245,9 +245,10 @@ class OAuth2CallbackViewEx(OAuth2CallbackView):
 
 
 @extend_schema(
+    summary="Redirets to Github authentication page",
     description="Redirects to the Github authentication page. "
                 "After successful authentication on the provider side, "
-                "a redirect to the callback endpoint is performed"
+                "a redirect to the callback endpoint is performed",
 )
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -255,6 +256,7 @@ def github_oauth2_login(*args, **kwargs):
     return OAuth2LoginView.adapter_view(GitHubAdapter)(*args, **kwargs)
 
 @extend_schema(
+    summary="Checks the authentication response from Github, redirects to the CVAT client if successful.",
     description="Accepts a request from Github with code and state query parameters. "
                 "In case of successful authentication on the provider side, it will "
                 "redirect to the CVAT client",
@@ -271,9 +273,11 @@ def github_oauth2_callback(*args, **kwargs):
     return OAuth2CallbackViewEx.adapter_view(GitHubAdapter)(*args, **kwargs)
 
 
-@extend_schema(description="Redirects to the Google authentication page. "
+@extend_schema(
+    summary="Redirects to Google authentication page",
+    description="Redirects to the Google authentication page. "
                 "After successful authentication on the provider side, "
-                "a redirect to the callback endpoint is performed"
+                "a redirect to the callback endpoint is performed.",
 )
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -281,6 +285,7 @@ def google_oauth2_login(*args, **kwargs):
     return OAuth2LoginView.adapter_view(GoogleAdapter)(*args, **kwargs)
 
 @extend_schema(
+    summary="Checks the authentication response from Google, redirects to the CVAT client if successful.",
     description="Accepts a request from Google with code and state query parameters. "
                 "In case of successful authentication on the provider side, it will "
                 "redirect to the CVAT client",
