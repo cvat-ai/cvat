@@ -9,20 +9,21 @@ import sys
 import os
 from itertools import product
 
-NAME = 'invitations'
+NAME = "invitations"
+
 
 def read_rules(name):
     rules = []
-    with open(os.path.join(sys.argv[1], f'{name}.csv')) as f:
+    with open(os.path.join(sys.argv[1], f"{name}.csv")) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            row = {k.lower():v.lower().replace('n/a','na') for k,v in row.items()}
-            row['limit'] = row['limit'].replace('none', 'None')
+            row = {k.lower(): v.lower().replace("n/a", "na") for k, v in row.items()}
+            row["limit"] = row["limit"].replace("none", "None")
             found = False
-            for col,val in row.items():
+            for col, val in row.items():
                 if col in ["limit", "method", "url"]:
                     continue
-                complex_val = [v.strip() for v in val.split(',')]
+                complex_val = [v.strip() for v in val.split(",")]
                 if len(complex_val) > 1:
                     found = True
                     for item in complex_val:
@@ -34,144 +35,183 @@ def read_rules(name):
 
     return rules
 
+
 simple_rules = read_rules(NAME)
 
-SCOPES = {rule['scope'] for rule in simple_rules}
-CONTEXTS = ['sandbox', 'organization']
-OWNERSHIPS = ['owner', 'invitee', 'none']
-GROUPS = ['admin', 'business', 'user', 'worker', 'none']
-ORG_ROLES = ['owner', 'maintainer', 'supervisor', 'worker', None]
+SCOPES = {rule["scope"] for rule in simple_rules}
+CONTEXTS = ["sandbox", "organization"]
+OWNERSHIPS = ["owner", "invitee", "none"]
+GROUPS = ["admin", "business", "user", "worker", "none"]
+ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 SAME_ORG = [False, True]
 
+
 def RESOURCES(scope):
-    if scope == 'list':
+    if scope == "list":
         return [None]
     else:
-        return [{
-            "owner": { "id": random.randrange(300, 400) },
-            "invitee": { "id": random.randrange(400, 500) },
-            "role": role,
-            "organization": {
-                "id": random.randrange(500,600)
+        return [
+            {
+                "owner": {"id": random.randrange(300, 400)},
+                "invitee": {"id": random.randrange(400, 500)},
+                "role": role,
+                "organization": {"id": random.randrange(500, 600)},
             }
-        } for role in ORG_ROLES if role != None]
+            for role in ORG_ROLES
+            if role != None
+        ]
+
 
 def is_same_org(org1, org2):
     if org1 != None and org2 != None:
-        return org1['id'] == org2['id']
+        return org1["id"] == org2["id"]
     elif org1 == None and org2 == None:
         return True
     else:
         return False
 
+
 def eval_rule(scope, context, ownership, privilege, membership, data):
-    if privilege == 'admin':
+    if privilege == "admin":
         return True
 
-    rules = list(filter(lambda r: scope == r['scope'], simple_rules))
-    rules = list(filter(lambda r: r['context'] == 'na' or context == r['context'], rules))
-    rules = list(filter(lambda r: r['ownership'] == 'na' or ownership == r['ownership'], rules))
-    rules = list(filter(lambda r: r['membership'] == 'na' or
-        ORG_ROLES.index(membership) <= ORG_ROLES.index(r['membership']), rules))
-    rules = list(filter(lambda r: GROUPS.index(privilege) <= GROUPS.index(r['privilege']), rules))
-    resource = data['resource']
-    rules = list(filter(lambda r: not r['limit'] or r['limit'].startswith('filter')
-        or eval(r['limit'], {'resource': resource}), rules))
-    if not is_same_org(data['auth']['organization'], data['resource']['organization']) and context != 'sandbox':
+    rules = list(filter(lambda r: scope == r["scope"], simple_rules))
+    rules = list(filter(lambda r: r["context"] == "na" or context == r["context"], rules))
+    rules = list(filter(lambda r: r["ownership"] == "na" or ownership == r["ownership"], rules))
+    rules = list(
+        filter(
+            lambda r: r["membership"] == "na"
+            or ORG_ROLES.index(membership) <= ORG_ROLES.index(r["membership"]),
+            rules,
+        )
+    )
+    rules = list(filter(lambda r: GROUPS.index(privilege) <= GROUPS.index(r["privilege"]), rules))
+    resource = data["resource"]
+    rules = list(
+        filter(
+            lambda r: not r["limit"]
+            or r["limit"].startswith("filter")
+            or eval(r["limit"], {"resource": resource}),
+            rules,
+        )
+    )
+    if (
+        not is_same_org(data["auth"]["organization"], data["resource"]["organization"])
+        and context != "sandbox"
+    ):
         return False
 
     return bool(rules)
+
 
 def get_data(scope, context, ownership, privilege, membership, resource, same_org):
     data = {
         "scope": scope,
         "auth": {
-            "user": { "id": random.randrange(0,100), "privilege": privilege },
+            "user": {"id": random.randrange(0, 100), "privilege": privilege},
             "organization": {
-                "id": random.randrange(100,200),
-                "owner": { "id": random.randrange(200, 300) },
-                "user": { "role": membership }
-            } if context == 'organization' else None
+                "id": random.randrange(100, 200),
+                "owner": {"id": random.randrange(200, 300)},
+                "user": {"role": membership},
+            }
+            if context == "organization"
+            else None,
         },
-        "resource": resource
+        "resource": resource,
     }
 
-    user_id = data['auth']['user']['id']
-    if context == 'organization':
-        org_id = data['auth']['organization']['id']
-        if data['auth']['organization']['user']['role'] == 'owner':
-            data['auth']['organization']['owner']['id'] = user_id
+    user_id = data["auth"]["user"]["id"]
+    if context == "organization":
+        org_id = data["auth"]["organization"]["id"]
+        if data["auth"]["organization"]["user"]["role"] == "owner":
+            data["auth"]["organization"]["owner"]["id"] = user_id
 
         if same_org:
-            data['resource']['organization']['id'] = org_id
+            data["resource"]["organization"]["id"] = org_id
 
-    if ownership == 'owner':
-        data['resource']['owner']['id'] = user_id
-    elif ownership == 'invitee':
-        data['resource']['invitee']['id'] = user_id
+    if ownership == "owner":
+        data["resource"]["owner"]["id"] = user_id
+    elif ownership == "invitee":
+        data["resource"]["invitee"]["id"] = user_id
 
-    if scope == 'create':
-        data['resource']['invitee']['id'] = None
+    if scope == "create":
+        data["resource"]["invitee"]["id"] = None
 
     return data
 
+
 def _get_name(prefix, **kwargs):
     name = prefix
-    for k,v in kwargs.items():
-        prefix = '_' + str(k)
+    for k, v in kwargs.items():
+        prefix = "_" + str(k)
         if isinstance(v, dict):
-            if 'id' not in v:
+            if "id" not in v:
                 name += _get_name(prefix, **v)
         else:
-            name += f'{prefix}_{str(v).upper()}'
+            name += f"{prefix}_{str(v).upper()}"
 
     return name
 
+
 def get_name(scope, context, ownership, privilege, membership, resource, same_org):
-    return _get_name('test', **locals())
+    return _get_name("test", **locals())
+
 
 def is_valid(scope, context, ownership, privilege, membership, resource, same_org):
     if context == "sandbox" and membership:
         return False
-    if scope == 'list' and ownership != 'None':
+    if scope == "list" and ownership != "None":
         return False
-    if context == 'sandbox' and same_org == False:
+    if context == "sandbox" and same_org == False:
         return False
 
     return True
 
+
 def gen_test_rego(name):
-    with open(f'{name}_test.gen.rego', 'wt') as f:
-        f.write(f'package {name}\n\n')
+    with open(f"{name}_test.gen.rego", "wt") as f:
+        f.write(f"package {name}\n\n")
         for scope, context, ownership, privilege, membership, same_org in product(
-            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES, SAME_ORG):
+            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES, SAME_ORG
+        ):
             for resource in RESOURCES(scope):
-                if not is_valid(scope, context, ownership, privilege, membership, resource, same_org):
+                if not is_valid(
+                    scope, context, ownership, privilege, membership, resource, same_org
+                ):
                     continue
 
-                data = get_data(scope, context, ownership, privilege, membership, resource, same_org)
-                test_name = get_name(scope, context, ownership, privilege, membership, resource, same_org)
+                data = get_data(
+                    scope, context, ownership, privilege, membership, resource, same_org
+                )
+                test_name = get_name(
+                    scope, context, ownership, privilege, membership, resource, same_org
+                )
                 result = eval_rule(scope, context, ownership, privilege, membership, data)
-                f.write('{test_name} {{\n    {allow} with input as {data}\n}}\n\n'.format(
-                    test_name=test_name, allow='allow' if result else 'not allow',
-                    data=json.dumps(data)))
+                f.write(
+                    "{test_name} {{\n    {allow} with input as {data}\n}}\n\n".format(
+                        test_name=test_name,
+                        allow="allow" if result else "not allow",
+                        data=json.dumps(data),
+                    )
+                )
 
         # Write the script which is used to generate the file
         with open(sys.argv[0]) as this_file:
-            f.write(f'\n\n# {os.path.split(sys.argv[0])[1]}\n')
+            f.write(f"\n\n# {os.path.split(sys.argv[0])[1]}\n")
             for line in this_file:
                 if line.strip():
-                    f.write(f'# {line}')
+                    f.write(f"# {line}")
                 else:
-                    f.write(f'#\n')
+                    f.write(f"#\n")
 
         # Write rules which are used to generate the file
-        with open(os.path.join(sys.argv[1], f'{name}.csv')) as rego_file:
-            f.write(f'\n\n# {name}.csv\n')
+        with open(os.path.join(sys.argv[1], f"{name}.csv")) as rego_file:
+            f.write(f"\n\n# {name}.csv\n")
             for line in rego_file:
                 if line.strip():
-                    f.write(f'# {line}')
+                    f.write(f"# {line}")
                 else:
-                    f.write(f'#\n')
+                    f.write(f"#\n")
+
 
 gen_test_rego(NAME)

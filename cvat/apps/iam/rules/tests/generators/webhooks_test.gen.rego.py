@@ -108,9 +108,7 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
     resource = data["resource"]
 
     rules = list(
-        filter(
-            lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules
-        )
+        filter(lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules)
     )
     if (
         not is_same_org(data["auth"]["organization"], data["resource"]["organization"])
@@ -210,9 +208,7 @@ def gen_test_rego(name):
                 test_name = get_name(
                     scope, context, ownership, privilege, membership, resource, same_org
                 )
-                result = eval_rule(
-                    scope, context, ownership, privilege, membership, data
-                )
+                result = eval_rule(scope, context, ownership, privilege, membership, data)
 
                 f.write(
                     "{test_name} {{\n    {allow} with input as {data}\n}}\n\n".format(
