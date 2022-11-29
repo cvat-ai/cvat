@@ -4,9 +4,9 @@
 
 import csv
 import json
+import os
 import random
 import sys
-import os
 from itertools import product
 
 NAME = "projects"

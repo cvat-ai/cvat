@@ -4,14 +4,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from argparse import ArgumentParser, Namespace
-from functools import partial
-from glob import glob
 import os
 import os.path as osp
-import sys
 import subprocess
+import sys
+from argparse import ArgumentParser, Namespace
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from glob import glob
 from typing import Optional, Sequence
 
 

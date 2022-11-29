@@ -6,8 +6,8 @@ import csv
 import json
 import os
 import random
-from itertools import product
 import sys
+from itertools import product
 
 NAME = "webhooks"
 
