@@ -9,8 +9,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
 from allauth.account import app_settings
 from allauth.account.utils import filter_users_by_email
-from allauth.socialaccount.models import SocialLogin
-from allauth.utils import get_request_param
 
 from django.conf import settings
 
