@@ -115,9 +115,9 @@ def get_name(scope, context, ownership, privilege, membership, resource):
 def is_valid(scope, context, ownership, privilege, membership, resource):
     if context == "sandbox" and membership:
         return False
-    if scope == "list" and resource != None:
+    if scope == "list" and resource is not None:
         return False
-    if resource == None and scope != "list":
+    if resource is None and scope != "list":
         return False
     if scope == "list" and ownership != "None":
         return False

@@ -129,9 +129,9 @@ def is_valid(scope, context, ownership, privilege, membership, resource):
         return False
     if scope == "list" and ownership != "None":
         return False
-    if context == "sandbox" and resource["membership"]["role"] != None:
+    if context == "sandbox" and resource["membership"]["role"] is not None:
         return False
-    if context == "organization" and membership == None:
+    if context == "organization" and membership is None:
         return False
 
     return True

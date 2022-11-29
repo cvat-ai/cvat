@@ -58,15 +58,15 @@ def RESOURCES(scope):
                 "organization": {"id": random.randrange(500, 600)},
             }
             for role in ORG_ROLES
-            if role != None
+            if role is not None
             for active in [False, True]
         ]
 
 
 def is_same_org(org1, org2):
-    if org1 != None and org2 != None:
+    if org1 is not None and org2 is not None:
         return org1["id"] == org2["id"]
-    elif org1 == None and org2 == None:
+    elif org1 is None and org2 is None:
         return True
     else:
         return False
@@ -156,7 +156,7 @@ def is_valid(scope, context, ownership, privilege, membership, resource, same_or
         return False
     if scope == "list" and ownership != "None":
         return False
-    if context == "sandbox" and same_org == False:
+    if context == "sandbox" and same_org is False:
         return False
 
     return True

@@ -113,7 +113,7 @@ def is_valid(scope, context, ownership, privilege, membership):
         return False
     if scope == "list" and ownership != "None":
         return False
-    if context == "organization" and membership == None:
+    if context == "organization" and membership is None:
         return False
 
     return True
