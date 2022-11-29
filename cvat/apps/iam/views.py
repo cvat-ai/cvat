@@ -12,6 +12,7 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, permission_classes
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.http import etag as django_etag
@@ -28,7 +29,7 @@ from allauth.utils import get_request_param
 from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
+from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema, inline_serializer, extend_schema_view
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from cvat.apps.iam.adapters import GitHubAdapter, GoogleAdapter
@@ -242,11 +243,59 @@ class OAuth2CallbackViewEx(OAuth2CallbackView):
             f'&auth_params={state.get("auth_params")}&process={state.get("process")}'
             f'&scope={state.get("scope")}')
 
-github_oauth2_login = OAuth2LoginView.adapter_view(GitHubAdapter)
-github_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GitHubAdapter)
 
-google_oauth2_login = OAuth2LoginView.adapter_view(GoogleAdapter)
-google_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GoogleAdapter)
+@extend_schema(
+    description="Redirects to the Github authentication page. "
+                "After successful authentication on the provider side, "
+                "a redirect to the callback endpoint is performed"
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def github_oauth2_login(*args, **kwargs):
+    return OAuth2LoginView.adapter_view(GitHubAdapter)(*args, **kwargs)
+
+@extend_schema(
+    description="Accepts a request from Github with code and state query parameters. "
+                "In case of successful authentication on the provider side, it will "
+                "redirect to the CVAT client",
+    parameters=[
+        OpenApiParameter('code', description='Returned by github',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('state', description='Returned by github',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+    ],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def github_oauth2_callback(*args, **kwargs):
+    return OAuth2CallbackViewEx.adapter_view(GitHubAdapter)(*args, **kwargs)
+
+
+@extend_schema(description="Redirects to the Google authentication page. "
+                "After successful authentication on the provider side, "
+                "a redirect to the callback endpoint is performed"
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def google_oauth2_login(*args, **kwargs):
+    return OAuth2LoginView.adapter_view(GoogleAdapter)(*args, **kwargs)
+
+@extend_schema(
+    description="Accepts a request from Google with code and state query parameters. "
+                "In case of successful authentication on the provider side, it will "
+                "redirect to the CVAT client",
+    parameters=[
+        OpenApiParameter('code', description='Returned by google',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('state', description='Returned by google',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+    ],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def google_oauth2_callback(*args, **kwargs):
+    return OAuth2CallbackViewEx.adapter_view(GoogleAdapter)(*args, **kwargs)
+
 
 class ConfirmEmailViewEx(ConfirmEmailView):
     template_name = 'account/email/email_confirmation_signup_message.html'
@@ -259,6 +308,19 @@ class ConfirmEmailViewEx(ConfirmEmailView):
         except Http404:
             return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
 
+@extend_schema(
+    methods=['POST'],
+    summary='Method returns an authentication token based on code parameter',
+    description="After successful authentication on the provider side, "
+                "the provider returns the 'code' parameter used to receive "
+                "an authentication token required for CVAT authentication.",
+    parameters=[
+        OpenApiParameter('auth_params', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('process', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('scope', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+    ],
+    responses=get_token_serializer_class()
+)
 class SocialLoginViewEx(SocialLoginView):
     serializer_class = SocialLoginSerializerEx
 
@@ -279,27 +341,11 @@ class SocialLoginViewEx(SocialLoginView):
         self.login()
         return self.get_response()
 
-@extend_schema(
-    methods=['POST'],
-    summary='Method returns an authentication token based on code parameter',
-    description="After successful authentication on the Github side, "
-                "the provider returns the 'code' parameter used to receive "
-                "an authentication token required for CVAT authentication.",
-    responses=get_token_serializer_class()
-)
 class GitHubLogin(SocialLoginViewEx):
     adapter_class = GitHubAdapter
     client_class = OAuth2Client
     callback_url = getattr(settings, 'GITHUB_CALLBACK_URL', None)
 
-@extend_schema(
-    methods=['POST'],
-    summary='Method returns an authentication token based on code parameter',
-    description="After successful authentication on the Google side, "
-                "the provider returns the 'code' parameter used to receive "
-                "an authentication token required for CVAT authentication.",
-    responses=get_token_serializer_class()
-)
 class GoogleLogin(SocialLoginViewEx):
     adapter_class = GoogleAdapter
     client_class = OAuth2Client
