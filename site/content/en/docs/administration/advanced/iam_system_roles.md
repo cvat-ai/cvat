@@ -13,7 +13,7 @@ See:
 - [Open Policy Agent](#open-policy-agent)
 - [Rules](#rules)
 - [Example of changing rules](#example-of-changing-rules)
-- [Rules for other resources](#rules-for-other-resources)
+- [List of permissions tables](#list-of-permissions-tables)
 
 ## Open Policy Agent
 
@@ -61,12 +61,12 @@ to perform a specific action:
 
 All CSV files have the following columns:
 
-- **Scope** is the action that is performed on the resource. For example, `list` gets the list of users,
+- **Scope**  is the action that is performed on the resource. For example, `list` gets the list of users,
   `update` changes information about a user, `view` gets information about a user, and so on.
 
 - **Resource** describes the object on which the action is performed.
 
-- **Context** can take one of two values: `sandbox` or `organization`:
+- **Context** can be: `sandbox`, `organization` or `N/A`:
 
   - If the created object does not belong to any `organization`, it will be in the `sandbox`.
   - An `organization` can have users with different roles and resources.
@@ -74,75 +74,100 @@ All CSV files have the following columns:
     but each member has permissions in accordance with their role and ownership.
   - If a user creates an object inside an `organization`, the user delegates some rights for the object
     to members with maintainer and owner roles in the `organization`.
+  - `N/A` stands for `not applicable` and is used when context
+    is not important for the operation.
+    For example, to get information about the server
+    system will use: `/api/server/about` without context
+    clarification, because it does not matter in what
+    context it is called.
 
 - **Ownership** describes how the user and the specific resource are connected.
-  <br>For example, the `N/A` value means that the property doesn't apply to the query.
+  <br>The `N/A` value means that the the query does not have `ownership` property.
+  <br>The `None` value means that the user who is making the query doesn't have any relationships
+  with the resource.
   Some possible values can be `self`, `owner`, `assignee`, and so on.
-  <br>The `None` value means that the user who is making the query doesn't have any relationships with the resource.
 
 - **Limit** covers constraints for the query.
   Typical constraints are the number
-  of tasks and projects which a regular user can create.
+  of tasks and projects which a regular user can create, visibility
+  of the resourse, and others.
 
-- **Method** and **URL** contain data for information purposes only and are not used.
-  They help to connect rules with the REST API. If a user makes a `GET /api/users/1` call,
-  it is easy to locate corresponding permissions in the table. Thus, the scope is the view,
-  the resource is the user, and the context is the sandbox.
+- **Method** and **URL** contain data for information purposes only.
+  They pass rules to the REST API. When the system makes a `GET /api/users/1` call,
+  it is easy to locate corresponding line with permissions in the table.
+  In the example, the table is the `users`, the scope is `view`, and the user `{id}`
+  is `1`.
 
-- **Privilege** corresponds to the group for the current user with the maximum level of permissions.
-  It can be empty if the user doesn't belong to any group or is equal to a worker, user, business, or admin.
+- **Privilege** describes the group of the user and its level of permissions.
+  It can be empty if the user doesn't belong to any group or is a `worker`, `user`, `business`, or `admin`.
   The primary idea is to delimit the fundamental rights of the user on the platform.
-  For example, users with the privilege of less than or equal to the worker cannot create tasks and projects.
-  At the same time, a user with the maximum privilege admin doesn't have any restrictions.
+  For example, users with the privilege of less than or equal to the `worker` cannot create tasks and projects.
+  At the same time, a user with the maximum privilege `admin` doesn't have any restrictions.
 
-- **Membership** is the user's role inside the organization like worker, supervisor, maintainer, or owner.
+- **Membership** is the user's role inside the organization. It can be `worker`, `supervisor`,
+  `maintainer`, or `owner`.
   The column makes sense only if a request is made in the context of an organization and allows
   to delimit access to resources of the organization.
   <br>For example, if a user has the `maintainer` role in an organization,
   but the privilege is `worker`, the user will be able to see all resources in the organization
   but not be able to create tasks and projects in the organization.
 
-If somebody needs to change the default behavior,
-it is possible to modify the policies defined in the `.rego` files and restart the OPA microservice.
+To change the degault behaviour, update policies defined in the `.rego`
+files and restart the OPA microservice.
 
 ## Example of changing rules
 
 By default, CVAT has a system of rules described in the organization section.
-But you can change them by editing the CSV files in the CVAT repository.
+You can change them by editing the CSV files in the CVAT repository.
 
 For example, if you want users with the supervisor role to be able to update an organization's
-cloud storage, edit cloudstorages.csv
+cloud storage, edit `cloudstorages.csv`:
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/cloudstorages.csv" >}}
+|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
+|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
+|update	|Storage	|Organization|	None|		|PATCH	|/cloudstorages/{id}	|User	|Maintainer|
 
-If you want to disable the ability to register new users on your server, edit auth.csv
+To:
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/auth.csv" >}}
+|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
+|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
+|update	|Storage	|Organization|	None|		|PATCH	|/cloudstorages/{id}	|User	|Supervisor|
 
-Prohibit invitations to the organization for everyone except the creator of the organization and edit Invitations
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/invitations.csv" >}}
+If you want to prohibit invitations to the organization for everyone except the creator of the organization and edit `Invitations.csv`:
 
-## Rules for other resources
+|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
+|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
+|create|Invitation|	Organization|	N/A|	resource["role"] not in ["maintainer", "owner"]|	POST|	/invitations|	User|	Maintainer|
+|create|	Invitation|	Organization|	N/A|	resource["role"] != "owner"|	POST|	/invitations|	User|	Owner|
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/analytics.csv" >}}
+To:
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/comments.csv" >}}
+|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
+|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
+|create|Invitation|	Organization|	N/A|	resource["role"] in [ "owner"]|POST|	/invitations|	User|	Maintainer|
+|create|	Invitation|	Organization|	N/A|	resource["role"] = "owner"|	POST|	/invitations|	User|	Owner|
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/issues.csv" >}}
+Can we do this without rego?
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/jobs.csv" >}}
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/lambda.csv" >}}
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/memberships.csv" >}}
+## List of permissions tables
 
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/organizations.csv" >}}
-
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/projects.csv" >}}
-
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/restrictions.csv" >}}
-
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/server.csv" >}}
-
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/tasks.csv" >}}
+|Table|Description|
+|------|------|
+|analytics.csv|TBD|
+|auth.csv||
+|cloudstorages.csv||
+|comments.csv||
+|invitations.csv||
+|issues.csv||
+|jobs.csv||
+|lambda.csv||
+|memberships.csv||
+|organizations.csv||
+|projects.csv||
+|server.csv||
+|tasks.csv||
+|users.csv||
+|webhooks.csv||
