@@ -14,7 +14,7 @@ NAME = "projects"
 
 def read_rules(name):
     rules = []
-    with open(f"{name}.csv") as f:
+    with open(os.path.join(sys.argv[1], f"{name}.csv")) as f:
         reader = csv.DictReader(f)
         for row in reader:
             row = {k.lower(): v.lower().replace("n/a", "na") for k, v in row.items()}
@@ -209,9 +209,9 @@ def gen_test_rego(name):
                     f.write(f"#\n")
 
         # Write rules which are used to generate the file
-        with open(f"{name}.csv") as rego_file:
+        with open(os.path.join(sys.argv[1], f"{name}.csv")) as csv_file:
             f.write(f"\n\n# {name}.csv\n")
-            for line in rego_file:
+            for line in csv_file:
                 if line.strip():
                     f.write(f"# {line}")
                 else:

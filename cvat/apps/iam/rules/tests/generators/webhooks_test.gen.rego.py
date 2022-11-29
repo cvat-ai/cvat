@@ -4,15 +4,17 @@
 
 import csv
 import json
+import os
 import random
 from itertools import product
+import sys
 
 NAME = "webhooks"
 
 
 def read_rules(name):
     rules = []
-    with open(f"{name}.csv") as f:
+    with open(os.path.join(sys.argv[1], f"{name}.csv")) as f:
         reader = csv.DictReader(f)
         for row in reader:
             row = {k.lower(): v.lower().replace("n/a", "na") for k, v in row.items()}
