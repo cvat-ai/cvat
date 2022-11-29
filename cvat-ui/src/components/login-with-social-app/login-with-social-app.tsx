@@ -11,8 +11,6 @@ import { getCore } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
-type AxiosRequestConfig = any;
-
 export default function LoginWithSocialAppComponent(): JSX.Element {
     const location = useLocation();
     const history = useHistory();
@@ -26,22 +24,8 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
         const authParams = search.get('auth_params');
 
         if (provider && code) {
-            const req: AxiosRequestConfig = {
-                method: 'POST',
-                data: {
-                    code,
-                    ...(process ? { process } : {}),
-                    ...(scope ? { scope } : {}),
-                    ...(authParams ? { auth_params: authParams } : {}),
-                },
-            };
-            cvat.server.request(
-                `${cvat.config.backendAPI}/auth/${provider}/login/token`, req,
-            )
-                .then((result: any) => {
-                    localStorage.setItem('token', result.key);
-                    return window.location.reload();
-                })
+            cvat.server.loginWithSocialAccount(provider, code, authParams, process, scope)
+                .then(() => window.location.reload())
                 .catch((exception: Error) => {
                     if (exception.message.includes('Unverified email')) {
                         history.push('/auth/email-verification-sent');

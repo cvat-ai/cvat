@@ -366,6 +366,35 @@ async function login(credential, password) {
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
 }
 
+async function loginWithSocialAccount(
+    provider: string,
+    code: string,
+    authParams?: string,
+    process?: string,
+    scope?: string,
+) {
+    removeToken();
+    const data = {
+        code,
+        ...(process ? { process } : {}),
+        ...(scope ? { scope } : {}),
+        ...(authParams ? { auth_params: authParams } : {}),
+    };
+    let authenticationResponse = null;
+    try {
+        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/${provider}/login/token`, data,
+            {
+                proxy: config.proxy,
+            });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    token = authenticationResponse.data.key;
+    store.set('token', token);
+    Axios.defaults.headers.common.Authorization = `Token ${token}`;
+}
+
 async function logout() {
     try {
         await Axios.post(`${config.backendAPI}/auth/logout`, {
@@ -2227,6 +2256,7 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
+        loginWithSocialAccount,
     }),
 
     projects: Object.freeze({
