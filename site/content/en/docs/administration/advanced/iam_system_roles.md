@@ -30,15 +30,14 @@ OPA has [Policy Language](https://www.openpolicyagent.org/docs/latest/policy-lan
 that transform policies into code and simple APIs to offload policy decision-making from CVAT.
 
 CVAT controls what queries look like and implements policies to handle them.
-After a query is processed by OPA following implemented policies,
-OPA returns the descision to CVAT.
+After OPA processes the query, it returns the descision to CVAT.
 
 The general flow is the following:
 
 1. CVAT receives some event or request. Based on this request it needs to make a policy decision.
 2. To make a policy decision, CVAT sends a query (with attributes) to OPA, asking: should this request be allowed/ mutated/ modified?
 3. OPA receives these attributes and evaluates them against policies that it has access to.
-4. OPA produces the decision, and replies with `allow` or `deny` (in the simplest case).
+4. OPA makes the decision, and replies with `allow` or `deny` (in the simplest case).
 
 ## Rules
 
