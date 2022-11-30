@@ -674,53 +674,56 @@ class DataChunkGetter:
 
         frame_provider = FrameProvider(db_data, self.dimension)
 
-        if self.type == 'chunk':
-            start_chunk = frame_provider.get_chunk_number(start)
-            stop_chunk = frame_provider.get_chunk_number(stop)
-            # pylint: disable=superfluous-parens
-            if not (start_chunk <= self.number <= stop_chunk):
-                raise ValidationError('The chunk number should be in ' +
-                    f'[{start_chunk}, {stop_chunk}] range')
+        try:
+            if self.type == 'chunk':
+                start_chunk = frame_provider.get_chunk_number(start)
+                stop_chunk = frame_provider.get_chunk_number(stop)
+                # pylint: disable=superfluous-parens
+                if not (start_chunk <= self.number <= stop_chunk):
+                    raise ValidationError('The chunk number should be in ' +
+                        f'[{start_chunk}, {stop_chunk}] range')
 
-            # TODO: av.FFmpegError processing
-            if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-                buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
-                return HttpResponse(buff.getvalue(), content_type=mime_type)
+                # TODO: av.FFmpegError processing
+                if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+                    buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
+                    return HttpResponse(buff.getvalue(), content_type=mime_type)
 
-            # Follow symbol links if the chunk is a link on a real image otherwise
-            # mimetype detection inside sendfile will work incorrectly.
-            path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
-            return sendfile(request, path)
+                # Follow symbol links if the chunk is a link on a real image otherwise
+                # mimetype detection inside sendfile will work incorrectly.
+                path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
+                return sendfile(request, path)
 
-        elif self.type == 'frame':
-            if not (start <= self.number <= stop):
-                raise ValidationError('The frame number should be in ' +
-                    f'[{start}, {stop}] range')
+            elif self.type == 'frame':
+                if not (start <= self.number <= stop):
+                    raise ValidationError('The frame number should be in ' +
+                        f'[{start}, {stop}] range')
 
-            buf, mime = frame_provider.get_frame(self.number, self.quality)
-            return HttpResponse(buf.getvalue(), content_type=mime)
+                buf, mime = frame_provider.get_frame(self.number, self.quality)
+                return HttpResponse(buf.getvalue(), content_type=mime)
 
-        elif self.type == 'preview':
-            return sendfile(request, db_object.get_preview_path())
+            elif self.type == 'preview':
+                return sendfile(request, db_object.get_preview_path())
 
-        elif self.type == 'context_image':
-            if not (start <= self.number <= stop):
-                raise ValidationError('The frame number should be in ' +
-                    f'[{start}, {stop}] range')
+            elif self.type == 'context_image':
+                if not (start <= self.number <= stop):
+                    raise ValidationError('The frame number should be in ' +
+                        f'[{start}, {stop}] range')
 
-            image = Image.objects.get(data_id=db_data.id, frame=self.number)
-            for i in image.related_files.all():
-                path = os.path.realpath(str(i.path))
-                image = cv2.imread(path)
-                success, result = cv2.imencode('.JPEG', image)
-                if not success:
-                    raise Exception('Failed to encode image to ".jpeg" format')
-                return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-            return Response(data='No context image related to the frame',
-                status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(data='unknown data type {}.'.format(self.type),
-                status=status.HTTP_400_BAD_REQUEST)
+                image = Image.objects.get(data_id=db_data.id, frame=self.number)
+                for i in image.related_files.all():
+                    path = os.path.realpath(str(i.path))
+                    image = cv2.imread(path)
+                    success, result = cv2.imencode('.JPEG', image)
+                    if not success:
+                        raise Exception('Failed to encode image to ".jpeg" format')
+                    return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
+                return Response(data='No context image related to the frame',
+                    status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response(data='unknown data type {}.'.format(self.type),
+                    status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as ex:
+            return HttpResponseBadRequest('\n'.join([str(d) for d in ex.detail]))
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -1208,6 +1211,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @staticmethod
     def _get_rq_response(queue, job_id):
+        def parse_exception_message(msg):
+            if 'ErrorDetail' in msg:
+                try:
+                    return msg.split('ErrorDetail')[1].split('string=')[1].split('code=')[0].strip(', ')
+                except Exception:
+                    return msg
+            return msg
+
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
         response = {}
@@ -1216,7 +1227,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif job.is_queued:
             response = { "state": "Queued" }
         elif job.is_failed:
-            response = { "state": "Failed", "message": job.exc_info }
+            response = { "state": "Failed", "message": parse_exception_message(job.exc_info) }
         else:
             response = { "state": "Started" }
             if 'status' in job.meta:
@@ -2084,16 +2095,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = f"{ex.strerror} {ex.filename}"
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as ex:
+            return HttpResponseBadRequest('\n'.join([str(d) for d in ex.detail]))
         except Exception as ex:
-            # check that cloud storage was not deleted
-            storage_status = storage.get_status() if storage else None
-            if storage_status == CloudStorageStatus.FORBIDDEN:
-                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
-            elif storage_status == CloudStorageStatus.NOT_FOUND:
-                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
-            else:
-                msg = str(ex)
-            return HttpResponseBadRequest(msg)
+            return HttpResponseBadRequest(str(ex))
 
     @extend_schema(summary='Method returns a preview image from a cloud storage',
         responses={
@@ -2152,16 +2157,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return HttpResponseNotFound(message)
         except PermissionDenied:
             raise
+        except ValidationError as ex:
+            return HttpResponseBadRequest('\n'.join([str(d) for d in ex.detail]))
         except Exception as ex:
-            # check that cloud storage was not deleted
-            storage_status = storage.get_status() if storage else None
-            if storage_status == CloudStorageStatus.FORBIDDEN:
-                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
-            elif storage_status == CloudStorageStatus.NOT_FOUND:
-                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
-            else:
-                msg = str(ex)
-            return HttpResponseBadRequest(msg)
+            return HttpResponseBadRequest(str(ex))
 
     @extend_schema(summary='Method returns a cloud storage status',
         responses={

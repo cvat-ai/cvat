@@ -46,6 +46,49 @@ class Permissions(str, Enum):
     def all(cls):
         return {i.value for i in cls}
 
+
+def validate_bucket_status(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            res = func(self, *args, **kwargs)
+        except Exception as ex:
+            # check that cloud storage exists
+            storage_status = self.get_status() if self is not None else None
+            if storage_status == Status.FORBIDDEN:
+                msg = 'The resource {} is no longer available. Access forbidden.'.format(self.name)
+            elif storage_status == Status.NOT_FOUND:
+                msg = 'The resource {} not found. It may have been deleted.'.format(self.name)
+            elif storage_status == Status.AVAILABLE:
+                raise
+            else:
+                msg = str(ex)
+            raise serializers.ValidationError(msg)
+        return res
+    return wrapper
+
+def validate_file_status(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            res = func(self, *args, **kwargs)
+        except Exception as ex:
+            storage_status = self.get_status() if self is not None else None
+            if storage_status == Status.AVAILABLE:
+                key = args[0]
+                file_status = self.get_file_status(key)
+                if file_status == Status.NOT_FOUND:
+                    msg = "The file '{}' not found on the cloud storage '{}'".format(key, self.name)
+                elif file_status == Status.FORBIDDEN:
+                    msg = "Access to the file '{}' on the '{}' cloud storage is denied".format(key, self.name)
+                else:
+                    msg = str(ex)
+                raise serializers.ValidationError(msg)
+            else:
+                raise
+        return res
+    return wrapper
+
 class _CloudStorage(ABC):
 
     def __init__(self):
@@ -269,6 +312,8 @@ class AWS_S3(_CloudStorage):
             'name': item.key,
         } for item in files]
 
+    @validate_file_status
+    @validate_bucket_status
     def download_fileobj(self, key):
         buf = BytesIO()
         self.bucket.download_fileobj(
@@ -424,6 +469,8 @@ class AzureBlobContainer(_CloudStorage):
             'name': item.name
         } for item in files]
 
+    @validate_file_status
+    @validate_bucket_status
     def download_fileobj(self, key):
         buf = BytesIO()
         storage_stream_downloader = self._container_client.download_blob(
@@ -509,6 +556,8 @@ class GoogleCloudStorage(_CloudStorage):
             )
         ]
 
+    @validate_file_status
+    @validate_bucket_status
     def download_fileobj(self, key):
         buf = BytesIO()
         blob = self.bucket.blob(key)
@@ -615,26 +664,6 @@ class Credentials:
 
     def values(self):
         return [self.key, self.secret_key, self.session_token, self.account_name, self.key_file_path]
-
-
-def validate_bucket_status(func):
-    @functools.wraps(func)
-    def wrapper(storage, *args, **kwargs):
-        try:
-            res = func(storage, *args, **kwargs)
-        except Exception as ex:
-            # check that cloud storage exists
-            storage_status = storage.get_status() if storage is not None else None
-            if storage_status == Status.FORBIDDEN:
-                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
-            elif storage_status == Status.NOT_FOUND:
-                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
-            else:
-                msg = str(ex)
-            raise serializers.ValidationError(msg)
-        return res
-    return wrapper
-
 
 def db_storage_to_storage_instance(db_storage):
     credentials = Credentials()
