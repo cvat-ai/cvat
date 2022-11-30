@@ -365,14 +365,20 @@ class LambdaPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'function' or view.basename == 'request':
-            for scope in cls.get_scopes(request, view, obj):
+            scopes = cls.get_scopes(request, view, obj)
+            for scope in scopes:
                 self = cls.create_base_perm(request, view, scope, obj)
                 permissions.append(self)
 
-            task_id = request.data.get('task')
-            if task_id:
-                perm = TaskPermission.create_scope_view_data(request, task_id)
+            job_id = request.data.get('job')
+            if job_id:
+                perm = JobPermission.create_scope_view_data(request, job_id)
                 permissions.append(perm)
+            else:
+                task_id = request.data.get('task')
+                if task_id:
+                    perm = TaskPermission.create_scope_view_data(request, task_id)
+                    permissions.append(perm)
 
         return permissions
 
@@ -878,6 +884,14 @@ class JobPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
         return permissions
+
+    @classmethod
+    def create_scope_view_data(cls, request, job_id):
+        try:
+            obj = Job.objects.get(id=job_id)
+        except Job.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+        return cls(**cls.unpack_context(request), obj=obj, scope='view:data')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

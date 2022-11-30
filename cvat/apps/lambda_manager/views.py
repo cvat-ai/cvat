@@ -8,6 +8,7 @@ import json
 from functools import wraps
 from enum import Enum
 from copy import deepcopy
+from typing import Any, Dict, Optional
 
 import django_rq
 import requests
@@ -21,7 +22,7 @@ from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Task as TaskModel
+from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
 
@@ -175,7 +176,7 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task, data):
+    def invoke(self, db_task: Task, data: Dict[str, Any], *, db_job: Optional[Job] = None):
         try:
             payload = {}
             data = {k: v for k,v in data.items() if v is not None}
@@ -226,10 +227,16 @@ class LambdaFunction:
                             supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
 
             if self.kind == LambdaType.DETECTOR:
+                if db_job and not db_job.segment.contains_frame(data["frame"]):
+                    raise ValidationError("the frame is outside the job range")
+
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality)
                 })
             elif self.kind == LambdaType.INTERACTOR:
+                if db_job and not db_job.segment.contains_frame(data["frame"]):
+                    raise ValidationError("the frame is outside the job range")
+
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
                     "pos_points": data["pos_points"][2:] if self.startswith_box else data["pos_points"],
@@ -237,6 +244,11 @@ class LambdaFunction:
                     "obj_bbox": data["pos_points"][0:2] if self.startswith_box else None
                 })
             elif self.kind == LambdaType.REID:
+                if db_job and not db_job.segment.contains_frame(data["frame0"]):
+                    raise ValidationError("the start frame is outside the job range")
+                if db_job and not db_job.segment.contains_frame(data["frame1"]):
+                    raise ValidationError("the end frame is outside the job range")
+
                 payload.update({
                     "image0": self._get_image(db_task, data["frame0"], quality),
                     "image1": self._get_image(db_task, data["frame1"], quality),
@@ -249,6 +261,9 @@ class LambdaFunction:
                         "max_distance": max_distance
                     })
             elif self.kind == LambdaType.TRACKER:
+                if db_job and not db_job.segment.contains_frame(data["frame"]):
+                    raise ValidationError("the frame is outside the job range")
+
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
                     "shapes": data.get("shapes", []),
@@ -647,7 +662,7 @@ class LambdaJob:
     @staticmethod
     def __call__(function, task, quality, cleanup, **kwargs):
         # TODO: need logging
-        db_task = TaskModel.objects.get(pk=task)
+        db_task = Task.objects.get(pk=task)
         if cleanup:
             dm.task.delete_task_data(db_task.id)
         db_labels = (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all()
@@ -729,8 +744,15 @@ class FunctionViewSet(viewsets.ViewSet):
     def call(self, request, func_id):
         self.check_object_permissions(request, func_id)
         try:
-            task_id = request.data['task']
-            db_task = TaskModel.objects.get(pk=task_id)
+            job_id = request.data.get('job')
+            job = None
+            if job_id is not None:
+                job = Job.objects.get(id=job_id)
+                task_id = job.get_task_id()
+            else:
+                task_id = request.data['task']
+
+            db_task = Task.objects.get(pk=task_id)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(func_id) +
@@ -740,7 +762,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, request.data)
+        return lambda_func.invoke(db_task, request.data, db_job=job)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
