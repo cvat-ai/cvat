@@ -35,7 +35,8 @@ After OPA processes the query, it returns the descision to CVAT.
 The general flow is the following:
 
 1. CVAT receives some event or request. Based on this request it needs to make a policy decision.
-2. To make a policy decision, CVAT sends a query (with attributes) to OPA, asking: should this request be allowed/ mutated/ modified?
+2. To make a policy decision, CVAT sends a query (with attributes) to OPA,
+   sking: should this request be allowed/ mutated/ modified?
 3. OPA receives these attributes and evaluates them against policies that it has access to.
 4. OPA makes the decision, and replies with `allow` or `deny` (in the simplest case).
 
