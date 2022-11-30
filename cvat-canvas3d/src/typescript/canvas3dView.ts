@@ -94,8 +94,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private clock: THREE.Clock;
     private speed: number;
     private cube: CuboidModel;
-    private highlighted: boolean;
-    private selected: CubeObject;
     private model: Canvas3dModel & Master;
     private action: any;
     private globalHelpers: any;
@@ -113,8 +111,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.clock = new THREE.Clock();
         this.speed = CONST.MOVEMENT_FACTOR;
         this.cube = new CuboidModel('line', '#ffffff');
-        this.highlighted = false;
-        this.selected = this.cube;
         this.model = model;
         this.globalHelpers = {
             top: {
@@ -1132,16 +1128,26 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.side.controls &&
             this.views.front.controls
         ) {
-            this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, animation);
-            this.views.top.camera.position.set(x, y, z + 8);
-            this.views.top.camera.lookAt(x, y, z);
-            this.views.top.camera.zoom = CONST.FOV_DEFAULT;
-            this.views.side.camera.position.set(x, y + 8, z);
-            this.views.side.camera.lookAt(x, y, z);
-            this.views.side.camera.zoom = CONST.FOV_DEFAULT;
-            this.views.front.camera.position.set(x + 8, y, z);
-            this.views.front.camera.lookAt(x, y, z);
-            this.views.front.camera.zoom = CONST.FOV_DEFAULT;
+            this.views.perspective.controls.setLookAt(
+                x + initialCameraSettings.perspective.position[0],
+                y - initialCameraSettings.perspective.position[1],
+                z + initialCameraSettings.perspective.position[2],
+                x, y, z, animation,
+            );
+
+            for (const cameraType of [
+                ViewType.TOP,
+                ViewType.SIDE,
+                ViewType.FRONT,
+            ]) {
+                this.views[cameraType].camera.position.set(
+                    x + initialCameraSettings[cameraType].position[0],
+                    y + initialCameraSettings[cameraType].position[1],
+                    z + initialCameraSettings[cameraType].position[2],
+                );
+                this.views[cameraType].camera.lookAt(x, y, z);
+                this.views[cameraType].camera.zoom = CONST.FOV_DEFAULT;
+            }
         }
     }
 
