@@ -104,7 +104,7 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
 });
 
 Cypress.Commands.add('exportProject', ({
-    projectName, type, dumpType, archiveCustomeName,
+    projectName, type, dumpType, archiveCustomName,
 }) => {
     cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Export dataset').click();
@@ -114,8 +114,8 @@ Cypress.Commands.add('exportProject', ({
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-project').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
-    if (archiveCustomeName) {
-        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    if (archiveCustomName) {
+        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(archiveCustomName);
     }
     cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');

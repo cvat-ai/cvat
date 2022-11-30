@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +37,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
 
     const exportFormat = 'CVAT for images';
     let annotationArchiveName = '';
-    let annotationArchiveNameCustomeName = '';
+    let annotationArchiveNameCustomName = '';
 
     function uploadToTask(toTaskName) {
         cy.contains('.cvat-item-task-name', toTaskName)
@@ -47,8 +48,8 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
         cy.contains('.cvat-modal-import-dataset-option-item', exportFormat.split(' ')[0]).click();
         cy.get('.cvat-modal-import-select').should('contain.text', exportFormat.split(' ')[0]);
-        cy.get('input[type="file"]').attachFile(annotationArchiveNameCustomeName, { subjectType: 'drag-n-drop' });
-        cy.get(`[title="${annotationArchiveNameCustomeName}"]`).should('be.visible');
+        cy.get('input[type="file"]').attachFile(annotationArchiveNameCustomName, { subjectType: 'drag-n-drop' });
+        cy.get(`[title="${annotationArchiveNameCustomName}"]`).should('be.visible');
         cy.contains('button', 'OK').click();
     }
 
@@ -72,12 +73,12 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: exportFormat,
-                archiveCustomeName: 'task_export_annotation_custome_name',
+                archiveCustomName: 'task_export_annotation_custome_name',
             };
             cy.exportJob(exportAnnotationRenameArchive);
             cy.getDownloadFileName().then((file) => {
-                annotationArchiveNameCustomeName = file;
-                cy.verifyDownload(annotationArchiveNameCustomeName);
+                annotationArchiveNameCustomName = file;
+                cy.verifyDownload(annotationArchiveNameCustomName);
             });
             cy.verifyNotification();
         });
