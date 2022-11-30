@@ -369,7 +369,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             try {
                 // run server request
                 this.setState({ fetching: true });
-                const response = await core.lambda.call(jobInstance.taskId, interactor, data);
+                const response = await core.lambda.call(jobInstance.taskId, interactor,
+                    { ...data, job: jobInstance.id });
 
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response.points);
