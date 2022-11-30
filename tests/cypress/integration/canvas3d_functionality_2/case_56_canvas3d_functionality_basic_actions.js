@@ -78,11 +78,11 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
-        cy.wait(1000); // Waiting for the point cloud to display
+        cy.wait(2000); // Waiting for the point cloud to display
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Check canvas can be dragged.', () => {
+        it('Check canvas can be zoomed.', () => {
             const screenshotNameBefore = 'before_idle_zoom';
             const screenshotNameAfter = 'after_idle_zoom';
             cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
