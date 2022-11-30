@@ -39,7 +39,7 @@ See:
 
 ## Basic configuration
 
-The basic configuration is TBD
+Use basic congiguration window to create simple task with minimum parameters.
 
 ![Basic configurator](/images/basic_confugurator.jpg)
 
