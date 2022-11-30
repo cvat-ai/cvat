@@ -308,8 +308,11 @@ export function importDataset(
     const allowedFileExtensions = [
         '.zip', '.xml', '.json',
     ];
+    const allowedFileExtensionsList = allowedFileExtensions.join(', ');
     if (typeof file === 'string' && !(allowedFileExtensions.some((ext) => file.toLowerCase().endsWith(ext)))) {
-        throw new ArgumentError('File must be file instance with eigther ZIP, XML or JSON extension');
+        throw new ArgumentError(
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+        );
     }
     const allowedMimeTypes = [
         'application/zip', 'application/x-zip-compressed',
@@ -317,7 +320,9 @@ export function importDataset(
         'application/json',
     ];
     if (file instanceof File && !(allowedMimeTypes.includes(file.type))) {
-        throw new ArgumentError('File must be file instance with eigther ZIP, XML or JSON extension');
+        throw new ArgumentError(
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+        );
     }
 
     if (instance instanceof Project) {
