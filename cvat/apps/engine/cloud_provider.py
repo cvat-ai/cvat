@@ -10,7 +10,7 @@ import json
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
-from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
@@ -56,14 +56,12 @@ def validate_bucket_status(func):
             # check that cloud storage exists
             storage_status = self.get_status() if self is not None else None
             if storage_status == Status.FORBIDDEN:
-                msg = 'The resource {} is no longer available. Access forbidden.'.format(self.name)
+                raise PermissionDenied('The resource {} is no longer available. Access forbidden.'.format(self.name))
             elif storage_status == Status.NOT_FOUND:
-                msg = 'The resource {} not found. It may have been deleted.'.format(self.name)
+                raise NotFound('The resource {} not found. It may have been deleted.'.format(self.name))
             elif storage_status == Status.AVAILABLE:
                 raise
-            else:
-                msg = str(ex)
-            raise serializers.ValidationError(msg)
+            raise ValidationError(str(ex))
         return res
     return wrapper
 
@@ -78,12 +76,10 @@ def validate_file_status(func):
                 key = args[0]
                 file_status = self.get_file_status(key)
                 if file_status == Status.NOT_FOUND:
-                    msg = "The file '{}' not found on the cloud storage '{}'".format(key, self.name)
+                    raise NotFound("The file '{}' not found on the cloud storage '{}'".format(key, self.name))
                 elif file_status == Status.FORBIDDEN:
-                    msg = "Access to the file '{}' on the '{}' cloud storage is denied".format(key, self.name)
-                else:
-                    msg = str(ex)
-                raise serializers.ValidationError(msg)
+                    raise PermissionDenied("Access to the file '{}' on the '{}' cloud storage is denied".format(key, self.name))
+                raise ValidationError(str(ex))
             else:
                 raise
         return res
@@ -282,6 +278,8 @@ class AWS_S3(_CloudStorage):
             else:
                 return Status.NOT_FOUND
 
+    @validate_file_status
+    @validate_bucket_status
     def get_file_last_modified(self, key):
         return self._head_file(key).get('LastModified')
 
@@ -423,6 +421,8 @@ class AzureBlobContainer(_CloudStorage):
         blob_client = self.container.get_blob_client(key)
         return blob_client.get_blob_properties()
 
+    @validate_file_status
+    @validate_bucket_status
     def get_file_last_modified(self, key):
         return self._head_file(key).last_modified
 
@@ -594,6 +594,8 @@ class GoogleCloudStorage(_CloudStorage):
             slogger.glob.info(msg)
             raise Exception(msg)
 
+    @validate_file_status
+    @validate_bucket_status
     def get_file_last_modified(self, key):
         blob = self.bucket.blob(key)
         blob.reload()

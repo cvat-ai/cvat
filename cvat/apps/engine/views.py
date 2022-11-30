@@ -37,18 +37,16 @@ from drf_spectacular.plumbing import build_array_type, build_basic_type
 
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
 from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage,
-    Status as CloudStorageStatus
+    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage
 )
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -722,8 +720,10 @@ class DataChunkGetter:
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError as ex:
-            return HttpResponseBadRequest('\n'.join([str(d) for d in ex.detail]))
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
+            return Response(data=msg, status=ex.status_code)
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -1212,14 +1212,21 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @staticmethod
     def _get_rq_response(queue, job_id):
         def parse_exception_message(msg):
-            if 'ErrorDetail' in msg:
-                try:
+            parsed_msg = msg
+            try:
+                if 'ErrorDetail' in msg:
                     # msg like: 'rest_framework.exceptions.ValidationError:
                     # [ErrorDetail(string="...", code=\'invalid\')]\n'
-                    return msg.split('string=')[1].split(', code=')[0].strip("\"")
-                except Exception:
-                    return msg
-            return msg
+                    parsed_msg = msg.split('string=')[1].split(', code=')[0].strip("\"")
+                elif 'PermissionDenied' in msg:
+                    # msg like 'rest_framework.exceptions.PermissionDenied: ... \n'
+                    parsed_msg = msg[44:-1]
+                elif 'NotFound' in msg:
+                    # msg like: 'rest_framework.exceptions.NotFound: ... \n'
+                    parsed_msg = msg[36:-1]
+            except Exception:
+                pass
+            return parsed_msg
 
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
@@ -2071,13 +2078,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
             manifest_prefix = os.path.dirname(manifest_path)
-            file_status = storage.get_file_status(manifest_path)
-            if file_status == CloudStorageStatus.NOT_FOUND:
-                raise FileNotFoundError(errno.ENOENT,
-                    "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
-            elif file_status == CloudStorageStatus.FORBIDDEN:
-                raise PermissionError(errno.EACCES,
-                    "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), manifest_path)
 
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
             if not os.path.exists(full_manifest_path) or \
@@ -2093,12 +2093,11 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except FileNotFoundError as ex:
-            msg = f"{ex.strerror} {ex.filename}"
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
             slogger.cloud_storage[pk].info(msg)
-            return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
-        except ValidationError as ex:
-            return HttpResponseBadRequest('\n'.join([str(d) for d in ex.detail]))
+            return Response(data=msg, status=ex.status_code)
         except Exception as ex:
             return HttpResponseBadRequest(str(ex))
 
@@ -2139,13 +2138,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     slogger.cloud_storage[pk].info(msg)
                     return HttpResponseBadRequest(msg)
 
-                file_status = storage.get_file_status(preview_path)
-                if file_status == CloudStorageStatus.NOT_FOUND:
-                    raise FileNotFoundError(errno.ENOENT,
-                        "Not found on the cloud storage {}".format(db_storage.display_name), preview_path)
-                elif file_status == CloudStorageStatus.FORBIDDEN:
-                    raise PermissionError(errno.EACCES,
-                        "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), preview_path)
                 with NamedTemporaryFile() as temp_image:
                     storage.download_file(preview_path, temp_image.name)
                     reader = ImageListReader([temp_image.name])
@@ -2157,10 +2149,11 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except PermissionDenied:
-            raise
-        except ValidationError as ex:
-            return HttpResponseBadRequest('\n'.join([str(d) for d in ex.detail]))
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
+            slogger.cloud_storage[pk].info(msg)
+            return Response(data=msg, status=ex.status_code)
         except Exception as ex:
             return HttpResponseBadRequest(str(ex))
 
