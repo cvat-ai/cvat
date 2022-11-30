@@ -12,8 +12,7 @@ See:
 
 - [Open Policy Agent](#open-policy-agent)
 - [Rules](#rules)
-- [Example of changing rules](#example-of-changing-rules)
-- [List of permissions tables](#list-of-permissions-tables)
+- [Rules edit and change](#rules-edit-and-change)
 
 ## Open Policy Agent
 
@@ -50,7 +49,10 @@ Each of them displays permissions in a form of a table.
 For example, the [Users.csv](https://github.com/opencv/cvat/blob/develop/cvat/apps/iam/rules/users.csv)
 the table shows permissions you need, to have access to or to change the users' information
 
-Every line in the table is a primitive rule that describes who has the right
+> **Note:** Tables are used only to generate test. You cannot change user permissions by editing
+tables.
+
+Every line in the table is a rule that describes who has the right
 to perform a specific action:
 
 | Scope  | Resource | Context      | Ownership | Limit                                  | Method | URL         | Privilege | Membership |
@@ -112,62 +114,13 @@ All CSV files have the following columns:
   but the privilege is `worker`, the user will be able to see all resources in the organization
   but not be able to create tasks and projects in the organization.
 
-To change the degault behaviour, update policies defined in the `.rego`
+To change the default behaviour, update policies defined in the `.rego`
 files and restart the OPA microservice.
 
-## Example of changing rules
+## Rules edit and change
 
-By default, CVAT has a system of rules described in the organization section.
-You can change them by editing the CSV files in the CVAT repository.
+To change the default behaviour and permissions, update policies defined in the `cvat/apps/iam/rules/*.rego` files.
 
-For example, if you want users with the supervisor role to be able to update an organization's
-cloud storage, edit `cloudstorages.csv`:
+Each `.rego` file describes the input data that is passed in the request, based on these requess you can make rules.
 
-|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
-|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
-|update	|Storage	|Organization|	None|		|PATCH	|/cloudstorages/{id}	|User	|Maintainer|
-
-To:
-
-|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
-|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
-|update	|Storage	|Organization|	None|		|PATCH	|/cloudstorages/{id}	|User	|Supervisor|
-
-
-If you want to prohibit invitations to the organization for everyone except the creator of the organization and edit `Invitations.csv`:
-
-|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
-|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
-|create|Invitation|	Organization|	N/A|	resource["role"] not in ["maintainer", "owner"]|	POST|	/invitations|	User|	Maintainer|
-|create|	Invitation|	Organization|	N/A|	resource["role"] != "owner"|	POST|	/invitations|	User|	Owner|
-
-To:
-
-|Scope	|Resource	|Context	|Ownership	|Limit	|Method	|URL	|Privilege	|Membership|
-|-------|---------|---------|-----------|-------|-------|-----|-----------|----------|
-|create|Invitation|	Organization|	N/A|	resource["role"] in [ "owner"]|POST|	/invitations|	User|	Maintainer|
-|create|	Invitation|	Organization|	N/A|	resource["role"] = "owner"|	POST|	/invitations|	User|	Owner|
-
-Can we do this without rego?
-
-
-
-## List of permissions tables
-
-|Table|Description|
-|------|------|
-|analytics.csv|TBD|
-|auth.csv||
-|cloudstorages.csv||
-|comments.csv||
-|invitations.csv||
-|issues.csv||
-|jobs.csv||
-|lambda.csv||
-|memberships.csv||
-|organizations.csv||
-|projects.csv||
-|server.csv||
-|tasks.csv||
-|users.csv||
-|webhooks.csv||
+For more information, see [Rego](https://www.openpolicyagent.org/docs/latest/#rego)
