@@ -360,29 +360,34 @@ class TrackManager(ObjectManager):
     def to_shapes(self, end_frame, end_skeleton_frame=None):
         shapes = []
         for idx, track in enumerate(self.objects):
-            track_shapes = []
+            track_shapes = {}
             for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
                 shape["track_id"] = idx
                 shape["attributes"] += track["attributes"]
                 shape["elements"] = []
-                track_shapes.append(shape)
+                track_shapes[shape["frame"]] = shape
+            last_frame = shape["frame"]
 
-            while end_skeleton_frame and track_shapes[-1]["frame"] < end_skeleton_frame:
-                shape = deepcopy(track_shapes[-1])
+            while end_skeleton_frame and shape["frame"] < end_skeleton_frame:
+                shape = deepcopy(shape)
                 shape["frame"] += 1
-                track_shapes.append(shape)
+                track_shapes[shape["frame"]] = shape
 
             if len(track.get("elements", [])):
                 element_tracks = TrackManager(track["elements"])
-                element_shapes = element_tracks.to_shapes(end_frame, end_skeleton_frame=track_shapes[-1]["frame"])
+                element_shapes = element_tracks.to_shapes(end_frame,
+                    end_skeleton_frame=last_frame)
 
-                for i in range(len(element_shapes) // len(track_shapes)):
-                    for track_shape, element_shape in zip(track_shapes, element_shapes[len(track_shapes) * i : len(track_shapes) * (i + 1)]):
-                        track_shape["elements"].append(element_shape)
+                for shape in element_shapes:
+                    track_shapes[shape["frame"]]["elements"].append(shape)
 
-            shapes.extend(track_shapes)
+                for frame, shape in list(track_shapes.items()):
+                    if all([el["outside"] for el in shape["elements"]]):
+                        track_shapes.pop(frame)
+
+            shapes.extend(list(track_shapes.values()))
         return shapes
 
     @staticmethod
