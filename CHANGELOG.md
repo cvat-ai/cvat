@@ -84,6 +84,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Missed token with using social account authentication (<https://github.com/opencv/cvat/pull/5344>)
 - Fixed FBRS serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5384>)
 - Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
+- Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
 
 ### Security
 - TDB
