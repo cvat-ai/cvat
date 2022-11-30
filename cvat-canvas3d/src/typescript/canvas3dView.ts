@@ -76,6 +76,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private cube: CuboidModel;
     private highlighted: boolean;
     private selected: CubeObject;
+    private isPerspectiveBeingDragged: boolean;
     private model: Canvas3dModel & Master;
     private action: any;
     private globalHelpers: any;
@@ -94,6 +95,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.speed = CONST.MOVEMENT_FACTOR;
         this.cube = new CuboidModel('line', '#ffffff');
         this.highlighted = false;
+        this.isPerspectiveBeingDragged = false;
         this.selected = this.cube;
         this.model = model;
         this.globalHelpers = {
@@ -249,6 +251,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
         });
 
+        canvasPerspectiveView.addEventListener('mousedown', this.onPerspectiveDrag);
+        window.document.addEventListener('mouseup', () => {
+            this.disablePerspectiveDragging();
+            if (this.isPerspectiveBeingDragged && this.mode !== Mode.DRAG_CANVAS) {
+                // call this body only of drag was activated inside the canvas, but not globally
+                this.isPerspectiveBeingDragged = false;
+            }
+        });
+
         canvasTopView.addEventListener('mousedown', this.startAction.bind(this, 'top'));
         canvasSideView.addEventListener('mousedown', this.startAction.bind(this, 'side'));
         canvasFrontView.addEventListener('mousedown', this.startAction.bind(this, 'front'));
@@ -276,8 +287,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         canvasPerspectiveView.addEventListener('click', (e: MouseEvent): void => {
             e.preventDefault();
-            if (e.detail !== 1) return;
-            if (![Mode.GROUP, Mode.IDLE].includes(this.mode) || !this.views.perspective.rayCaster) return;
+            const selectionIsBlocked = ![Mode.GROUP, Mode.IDLE].includes(this.mode) ||
+                !this.views.perspective.rayCaster ||
+                this.isPerspectiveBeingDragged;
+
+            if (e.detail !== 1 || selectionIsBlocked) return;
             const intersects = this.views.perspective.rayCaster.renderer.intersectObjects(
                 this.views.perspective.scene.children[0].children,
                 false,
@@ -450,7 +464,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     viewType.controls = new CameraControls(viewType.camera, viewType.renderer.domElement);
                     viewType.controls.mouseButtons.left = CameraControls.ACTION.NONE;
                     viewType.controls.mouseButtons.right = CameraControls.ACTION.NONE;
-                    viewType.controls.mouseButtons.wheel = CameraControls.ACTION.NONE;
                     viewType.controls.touches.one = CameraControls.ACTION.NONE;
                     viewType.controls.touches.two = CameraControls.ACTION.NONE;
                     viewType.controls.touches.three = CameraControls.ACTION.NONE;
@@ -526,6 +539,30 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.side.camera.updateMatrix();
             this.setHelperSize(ViewType.SIDE);
         }
+    }
+
+    private enablePerspectiveDragging(): void {
+        const { controls } = this.views.perspective;
+        controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+        controls.mouseButtons.right = CameraControls.ACTION.TRUCK;
+        controls.touches.one = CameraControls.ACTION.TOUCH_ROTATE;
+        controls.touches.two = CameraControls.ACTION.TOUCH_DOLLY_TRUCK;
+        controls.touches.three = CameraControls.ACTION.TOUCH_TRUCK;
+    }
+
+    private disablePerspectiveDragging(): void {
+        const { controls } = this.views.perspective;
+        controls.mouseButtons.left = CameraControls.ACTION.NONE;
+        controls.mouseButtons.right = CameraControls.ACTION.NONE;
+        controls.touches.one = CameraControls.ACTION.NONE;
+        controls.touches.two = CameraControls.ACTION.NONE;
+        controls.touches.three = CameraControls.ACTION.NONE;
+    }
+
+    private onPerspectiveDrag = (): void => {
+        if (![Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) return;
+        this.isPerspectiveBeingDragged = true;
+        this.enablePerspectiveDragging();
     }
 
     private startAction(view: any, event: MouseEvent): void {
@@ -844,24 +881,26 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
             this.setupObjects();
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
+            this.isPerspectiveBeingDragged = true;
             this.dispatchEvent(
-                new CustomEvent(this.model.mode === Mode.DRAG_CANVAS ? 'canvas.dragstart' : 'canvas.dragstop', {
+                new CustomEvent('canvas.dragstart', {
                     bubbles: false,
                     cancelable: true,
                 }),
             );
             this.model.data.activeElement.clientID = 'null';
-            if (this.model.mode === Mode.DRAG_CANVAS) {
-                const { controls } = this.views.perspective;
-                controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
-                controls.mouseButtons.right = CameraControls.ACTION.TRUCK;
-                controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
-                controls.touches.one = CameraControls.ACTION.TOUCH_ROTATE;
-                controls.touches.two = CameraControls.ACTION.TOUCH_DOLLY_TRUCK;
-                controls.touches.three = CameraControls.ACTION.TOUCH_TRUCK;
-            }
             this.setupObjects();
         } else if (reason === UpdateReasons.CANCEL) {
+            if (this.mode === Mode.DRAG_CANVAS) {
+                this.isPerspectiveBeingDragged = false;
+                this.dispatchEvent(
+                    new CustomEvent('canvas.dragstop', {
+                        bubbles: false,
+                        cancelable: true,
+                    }),
+                );
+            }
+
             if (this.mode === Mode.DRAW) {
                 this.controller.drawData.enabled = false;
                 this.controller.drawData.redraw = undefined;
@@ -869,16 +908,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.views[view as keyof Views].scene.children[0].remove(this.cube[view as keyof Views]);
                 });
             }
+
             this.model.data.groupData.grouped = [];
             this.setHelperVisibility(false);
+            this.mode = Mode.IDLE;
             this.model.mode = Mode.IDLE;
-            const { controls } = this.views.perspective;
-            controls.mouseButtons.left = CameraControls.ACTION.NONE;
-            controls.mouseButtons.right = CameraControls.ACTION.NONE;
-            controls.mouseButtons.wheel = CameraControls.ACTION.NONE;
-            controls.touches.one = CameraControls.ACTION.NONE;
-            controls.touches.two = CameraControls.ACTION.NONE;
-            controls.touches.three = CameraControls.ACTION.NONE;
+
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             this.dispatchEvent(new CustomEvent('canvas.fit'));
@@ -991,6 +1026,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // eslint-disable-next-line no-param-reassign
         points.material.size = 0.05;
         points.material.color.set(new THREE.Color(0xffffff));
+
+        const { controls } = this.views.perspective;
+        controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+
         const material = points.material.clone();
         const sphereCenter = points.geometry.boundingSphere.center;
         const { radius } = points.geometry.boundingSphere;
@@ -1175,7 +1214,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.cube.perspective.position.copy(newPoints);
                 this.views.perspective.renderer.domElement.style.cursor = 'default';
             }
-        } else if (this.mode === Mode.IDLE) {
+        } else if (this.mode === Mode.IDLE && !this.isPerspectiveBeingDragged) {
             const { children } = this.views.perspective.scene.children[0];
             const { renderer } = this.views.perspective.rayCaster;
             const intersects = renderer.intersectObjects(children, false);
