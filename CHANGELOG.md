@@ -20,6 +20,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
+- Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
@@ -81,11 +82,9 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Visibility and ignored information fail to be loaded (MOT dataset format) (<https://github.com/opencv/cvat/pull/5270>)
 - Added force logout on CVAT app start if token is missing (<https://github.com/opencv/cvat/pull/5331>)
 - Missed token with using social account authentication (<https://github.com/opencv/cvat/pull/5344>)
-- Fix chart not being upgradable. In order to upgrade, delete the CVAT Deployments before upgrading
-  (<https://github.com/opencv/cvat/pull/5371>):
-  ```shell
-  kubectl delete deployments --namespace=foo -l app=cvat-app
-  ```
+- Fixed FBRS serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5384>)
+- Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
+- Fix chart not being upgradable (<https://github.com/opencv/cvat/pull/5371>)
 
 ### Security
 - TDB
