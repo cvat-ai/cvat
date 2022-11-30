@@ -1214,7 +1214,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         def parse_exception_message(msg):
             if 'ErrorDetail' in msg:
                 try:
-                    return msg.split('ErrorDetail')[1].split('string=')[1].split('code=')[0].strip(', ')
+                    # msg like: 'rest_framework.exceptions.ValidationError:
+                    # [ErrorDetail(string="...", code=\'invalid\')]\n'
+                    return msg.split('string=')[1].split(', code=')[0].strip("\"")
                 except Exception:
                     return msg
             return msg
