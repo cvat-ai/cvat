@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -59,35 +60,6 @@ export interface RenderView {
     rayCaster?: RayCast;
 }
 
-const initialCameraSettings: {
-    [key in ViewType]: {
-        position: [number, number, number],
-        lookAt: [number, number, number],
-        up: [number, number, number],
-    }
-} = {
-    perspective: {
-        position: [-15, 0, 4],
-        lookAt: [10, 0, 0],
-        up: [0, 0, 1],
-    },
-    top: {
-        position: [0, 0, 8],
-        lookAt: [0, 0, 0],
-        up: [0, 0, 1],
-    },
-    side: {
-        position: [0, 8, 0],
-        lookAt: [0, 0, 0],
-        up: [0, 0, 1],
-    },
-    front: {
-        position: [8, 0, 0],
-        lookAt: [0, 0, 0],
-        up: [0, 0, 1],
-    },
-};
-
 export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private controller: Canvas3dController;
     private views: Views;
@@ -97,6 +69,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private model: Canvas3dModel & Master;
     private action: any;
     private globalHelpers: any;
+    private cameraSettings: {
+        [key in ViewType]: {
+            position: [number, number, number],
+            lookAt: [number, number, number],
+            up: [number, number, number],
+        }
+    };
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -126,6 +105,30 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 rotate: [],
             },
         };
+
+        this.cameraSettings = {
+            perspective: {
+                position: [-15, 0, 8],
+                lookAt: [10, 0, 0],
+                up: [0, 0, 1],
+            },
+            top: {
+                position: [0, 0, 8],
+                lookAt: [0, 0, 0],
+                up: [0, 0, 1],
+            },
+            side: {
+                position: [0, 8, 0],
+                lookAt: [0, 0, 0],
+                up: [0, 0, 1],
+            },
+            front: {
+                position: [8, 0, 0],
+                lookAt: [0, 0, 0],
+                up: [0, 0, 1],
+            },
+        };
+
         this.action = {
             loading: false,
             oldState: '',
@@ -440,9 +443,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             ViewType.SIDE,
             ViewType.FRONT,
         ]) {
-            this.views[cameraType].camera.position.set(...initialCameraSettings[cameraType].position);
-            this.views[cameraType].camera.lookAt(...initialCameraSettings[cameraType].lookAt);
-            this.views[cameraType].camera.up.set(...initialCameraSettings[cameraType].up);
+            this.views[cameraType].camera.position.set(...this.cameraSettings[cameraType].position);
+            this.views[cameraType].camera.lookAt(...this.cameraSettings[cameraType].lookAt);
+            this.views[cameraType].camera.up.set(...this.cameraSettings[cameraType].up);
             this.views[cameraType].camera.name = `camera${cameraType[0].toUpperCase()}${cameraType.slice(1)}`;
         }
 
@@ -996,33 +999,44 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private addScene(points: any): void {
+        const getcameraSettingsToFitScene = (
+            camera: THREE.PerspectiveCamera,
+            boundingBox: THREE.Box3,
+        ): [number, number, number] => {
+            const offset = 5;
+            const width = boundingBox.max.x - boundingBox.min.x;
+            const height = boundingBox.max.y - boundingBox.min.y;
+
+            // find the maximum width or height, compute z to approximately fit the scene
+            const maxDim = Math.max(width, height);
+            const fov = camera.fov * (Math.PI / 180);
+            const cameraZ = Math.abs((maxDim / 8) * Math.tan(fov * 2));
+
+            return [
+                boundingBox.min.x + offset,
+                boundingBox.max.y + offset,
+                cameraZ + offset,
+            ];
+        };
+
         // eslint-disable-next-line no-param-reassign
         points.material.size = 0.05;
         points.material.color.set(new THREE.Color(0xffffff));
         const material = points.material.clone();
-        const { radius, center: sphereCenter } = points.geometry.boundingSphere;
+        // const { radius, center: sphereCenter } = points.geometry.boundingSphere;
         if (!this.views.perspective.camera) return;
-        const xRange = -radius / 2 < this.views.perspective.camera.position.x - sphereCenter.x &&
-            radius / 2 > this.views.perspective.camera.position.x - sphereCenter.x;
-        const yRange = -radius / 2 < this.views.perspective.camera.position.y - sphereCenter.y &&
-            radius / 2 > this.views.perspective.camera.position.y - sphereCenter.y;
-        const zRange = -radius / 2 < this.views.perspective.camera.position.z - sphereCenter.z &&
-            radius / 2 > this.views.perspective.camera.position.z - sphereCenter.z;
-        let newX = 0;
-        let newY = 0;
-        let newZ = 0;
-        if (!xRange) {
-            newX = sphereCenter.x;
-        }
-        if (!yRange) {
-            newY = sphereCenter.y;
-        }
-        if (!zRange) {
-            newZ = sphereCenter.z;
-        }
-        if (newX || newY || newZ) {
-            this.action.frameCoordinates = { x: newX, y: newY, z: newZ };
-            this.positionAllViews(newX, newY, newZ, false);
+
+        if (this.model.configuration.resetZoom) {
+            points.geometry.computeBoundingBox();
+            this.cameraSettings.perspective.position = getcameraSettingsToFitScene(
+                this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
+            );
+            this.positionAllViews(
+                this.action.frameCoordinates.x,
+                this.action.frameCoordinates.y,
+                this.action.frameCoordinates.z,
+                false,
+            );
         }
 
         [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
@@ -1129,9 +1143,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.front.controls
         ) {
             this.views.perspective.controls.setLookAt(
-                x + initialCameraSettings.perspective.position[0],
-                y - initialCameraSettings.perspective.position[1],
-                z + initialCameraSettings.perspective.position[2],
+                x + this.cameraSettings.perspective.position[0],
+                y - this.cameraSettings.perspective.position[1],
+                z + this.cameraSettings.perspective.position[2],
                 x, y, z, animation,
             );
 
@@ -1141,9 +1155,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 ViewType.FRONT,
             ]) {
                 this.views[cameraType].camera.position.set(
-                    x + initialCameraSettings[cameraType].position[0],
-                    y + initialCameraSettings[cameraType].position[1],
-                    z + initialCameraSettings[cameraType].position[2],
+                    x + this.cameraSettings[cameraType].position[0],
+                    y + this.cameraSettings[cameraType].position[1],
+                    z + this.cameraSettings[cameraType].position[2],
                 );
                 this.views[cameraType].camera.lookAt(x, y, z);
                 this.views[cameraType].camera.zoom = CONST.FOV_DEFAULT;
@@ -1275,8 +1289,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             try {
                 this.detachCamera(null);
                 // eslint-disable-next-line no-empty
-            } catch (e) {
-            } finally {
+            } catch (e) { } finally {
                 this.action.detachCam = false;
             }
         }
