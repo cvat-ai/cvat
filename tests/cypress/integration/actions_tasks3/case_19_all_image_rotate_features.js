@@ -14,11 +14,11 @@ context('Rotate all images feature.', () => {
     }
 
     function imageRotate(direction = 'anticlockwise', deg) {
-        cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
+        cy.get('.cvat-rotate-canvas-control').trigger('mouseover').should('be.visible');
         if (direction === 'clockwise') {
-            cy.get('.cvat-rotate-canvas-controls-right').click();
+            cy.get('.cvat-rotate-canvas-controls-right').should('be.visible').click();
         } else {
-            cy.get('.cvat-rotate-canvas-controls-left').click();
+            cy.get('.cvat-rotate-canvas-controls-left').should('be.visible').click();
         }
         checkDegRotate(deg);
     }

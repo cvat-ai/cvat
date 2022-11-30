@@ -234,3 +234,8 @@ Just create file `values.override.yaml` and place your changes here, using same 
 Then reference it in helm update/install command using `-f` flag
 ### Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
+### How to use custom domain name with k8s deployment:
+The default value `cvat.local` may be overriden with `--set ingress.hosts[0].host` option like this:
+```shell
+helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml --set ingress.hosts[0].host=YOUR_FQDN
+```

@@ -5,13 +5,13 @@
 
 from __future__ import annotations
 
-import os
 import os.path as osp
 from contextlib import closing
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.utils import atomic_writer
 
 if TYPE_CHECKING:
     from cvat_sdk.core.client import Client
@@ -41,10 +41,6 @@ class Downloader:
 
         assert not osp.exists(output_path)
 
-        tmp_path = output_path + ".tmp"
-        if osp.exists(tmp_path):
-            raise FileExistsError(f"Can't write temporary file '{tmp_path}' - file exists")
-
         response = self._client.api_client.rest_client.GET(
             url,
             _request_timeout=timeout,
@@ -57,25 +53,19 @@ class Downloader:
             except ValueError:
                 file_size = None
 
-            try:
-                with open(tmp_path, "wb") as fd:
+            with atomic_writer(output_path, "wb") as fd:
+                if pbar is not None:
+                    pbar.start(file_size, desc="Downloading")
+
+                while True:
+                    chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
+                    if not chunk:
+                        break
+
                     if pbar is not None:
-                        pbar.start(file_size, desc="Downloading")
+                        pbar.advance(len(chunk))
 
-                    while True:
-                        chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
-                        if not chunk:
-                            break
-
-                        if pbar is not None:
-                            pbar.advance(len(chunk))
-
-                        fd.write(chunk)
-
-                os.rename(tmp_path, output_path)
-            except:
-                os.unlink(tmp_path)
-                raise
+                    fd.write(chunk)
 
     def prepare_and_download_file_from_endpoint(
         self,
