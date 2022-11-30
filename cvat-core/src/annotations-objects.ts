@@ -3012,7 +3012,6 @@ export class SkeletonTrack extends Track {
             this.saveKeyframe(frame, data.keyframe);
             data.updateFlags.keyframe = false;
             updateElements(updatedKeyframe, HistoryActions.CHANGED_KEYFRAME);
-            this.saveKeyframe(frame, data.keyframe);
         }
 
         if (updatedHidden.length) {
