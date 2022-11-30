@@ -68,7 +68,7 @@ const initialCameraSettings: {
 } = {
     perspective: {
         position: [-15, 0, 4],
-        lookAt: [0, 0, 0],
+        lookAt: [10, 0, 0],
         up: [0, 0, 1],
     },
     top: {
@@ -445,9 +445,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             ViewType.FRONT,
         ]) {
             this.views[cameraType].camera.position.set(...initialCameraSettings[cameraType].position);
-            this.views.perspective.camera.lookAt(...initialCameraSettings[cameraType].lookAt);
-            this.views.perspective.camera.up.set(...initialCameraSettings[cameraType].up);
-            this.views.perspective.camera.name = `camera${cameraType[0].toUpperCase()}${cameraType.slice(1)}`;
+            this.views[cameraType].camera.lookAt(...initialCameraSettings[cameraType].lookAt);
+            this.views[cameraType].camera.up.set(...initialCameraSettings[cameraType].up);
+            this.views[cameraType].camera.name = `camera${cameraType[0].toUpperCase()}${cameraType.slice(1)}`;
         }
 
         Object.keys(this.views).forEach((view: string): void => {
@@ -1133,19 +1133,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.front.controls
         ) {
             this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, animation);
-            for (const cameraType of [
-                ViewType.TOP,
-                ViewType.SIDE,
-                ViewType.FRONT,
-            ]) {
-                this.views[cameraType].camera.position.set(
-                    x + initialCameraSettings[cameraType].position[0],
-                    y + initialCameraSettings[cameraType].position[1],
-                    z + initialCameraSettings[cameraType].position[2],
-                );
-                this.views[cameraType].camera.lookAt(x, y, z);
-                this.views[cameraType].camera.zoom = CONST.FOV_DEFAULT;
-            }
+            this.views.top.camera.position.set(x, y, z + 8);
+            this.views.top.camera.lookAt(x, y, z);
+            this.views.top.camera.zoom = CONST.FOV_DEFAULT;
+            this.views.side.camera.position.set(x, y + 8, z);
+            this.views.side.camera.lookAt(x, y, z);
+            this.views.side.camera.zoom = CONST.FOV_DEFAULT;
+            this.views.front.camera.position.set(x + 8, y, z);
+            this.views.front.camera.lookAt(x, y, z);
+            this.views.front.camera.zoom = CONST.FOV_DEFAULT;
         }
     }
 
