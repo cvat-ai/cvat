@@ -83,6 +83,9 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Added force logout on CVAT app start if token is missing (<https://github.com/opencv/cvat/pull/5331>)
 - Missed token with using social account authentication (<https://github.com/opencv/cvat/pull/5344>)
 - An exception when run export for an empty task (<https://github.com/opencv/cvat/pull/5396>)
+- Fixed FBRS serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5384>)
+- Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
+- Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
 
 ### Security
 - TDB
