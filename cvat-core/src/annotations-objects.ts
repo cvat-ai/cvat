@@ -2996,11 +2996,13 @@ export class SkeletonTrack extends Track {
         if (updatedOccluded.length) {
             updatedOccluded.forEach((el) => { el.updateFlags.occluded = true; });
             updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED);
+            this.saveOccluded(data.occluded, frame);
         }
 
         if (updatedOutside.length) {
             updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
             updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
+            this.saveOutside(frame, data.outside);
         }
 
         if (updatedKeyframe.length) {
@@ -3010,16 +3012,19 @@ export class SkeletonTrack extends Track {
             this.saveKeyframe(frame, data.keyframe);
             data.updateFlags.keyframe = false;
             updateElements(updatedKeyframe, HistoryActions.CHANGED_KEYFRAME);
+            this.saveKeyframe(frame, data.keyframe);
         }
 
         if (updatedHidden.length) {
             updatedHidden.forEach((el) => { el.updateFlags.hidden = true; });
             updateElements(updatedHidden, HistoryActions.CHANGED_HIDDEN, 'hidden');
+            this.saveHidden(data.hidden, frame);
         }
 
         if (updatedLock.length) {
             updatedLock.forEach((el) => { el.updateFlags.lock = true; });
             updateElements(updatedLock, HistoryActions.CHANGED_LOCK, 'lock');
+            this.saveLock(data.lock, frame);
         }
 
         const result = Track.prototype.save.call(this, frame, data);
