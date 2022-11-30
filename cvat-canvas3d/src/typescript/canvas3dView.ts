@@ -39,19 +39,17 @@ export interface RayCast {
     mouseVector: THREE.Vector2;
 }
 
-export interface Views {
-    perspective: RenderView;
-    top: RenderView;
-    side: RenderView;
-    front: RenderView;
-}
+export type Views = {
+    [key in ViewType]: RenderView;
+};
 
-export interface CubeObject {
-    perspective: THREE.Mesh;
-    top: THREE.Mesh;
-    side: THREE.Mesh;
-    front: THREE.Mesh;
-}
+export type CubeObject = {
+    [key in ViewType]: THREE.Mesh;
+};
+
+export type ViewsDOM = {
+    [key in ViewType]: HTMLCanvasElement;
+};
 
 export interface RenderView {
     renderer: THREE.WebGLRenderer;
@@ -61,12 +59,34 @@ export interface RenderView {
     rayCaster?: RayCast;
 }
 
-export interface ViewsDOM {
-    perspective: HTMLCanvasElement;
-    top: HTMLCanvasElement;
-    side: HTMLCanvasElement;
-    front: HTMLCanvasElement;
-}
+const initialCameraSettings: {
+    [key in ViewType]: {
+        position: [number, number, number],
+        lookAt: [number, number, number],
+        up: [number, number, number],
+    }
+} = {
+    perspective: {
+        position: [-15, 0, 4],
+        lookAt: [0, 0, 0],
+        up: [0, 0, 1],
+    },
+    top: {
+        position: [0, 0, 8],
+        lookAt: [0, 0, 0],
+        up: [0, 0, 1],
+    },
+    side: {
+        position: [0, 8, 0],
+        lookAt: [0, 0, 0],
+        up: [0, 0, 1],
+    },
+    front: {
+        position: [8, 0, 0],
+        lookAt: [0, 0, 0],
+        up: [0, 0, 1],
+    },
+};
 
 export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private controller: Canvas3dController;
@@ -393,11 +413,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         // setting up the camera and adding it in the scene
         this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 1, 500);
-        this.views.perspective.camera.position.set(-15, 0, 4);
-        this.views.perspective.camera.up.set(0, 0, 1);
-        this.views.perspective.camera.lookAt(10, 0, 0);
-        this.views.perspective.camera.name = 'cameraPerspective';
-
         this.views.top.camera = new THREE.OrthographicCamera(
             (-aspectRatio * viewSize) / 2 - 2,
             (aspectRatio * viewSize) / 2 + 2,
@@ -406,12 +421,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             -50,
             50,
         );
-
-        this.views.top.camera.position.set(0, 0, 5);
-        this.views.top.camera.lookAt(0, 0, 0);
-        this.views.top.camera.up.set(0, 0, 1);
-        this.views.top.camera.name = 'cameraTop';
-
         this.views.side.camera = new THREE.OrthographicCamera(
             (-aspectRatio * viewSize) / 2,
             (aspectRatio * viewSize) / 2,
@@ -420,11 +429,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             -50,
             50,
         );
-        this.views.side.camera.position.set(0, 5, 0);
-        this.views.side.camera.lookAt(0, 0, 0);
-        this.views.side.camera.up.set(0, 0, 1);
-        this.views.side.camera.name = 'cameraSide';
-
         this.views.front.camera = new THREE.OrthographicCamera(
             (-aspectRatio * viewSize) / 2,
             (aspectRatio * viewSize) / 2,
@@ -433,10 +437,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             -50,
             50,
         );
-        this.views.front.camera.position.set(3, 0, 0);
-        this.views.front.camera.up.set(0, 0, 1);
-        this.views.front.camera.lookAt(0, 0, 0);
-        this.views.front.camera.name = 'cameraFront';
+
+        for (const cameraType of [
+            ViewType.PERSPECTIVE,
+            ViewType.TOP,
+            ViewType.SIDE,
+            ViewType.FRONT,
+        ]) {
+            this.views[cameraType].camera.position.set(...initialCameraSettings[cameraType].position);
+            this.views.perspective.camera.up.set(...initialCameraSettings[cameraType].up);
+            this.views.perspective.camera.lookAt(...initialCameraSettings[cameraType].lookAt);
+            this.views.perspective.camera.name = `camera${cameraType[0].toUpperCase()}${cameraType.slice(1)}`;
+        }
 
         Object.keys(this.views).forEach((view: string): void => {
             const viewType = this.views[view as keyof Views];
@@ -484,48 +496,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private setDefaultZoom(): void {
-        if (this.model.data.activeElement === 'null') {
-            Object.keys(this.views).forEach((view: string): void => {
-                const viewType = this.views[view as keyof Views];
-                if (view !== ViewType.PERSPECTIVE) {
-                    viewType.camera.zoom = CONST.FOV_DEFAULT;
-                    viewType.camera.updateProjectionMatrix();
-                }
-            });
-        } else {
-            const canvasTop = this.views.top.renderer.domElement;
-            const bboxtop = new THREE.Box3().setFromObject(this.model.data.selected.top);
-            const x1 = Math.min(
-                canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
-                canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
-            ) * 0.4;
-            this.views.top.camera.zoom = x1 / 100;
-            this.views.top.camera.updateProjectionMatrix();
-            this.views.top.camera.updateMatrix();
-            this.setHelperSize(ViewType.TOP);
 
-            const canvasFront = this.views.top.renderer.domElement;
-            const bboxfront = new THREE.Box3().setFromObject(this.model.data.selected.front);
-            const x2 = Math.min(
-                canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
-                canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
-            ) * 0.4;
-            this.views.front.camera.zoom = x2 / 100;
-            this.views.front.camera.updateProjectionMatrix();
-            this.views.front.camera.updateMatrix();
-            this.setHelperSize(ViewType.FRONT);
-
-            const canvasSide = this.views.side.renderer.domElement;
-            const bboxside = new THREE.Box3().setFromObject(this.model.data.selected.side);
-            const x3 = Math.min(
-                canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
-                canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
-            ) * 0.4;
-            this.views.side.camera.zoom = x3 / 100;
-            this.views.side.camera.updateProjectionMatrix();
-            this.views.side.camera.updateMatrix();
-            this.setHelperSize(ViewType.SIDE);
-        }
     }
 
     private startAction(view: any, event: MouseEvent): void {
@@ -992,8 +963,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         points.material.size = 0.05;
         points.material.color.set(new THREE.Color(0xffffff));
         const material = points.material.clone();
-        const sphereCenter = points.geometry.boundingSphere.center;
-        const { radius } = points.geometry.boundingSphere;
+        const { radius, center: sphereCenter } = points.geometry.boundingSphere;
         if (!this.views.perspective.camera) return;
         const xRange = -radius / 2 < this.views.perspective.camera.position.x - sphereCenter.x &&
             radius / 2 > this.views.perspective.camera.position.x - sphereCenter.x;
@@ -1121,16 +1091,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.side.controls &&
             this.views.front.controls
         ) {
-            this.views.perspective.controls.setLookAt(x - 8, y - 8, z + 3, x, y, z, animation);
-            this.views.top.camera.position.set(x, y, z + 8);
-            this.views.top.camera.lookAt(x, y, z);
-            this.views.top.camera.zoom = CONST.FOV_DEFAULT;
-            this.views.side.camera.position.set(x, y + 8, z);
-            this.views.side.camera.lookAt(x, y, z);
-            this.views.side.camera.zoom = CONST.FOV_DEFAULT;
-            this.views.front.camera.position.set(x + 8, y, z);
-            this.views.front.camera.lookAt(x, y, z);
-            this.views.front.camera.zoom = CONST.FOV_DEFAULT;
+            this.views.perspective.controls.setLookAt(x - 15, y, z + 4, x, y, z, animation);
+            for (const cameraType of [
+                ViewType.TOP,
+                ViewType.SIDE,
+                ViewType.FRONT,
+            ]) {
+                this.views[cameraType].camera.position.set(
+                    x + initialCameraSettings[cameraType].position[0],
+                    y + initialCameraSettings[cameraType].position[1],
+                    z + initialCameraSettings[cameraType].position[2],
+                );
+                this.views[cameraType].camera.lookAt(x, y, z);
+                this.views[cameraType].camera.zoom = CONST.FOV_DEFAULT;
+            }
         }
     }
 
