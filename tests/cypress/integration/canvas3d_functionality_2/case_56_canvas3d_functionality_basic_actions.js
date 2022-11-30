@@ -1,6 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/* eslint-disable cypress/no-unnecessary-waiting */
 
 /// <reference types="cypress" />
 
@@ -75,9 +78,25 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
+        cy.wait(1000); // Waiting for the point cloud to display
     });
 
     describe(`Testing case "${caseId}"`, () => {
+        it('Check canvas can be dragged.', () => {
+            const screenshotNameBefore = 'before_idle_zoom';
+            const screenshotNameAfter = 'after_idle_zoom';
+            cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
+            cy.get('.cvat-canvas3d-perspective').should('exist').and('be.visible')
+                .within(() => {
+                    cy.get('canvas').trigger('wheel', { deltaY: -500 });
+                });
+            cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
+            cy.compareImagesAndCheckResult(
+                `${screenshotsPath}/${screenshotNameBefore}.png`,
+                `${screenshotsPath}/${screenshotNameAfter}.png`,
+            );
+        });
+
         it('Check existing of elements.', () => {
             cy.get('.cvat-canvas3d-perspective')
                 .should('exist')
