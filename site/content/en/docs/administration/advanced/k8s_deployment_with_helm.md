@@ -234,3 +234,12 @@ Just create file `values.override.yaml` and place your changes here, using same 
 Then reference it in helm update/install command using `-f` flag
 ### Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
+### How to fix fail of `helm upgrade` due label field is immutable reason?
+If an error message like this:
+```shell
+Error: UPGRADE FAILED:cannot patch "cvat-backend-server" with kind Deployment: Deployment.apps "cvat-backend-server" is invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app":"cvat-app", "app.kubernetes.io/instance":"cvat", "app.kubernetes.io/managed-by":"Helm", "app.kubernetes.io/name":"cvat", "app.kubernetes.io/version":"latest", "component":"server", "helm.sh/chart":"cvat", "tier":"backend"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
+```
+To fix that, delete CVAT Deployments before upgrading
+```shell
+kubectl delete deployments --namespace=foo -l app=cvat-app
+```
