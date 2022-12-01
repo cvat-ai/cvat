@@ -27,6 +27,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
+- Unify error handling with the cloud storage (<https://github.com/opencv/cvat/pull/5389>)
 
 ### Deprecated
 - TDB
