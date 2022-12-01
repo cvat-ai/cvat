@@ -27,6 +27,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - 3D canvas now can be dragged in IDLE mode (<https://github.com/opencv/cvat/pull/5385>)
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
+- Adjusted initial camera position, enabled 'Reset zoom' option for 3D canvas (<https://github.com/opencv/cvat/pull/5395>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
 
 ### Deprecated
@@ -87,6 +88,9 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
 - Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
 - Loss of rotation in CVAT format (<https://github.com/opencv/cvat/pull/5407>)
+- Fix chart not being upgradable (<https://github.com/opencv/cvat/pull/5371>)
+- Broken helm chart - if using custom release name (<https://github.com/opencv/cvat/pull/5403>)
+- Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 
 ### Security
 - TDB
