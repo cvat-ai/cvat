@@ -740,6 +740,19 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         return gateway.get(func_id).to_dict()
 
+    @extend_schema(description=textwrap.dedent("""\
+        Allows to execute a function for immediate computation.
+
+        Supposed for short-living executions, useful for interactive calls.
+        When executed for interactive annotation, the job id must be specified
+        in the 'job' input field.
+        """),
+        request=inline_serializer("OnlineFunctionCall", fields={
+            "job": serializers.IntegerField(required=False),
+            "task": serializers.IntegerField(required=False),
+        }),
+        responses=OpenApiResponse(description="Returns function invocation results")
+    )
     @return_response()
     def call(self, request, func_id):
         self.check_object_permissions(request, func_id)
