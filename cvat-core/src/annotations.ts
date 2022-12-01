@@ -305,11 +305,24 @@ export function importDataset(
     if (!(typeof convMaskToPoly === 'boolean')) {
         throw new ArgumentError('Option "convMaskToPoly" must be a boolean');
     }
-    if (typeof file === 'string' && !file.toLowerCase().endsWith('.zip')) {
-        throw new ArgumentError('File must be file instance with ZIP extension');
+    const allowedFileExtensions = [
+        '.zip', '.xml', '.json',
+    ];
+    const allowedFileExtensionsList = allowedFileExtensions.join(', ');
+    if (typeof file === 'string' && !(allowedFileExtensions.some((ext) => file.toLowerCase().endsWith(ext)))) {
+        throw new ArgumentError(
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+        );
     }
-    if (file instanceof File && !(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
-        throw new ArgumentError('File must be file instance with ZIP extension');
+    const allowedMimeTypes = [
+        'application/zip', 'application/x-zip-compressed',
+        'application/xml', 'text/xml',
+        'application/json',
+    ];
+    if (file instanceof File && !(allowedMimeTypes.includes(file.type))) {
+        throw new ArgumentError(
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+        );
     }
 
     if (instance instanceof Project) {

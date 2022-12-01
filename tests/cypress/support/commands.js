@@ -739,7 +739,7 @@ Cypress.Commands.add('confirmUpdate', (modalWindowClassName) => {
 Cypress.Commands.add(
     'uploadAnnotations', (
         format,
-        file,
+        filePath,
         confirmModalClassName,
         sourceStorage = null,
         useDefaultLocation = true,
@@ -766,10 +766,10 @@ Cypress.Commands.add(
         if (sourceStorage && sourceStorage.cloudStorageId) {
             cy.get('.cvat-modal-import-dataset')
                 .find('.cvat-modal-import-filename-input')
-                .type(file);
+                .type(filePath);
         } else {
-            cy.get('input[type="file"]').attachFile(file, { subjectType: 'drag-n-drop' });
-            cy.get(`[title="${file}"]`).should('be.visible');
+            cy.get('input[type="file"]').attachFile(filePath, { subjectType: 'drag-n-drop' });
+            cy.get(`[title="${filePath.split('/').pop()}"]`).should('be.visible');
         }
         cy.contains('button', 'OK').click();
         cy.confirmUpdate(confirmModalClassName);
@@ -991,7 +991,7 @@ Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
 });
 
 Cypress.Commands.add('exportTask', ({
-    type, format, archiveCustomeName,
+    type, format, archiveCustomName,
 }) => {
     cy.interactMenu('Export task dataset');
     cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
@@ -1000,8 +1000,8 @@ Cypress.Commands.add('exportTask', ({
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-task').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
-    if (archiveCustomeName) {
-        cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    if (archiveCustomName) {
+        cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(archiveCustomName);
     }
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
@@ -1009,7 +1009,7 @@ Cypress.Commands.add('exportTask', ({
 });
 
 Cypress.Commands.add('exportJob', ({
-    type, format, archiveCustomeName,
+    type, format, archiveCustomName,
     targetStorage = null, useDefaultLocation = true,
 }) => {
     cy.interactMenu('Export job dataset');
@@ -1019,8 +1019,8 @@ Cypress.Commands.add('exportJob', ({
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-job').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
-    if (archiveCustomeName) {
-        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    if (archiveCustomName) {
+        cy.get('.cvat-modal-export-job').find('.cvat-modal-export-filename-input').type(archiveCustomName);
     }
     if (!useDefaultLocation) {
         cy.get('.cvat-modal-export-job').find('.cvat-settings-switch').click();
