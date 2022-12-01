@@ -1,61 +1,147 @@
+import os
+import sys
+import random
+from urllib import parse as urlparse, request as urlrequest
+
 import django_rq
 from django.utils.timezone import now
 from django.contrib.auth import get_user_model
 
 from cvat.apps.engine import task as task_api
-from cvat.apps.engine.models import Project, Task, Data, RemoteFile, S3File, ModeChoice
+from cvat.apps.engine.models import Project, Task, Data, RemoteFile, S3File, \
+    Label, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
+    ModeChoice, ShapeType, SourceType, AttributeType
 from cvat.apps.engine.views import TaskViewSet
+from utils.dataset_manifest import S3ManifestManager
 
 User = get_user_model()
 
 ## Reference image data structure
 # {
-#     'image': 'url',
-#     'planogram_title': 'title',
-#     'processing_action_id': 1,
+#     'image': 'url',  # save only these after annotation import
+#     'planogram_title': 'title',  # save only these after annotation import
+#     'processing_action_id': 1,  # save only these after annotation import
 #     'items': [
-#         {
+#         {  # create LabeledShape of type=rectangle for each of these
 #             'lowerx': 0.0,
 #             'lowery': 0.0,
 #             'upperx': 0.0,
 #             'uppery': 0.0,
-#             'label': 'text',
-#             'upc': 'text',
-#             'points': 'json',
-#             'type': 'text'  # Some of constant types
+#             'label': 'text',   # create project Labels for each value of these.
+#                                # translate this to project tag. Is not a field on a model, defaults to "All UPC"
+#             'upc': 'text',     # create AttributeSpec named "UPC" for these
+#                                # create LabeledShapeAttributeVal for each UPC.
+#                                # arbitrary text, extra text for tag.
+#             'points': 'json',  # polygon points, never comes from mgmt.
+#             'type': 'text'     # shape - rectangle, polygon, line, never comes from mgmt, rectangle by default.
 #         },
 #         ...
 #     ],
 #     'price_tags': [
-#         {
+#         {  # create LabeledShape of type=rectangle for each of these
 #             'lowerx': 0.0,
 #             'lowery': 0.0,
 #             'upperx': 0.0,
 #             'uppery': 0.0,
-#             'label': 'text',
-#             'upc': 'text',
+#             'label': 'text',  # create project Labels for each value of these.
+#                               # defaults to "All PRICE TAGS",
+#             'upc': 'text',    # never comes from mgmt for these.
 #             'points': 'json',
-#             'type': 'text'  # Some of constant types
+#             'type': 'text'
 #         },
 #         ...
 #     ],
 # }
 
 
+def _fix_coordinates(item, width, height):
+    if item['lowerx'] > item['upperx']:
+        item['lowerx'], item['upperx'] = item['upperx'], item['lowerx']
+    if item['lowery'] > item['uppery']:
+        item['lowery'], item['uppery'] = item['uppery'], item['lowery']
+    if item['lowerx'] < 0:
+        item['lowerx'] = 0
+    if item['upperx'] > width:
+        item['upperx'] = width
+    if item['lowery'] < 0:
+        item['lowery'] = 0
+    if item['uppery'] > height:
+        item['uppery'] = height
+
+
+def _rand_color():
+    choices = ('FF', '00')
+    color = '#'
+    for i in range(3):
+        color += random.choice(choices)
+    return color
+
+
 def _create_thread(task_id, cvat_data):
+    # get task
     task_api._create_thread(task_id, cvat_data)
 
+    # get task
     task: Task = Task.objects.get(pk=task_id)
-    s3_files = task.data.s3_files.all()
 
-    # TODO:
-    #  get manifest from task data
-    #  compare it to exact files
-    #  pop annotations for s3_files' meta
-    #  get image sizes from manifest
-    #  trim annotations' coordinates between 0 and image sizes.
-    #  get or create project labels.
-    #  store annotations in the db.
+    # get file sizes from manifest
+    manifest_manager = S3ManifestManager(task.data.get_s3_manifest_path())
+    image_data = {f'{props["name"]}.{props["extension"]}': (props['width'], props['height'])
+                  for _, props in manifest_manager}
+
+    for file in task.data.s3_files.all():
+        file_name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(file.meta['url']).path))
+        size = image_data.get(file_name, (sys.maxsize, sys.maxsize))
+
+        labels = {}
+        annotations = []
+        attribute_vals = []
+        for i, item in enumerate(file.meta['items'] + file.meta['price_tags']):
+            _fix_coordinates(item, *size)
+
+            # create label
+            if item['label'] in labels:
+                label = labels[item['label']]
+            else:
+                label, _ = Label.objects.get_or_create(
+                    project_id=task.project_id,
+                    name=item['label'],
+                    defaults={'color': _rand_color()}
+                )
+                labels[item['label']] = label
+
+            # create annotation
+            annotations.append(LabeledShape(
+                job_id=...,  # TODO: calculate these
+                label=label,
+                frame=...,  # TODO: calculate these
+                group=...,  # TODO: calculate these
+                type=ShapeType.RECTANGLE,
+                source=SourceType.AUTO,
+                points=[item['lowerx'], item['lowery'], item['upperx'], item['uppery']],
+            ))
+
+            # create upc.
+            upc = item.get('upc', None)
+            if upc:
+                attribute_spec = AttributeSpec.objects.get_or_create(
+                    label=label,
+                    name='UPC',
+                    defaults={'mutable': True, 'input_type': AttributeType.TEXT}
+                )
+                attribute_vals.append(LabeledShapeAttributeVal(
+                    shape_id=i,
+                    spec=attribute_spec,
+                    value=upc,
+                ))
+            else:
+                attribute_vals.append(None)
+
+        # bulk save everything.
+        LabeledShape.objects.bulk_create(annotations)
+        for i, shape in enumerate(annotations):
+            attribute_vals[i].shape_id = shape.pk
+        LabeledShapeAttributeVal.objects.bulk_create(attribute_vals)
 
 
 def create(data: list, retailer: User):
