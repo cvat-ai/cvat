@@ -2081,7 +2081,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=ex.status_code)
         except Exception as ex:
-            return HttpResponseBadRequest(str(ex))
+            slogger.glob.error(str(ex))
+            return Response("An internal error has occurred",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Method returns a preview image from a cloud storage',
         responses={
@@ -2137,7 +2139,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=ex.status_code)
         except Exception as ex:
-            return HttpResponseBadRequest(str(ex))
+            slogger.glob.error(str(ex))
+            return Response("An internal error has occurred",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Method returns a cloud storage status',
         responses={
