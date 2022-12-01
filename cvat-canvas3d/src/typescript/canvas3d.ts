@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +14,7 @@ import {
     MouseInteraction,
     ShapeProperties,
     GroupData,
+    Configuration,
 } from './canvas3dModel';
 import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
@@ -92,6 +94,10 @@ class Canvas3dImpl implements Canvas3d {
 
     public configureShapes(shapeProperties: ShapeProperties): void {
         this.model.configureShapes(shapeProperties);
+    }
+
+    public configure(configuration: Configuration): void {
+        this.model.configure(configuration);
     }
 
     public activate(clientID: number | null, attributeID: number | null = null): void {

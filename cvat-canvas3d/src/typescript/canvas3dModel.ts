@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +18,10 @@ export interface ActiveElement {
 export interface GroupData {
     enabled: boolean;
     grouped?: [];
+}
+
+export interface Configuration {
+    resetZoom?: boolean;
 }
 
 export interface Image {
@@ -80,6 +85,7 @@ export enum UpdateReasons {
     SHAPE_ACTIVATED = 'shape_activated',
     GROUP = 'group',
     FITTED_CANVAS = 'fitted_canvas',
+    CONFIG_UPDATED = 'config_updated',
 }
 
 export enum Mode {
@@ -111,6 +117,7 @@ export interface Canvas3dDataModel {
     selected: any;
     shapeProperties: ShapeProperties;
     groupData: GroupData;
+    configuration: Configuration;
 }
 
 export interface Canvas3dModel {
@@ -118,6 +125,7 @@ export interface Canvas3dModel {
     data: Canvas3dDataModel;
     readonly imageIsDeleted: boolean;
     readonly groupData: GroupData;
+    readonly configuration: Configuration;
     setup(frameData: any, objectStates: any[]): void;
     isAbleToChangeFrame(): boolean;
     draw(drawData: DrawData): void;
@@ -125,6 +133,7 @@ export interface Canvas3dModel {
     dragCanvas(enable: boolean): void;
     activate(clientID: string | null, attributeID: number | null): void;
     configureShapes(shapeProperties: any): void;
+    configure(configuration: Configuration): void;
     fit(): void;
     group(groupData: GroupData): void;
     destroy(): void;
@@ -174,6 +183,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 outlineColor: '#000000',
                 selectedOpacity: 60,
                 colorBy: 'Label',
+            },
+            configuration: {
+                resetZoom: false,
             },
         };
     }
@@ -321,6 +333,14 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.GROUP);
     }
 
+    public configure(configuration: Configuration): void {
+        if (typeof configuration.resetZoom === 'boolean') {
+            this.data.configuration.resetZoom = configuration.resetZoom;
+        }
+
+        this.notify(UpdateReasons.CONFIG_UPDATED);
+    }
+
     public configureShapes(shapeProperties: ShapeProperties): void {
         this.data.drawData.enabled = false;
         this.data.mode = Mode.IDLE;
@@ -333,6 +353,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public fit(): void {
         this.notify(UpdateReasons.FITTED_CANVAS);
+    }
+
+    public get configuration(): Configuration {
+        return { ...this.data.configuration };
     }
 
     public get groupData(): GroupData {
