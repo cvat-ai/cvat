@@ -1061,6 +1061,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             ), description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
+            '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PUT'], summary='Method allows to upload task annotations',
@@ -1120,14 +1121,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def annotations(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
-            return self.export_annotations(
-                request=request,
-                pk=pk,
-                db_obj=self._object,
-                export_func=_export_annotations,
-                callback=dm.views.export_task_annotations,
-                get_data=dm.task.get_task_data,
-            )
+            if self._object.data:
+                return self.export_annotations(
+                    request=request,
+                    pk=pk,
+                    db_obj=self._object,
+                    export_func=_export_annotations,
+                    callback=dm.views.export_task_annotations,
+                    get_data=dm.task.get_task_data,
+                )
+            else:
+                return Response(data="Exporting a task without data is not allowed",
+                    status=status.HTTP_400_BAD_REQUEST)
         elif request.method == 'POST' or request.method == 'OPTIONS':
             return self.import_annotations(
                 request=request,
@@ -1290,6 +1295,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
+            '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET'], serializer_class=None,
@@ -1297,13 +1303,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def dataset_export(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
 
-        return self.export_annotations(
-            request=request,
-            pk=pk,
-            db_obj=self._object,
-            export_func=_export_annotations,
-            callback=dm.views.export_task_as_dataset
-        )
+        if self._object.data:
+            return self.export_annotations(
+                request=request,
+                pk=pk,
+                db_obj=self._object,
+                export_func=_export_annotations,
+                callback=dm.views.export_task_as_dataset)
+        else:
+            return Response(data="Exporting a task without data is not allowed",
+                status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
