@@ -62,7 +62,7 @@ def create(request: Request, tid):
         slogger.task[tid].info("create repository request")
         body = request.data
         path = body["path"]
-        export_format = body["format"]
+        export_format = body.get("format")
         lfs = body["lfs"]
         rq_id = "git.create.{}".format(tid)
         queue = django_rq.get_queue("default")
