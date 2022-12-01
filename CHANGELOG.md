@@ -24,6 +24,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
+- 3D canvas now can be dragged in IDLE mode (<https://github.com/opencv/cvat/pull/5385>)
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
@@ -83,6 +84,12 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Visibility and ignored information fail to be loaded (MOT dataset format) (<https://github.com/opencv/cvat/pull/5270>)
 - Added force logout on CVAT app start if token is missing (<https://github.com/opencv/cvat/pull/5331>)
 - Missed token with using social account authentication (<https://github.com/opencv/cvat/pull/5344>)
+- Fixed FBRS serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5384>)
+- Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
+- Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
+- Fix chart not being upgradable (<https://github.com/opencv/cvat/pull/5371>)
+- Broken helm chart - if using custom release name (<https://github.com/opencv/cvat/pull/5403>)
+- Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 
 ### Security
 - TDB

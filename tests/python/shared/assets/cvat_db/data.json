@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-11-03T13:56:42.744Z",
+    "last_login": "2022-12-01T12:52:15.631Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -1147,10 +1147,39 @@
   }
 },
 {
+  "model": "engine.data",
+  "pk": 14,
+  "fields": {
+    "chunk_size": 72,
+    "size": 25,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 24,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "video",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
   "model": "engine.video",
   "pk": 1,
   "fields": {
     "data": 5,
+    "path": "test_video_1.mp4",
+    "width": 1280,
+    "height": 720
+  }
+},
+{
+  "model": "engine.video",
+  "pk": 2,
+  "fields": {
+    "data": 14,
     "path": "test_video_1.mp4",
     "width": 1280,
     "height": 720
@@ -2316,6 +2345,24 @@
   }
 },
 {
+  "model": "engine.project",
+  "pk": 8,
+  "fields": {
+    "name": "project with video data",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-12-01T12:52:42.454Z",
+    "updated_date": "2022-12-01T12:53:34.917Z",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 13,
+    "target_storage": 14
+  }
+},
+{
   "model": "engine.task",
   "pk": 2,
   "fields": {
@@ -2575,6 +2622,31 @@
     "organization": 2,
     "source_storage": 7,
     "target_storage": 8
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 15,
+  "fields": {
+    "project": 8,
+    "name": "task with video data",
+    "mode": "interpolation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-12-01T12:53:10.425Z",
+    "updated_date": "2022-12-01T12:53:35.028Z",
+    "overlap": 5,
+    "segment_size": 25,
+    "status": "annotation",
+    "data": 14,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 15,
+    "target_storage": 16
   }
 },
 {
@@ -3330,6 +3402,14 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 442,
+  "fields": {
+    "data": 14,
+    "file": "/home/django/data/data/14/raw/test_video_1.mp4"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -3444,6 +3524,15 @@
     "task": 14,
     "start_frame": 0,
     "stop_frame": 7
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 19,
+  "fields": {
+    "task": 15,
+    "start_frame": 0,
+    "stop_frame": 24
   }
 },
 {
@@ -3595,6 +3684,18 @@
     "segment": 18,
     "assignee": null,
     "updated_date": "2022-09-23T11:57:02.302Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 19,
+  "fields": {
+    "segment": 19,
+    "assignee": null,
+    "updated_date": "2022-12-01T12:53:35.354Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -3908,6 +4009,30 @@
     "project": 7,
     "name": "label_0",
     "color": "#bde94a",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 29,
+  "fields": {
+    "task": null,
+    "project": 8,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 30,
+  "fields": {
+    "task": null,
+    "project": 8,
+    "name": "person",
+    "color": "#c06060",
     "type": "any",
     "parent": null
   }
@@ -4801,6 +4926,72 @@
   }
 },
 {
+  "model": "engine.jobcommit",
+  "pk": 77,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:11.352Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 19
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 78,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:35.036Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 19
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 79,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:35.360Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 19
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 80,
+  "fields": {
+    "scope": "update",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:35.363Z",
+    "data": {
+      "state": "in progress"
+    },
+    "job": 19
+  }
+},
+{
   "model": "engine.labeledimage",
   "pk": 1,
   "fields": {
@@ -5160,6 +5351,42 @@
     "outside": false,
     "z_order": 0,
     "points": "[172.0810546875, 105.990234375, 285.97262095255974, 138.40000000000146]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 43,
+  "fields": {
+    "job": 19,
+    "label": 30,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[120.81927710843593, 213.52074966532928, 258.7576974564945, 643.614457831327]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 44,
+  "fields": {
+    "job": 19,
+    "label": 29,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[479.97322623828586, 408.0053547523421, 942.6238286479238, 513.3868808567604]",
     "rotation": 0.0,
     "parent": null
   }
@@ -5925,6 +6152,38 @@
 {
   "model": "engine.storage",
   "pk": 12,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 13,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 14,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 15,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 16,
   "fields": {
     "location": "local",
     "cloud_storage_id": null
