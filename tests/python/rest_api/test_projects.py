@@ -506,7 +506,7 @@ class TestImportExportDatasetProject:
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
         [
-            ("CVAT for video 1.1", "annotations.xml", _check_cvat_for_video_annotations),
+            ("CVAT for video 1.1", "annotations.xml", _check_cvat_for_video_project_annotations_meta),
         ],
     )
     def test_exported_project_dataset_structure(
