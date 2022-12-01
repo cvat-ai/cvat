@@ -27,6 +27,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - 3D canvas now can be dragged in IDLE mode (<https://github.com/opencv/cvat/pull/5385>)
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
+- Adjusted initial camera position, enabled 'Reset zoom' option for 3D canvas (<https://github.com/opencv/cvat/pull/5395>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
 
 ### Deprecated
