@@ -7,26 +7,26 @@ weight: 32
 ## Introduction
 
 Leveraging the power of computers to solve daily routine problems,
-fix mistakes, find information, etc has become second nature. It is therefore
-natural to use computing power in annotating our datasets. There are multiple
+fix mistakes, and find information has become second nature. It is therefore
+natural to use computing power in annotating datasets. There are multiple
 publicly available DL models for classification, object detection, and semantic
-segmentation which can be used for data annotation. Whilst some of these publicly 
+segmentation which can be used for data annotation. Whilst some of these publicly
 available DL models can be found on CVAT, it is relatively simple to integrate your
 privately trained ML/DL model into CVAT.
 
 With the imperfection of the world, alongside the unavailability of a silver bullet
-that can solve all our problems; publicly available DL models cannot be used when we 
+that can solve all our problems; publicly available DL models cannot be used when we
 want to detect niche or specific objects on which these publicly available models were not trained.
 As annotation requirements can be sometimes strict, automatically annotated objects cannot be accepted
 as it is, and it is easier to annotate them from scratch. With these limitations in mind, a DL solution
-which can _perfectly_ annotate 50% of your data equates to reducing manual annotation by half.
+that can _perfectly_ annotate 50% of your data equates to reducing manual annotation by half.
 
 Since we know DL models can help us to annotate faster, how then do we use them?
 In CVAT all such DL models are implemented as serverless functions using the [Nuclio][nuclio-homepage]
-serverless platform. There are multiple implemented functions which can be
+serverless platform. There are multiple implemented functions that can be
 found in the [serverless][cvat-builtin-serverless] directory such as _Mask RCNN,
 Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
-You can follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
+Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
 these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
 understand how to use these functions in the UI to automatically annotate data.
 
