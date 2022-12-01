@@ -15,7 +15,7 @@ from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.engine.utils import md5_hash
 class CacheInteraction:
     def __init__(self, dimension=DimensionType.DIM_2D):
