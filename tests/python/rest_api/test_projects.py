@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import zipfile
 import xml.etree.ElementTree as ET
+import zipfile
 from copy import deepcopy
-from io import BytesIO
 from http import HTTPStatus
+from io import BytesIO
 from itertools import groupby, product
 from time import sleep
 
