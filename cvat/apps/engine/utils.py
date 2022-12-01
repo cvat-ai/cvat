@@ -123,7 +123,7 @@ def parse_exception_message(msg):
         elif 'NotFound' in msg:
             # msg like: 'rest_framework.exceptions.NotFound: ... \n'
             parsed_msg = msg[36:-1]
-    except Exception:
+    except Exception: # nosec
         pass
     return parsed_msg
 
