@@ -190,7 +190,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
                         changeAttribute(attrID, event.target.value);
                     }}
-                    value={attrValue}
+                    defaultValue={attrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>
