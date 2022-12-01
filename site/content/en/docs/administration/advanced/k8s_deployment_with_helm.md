@@ -239,3 +239,12 @@ The default value `cvat.local` may be overriden with `--set ingress.hosts[0].hos
 ```shell
 helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml --set ingress.hosts[0].host=YOUR_FQDN
 ```
+### How to fix fail of `helm upgrade` due label field is immutable reason?
+If an error message like this:
+```shell
+Error: UPGRADE FAILED:cannot patch "cvat-backend-server" with kind Deployment: Deployment.apps "cvat-backend-server" is invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app":"cvat-app", "app.kubernetes.io/instance":"cvat", "app.kubernetes.io/managed-by":"Helm", "app.kubernetes.io/name":"cvat", "app.kubernetes.io/version":"latest", "component":"server", "helm.sh/chart":"cvat", "tier":"backend"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
+```
+To fix that, delete CVAT Deployments before upgrading
+```shell
+kubectl delete deployments --namespace=foo -l app=cvat-app
+```
