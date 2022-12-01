@@ -8,6 +8,7 @@ import json
 from functools import wraps
 from enum import Enum
 from copy import deepcopy
+import textwrap
 from typing import Any, Dict, Optional
 
 import django_rq
@@ -17,7 +18,7 @@ import os
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
@@ -26,7 +27,8 @@ from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
+from drf_spectacular.utils import (extend_schema, extend_schema_view,
+    OpenApiResponse, OpenApiParameter, inline_serializer)
 from drf_spectacular.types import OpenApiTypes
 
 class LambdaType(Enum):
@@ -228,14 +230,16 @@ class LambdaFunction:
 
             if self.kind == LambdaType.DETECTOR:
                 if db_job and not db_job.segment.contains_frame(data["frame"]):
-                    raise ValidationError("the frame is outside the job range")
+                    raise ValidationError("the frame is outside the job range",
+                        code=status.HTTP_400_BAD_REQUEST)
 
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality)
                 })
             elif self.kind == LambdaType.INTERACTOR:
                 if db_job and not db_job.segment.contains_frame(data["frame"]):
-                    raise ValidationError("the frame is outside the job range")
+                    raise ValidationError("the frame is outside the job range",
+                        code=status.HTTP_400_BAD_REQUEST)
 
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
@@ -245,9 +249,11 @@ class LambdaFunction:
                 })
             elif self.kind == LambdaType.REID:
                 if db_job and not db_job.segment.contains_frame(data["frame0"]):
-                    raise ValidationError("the start frame is outside the job range")
+                    raise ValidationError("the start frame is outside the job range",
+                        code=status.HTTP_400_BAD_REQUEST)
                 if db_job and not db_job.segment.contains_frame(data["frame1"]):
-                    raise ValidationError("the end frame is outside the job range")
+                    raise ValidationError("the end frame is outside the job range",
+                        code=status.HTTP_400_BAD_REQUEST)
 
                 payload.update({
                     "image0": self._get_image(db_task, data["frame0"], quality),
@@ -262,7 +268,8 @@ class LambdaFunction:
                     })
             elif self.kind == LambdaType.TRACKER:
                 if db_job and not db_job.segment.contains_frame(data["frame"]):
-                    raise ValidationError("the frame is outside the job range")
+                    raise ValidationError("the frame is outside the job range",
+                        code=status.HTTP_400_BAD_REQUEST)
 
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
@@ -700,7 +707,7 @@ def return_response(success_code=status.HTTP_200_OK):
                 status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 data = str(err)
             except ValidationError as err:
-                status_code = err.code
+                status_code = err.code or status.HTTP_400_BAD_REQUEST
                 data = err.message
             except ObjectDoesNotExist as err:
                 status_code = status.HTTP_400_BAD_REQUEST
