@@ -283,6 +283,7 @@ class AWS_S3(_CloudStorage):
     def get_file_last_modified(self, key):
         return self._head_file(key).get('LastModified')
 
+    @validate_bucket_status
     def upload_fileobj(self, file_obj, file_name):
         self._bucket.upload_fileobj(
             Fileobj=file_obj,
@@ -290,6 +291,7 @@ class AWS_S3(_CloudStorage):
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
 
+    @validate_bucket_status
     def upload_file(self, file_path, file_name=None):
         if not file_name:
             file_name = os.path.basename(file_path)
@@ -446,18 +448,15 @@ class AzureBlobContainer(_CloudStorage):
             else:
                 return Status.NOT_FOUND
 
+    @validate_bucket_status
     def upload_fileobj(self, file_obj, file_name):
         self._container_client.upload_blob(name=file_name, data=file_obj)
 
     def upload_file(self, file_path, file_name=None):
         if not file_name:
             file_name = os.path.basename(file_path)
-        try:
-            with open(file_path, 'r') as f:
-                self.upload_fileobj(f, file_name)
-        except Exception as ex:
-            slogger.glob.error(str(ex))
-            raise
+        with open(file_path, 'r') as f:
+            self.upload_fileobj(f, file_name)
 
     # TODO:
     # def multipart_upload(self, file_obj):
@@ -565,17 +564,15 @@ class GoogleCloudStorage(_CloudStorage):
         buf.seek(0)
         return buf
 
+    @validate_bucket_status
     def upload_fileobj(self, file_obj, file_name):
         self.bucket.blob(file_name).upload_from_file(file_obj)
 
+    @validate_bucket_status
     def upload_file(self, file_path, file_name=None):
         if not file_name:
             file_name = os.path.basename(file_path)
-        try:
-            self.bucket.blob(file_name).upload_from_filename(file_path)
-        except Exception as ex:
-            slogger.glob.info(str(ex))
-            raise
+        self.bucket.blob(file_name).upload_from_filename(file_path)
 
     def create(self):
         try:
@@ -679,11 +676,3 @@ def db_storage_to_storage_instance(db_storage):
         'specific_attributes': db_storage.get_specific_attributes()
     }
     return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-
-@validate_bucket_status
-def import_from_cloud_storage(storage, file_name):
-    return storage.download_fileobj(file_name)
-
-@validate_bucket_status
-def export_to_cloud_storage(storage, file_path, file_name):
-    storage.upload_file(file_path, file_name)

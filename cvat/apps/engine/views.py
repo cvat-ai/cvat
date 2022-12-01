@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import errno
 import io
 import os
 import os.path as osp
@@ -45,9 +44,7 @@ from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage
-)
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -71,7 +68,9 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
+from cvat.apps.engine.utils import (
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
+)
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
@@ -1211,23 +1210,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @staticmethod
     def _get_rq_response(queue, job_id):
-        def parse_exception_message(msg):
-            parsed_msg = msg
-            try:
-                if 'ErrorDetail' in msg:
-                    # msg like: 'rest_framework.exceptions.ValidationError:
-                    # [ErrorDetail(string="...", code=\'invalid\')]\n'
-                    parsed_msg = msg.split('string=')[1].split(', code=')[0].strip("\"")
-                elif 'PermissionDenied' in msg:
-                    # msg like 'rest_framework.exceptions.PermissionDenied: ... \n'
-                    parsed_msg = msg[44:-1]
-                elif 'NotFound' in msg:
-                    # msg like: 'rest_framework.exceptions.NotFound: ... \n'
-                    parsed_msg = msg[36:-1]
-            except Exception:
-                pass
-            return parsed_msg
-
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
         response = {}
@@ -2210,7 +2192,7 @@ def rq_handler(job, exc_type, exc_value, tb):
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    data = import_from_cloud_storage(storage, key)
+    data = storage.download_fileobj(key)
     with open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
@@ -2348,7 +2330,12 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                         storage = db_storage_to_storage_instance(db_storage)
 
-                        export_to_cloud_storage(storage, file_path, filename)
+                        try:
+                            storage.upload_file(file_path, filename)
+                        except (ValidationError, PermissionDenied, NotFound) as ex:
+                            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                                '\n'.join([str(d) for d in ex.detail])
+                            return Response(data=msg, status=ex.status_code)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()

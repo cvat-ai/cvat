@@ -110,17 +110,34 @@ def parse_specific_attributes(specific_attributes):
     } if parsed_specific_attributes else dict()
 
 
+def parse_exception_message(msg):
+    parsed_msg = msg
+    try:
+        if 'ErrorDetail' in msg:
+            # msg like: 'rest_framework.exceptions.ValidationError:
+            # [ErrorDetail(string="...", code=\'invalid\')]\n'
+            parsed_msg = msg.split('string=')[1].split(', code=')[0].strip("\"")
+        elif 'PermissionDenied' in msg:
+            # msg like 'rest_framework.exceptions.PermissionDenied: ... \n'
+            parsed_msg = msg[44:-1]
+        elif 'NotFound' in msg:
+            # msg like: 'rest_framework.exceptions.NotFound: ... \n'
+            parsed_msg = msg[36:-1]
+    except Exception:
+        pass
+    return parsed_msg
+
 def process_failed_job(rq_job):
     if rq_job.meta['tmp_file_descriptor']:
         os.close(rq_job.meta['tmp_file_descriptor'])
     if os.path.exists(rq_job.meta['tmp_file']):
         os.remove(rq_job.meta['tmp_file'])
-    exc_info = str(rq_job.exc_info) or str(rq_job.dependency.exc_info)
+    exc_info = str(rq_job.exc_info or rq_job.dependency.exc_info)
     if rq_job.dependency:
         rq_job.dependency.delete()
     rq_job.delete()
 
-    return exc_info
+    return parse_exception_message(exc_info)
 
 def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
