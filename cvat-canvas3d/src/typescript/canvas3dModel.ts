@@ -104,7 +104,6 @@ export interface Canvas3dDataModel {
     imageIsDeleted: boolean;
     drawData: DrawData;
     mode: Mode;
-    objectUpdating: boolean;
     exception: Error | null;
     objects: any[];
     groupedObjects: any[];
@@ -145,7 +144,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 height: 0,
                 width: 0,
             },
-            objectUpdating: false,
             objects: [],
             groupedObjects: [],
             image: null,
@@ -191,11 +189,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         }
 
         if (frameData.number === this.data.imageID && frameData.deleted === this.data.imageIsDeleted) {
-            if (this.data.objectUpdating) {
-                return;
-            }
             this.data.objects = objectStates;
-            this.data.objectUpdating = true;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
         }
