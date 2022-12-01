@@ -502,7 +502,6 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(username, project_id, format_name, import_data)
 
-
     @pytest.mark.parametrize("username, pid", [("admin1", 8)])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
@@ -526,12 +525,15 @@ class TestImportExportDatasetProject:
         values_to_be_checked = {
             "pid": str(pid),
             "name": project["name"],
-            "tasks": [{
-                "id": tid,
-                "name": (task := tasks[tid])['name'],
-                "size": str(task['size']),
-                "mode": task["mode"],
-            } for tid in project['tasks']]
+            "tasks": [
+                {
+                    "id": tid,
+                    "name": (task := tasks[tid])["name"],
+                    "size": str(task["size"]),
+                    "mode": task["mode"],
+                }
+                for tid in project["tasks"]
+            ],
         }
 
         response = self._export_annotations(username, pid, anno_format)
@@ -539,6 +541,7 @@ class TestImportExportDatasetProject:
         with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
