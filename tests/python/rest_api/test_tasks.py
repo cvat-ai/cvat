@@ -674,9 +674,9 @@ class TestPostTaskData:
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
-
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, org", [(1, "manifest.jsonl", "")], # public bucket
+        "cloud_storage_id, manifest, org",
+        [(1, "manifest.jsonl", "")],  # public bucket
     )
     def test_cannot_create_task_with_mythical_cloud_storage_data(
         self, cloud_storage_id, manifest, org
@@ -686,7 +686,7 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"Task with mythical file from cloud storage {cloud_storage_id}",
-            "labels": [{ "name": "car" }],
+            "labels": [{"name": "car"}],
         }
 
         data_spec = {
