@@ -90,6 +90,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Fix chart not being upgradable (<https://github.com/opencv/cvat/pull/5371>)
 - Broken helm chart - if using custom release name (<https://github.com/opencv/cvat/pull/5403>)
 - Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
+- Creating a task with a Git repository via the SDK
+  (<https://github.com/opencv/cvat/issues/4365>)
 
 ### Security
 - TDB
