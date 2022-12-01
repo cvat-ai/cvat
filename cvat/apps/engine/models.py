@@ -447,7 +447,7 @@ class Segment(models.Model):
     stop_frame = models.IntegerField()
 
     def contains_frame(self, idx: int) -> bool:
-        return self.start_frame <= idx and idx < self.stop_frame
+        return self.start_frame <= idx and idx <= self.stop_frame
 
     class Meta:
         default_permissions = ()
