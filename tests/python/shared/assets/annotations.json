@@ -714,6 +714,53 @@
         }
       ],
       "version": 0
+    },
+    "19": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 44,
+          "label_id": 29,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            479.97322623828586,
+            408.0053547523421,
+            942.6238286479238,
+            513.3868808567604
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 43,
+          "label_id": 30,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            120.81927710843593,
+            213.52074966532928,
+            258.7576974564945,
+            643.614457831327
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
     }
   },
   "task": {
@@ -1417,6 +1464,53 @@
           "source": "manual"
         }
       ],
+      "version": 0
+    },
+    "15": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 44,
+          "label_id": 29,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            479.97322623828586,
+            408.0053547523421,
+            942.6238286479238,
+            513.3868808567604
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 43,
+          "label_id": 30,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            120.81927710843593,
+            213.52074966532928,
+            258.7576974564945,
+            643.614457831327
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
       "version": 0
     }
   }
