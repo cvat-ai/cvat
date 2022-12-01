@@ -87,6 +87,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
 - Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
 - Broken helm chart - if using custom release name (<https://github.com/opencv/cvat/pull/5403>)
+- Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 
 ### Security
 - TDB
