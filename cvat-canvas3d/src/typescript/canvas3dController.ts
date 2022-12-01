@@ -4,14 +4,13 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    Canvas3dModel, Mode, DrawData, ActiveElement, FocusData, GroupData, Configuration,
+    Canvas3dModel, Mode, DrawData, ActiveElement, GroupData, Configuration,
 } from './canvas3dModel';
 
 export interface Canvas3dController {
     readonly drawData: DrawData;
     readonly activeElement: ActiveElement;
     readonly selected: any;
-    readonly focused: FocusData;
     readonly groupData: GroupData;
     readonly configuration: Configuration;
     readonly imageIsDeleted: boolean;
@@ -44,10 +43,6 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public get selected(): any {
         return this.model.data.selected;
-    }
-
-    public get focused(): any {
-        return this.model.data.focusData;
     }
 
     public get imageIsDeleted(): any {
