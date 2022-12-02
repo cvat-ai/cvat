@@ -41,7 +41,7 @@ To enable authentication, do the following:
          SOCIAL_AUTH_GOOGLE_CLIENT_SECRET: '<YOUR_GOOGLE_CLIENT_SECRET>'
    ```
 
-   2. In Git Bash, run the following command:
+   2. In a terminal, run the following command:
 
    ```bash
    docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
