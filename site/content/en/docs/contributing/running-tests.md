@@ -39,7 +39,7 @@ yarn run cypress:run:chrome:canvas3d
 # REST API, SDK and CLI tests
 
 **Initial steps**
-1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare 
+1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
    ```
@@ -98,4 +98,31 @@ pytest ./tests/python --rebuild
    ```
    cd cvat-core
    yarn run test
+   ```
+
+
+<a id="opa-tests"></a>
+## IAM and Open Policy Agent tests
+
+### Generate tests
+
+```bash
+python cvat/apps/iam/rules/tests/generate_tests.py \
+   --output-dir cvat/apps/iam/rules/
+```
+
+### Run testing
+
+- In a Docker container
+   ```
+   docker run --rm -v ${PWD}/cvat/apps/iam/rules:/rules \
+      openpolicyagent/opa:0.34.2-rootless \
+      test /rules -v
+   ```
+
+- Execute OPA directly
+   ```bash
+   curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+   chmod +x ./opa
+   ./opa test cvat/apps/iam/rules
    ```
