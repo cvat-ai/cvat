@@ -1,6 +1,6 @@
 ---
 title: 'Registration'
-linkTitle: 'egistration'
+linkTitle: 'registration'
 weight: 1
 description: 'App CVAT user registration and account access.'
 ---
