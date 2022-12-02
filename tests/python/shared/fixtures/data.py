@@ -359,8 +359,11 @@ def filter_jobs_with_shapes(annotations):
 def filter_tasks_with_shapes(annotations):
     def find(tasks, skip_tasks=None):
         def _is_task_with_shapes(t):
-            if skip_tasks is not None and t["id"] in skip_tasks or \
-            not annotations["task"][str(t["id"])]["shapes"]:
+            if (
+                skip_tasks is not None
+                and t["id"] in skip_tasks
+                or not annotations["task"][str(t["id"])]["shapes"]
+            ):
                 return False
             return True
 

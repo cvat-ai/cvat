@@ -332,7 +332,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(privilege=privilege)
         tasks = tasks_by_org[org]
-        filtered_tasks = filter_tasks_with_shapes(tasks, skip_tasks=[12]) # skip task without data
+        filtered_tasks = filter_tasks_with_shapes(tasks, skip_tasks=[12])  # skip task without data
         username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
 
         data = request_data(tid)
