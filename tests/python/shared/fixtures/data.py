@@ -358,12 +358,7 @@ def filter_jobs_with_shapes(annotations):
 @pytest.fixture(scope="session")
 def filter_tasks_with_shapes(annotations):
     def find(tasks):
-        def _is_task_with_shapes(t):
-            if t.get("data") and annotations["task"][str(t["id"])]["shapes"]:
-                return True
-            return False
-
-        return list(filter(_is_task_with_shapes, tasks))
+        return list(filter(lambda t: annotations["task"][str(t["id"])]["shapes"], tasks))
 
     return find
 
