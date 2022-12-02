@@ -350,7 +350,7 @@ def find_issue_staff_user(is_issue_staff, is_issue_admin):
 @pytest.fixture(scope="session")
 def filter_jobs_with_shapes(annotations):
     def find(jobs):
-        return list(filter(lambda j: annotations["job"][str(j["id"])]["shapes"], jobs))
+        return list(filter(lambda j: annotations["job"].get(str(j["id"]), {}).get("shapes"), jobs))
 
     return find
 
@@ -358,7 +358,9 @@ def filter_jobs_with_shapes(annotations):
 @pytest.fixture(scope="session")
 def filter_tasks_with_shapes(annotations):
     def find(tasks):
-        return list(filter(lambda t: annotations["task"][str(t["id"])]["shapes"], tasks))
+        return list(
+            filter(lambda t: annotations["task"].get(str(t["id"]), {}).get("shapes"), tasks)
+        )
 
     return find
 

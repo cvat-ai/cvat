@@ -248,3 +248,39 @@ To fix that, delete CVAT Deployments before upgrading
 ```shell
 kubectl delete deployments --namespace=foo -l app=cvat-app
 ```
+### How to use existing PersistentVolume to store CVAT data instead of default storage
+It is assumed that you have created a PersistentVolumeClaim named `my-claim-name`
+and a PersistentVolume that backing the claim.
+Claims must exist in the same namespace as the Pod using the claim.
+For details [see](https://kubernetes.io/docs/concepts/storage/persistent-volumes).
+Add these values in the `values.override.yaml`:
+```yaml
+cvat:
+  backend:
+    permissionFix:
+      enabled: false
+    defaultStorage:
+      enabled: false
+    server:
+      additionalVolumes:
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: my-claim-name
+    worker:
+      default:
+        additionalVolumes:
+          - name: cvat-backend-data
+            persistentVolumeClaim:
+              claimName: my-claim-name
+      low:
+        additionalVolumes:
+          - name: cvat-backend-data
+            persistentVolumeClaim:
+              claimName: my-claim-name
+    utils:
+      additionalVolumes:
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: my-claim-name
+
+```
