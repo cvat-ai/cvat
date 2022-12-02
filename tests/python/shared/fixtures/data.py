@@ -357,8 +357,14 @@ def filter_jobs_with_shapes(annotations):
 
 @pytest.fixture(scope="session")
 def filter_tasks_with_shapes(annotations):
-    def find(tasks):
-        return list(filter(lambda t: annotations["task"][str(t["id"])]["shapes"], tasks))
+    def find(tasks, skip_tasks=None):
+        def _is_task_with_shapes(t):
+            if skip_tasks is not None and t["id"] in skip_tasks or \
+            not annotations["task"][str(t["id"])]["shapes"]:
+                return False
+            return True
+
+        return list(filter(_is_task_with_shapes, tasks))
 
     return find
 
@@ -370,7 +376,7 @@ def jobs_with_shapes(jobs, filter_jobs_with_shapes):
 
 @pytest.fixture(scope="session")
 def tasks_with_shapes(tasks, filter_tasks_with_shapes):
-    return filter_tasks_with_shapes(tasks)
+    return filter_tasks_with_shapes(tasks, skip_tasks=[12])
 
 
 @pytest.fixture(scope="session")
