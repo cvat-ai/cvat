@@ -4,6 +4,7 @@
 
 import io
 import os.path as osp
+import zipfile
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -266,6 +267,18 @@ class TestTaskUsecases:
         )
 
         assert osp.isfile(self.tmp_path / "frame-0.jpg")
+        assert self.stdout.getvalue() == ""
+
+    @pytest.mark.parametrize("quality", ("compressed", "original"))
+    def test_can_download_chunk(self, fxt_new_task: Task, quality: str):
+        chunk_path = self.tmp_path / "chunk.zip"
+
+        with open(chunk_path, "wb") as chunk_file:
+            fxt_new_task.download_chunk(0, chunk_file, quality=quality)
+
+        with zipfile.ZipFile(chunk_path, "r") as chunk_zip:
+            assert chunk_zip.testzip() is None
+            assert len(chunk_zip.infolist()) == 1
         assert self.stdout.getvalue() == ""
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):

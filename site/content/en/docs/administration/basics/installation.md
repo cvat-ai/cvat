@@ -137,7 +137,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
   needed.
 
-- Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
+- Download and install [Docker Desktop for Windows](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe).
   Double-click `Docker for Windows Installer` to run the installer.
   More instructions can be found [here](https://docs.docker.com/docker-for-windows/install/).
   Official guide for docker WSL2 backend can be found
