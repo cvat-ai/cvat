@@ -27,7 +27,7 @@ To creata account or log in, go to the [App CVAT](https://app.cvat.ai/) login pa
 
 ![](/images/image001.jpg)
 
-> **Note:** By default authentincation and registration with Google and Git works only for [App CVAT](https://app.cvat.ai/). <br>If you want to use Google and Git authentication on local installation, see [Social auth configuration](/docs/administration/basics/social-accounts-configuration/).
+> **Note:** By default authentication and registration with Google and GitHub work only for [App CVAT](https://app.cvat.ai/). <br>If you want to use Google and GitHub authentication on a local installation, see [Social auth configuration](/docs/administration/basics/social-accounts-configuration/).
 
 ### User registration
 
