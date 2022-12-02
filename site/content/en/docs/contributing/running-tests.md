@@ -39,7 +39,7 @@ yarn run cypress:run:chrome:canvas3d
 # REST API, SDK and CLI tests
 
 **Initial steps**
-1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare 
+1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
    ```
@@ -92,7 +92,7 @@ pytest ./tests/python --rebuild
 **Running tests**
 1. Python tests
    ```
-   python manage.py test --settings cvat.settings.testing cvat/apps utils/cli
+   python manage.py test --settings cvat.settings.testing cvat/apps
    ```
 1. JS tests
    ```

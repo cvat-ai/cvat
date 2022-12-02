@@ -4,6 +4,7 @@
 
 import json
 import os.path as osp
+from http import HTTPStatus
 
 from config import ASSETS_DIR, get_method
 
@@ -31,7 +32,8 @@ if __name__ == "__main__":
             for _obj in response.json()["results"]:
                 oid = _obj["id"]
                 response = get_method("admin1", f"{obj}s/{oid}/annotations")
-                annotations[obj][oid] = response.json()
+                if response.status_code == HTTPStatus.OK:
+                    annotations[obj][oid] = response.json()
 
     with open(osp.join(ASSETS_DIR, f"annotations.json"), "w") as f:
         json.dump(annotations, f, indent=2, sort_keys=True)
