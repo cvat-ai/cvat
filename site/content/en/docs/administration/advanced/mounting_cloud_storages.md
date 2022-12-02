@@ -30,7 +30,7 @@ description: 'Instructions on how to mount AWS S3 bucket, Microsoft Azure contai
 1. Run s3fs, replace `bucket_name`, `mount_point`:
 
    ```bash
-   s3fs <bucket_name> <mount_point> -o allow_other
+   s3fs <bucket_name> <mount_point> -o allow_other -o passwd_file=${HOME}/.passwd-s3fs
    ```
 
 For more details see [here](https://github.com/s3fs-fuse/s3fs-fuse).

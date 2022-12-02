@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,11 +35,9 @@ interface Props {
     canvasInstance: Canvas3d | Canvas;
     jobInstance: any;
     frameData: any;
-    curZLayer: number;
     annotations: any[];
     contextMenuVisibility: boolean;
     activeLabelID: number;
-    activatedStateID: number | null;
     activeObjectType: ObjectType;
     onSetupCanvas: () => void;
     onGroupObjects: (enabled: boolean) => void;
@@ -52,9 +51,8 @@ interface Props {
     onDragCanvas: (enabled: boolean) => void;
     onShapeDrawn: () => void;
     workspace: Workspace;
-    automaticBordering: boolean;
-    showObjectsTextAlways: boolean;
     frame: number;
+    resetZoom: boolean;
 }
 
 interface ViewSize {
@@ -184,6 +182,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         frame,
         jobInstance,
         activeLabelID,
+        resetZoom,
         activeObjectType,
         onShapeDrawn,
         onCreateAnnotations,
@@ -258,6 +257,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstart', onCanvasDragStart);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstop', onCanvasDragDone);
+        canvasInstance.configure({ resetZoom });
     };
 
     const keyControlsKeyDown = (key: KeyboardEvent): void => {
@@ -335,6 +335,10 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             cancelAnimationFrame(animateId.current);
         };
     }, []);
+
+    useEffect(() => {
+        canvasInstance.configure({ resetZoom });
+    }, [resetZoom]);
 
     const updateShapesView = (): void => {
         (canvasInstance as Canvas3d).configureShapes({
