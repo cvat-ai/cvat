@@ -6,7 +6,7 @@
 
 context('Issue 1599 (Polish alphabet).', () => {
     const firstName = 'Świętobor';
-    const lastName = 'Сzcić';
+    const lastName = 'Czcić';
     const userName = 'Testuser_pl';
     const email = 'Testuser_pl@local.local';
     const password = 'Qwerty123!';

@@ -1,6 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/* eslint-disable cypress/no-unnecessary-waiting */
 
 /// <reference types="cypress" />
 
@@ -9,12 +12,10 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. "Move the image" button interaction.', () => {
     const caseId = '86';
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_86_canvas3d_functionality_move_image_button.js';
-    const cuboidCreationParams = {
-        labelName: labelName,
-    };
+    const cuboidCreationParams = { labelName };
 
     before(() => {
-        cy.openTask(taskName)
+        cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);

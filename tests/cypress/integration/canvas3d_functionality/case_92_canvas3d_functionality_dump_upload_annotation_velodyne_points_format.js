@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +14,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
     };
     const dumpTypeVC = 'Kitti Raw Format';
     let annotationVCArchiveName = '';
-    let annotationVCArchiveNameCustomeName = '';
+    let annotationVCArchiveNameCustomName = '';
 
     function confirmUpdate(modalWindowClassName) {
         cy.get(modalWindowClassName).should('be.visible').within(() => {
@@ -63,12 +64,12 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: dumpTypeVC,
-                archiveCustomeName: 'job_export_3d_annotation_custome_name_vc_format',
+                archiveCustomName: 'job_export_3d_annotation_custome_name_vc_format',
             };
             cy.exportJob(exportAnnotationRenameArchive);
             cy.getDownloadFileName().then((file) => {
-                annotationVCArchiveNameCustomeName = file;
-                cy.verifyDownload(annotationVCArchiveNameCustomeName);
+                annotationVCArchiveNameCustomName = file;
+                cy.verifyDownload(annotationVCArchiveNameCustomName);
             });
             cy.verifyNotification();
             cy.removeAnnotations();
@@ -101,7 +102,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             cy.contains('Upload annotations').click();
             uploadAnnotation(
                 dumpTypeVC.split(' ')[0],
-                annotationVCArchiveNameCustomeName,
+                annotationVCArchiveNameCustomName,
                 '.cvat-modal-content-load-task-annotation',
             );
             cy.contains('Annotations have been loaded').should('be.visible');

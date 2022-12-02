@@ -436,7 +436,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Route exact path='/auth/login' component={LoginPageContainer} />
                         <Route
                             exact
-                            path='/auth/login-with-token/:sessionId/:token'
+                            path='/auth/login-with-token/:token'
                             component={LoginWithTokenComponent}
                         />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />

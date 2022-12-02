@@ -218,7 +218,9 @@ def start_services(rebuild=False):
         )
 
     _run(
-        f"docker-compose -p {PREFIX} "
+        # use compatibility mode to have fixed names for containers (with underscores)
+        # https://github.com/docker/compose#about-update-and-backward-compatibility
+        f"docker-compose -p {PREFIX} --compatibility "
         + "--env-file "
         + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
         + f" -f {' -f '.join(DC_FILES)} up -d "
@@ -264,7 +266,9 @@ def services(request):
 
         if stop:
             _run(
-                f"docker-compose -p {PREFIX} "
+                # use compatibility mode to have fixed names for containers (with underscores)
+                # https://github.com/docker/compose#about-update-and-backward-compatibility
+                f"docker-compose -p {PREFIX} --compatibility "
                 + "--env-file "
                 + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
                 + f" -f {' -f '.join(DC_FILES)} down -v",

@@ -117,7 +117,7 @@ context('Import and export annotations: specify source and target storage in mod
             const exportParams = {
                 type: 'annotations',
                 format,
-                archiveCustomeName: 'job_annotations',
+                archiveCustomName: 'job_annotations',
                 targetStorage: {
                     location: 'Cloud storage',
                     cloudStorageId: createdCloudStorageId,
