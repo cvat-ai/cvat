@@ -26,7 +26,7 @@ This section starts with **Create superuser** step that is common for all OS.
 
 In the process of installation you need to create a superuser:
 
-1. In the Git Bash run the following command:
+1. In a terminal run the following command:
 
 ```bash
   docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
