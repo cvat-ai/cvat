@@ -47,9 +47,10 @@ class LimitationViewSet(viewsets.ViewSet):
         if user_id and org_id:
             raise exceptions.ParseError("user_id and org_id cannot be used together")
 
-        instance = Limitation.objects.filter(user_id=user_id, org_id=org_id).first()
-        if instance is None:
-            instance = LimitManager()._create_limitation(user_id=user_id, org_id=org_id)
+        if not user_id and not org_id:
+            raise exceptions.ParseError("list of limitations for all users: not implemented yet")
+
+        instance = LimitManager()._get_or_create_limitation(user_id=user_id, org_id=org_id)
 
         data = self.get_serializer_class()(
             context={"request": request}
@@ -58,6 +59,7 @@ class LimitationViewSet(viewsets.ViewSet):
 
     @action(methods=["GET"], detail=False)
     def default(self, request):
+        # TO-DO: admin only method
         serializer_class = (
             UserLimitationReadSerializer
             if "org" not in request.query_params

@@ -139,10 +139,16 @@ class LimitManager:
     def _get_or_create_limitation(
         self, user_id: Optional[int] = None, org_id: Optional[int] = None
     ) -> Limitation:
+        limitation = Limitation.objects.filter(user_id=user_id, org_id=org_id).first()
+
+        if limitation is not None:
+            return limitation
+
         if org_id:
             serializer = OrgLimitationWriteSerializer(data={"org_id": org_id})
         elif user_id:
             serializer = UserLimitationWriteSerializer(data={"user_id": user_id})
+
         serializer.is_valid(raise_exception=True)
         return serializer.save()
 
@@ -154,17 +160,11 @@ class LimitManager:
     ) -> LimitStatus:
 
         # TO-DO: remove this duplication
-        limitation = None
         org_id = getattr(context, "org_id", None)
-        if org_id:
-            limitation = Limitation.objects.filter(org_id=org_id).first()
-            if limitation is None:
-                limitation = self._create_limitation(org_id=org_id)
         user_id = getattr(context, "user_id", None)
-        if user_id:
-            limitation = Limitation.objects.filter(user_id=user_id).first()
-            if limitation is None:
-                limitation = self._create_limitation(user_id=user_id)
+
+        assert org_id is not None or user_id is not None
+        limitation = self._get_or_create_limitation(user_id=user_id, org_id=org_id)
 
         assert limitation is not None
 
