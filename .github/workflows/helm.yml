@@ -63,7 +63,7 @@ jobs:
         cd helm-chart
         helm dependency update
         cd ..
-        helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f tests/values.test.yaml
+        helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart -f helm-chart/values.yaml -f tests/values.test.yaml
 
     - name: Update test config
       run: |
