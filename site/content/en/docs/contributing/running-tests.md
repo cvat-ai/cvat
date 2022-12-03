@@ -92,7 +92,7 @@ pytest ./tests/python --rebuild
 **Running tests**
 1. Python tests
    ```
-   python manage.py test --settings cvat.settings.testing cvat/apps utils/cli
+   python manage.py test --settings cvat.settings.testing cvat/apps
    ```
 1. JS tests
    ```

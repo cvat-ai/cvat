@@ -1131,7 +1131,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     get_data=dm.task.get_task_data,
                 )
             else:
-                return Response(data="Exporting a task without data is not allowed",
+                return Response(data="Exporting annotations from a task without data is not allowed",
                     status=status.HTTP_400_BAD_REQUEST)
         elif request.method == 'POST' or request.method == 'OPTIONS':
             return self.import_annotations(
@@ -1221,10 +1221,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif job.is_queued:
             response = { "state": "Queued" }
         elif job.is_failed:
-            response = { "state": "Failed", "message": job.exc_info }
+            # FIXME: It seems that in some cases exc_info can be None.
+            # It's not really clear how it is possible, but it can
+            # lead to an error in serializing the response
+            # https://github.com/opencv/cvat/issues/5215
+            response = { "state": "Failed", "message": job.exc_info or "Unknown error" }
         else:
             response = { "state": "Started" }
-            if 'status' in job.meta:
+            if job.meta.get('status'):
                 response['message'] = job.meta['status']
             response['progress'] = job.meta.get('task_progress', 0.)
 
@@ -1311,7 +1315,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 export_func=_export_annotations,
                 callback=dm.views.export_task_as_dataset)
         else:
-            return Response(data="Exporting a task without data is not allowed",
+            return Response(data="Exporting a dataset from a task without data is not allowed",
                 status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(tags=['jobs'])
