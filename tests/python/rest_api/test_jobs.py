@@ -153,7 +153,6 @@ class TestGetAnnotations:
             assert response.status == HTTPStatus.OK
 
             response_data = json.loads(response.data)
-            response_data["shapes"] = sorted(response_data["shapes"], key=lambda a: a["id"])
             assert (
                 DeepDiff(data, response_data, exclude_regex_paths=r"root\['version|updated_date'\]")
                 == {}
