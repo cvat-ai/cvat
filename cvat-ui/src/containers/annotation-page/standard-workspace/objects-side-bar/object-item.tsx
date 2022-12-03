@@ -14,7 +14,7 @@ import {
     pasteShapeAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
-    propagateObject as propagateObjectAction,
+    switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import {
@@ -56,7 +56,7 @@ interface DispatchToProps {
     activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     removeObject: (objectState: any) => void;
     copyShape: (objectState: any) => void;
-    propagateObject: (objectState: any) => void;
+    switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
 }
 
@@ -118,8 +118,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(copyShapeAction(objectState));
             dispatch(pasteShapeAsync());
         },
-        propagateObject(objectState: any): void {
-            dispatch(propagateObjectAction(objectState));
+        switchPropagateVisibility(visible: boolean): void {
+            dispatch(switchPropagateVisibilityAction(visible));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -137,9 +137,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private propagate = (): void => {
-        const { objectState, readonly, propagateObject } = this.props;
+        const { switchPropagateVisibility, readonly } = this.props;
         if (!readonly) {
-            propagateObject(objectState);
+            switchPropagateVisibility(true);
         }
     };
 

@@ -149,7 +149,7 @@ context('Tests for source and target storage.', () => {
             const exportParams = {
                 type: 'annotations',
                 format,
-                archiveCustomeName: 'job_annotations',
+                archiveCustomName: 'job_annotations',
                 targetStorage: project.advancedConfiguration.targetStorage,
             };
             cy.exportJob(exportParams);

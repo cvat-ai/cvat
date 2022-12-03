@@ -66,10 +66,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
                     password: Cypress.env('password'),
                 },
             }).then(async (response) => {
-                const cookies = await response.headers['set-cookie'];
-                const csrfToken = cookies[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
-                const sessionId = cookies[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
-                cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
+                const token = response.body.key;
+                cy.visit(`/auth/login-with-token/${token}?next=/tasks/${taskId}`);
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });
         });
