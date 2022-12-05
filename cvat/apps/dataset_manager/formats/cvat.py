@@ -137,7 +137,8 @@ class CvatExtractor(Extractor):
                             'label': el.attrib.get('label'),
                         }
                     else:
-                        frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
+                        frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] \
+                            if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
                         track = {
                             'id': el.attrib['id'],
                             'label': el.attrib.get('label'),
@@ -877,6 +878,133 @@ def dump_as_cvat_annotation(dumper, annotations):
 def dump_as_cvat_interpolation(dumper, annotations):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
+
+    def dump_shape(shape, element_shapes={}, label=None):
+        dump_data = OrderedDict()
+        if label is None:
+            dump_data.update(OrderedDict([
+                ("frame", str(shape.frame)),
+            ]))
+        else:
+            dump_data.update(OrderedDict([
+                ("label", label),
+            ]))
+        dump_data.update(OrderedDict([
+            ("keyframe", str(int(shape.keyframe))),
+        ]))
+
+        if shape.type != "skeleton":
+            dump_data.update(OrderedDict([
+                ("outside", str(int(shape.outside))),
+                ("occluded", str(int(shape.occluded))),
+            ]))
+
+        if shape.type == "rectangle":
+            dump_data.update(OrderedDict([
+                ("xtl", "{:.2f}".format(shape.points[0])),
+                ("ytl", "{:.2f}".format(shape.points[1])),
+                ("xbr", "{:.2f}".format(shape.points[2])),
+                ("ybr", "{:.2f}".format(shape.points[3])),
+            ]))
+
+            if shape.rotation:
+                dump_data.update(OrderedDict([
+                    ("rotation", "{:.2f}".format(shape.rotation))
+                ]))
+        elif shape.type == "ellipse":
+            dump_data.update(OrderedDict([
+                ("cx", "{:.2f}".format(shape.points[0])),
+                ("cy", "{:.2f}".format(shape.points[1])),
+                ("rx", "{:.2f}".format(shape.points[2] - shape.points[0])),
+                ("ry", "{:.2f}".format(shape.points[1] - shape.points[3]))
+            ]))
+
+            if shape.rotation:
+                dump_data.update(OrderedDict([
+                    ("rotation", "{:.2f}".format(shape.rotation))
+                ]))
+        elif shape.type == "mask":
+            dump_data.update(OrderedDict([
+                ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
+                ("left", f"{int(shape.points[-4])}"),
+                ("top", f"{int(shape.points[-3])}"),
+                ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
+                ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+            ]))
+        elif shape.type == "cuboid":
+            dump_data.update(OrderedDict([
+                ("xtl1", "{:.2f}".format(shape.points[0])),
+                ("ytl1", "{:.2f}".format(shape.points[1])),
+                ("xbl1", "{:.2f}".format(shape.points[2])),
+                ("ybl1", "{:.2f}".format(shape.points[3])),
+                ("xtr1", "{:.2f}".format(shape.points[4])),
+                ("ytr1", "{:.2f}".format(shape.points[5])),
+                ("xbr1", "{:.2f}".format(shape.points[6])),
+                ("ybr1", "{:.2f}".format(shape.points[7])),
+                ("xtl2", "{:.2f}".format(shape.points[8])),
+                ("ytl2", "{:.2f}".format(shape.points[9])),
+                ("xbl2", "{:.2f}".format(shape.points[10])),
+                ("ybl2", "{:.2f}".format(shape.points[11])),
+                ("xtr2", "{:.2f}".format(shape.points[12])),
+                ("ytr2", "{:.2f}".format(shape.points[13])),
+                ("xbr2", "{:.2f}".format(shape.points[14])),
+                ("ybr2", "{:.2f}".format(shape.points[15]))
+            ]))
+        elif shape.type != "skeleton":
+            dump_data.update(OrderedDict([
+                ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
+                    for x,y in pairwise(shape.points)]))
+            ]))
+
+        if label is None:
+            dump_data["z_order"] = str(shape.z_order)
+
+        if shape.type == "rectangle":
+            dumper.open_box(dump_data)
+        elif shape.type == "ellipse":
+            dumper.open_ellipse(dump_data)
+        elif shape.type == "polygon":
+            dumper.open_polygon(dump_data)
+        elif shape.type == "polyline":
+            dumper.open_polyline(dump_data)
+        elif shape.type == "points":
+            dumper.open_points(dump_data)
+        elif shape.type == 'mask':
+            dumper.open_mask(dump_data)
+        elif shape.type == "cuboid":
+            dumper.open_cuboid(dump_data)
+        elif shape.type == 'skeleton':
+            dumper.open_skeleton(dump_data)
+            for element_shape, label in element_shapes.get(shape.frame, []):
+                dump_shape(element_shape, label=label)
+        else:
+            raise NotImplementedError("unknown shape type")
+
+        for attr in shape.attributes:
+            dumper.add_attribute(OrderedDict([
+                ("name", attr.name),
+                ("value", attr.value)
+            ]))
+
+        if shape.type == "rectangle":
+            dumper.close_box()
+        elif shape.type == "ellipse":
+            dumper.close_ellipse()
+        elif shape.type == "polygon":
+            dumper.close_polygon()
+        elif shape.type == "polyline":
+            dumper.close_polyline()
+        elif shape.type == "points":
+            dumper.close_points()
+        elif shape.type == 'mask':
+            dumper.close_mask()
+        elif shape.type == "cuboid":
+            dumper.close_cuboid()
+        elif shape.type == "skeleton":
+            dumper.close_skeleton()
+        else:
+            raise NotImplementedError("unknown shape type")
+
     def dump_track(idx, track):
         track_id = idx
         dump_data = OrderedDict([
@@ -896,119 +1024,16 @@ def dump_as_cvat_interpolation(dumper, annotations):
             dump_data['group_id'] = str(track.group)
         dumper.open_track(dump_data)
 
+        element_shapes = {}
+        for element_track in track.elements:
+            for element_shape in element_track.shapes:
+                if element_shape.frame not in element_shapes:
+                    element_shapes[element_shape.frame] = []
+                element_shapes[element_shape.frame].append((element_shape, element_track.label))
+
         for shape in track.shapes:
-            dump_data = OrderedDict([
-                ("frame", str(shape.frame)),
-                ("outside", str(int(shape.outside))),
-                ("occluded", str(int(shape.occluded))),
-                ("keyframe", str(int(shape.keyframe))),
-            ])
+            dump_shape(shape, element_shapes)
 
-            if shape.type == "rectangle":
-                dump_data.update(OrderedDict([
-                    ("xtl", "{:.2f}".format(shape.points[0])),
-                    ("ytl", "{:.2f}".format(shape.points[1])),
-                    ("xbr", "{:.2f}".format(shape.points[2])),
-                    ("ybr", "{:.2f}".format(shape.points[3])),
-                ]))
-
-                if shape.rotation:
-                    dump_data.update(OrderedDict([
-                        ("rotation", "{:.2f}".format(shape.rotation))
-                    ]))
-            elif shape.type == "ellipse":
-                dump_data.update(OrderedDict([
-                    ("cx", "{:.2f}".format(shape.points[0])),
-                    ("cy", "{:.2f}".format(shape.points[1])),
-                    ("rx", "{:.2f}".format(shape.points[2] - shape.points[0])),
-                    ("ry", "{:.2f}".format(shape.points[1] - shape.points[3]))
-                ]))
-
-                if shape.rotation:
-                    dump_data.update(OrderedDict([
-                        ("rotation", "{:.2f}".format(shape.rotation))
-                    ]))
-            elif shape.type == "mask":
-                dump_data.update(OrderedDict([
-                    ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
-                    ("left", f"{int(shape.points[-4])}"),
-                    ("top", f"{int(shape.points[-3])}"),
-                    ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
-                    ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
-                ]))
-            elif shape.type == "cuboid":
-                dump_data.update(OrderedDict([
-                    ("xtl1", "{:.2f}".format(shape.points[0])),
-                    ("ytl1", "{:.2f}".format(shape.points[1])),
-                    ("xbl1", "{:.2f}".format(shape.points[2])),
-                    ("ybl1", "{:.2f}".format(shape.points[3])),
-                    ("xtr1", "{:.2f}".format(shape.points[4])),
-                    ("ytr1", "{:.2f}".format(shape.points[5])),
-                    ("xbr1", "{:.2f}".format(shape.points[6])),
-                    ("ybr1", "{:.2f}".format(shape.points[7])),
-                    ("xtl2", "{:.2f}".format(shape.points[8])),
-                    ("ytl2", "{:.2f}".format(shape.points[9])),
-                    ("xbl2", "{:.2f}".format(shape.points[10])),
-                    ("ybl2", "{:.2f}".format(shape.points[11])),
-                    ("xtr2", "{:.2f}".format(shape.points[12])),
-                    ("ytr2", "{:.2f}".format(shape.points[13])),
-                    ("xbr2", "{:.2f}".format(shape.points[14])),
-                    ("ybr2", "{:.2f}".format(shape.points[15]))
-                ]))
-            else:
-                dump_data.update(OrderedDict([
-                    ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
-                        for x,y in pairwise(shape.points)]))
-                ]))
-
-            dump_data["z_order"] = str(shape.z_order)
-
-            if shape.type == "rectangle":
-                dumper.open_box(dump_data)
-            elif shape.type == "ellipse":
-                dumper.open_ellipse(dump_data)
-            elif shape.type == "polygon":
-                dumper.open_polygon(dump_data)
-            elif shape.type == "polyline":
-                dumper.open_polyline(dump_data)
-            elif shape.type == "points":
-                dumper.open_points(dump_data)
-            elif shape.type == 'mask':
-                dumper.open_mask(dump_data)
-            elif shape.type == "cuboid":
-                dumper.open_cuboid(dump_data)
-            elif shape.type == 'skeleton':
-                dumper.open_skeleton(dump_data)
-            else:
-                raise NotImplementedError("unknown shape type")
-
-            for attr in shape.attributes:
-                dumper.add_attribute(OrderedDict([
-                    ("name", attr.name),
-                    ("value", attr.value)
-                ]))
-
-            if shape.type == "rectangle":
-                dumper.close_box()
-            elif shape.type == "ellipse":
-                dumper.close_ellipse()
-            elif shape.type == "polygon":
-                dumper.close_polygon()
-            elif shape.type == "polyline":
-                dumper.close_polyline()
-            elif shape.type == "points":
-                dumper.close_points()
-            elif shape.type == 'mask':
-                dumper.close_mask()
-            elif shape.type == "cuboid":
-                dumper.close_cuboid()
-            elif shape.type == "skeleton":
-                dumper.close_skeleton()
-            else:
-                raise NotImplementedError("unknown shape type")
-
-        for i, element in enumerate(track.elements):
-            dump_track(i, element)
         dumper.close_track()
 
     counter = 0
@@ -1017,11 +1042,13 @@ def dump_as_cvat_interpolation(dumper, annotations):
         counter += 1
 
     for shape in annotations.shapes:
-        frame_step = annotations.frame_step if not isinstance(annotations, ProjectData) else annotations.frame_step[shape.task_id]
+        frame_step = annotations.frame_step if not isinstance(annotations, ProjectData) \
+            else annotations.frame_step[shape.task_id]
         if not isinstance(annotations, ProjectData):
             stop_frame = int(annotations.meta[annotations.META_FIELD]['stop_frame'])
         else:
-            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta[annotations.META_FIELD]['tasks']))[0][1]
+            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id,
+                annotations.meta[annotations.META_FIELD]['tasks']))[0][1]
             stop_frame = int(task_meta['stop_frame'])
         track = {
             'label': shape.label,
@@ -1102,32 +1129,23 @@ def load_anno(file_object, annotations):
     next(context)
 
     track = None
-    track_element=None
     shape = None
     shape_element=None
     tag = None
     image_is_opened = False
     attributes = None
     elem_attributes = None
+    element_tracks = None
     for ev, el in context:
         if ev == 'start':
             if el.tag == 'track':
-                if track:
-                    track_element = annotations.Track(
-                        label=el.attrib['label'],
-                        group=int(el.attrib.get('group_id', 0)),
-                        source=el.attrib.get('source', 'manual'),
-                        shapes=[],
-                        elements=[],
-                    )
-                else:
-                    track = annotations.Track(
-                        label=el.attrib['label'],
-                        group=int(el.attrib.get('group_id', 0)),
-                        source=el.attrib.get('source', 'manual'),
-                        shapes=[],
-                        elements=[],
-                    )
+                track = annotations.Track(
+                    label=el.attrib['label'],
+                    group=int(el.attrib.get('group_id', 0)),
+                    source=el.attrib.get('source', 'manual'),
+                    shapes=[],
+                    elements=[],
+                )
             elif el.tag == 'image':
                 image_is_opened = True
                 frame_id = annotations.abs_frame_id(match_dm_item(
@@ -1145,6 +1163,14 @@ def load_anno(file_object, annotations):
                         'points': [],
                         'type': 'rectangle' if el.tag == 'box' else el.tag
                     }
+                    if track is not None and el.attrib['label'] not in element_tracks:
+                        element_tracks[el.attrib['label']] = annotations.Track(
+                            label=el.attrib['label'],
+                            group=0,
+                            source=el.attrib.get('source', 'manual'),
+                            shapes=[],
+                            elements=[],
+                        )
                 else:
                     attributes = []
                     shape = {
@@ -1154,6 +1180,10 @@ def load_anno(file_object, annotations):
                     }
                     if track is None:
                         shape['elements'] = []
+                    elif shape['type'] == 'skeleton':
+                        shape['frame'] = el.attrib['frame']
+                        if element_tracks is None:
+                            element_tracks = {}
             elif el.tag == 'tag' and image_is_opened:
                 attributes = []
                 tag = {
@@ -1213,15 +1243,21 @@ def load_anno(file_object, annotations):
                     for pair in el.attrib['points'].split(';'):
                         shape_element['points'].extend(map(float, pair.split(',')))
 
-                shape_element['frame'] = frame_id
-                shape_element['source'] = str(el.attrib.get('source', 'manual'))
-                shape['elements'].append(annotations.LabeledShape(**shape_element))
+                if track is None:
+                    shape_element['frame'] = frame_id
+                    shape_element['source'] = str(el.attrib.get('source', 'manual'))
+                    shape['elements'].append(annotations.LabeledShape(**shape_element))
+                else:
+                    shape_element["frame"] = shape['frame']
+                    shape_element['keyframe'] = el.attrib['keyframe'] == "1"
+                    if shape_element['keyframe']:
+                        element_tracks[el.attrib['label']].shapes.append(annotations.TrackedShape(**shape_element))
                 shape_element = None
 
             elif el.tag in supported_shapes:
                 if track is not None:
                     shape['frame'] = el.attrib['frame']
-                    shape['outside'] = el.attrib['outside'] == "1"
+                    shape['outside'] = el.attrib.get('outside', "0") == "1"
                     shape['keyframe'] = el.attrib['keyframe'] == "1"
                 else:
                     shape['frame'] = frame_id
@@ -1230,7 +1266,7 @@ def load_anno(file_object, annotations):
                     shape['source'] = str(el.attrib.get('source', 'manual'))
                     shape['outside'] = False
 
-                shape['occluded'] = el.attrib['occluded'] == '1'
+                shape['occluded'] = el.attrib.get('occluded', "0") == '1'
                 shape['z_order'] = int(el.attrib.get('z_order', 0))
                 shape['rotation'] = float(el.attrib.get('rotation', 0))
 
@@ -1273,10 +1309,8 @@ def load_anno(file_object, annotations):
                 else:
                     for pair in el.attrib['points'].split(';'):
                         shape['points'].extend(map(float, pair.split(',')))
-                if track_element is not None:
-                    if shape['keyframe']:
-                        track_element.shapes.append(annotations.TrackedShape(**shape))
-                elif track is not None:
+
+                if track is not None:
                     if shape['keyframe']:
                         track.shapes.append(annotations.TrackedShape(**shape))
                 else:
@@ -1284,28 +1318,27 @@ def load_anno(file_object, annotations):
                 shape = None
 
             elif el.tag == 'track':
-                if track_element:
-                    track.elements.append(track_element)
-                    track_element = None
+                if track.shapes[0].type == 'mask':
+                    # convert mask tracks to shapes
+                    # because mask track are not supported
+                    annotations.add_shape(annotations.LabeledShape(**{
+                        'attributes': track.shapes[0].attributes,
+                        'points': track.shapes[0].points,
+                        'type': track.shapes[0].type,
+                        'occluded': track.shapes[0].occluded,
+                        'frame': track.shapes[0].frame,
+                        'source': track.shapes[0].source,
+                        'rotation': track.shapes[0].rotation,
+                        'z_order': track.shapes[0].z_order,
+                        'group': track.shapes[0].group,
+                        'label': track.label,
+                    }))
                 else:
-                    if track.shapes[0].type == 'mask':
-                        # convert mask tracks to shapes
-                        # because mask track are not supported
-                        annotations.add_shape(annotations.LabeledShape(**{
-                            'attributes': track.shapes[0].attributes,
-                            'points': track.shapes[0].points,
-                            'type': track.shapes[0].type,
-                            'occluded': track.shapes[0].occluded,
-                            'frame': track.shapes[0].frame,
-                            'source': track.shapes[0].source,
-                            'rotation': track.shapes[0].rotation,
-                            'z_order': track.shapes[0].z_order,
-                            'group': track.shapes[0].group,
-                            'label': track.label,
-                        }))
-                    else:
-                        annotations.add_track(track)
-                    track = None
+                    if element_tracks is not None:
+                        for element in element_tracks.values():
+                            track.elements.append(element)
+                    annotations.add_track(track)
+                track = None
             elif el.tag == 'image':
                 image_is_opened = False
             elif el.tag == 'tag':
