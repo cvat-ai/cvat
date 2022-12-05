@@ -1,12 +1,19 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/* eslint-disable cypress/no-unnecessary-waiting */
 
 /// <reference types="cypress" />
 
 Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noChangesExpected) => {
     cy.compareImages(baseImage, afterImage).then((diffPercent) => {
-        noChangesExpected ? expect(diffPercent).to.be.lt(0.01) : expect(diffPercent).to.be.gt(0);
+        if (noChangesExpected) {
+            expect(diffPercent).to.be.lt(0.02);
+        } else {
+            expect(diffPercent).to.be.gt(0);
+        }
     });
 });
 
@@ -31,5 +38,5 @@ Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
         getEl = cy.get(element).find('.cvat-canvas3d-fullsize');
         padding = -40;
     }
-    getEl.screenshot(screenshotName, {padding: padding});
+    getEl.screenshot(screenshotName, { padding });
 });

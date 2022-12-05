@@ -11,7 +11,13 @@ context('Create an annotation task with manifest.', () => {
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some default value for type Text';
     const pathToFiles = `${__dirname}/assets/case_65_manifest`;
-    let filesToAttach = [];
+    // Specify paths relative to the fixtures folder to the file names
+    // for the plugin "cypress-file-upload" to work correctly
+    const filesToAttach = [
+        `../../${pathToFiles}/demo_manifest.jsonl`,
+        `../../${pathToFiles}/image_case_65_1.png`,
+        `../../${pathToFiles}/image_case_65_2.png`,
+    ];
 
     before(() => {
         cy.visit('auth/login');
@@ -25,13 +31,7 @@ context('Create an annotation task with manifest.', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('Task created successfully.', () => {
-            cy.task('listFiles', pathToFiles).then(($files) => {
-                $files.forEach(($el) => {
-                    // Add the path relative to the fixtures folder to the file names for the plugin "cypress-file-upload" to work correctly
-                    filesToAttach.push(`../../${pathToFiles}/${$el}`);
-                });
-                cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, filesToAttach);
-            });
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, filesToAttach);
             cy.get('.cvat-notification-create-task-fail').should('not.exist');
         });
 
