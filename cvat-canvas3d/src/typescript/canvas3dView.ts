@@ -225,13 +225,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const canvasFrontView = this.views.front.renderer.domElement;
 
         canvasPerspectiveView.addEventListener('contextmenu', (e: MouseEvent): void => {
-            if (this.controller.focused.clientID !== null) {
+            if (this.model.data.activeElement.clientID !== null) {
                 this.dispatchEvent(
                     new CustomEvent('canvas.contextmenu', {
                         bubbles: false,
                         cancelable: true,
                         detail: {
-                            clientID: Number(this.controller.focused.clientID),
+                            clientID: Number(this.model.data.activeElement.clientID),
                             clientX: e.clientX,
                             clientY: e.clientY,
                         },
@@ -335,15 +335,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (intersects.length === 0) {
                     this.setHelperVisibility(false);
                 }
-                this.dispatchEvent(
-                    new CustomEvent('canvas.selected', {
-                        bubbles: false,
-                        cancelable: true,
-                        detail: {
-                            clientID: intersects.length !== 0 ? Number(intersects[0].object.name) : null,
-                        },
-                    }),
-                );
+                const intersectedClientID = intersects[0]?.object?.name || null;
+                if (this.model.data.activeElement.clientID !== intersectedClientID) {
+                    this.dispatchEvent(
+                        new CustomEvent('canvas.selected', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                clientID: typeof intersectedClientID === 'string' ? +intersectedClientID : null,
+                            },
+                        }),
+                    );
+                }
             }
         });
 
@@ -356,7 +359,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.views.perspective.scene.children[0].children,
                     false,
                 );
-                if (intersects.length !== 0 || this.controller.focused.clientID !== null) {
+                if (intersects.length !== 0 || this.model.data.activeElement.clientID !== null) {
                     this.setDefaultZoom();
                 } else {
                     const { x, y, z } = this.action.frameCoordinates;
@@ -1261,14 +1264,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const intersects = renderer.intersectObjects(children, false);
             if (intersects.length !== 0) {
                 const clientID = intersects[0].object.name;
-                if (clientID === undefined || clientID === '' || this.model.data.focusData.clientID === clientID) {
+                if (clientID === undefined || clientID === '' || this.model.data.activeElement.clientID === clientID) {
                     return;
                 }
                 if (!this.action.selectable) return;
-                this.resetColor();
                 const object = this.views.perspective.scene.getObjectByName(clientID);
                 if (object === undefined) return;
-                this.model.data.focusData.clientID = clientID;
                 this.dispatchEvent(
                     new CustomEvent('canvas.selected', {
                         bubbles: false,
@@ -1278,22 +1279,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         },
                     }),
                 );
-            } else if (this.model.data.focusData.clientID !== null) {
-                this.resetColor();
-                this.model.data.focusData.clientID = null;
             }
         }
     };
-
-    private resetColor(): void {
-        this.model.data.objects.forEach((object: any): void => {
-            const { clientID } = object;
-            const target = this.views.perspective.scene.getObjectByName(String(clientID));
-            if (target) {
-                ((target as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set((target as any).originalColor);
-            }
-        });
-    }
 
     public render(): void {
         Object.keys(this.views).forEach((view: string): void => {
