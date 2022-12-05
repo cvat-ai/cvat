@@ -750,7 +750,8 @@ class FunctionViewSet(viewsets.ViewSet):
     @extend_schema(description=textwrap.dedent("""\
         Allows to execute a function for immediate computation.
 
-        Supposed for short-living executions, useful for interactive calls.
+        Intended for short-lived executions, useful for interactive calls.
+
         When executed for interactive annotation, the job id must be specified
         in the 'job' input field.
         """),
