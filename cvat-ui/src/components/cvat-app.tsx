@@ -81,6 +81,7 @@ interface CVATAppProps {
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
     loadOrganizations: () => void;
+    loadBackendHealth: () => void;
     keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
@@ -101,12 +102,15 @@ interface CVATAppProps {
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
+    healthFetching: boolean;
+    healthIinitialized: boolean;
+    backendIsHealthy: boolean;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized, history, location } = this.props;
+        const { verifyAuthorized, loadBackendHealth, history, location } = this.props;
         // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -121,6 +125,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             customWaViewHit(_location.pathname, _location.search, _location.hash);
         });
 
+        loadBackendHealth();
         verifyAuthorized();
 
         const {
@@ -178,6 +183,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             initModels,
             loadOrganizations,
             loadAuthActions,
+            loadBackendHealth,
             userInitialized,
             userFetching,
             organizationsFetching,
@@ -196,7 +202,31 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             authActionsFetching,
             authActionsInitialized,
             isModelPluginActive,
+            healthFetching,
+            healthIinitialized,
+            backendIsHealthy,
         } = this.props;
+
+        if (!healthIinitialized && !healthFetching) {
+            loadBackendHealth();
+            return;
+        }
+
+        if (healthIinitialized && !healthFetching && !backendIsHealthy) {
+            Modal.error({
+                title: 'Cannot connect to the server',
+                className: 'cvat-modal-cannot-connect-server',
+                closable: false,
+                okButtonProps: { disabled: true},
+                content: (
+                    <Text>
+                        {`does not support API, which is used by CVAT. `}
+                        Cannot connect to the server!
+                    </Text>
+                ),
+            });
+            return;
+        }
 
         this.showErrors();
         this.showMessages();

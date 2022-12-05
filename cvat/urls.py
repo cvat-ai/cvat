@@ -48,8 +48,5 @@ if apps.is_installed('cvat.apps.webhooks'):
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
 
-if apps.is_installed('cvat.apps.service_unavailable') and \
-    'service_unavailable' == os.environ.get('DJANGO_CONFIGURATION'):
-    urlpatterns = [
-        path('', include('cvat.apps.service_unavailable.urls'))
-    ]
+if apps.is_installed('health_check'):
+    urlpatterns.append(path('api/server/health-check/', include('health_check.urls')))

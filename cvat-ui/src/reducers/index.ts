@@ -288,6 +288,12 @@ export interface AboutState {
     initialized: boolean;
 }
 
+export interface HealthState {
+    fetching: boolean;
+    initialized: boolean;
+    isHealthy: boolean;
+}
+
 export interface UserAgreement {
     name: string;
     urlDisplayText: string;
@@ -903,6 +909,7 @@ export interface CombinedState {
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     webhooks: WebhooksState;
+    health: HealthState;
 }
 
 export enum DimensionType {

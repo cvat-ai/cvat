@@ -12,6 +12,7 @@ import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { getModelsAsync } from 'actions/models-actions';
 import { getPluginsAsync } from 'actions/plugins-actions';
+import { getHealthAsync } from 'actions/health-check-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
@@ -51,6 +52,9 @@ interface StateToProps {
     user: any;
     keyMap: KeyMap;
     isModelPluginActive: boolean;
+    healthFetching: boolean;
+    healthIinitialized: boolean;
+    backendIsHealthy: boolean;
 }
 
 interface DispatchToProps {
@@ -66,6 +70,7 @@ interface DispatchToProps {
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
     loadOrganizations: () => void;
+    loadBackendHealth: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -77,6 +82,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { userAgreements } = state;
     const { models } = state;
     const { organizations } = state;
+    const { health } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -101,6 +107,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         user: auth.user,
         keyMap: shortcuts.keyMap,
         isModelPluginActive: plugins.list.MODELS,
+        healthFetching: health.fetching,
+        healthIinitialized: health.initialized,
+        backendIsHealthy: health.isHealthy,
     };
 }
 
@@ -118,6 +127,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
         loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
+        loadBackendHealth: (): void => dispatch(getHealthAsync(),)
     };
 }
 
