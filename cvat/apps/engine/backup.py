@@ -800,9 +800,7 @@ def export(db_instance, request):
                         try:
                             storage.upload_file(file_path, filename)
                         except (ValidationError, PermissionDenied, NotFound) as ex:
-                            msg = str(ex) if not isinstance(ex, ValidationError) else \
-                                '\n'.join([str(d) for d in ex.detail])
-                            return Response(data=msg, status=ex.status_code)
+                            return Response(data=str(ex), status=ex.status_code)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()
