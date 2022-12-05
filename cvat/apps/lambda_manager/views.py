@@ -180,6 +180,11 @@ class LambdaFunction:
 
     def invoke(self, db_task: Task, data: Dict[str, Any], *, db_job: Optional[Job] = None):
         try:
+            if db_job is not None and db_job.get_task_id() != db_task.id:
+                raise ValidationError("Job task id does not match task id",
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+
             payload = {}
             data = {k: v for k,v in data.items() if v is not None}
             threshold = data.get("threshold")
@@ -753,7 +758,8 @@ class FunctionViewSet(viewsets.ViewSet):
         Intended for short-lived executions, useful for interactive calls.
 
         When executed for interactive annotation, the job id must be specified
-        in the 'job' input field.
+        in the 'job' input field. The task id is not required in this case,
+        but if it is specified, it must match the job task id.
         """),
         request=inline_serializer("OnlineFunctionCall", fields={
             "job": serializers.IntegerField(required=False),
