@@ -117,12 +117,8 @@ def parse_exception_message(msg):
             # msg like: 'rest_framework.exceptions.ValidationError:
             # [ErrorDetail(string="...", code=\'invalid\')]\n'
             parsed_msg = msg.split('string=')[1].split(', code=')[0].strip("\"")
-        elif 'PermissionDenied' in msg:
-            # msg like 'rest_framework.exceptions.PermissionDenied: ... \n'
-            parsed_msg = msg[44:-1]
-        elif 'NotFound' in msg:
-            # msg like: 'rest_framework.exceptions.NotFound: ... \n'
-            parsed_msg = msg[36:-1]
+        elif msg.startswith('rest_framework.exceptions.'):
+            parsed_msg = msg.split(':')[1].strip()
     except Exception: # nosec
         pass
     return parsed_msg

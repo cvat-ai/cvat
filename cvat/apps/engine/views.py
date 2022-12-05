@@ -2057,7 +2057,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
             if not db_storage.manifests.count():
-                raise Exception('There is no manifest file')
+                raise ValidationError('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
             manifest_prefix = os.path.dirname(manifest_path)
 
@@ -2097,7 +2097,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if not os.path.exists(db_storage.get_preview_path()):
                 storage = db_storage_to_storage_instance(db_storage)
                 if not db_storage.manifests.count():
-                    raise Exception('Cannot get the cloud storage preview. There is no manifest file')
+                    raise ValidationError('Cannot get the cloud storage preview. There is no manifest file')
                 preview_path = None
                 for manifest_model in db_storage.manifests.all():
                     manifest_prefix = os.path.dirname(manifest_model.filename)
@@ -2153,7 +2153,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
             storage_status = storage.get_status()
-            return HttpResponse(storage_status)
+            return Response(storage_status)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
