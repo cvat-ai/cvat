@@ -53,10 +53,10 @@ except ImportError:
 def generate_ssh_keys():
     keys_dir = '{}/keys'.format(os.getcwd())
     ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
-    pidfile = os.path.join(ssh_dir, 'ssh.pid')
+    pidfile = os.path.join(keys_dir, 'ssh.pid')
 
     def add_ssh_keys():
-        IGNORE_FILES = ('README.md', 'ssh.pid')
+        IGNORE_FILES = ('README.md',)
         keys_to_add = [entry.name for entry in os.scandir(ssh_dir) if entry.name not in IGNORE_FILES]
         keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
         subprocess.run(['ssh-add {}'.format(keys_to_add)], # nosec
