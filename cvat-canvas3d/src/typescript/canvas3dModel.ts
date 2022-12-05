@@ -62,10 +62,6 @@ export enum MouseInteraction {
     HOVER = 'hover',
 }
 
-export interface FocusData {
-    clientID: string | null;
-}
-
 export interface ShapeProperties {
     opacity: number;
     outlined: boolean;
@@ -113,7 +109,6 @@ export interface Canvas3dDataModel {
     exception: Error | null;
     objects: any[];
     groupedObjects: any[];
-    focusData: FocusData;
     selected: any;
     shapeProperties: ShapeProperties;
     groupData: GroupData;
@@ -169,9 +164,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             },
             mode: Mode.IDLE,
             exception: null,
-            focusData: {
-                clientID: null,
-            },
             groupData: {
                 enabled: false,
                 grouped: [],
