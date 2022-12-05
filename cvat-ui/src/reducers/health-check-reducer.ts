@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
+import { BoundariesActions } from 'actions/boundaries-actions';
 import { HealthActions, HealthCheckActionTypes } from 'actions/health-check-actions';
 import { HealthState } from '.';
 
@@ -10,10 +10,16 @@ const defaultState: HealthState = {
     initialized: false,
     fetching: false,
     isHealthy: false,
+    progress: '0/1',
 };
 
 export default function (state = defaultState, action: HealthActions | BoundariesActions): HealthState {
     switch (action.type) {
+        case HealthCheckActionTypes.GET_HEALTH:
+            return {
+                ...state,
+                fetching: true,
+            };
         case HealthCheckActionTypes.GET_HEALTH_SUCCESS:
             return {
                 ...state,
@@ -27,6 +33,11 @@ export default function (state = defaultState, action: HealthActions | Boundarie
                 fetching: false,
                 initialized: true,
                 isHealthy: false,
+            };
+        case HealthCheckActionTypes.GET_HEALTH_PROGRESS:
+            return {
+                ...state,
+                progress: action.payload.progress,
             };
         default:
             return state;

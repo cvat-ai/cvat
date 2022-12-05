@@ -266,12 +266,11 @@ function build() {
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-             async healthCheck(maxRetries=1, checkPeriod=5000, requestTimeout=5000) {
+            async healthCheck(requestTimeout = 5000) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.server.healthCheck,
-                    maxRetries,
-                    checkPeriod,
-                    requestTimeout);
+                    requestTimeout,
+                );
                 return result;
             },
             /**

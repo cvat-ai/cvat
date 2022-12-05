@@ -55,6 +55,7 @@ interface StateToProps {
     healthFetching: boolean;
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
+    backendHealthCheckProgress: string;
 }
 
 interface DispatchToProps {
@@ -110,6 +111,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         healthFetching: health.fetching,
         healthIinitialized: health.initialized,
         backendIsHealthy: health.isHealthy,
+        backendHealthCheckProgress: health.progress,
     };
 }
 
@@ -127,7 +129,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
         loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
-        loadBackendHealth: (): void => dispatch(getHealthAsync(),)
+        loadBackendHealth: (): void => dispatch(getHealthAsync()),
     };
 }
 

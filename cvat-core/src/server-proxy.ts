@@ -468,23 +468,32 @@ async function authorized() {
     return true;
 }
 
-async function healthCheck(maxRetries, checkPeriod, requestTimeout) {
+async function healthCheck(requestTimeout) {
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health-check`;
 
-    return await Axios.get(url, {
-        proxy: config.proxy,
-        timeout: requestTimeout,
-    })
-        .then(response => { return response.data;})
-        .catch(serverError => {
-            if (maxRetries > 0) {
-                return new Promise(resolve => setTimeout(resolve, checkPeriod))
-                    .then(() => healthCheck(maxRetries - 1, checkPeriod, requestTimeout));
-            } else {
-                throw serverError;
-            }
-        })
+    try {
+        return await Axios.get(url, {
+            proxy: config.proxy,
+            timeout: requestTimeout,
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    // return await Axios.get(url, {
+    //     proxy: config.proxy,
+    //     timeout: requestTimeout,
+    // })
+    //     .then(response => { return response.data;})
+    //     .catch(serverError => {
+    //         if (maxRetries > 0) {
+    //             return new Promise(resolve => setTimeout(resolve, checkPeriod))
+    //                 .then(() => healthCheck(maxRetries - 1, checkPeriod, requestTimeout));
+    //         } else {
+    //             throw serverError;
+    //         }
+    //     })
 }
 
 async function serverRequest(url, data) {

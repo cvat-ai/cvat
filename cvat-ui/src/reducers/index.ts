@@ -292,6 +292,7 @@ export interface HealthState {
     fetching: boolean;
     initialized: boolean;
     isHealthy: boolean;
+    progress: string;
 }
 
 export interface UserAgreement {

@@ -10,7 +10,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
-import Spin from 'antd/lib/spin';
+import Progress, { ProgressProps } from 'antd/lib/progress';
 import Text from 'antd/lib/typography/Text';
 import 'antd/dist/antd.css';
 
@@ -105,12 +105,13 @@ interface CVATAppProps {
     healthFetching: boolean;
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
+    backendHealthCheckProgress: string;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized, loadBackendHealth, history, location } = this.props;
+        const { loadBackendHealth, history, location } = this.props;
         // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -126,7 +127,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         loadBackendHealth();
-        verifyAuthorized();
 
         const {
             name, version, engine, os,
@@ -212,15 +212,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
+        if (healthFetching) {
+            return;
+        }
+
         if (healthIinitialized && !healthFetching && !backendIsHealthy) {
             Modal.error({
                 title: 'Cannot connect to the server',
                 className: 'cvat-modal-cannot-connect-server',
                 closable: false,
-                okButtonProps: { disabled: true},
+                okButtonProps: { disabled: true },
                 content: (
                     <Text>
-                        {`does not support API, which is used by CVAT. `}
+                        {'does not support API, which is used by CVAT. '}
                         Cannot connect to the server!
                     </Text>
                 ),
@@ -360,6 +364,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             keyMap,
             location,
             isModelPluginActive,
+            backendHealthCheckProgress,
+            healthIinitialized,
+            backendIsHealthy,
         } = this.props;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
@@ -486,7 +493,28 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             );
         }
 
-        return <Spin size='large' className='cvat-spinner' />;
+        const progress = backendHealthCheckProgress.split('/').map(Number);
+        let status: ProgressProps['status'] = 'active';
+        if (healthIinitialized) {
+            if (backendIsHealthy) {
+                status = 'success';
+            } else {
+                status = 'exception';
+            }
+        }
+
+        return (
+            <>
+                <Progress
+                    className='cvat-spinner'
+                    type='circle'
+                    percent={(progress[0] / progress[1]) * 100}
+                    format={() => `${backendHealthCheckProgress} Connection attempts`}
+                    status={status}
+                    width={200}
+                />
+            </>
+        );
     }
 }
 
