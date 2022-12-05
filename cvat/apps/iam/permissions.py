@@ -370,15 +370,12 @@ class LambdaPermission(OpenPolicyAgentPermission):
                 self = cls.create_base_perm(request, view, scope, obj)
                 permissions.append(self)
 
-            job_id = request.data.get('job')
-            if job_id:
+            if job_id := request.data.get('job'):
                 perm = JobPermission.create_scope_view_data(request, job_id)
                 permissions.append(perm)
-            else:
-                task_id = request.data.get('task')
-                if task_id:
-                    perm = TaskPermission.create_scope_view_data(request, task_id)
-                    permissions.append(perm)
+            elif task_id := request.data.get('task'):
+                perm = TaskPermission.create_scope_view_data(request, task_id)
+                permissions.append(perm)
 
         return permissions
 
