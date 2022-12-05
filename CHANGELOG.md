@@ -37,6 +37,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
 
 ### Fixed
+- fix korean input broken issue (#5298)
 - Significantly optimized access to DB for api/jobs, api/tasks, and api/projects.
 - Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
 non-ascii paths while adding files from "Connected file share" (issue #4428)
