@@ -233,19 +233,21 @@ class LambdaFunction:
                         if mapped_attr in task_attr_names:
                             supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
 
-            if self.kind == LambdaType.DETECTOR:
-                if db_job and not db_job.segment.contains_frame(data["frame"]):
-                    raise ValidationError("the frame is outside the job range",
+            # Check job frame boundaries
+            for key, desc in (
+                ('frame', 'frame'),
+                ('frame0', 'start frame'),
+                ('frame1', 'end frame'),
+            ):
+                if key in data and db_job and not db_job.segment.contains_frame(data[key]):
+                    raise ValidationError(f"The {desc} is outside the job range",
                         code=status.HTTP_400_BAD_REQUEST)
 
+            if self.kind == LambdaType.DETECTOR:
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality)
                 })
             elif self.kind == LambdaType.INTERACTOR:
-                if db_job and not db_job.segment.contains_frame(data["frame"]):
-                    raise ValidationError("the frame is outside the job range",
-                        code=status.HTTP_400_BAD_REQUEST)
-
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
                     "pos_points": data["pos_points"][2:] if self.startswith_box else data["pos_points"],
@@ -253,13 +255,6 @@ class LambdaFunction:
                     "obj_bbox": data["pos_points"][0:2] if self.startswith_box else None
                 })
             elif self.kind == LambdaType.REID:
-                if db_job and not db_job.segment.contains_frame(data["frame0"]):
-                    raise ValidationError("the start frame is outside the job range",
-                        code=status.HTTP_400_BAD_REQUEST)
-                if db_job and not db_job.segment.contains_frame(data["frame1"]):
-                    raise ValidationError("the end frame is outside the job range",
-                        code=status.HTTP_400_BAD_REQUEST)
-
                 payload.update({
                     "image0": self._get_image(db_task, data["frame0"], quality),
                     "image1": self._get_image(db_task, data["frame1"], quality),
@@ -272,10 +267,6 @@ class LambdaFunction:
                         "max_distance": max_distance
                     })
             elif self.kind == LambdaType.TRACKER:
-                if db_job and not db_job.segment.contains_frame(data["frame"]):
-                    raise ValidationError("the frame is outside the job range",
-                        code=status.HTTP_400_BAD_REQUEST)
-
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality),
                     "shapes": data.get("shapes", []),
