@@ -339,7 +339,7 @@ class TasksRepo(
 
         if dataset_repository_url:
             git.create_git_repo(
-                self,
+                self._client,
                 task_id=task.id,
                 repo_url=dataset_repository_url,
                 status_check_period=status_check_period,
