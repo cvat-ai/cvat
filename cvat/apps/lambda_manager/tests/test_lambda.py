@@ -1074,20 +1074,14 @@ class Issue4996_Cases(_LambdaTestCaseBase):
             "frame": 0
         }
 
-    def test_can_call_function_for_job_worker_in_org(self):
-        # not assigned + task => denied
-        # not assigned + job => denied
-        # task assignee + task => ok
-        # job assignee + task => denied
-        # job assignee + job => ok
-
+    def test_can_call_function_for_job_worker_in_org__deny_unassigned_worker_with_task_request(self):
         data = self.common_data.copy()
         with self.subTest(job=None, assignee=None):
             response = self._post_request(self.function_name, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
+    def test_can_call_function_for_job_worker_in_org__deny_unassigned_worker_with_job_request(self):
         data = self.common_data.copy()
         data.update(self._get_valid_job_params())
         with self.subTest(job='defined', assignee=None):
@@ -1095,7 +1089,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
+    def test_can_call_function_for_job_worker_in_org__allow_task_assigned_worker_with_task_request(self):
         self._set_task_assignee(self.task['id'], self.user.id, org_id=self.org['id'])
 
         data = self.common_data.copy()
@@ -1104,9 +1098,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self._set_task_assignee(self.task['id'], None)
-
-
+    def test_can_call_function_for_job_worker_in_org__deny_job_assigned_worker_with_task_request(self):
         self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
 
         data = self.common_data.copy()
@@ -1115,9 +1107,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        self._set_job_assignee(self.job['id'], None)
-
-
+    def test_can_call_function_for_job_worker_in_org__allow_job_assigned_worker_with_job_request(self):
         self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
 
         data = self.common_data.copy()
@@ -1127,12 +1117,8 @@ class Issue4996_Cases(_LambdaTestCaseBase):
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_can_check_job_boundaries_in_function_call(self):
-        # job + frame (outside) => error (outside)
-        # job + frame (inside) => ok
-
+    def test_can_check_job_boundaries_in_function_call__fail_for_frame_outside_job(self):
         self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
-
 
         data = self.common_data.copy()
         data.update(self._get_invalid_job_params())
@@ -1140,6 +1126,9 @@ class Issue4996_Cases(_LambdaTestCaseBase):
             response = self._post_request(self.function_name, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_check_job_boundaries_in_function_call__ok_for_frame_inside_job(self):
+        self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
 
         data = self.common_data.copy()
         data.update(self._get_valid_job_params())
