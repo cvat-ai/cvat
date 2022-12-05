@@ -574,10 +574,10 @@ class TestImportExportDatasetProject:
         assert response.status_code == HTTPStatus.OK
         tasks = response.json()["results"]
 
-        task1_rotation = self._test_get_annotations_from_task(username,
-            tasks[0]['id'])["shapes"][0]["rotation"]
-        task2_rotation = self._test_get_annotations_from_task(username,
-            tasks[1]['id'])["shapes"][0]["rotation"]
+        response_data = self._test_get_annotations_from_task(username, tasks[0]["id"])
+        task1_rotation = response_data["shapes"][0]["rotation"]
+        response_data = self._test_get_annotations_from_task(username, tasks[1]["id"])
+        task2_rotation = response_data["shapes"][0]["rotation"]
 
         assert task1_rotation == task2_rotation
 
