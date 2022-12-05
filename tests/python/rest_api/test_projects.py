@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
@@ -402,6 +403,14 @@ class TestImportExportDatasetProject:
                 if response.status == HTTPStatus.CREATED:
                     break
 
+    def _test_get_annotations_from_task(self, username, task_id):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_annotations(task_id)
+            assert response.status == HTTPStatus.OK
+
+            response_data = json.loads(response.data)
+        return response_data
+
     def test_can_import_dataset_in_org(self, admin_user):
         project_id = 4
 
@@ -545,6 +554,33 @@ class TestImportExportDatasetProject:
         with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
+
+    def test_can_import_export_annotations_with_rotation(self):
+        # https://github.com/opencv/cvat/issues/4378
+        username = "admin1"
+        project_id = 4
+
+        response = self._test_export_project(username, project_id, "CVAT for images 1.1")
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = "dataset.zip"
+
+        import_data = {
+            "dataset_file": tmp_file,
+        }
+
+        self._test_import_project(username, project_id, "CVAT 1.1", import_data)
+
+        response = get_method(username, f"/projects/{project_id}/tasks")
+        assert response.status_code == HTTPStatus.OK
+        tasks = response.json()["results"]
+
+        response_data = self._test_get_annotations_from_task(username, tasks[0]["id"])
+        task1_rotation = response_data["shapes"][0]["rotation"]
+        response_data = self._test_get_annotations_from_task(username, tasks[1]["id"])
+        task2_rotation = response_data["shapes"][0]["rotation"]
+
+        assert task1_rotation == task2_rotation
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
