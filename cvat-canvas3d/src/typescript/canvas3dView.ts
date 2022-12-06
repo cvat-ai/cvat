@@ -861,9 +861,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private deactivateObject(): void {
         const { opacity } = this.model.data.shapeProperties;
-        const clientID = this.activatedElementID;
-        if (clientID !== null) {
-            const { cuboid } = this.drawnObjects[clientID];
+        if (this.activatedElementID !== null) {
+            const { cuboid } = this.drawnObjects[this.activatedElementID];
             cuboid.setOpacity(opacity);
             for (const view of [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]) {
                 cuboid[view].visible = false;
@@ -871,14 +870,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 removeResizeHelper(cuboid[view]);
                 removeRotationHelper(cuboid[view]);
             }
+            this.activatedElementID = null;
         }
     }
 
     private activateObject(): void {
-        if (this.activatedElementID !== null) {
-            this.deactivateObject();
-        }
-
         const { selectedOpacity } = this.model.data.shapeProperties;
         const { clientID } = this.model.data.activeElement;
         if (clientID !== null && clientID in this.drawnObjects) {
@@ -891,7 +887,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (!data.lock) {
                     createResizeHelper(cuboid[view]);
                     createRotationHelper(cuboid[view], view);
-                    // this.updateRotationHelperPos();
                 }
             }
 
@@ -1076,10 +1071,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 throw error;
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
+            this.deactivateObject();
             this.activateObject();
-            // if (clientID !== null) {
-            //     this.setDefaultZoom();
-            // }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (data.redraw) {
@@ -1165,14 +1158,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         Object.keys(this.views).forEach((view: string): void => {
             this.views[view as keyof Views].scene.children[0].children = [];
         });
-    }
-
-    private static setupRotationHelper(): THREE.Mesh {
-        const sphereGeometry = new THREE.SphereGeometry(0.15);
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1, visible: true });
-        const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
-        rotationHelper.name = 'globalRotationHelper';
-        return rotationHelper;
     }
 
     private updateRotationHelperPos(): void {
@@ -1318,8 +1303,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         material.size = 0.5;
         this.views.top.scene.add(points.clone());
         this.views.top.scene.add(topScenePlane);
-        const topRotationHelper = Canvas3dViewImpl.setupRotationHelper();
-        this.views.top.scene.add(topRotationHelper);
         // Setup Side View
         const canvasSideView = this.views.side.renderer.domElement;
         const sideScenePlane = new THREE.Mesh(
@@ -1344,8 +1327,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (sideScenePlane as any).verticesNeedUpdate = true;
         this.views.side.scene.add(points.clone());
         this.views.side.scene.add(sideScenePlane);
-        const sideRotationHelper = Canvas3dViewImpl.setupRotationHelper();
-        this.views.side.scene.add(sideRotationHelper);
         // Setup front View
         const canvasFrontView = this.views.front.renderer.domElement;
         const frontScenePlane = new THREE.Mesh(
@@ -1370,8 +1351,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (frontScenePlane as any).verticesNeedUpdate = true;
         this.views.front.scene.add(points.clone());
         this.views.front.scene.add(frontScenePlane);
-        const frontRotationHelper = Canvas3dViewImpl.setupRotationHelper();
-        this.views.front.scene.add(frontRotationHelper);
     }
 
     private positionAllViews(x: number, y: number, z: number, animation: boolean): void {
