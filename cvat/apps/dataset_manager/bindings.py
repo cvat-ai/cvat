@@ -723,6 +723,9 @@ class TaskData(CommonData):
                 ("height", str(db_task.data.video.height))
             ])
 
+            # Add source to dumped file
+            meta["source"] = str(osp.basename(db_task.data.video.path))
+
         return meta
 
     def _init_meta(self):
@@ -730,11 +733,6 @@ class TaskData(CommonData):
             (TaskData.META_FIELD, self.meta_for_task(self._db_task, self._host, self._label_mapping)),
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
-
-        if hasattr(self._db_task.data, "video"):
-            # Add source to dumped file
-            self._meta["source"] = str(
-                osp.basename(self._db_task.data.video.path))
 
     def __len__(self):
         return self._db_data.size
@@ -1895,6 +1893,9 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
     else:
         for label in dataset.categories()[dm.AnnotationType.label].items:
             if not project_annotation.db_project.label_set.filter(name=label.name).exists():
+                if label.name == "background":
+                    dataset.transform("remap_labels", mapping={"background": ""}, default="keep")
+                    continue
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()

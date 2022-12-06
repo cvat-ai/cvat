@@ -275,7 +275,8 @@ class ServerPermission(OpenPolicyAgentPermission):
             'plugins': 'view',
             'exception': 'send:exception',
             'logs': 'send:logs',
-            'share': 'list:content'
+            'share': 'list:content',
+            'advanced_authentication': 'view',
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -364,12 +365,15 @@ class LambdaPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'function' or view.basename == 'request':
-            for scope in cls.get_scopes(request, view, obj):
+            scopes = cls.get_scopes(request, view, obj)
+            for scope in scopes:
                 self = cls.create_base_perm(request, view, scope, obj)
                 permissions.append(self)
 
-            task_id = request.data.get('task')
-            if task_id:
+            if job_id := request.data.get('job'):
+                perm = JobPermission.create_scope_view_data(request, job_id)
+                permissions.append(perm)
+            elif task_id := request.data.get('task'):
                 perm = TaskPermission.create_scope_view_data(request, task_id)
                 permissions.append(perm)
 
@@ -878,6 +882,14 @@ class JobPermission(OpenPolicyAgentPermission):
 
         return permissions
 
+    @classmethod
+    def create_scope_view_data(cls, request, job_id):
+        try:
+            obj = Job.objects.get(id=job_id)
+        except Job.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+        return cls(**cls.unpack_context(request), obj=obj, scope='view:data')
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/jobs/allow'
@@ -891,6 +903,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('update', 'PUT'): 'update', # TODO: do we need the method?
             ('destroy', 'DELETE'): 'delete',
             ('annotations', 'GET'): 'view:annotations',
+            ('dataset_export', 'GET'): 'export:dataset',
             ('annotations', 'PATCH'): 'update:annotations',
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',

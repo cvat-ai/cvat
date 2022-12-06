@@ -44,6 +44,26 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
 
 class LoginSerializerEx(LoginSerializer):
     def get_auth_user_using_allauth(self, username, email, password):
+
+        def is_email_authentication():
+            return settings.ACCOUNT_AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.EMAIL
+
+        def is_username_authentication():
+            return settings.ACCOUNT_AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.USERNAME
+
+        # check that the server settings match the request
+        if is_username_authentication() and not username and email:
+            raise ValidationError(
+                'Attempt to authenticate with email/password. '
+                'But username/password are used for authentication on the server. '
+                'Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD.')
+
+        if is_email_authentication() and not email and username:
+            raise ValidationError(
+                'Attempt to authenticate with username/password. '
+                'But email/password are used for authentication on the server. '
+                'Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD.')
+
         # Authentication through email
         if settings.ACCOUNT_AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.EMAIL:
             return self._validate_email(email, password)

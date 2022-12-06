@@ -8,11 +8,11 @@ import { taskName, labelName } from '../../support/const';
 
 context('When delete a point, the required point is deleted.', () => {
     const issueId = '1391';
-    let pointsСoordinatesBeforeDeletePoint = [];
-    let pointsСoordinatesAfterDeletePoint = [];
+    const pointsCoordinatesBeforeDeletePoint = [];
+    const pointsCoordinatesAfterDeletePoint = [];
     const createPolylinesShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 309, y: 250 },
             { x: 309, y: 350 },
@@ -34,9 +34,9 @@ context('When delete a point, the required point is deleted.', () => {
         it('Get points coordinates from created polyline', () => {
             cy.get('#cvat_canvas_shape_1')
                 .should('have.prop', 'animatedPoints')
-                .then(($pointsСoordinates) => {
-                    for (let i of $pointsСoordinates) {
-                        pointsСoordinatesBeforeDeletePoint.push(`${i.x}, ${i.y}`);
+                .then(($pointsCoordinates) => {
+                    for (const i of $pointsCoordinates) {
+                        pointsCoordinatesBeforeDeletePoint.push(`${i.x}, ${i.y}`);
                     }
                 });
         });
@@ -59,15 +59,15 @@ context('When delete a point, the required point is deleted.', () => {
         it('Get points coordinates from turned out polyline', () => {
             cy.get('#cvat_canvas_shape_1')
                 .should('have.prop', 'animatedPoints')
-                .then(($pointsСoordinates) => {
-                    for (let i of $pointsСoordinates) {
-                        pointsСoordinatesAfterDeletePoint.push(`${i.x}, ${i.y}`);
+                .then(($pointsCoordinates) => {
+                    for (const i of $pointsCoordinates) {
+                        pointsCoordinatesAfterDeletePoint.push(`${i.x}, ${i.y}`);
                     }
                 });
         });
         it('Coordinate of second point before delete not in coordinates array after delete', () => {
-            cy.get(pointsСoordinatesBeforeDeletePoint).then((point) => {
-                cy.expect(pointsСoordinatesAfterDeletePoint).not.contain(point[1]);
+            cy.get(pointsCoordinatesBeforeDeletePoint).then((point) => {
+                cy.expect(pointsCoordinatesAfterDeletePoint).not.contain(point[1]);
             });
         });
     });

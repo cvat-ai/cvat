@@ -19,6 +19,15 @@ cvat:
       envs:
         ALLOWED_HOSTS: "*"
         DJANGO_MODWSGI_EXTRA_ARGS: ""
+        USE_ALLAUTH_SOCIAL_ACCOUNTS: false
+      secret:
+        create: true
+        name: "{{ .Release.Name }}-cvat-server-secret"
+        socialAccountAuthentication:
+          googleClientId: ""
+          googleClientSecret: ""
+          githubClientId: ""
+          githubClientSecret: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
@@ -66,6 +75,7 @@ cvat:
     replicas: 1
     image: cvat/server
     tag: dev
+    imagepullploicy: IfNotPresent
     permissionFix:
       enabled: true
     service:
@@ -85,6 +95,7 @@ cvat:
     replicas: 1
     image: cvat/ui
     tag: dev
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -127,6 +138,7 @@ cvat:
     replicas: 1
     image: openpolicyagent/opa
     tag: 0.34.2-rootless
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -179,10 +191,10 @@ postgresql:
  # If not external following config will be applied by default
   global:
     postgresql:
-      existingSecret: cvat-postgres-secret
+      existingSecret: "{{ .Release.Name }}-postgres-secret"
   secret:
     create: true
-    name: postgres-secret
+    name: "{{ .Release.Name }}-postgres-secret"
     password: cvat_postgresql
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica

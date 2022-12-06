@@ -18,11 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mask tools are supported now (brush, eraser, polygon-plus, polygon-minus, returning masks
 from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
+- Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
+- REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
+- Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
+- 3D canvas now can be dragged in IDLE mode (<https://github.com/opencv/cvat/pull/5385>)
 - Datumaro version is upgraded to 0.3 (dev) (<https://github.com/opencv/cvat/pull/4984>)
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
+- Adjusted initial camera position, enabled 'Reset zoom' option for 3D canvas (<https://github.com/opencv/cvat/pull/5395>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
 
 ### Deprecated
@@ -32,6 +37,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
 
 ### Fixed
+- Significantly optimized access to DB for api/jobs, api/tasks, and api/projects.
 - Removed a possibly duplicated encodeURI() calls in `server-proxy.ts` to prevent doubly encoding
 non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Removed unnecessary volumes defined in docker-compose.serverless.yml
@@ -62,11 +68,34 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Extra rerenders of different pages with each click (<https://github.com/opencv/cvat/pull/5178>)
 - Skeleton points exported out of order in the COCO Keypoints format
   (<https://github.com/opencv/cvat/issues/5048>)
+- PASCAL VOC 1.1 can't import dataset (<https://github.com/opencv/cvat/pull/4647>)
 - Changing an object causes current z layer to be set to the maximum (<https://github.com/opencv/cvat/pull/5145>)
 - Job assignee can not resolve an issue (<https://github.com/opencv/cvat/pull/5167>)
 - Create manifest with cvat/server docker container command (<https://github.com/opencv/cvat/pull/5172>)
 - Cannot assign a resource to a user who has an organization (<https://github.com/opencv/cvat/pull/5218>)
+- Logs and annotations are not saved when logout from a job page (<https://github.com/opencv/cvat/pull/5266>)
+- Added "type" field for all the labels, allows to reduce number of controls on annotation view (<https://github.com/opencv/cvat/pull/5273>)
+- Occluded not applied on canvas instantly for a skeleton elements (<https://github.com/opencv/cvat/pull/5259>)
 - Oriented bounding boxes broken with COCO format ss(<https://github.com/opencv/cvat/pull/5219>)
+- Can't dump annotations with objects type is track from several jobs (<https://github.com/opencv/cvat/pull/5250>)
+- Fixed upload resumption in production environments
+  (<https://github.com/opencv/cvat/issues/4839>)
+- Fixed job exporting (<https://github.com/opencv/cvat/pull/5282>)
+- Visibility and ignored information fail to be loaded (MOT dataset format) (<https://github.com/opencv/cvat/pull/5270>)
+- Added force logout on CVAT app start if token is missing (<https://github.com/opencv/cvat/pull/5331>)
+- Drawing issues on 3D canvas (<https://github.com/opencv/cvat/pull/5410>)
+- Missed token with using social account authentication (<https://github.com/opencv/cvat/pull/5344>)
+- The same object on 3D scene or `null` selected each click (PERFORMANCE) (<https://github.com/opencv/cvat/pull/5411>)
+- An exception when run export for an empty task (<https://github.com/opencv/cvat/pull/5396>)
+- Fixed FBRS serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5384>)
+- Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
+- Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
+- A permission problem with interactive model launches for workers in orgs (<https://github.com/opencv/cvat/issues/4996>)
+- Fix chart not being upgradable (<https://github.com/opencv/cvat/pull/5371>)
+- Broken helm chart - if using custom release name (<https://github.com/opencv/cvat/pull/5403>)
+- Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
+- Creating a task with a Git repository via the SDK
+  (<https://github.com/opencv/cvat/issues/4365>)
 
 ### Security
 - TDB

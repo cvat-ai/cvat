@@ -6,7 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Check error сannot read property at saving job', () => {
+context('Check error cannot read property at saving job', () => {
     const prId = '2203';
     const createRectangleShape2Points = {
         points: 'By 2 Points',

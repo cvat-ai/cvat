@@ -178,6 +178,13 @@ class MetaUserSerializerExtension(AnyOfProxySerializerExtension):
     # field here, because these serializers don't have such.
     target_component = 'MetaUser'
 
+class MetaSelfUserSerializerExtension(AnyOfProxySerializerExtension):
+    # Need to replace oneOf to anyOf for MetaUser variants
+    # Otherwise, clients cannot distinguish between classes
+    # using just input data. Also, we can't use discrimintator
+    # field here, because these serializers don't have such.
+    target_component = 'MetaSelfUser'
+
 class PolymorphicProjectSerializerExtension(AnyOfProxySerializerExtension):
     # Need to replace oneOf to anyOf for PolymorphicProject variants
     # Otherwise, clients cannot distinguish between classes

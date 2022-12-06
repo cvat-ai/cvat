@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 import os.path as osp
+import zipfile
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -12,6 +14,7 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 
 from shared.utils.helpers import generate_image_files
@@ -167,6 +170,39 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
+    def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_spec = {
+            "name": f"task with Git repo",
+            "labels": [{"name": "car"}],
+        }
+
+        repository_url = "root@gitserver:repos/repo.git [annotations/annot.zip]"
+
+        task = self.client.tasks.create_from_data(
+            spec=task_spec,
+            resource_type=ResourceType.LOCAL,
+            resources=[str(fxt_image_file)],
+            pbar=pbar,
+            dataset_repository_url=repository_url,
+        )
+
+        assert task.size == 1
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+        git_get_response = self.client.api_client.rest_client.GET(
+            self.client.api_map.git_get(task.id),
+            headers=self.client.api_client.get_common_headers(),
+        )
+
+        response_json = json.loads(git_get_response.data)
+        assert response_json["url"]["value"] == repository_url
+        assert response_json["format"] == "CVAT for images 1.1"
+        assert response_json["lfs"] is False
+
     def test_can_retrieve_task(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
 
@@ -267,6 +303,18 @@ class TestTaskUsecases:
         assert osp.isfile(self.tmp_path / "frame-0.jpg")
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.parametrize("quality", ("compressed", "original"))
+    def test_can_download_chunk(self, fxt_new_task: Task, quality: str):
+        chunk_path = self.tmp_path / "chunk.zip"
+
+        with open(chunk_path, "wb") as chunk_file:
+            fxt_new_task.download_chunk(0, chunk_file, quality=quality)
+
+        with zipfile.ZipFile(chunk_path, "r") as chunk_zip:
+            assert chunk_zip.testzip() is None
+            assert len(chunk_zip.infolist()) == 1
+        assert self.stdout.getvalue() == ""
+
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
@@ -279,7 +327,7 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
+    def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -291,6 +339,29 @@ class TestTaskUsecases:
         assert "imported sucessfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+    def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
+        self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
+
+    def test_can_create_from_backup_in_chunks(
+        self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
+    ):
+        monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+
+        num_requests = 0
+        original_do_request = _MyTusUploader._do_request
+
+        def counting_do_request(uploader):
+            nonlocal num_requests
+            num_requests += 1
+            original_do_request(uploader)
+
+        monkeypatch.setattr(_MyTusUploader, "_do_request", counting_do_request)
+
+        self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
+
+        # make sure the upload was actually chunked
+        assert num_requests > 1
 
     def test_can_get_jobs(self, fxt_new_task: Task):
         jobs = fxt_new_task.get_jobs()

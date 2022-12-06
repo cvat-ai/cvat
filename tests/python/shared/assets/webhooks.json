@@ -91,6 +91,8 @@
       ],
       "id": 2,
       "is_active": true,
+      "last_delivery_date": "2022-11-03T13:57:26.908000Z",
+      "last_status": 200,
       "organization": null,
       "owner": {
         "first_name": "Business",

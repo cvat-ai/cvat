@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +7,8 @@ import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
-import { CombinedState } from 'reducers';
+import { LabelType } from 'cvat-core-wrapper';
+import { CombinedState, ObjectType } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -15,6 +17,8 @@ function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
     const activatedStateID = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateID);
+    const activeShapeType = useSelector((state: CombinedState) => state.annotation.drawing.activeShapeType);
+    const activeObjectType = useSelector((state: CombinedState) => state.annotation.drawing.activeObjectType);
     const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
     const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
 
@@ -72,14 +76,22 @@ function LabelsListComponent(): JSX.Element {
             if (Number.isInteger(labelID) && label) {
                 if (Number.isInteger(activatedStateID)) {
                     const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
-                    if (activatedState) {
+                    const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === ObjectType.TAG;
+                    const labelIsApplicable = label.type === LabelType.ANY ||
+                        activatedState.shapeType === label.type || bothAreTags;
+                    if (activatedState && labelIsApplicable) {
                         activatedState.label = label;
                         dispatch(updateAnnotationsAsync([activatedState]));
                     }
                 } else {
-                    dispatch(rememberObject({ activeLabelID: labelID }));
-                    message.destroy();
-                    message.success(`Default label was changed to "${label.name}"`);
+                    const bothAreTags = activeObjectType === ObjectType.TAG && label.type === ObjectType.TAG;
+                    const labelIsApplicable = label.type === LabelType.ANY ||
+                        activeShapeType === label.type || bothAreTags;
+                    if (labelIsApplicable) {
+                        dispatch(rememberObject({ activeLabelID: labelID }));
+                        message.destroy();
+                        message.success(`Default label has been changed to "${label.name}"`);
+                    }
                 }
             }
         },

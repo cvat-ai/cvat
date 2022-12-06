@@ -134,6 +134,11 @@ module.exports = (env) => ({
                 },
             },
         ],
+        parser: {
+            javascript: {
+                exportsPresence: 'error',
+            },
+        },
     },
     plugins: [
         new HtmlWebpackPlugin({
