@@ -3,18 +3,29 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from functools import partial
 from http import HTTPStatus
 from pathlib import Path
+from typing import Optional, Sequence
+from uuid import uuid4
+
+import boto3
+import pytest
+from cvat_sdk import Client, exceptions
+from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.core.client import Config
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-import pytest
-
-from cvat_sdk.api_client import ApiClient, models
-from cvat_sdk import Client, exceptions
-
-from shared.utils.config import BASE_URL, USER_PASS
+from shared.utils.config import (
+    BASE_URL,
+    MINIO_ENDPOINT_URL,
+    MINIO_KEY,
+    MINIO_SECRET_KEY,
+    USER_PASS,
+    post_method,
+)
 from shared.utils.helpers import generate_image_file
+
 
 @pytest.fixture
 def fxt_image_file(tmp_path: Path):
@@ -24,17 +35,29 @@ def fxt_image_file(tmp_path: Path):
 
     return img_path
 
+
+def define_s3_client():
+    s3 = boto3.resource(
+        "s3",
+        aws_access_key_id=MINIO_KEY,
+        aws_secret_access_key=MINIO_SECRET_KEY,
+        endpoint_url=MINIO_ENDPOINT_URL,
+    )
+    return s3.meta.client
+
+
 class TestUserLimits:
     @classmethod
     def _create_user(cls, api_client: ApiClient, email: str) -> str:
-        username = email.split('@', maxsplit=1)[0]
+        username = email.split("@", maxsplit=1)[0]
         with api_client:
-            (user, response) = api_client.auth_api.create_register(
+            (user, _) = api_client.auth_api.create_register(
                 models.RegisterSerializerExRequest(
                     username=username, password1=USER_PASS, password2=USER_PASS, email=email
                 )
             )
-            assert response.status == HTTPStatus.CREATED
+
+        api_client.cookies.clear()
 
         return user.username
 
@@ -43,29 +66,160 @@ class TestUserLimits:
         self.tmp_dir = tmp_path
 
         self.client = Client(BASE_URL, config=Config(status_check_period=0.01))
-        self.user = self._create_user(self.client.api_client, email="test_user_limits@example.com")
+        self.user = self._create_user(self.client.api_client, email="test_user_limits@localhost")
+
+        self.client.__enter__()
+        self.client.login((self.user, USER_PASS))
 
     _DEFAULT_TASK_LIMIT = 10
+    _DEFAULT_PROJECT_TASKS_LIMIT = 5
+    _DEFAULT_PROJECTS_LIMIT = 5
+    _DEFAULT_ORGS_LIMIT = 1
+    _DEFAULT_CLOUD_STORAGES_LIMIT = 10
 
-    def test_can_reach_user_task_limit(self, fxt_image_file: Path):
-        def _create_task(idx: int):
-            return self.client.tasks.create_from_data(
-                spec=models.TaskWriteRequest(
-                    name=f"test_task_{idx}",
-                    labels=[models.PatchedLabelRequest(name="cat")]
-                ),
-                resource_type=ResourceType.LOCAL,
-                resources=[str(fxt_image_file)]
-            )
+    _TASK_LIMIT_MESSAGE = "user tasks limit reached"
+    _PROJECT_TASK_LIMIT_MESSAGE = "user project tasks limit reached"
+    _PROJECTS_LIMIT_MESSAGE = "user projects limit reached"
+    _ORGS_LIMIT_MESSAGE = "user orgs limit reached"
+    _CLOUD_STORAGES_LIMIT_MESSAGE = "user cloud storages limit reached"
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+    def _create_task(self, data: Sequence[str], *, project: Optional[int] = None):
+        return self.client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(
+                name="test_task",
+                labels=[models.PatchedLabelRequest(name="cat")] if not project else [],
+                project_id=project,
+            ),
+            resource_type=ResourceType.LOCAL,
+            resources=data,
+        )
 
-            for i in range(self._DEFAULT_TASK_LIMIT):
-                _create_task(i)
+    def test_can_reach_tasks_limit(self, fxt_image_file: Path):
+        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
 
-            with pytest.raises(exceptions.ApiException) as capture:
-                _create_task(i)
+        for _ in range(self._DEFAULT_TASK_LIMIT):
+            _create_task()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _create_task()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == ["user tasks limit reached"]
+        assert json.loads(capture.value.body) == [self._TASK_LIMIT_MESSAGE]
+
+    def test_can_reach_tasks_limit_when_creating_in_project(self, fxt_image_file: Path):
+        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
+
+        project = self.client.projects.create(models.ProjectWriteRequest(name="test_project")).id
+
+        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
+            _create_task(project=project)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _create_task(project=project)
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert json.loads(capture.value.body) == [self._PROJECT_TASK_LIMIT_MESSAGE]
+
+    def test_can_reach_tasks_limit_when_creating_in_different_projects(self, fxt_image_file: Path):
+        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
+
+        project1 = self.client.projects.create(models.ProjectWriteRequest(name="test_project")).id
+        project2 = self.client.projects.create(models.ProjectWriteRequest(name="test_project")).id
+
+        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
+            _create_task(project=project1)
+        for _ in range(self._DEFAULT_TASK_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
+            _create_task(project=project2)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _create_task()
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert json.loads(capture.value.body) == [self._TASK_LIMIT_MESSAGE]
+
+    def test_can_reach_tasks_limit_when_creating_in_filled_project(self, fxt_image_file: Path):
+        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
+
+        project = self.client.projects.create(models.ProjectWriteRequest(name="test_project1")).id
+
+        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
+            _create_task(project=project)
+        for _ in range(self._DEFAULT_TASK_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
+            _create_task()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _create_task(project=project)
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {
+            self._TASK_LIMIT_MESSAGE,
+            self._PROJECT_TASK_LIMIT_MESSAGE,
+        }
+
+    def test_can_reach_projects_limit(self):
+        for _ in range(self._DEFAULT_PROJECTS_LIMIT):
+            self.client.projects.create(models.ProjectWriteRequest(name="test_project"))
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self.client.projects.create(models.ProjectWriteRequest(name="test_project"))
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert json.loads(capture.value.body) == [self._PROJECTS_LIMIT_MESSAGE]
+
+    def test_can_reach_orgs_limit(self):
+        for i in range(self._DEFAULT_ORGS_LIMIT):
+            (_, response) = self.client.api_client.organizations_api.create(
+                models.OrganizationWriteRequest(slug=f"test_user_orgs_{i}"), _parse_response=False
+            )
+            assert response.status == HTTPStatus.CREATED
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self.client.api_client.organizations_api.create(
+                models.OrganizationWriteRequest(slug=f"test_user_orgs_{i}"), _parse_response=False
+            )
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert json.loads(capture.value.body) == [self._ORGS_LIMIT_MESSAGE]
+
+    def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
+        storage_params = {
+            "provider_type": "AWS_S3_BUCKET",
+            "credentials_type": "KEY_SECRET_KEY_PAIR",
+            "key": "minio_access_key",
+            "secret_key": "minio_secret_key",
+            "specific_attributes": "endpoint_url=http://minio:9000",
+        }
+
+        # TODO: refactor after https://github.com/opencv/cvat/pull/4819
+        s3_client = define_s3_client()
+
+        def _create_bucket(name: str):
+            name = name + str(uuid4())
+            s3_client.create_bucket(Bucket=name)
+            request.addfinalizer(partial(s3_client.delete_bucket, Bucket=name))
+            return name
+
+        for i in range(self._DEFAULT_CLOUD_STORAGES_LIMIT):
+            response = post_method(
+                self.user,
+                "cloudstorages",
+                {
+                    "display_name": f"test_storage{i}",
+                    "resource": _create_bucket(f"testbucket{i}"),
+                    **storage_params,
+                },
+            )
+            assert response.status_code == HTTPStatus.CREATED
+
+        response = post_method(
+            self.user,
+            "cloudstorages",
+            {
+                "display_name": f"test_storage{i}",
+                "resource": _create_bucket(f"testbucket{i}"),
+                **storage_params,
+            },
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+        assert response.json() == [self._CLOUD_STORAGES_LIMIT_MESSAGE]
