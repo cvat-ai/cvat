@@ -10,6 +10,8 @@ from .serializers import (
     OrgLimitationWriteSerializer,
     UserLimitationReadSerializer,
     UserLimitationWriteSerializer,
+    DefaultUserLimitationSerializer,
+    DefaultOrgLimitationSerializer
 )
 
 
@@ -27,6 +29,7 @@ class LimitationViewSet(viewsets.ViewSet):
 
     def partial_update(self, request, pk):
         instance = Limitation.objects.get(id=pk)
+        # TO-DO: fix serializer here
         serializer = self.get_serializer_class()(
             instance, data=request.data, partial=True
         )
@@ -60,10 +63,10 @@ class LimitationViewSet(viewsets.ViewSet):
     @action(methods=["GET"], detail=False)
     def default(self, request):
         # TO-DO: admin only method
-        serializer_class = (
-            UserLimitationReadSerializer
+        serializer = (
+            DefaultUserLimitationSerializer()
             if "org" not in request.query_params
-            else OrgLimitationReadSerializer
+            else DefaultOrgLimitationSerializer()
         )
-        data = serializer_class().to_representation(instance=Limitation())
+        data = serializer.to_representation(instance=Limitation())
         return Response(data, status=status.HTTP_200_OK)
