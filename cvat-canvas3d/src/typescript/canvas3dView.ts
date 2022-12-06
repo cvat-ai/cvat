@@ -965,62 +965,76 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
         if (reason === UpdateReasons.IMAGE_CHANGED) {
+            const onPCDLoadFailed = (): void => {
+                this.model.unlockFrameUpdating();
+            };
+
+            const onPCDLoadSuccess = (points: any): void => {
+                try {
+                    this.clearScene();
+                    this.onSceneImageLoaded(points);
+                    this.model.updateCanvasObjects();
+                } finally {
+                    this.model.unlockFrameUpdating();
+                }
+            };
+
             try {
                 if (!model.data.image) {
-                    return;
+                    throw new Error('No image data found');
                 }
 
-                this.views.perspective.renderer.dispose();
                 const loader = new PCDLoader();
                 const objectURL = URL.createObjectURL(model.data.image.imageData);
-                this.clearScene();
 
-                if (this.controller.imageIsDeleted) {
-                    this.render();
-                    const [container] = window.document.getElementsByClassName('cvat-canvas-container');
-                    const overlay = window.document.createElement('canvas');
-                    overlay.classList.add('cvat_3d_canvas_deleted_overlay');
-                    overlay.style.width = '100%';
-                    overlay.style.height = '100%';
-                    overlay.style.position = 'absolute';
-                    overlay.style.top = '0px';
-                    overlay.style.left = '0px';
-                    container.appendChild(overlay);
-                    const { clientWidth: width, clientHeight: height } = overlay;
-                    overlay.width = width;
-                    overlay.height = height;
-                    const canvasContext = overlay.getContext('2d');
-                    const fontSize = width / 10;
-                    canvasContext.font = `bold ${fontSize}px serif`;
-                    canvasContext.textAlign = 'center';
-                    canvasContext.lineWidth = fontSize / 20;
-                    canvasContext.strokeStyle = 'white';
-                    canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
-                    canvasContext.fillStyle = 'black';
-                    canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
-                } else {
-                    loader.load(objectURL, (points: any) => {
+                try {
+                    this.views.perspective.renderer.dispose();
+                    if (this.controller.imageIsDeleted) {
                         try {
-                            this.onSceneImageLoaded(points);
+                            this.clearScene();
+                            this.render();
+                            const [container] = window.document.getElementsByClassName('cvat-canvas-container');
+                            const overlay = window.document.createElement('canvas');
+                            overlay.classList.add('cvat_3d_canvas_deleted_overlay');
+                            overlay.style.width = '100%';
+                            overlay.style.height = '100%';
+                            overlay.style.position = 'absolute';
+                            overlay.style.top = '0px';
+                            overlay.style.left = '0px';
+                            container.appendChild(overlay);
+                            const { clientWidth: width, clientHeight: height } = overlay;
+                            overlay.width = width;
+                            overlay.height = height;
+                            const canvasContext = overlay.getContext('2d');
+                            const fontSize = width / 10;
+                            canvasContext.font = `bold ${fontSize}px serif`;
+                            canvasContext.textAlign = 'center';
+                            canvasContext.lineWidth = fontSize / 20;
+                            canvasContext.strokeStyle = 'white';
+                            canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
+                            canvasContext.fillStyle = 'black';
+                            canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
                         } finally {
                             this.model.unlockFrameUpdating();
                         }
-                    }, () => {}, () => {
-                        this.model.unlockFrameUpdating();
-                    });
-                    const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
-                    if (overlay) {
-                        overlay.remove();
+                    } else {
+                        loader.load(objectURL, onPCDLoadSuccess, () => {}, onPCDLoadFailed);
+                        const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
+                        if (overlay) {
+                            overlay.remove();
+                        }
                     }
+
+                    this.dispatchEvent(new CustomEvent('canvas.setup'));
+                } finally {
+                    URL.revokeObjectURL(objectURL);
                 }
-                URL.revokeObjectURL(objectURL);
-                this.dispatchEvent(new CustomEvent('canvas.setup'));
-            } finally {
+            } catch (error: any) {
                 this.model.unlockFrameUpdating();
+                throw error;
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             const { clientID } = this.model.data.activeElement;
-            // this.setupObjects();
             this.activateObject();
             if (clientID !== null) {
                 this.setDefaultZoom();
@@ -1040,9 +1054,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             this.cube.setName('drawTemplate');
             this.model.data.activeElement.clientID = null;
-            // this.setupObjects();
-            // todo: add drawable cuboid to the scene
             this.deactivateObject();
+
+            // todo: add drawable cuboid to the scene
 
             if (data.redraw) {
                 const object = this.views.perspective.scene.getObjectByName(String(data.redraw));
@@ -1053,7 +1067,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             this.setHelperVisibility(false);
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
-            // this.setupObjects();
             this.setupObjectsIncremental(this.model.data.objects);
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             this.isPerspectiveBeingDragged = true;
@@ -1064,7 +1077,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }),
             );
             this.model.data.activeElement.clientID = null;
-            // this.setupObjects();
             this.deactivateObject();
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAG_CANVAS) {
@@ -1099,18 +1111,19 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             } else {
                 this.model.data.groupData.grouped = [];
                 this.model.data.activeElement.clientID = null;
-                // this.setupObjects();
             }
         }
     }
 
     private clearScene(): void {
+        this.drawnObjects = {};
         Object.keys(this.views).forEach((view: string): void => {
             this.views[view as keyof Views].scene.children = [];
         });
     }
 
     private clearSceneObjects(): void {
+        this.drawnObjects = {};
         Object.keys(this.views).forEach((view: string): void => {
             this.views[view as keyof Views].scene.children[0].children = [];
         });
@@ -1336,8 +1349,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.front.scene.add(frontRotationHelper);
         this.setupResizeHelper(ViewType.FRONT);
         this.setHelperVisibility(false);
-        this.setupObjectsIncremental(this.model.data.objects);
-        // this.setupObjects();
     }
 
     private positionAllViews(x: number, y: number, z: number, animation: boolean): void {

@@ -135,6 +135,7 @@ export interface Canvas3dModel {
     fit(): void;
     group(groupData: GroupData): void;
     destroy(): void;
+    updateCanvasObjects(): void;
     unlockFrameUpdating(): void;
 }
 
@@ -187,6 +188,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         };
     }
 
+    public updateCanvasObjects(): void {
+        this.notify(UpdateReasons.OBJECTS_UPDATED);
+    }
+
     public unlockFrameUpdating(): void {
         this.data.isFrameUpdating = false;
         if (this.data.nextSetupRequest) {
@@ -233,9 +238,8 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 };
                 this.data.imageIsDeleted = frameData.deleted;
                 this.data.image = data;
-                this.notify(UpdateReasons.IMAGE_CHANGED);
                 this.data.objects = objectStates;
-                this.notify(UpdateReasons.OBJECTS_UPDATED);
+                this.notify(UpdateReasons.IMAGE_CHANGED);
             })
             .catch((exception: any): void => {
                 this.data.isFrameUpdating = false;
