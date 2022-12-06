@@ -12,34 +12,9 @@ select **Create new task**.
 
 ![Create new task](/images/image004.jpg)
 
-See:
-
-- [Basic configuration](#basic-configuration)
-  - [Label shape](#label-shape)
-  - [Add an attribute](#add-an-attribute)
-  - [Select files](#select-files)
-  - [RAW](#raw)
-  - [Data formats for a 3D task](#data-formats-for-a-3d-task)
-- [Advanced configuration](#advanced-configuration)
-  - [Sorting method](#sorting-method)
-  - [Use zip/video chunks](#use-zipvideo-chunks)
-  - [Use cache](#use-cache)
-  - [Image Quality](#image-quality)
-  - [Overlap Size](#overlap-size)
-  - [Segment size](#segment-size)
-  - [Start frame](#start-frame)
-  - [Stop frame](#stop-frame)
-  - [Frame Step](#frame-step)
-  - [Chunk size](#chunk-size)
-  - [Dataset Repository](#dataset-repository)
-  - [Use LFS](#use-lfs)
-  - [Issue tracker](#issue-tracker)
-  - [Source storage](#source-storage)
-  - [Target storage](#target-storage)
-
 ## Basic configuration
 
-Use basic congiguration window to create simple task with minimum parameters.
+Use a basic configuration window to create a simple task with minimum parameters.
 
 ![Basic configurator](/images/basic_confugurator.jpg)
 
@@ -54,68 +29,79 @@ To create a basic configuration task, do the following:
 
    ![Select project](/images/image193.jpg)
 
-> **Note:** Further steps are valid if the task does not belong to the project. If the task is in
-> project, the project's labels will be applied to the task.
+   > **Note:** Further steps are valid if the task does not belong to the project. If the task is in
+   > project, the project's labels will be applied to the task.
 
-1. On the **Constructor** tab, click **Add label**, the label constructor menu will open:
+3. On the **Constructor** tab, click **Add label**, the label constructor menu will open:
 
    ![Label constructor](/images/image124.jpg)
 
-2. In the **Label name** field, enter the name of the label.
-3. (Optional) From the drop-down list, select [label shape](#label-shape)
-   and select the color for the label if needed.
+4. In the **Label name** field, enter the name of the label.
+5. (Optional) To limit the use of the label to a certain [shape tool](/docs/manual/basics/controls-sidebar/#shapes),
+   from the **Label shape** drop-down select the shape.
+6. (Optional) Select the color for the label.
 
    ![label shape and color](/images/label_shape.jpg)
 
-4. (Optional) Click **Add an attribute** to add [attribute](#add-an-attribute) and its properties.
-5. Click [**Select files**](#select-files).
-6. Click **Continue** to save the label and start adding a new one
+7. (Optional) Click **Add an attribute** to add [attribute](#add-an-attribute) and its properties.
+8. Click [**Select files**](#select-files).
+9. Click **Continue** to save the label and start adding a new one
    <br> **Cancel** will reset all added settings.
-7. Click **Submit and open** to submit the configuration and open the created task,
-   or **Submit and continue**, to submit the configuration and start a new task.
+10. Click **Submit and open** to submit the configuration and open the created task,
+    or **Submit and continue**, to submit the configuration and start a new task.
 
 ### Label shape
 
-**Label shape** is a type of shape for the label you are adding.
-<br>It corresponds with the [shape tools](/docs/manual/basics/controls-sidebar/#shapes)
-from the controls sidebar.
+**Label shape** limits the use of the label to certain [shape tool](/docs/manual/basics/controls-sidebar/#shapes).
 
-For example, if you added the label `sun` and from the **Label shape** drop-down
-selected `ellipse`, then the `sun` label will be available for
-**Draw new ellipse** menu item:
+`Any` - is the default shape, that does not limit labels.
 
-![Label shape](/images/label_shape.gif)
+For example, you added:
 
-It also will be available for the tools that
-are not bound by the shape of the label, for
-example **AI Tools** and **OpenCV** will also
-have the `sun` label.
+- Label `sun` with the **Label shape** type `ellipse`
+- Lable `car` with the **Label shape** type `any`
 
-`Any` - is the default value.
-<br>If the label shape is `Any` it will be available
-for all shapes from the controls sidebar.
+As a result:
 
-You can change the shape of the label at any moment after the creation of the
-task. The change will not affect the existing annotation.
+- The `sun` label will be available only for
+  **Draw new ellipse**.
+- The `car` label will be available for all shapes.
+
+  ![Label shape](/images/label_shape.gif)
+
+You can change the shape of the label at any moment.
+The change will not affect the existing annotation.
+
+> **Note:** You cannot change the shape of the label
+> that was created as `skeleton`.
+> <br>The **Label shape** field is disabled for `skeleton` labels.
+
 For example, if the objects were created by polygons, and then the label
-the shape was changed to polylines, all the created objects will
-still, be polygons, but you will not be able to add new polygon
+the shape was changed to polylines, all previously created objects will
+be polygons, but you will not be able to add new polygon
 objects with the same label.
-
-> **Note:** The skeleton label cannot be set to any other type, this
-> field is disabled when editing the skeleton label.
 
 ### Add an attribute
 
+**Attribute** is an additional label data, that you can use for annotation.
+
+For example, you created the label `face` and also want to clarify
+the type of face.
+To avoid adding extra labels, you can add attributes of the
+`face`: `male` or `female`.
+
+Added attributes will be available from the Objects menu:
+
+![Attributes](/images/attributes.jpg)
+
 To add an attribute, do the following:
 
-1. Set the attribute’s name.
-2. Choose the way to display the attribute:
-   - Select — drop-down list of value
-   - Radio — is used when it is necessary to choose just one option out of a few suggested.
-   - Checkbox — is used when it is necessary to choose any number of options out of suggested.
-   - Text — is used when an attribute is entered as a text.
-   - Number — is used when an attribute is entered as a number.
+1. In the **Name** field add the attribute’s name.
+2. From the drop-down, select way to display the attribute:
+   - `Radio` to choose one of several options.
+   - `Checkbox` to choose several options.
+   - `Text` to add text attribute.
+   - `Number` to add number attribute.
 3. Set values for the attribute. To separate values use **Enter**.
    To delete the added value, use **Backspace** or near the name of the value, click **x**.
    > ** Note:** If the specified way of displaying the attribute is `Text` or `Number`,
@@ -126,7 +112,7 @@ To delete an attribute, click **Delete attribute**.
 
 ### Select files
 
-There are several ways to upload files for annotation.
+There are several ways to upload files for annotation:
 
 - To upload the file from your PC, go to the **My computer** tab.
 - To upload files from a connected file share or network, go to the **Connected file share** tab.
@@ -140,15 +126,17 @@ There are several ways to upload files for annotation.
 
 ### RAW
 
-The `Raw` is a way of working with labels for an advanced user.
-Raw presents label data in _json_ format with an option of editing and copying labels as text.
-The `Done` button applies the changes and the `Reset` button cancels the changes.
+The **Raw** is a way of working with labels for an advanced user.
 
 ![](/images/image126.jpg)
+
+Raw presents label data in _.json_ format with an option of editing and copying labels as text.
+The **Done** button applies the changes and the **Reset** button cancels the changes.
 
 ### Data formats for a 3D task
 
 To create a 3D task, you must prepare an archive with one of the following directory structures:
+
 {{< tabpane >}}
 {{< tab header="Velodyne" >}}
 VELODYNE FORMAT
@@ -195,12 +183,16 @@ context_2.jpg
 
 ### Sorting method
 
-Option to sort the data. It is not relevant for videos.
-For example, the sequence `2.jpeg, 10.jpeg, 1.jpeg` after sorting will be:
+To sort image data select one of the sorting methods.
 
-- `lexicographical`: 1.jpeg, 10.jpeg, 2.jpeg
-- `natural`: 1.jpeg, 2.jpeg, 10.jpeg
-- `predefined`: 2.jpeg, 10.jpeg, 1.jpeg
+> **Note:** you cannot sort the video data.
+
+For example, the sequence `2.jpeg`, `10.jpeg`, `1.jpeg` after sorting will be:
+
+- **Lexicographica**: `1.jpeg`, `10.jpeg`, `2.jpeg`
+- **Natural**: `1.jpeg`, `2.jpeg`, `10.jpeg`
+- **Predefined**: `2.jpeg`, `10.jpeg`, `1.jpeg`
+- **Random** uploads data in random order.
 
 ### Use zip/video chunks
 
