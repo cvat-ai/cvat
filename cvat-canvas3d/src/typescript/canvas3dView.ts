@@ -851,6 +851,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
         cuboid.attachCameraReference();
 
+        cuboid[ViewType.PERSPECTIVE].visible = !(state.hidden || state.outside);
         for (const view of [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]) {
             cuboid[view].visible = false;
         }
@@ -941,10 +942,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             if (outside !== data.outside || hidden !== data.hidden) {
-                cuboid.perspective.visible = outside || hidden;
-                cuboid.top.visible = outside || hidden;
-                cuboid.side.visible = outside || hidden;
-                cuboid.front.visible = outside || hidden;
+                cuboid.perspective.visible = !(outside || hidden);
+                cuboid.top.visible = !(outside || hidden);
+                cuboid.side.visible = !(outside || hidden);
+                cuboid.front.visible = !(outside || hidden);
             }
 
             if (lock !== data.lock) {
