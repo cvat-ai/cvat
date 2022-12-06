@@ -64,6 +64,7 @@ import showPlatformNotification, {
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
+import consts from 'consts';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -207,6 +208,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             backendIsHealthy,
         } = this.props;
 
+        const { UPGRADE_GUIDE_URL } = consts;
+
         if (!healthIinitialized && !healthFetching) {
             loadBackendHealth();
             return;
@@ -224,8 +227,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 okButtonProps: { disabled: true },
                 content: (
                     <Text>
-                        {'does not support API, which is used by CVAT. '}
-                        Cannot connect to the server!
+                        Cannot connect to the server.
+                        Make sure the CVAT backend and all necessary services (Database, Redis and Open Policy Agent)
+                        are running and avaliable.
+                        If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the
+
+                        <a
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            href={UPGRADE_GUIDE_URL}
+                        >
+                            Upgrade Guide
+                        </a>
+                        .
                     </Text>
                 ),
             });

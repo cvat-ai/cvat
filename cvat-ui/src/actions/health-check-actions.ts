@@ -6,6 +6,8 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
 import { ServerError } from 'cvat-core/src/exceptions';
 
+import consts from 'consts';
+
 const core = getCore();
 
 export enum HealthCheckActionTypes {
@@ -39,14 +41,12 @@ export const getHealthAsync = (): ThunkAction => async (dispatch): Promise<void>
             });
     };
 
+    const { HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT } = consts;
+
     dispatch(healthCheckActions.getHealthCheck());
 
-    const maxRetries = 10;
-    const checkPeriod = 3000; // ms
-    const requestTimeout = 5000; // ms
-
     try {
-        await healthCheck(maxRetries, checkPeriod, requestTimeout);
+        await healthCheck(HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT);
         dispatch(healthCheckActions.getHealthCheckSuccess());
     } catch (error) {
         dispatch(healthCheckActions.getHealthCheckFailed(error));
