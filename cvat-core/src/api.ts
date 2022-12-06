@@ -262,6 +262,7 @@ function build() {
              * @method healthCheck
              * @async
              * @memberof module:API.cvat.server
+             * @param {number} requestTimeout
              * @returns {Object | undefined} response data if exist
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}

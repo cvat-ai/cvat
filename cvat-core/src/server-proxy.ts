@@ -480,20 +480,6 @@ async function healthCheck(requestTimeout) {
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    // return await Axios.get(url, {
-    //     proxy: config.proxy,
-    //     timeout: requestTimeout,
-    // })
-    //     .then(response => { return response.data;})
-    //     .catch(serverError => {
-    //         if (maxRetries > 0) {
-    //             return new Promise(resolve => setTimeout(resolve, checkPeriod))
-    //                 .then(() => healthCheck(maxRetries - 1, checkPeriod, requestTimeout));
-    //         } else {
-    //             throw serverError;
-    //         }
-    //     })
 }
 
 async function serverRequest(url, data) {
