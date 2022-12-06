@@ -15,7 +15,7 @@ rcssmin==1.0.6
 redis==3.5.3
 rjsmin==1.1.0
 requests==2.26.0
-rq==1.5.1
+rq==1.5.2
 rq-scheduler==0.10.0
 sqlparse==0.4.2
 django-sendfile2==0.7.0
@@ -36,7 +36,7 @@ opencv-python-headless==4.5.5.62
 h5py==3.6.0
 django-cors-headers==3.5.0
 furl==2.1.0
-av==8.0.2 --no-binary=av
+av==9.2.0 --no-binary=av
 tensorflow==2.9.3 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.

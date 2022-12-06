@@ -291,6 +291,9 @@ class CVAT_API_V2:
     def git_check(self, rq_id: int) -> str:
         return self.git + f"check/{rq_id}"
 
+    def git_get(self, task_id: int) -> str:
+        return self.git + f"get/{task_id}"
+
     def make_endpoint_url(
         self,
         path: str,

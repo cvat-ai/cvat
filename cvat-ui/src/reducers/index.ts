@@ -727,10 +727,6 @@ export interface AnnotationState {
             cur: number;
         };
     };
-    propagate: {
-        objectState: any | null;
-        frames: number;
-    };
     remove: {
         objectState: any;
         force: boolean;
@@ -739,6 +735,9 @@ export interface AnnotationState {
         collecting: boolean;
         visible: boolean;
         data: any;
+    };
+    propagate: {
+        visible: boolean;
     };
     colors: any[];
     filtersPanelVisible: boolean;

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os.path as osp
+import os
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -103,18 +103,18 @@ class TestJobUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
+        path = self.tmp_path / f"task_{task_id}-cvat.zip"
         job_id = fxt_new_task.get_jobs()[0].id
         job = self.client.jobs.retrieve(job_id)
         job.export_dataset(
             format_name="CVAT for images 1.1",
-            filename=path,
+            filename=os.fspath(path),
             pbar=pbar,
             include_images=include_images,
         )
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
@@ -139,7 +139,7 @@ class TestJobUsecases:
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert osp.isfile(self.tmp_path / "frame-0.jpg")
+        assert (self.tmp_path / "frame-0.jpg").is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
