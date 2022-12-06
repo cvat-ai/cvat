@@ -29,6 +29,8 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Adjusted initial camera position, enabled 'Reset zoom' option for 3D canvas (<https://github.com/opencv/cvat/pull/5395>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
+- In the SDK, functions taking paths as strings now also accept path-like objects
+  (<https://github.com/opencv/cvat/pull/5435>)
 
 ### Deprecated
 - TDB

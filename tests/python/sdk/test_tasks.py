@@ -4,7 +4,6 @@
 
 import io
 import json
-import os
 import zipfile
 from logging import Logger
 from pathlib import Path
@@ -48,7 +47,7 @@ class TestTaskUsecases:
         backup_path = self.tmp_path / "backup.zip"
 
         fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
-        fxt_new_task.download_backup(str(backup_path))
+        fxt_new_task.download_backup(backup_path)
 
         yield backup_path
 
@@ -60,7 +59,7 @@ class TestTaskUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[str(fxt_image_file)],
+            resources=[fxt_image_file],
             data_params={"image_quality": 80},
         )
 
@@ -113,9 +112,8 @@ class TestTaskUsecases:
         task_files = generate_image_files(7)
         for i, f in enumerate(task_files):
             fname = self.tmp_path / f.name
-            with fname.open("wb") as fd:
-                fd.write(f.getvalue())
-                task_files[i] = str(fname)
+            fname.write_bytes(f.getvalue())
+            task_files[i] = fname
 
         task = self.client.tasks.create_from_data(
             spec=task_spec,
@@ -184,7 +182,7 @@ class TestTaskUsecases:
         task = self.client.tasks.create_from_data(
             spec=task_spec,
             resource_type=ResourceType.LOCAL,
-            resources=[str(fxt_image_file)],
+            resources=[fxt_image_file],
             pbar=pbar,
             dataset_repository_url=repository_url,
         )
@@ -256,7 +254,7 @@ class TestTaskUsecases:
         task = self.client.tasks.retrieve(task_id)
         task.export_dataset(
             format_name="CVAT for images 1.1",
-            filename=os.fspath(path),
+            filename=path,
             pbar=pbar,
             include_images=include_images,
         )
@@ -272,7 +270,7 @@ class TestTaskUsecases:
         task_id = fxt_new_task.id
         path = self.tmp_path / f"task_{task_id}-backup.zip"
         task = self.client.tasks.retrieve(task_id)
-        task.download_backup(filename=os.fspath(path), pbar=pbar)
+        task.download_backup(filename=path, pbar=pbar)
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert path.is_file()
@@ -296,7 +294,7 @@ class TestTaskUsecases:
         fxt_new_task.download_frames(
             [0],
             quality=quality,
-            outdir=str(self.tmp_path),
+            outdir=self.tmp_path,
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
@@ -319,9 +317,7 @@ class TestTaskUsecases:
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        fxt_new_task.import_annotations(
-            format_name="COCO 1.0", filename=str(fxt_coco_file), pbar=pbar
-        )
+        fxt_new_task.import_annotations(format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar)
 
         assert "uploaded" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
@@ -331,7 +327,7 @@ class TestTaskUsecases:
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        task = self.client.tasks.create_from_backup(str(fxt_backup_file), pbar=pbar)
+        task = self.client.tasks.create_from_backup(fxt_backup_file, pbar=pbar)
 
         assert task.id
         assert task.id != fxt_new_task.id
