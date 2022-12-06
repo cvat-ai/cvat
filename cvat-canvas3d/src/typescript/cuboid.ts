@@ -86,11 +86,6 @@ export class CuboidModel {
     public setScale(x: number, y: number, z: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].scale.set(x, y, z);
-            // this[view].children.forEach((child: THREE.Object3D) => {
-            //     if (child.name.startsWith(constants.RESIZE_HELPER_NAME)) {
-            //         child.scale.set(1 / x, 1 / y, 1 / z);
-            //     }
-            // });
         });
     }
 

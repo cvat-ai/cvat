@@ -920,7 +920,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private updateObjects(states: ObjectState[]): void {
         states.forEach((state: ObjectState) => {
             const {
-                clientID, points, color, label, group, lock, occluded, outside, hidden,
+                clientID, points, color, label, group, occluded, outside, hidden,
             } = state;
             const { cuboid, data } = this.drawnObjects[clientID];
 
@@ -948,14 +948,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 cuboid.front.visible = !(outside || hidden);
             }
 
-            if (lock !== data.lock) {
-                console.warn('not implemented');
-                // todo
-            }
-
             if (occluded !== data.occluded) {
-                console.warn('not implemented');
-                // todo
+                this.deleteObjects([clientID]);
+                this.createObjects([state]);
+                return;
             }
 
             this.drawnObjects[clientID].data = drawnDataFromState(state);
