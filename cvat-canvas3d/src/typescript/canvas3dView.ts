@@ -15,11 +15,26 @@ import {
 import {
     createRotationHelper, CuboidModel, setEdges, setTranslationHelper,
 } from './cuboid';
+import { ObjectState } from '.';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
+}
+
+interface DrawnState {
+    updated: number;
+    points: number[];
+    lock: boolean;
+    outside: boolean;
+    occluded: boolean;
+    hidden: boolean;
+    pinned: boolean;
+    frame: number;
+    label: any;
+    group: any;
+    color: string;
 }
 
 export enum CameraAction {
@@ -35,17 +50,8 @@ export enum CameraAction {
     ROTATE_LEFT = 'ArrowLeft',
 }
 
-export interface RayCast {
-    renderer: THREE.Raycaster;
-    mouseVector: THREE.Vector2;
-}
-
 export type Views = {
     [key in ViewType]: RenderView;
-};
-
-export type CubeObject = {
-    [key in ViewType]: THREE.Mesh;
 };
 
 export type ViewsDOM = {
@@ -57,7 +63,10 @@ export interface RenderView {
     scene: THREE.Scene;
     camera?: THREE.PerspectiveCamera | THREE.OrthographicCamera;
     controls?: CameraControls;
-    rayCaster?: RayCast;
+    rayCaster?: {
+        renderer: THREE.Raycaster;
+        mouseVector: THREE.Vector2;
+    };
 }
 
 export class Canvas3dViewImpl implements Canvas3dView, Listener {
@@ -67,6 +76,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private speed: number;
     private cube: CuboidModel;
     private isPerspectiveBeingDragged: boolean;
+    private drawnObjects: Record<number, { state: DrawnState; cuboid: CuboidModel; }>;
     private model: Canvas3dModel & Master;
     private action: any;
     private globalHelpers: any;
@@ -92,6 +102,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.speed = CONST.MOVEMENT_FACTOR;
         this.cube = new CuboidModel('line', '#ffffff');
         this.isPerspectiveBeingDragged = false;
+        this.drawnObjects = {};
         this.model = model;
         this.globalHelpers = {
             top: {
@@ -132,7 +143,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
 
         this.action = {
-            loading: false,
             scan: null,
             selectable: true,
             frameCoordinates: {
@@ -800,6 +810,132 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         return cuboid;
     }
 
+    private receiveShapeColor(state: ObjectState): string {
+        const { colorBy } = this.model.data.shapeProperties;
+
+        let color = '';
+        if (colorBy === 'Label') {
+            ({ color } = state.label);
+        } else if (colorBy === 'Instance') {
+            ({ color } = state);
+        } else {
+            ({ color } = state.group);
+        }
+
+        return color;
+    }
+
+    private addCuboid(state: ObjectState): CuboidModel {
+        const {
+            opacity, outlined, outlineColor, colorBy,
+        } = this.model.data.shapeProperties;
+        const clientID = String(state.clientID);
+        const cuboid = new CuboidModel(state.occluded ? 'dashed' : 'line', outlined ? outlineColor : '#ffffff');
+        const color = this.receiveShapeColor(state);
+
+        cuboid.setName(clientID);
+        cuboid.setOriginalColor(color);
+        cuboid.setColor(color);
+        cuboid.setOpacity(opacity);
+        cuboid.setPosition(state.points[0], state.points[1], state.points[2]);
+        cuboid.setScale(state.points[6], state.points[7], state.points[8]);
+        cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
+
+        cuboid.perspective.userData = state;
+
+        return cuboid;
+    }
+
+    private deactivateObject(): void {
+
+    }
+
+    private activateObject(): void {
+
+    }
+
+    private createObjects(states: ObjectState[]): void {
+        states.forEach((state: ObjectState) => {
+            const cuboid = this.addCuboid(state);
+            this.addSceneChildren(cuboid);
+            this.drawnObjects[state.clientID] = {
+                cuboid,
+                state,
+            };
+        });
+    }
+
+    private updateObjects(states: ObjectState[]): void {
+        states.forEach((state: ObjectState) => {
+            const {
+                clientID, points, color, label, group, lock, occluded, outside, hidden,
+            } = state;
+            const { cuboid, state: keptState } = this.drawnObjects[clientID];
+
+            if (points.length !== keptState.points.length ||
+                points.some((point: number, idx: number) => point !== keptState.points[idx])) {
+                cuboid.setPosition(state.points[0], state.points[1], state.points[2]);
+                cuboid.setScale(state.points[6], state.points[7], state.points[8]);
+                cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
+            }
+
+            if (
+                color !== keptState.color ||
+                label.id !== keptState.label.id ||
+                group.id !== keptState.group.id
+            ) {
+                const newColor = this.receiveShapeColor(state);
+                cuboid.setOriginalColor(newColor);
+                cuboid.setColor(newColor);
+            }
+
+            if (outside !== keptState.outside || hidden !== keptState.hidden) {
+                cuboid.perspective.visible = outside || hidden;
+                cuboid.top.visible = outside || hidden;
+                cuboid.side.visible = outside || hidden;
+                cuboid.front.visible = outside || hidden;
+            }
+
+            if (lock !== keptState.lock) {
+                console.warn('not implemented');
+                // todo
+            }
+
+            if (occluded !== keptState.occluded) {
+                console.warn('not implemented');
+                // todo
+            }
+        });
+    }
+
+    private deleteObjects(clientIDs: number[]): void {
+        clientIDs.forEach((clientID: number): void => {
+            const { cuboid } = this.drawnObjects[clientID];
+            Object.keys(this.views).forEach((view: string): void => {
+                this.views[view as keyof Views].scene.children[0].remove(cuboid[view as keyof Views]);
+            });
+
+            delete this.drawnObjects[clientID];
+        });
+    }
+
+    private setupObjectsIncremental(states: ObjectState[]): void {
+        const created = states.filter((state: ObjectState): boolean => !(state.clientID in this.drawnObjects));
+        const updated = states.filter((state: ObjectState): boolean => (
+            state.clientID in this.drawnObjects && this.drawnObjects[state.clientID].state.updated !== state.updated
+        ));
+        const deleted = Object.keys(this.drawnObjects).map((key: string): number => +key)
+            .filter((clientID: number): boolean => (
+                states.findIndex((state: ObjectState) => state.clientID === clientID) === -1
+            ));
+
+        this.deactivateObject();
+        this.createObjects(created);
+        this.updateObjects(updated);
+        this.deleteObjects(deleted);
+        this.activateObject();
+    }
+
     private setupObjects(): void {
         if (this.views.perspective.scene.children[0]) {
             this.clearSceneObjects();
@@ -808,7 +944,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const object = this.model.data.objects[i];
                 this.setupObject(object, true);
             }
-            this.action.loading = false;
 
             if (this.mode === Mode.DRAW) {
                 // if setupObjects was called during drawing, need to restore drawable object
@@ -830,54 +965,63 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
         if (reason === UpdateReasons.IMAGE_CHANGED) {
-            if (!model.data.image) return;
-            this.dispatchEvent(new CustomEvent('canvas.canceled'));
-            if (this.model.mode === Mode.DRAW) {
-                this.model.data.drawData.enabled = false;
-            }
-            this.views.perspective.renderer.dispose();
-            if (!this.controller.imageIsDeleted) {
-                this.model.mode = Mode.BUSY;
-            }
-            this.action.loading = true;
-            const loader = new PCDLoader();
-            const objectURL = URL.createObjectURL(model.data.image.imageData);
-            this.clearScene();
-            if (this.controller.imageIsDeleted) {
-                this.render();
-                const [container] = window.document.getElementsByClassName('cvat-canvas-container');
-                const overlay = window.document.createElement('canvas');
-                overlay.classList.add('cvat_3d_canvas_deleted_overlay');
-                overlay.style.width = '100%';
-                overlay.style.height = '100%';
-                overlay.style.position = 'absolute';
-                overlay.style.top = '0px';
-                overlay.style.left = '0px';
-                container.appendChild(overlay);
-                const { clientWidth: width, clientHeight: height } = overlay;
-                overlay.width = width;
-                overlay.height = height;
-                const canvasContext = overlay.getContext('2d');
-                const fontSize = width / 10;
-                canvasContext.font = `bold ${fontSize}px serif`;
-                canvasContext.textAlign = 'center';
-                canvasContext.lineWidth = fontSize / 20;
-                canvasContext.strokeStyle = 'white';
-                canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
-                canvasContext.fillStyle = 'black';
-                canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
-            } else {
-                loader.load(objectURL, this.addScene.bind(this));
-                const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
-                if (overlay) {
-                    overlay.remove();
+            try {
+                if (!model.data.image) {
+                    return;
                 }
+
+                this.views.perspective.renderer.dispose();
+                const loader = new PCDLoader();
+                const objectURL = URL.createObjectURL(model.data.image.imageData);
+                this.clearScene();
+
+                if (this.controller.imageIsDeleted) {
+                    this.render();
+                    const [container] = window.document.getElementsByClassName('cvat-canvas-container');
+                    const overlay = window.document.createElement('canvas');
+                    overlay.classList.add('cvat_3d_canvas_deleted_overlay');
+                    overlay.style.width = '100%';
+                    overlay.style.height = '100%';
+                    overlay.style.position = 'absolute';
+                    overlay.style.top = '0px';
+                    overlay.style.left = '0px';
+                    container.appendChild(overlay);
+                    const { clientWidth: width, clientHeight: height } = overlay;
+                    overlay.width = width;
+                    overlay.height = height;
+                    const canvasContext = overlay.getContext('2d');
+                    const fontSize = width / 10;
+                    canvasContext.font = `bold ${fontSize}px serif`;
+                    canvasContext.textAlign = 'center';
+                    canvasContext.lineWidth = fontSize / 20;
+                    canvasContext.strokeStyle = 'white';
+                    canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
+                    canvasContext.fillStyle = 'black';
+                    canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+                } else {
+                    loader.load(objectURL, (points: any) => {
+                        try {
+                            this.onSceneImageLoaded(points);
+                        } finally {
+                            this.model.unlockFrameUpdating();
+                        }
+                    }, () => {}, () => {
+                        this.model.unlockFrameUpdating();
+                    });
+                    const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
+                    if (overlay) {
+                        overlay.remove();
+                    }
+                }
+                URL.revokeObjectURL(objectURL);
+                this.dispatchEvent(new CustomEvent('canvas.setup'));
+            } finally {
+                this.model.unlockFrameUpdating();
             }
-            URL.revokeObjectURL(objectURL);
-            this.dispatchEvent(new CustomEvent('canvas.setup'));
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             const { clientID } = this.model.data.activeElement;
-            this.setupObjects();
+            // this.setupObjects();
+            this.activateObject();
             if (clientID !== null) {
                 this.setDefaultZoom();
             }
@@ -896,7 +1040,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             this.cube.setName('drawTemplate');
             this.model.data.activeElement.clientID = null;
-            this.setupObjects();
+            // this.setupObjects();
+            // todo: add drawable cuboid to the scene
+            this.deactivateObject();
 
             if (data.redraw) {
                 const object = this.views.perspective.scene.getObjectByName(String(data.redraw));
@@ -907,7 +1053,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             this.setHelperVisibility(false);
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
-            this.setupObjects();
+            // this.setupObjects();
+            this.setupObjectsIncremental(this.model.data.objects);
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
             this.isPerspectiveBeingDragged = true;
             this.dispatchEvent(
@@ -917,7 +1064,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }),
             );
             this.model.data.activeElement.clientID = null;
-            this.setupObjects();
+            // this.setupObjects();
+            this.deactivateObject();
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAG_CANVAS) {
                 this.isPerspectiveBeingDragged = false;
@@ -951,7 +1099,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             } else {
                 this.model.data.groupData.grouped = [];
                 this.model.data.activeElement.clientID = null;
-                this.setupObjects();
+                // this.setupObjects();
             }
         }
     }
@@ -1050,8 +1198,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         });
     }
 
-    private addScene(points: any): void {
-        const getcameraSettingsToFitScene = (
+    private onSceneImageLoaded(points: any): void {
+        const getCameraSettingsToFitScene = (
             camera: THREE.PerspectiveCamera,
             boundingBox: THREE.Box3,
         ): [number, number, number] => {
@@ -1084,7 +1232,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         if (this.model.configuration.resetZoom) {
             points.geometry.computeBoundingBox();
-            this.cameraSettings.perspective.position = getcameraSettingsToFitScene(
+            this.cameraSettings.perspective.position = getCameraSettingsToFitScene(
                 this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
             );
             this.positionAllViews(
@@ -1188,7 +1336,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.front.scene.add(frontRotationHelper);
         this.setupResizeHelper(ViewType.FRONT);
         this.setHelperVisibility(false);
-        this.setupObjects();
+        this.setupObjectsIncremental(this.model.data.objects);
+        // this.setupObjects();
     }
 
     private positionAllViews(x: number, y: number, z: number, animation: boolean): void {
@@ -1332,9 +1481,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
         }
 
-        if (this.model.mode === Mode.BUSY && !this.action.loading) {
-            this.model.mode = Mode.IDLE;
-        }
+        // if (this.model.mode === Mode.BUSY && !this.action.loading) {
+        //     this.model.mode = Mode.IDLE;
+        // }
     }
 
     private adjustPerspectiveCameras(): void {

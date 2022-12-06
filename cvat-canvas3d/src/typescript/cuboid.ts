@@ -1,6 +1,7 @@
 // Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
+
 import * as THREE from 'three';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { ViewType } from './canvas3dModel';
