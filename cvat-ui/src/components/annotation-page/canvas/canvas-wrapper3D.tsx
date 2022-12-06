@@ -522,16 +522,18 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 handle={<span className='cvat-resizable-handle-horizontal' />}
                 onResize={(e: SyntheticEvent) => setViewSize({ type: ViewType.PERSPECTIVE, e })}
             >
-                {frameFetching ? (
-                    <svg id='cvat_canvas_loading_animation'>
-                        <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
-                    </svg>
-                ) : null}
-                <div className='cvat-canvas3d-perspective' id='cvat-canvas3d-perspective'>
-                    <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
-                    <ArrowGroup />
-                    <ControlGroup />
-                </div>
+                <>
+                    {frameFetching ? (
+                        <svg id='cvat_canvas_loading_animation'>
+                            <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
+                        </svg>
+                    ) : null}
+                    <div className='cvat-canvas3d-perspective' id='cvat-canvas3d-perspective'>
+                        <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
+                        <ArrowGroup />
+                        <ControlGroup />
+                    </div>
+                </>
             </ResizableBox>
             <div
                 className='cvat-canvas3d-orthographic-views'

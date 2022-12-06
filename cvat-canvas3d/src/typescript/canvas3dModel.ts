@@ -85,14 +85,10 @@ export enum UpdateReasons {
 
 export enum Mode {
     IDLE = 'idle',
-    DRAG = 'drag',
-    RESIZE = 'resize',
     DRAW = 'draw',
     EDIT = 'edit',
-    INTERACT = 'interact',
     DRAG_CANVAS = 'drag_canvas',
     GROUP = 'group',
-    BUSY = 'busy',
 }
 
 export interface Canvas3dDataModel {
@@ -206,7 +202,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public setup(frameData: any, objectStates: any[]): void {
         if (this.data.imageID !== frameData.number) {
-            if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
+            if ([Mode.EDIT].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
@@ -256,7 +252,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT, Mode.BUSY].includes(this.data.mode) ||
+        const isUnable = [Mode.EDIT].includes(this.data.mode) ||
             this.data.isFrameUpdating || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
         return !isUnable;
     }

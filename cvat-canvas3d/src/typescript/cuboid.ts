@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +10,31 @@ import constants from './consts';
 
 export interface Indexable {
     [key: string]: any;
+}
+
+export function makeCornerPointsMatrix(x: number, y: number, z: number): number[][] {
+    return ([
+        [1 * x, 1 * y, 1 * z],
+        [1 * x, 1 * y, -1 * z],
+        [1 * x, -1 * y, 1 * z],
+        [1 * x, -1 * y, -1 * z],
+        [-1 * x, 1 * y, 1 * z],
+        [-1 * x, 1 * y, -1 * z],
+        [-1 * x, -1 * y, 1 * z],
+        [-1 * x, -1 * y, -1 * z],
+    ]);
+}
+
+export function cuboidSize(cuboid: THREE.Mesh): {
+    x: number, y: number, z: number,
+} {
+    cuboid.geometry.computeBoundingBox();
+    const bbox = cuboid.geometry.boundingBox;
+    const x = bbox.max.x - bbox.min.x;
+    const y = bbox.max.y - bbox.min.y;
+    const z = bbox.max.z - bbox.min.z;
+
+    return { x, y, z };
 }
 
 export class CuboidModel {
@@ -29,9 +55,8 @@ export class CuboidModel {
         const geo = new THREE.EdgesGeometry(this.perspective.geometry);
         const wireframe = new THREE.LineSegments(
             geo,
-            outline === 'line'
-                ? new THREE.LineBasicMaterial({ color: outlineColor, linewidth: 4 })
-                : new THREE.LineDashedMaterial({
+            outline === 'line' ? new THREE.LineBasicMaterial({ color: outlineColor, linewidth: 4 }) :
+                new THREE.LineDashedMaterial({
                     color: outlineColor,
                     dashSize: 0.05,
                     gapSize: 0.05,
@@ -62,6 +87,11 @@ export class CuboidModel {
     public setScale(x: number, y: number, z: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].scale.set(x, y, z);
+            // this[view].children.forEach((child: THREE.Object3D) => {
+            //     if (child.name.startsWith(constants.RESIZE_HELPER_NAME)) {
+            //         child.scale.set(1 / x, 1 / y, 1 / z);
+            //     }
+            // });
         });
     }
 
@@ -122,69 +152,84 @@ export class CuboidModel {
     }
 }
 
-export function setEdges(instance: THREE.Mesh): THREE.LineSegments {
-    const edges = new THREE.EdgesGeometry(instance.geometry);
-    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: '#ffffff', linewidth: 3 }));
-    line.name = constants.CUBOID_EDGE_NAME;
-    instance.add(line);
-    return line;
+export function createCuboidEdges(instance: THREE.Mesh): THREE.LineSegments {
+    const geometry = new THREE.EdgesGeometry(instance.geometry);
+    const edges = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: '#ffffff', linewidth: 3 }));
+    edges.name = constants.CUBOID_EDGE_NAME;
+    instance.add(edges);
+    return edges;
 }
 
-export function setTranslationHelper(instance: THREE.Mesh): void {
+export function removeCuboidEdges(instance: THREE.Mesh): void {
+    const edges = instance.getObjectByName(constants.CUBOID_EDGE_NAME);
+    instance.remove(edges);
+}
+
+export function createResizeHelper(instance: THREE.Mesh): void {
     const sphereGeometry = new THREE.SphereGeometry(0.1);
     const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
-    instance.geometry.deleteAttribute('normal');
-    instance.geometry.deleteAttribute('uv');
-    // eslint-disable-next-line no-param-reassign
-    instance.geometry = BufferGeometryUtils.mergeVertices(instance.geometry);
+    const { x, y, z } = cuboidSize(instance);
+    const cornerPoints = makeCornerPointsMatrix(x / 2, y / 2, z / 2);
+
     const vertices = [];
-    const positionAttribute = instance.geometry.getAttribute('position');
-    for (let i = 0; i < positionAttribute.count; i++) {
-        const vertex = new THREE.Vector3();
-        vertex.fromBufferAttribute(positionAttribute, i);
-        vertices.push(vertex);
+    for (const offset of cornerPoints) {
+        const scaleVector = new THREE.Vector3().fromArray(offset).multiply(instance.scale);
+        const vertex = instance.position.clone();
+        vertices.push(vertex.add(scaleVector));
     }
-    const helpers = [];
+
     for (let i = 0; i < vertices.length; i++) {
-        helpers[i] = new THREE.Mesh(sphereGeometry.clone(), sphereMaterial.clone());
-        helpers[i].position.set(vertices[i].x, vertices[i].y, vertices[i].z);
-        helpers[i].up.set(0, 0, 1);
-        helpers[i].name = 'resizeHelper';
-        instance.add(helpers[i]);
-        helpers[i].scale.set(1 / instance.scale.x, 1 / instance.scale.y, 1 / instance.scale.z);
+        const helper = new THREE.Mesh(sphereGeometry.clone(), sphereMaterial.clone());
+        helper.position.set(vertices[i].x, vertices[i].y, vertices[i].z);
+        helper.up.set(0, 0, 1);
+        helper.rotateY(90);
+        helper.name = `${constants.RESIZE_HELPER_NAME}_${i}`;
+        instance.parent.add(helper);
     }
-    // eslint-disable-next-line no-param-reassign
-    instance.userData = { ...instance.userData, resizeHelpers: helpers };
+}
+
+export function removeResizeHelper(instance: THREE.Mesh): void {
+    instance.parent.children.filter((child: THREE.Object3D) => child.name.startsWith(constants.RESIZE_HELPER_NAME))
+        .forEach((helper) => {
+            instance.parent.remove(helper);
+        });
 }
 
 export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
-    const sphereGeometry = new THREE.SphereGeometry(0.1);
-    const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
-    const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    rotationHelper.name = constants.ROTATION_HELPER;
-    switch (viewType) {
-        case ViewType.TOP:
-            rotationHelper.position.set(
-                (instance.geometry as THREE.BoxGeometry).parameters.height / 2 + constants.ROTATION_HELPER_OFFSET,
-                instance.position.y,
-                instance.position.z,
-            );
-            instance.add(rotationHelper.clone());
-            // eslint-disable-next-line no-param-reassign
-            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone() };
-            break;
-        case ViewType.SIDE:
-        case ViewType.FRONT:
-            rotationHelper.position.set(
-                instance.position.x,
-                instance.position.y,
-                (instance.geometry as THREE.BoxGeometry).parameters.depth / 2 + constants.ROTATION_HELPER_OFFSET,
-            );
-            instance.add(rotationHelper.clone());
-            // eslint-disable-next-line no-param-reassign
-            instance.userData = { ...instance.userData, rotationHelpers: rotationHelper.clone() };
-            break;
-        default:
-            break;
+    if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
+        const sphereGeometry = new THREE.SphereGeometry(0.1);
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
+        const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        rotationHelper.name = constants.ROTATION_HELPER_NAME;
+        instance.parent.add(rotationHelper);
+
+        const { y, z } = cuboidSize(instance);
+
+        switch (viewType) {
+            case ViewType.TOP:
+                rotationHelper.position.set(
+                    instance.position.x,
+                    instance.position.y + (y / 2) * instance.scale.y + constants.ROTATION_HELPER_OFFSET,
+                    instance.position.z,
+                );
+                break;
+            case ViewType.SIDE:
+            case ViewType.FRONT:
+                rotationHelper.position.set(
+                    instance.position.x,
+                    instance.position.y,
+                    instance.position.z + (z / 2) * instance.scale.z + constants.ROTATION_HELPER_OFFSET,
+                );
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+export function removeRotationHelper(instance: THREE.Mesh): void {
+    const helper = instance.parent.getObjectByName(constants.ROTATION_HELPER_NAME);
+    if (helper) {
+        instance.parent.remove(helper);
     }
 }
