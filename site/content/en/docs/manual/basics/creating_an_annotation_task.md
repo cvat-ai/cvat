@@ -54,7 +54,7 @@ To create a basic configuration task, do the following:
 
 **Label shape** limits the use of the label to certain [shape tool](/docs/manual/basics/controls-sidebar/#shapes).
 
-`Any` - is the default shape, that does not limit labels.
+`Any` - is the default shape, that does not limit shape types.
 
 For example, you added:
 
