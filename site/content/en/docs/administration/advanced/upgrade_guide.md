@@ -9,7 +9,7 @@ description: 'Instructions for upgrading CVAT deployed with docker compose'
 
 ## Upgrade guide
 
-Note: updating CVAT from version 2.3.0 to version 2.4.0 requires additional manual actions with database data due to
+Note: updating CVAT from version 2.2.0 to version 2.3.0 requires additional manual actions with database data due to
 upgrading PostgreSQL base image major version. See details [here](#how-to-upgrade-postgresql-database-base-image)
 
 To upgrade CVAT, follow these steps:
