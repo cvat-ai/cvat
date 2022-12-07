@@ -81,6 +81,7 @@ export enum UpdateReasons {
     GROUP = 'group',
     FITTED_CANVAS = 'fitted_canvas',
     CONFIG_UPDATED = 'config_updated',
+    SHAPES_CONFIG_UPDATED = 'shapes_config_updated',
 }
 
 export enum Mode {
@@ -126,7 +127,7 @@ export interface Canvas3dModel {
     cancel(): void;
     dragCanvas(enable: boolean): void;
     activate(clientID: string | null, attributeID: number | null): void;
-    configureShapes(shapeProperties: any): void;
+    configureShapes(shapeProperties: ShapeProperties): void;
     configure(configuration: Configuration): void;
     fit(): void;
     group(groupData: GroupData): void;
@@ -370,7 +371,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             this.data.shapeProperties.outlineColor = shapeProperties.outlineColor;
         }
 
-        // this.notify(UpdateReasons.OBJECTS_UPDATED);
+        this.notify(UpdateReasons.SHAPES_CONFIG_UPDATED);
     }
 
     public fit(): void {

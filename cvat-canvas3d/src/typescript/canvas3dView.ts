@@ -59,8 +59,10 @@ export interface RenderView {
 
 interface DrawnObjectData {
     labelID: number;
+    labelColor: string;
     points: number[];
     groupID: number | null;
+    groupColor: string;
     color: string;
     occluded: boolean;
     outside: boolean;
@@ -70,10 +72,20 @@ interface DrawnObjectData {
     updated: number;
 }
 
+const BOTTOM_VIEWS = [
+    ViewType.TOP,
+    ViewType.SIDE,
+    ViewType.FRONT,
+];
+
+const ALL_VIEWS = [...BOTTOM_VIEWS, ViewType.PERSPECTIVE];
+
 function drawnDataFromState(state: ObjectState): DrawnObjectData {
     return {
         labelID: state.label.id,
+        labelColor: state.label.color,
         groupID: state.group?.id || null,
+        groupColor: state.group?.color || '#ffffff',
         points: [...state.points],
         color: state.color,
         hidden: state.hidden,
@@ -473,12 +485,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             50,
         );
 
-        for (const cameraType of [
-            ViewType.PERSPECTIVE,
-            ViewType.TOP,
-            ViewType.SIDE,
-            ViewType.FRONT,
-        ]) {
+        for (const cameraType of ALL_VIEWS) {
             this.views[cameraType].camera.position.set(...this.cameraSettings[cameraType].position);
             this.views[cameraType].camera.lookAt(...this.cameraSettings[cameraType].lookAt);
             this.views[cameraType].camera.up.set(...this.cameraSettings[cameraType].up);
@@ -509,7 +516,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.side.controls.enabled = false;
         this.views.front.controls.enabled = false;
 
-        [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
+        BOTTOM_VIEWS.forEach((view: ViewType): void => {
             this.views[view].renderer.domElement.addEventListener(
                 'wheel',
                 (event: WheelEvent): void => {
@@ -819,19 +826,30 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     //     return cuboid;
     // }
 
-    private receiveShapeColor(state: ObjectState): string {
+    private receiveShapeColor(state: ObjectState | DrawnObjectData): string {
         const { colorBy } = this.model.data.shapeProperties;
 
-        let color = '';
-        if (colorBy === 'Label') {
-            ({ color } = state.label);
-        } else if (colorBy === 'Instance') {
-            ({ color } = state);
-        } else {
-            ({ color } = state.group);
+        if (state instanceof ObjectState) {
+            if (colorBy === 'Label') {
+                return state.label.color;
+            }
+
+            if (colorBy === 'Group') {
+                return state.color;
+            }
+
+            return state.group?.color || CONST.DEFAULT_GROUP_COLOR;
         }
 
-        return color;
+        if (colorBy === 'Label') {
+            return state.labelColor;
+        }
+
+        if (colorBy === 'Group') {
+            return state.groupColor;
+        }
+
+        return state.color;
     }
 
     private addCuboid(state: ObjectState): CuboidModel {
@@ -852,7 +870,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid.attachCameraReference();
 
         cuboid[ViewType.PERSPECTIVE].visible = !(state.hidden || state.outside);
-        for (const view of [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]) {
+        for (const view of BOTTOM_VIEWS) {
             cuboid[view].visible = false;
         }
 
@@ -865,7 +883,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (this.activatedElementID !== null) {
             const { cuboid } = this.drawnObjects[this.activatedElementID];
             cuboid.setOpacity(opacity);
-            for (const view of [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]) {
+            for (const view of BOTTOM_VIEWS) {
                 cuboid[view].visible = false;
                 removeCuboidEdges(cuboid[view]);
                 removeResizeHelper(cuboid[view]);
@@ -881,7 +899,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (clientID !== null && this.drawnObjects[+clientID]?.cuboid?.perspective?.visible) {
             const { cuboid, data } = this.drawnObjects[+clientID];
             cuboid.setOpacity(selectedOpacity);
-            for (const view of [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]) {
+            for (const view of BOTTOM_VIEWS) {
                 cuboid[view].visible = true;
                 createCuboidEdges(cuboid[view]);
 
@@ -1064,6 +1082,26 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.model.unlockFrameUpdating();
                 throw error;
             }
+        } else if (reason === UpdateReasons.SHAPES_CONFIG_UPDATED) {
+            const config = { ...this.model.data.shapeProperties };
+            for (const key of Object.keys(this.drawnObjects)) {
+                const clientID = +key;
+                const { cuboid, data } = this.drawnObjects[clientID];
+                const newColor = this.receiveShapeColor(data);
+                const wireframe = (cuboid.wireframe.material as THREE.LineBasicMaterial | THREE.LineDashedMaterial);
+                for (const view of ALL_VIEWS) {
+                    const material = cuboid[view].material as THREE.MeshBasicMaterial;
+                    (material as THREE.MeshBasicMaterial).color.set(newColor);
+                    (material as THREE.MeshBasicMaterial).opacity = ((clientID === this.activatedElementID) ?
+                        config.selectedOpacity : config.opacity) / 100;
+                }
+
+                if (!config.outlined) {
+                    wireframe.color.set(newColor);
+                } else {
+                    wireframe.color.set(config.outlineColor || CONST.DEFAULT_OUTLINE_COLOR);
+                }
+            }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
@@ -1164,7 +1202,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             return;
         }
 
-        [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
+        BOTTOM_VIEWS.forEach((view: ViewType): void => {
             const rotationHelper = cuboid[view].parent.getObjectByName(CONST.ROTATION_HELPER_NAME);
             const { y, z } = cuboidSize(cuboid[view]);
             if (rotationHelper) {
@@ -1191,7 +1229,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             return;
         }
 
-        [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
+        BOTTOM_VIEWS.forEach((view: ViewType): void => {
             const center = cuboid[view].position.clone();
             const { x, y, z } = cuboidSize(cuboid[view]);
             const cornerPoints = makeCornerPointsMatrix(x / 2, y / 2, z / 2);
@@ -1211,7 +1249,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private updateHelperPointsSize(viewType: ViewType): void {
-        if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
+        if (BOTTOM_VIEWS.includes(viewType)) {
             const camera = this.views[viewType].camera as THREE.OrthographicCamera;
             if (!camera) { return; }
 
@@ -1365,11 +1403,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 x, y, z, animation,
             );
 
-            for (const cameraType of [
-                ViewType.TOP,
-                ViewType.SIDE,
-                ViewType.FRONT,
-            ]) {
+            for (const cameraType of BOTTOM_VIEWS) {
                 this.views[cameraType].camera.position.set(
                     x + this.cameraSettings[cameraType].position[0],
                     y + this.cameraSettings[cameraType].position[1],
@@ -1552,7 +1586,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private setSelectedChildScale(x: number, y: number, z: number): void {
         const cuboid = this.selectedCuboid;
         if (cuboid) {
-            [ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view: ViewType): void => {
+            BOTTOM_VIEWS.forEach((view: ViewType): void => {
                 cuboid[view].children.forEach((element: any): void => {
                     if (element.name !== CONST.CUBOID_EDGE_NAME) {
                         element.scale.set(

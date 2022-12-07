@@ -41,6 +41,7 @@ export class CuboidModel {
     public top: THREE.Mesh;
     public side: THREE.Mesh;
     public front: THREE.Mesh;
+    public wireframe: THREE.LineSegments;
 
     public constructor(outline: string, outlineColor: string) {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -52,7 +53,7 @@ export class CuboidModel {
         });
         this.perspective = new THREE.Mesh(geometry, material);
         const geo = new THREE.EdgesGeometry(this.perspective.geometry);
-        const wireframe = new THREE.LineSegments(
+        this.wireframe = new THREE.LineSegments(
             geo,
             outline === 'line' ? new THREE.LineBasicMaterial({ color: outlineColor, linewidth: 4 }) :
                 new THREE.LineDashedMaterial({
@@ -61,9 +62,9 @@ export class CuboidModel {
                     gapSize: 0.05,
                 }),
         );
-        wireframe.computeLineDistances();
-        wireframe.renderOrder = 1;
-        this.perspective.add(wireframe);
+        this.wireframe.computeLineDistances();
+        this.wireframe.renderOrder = 1;
+        this.perspective.add(this.wireframe);
 
         this.top = new THREE.Mesh(geometry, material);
         this.side = new THREE.Mesh(geometry, material);
