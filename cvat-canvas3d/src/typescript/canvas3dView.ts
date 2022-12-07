@@ -387,6 +387,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
                 return;
             }
+
             this.controller.drawData.enabled = false;
             this.mode = Mode.IDLE;
             const { x, y, z } = this.cube.perspective.position;
@@ -399,10 +400,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 ({ label } = initState);
             }
 
-            if (typeof this.model.data.drawData.redraw === 'number') {
-                const [state] = this.model.data.objects.filter(
-                    (_state: any): boolean => _state.clientID === Number(this.selectedCuboid.perspective.name),
-                );
+            const { redraw } = this.model.data.drawData;
+            if (typeof redraw === 'number') {
+                const state = this.model.data.objects
+                    .find((object: ObjectState): boolean => object.clientID === redraw);
+                const { cuboid } = this.drawnObjects[redraw];
+                cuboid.perspective.visible = true;
+
                 this.dispatchEvent(
                     new CustomEvent('canvas.edited', {
                         bubbles: false,
@@ -432,6 +436,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     }),
                 );
             }
+
+            this.views[ViewType.PERSPECTIVE].scene.children[0].remove(this.cube.perspective);
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         });
 
@@ -878,7 +884,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private activateObject(): void {
         const { selectedOpacity } = this.model.data.shapeProperties;
         const { clientID } = this.model.data.activeElement;
-        if (clientID !== null && clientID in this.drawnObjects) {
+        if (clientID !== null && this.drawnObjects[+clientID]?.cuboid?.perspective?.visible) {
             const { cuboid, data } = this.drawnObjects[+clientID];
             cuboid.setOpacity(selectedOpacity);
             for (const view of [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]) {
@@ -1072,10 +1078,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.activateObject();
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
-            if (data.redraw) {
-                const object = this.views.perspective.scene.getObjectByName(String(data.redraw));
-                if (object) {
-                    this.cube.perspective = object.clone() as THREE.Mesh;
+            if (Number.isInteger(data.redraw)) {
+                if (this.drawnObjects[data.redraw]?.cuboid?.perspective?.visible) {
+                    const { cuboid } = this.drawnObjects[data.redraw];
+                    this.cube.perspective = cuboid.perspective.clone() as THREE.Mesh;
+                    cuboid.perspective.visible = false;
+                } else {
+                    // object must be drawn and visible to be redrawn
+                    this.model.cancel();
+                    return;
                 }
             } else if (data.initialState) {
                 // this.cube = this.setupObject(data.initialState, false);
@@ -1084,17 +1095,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             this.cube.setName('drawTemplate');
-            this.model.data.activeElement.clientID = null;
             this.deactivateObject();
-
-            // todo: add drawable cuboid to the scene
-
-            if (data.redraw) {
-                const object = this.views.perspective.scene.getObjectByName(String(data.redraw));
-                if (object) {
-                    object.visible = false;
-                }
-            }
+            this.views[ViewType.PERSPECTIVE].scene.children[0].add(this.cube.perspective);
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
             this.setupObjectsIncremental(this.model.data.objects);
         } else if (reason === UpdateReasons.DRAG_CANVAS) {
@@ -1121,9 +1123,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (this.mode === Mode.DRAW) {
                 this.controller.drawData.enabled = false;
                 this.controller.drawData.redraw = undefined;
-                Object.keys(this.views).forEach((view: string): void => {
-                    this.views[view as keyof Views].scene.children[0].remove(this.cube[view as keyof Views]);
-                });
+                const scene = this.views[ViewType.PERSPECTIVE].scene.children[0];
+                const template = scene.getObjectByName('drawTemplate');
+                if (template) {
+                    scene.remove(template);
+                }
             }
 
             this.model.data.groupData.grouped = [];
@@ -1420,7 +1424,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else if (this.mode === Mode.IDLE && !this.isPerspectiveBeingDragged) {
             const { children } = this.views.perspective.scene.children[0];
             const { renderer } = this.views.perspective.rayCaster;
-            const intersects = renderer.intersectObjects(children, false);
+            const intersects = renderer
+                .intersectObjects(children.filter((child: THREE.Object3D) => child.visible), false);
             if (intersects.length !== 0) {
                 const clientID = intersects[0].object.name;
                 if (clientID === undefined || clientID === '' || this.model.data.activeElement.clientID === clientID) {
