@@ -145,9 +145,9 @@ class LimitManager:
             return limitation
 
         if org_id:
-            serializer = OrgLimitationWriteSerializer(data={"org_id": org_id})
+            serializer = OrgLimitationWriteSerializer(data={"org": org_id})
         elif user_id:
-            serializer = UserLimitationWriteSerializer(data={"user_id": user_id})
+            serializer = UserLimitationWriteSerializer(data={"user": user_id})
 
         serializer.is_valid(raise_exception=True)
         return serializer.save()

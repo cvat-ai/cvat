@@ -48,10 +48,13 @@ class LimitationViewSet(viewsets.GenericViewSet):
         org_id = getattr(self.request.iam_context["organization"], "id", None)
 
         if not user_id and not org_id:
-            return Limitation.objects.all()
+            raise exceptions.ParseError("Cannot get list of all limitations: not implemented yet")
 
         if user_id and org_id:
-            raise exceptions.ParseError("user_id and org_id cannot be used together")
+            raise exceptions.ParseError("Cannot use together: 'user_id' and 'org_id'")
+
+        if user_id and not isinstance(user_id, int):
+            raise exceptions.ParseError("Parameter 'user_id' must be integer")
 
         queryset = Limitation.objects.filter(user_id=user_id, org_id=org_id)
         if queryset.count() == 0:
@@ -64,7 +67,6 @@ class LimitationViewSet(viewsets.GenericViewSet):
     #   - only admin method
     #   - pagination
     #   - return single limitation via query params
-    #   - validate user_id: User.DoesNotExists
     def list(self, request):
         org_id = getattr(request.iam_context["organization"], "id", None)
 

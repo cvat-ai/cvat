@@ -1,12 +1,12 @@
-from rest_framework.serializers import IntegerField, ModelSerializer
+from rest_framework.serializers import ModelSerializer, SlugRelatedField
 
+from cvat.apps.engine.models import User
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.organizations.serializers import OrganizationReadSerializer
+from cvat.apps.organizations.models import Organization
 
 from .models import Limitation
 
-# TO-DO:
-#   - add tasks_per_project
 general_limitation_fields = (
     "tasks",
     "projects",
@@ -48,11 +48,11 @@ class OrgLimitationReadSerializer(ModelSerializer):
 
 
 class UserLimitationWriteSerializer(ModelSerializer):
-    user_id = IntegerField(write_only=True, allow_null=True, required=True)
+    user = SlugRelatedField(slug_field="id", queryset=User.objects.all())
 
     class Meta:
         model = Limitation
-        fields = ("user_id",) + user_limitation_fields
+        fields = ("user",) + user_limitation_fields
 
     def create(self, validated_data):
         user_limitation = Limitation.objects.create(**validated_data)
@@ -60,11 +60,11 @@ class UserLimitationWriteSerializer(ModelSerializer):
 
 
 class OrgLimitationWriteSerializer(ModelSerializer):
-    org_id = IntegerField(write_only=True, allow_null=True, required=True)
+    org = SlugRelatedField(slug_field="id", queryset=Organization.objects.all())
 
     class Meta:
         model = Limitation
-        fields = ("org_id",) + org_limitation_fields
+        fields = ("org",) + org_limitation_fields
 
     def create(self, validated_data):
         org_limitation = Limitation.objects.create(**validated_data)
