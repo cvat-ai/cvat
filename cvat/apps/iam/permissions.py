@@ -25,6 +25,7 @@ from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager
     OrgCommonWebhooksContext,
     TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
     UserSandboxCloudStoragesContext, UserSandboxTasksContext)
+from cvat.apps.webhooks.models import WebhookTypeChoice
 
 
 class StrEnum(str, Enum):
@@ -926,8 +927,8 @@ class TaskPermission(OpenPolicyAgentPermission):
 class WebhookPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         CREATE = 'create'
-        CREATE_IN_PROJECT = 'create_in_project'
-        CREATE_IN_ORG = 'create_in_org'
+        CREATE_IN_PROJECT = 'create@project'
+        CREATE_IN_ORG = 'create@organization'
         DELETE = 'delete'
         UPDATE = 'update'
         LIST = 'list'
@@ -973,9 +974,9 @@ class WebhookPermission(OpenPolicyAgentPermission):
         scopes = []
         if scope == Scopes.CREATE:
             webhook_type = request.data.get('type')
-            if webhook_type:
-                scope = Scopes[str(scope) + f'@{webhook_type}']
-                scopes.append(scope)
+            if webhook_type in [m.value for m in WebhookTypeChoice]:
+                scope = Scopes(str(scope) + f'@{webhook_type}')
+            scopes.append(scope)
         elif scope in [Scopes.UPDATE, Scopes.DELETE, Scopes.LIST, Scopes.VIEW]:
             scopes.append(scope)
 

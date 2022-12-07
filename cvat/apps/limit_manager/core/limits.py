@@ -135,7 +135,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed projects
                 Project.objects.filter(owner=context.user_id, organization=None).count(),
-                5
+                3
             )
 
         elif limit == Limits.ORG_PROJECTS:
@@ -145,7 +145,7 @@ class LimitManager:
             return (
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
-                5
+                3
             )
 
         elif limit == Limits.USER_SANDBOX_TASKS:

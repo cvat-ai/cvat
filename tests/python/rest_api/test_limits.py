@@ -85,7 +85,7 @@ class TestUserLimits:
 
     _DEFAULT_TASK_LIMIT = 10
     _DEFAULT_PROJECT_TASKS_LIMIT = 5
-    _DEFAULT_PROJECTS_LIMIT = 5
+    _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_ORGS_LIMIT = 1
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
 
@@ -229,20 +229,6 @@ class TestUserLimits:
 
 class TestOrgLimits:
     @classmethod
-    def _create_user(cls, api_client: ApiClient, email: str) -> str:
-        username = email.split("@", maxsplit=1)[0]
-        with api_client:
-            (user, _) = api_client.auth_api.create_register(
-                models.RegisterSerializerExRequest(
-                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
-                )
-            )
-
-        api_client.cookies.clear()
-
-        return user.username
-
-    @classmethod
     def _create_org(cls, api_client: ApiClient) -> str:
         with api_client:
             (_, response) = api_client.organizations_api.create(
@@ -252,11 +238,11 @@ class TestOrgLimits:
         return json.loads(response.data)["id"]
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, tmp_path: Path):
+    def setup(self, restore_db_per_function, tmp_path: Path, regular_user: str):
         self.tmp_dir = tmp_path
 
         self.client = Client(BASE_URL, config=Config(status_check_period=0.01))
-        self.user = self._create_user(self.client.api_client, email="test_user_limits@localhost")
+        self.user = regular_user
         self.client.__enter__()
         self.client.login((self.user, USER_PASS))
 
@@ -264,7 +250,7 @@ class TestOrgLimits:
 
     _DEFAULT_TASK_LIMIT = 10
     _DEFAULT_PROJECT_TASKS_LIMIT = 5
-    _DEFAULT_PROJECTS_LIMIT = 5
+    _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
 
     _TASK_LIMIT_MESSAGE = "org tasks limit reached"
