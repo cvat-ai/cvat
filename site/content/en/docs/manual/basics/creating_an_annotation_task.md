@@ -45,7 +45,7 @@ To create a basic configuration task, do the following:
 
 7. (Optional) Click **Add an attribute** to add [attribute](#add-an-attribute) and its properties.
 8. Click [**Select files**](#select-files).
-9. Click **Continue** to save the label and start adding a new one
+9. Click **Continue** to submit the label and start adding a new one
    <br> **Cancel** will reset all added settings.
 10. Click **Submit and open** to submit the configuration and open the created task,
     or **Submit and continue**, to submit the configuration and start a new task.
