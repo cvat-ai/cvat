@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
+from cvat.apps.iam.permissions import LimitationPermission
 from .core.limits import LimitManager
 from .models import Limitation
 from .serializers import (
@@ -15,27 +16,49 @@ from .serializers import (
 )
 
 
-class LimitationViewSet(viewsets.ViewSet):
-    def get_serializer_class(self):
-        is_org = bool(self.request.iam_context["organization"])
-        if is_org and self.request.method in SAFE_METHODS:
+class LimitationViewSet(viewsets.GenericViewSet):
+    def get_serializer_class(self, org=None):
+        is_safe_method = self.request.method in SAFE_METHODS
+
+        if org and is_safe_method:
             return OrgLimitationReadSerializer
-        elif is_org and self.request.method not in SAFE_METHODS:
+
+        if org and not is_safe_method:
             return OrgLimitationWriteSerializer
-        elif not is_org and self.request.method in SAFE_METHODS:
+
+        if not org and is_safe_method:
             return UserLimitationReadSerializer
-        else:
-            return UserLimitationWriteSerializer
+
+        return UserLimitationWriteSerializer
 
     def partial_update(self, request, pk):
-        instance = Limitation.objects.get(id=pk)
-        # TO-DO: fix serializer here
-        serializer = self.get_serializer_class()(
-            instance, data=request.data, partial=True
-        )
+        try:
+            instance = Limitation.objects.get(id=pk)
+        except Limitation.DoesNotExist:
+            raise exceptions.NotFound(f"Cannot find limitations with id {pk}")
+
+        serializer = self.get_serializer_class(instance.org)(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
         return Response(status=status.HTTP_200_OK)
+
+    def get_queryset(self):
+        user_id = self.request.query_params.get("user_id")
+        org_id = getattr(self.request.iam_context["organization"], "id", None)
+
+        if not user_id and not org_id:
+            return Limitation.objects.all()
+
+        if user_id and org_id:
+            raise exceptions.ParseError("user_id and org_id cannot be used together")
+
+        queryset = Limitation.objects.filter(user_id=user_id, org_id=org_id)
+        if queryset.count() == 0:
+            queryset = [LimitManager()._get_or_create_limitation(user_id=user_id, org_id=org_id)]
+
+        return queryset
+
 
     # TO-DO:
     #   - only admin method
@@ -43,22 +66,11 @@ class LimitationViewSet(viewsets.ViewSet):
     #   - return single limitation via query params
     #   - validate user_id: User.DoesNotExists
     def list(self, request):
-        user_id = request.user.id
-        user_id = request.query_params.get("user_id")
         org_id = getattr(request.iam_context["organization"], "id", None)
 
-        if user_id and org_id:
-            raise exceptions.ParseError("user_id and org_id cannot be used together")
-
-        if not user_id and not org_id:
-            raise exceptions.ParseError("list of limitations for all users: not implemented yet")
-
-        instance = LimitManager()._get_or_create_limitation(user_id=user_id, org_id=org_id)
-
-        data = self.get_serializer_class()(
-            context={"request": request}
-        ).to_representation(instance)
-        return Response(data, status=status.HTTP_200_OK)
+        queryset = self.get_queryset()
+        serializer = self.get_serializer_class(org_id)(queryset, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=["GET"], detail=False)
     def default(self, request):
