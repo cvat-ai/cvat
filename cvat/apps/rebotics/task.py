@@ -4,12 +4,13 @@ import random
 from urllib import parse as urlparse, request as urlrequest
 
 import django_rq
+from django.db import transaction
 from django.utils.timezone import now
 from django.contrib.auth import get_user_model
 
 from cvat.apps.engine import task as task_api
-from cvat.apps.engine.models import Project, Task, Data, RemoteFile, S3File, \
-    Label, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
+from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
+    S3File, Label, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
     ModeChoice, ShapeType, SourceType, AttributeType
 from cvat.apps.engine.views import TaskViewSet
 from utils.dataset_manifest import S3ManifestManager
@@ -70,89 +71,162 @@ def _fix_coordinates(item, width, height):
 
 
 def _rand_color():
-    choices = ('FF', '00')
+    choices = '0123456789ABCDEF'
     color = '#'
-    for i in range(3):
+    for i in range(6):
         color += random.choice(choices)
     return color
 
 
+def _get_file_name(url):
+    return os.path.basename(
+        urlrequest.url2pathname(
+            urlparse.urlparse(
+                url
+            ).path
+        )
+    )
+
+
+class ShapesImporter:
+    def __init__(self, task_id):
+        self.task = Task.objects.get(pk=task_id)
+        self.labels = {}    # Labels
+        self.specs = {}     # AttributeSpecs
+        self.shapes = None  # LabeledShapes
+        self.vals = None    # AttributeVals
+        self.jobs = None
+        self.job_n = None
+        self.files = None
+        self.image_data = None
+
+    def _get_label(self, item: dict) -> Label:
+        if item['label'] in self.labels:
+            label = self.labels[item['label']]
+        else:
+            label, _ = Label.objects.get_or_create(
+                project_id=self.task.project_id,
+                name=item['label'],
+                defaults={'color': _rand_color()}
+            )
+            self.labels[item['label']] = label
+
+        return label
+
+    def _get_spec(self, label: Label, text: str) -> AttributeSpec:
+        if label.name in self.specs:
+            specs = self.specs[label.name]
+        else:
+            specs = {}
+            self.specs[label.name] = specs
+
+        if text in specs:
+            spec = specs[text]
+        else:
+            spec = AttributeSpec.objects.get_or_create(
+                label=label,
+                name=text,
+                defaults={'mutable': True, 'input_type': AttributeType.TEXT}
+            )
+            specs[text] = spec
+
+        return spec
+
+    def _import_item(self, item: dict, frame: int, group: int, image_size: tuple) -> None:
+        _fix_coordinates(item, *image_size)
+        label = self._get_label(item)
+
+        # annotation shape
+        self.shapes.append(LabeledShape(
+            job=self.jobs[self.job_n],
+            label=label,
+            frame=frame,
+            group=group,
+            type=ShapeType.RECTANGLE,
+            source=SourceType.AUTO,
+            points=[item['lowerx'], item['lowery'], item['upperx'], item['uppery']],
+        ))
+
+        # related upc text
+        upc = item.get('upc', None)
+        if upc:
+            spec = self._get_spec(label, 'UPC')
+            self.vals.append(LabeledShapeAttributeVal(
+                shape_id=0,
+                spec=spec,
+                value=upc,
+            ))
+        else:
+            self.vals.append(None)
+
+    def _save(self) -> None:
+        LabeledShape.objects.bulk_create(self.shapes)
+        for i, shape in enumerate(self.shapes):
+            self.vals[i].shape_id = shape.pk
+        self.vals = filter(lambda v: v is not None, self.vals)
+        LabeledShapeAttributeVal.objects.bulk_create(self.vals)
+
+    def _get_image_data(self) -> dict:
+        manifest_manager = S3ManifestManager(self.task.data.get_s3_manifest_path())
+        return {f'{props["name"]}.{props["extension"]}': (props['width'], props['height'])
+                      for _, props in manifest_manager}
+
+    def _get_image_size(self, file: S3File) -> tuple:
+        file_name = _get_file_name(file.meta['url'])
+        return self.image_data.get(file_name, (sys.maxsize, sys.maxsize))
+
+    def _next_job(self, frame: int) -> None:
+        if frame > self.jobs[self.job_n].segment.stop_frame:
+            self.job_n += 1
+
+    def _reset(self) -> None:
+        self.files = self.task.data.s3_files.all().update
+        self.image_data = self._get_image_data()
+        self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
+        self.job_n = 0
+        self.shapes = []
+        self.vals = []
+
+    def _clean_meta(self) -> None:
+        for file in self.files:
+            file.meta.pop('items')
+            file.meta.pop('price_tags')
+        self.files.update('meta')
+
+    def perform_import(self) -> None:
+        self._reset()
+
+        for frame, file in enumerate(self.files):
+            image_size = self._get_image_size(file)
+            self._next_job(frame)
+            for item in file.meta['items']:
+                self._import_item(item, frame, 0, image_size)
+            for item in file.meta['price_tags']:
+                self._import_item(item, frame, 1, image_size)
+
+        self._save()
+        self._clean_meta()
+
+
+@transaction.atomic
 def _create_thread(task_id, cvat_data):
-    # get task
+    # finish task creating
     task_api._create_thread(task_id, cvat_data)
 
-    # get task
-    task: Task = Task.objects.get(pk=task_id)
-
-    # get file sizes from manifest
-    manifest_manager = S3ManifestManager(task.data.get_s3_manifest_path())
-    image_data = {f'{props["name"]}.{props["extension"]}': (props['width'], props['height'])
-                  for _, props in manifest_manager}
-
-    for file in task.data.s3_files.all():
-        file_name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(file.meta['url']).path))
-        size = image_data.get(file_name, (sys.maxsize, sys.maxsize))
-
-        labels = {}
-        annotations = []
-        attribute_vals = []
-        for i, item in enumerate(file.meta['items'] + file.meta['price_tags']):
-            _fix_coordinates(item, *size)
-
-            # create label
-            if item['label'] in labels:
-                label = labels[item['label']]
-            else:
-                label, _ = Label.objects.get_or_create(
-                    project_id=task.project_id,
-                    name=item['label'],
-                    defaults={'color': _rand_color()}
-                )
-                labels[item['label']] = label
-
-            # create annotation
-            annotations.append(LabeledShape(
-                job_id=...,  # TODO: calculate these
-                label=label,
-                frame=...,  # TODO: calculate these
-                group=...,  # TODO: calculate these
-                type=ShapeType.RECTANGLE,
-                source=SourceType.AUTO,
-                points=[item['lowerx'], item['lowery'], item['upperx'], item['uppery']],
-            ))
-
-            # create upc.
-            upc = item.get('upc', None)
-            if upc:
-                attribute_spec = AttributeSpec.objects.get_or_create(
-                    label=label,
-                    name='UPC',
-                    defaults={'mutable': True, 'input_type': AttributeType.TEXT}
-                )
-                attribute_vals.append(LabeledShapeAttributeVal(
-                    shape_id=i,
-                    spec=attribute_spec,
-                    value=upc,
-                ))
-            else:
-                attribute_vals.append(None)
-
-        # bulk save everything.
-        LabeledShape.objects.bulk_create(annotations)
-        for i, shape in enumerate(annotations):
-            attribute_vals[i].shape_id = shape.pk
-        LabeledShapeAttributeVal.objects.bulk_create(attribute_vals)
+    # import annotations
+    ShapesImporter(task_id).perform_import()
 
 
 def create(data: list, retailer: User):
     project = Project.objects.get_or_create(owner=retailer, name='Retailer import')
-    db_data = Data.objects.create(image_quality=70)
+    db_data = Data.objects.create(image_quality=80)
     task = Task.objects.create(
         project=project,
         data=data,
         name=now().strftime('Import %Y-%m-%d %H:%M:%S %Z'),
         owner=retailer,
         mode=ModeChoice.ANNOTATION,
+        segment_size=20,
     )
 
     remote_files = []
