@@ -172,6 +172,7 @@ export enum ShapeType {
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
     SKELETON = 'skeleton',
+    MASK = 'mask',
 }
 
 /**
@@ -479,4 +480,17 @@ export enum WebhookSourceType {
 */
 export enum WebhookContentType {
     JSON = 'application/json',
+}
+
+export enum LabelType {
+    ANY = 'any',
+    RECTANGLE = 'rectangle',
+    POLYGON = 'polygon',
+    POLYLINE = 'polyline',
+    POINTS = 'points',
+    ELLIPSE = 'ellipse',
+    CUBOID = 'cuboid',
+    SKELETON = 'skeleton',
+    MASK = 'mask',
+    TAG = 'tag',
 }

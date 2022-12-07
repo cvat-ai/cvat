@@ -9,9 +9,10 @@ import json
 import mimetypes
 import os
 import os.path as osp
+import shutil
 from enum import Enum
 from time import sleep
-from typing import Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from PIL import Image
 
@@ -31,6 +32,9 @@ from cvat_sdk.core.proxies.model_proxy import (
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsWrite
 
 
 class ResourceType(Enum):
@@ -152,6 +156,23 @@ class Task(
     ) -> io.RawIOBase:
         (_, response) = self.api.retrieve_data(self.id, type="preview")
         return io.BytesIO(response.data)
+
+    def download_chunk(
+        self,
+        chunk_id: int,
+        output_file: SupportsWrite[bytes],
+        *,
+        quality: Optional[str] = None,
+    ) -> None:
+        params = {}
+        if quality:
+            params["quality"] = quality
+        (_, response) = self.api.retrieve_data(
+            self.id, number=chunk_id, **params, type="chunk", _parse_response=False
+        )
+
+        with response:
+            shutil.copyfileobj(response, output_file)
 
     def download_frames(
         self,
@@ -318,7 +339,7 @@ class TasksRepo(
 
         if dataset_repository_url:
             git.create_git_repo(
-                self,
+                self._client,
                 task_id=task.id,
                 repo_url=dataset_repository_url,
                 status_check_period=status_check_period,

@@ -254,6 +254,7 @@ class CvatExtractor(Extractor):
                     shape['type'] = el.tag
                     shape['occluded'] = (el.attrib.get('occluded') == '1')
                     shape['z_order'] = int(el.attrib.get('z_order', 0))
+                    shape['rotation'] = float(el.attrib.get('rotation', 0))
 
                     if el.tag == 'box':
                         shape['points'] = list(map(float, [
@@ -440,6 +441,8 @@ class CvatExtractor(Extractor):
             attributes['keyframe'] = ann['keyframe']
         if 'track_id' in ann:
             attributes['track_id'] = ann['track_id']
+        if 'rotation' in ann:
+            attributes['rotation'] = ann['rotation']
 
         group = ann.get('group')
 
@@ -611,6 +614,11 @@ def create_xml_dumper(file_object):
             self.xmlgen.startElement("points", points)
             self._level += 1
 
+        def open_mask(self, points):
+            self._indent()
+            self.xmlgen.startElement("mask", points)
+            self._level += 1
+
         def open_cuboid(self, cuboid):
             self._indent()
             self.xmlgen.startElement("cuboid", cuboid)
@@ -656,6 +664,11 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("points")
+
+        def close_mask(self):
+            self._level -= 1
+            self._indent()
+            self.xmlgen.endElement("mask")
 
         def close_cuboid(self):
             self._level -= 1
@@ -775,7 +788,14 @@ def dump_as_cvat_annotation(dumper, annotations):
                         ("points", ''),
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
-
+                elif shape.type == "mask":
+                    dump_data.update(OrderedDict([
+                        ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
+                        ("left", f"{int(shape.points[-4])}"),
+                        ("top", f"{int(shape.points[-3])}"),
+                        ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
+                        ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                    ]))
                 else:
                     dump_data.update(OrderedDict([
                         ("points", ';'.join((
@@ -800,6 +820,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                     dumper.open_polyline(dump_data)
                 elif shape.type == "points":
                     dumper.open_points(dump_data)
+                elif shape.type == "mask":
+                    dumper.open_mask(dump_data)
                 elif shape.type == "cuboid":
                     dumper.open_cuboid(dump_data)
                 elif shape.type == "skeleton":
@@ -826,6 +848,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                     dumper.close_points()
                 elif shape.type == "cuboid":
                     dumper.close_cuboid()
+                elif shape.type == "mask":
+                    dumper.close_mask()
                 elif shape.type == "skeleton":
                     dumper.close_skeleton()
                 else:
@@ -907,6 +931,14 @@ def dump_as_cvat_interpolation(dumper, annotations):
                     dump_data.update(OrderedDict([
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
+            elif shape.type == "mask":
+                dump_data.update(OrderedDict([
+                    ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
+                    ("left", f"{int(shape.points[-4])}"),
+                    ("top", f"{int(shape.points[-3])}"),
+                    ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
+                    ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -944,6 +976,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.open_polyline(dump_data)
             elif shape.type == "points":
                 dumper.open_points(dump_data)
+            elif shape.type == 'mask':
+                dumper.open_mask(dump_data)
             elif shape.type == "cuboid":
                 dumper.open_cuboid(dump_data)
             elif shape.type == 'skeleton':
@@ -967,6 +1001,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.close_polyline()
             elif shape.type == "points":
                 dumper.close_points()
+            elif shape.type == 'mask':
+                dumper.close_mask()
             elif shape.type == "cuboid":
                 dumper.close_cuboid()
             elif shape.type == "skeleton":
@@ -1063,7 +1099,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
     dumper.close_root()
 
 def load_anno(file_object, annotations):
-    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid', 'skeleton')
+    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid', 'skeleton', 'mask')
     context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
     next(context)
@@ -1211,6 +1247,12 @@ def load_anno(file_object, annotations):
                     shape['points'].append(el.attrib['cy'])
                     shape['points'].append("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx'])))
                     shape['points'].append("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry'])))
+                elif el.tag == 'mask':
+                    shape['points'] = el.attrib['rle'].split(',')
+                    shape['points'].append(el.attrib['left'])
+                    shape['points'].append(el.attrib['top'])
+                    shape['points'].append("{}".format(int(el.attrib['left']) + int(el.attrib['width'])))
+                    shape['points'].append("{}".format(int(el.attrib['top']) + int(el.attrib['height'])))
                 elif el.tag == 'cuboid':
                     shape['points'].append(el.attrib['xtl1'])
                     shape['points'].append(el.attrib['ytl1'])
@@ -1249,7 +1291,23 @@ def load_anno(file_object, annotations):
                     track.elements.append(track_element)
                     track_element = None
                 else:
-                    annotations.add_track(track)
+                    if track.shapes[0].type == 'mask':
+                        # convert mask tracks to shapes
+                        # because mask track are not supported
+                        annotations.add_shape(annotations.LabeledShape(**{
+                            'attributes': track.shapes[0].attributes,
+                            'points': track.shapes[0].points,
+                            'type': track.shapes[0].type,
+                            'occluded': track.shapes[0].occluded,
+                            'frame': track.shapes[0].frame,
+                            'source': track.shapes[0].source,
+                            'rotation': track.shapes[0].rotation,
+                            'z_order': track.shapes[0].z_order,
+                            'group': track.shapes[0].group,
+                            'label': track.label,
+                        }))
+                    else:
+                        annotations.add_track(track)
                     track = None
             elif el.tag == 'image':
                 image_is_opened = False
@@ -1334,7 +1392,7 @@ def _export_images(dst_file, instance_data, save_images=False):
             anno_callback=dump_as_cvat_annotation, save_images=save_images)
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     is_zip = zipfile.is_zipfile(src_file)
     src_file.seek(0)
     if is_zip:

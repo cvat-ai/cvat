@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +14,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
     };
     const dumpTypePC = 'Sly Point Cloud Format';
     let annotationPCArchiveName = '';
-    let annotationPCArchiveCustomeName = '';
+    let annotationPCArchiveCustomName = '';
 
     function confirmUpdate(modalWindowClassName) {
         cy.get(modalWindowClassName).should('be.visible').within(() => {
@@ -63,12 +64,12 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: dumpTypePC,
-                archiveCustomeName: 'job_export_3d_annotation_custome_name_pc_format',
+                archiveCustomName: 'job_export_3d_annotation_custome_name_pc_format',
             };
             cy.exportJob(exportAnnotationRenameArchive);
             cy.getDownloadFileName().then((file) => {
-                annotationPCArchiveCustomeName = file;
-                cy.verifyDownload(annotationPCArchiveCustomeName);
+                annotationPCArchiveCustomName = file;
+                cy.verifyDownload(annotationPCArchiveCustomName);
             });
             cy.verifyNotification();
             cy.removeAnnotations();

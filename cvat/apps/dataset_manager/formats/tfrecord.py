@@ -32,7 +32,7 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='TFRecord', ext='ZIP', version='1.0', enabled=tf_available)
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 

@@ -1,10 +1,10 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import Platform from 'platform';
 import ErrorStackParser from 'error-stack-parser';
-// import config from './config';
 
 /**
  * Base exception class
