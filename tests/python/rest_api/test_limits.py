@@ -245,11 +245,11 @@ class TestOrgLimits:
     @classmethod
     def _create_org(cls, api_client: ApiClient) -> str:
         with api_client:
-            (org, _) = api_client.organizations_api.create(
-                models.OrganizationWriteRequest(slug="test_org_limits")
+            (_, response) = api_client.organizations_api.create(
+                models.OrganizationWriteRequest(slug="test_org_limits"), _parse_response=False
             )
 
-        return org.id
+        return json.loads(response.data)["id"]
 
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path):
@@ -274,18 +274,18 @@ class TestOrgLimits:
 
     @staticmethod
     def _wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
-        for _ in range(100):
+        for _ in range(1000):
             (status, _) = api.retrieve_status(task_id)
             if status.state.value in ["Finished", "Failed"]:
                 return status
-            sleep(1)
+            sleep(0.01)
         raise Exception("Cannot create task")
 
     def _create_task(self, data: Sequence[str], *, project: Optional[int] = None):
         api_client = self.client.api_client
 
         (task, response) = api_client.tasks_api.create(
-            spec=models.TaskWriteRequest(
+            models.TaskWriteRequest(
                 name="test_task",
                 labels=[models.PatchedLabelRequest(name="cat")] if not project else [],
                 project_id=project,
@@ -298,8 +298,8 @@ class TestOrgLimits:
             client_files = [es.enter_context(open(filename, "rb")) for filename in data]
             (_, response) = api_client.tasks_api.create_data(
                 task.id,
-                data_request=models.DataRequest(client_files),
-                _content_type="application/json",
+                data_request=models.DataRequest(client_files=client_files, image_quality=75),
+                _content_type="multipart/form-data",
                 org_id=self.org,
             )
             assert response.status == HTTPStatus.ACCEPTED
@@ -312,7 +312,9 @@ class TestOrgLimits:
     def _create_project(self, name: str) -> int:
         api_client = self.client.api_client
 
-        (project, _) = api_client.projects_api.create(models.ProjectWriteRequest(name=name))
+        (project, _) = api_client.projects_api.create(
+            models.ProjectWriteRequest(name=name), org_id=self.org
+        )
         return project.id
 
     def test_can_reach_tasks_limit(self, fxt_image_file: Path):
