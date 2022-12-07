@@ -46,11 +46,13 @@ To create a basic configuration task, do the following:
 7. (Optional) Click **Add an attribute** to add [attribute](#add-an-attribute) and its properties.
 8. Click [**Select files**](#select-files).
 9. Click **Continue** to submit the label and start adding a new one
-   <br> **Cancel** will abort current label and return you to labels list.
+   <br> **Cancel** will terminate current label and return you to labels list.
 10. Click **Submit and open** to submit the configuration and open the created task,
     or **Submit and continue**, to submit the configuration and start a new task.
 
 ### Label shape
+
+Labels (or classes) are classes of the objects you can annotate.
 
 **Label shape** limits the use of the label to certain [shape tool](/docs/manual/basics/controls-sidebar/#shapes).
 
@@ -127,6 +129,10 @@ There are several ways to upload files for annotation:
 ### RAW
 
 The **Raw** is a way of working with labels for an advanced user.
+
+> **Note:** Be careful with changing raw specification of an existing task/project.
+> Removing any "id" properties will lead to losing existing annotations.
+> **This property will be removed automatically from any text you insert to this field**.
 
 ![](/images/image126.jpg)
 
