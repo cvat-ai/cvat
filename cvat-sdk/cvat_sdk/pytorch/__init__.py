@@ -252,7 +252,6 @@ _SUPPORTED_SHAPE_TYPES = frozenset(["rectangle", "polygon", "polyline", "points"
 @attrs.frozen
 class ExtractBoundingBoxes:
     include_shape_types: FrozenSet[str] = attrs.field(
-        default=_SUPPORTED_SHAPE_TYPES,
         converter=frozenset,
         validator=attrs.validators.deep_iterable(attrs.validators.in_(_SUPPORTED_SHAPE_TYPES)),
         kw_only=True,
@@ -265,9 +264,6 @@ class ExtractBoundingBoxes:
         for shape in target.annotations.shapes:
             if shape.type.value not in self.include_shape_types:
                 continue
-
-            if shape.type.value not in _SUPPORTED_SHAPE_TYPES:
-                raise UnsupportedDatasetError(f"Unsupported shape type {shape.type.value!r}")
 
             if shape.rotation != 0:
                 raise UnsupportedDatasetError("Rotated shapes are not supported")
