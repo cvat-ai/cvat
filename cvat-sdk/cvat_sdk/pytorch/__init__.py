@@ -55,7 +55,7 @@ class Target:
     label_id_to_index: Mapping[int, int]
 
 
-class TaskDataset(torchvision.datasets.VisionDataset):
+class TaskVisionDataset(torchvision.datasets.VisionDataset):
     def __init__(
         self,
         client: cvat_sdk.core.Client,

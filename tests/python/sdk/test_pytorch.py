@@ -26,7 +26,7 @@ from shared.utils.helpers import generate_image_files
 
 
 @pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
-class TestPytorchAdapter:
+class TestTaskVisionDataset:
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -105,7 +105,7 @@ class TestPytorchAdapter:
         )
 
     def test_basic(self):
-        dataset = cvatpt.TaskDataset(self.client, self.task.id)
+        dataset = cvatpt.TaskVisionDataset(self.client, self.task.id)
 
         assert len(dataset) == self.task.size
 
@@ -138,7 +138,7 @@ class TestPytorchAdapter:
     def test_deleted_frame(self):
         self.task.remove_frames_by_ids([1])
 
-        dataset = cvatpt.TaskDataset(self.client, self.task.id)
+        dataset = cvatpt.TaskVisionDataset(self.client, self.task.id)
 
         assert len(dataset) == self.task.size - 1
 
@@ -158,7 +158,7 @@ class TestPytorchAdapter:
         assert not dataset[4][1].annotations.shapes
 
     def test_extract_single_label_index(self):
-        dataset = cvatpt.TaskDataset(
+        dataset = cvatpt.TaskVisionDataset(
             self.client,
             self.task.id,
             transform=torchvision.transforms.PILToTensor(),
@@ -185,7 +185,7 @@ class TestPytorchAdapter:
         assert torch.equal(batch[1], torch.tensor([0, 1]))
 
     def test_extract_bounding_boxes(self):
-        dataset = cvatpt.TaskDataset(
+        dataset = cvatpt.TaskVisionDataset(
             self.client,
             self.task.id,
             transform=torchvision.transforms.PILToTensor(),
@@ -197,7 +197,7 @@ class TestPytorchAdapter:
         assert dataset[7][1] == {"boxes": [], "labels": []}  # points are filtered out
 
     def test_transforms(self):
-        dataset = cvatpt.TaskDataset(
+        dataset = cvatpt.TaskVisionDataset(
             self.client,
             self.task.id,
             transforms=lambda x, y: (y, x),
