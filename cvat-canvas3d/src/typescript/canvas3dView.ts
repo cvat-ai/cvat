@@ -267,22 +267,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const { x: rotationX, y: rotationY, z: rotationZ } = this.cube.perspective.rotation;
                 const points = [x, y, z, rotationX, rotationY, rotationZ, width, height, depth, 0, 0, 0, 0, 0, 0, 0];
                 const initState = this.model.data.drawData.initialState;
-                let label;
-                if (initState) {
-                    ({ label } = initState);
-                }
                 this.dispatchEvent(
                     new CustomEvent('canvas.drawn', {
                         bubbles: false,
                         cancelable: true,
                         detail: {
                             state: {
-                                attributes: { ...initState.attributes },
                                 shapeType: 'cuboid',
                                 frame: this.model.data.imageID,
-                                group: initState.group?.id || null,
                                 points,
-                                label,
+                                attributes: { ...initState.attributes },
+                                group: initState.group?.id || null,
+                                label: initState.label,
                             },
                             continue: true,
                             duration: 0,
@@ -395,11 +391,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const { x: rotationX, y: rotationY, z: rotationZ } = this.cube.perspective.rotation;
             const points = [x, y, z, rotationX, rotationY, rotationZ, width, height, depth, 0, 0, 0, 0, 0, 0, 0];
             const initState = this.model.data.drawData.initialState;
-            let label;
-            if (initState) {
-                ({ label } = initState);
-            }
-
             const { redraw } = this.model.data.drawData;
             if (typeof redraw === 'number') {
                 const state = this.model.data.objects
@@ -424,13 +415,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         cancelable: true,
                         detail: {
                             state: {
-                                ...initState,
                                 shapeType: 'cuboid',
                                 frame: this.model.data.imageID,
                                 points,
-                                label,
+                                ...(initState ? {
+                                    attributes: { ...initState.attributes },
+                                    group: initState.group?.id || null,
+                                    label: initState.label,
+                                    shapeType: initState.shapeType,
+                                } : {}),
                             },
-                            continue: undefined,
                             duration: 0,
                         },
                     }),
@@ -902,10 +896,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             //         this.action.detachCam = true;
             //         this.action.detachCamRef = this.model.data.activeElement.clientID;
             // this.translateReferencePlane(new THREE.Vector3(data.points[0], data.points[1], data.points[2]));
-            // this.model.data.selected = cuboid;
-            // if (data.hidden) {
-            //     this.setHelperVisibility(false);
-            // }
+
             this.activatedElementID = +clientID;
             this.detachCamera(null);
             this.setDefaultZoom();
@@ -1084,12 +1075,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.cube.perspective = cuboid.perspective.clone() as THREE.Mesh;
                     cuboid.perspective.visible = false;
                 } else {
-                    // object must be drawn and visible to be redrawn
+                    // an object must be drawn and visible to be redrawn
                     this.model.cancel();
                     return;
                 }
             } else if (data.initialState) {
-                // this.cube = this.setupObject(data.initialState, false);
+                if (!data.initialState.outside && !data.initialState.hidden) {
+                    this.cube = this.addCuboid(data.initialState);
+                } else {
+                    // an object must visible to paste it
+                    this.model.cancel();
+                    return;
+                }
             } else {
                 this.cube = new CuboidModel('line', '#ffffff');
             }
