@@ -1157,7 +1157,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             if (this.mode === Mode.DRAW) {
                 this.controller.drawData.enabled = false;
-                this.controller.drawData.redraw = undefined;
+                const { redraw } = this.controller.drawData;
+                if (Number.isInteger(redraw)) {
+                    this.drawnObjects[redraw].cuboid.perspective.visible = true;
+                    this.controller.drawData.redraw = undefined;
+                }
                 const scene = this.views[ViewType.PERSPECTIVE].scene.children[0];
                 const template = scene.getObjectByName('drawTemplate');
                 if (template) {
