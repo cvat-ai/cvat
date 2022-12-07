@@ -468,18 +468,27 @@ async function authorized() {
     return true;
 }
 
-async function healthCheck(requestTimeout) {
+async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback, attempt = 0) {
     const { backendAPI } = config;
-    const url = `${backendAPI}/server/health-check`;
+    const url = `${backendAPI}/server/health/?format=json`;
 
-    try {
-        return await Axios.get(url, {
-            proxy: config.proxy,
-            timeout: requestTimeout,
-        });
-    } catch (errorData) {
-        throw generateError(errorData);
+    if (progressCallback) {
+        progressCallback(`${attempt}/${attempt + maxRetries}`);
     }
+
+    return Axios.get(url, {
+        proxy: config.proxy,
+        timeout: requestTimeout,
+    })
+        .then((response) => response.data)
+        .catch((errorData) => {
+            if (maxRetries > 0) {
+                return new Promise((resolve) => setTimeout(resolve, checkPeriod))
+                    .then(() => healthCheck(maxRetries - 1, checkPeriod,
+                        requestTimeout, progressCallback, attempt + 1));
+            }
+            throw generateError(errorData);
+        });
 }
 
 async function serverRequest(url, data) {

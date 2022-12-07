@@ -82,7 +82,6 @@ interface CVATAppProps {
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
     loadOrganizations: () => void;
-    loadBackendHealth: () => void;
     keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
@@ -103,16 +102,27 @@ interface CVATAppProps {
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
-    healthFetching: boolean;
+}
+
+interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
     backendHealthCheckProgress: string;
 }
 
-class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
+class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
+    constructor(props: CVATAppProps & RouteComponentProps) {
+        super(props);
+
+        this.state = {
+            healthIinitialized: false,
+            backendIsHealthy: false,
+            backendHealthCheckProgress: '0/1',
+        };
+    }
     public componentDidMount(): void {
         const core = getCore();
-        const { loadBackendHealth, history, location } = this.props;
+        const { history, location } = this.props;
         // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -127,7 +137,49 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             customWaViewHit(_location.pathname, _location.search, _location.hash);
         });
 
-        loadBackendHealth();
+        const {
+            HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, UPGRADE_GUIDE_URL,
+        } = consts;
+        core.server.healthCheck(
+            HEALH_CHECK_RETRIES,
+            HEALTH_CHECK_PERIOD,
+            HEALTH_CHECK_REQUEST_TIMEOUT,
+            (progress: string): void => this.setState({ backendHealthCheckProgress: progress }),
+        ).then(() => {
+            this.setState({
+                healthIinitialized: true,
+                backendIsHealthy: true,
+            });
+        })
+            .catch(() => {
+                this.setState({
+                    healthIinitialized: true,
+                    backendIsHealthy: false,
+                });
+                Modal.error({
+                    title: 'Cannot connect to the server',
+                    className: 'cvat-modal-cannot-connect-server',
+                    closable: false,
+                    okButtonProps: { disabled: true },
+                    content: (
+                        <Text>
+                            Cannot connect to the server.
+                            Make sure the CVAT backend and all necessary services
+                            (Database, Redis and Open Policy Agent) are running and avaliable.
+                            If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the
+
+                            <a
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                href={UPGRADE_GUIDE_URL}
+                            >
+                                Upgrade Guide
+                            </a>
+                            .
+                        </Text>
+                    ),
+                });
+            });
 
         const {
             name, version, engine, os,
@@ -184,7 +236,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             initModels,
             loadOrganizations,
             loadAuthActions,
-            loadBackendHealth,
             userInitialized,
             userFetching,
             organizationsFetching,
@@ -203,46 +254,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             authActionsFetching,
             authActionsInitialized,
             isModelPluginActive,
-            healthFetching,
-            healthIinitialized,
-            backendIsHealthy,
         } = this.props;
 
-        const { UPGRADE_GUIDE_URL } = consts;
+        const { backendIsHealthy } = this.state;
 
-        if (!healthIinitialized && !healthFetching) {
-            loadBackendHealth();
-            return;
-        }
-
-        if (healthFetching) {
-            return;
-        }
-
-        if (healthIinitialized && !healthFetching && !backendIsHealthy) {
-            Modal.error({
-                title: 'Cannot connect to the server',
-                className: 'cvat-modal-cannot-connect-server',
-                closable: false,
-                okButtonProps: { disabled: true },
-                content: (
-                    <Text>
-                        Cannot connect to the server.
-                        Make sure the CVAT backend and all necessary services (Database, Redis and Open Policy Agent)
-                        are running and avaliable.
-                        If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the
-
-                        <a
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            href={UPGRADE_GUIDE_URL}
-                        >
-                            Upgrade Guide
-                        </a>
-                        .
-                    </Text>
-                ),
-            });
+        if (!backendIsHealthy) {
             return;
         }
 
@@ -378,10 +394,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             keyMap,
             location,
             isModelPluginActive,
-            backendHealthCheckProgress,
-            healthIinitialized,
-            backendIsHealthy,
         } = this.props;
+
+        const { healthIinitialized, backendIsHealthy, backendHealthCheckProgress } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
         let readyForRender = userAgreementsInitialized && authActionsInitialized;
