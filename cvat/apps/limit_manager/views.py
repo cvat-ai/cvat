@@ -3,7 +3,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from cvat.apps.iam.permissions import LimitationPermission
 from .core.limits import LimitManager
 from .models import Limitation
 from .serializers import (
@@ -37,6 +36,8 @@ class LimitationViewSet(viewsets.GenericViewSet):
         except Limitation.DoesNotExist:
             raise exceptions.NotFound(f"Cannot find limitations with id {pk}")
 
+        self.check_object_permissions(self.request, instance)
+
         serializer = self.get_serializer_class(instance.org)(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -51,9 +52,9 @@ class LimitationViewSet(viewsets.GenericViewSet):
             raise exceptions.ParseError("Cannot get list of all limitations: not implemented yet")
 
         if user_id and org_id:
-            raise exceptions.ParseError("Cannot use together: 'user_id' and 'org_id'")
+            raise exceptions.ParseError("Limitation could belong to user or to organization, but not both")
 
-        if user_id and not isinstance(user_id, int):
+        if user_id and not user_id.isnumeric():
             raise exceptions.ParseError("Parameter 'user_id' must be integer")
 
         queryset = Limitation.objects.filter(user_id=user_id, org_id=org_id)
@@ -62,11 +63,6 @@ class LimitationViewSet(viewsets.GenericViewSet):
 
         return queryset
 
-
-    # TO-DO:
-    #   - only admin method
-    #   - pagination
-    #   - return single limitation via query params
     def list(self, request):
         org_id = getattr(request.iam_context["organization"], "id", None)
 
@@ -76,7 +72,6 @@ class LimitationViewSet(viewsets.GenericViewSet):
 
     @action(methods=["GET"], detail=False)
     def default(self, request):
-        # TO-DO: admin only method
         serializer = (
             DefaultUserLimitationSerializer()
             if "org" not in request.query_params
