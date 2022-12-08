@@ -210,6 +210,9 @@ class TestUserLimits:
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
 
+    @pytest.mark.xfail(
+        raises=AssertionError, reason="only admins can change ownership, but they ignore limits"
+    )
     def test_can_reach_tasks_limit_when_giving_away_to_another_user(
         self, fxt_another_client: Client
     ):
@@ -228,10 +231,13 @@ class TestUserLimits:
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
 
+    @pytest.mark.xfail(
+        raises=AssertionError, reason="only admins can change ownership, but they ignore limits"
+    )
     def test_can_reach_project_tasks_limit_when_giving_away_to_another_users_filled_project(
         self, fxt_another_client: Client
     ):
-        project = self._create_project().id
+        project = self._create_project(client=fxt_another_client).id
 
         for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
             self._create_task(client=fxt_another_client, project=project)
@@ -253,6 +259,9 @@ class TestUserLimits:
             self._PROJECT_TASK_LIMIT_MESSAGE,
         }
 
+    @pytest.mark.xfail(
+        raises=AssertionError, reason="only admins can change ownership, but they ignore limits"
+    )
     def test_can_reach_projects_limit_when_giving_away_to_another_user(
         self, fxt_another_client: Client
     ):

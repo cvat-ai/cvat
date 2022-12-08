@@ -1495,6 +1495,25 @@ class LimitPermission(OpenPolicyAgentPermission):
                         UserSandboxTasksContext(user_id=project.owner.id)
                     ))
 
+        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_OWNER):
+            task = cast(Task, scope.obj)
+
+            class OwnerType(Enum):
+                org = auto()
+                user = auto()
+
+            if getattr(task, 'organization'):
+                old_owner = (OwnerType.org, task.organization.id)
+            else:
+                old_owner = (OwnerType.user, task.owner.id)
+
+            new_owner = getattr(scope, 'owner_id')
+            if new_owner and old_owner != (OwnerType.user, new_owner):
+                results.append((
+                    Limits.USER_SANDBOX_TASKS,
+                    UserSandboxTasksContext(user_id=new_owner)
+                ))
+
         elif scope_id in [
             (ProjectPermission, ProjectPermission.Scopes.CREATE),
             (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
