@@ -1347,11 +1347,20 @@ class IssuePermission(OpenPolicyAgentPermission):
 class LimitPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
+        return [] # There are no basic (unconditional) permissions
+
+    @classmethod
+    def create_from_scopes(cls, request, view, obj, scopes: List[OpenPolicyAgentPermission]):
+        scope_to_caps = [
+            (scope_handler, cls._prepare_capability_params(scope_handler))
+            for scope_handler in scopes
+        ]
         return [
             cls.create_base_perm(request, view, str(scope_handler.scope), obj,
                 scope_handler=scope_handler, capabilities=capabilities,
             )
-            for scope_handler, capabilities in cls.get_scopes(request, view, obj)
+            for scope_handler, capabilities in scope_to_caps
+            if capabilities
         ]
 
     def __init__(self, **kwargs):
@@ -1537,7 +1546,11 @@ class LimitPermission(OpenPolicyAgentPermission):
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
-        permissions: List[OpenPolicyAgentPermission] = []
+        # Some permissions are only needed to be checked if the action
+        # is permitted in general. To achieve this, we split checks
+        # into 2 groups, and check one after another.
+        basic_permissions: List[OpenPolicyAgentPermission] = []
+        conditional_permissions: List[OpenPolicyAgentPermission] = []
 
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
@@ -1546,8 +1559,18 @@ class PolicyEnforcer(BasePermission):
         # the condition below is enough.
         if not self.is_metadata_request(request, view):
             for perm in OpenPolicyAgentPermission.__subclasses__():
-                permissions.extend(perm.create(request, view, obj))
+                basic_permissions.extend(perm.create(request, view, obj))
 
+            conditional_permissions.extend(LimitPermission.create_from_scopes(
+                request, view, obj, basic_permissions
+            ))
+
+        allow = self._check_permissions(basic_permissions)
+        if allow:
+            allow = self._check_permissions(conditional_permissions)
+        return allow
+
+    def _check_permissions(self, permissions: List[OpenPolicyAgentPermission]) -> bool:
         allow = True
         reasons = []
         for perm in permissions:
