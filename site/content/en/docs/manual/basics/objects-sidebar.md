@@ -7,7 +7,7 @@ description: 'Overview of available functions on the objects sidebar of the anno
 
 ## Hide objects sidebar
 
-`Hide` - the button hides the object's sidebar.
+**Hide** - the button hides the object's sidebar.
 
 ![](/images/image146.jpg)
 
@@ -52,28 +52,32 @@ The action menu calls up the button:
 
 The action menu contains:
 
-- `Create object URL` - puts a link to an object on the clipboard.
+- **Create object URL** - puts a link to an object on the clipboard.
   After you open the link, this object will be filtered.
-- `Make a copy`- copies an object. The keyboard shortcut is `Ctrl + C` `Ctrl + V`.
-- `Propagate` - Copies the form to several frames,
+- **Make a copy** - copies an object. The keyboard shortcut is **Ctrl** + **C** > **Ctrl** + **V**.
+- **Propagate** - Copies the form to several frames,
   invokes a dialog box in which you can specify the number of copies
-  or the frame onto which you want to copy the object. The keyboard shortcut `Ctrl + B`.
+  or the frame onto which you want to copy the object.
+  The keyboard shortcut **Ctrl** + **B**. It has two
+  options:
+    - **Propagate** (![Fw propagate](/images/propagate_fw.png)) creates a copy of the object on `N` *subsequent* frames at the same position.
+    - **Propagate backwards** (![Back propagate](/images/propagate_back.png)) creates a copy of the object on `N` *previous* frames at the same position.
 
   ![](/images/image053.jpg)
 
-- `To background` - moves the object to the background. The keyboard shortcut `-`,`_`.
-- `To foreground` - moves the object to the foreground. The keyboard shortcut `+`,`=`.
-- `Change instance color`- choosing a color using the color picker (available only in instance mode).
+- **To background** - moves the object to the background. The keyboard shortcut `-`,`_`.
+- **To foreground** - moves the object to the foreground. The keyboard shortcut `+`,`=`.
+- **Change instance color**- choosing a color using the color picker (available only in instance mode).
 
   ![](/images/image153.jpg)
 
-- `Remove` - removes the object. The keyboard shortcut `Del`,`Shift+Del`.
+- **Remove** - removes the object. The keyboard shortcut `Del`,`Shift+Del`.
 
 A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: `L`.
 
 ![](/images/image046.jpg)
 
-A shape can be **Occluded**. Shortcut: `Q`. Such shapes have dashed boundaries.
+A shape can be **Occluded**. Shortcut: **Q**. Such shapes have dashed boundaries.
 
 ![](/images/image048.jpg)
 
@@ -116,9 +120,9 @@ To assign a number, click on the button placed at the right of a label name on t
 ![](/images/image210.jpg)
 
 After that you will be able to assign a corresponding label to an object
-by hovering your mouse cursor over it and pressing `Ctrl + Num(0..9)`.
+by hovering your mouse cursor over it and pressing **Ctrl** + **Num(0..9)**.
 
-In case you do not point the cursor to the object, pressing `Ctrl + Num(0..9)` will set a chosen label as default,
+In case you do not point the cursor to the object, pressing **Ctrl** + **Num(0..9)** will set a chosen label as default,
 so that the next object you create (use `N` key) will automatically have this label assigned.
 
 ![](/images/image211.jpg)
