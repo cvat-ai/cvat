@@ -19,8 +19,9 @@ const FOV_DEFAULT = 1;
 const FOV_MAX = 2;
 const FOV_MIN = 0;
 const FOV_INC = 0.08;
-const DEFAULT_GROUP_COLOR = '#ffffff';
+const DEFAULT_GROUP_COLOR = '#e0e0e0';
 const DEFAULT_OUTLINE_COLOR = '#000000';
+const GROUPING_COLOR = '#8b008b';
 
 export default {
     BASE_GRID_WIDTH,
@@ -41,4 +42,5 @@ export default {
     FOV_INC,
     DEFAULT_GROUP_COLOR,
     DEFAULT_OUTLINE_COLOR,
+    GROUPING_COLOR,
 };

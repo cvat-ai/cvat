@@ -345,22 +345,25 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.views.perspective.scene.children[0].children,
                 false,
             );
-            if (intersects.length !== 0 && this.mode === Mode.GROUP && this.model.data.groupData.grouped) {
-                const item = this.model.data.groupData.grouped.filter(
-                    (_state: any): boolean => _state.clientID === Number(intersects[0].object.name),
-                );
-                if (item.length !== 0) {
-                    // @ts-ignore
-                    this.model.data.groupData.grouped = this.model.data.groupData.grouped.filter(
-                        (_state: any): boolean => _state.clientID !== Number(intersects[0].object.name),
-                    );
-                    intersects[0].object.material.color.set(intersects[0].object.originalColor);
+
+            const intersectionClientID = +(intersects[0]?.object?.name) || null;
+            const objectState = Number.isInteger(intersectionClientID) ? this.model.data.objects
+                .find((state: ObjectState) => state.clientID === intersectionClientID) : null;
+            if (
+                objectState &&
+                this.mode === Mode.GROUP &&
+                this.model.data.groupData.grouped
+            ) {
+                const objectStateIdx = this.model.data.groupData.grouped
+                    .findIndex((state: ObjectState) => state.clientID === intersectionClientID);
+                if (objectStateIdx !== -1) {
+                    this.model.data.groupData.grouped.splice(objectStateIdx, 1);
+                    ((intersects[0].object as THREE.Mesh).material as THREE.MeshBasicMaterial)
+                        .color.set(this.receiveShapeColor(objectState));
                 } else {
-                    const [state] = this.model.data.objects.filter(
-                        (_state: any): boolean => _state.clientID === Number(intersects[0].object.name),
-                    );
-                    this.model.data.groupData.grouped.push(state);
-                    intersects[0].object.material.color.set('#ffffff');
+                    this.model.data.groupData.grouped.push(objectState);
+                    ((intersects[0].object as THREE.Mesh).material as THREE.MeshBasicMaterial)
+                        .color.set(CONST.GROUPING_COLOR);
                 }
             } else if (this.mode === Mode.IDLE) {
                 const intersectedClientID = intersects[0]?.object?.name || null;
@@ -835,10 +838,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             if (colorBy === 'Group') {
-                return state.color;
+                return state.group?.color || CONST.DEFAULT_GROUP_COLOR;
             }
 
-            return state.group?.color || CONST.DEFAULT_GROUP_COLOR;
+            return state.color;
         }
 
         if (colorBy === 'Label') {
@@ -1169,7 +1172,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             }
 
-            this.model.data.groupData.grouped = [];
+            if (this.mode === Mode.GROUP) {
+                const { grouped } = this.model.data.groupData;
+                grouped.forEach((state: ObjectState) => {
+                    const { clientID } = state;
+                    const { cuboid } = this.drawnObjects[clientID] || {};
+                    if (cuboid) {
+                        cuboid.setColor(this.receiveShapeColor(state));
+                    }
+                });
+                this.model.data.groupData.grouped = [];
+            }
+
             this.mode = Mode.IDLE;
             this.model.mode = Mode.IDLE;
 

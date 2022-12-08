@@ -17,7 +17,7 @@ export interface ActiveElement {
 
 export interface GroupData {
     enabled: boolean;
-    grouped?: [];
+    grouped?: any[];
 }
 
 export interface Configuration {
