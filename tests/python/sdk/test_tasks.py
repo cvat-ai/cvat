@@ -4,7 +4,7 @@
 
 import io
 import json
-import os.path as osp
+import os
 import zipfile
 from logging import Logger
 from pathlib import Path
@@ -112,7 +112,7 @@ class TestTaskUsecases:
 
         task_files = generate_image_files(7)
         for i, f in enumerate(task_files):
-            fname = self.tmp_path / osp.basename(f.name)
+            fname = self.tmp_path / f.name
             with fname.open("wb") as fd:
                 fd.write(f.getvalue())
                 task_files[i] = str(fname)
@@ -252,17 +252,17 @@ class TestTaskUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
+        path = self.tmp_path / f"task_{task_id}-cvat.zip"
         task = self.client.tasks.retrieve(task_id)
         task.export_dataset(
             format_name="CVAT for images 1.1",
-            filename=path,
+            filename=os.fspath(path),
             pbar=pbar,
             include_images=include_images,
         )
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task: Task):
@@ -270,12 +270,12 @@ class TestTaskUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-backup.zip")
+        path = self.tmp_path / f"task_{task_id}-backup.zip"
         task = self.client.tasks.retrieve(task_id)
-        task.download_backup(filename=path, pbar=pbar)
+        task.download_backup(filename=os.fspath(path), pbar=pbar)
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
@@ -300,7 +300,7 @@ class TestTaskUsecases:
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert osp.isfile(self.tmp_path / "frame-0.jpg")
+        assert (self.tmp_path / "frame-0.jpg").is_file()
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
