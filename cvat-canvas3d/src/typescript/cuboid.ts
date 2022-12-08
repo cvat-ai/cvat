@@ -29,9 +29,9 @@ export function cuboidSize(cuboid: THREE.Mesh): {
 } {
     cuboid.geometry.computeBoundingBox();
     const bbox = cuboid.geometry.boundingBox;
-    const x = bbox.max.x - bbox.min.x;
-    const y = bbox.max.y - bbox.min.y;
-    const z = bbox.max.z - bbox.min.z;
+    const x = (bbox.max.x - bbox.min.x) * cuboid.scale.x;
+    const y = (bbox.max.y - bbox.min.y) * cuboid.scale.y;
+    const z = (bbox.max.z - bbox.min.z) * cuboid.scale.z;
 
     return { x, y, z };
 }
@@ -173,7 +173,7 @@ export function createResizeHelper(instance: THREE.Mesh): void {
 
     const vertices = [];
     for (const offset of cornerPoints) {
-        const scaleVector = new THREE.Vector3().fromArray(offset).multiply(instance.scale);
+        const scaleVector = new THREE.Vector3().fromArray(offset);
         const vertex = instance.position.clone();
         vertices.push(vertex.add(scaleVector));
     }

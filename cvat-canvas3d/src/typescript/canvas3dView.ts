@@ -204,18 +204,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             resize: {
                 status: false,
                 helper: null,
+                helperElement: null,
                 recentMouseVector: new THREE.Vector2(0, 0),
-                initScales: {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                },
-                memScales: {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                },
-                resizeVector: new THREE.Vector3(0, 0, 0),
                 frontBool: false,
             },
         };
@@ -482,8 +472,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         for (const cameraType of ALL_VIEWS) {
             this.views[cameraType].camera.position.set(...this.cameraSettings[cameraType].position);
-            this.views[cameraType].camera.lookAt(...this.cameraSettings[cameraType].lookAt);
             this.views[cameraType].camera.up.set(...this.cameraSettings[cameraType].up);
+            this.views[cameraType].camera.lookAt(...this.cameraSettings[cameraType].lookAt);
             this.views[cameraType].camera.name = `camera${cameraType[0].toUpperCase()}${cameraType.slice(1)}`;
         }
 
@@ -1254,7 +1244,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     const order2 = +child2.name.split('_')[1];
                     return order2 - order1;
                 }).forEach((child: THREE.Object3D, idx: number) => {
-                    const offset = new THREE.Vector3().fromArray(cornerPoints[idx]).multiply(cuboid[view].scale);
+                    const offset = new THREE.Vector3().fromArray(cornerPoints[idx]);
                     const vertex = center.clone().add(offset);
                     child.position.set(vertex.x, vertex.y, vertex.z);
                 });
@@ -1362,15 +1352,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 canvasSideView.offsetWidth,
             ),
             new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                alphaTest: 0,
+                color: 0x00ff00,
+                // alphaTest: 0,
                 visible: false,
-                transparent: true,
-                opacity: 0,
+                // transparent: true,
+                opacity: 0.5,
             }),
         );
         sideScenePlane.position.set(0, 0, 0);
-        sideScenePlane.rotation.set(-Math.PI / 2, Math.PI / 2000, Math.PI);
+        sideScenePlane.rotation.set(-Math.PI / 2, 0, Math.PI);
         sideScenePlane.name = Planes.SIDE;
         (sideScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (sideScenePlane as any).verticesNeedUpdate = true;
@@ -1616,131 +1606,61 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private renderResizeAction(view: ViewType, viewType: any): void {
         const cuboid = this.selectedCuboid;
-        if (cuboid === null) {
-            return;
-        }
-
-        const intersects = viewType.rayCaster.renderer.intersectObjects(
-            [viewType.scene.getObjectByName(`${view}Plane`)],
-            true,
-        );
-        // Return if no intersection with the reference plane
-        if (intersects.length === 0) return;
-        const { x: scaleInitX, y: scaleInitY, z: scaleInitZ } = this.action.resize.initScales;
-        const { x: scaleMemX, y: scaleMemY, z: scaleMemZ } = this.action.resize.memScales;
-        const { x: initPosX, y: initPosY } = this.action.resize.helper;
+        const intersects = viewType.rayCaster.renderer
+            .intersectObjects([viewType.scene.getObjectByName(`${view}Plane`)], true);
         const { x: currentPosX, y: currentPosY } = viewType.rayCaster.mouseVector;
-        const { resizeVector } = this.action.resize;
-
-        if (this.action.resize.helper.x === currentPosX && this.action.resize.helper.y === currentPosY) {
-            return;
-        }
-
         if (
-            this.action.resize.recentMouseVector.x === currentPosX &&
-            this.action.resize.recentMouseVector.y === currentPosY
+            cuboid === null ||
+            intersects.length === 0 ||
+            (this.action.resize.recentMouseVector.x === currentPosX &&
+            this.action.resize.recentMouseVector.y === currentPosY)
         ) {
             return;
         }
+
         this.action.resize.recentMouseVector = viewType.rayCaster.mouseVector.clone();
+        const newPosition = cuboid.perspective.position.clone();
+        const newScale = cuboid.perspective.scale.clone();
+        const { x, y, z } = cuboidSize(cuboid.perspective);
+        const matrix = makeCornerPointsMatrix(x / 2, y / 2, z / 2);
+        const index = +this.action.resize.helperElement.name.split('_')[1];
+        const oppositePoint = (new THREE.Vector3()).fromArray(matrix[index])
+            .multiply(new THREE.Vector3(-1, -1, -1)).add(cuboid.perspective.position);
+        const pointUnderCursor = intersects[0].point.clone();
+        const center = new THREE.Vector3(0, 0, 0)
+            .add(oppositePoint)
+            .add(pointUnderCursor)
+            .divide(new THREE.Vector3(2, 2, 2));
+
         switch (view) {
             case ViewType.TOP: {
-                let y = scaleInitX * (currentPosX / initPosX);
-                let x = scaleInitY * (currentPosY / initPosY);
-                if (x < 0) x = 0.2;
-                if (y < 0) y = 0.2;
-                cuboid.setScale(y, x, this.selectedCuboid.top.scale.z);
-                this.setSelectedChildScale(1 / y, 1 / x, null);
-                const differenceX = y / 2 - scaleMemX / 2;
-                const differenceY = x / 2 - scaleMemY / 2;
-
-                if (currentPosX > 0 && currentPosY < 0) {
-                    resizeVector.x += differenceX;
-                    resizeVector.y -= differenceY;
-                } else if (currentPosX > 0 && currentPosY > 0) {
-                    resizeVector.x += differenceX;
-                    resizeVector.y += differenceY;
-                } else if (currentPosX < 0 && currentPosY < 0) {
-                    resizeVector.x -= differenceX;
-                    resizeVector.y -= differenceY;
-                } else if (currentPosX < 0 && currentPosY > 0) {
-                    resizeVector.x -= differenceX;
-                    resizeVector.y += differenceY;
-                }
-
-                this.action.resize.memScales.x = y;
-                this.action.resize.memScales.y = x;
+                newScale.x = Math.abs(pointUnderCursor.x - oppositePoint.x);
+                newScale.y = Math.abs(pointUnderCursor.y - oppositePoint.y);
+                newPosition.x = center.x;
+                newPosition.y = center.y;
                 break;
             }
             case ViewType.SIDE: {
-                let x = scaleInitX * (currentPosX / initPosX);
-                let z = scaleInitZ * (currentPosY / initPosY);
-                if (x < 0) x = 0.2;
-                if (z < 0) z = 0.2;
-                cuboid.setScale(x, this.selectedCuboid.top.scale.y, z);
-                this.setSelectedChildScale(1 / x, null, 1 / z);
-                const differenceX = x / 2 - scaleMemX / 2;
-                const differenceY = z / 2 - scaleMemZ / 2;
-
-                if (currentPosX > 0 && currentPosY < 0) {
-                    resizeVector.x += differenceX;
-                    resizeVector.y -= differenceY;
-                } else if (currentPosX > 0 && currentPosY > 0) {
-                    resizeVector.x += differenceX;
-                    resizeVector.y += differenceY;
-                } else if (currentPosX < 0 && currentPosY < 0) {
-                    resizeVector.x -= differenceX;
-                    resizeVector.y -= differenceY;
-                } else if (currentPosX < 0 && currentPosY > 0) {
-                    resizeVector.x -= differenceX;
-                    resizeVector.y += differenceY;
-                }
-
-                this.action.resize.memScales = { ...this.action.resize.memScales, x, z };
+                newScale.x = Math.abs(pointUnderCursor.x - oppositePoint.x);
+                newScale.z = Math.abs(pointUnderCursor.z - oppositePoint.z);
+                newPosition.x = center.x;
+                newPosition.z = center.z;
                 break;
             }
             case ViewType.FRONT: {
-                let y = scaleInitY * (currentPosX / initPosX);
-                let z = scaleInitZ * (currentPosY / initPosY);
-                if (y < 0) y = 0.2;
-                if (z < 0) z = 0.2;
-                cuboid.setScale(cuboid.top.scale.x, y, z);
-                this.setSelectedChildScale(null, 1 / y, 1 / z);
-                let differenceX;
-                let differenceY;
-
-                if (!this.action.resize.frontBool) {
-                    differenceX = z / 2 - scaleMemZ / 2;
-                    differenceY = y / 2 - scaleMemY / 2;
-                    this.action.resize.frontBool = true;
-                } else {
-                    differenceX = z / 2 - scaleMemY / 2;
-                    differenceY = y / 2 - scaleMemZ / 2;
-                }
-                if (currentPosX > 0 && currentPosY < 0) {
-                    resizeVector.x += differenceX;
-                    resizeVector.y += differenceY;
-                } else if (currentPosX > 0 && currentPosY > 0) {
-                    resizeVector.x -= differenceX;
-                    resizeVector.y += differenceY;
-                } else if (currentPosX < 0 && currentPosY < 0) {
-                    resizeVector.x += differenceX;
-                    resizeVector.y -= differenceY;
-                } else if (currentPosX < 0 && currentPosY > 0) {
-                    resizeVector.x -= differenceX;
-                    resizeVector.y -= differenceY;
-                }
-
-                this.action.resize.memScales.y = z;
-                this.action.resize.memScales.z = y;
+                newScale.y = Math.abs(pointUnderCursor.y - oppositePoint.y);
+                newScale.z = Math.abs(pointUnderCursor.z - oppositePoint.z);
+                newPosition.y = center.y;
+                newPosition.z = center.z;
                 break;
             }
             default:
         }
-        const coordinates = resizeVector.clone();
-        intersects[0].object.localToWorld(coordinates);
-        this.moveObject(coordinates);
-        this.adjustPerspectiveCameras();
+
+        cuboid.setScale(newScale.x, newScale.y, newScale.z);
+        this.action.resize.initPlaneIntersect = intersects[0].point;
+        this.moveObject(newPosition);
+        // this.adjustPerspectiveCameras();
     }
 
     private static isLeft(a: any, b: any, c: any): boolean {
@@ -1934,7 +1854,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 objectSideView.add(sceneSidePlane);
                 objectFrontView.add(sceneFrontPlane);
                 objectTopView.getObjectByName(Planes.TOP).rotation.set(0, 0, 0);
-                objectSideView.getObjectByName(Planes.SIDE).rotation.set(-Math.PI / 2, Math.PI / 2000, Math.PI);
+                objectSideView.getObjectByName(Planes.SIDE).rotation.set(-Math.PI / 2, 0, Math.PI);
                 objectFrontView.getObjectByName(Planes.FRONT).rotation.set(0, Math.PI / 2, 0);
 
                 const quaternionSide = new THREE.Quaternion();
@@ -2078,18 +1998,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             false,
         );
 
-        if (intersectsHelperResize.length !== 0) {
-            this.action.resize.helper = viewType.rayCaster.mouseVector.clone();
+        const intersectsPlane = viewType.rayCaster.renderer.intersectObjects(
+            [viewType.scene.getObjectByName(`${view}Plane`)],
+            false,
+        );
+
+        if (intersectsHelperResize.length !== 0 && intersectsPlane.length !== 0) {
+            this.action.resize.recentMouseVector = viewType.rayCaster.mouseVector.clone();
             this.action.resize.status = true;
             this.action.detected = true;
             this.views.top.controls.enabled = false;
             this.views.side.controls.enabled = false;
             this.views.front.controls.enabled = false;
-            const { x, y, z } = cuboid[view].scale;
-            this.action.resize.initScales = { x, y, z };
-            this.action.resize.memScales = { x, y, z };
             this.action.resize.frontBool = false;
-            this.action.resize.resizeVector = new THREE.Vector3(0, 0, 0);
+            this.action.resize.helperElement = intersectsHelperResize[0].object;
             return;
         }
 
