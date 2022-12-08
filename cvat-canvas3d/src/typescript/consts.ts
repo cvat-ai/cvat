@@ -13,6 +13,7 @@ const ROTATION_HELPER_OFFSET = 0.75;
 const CAMERA_REFERENCE = 'camRef';
 const CUBOID_EDGE_NAME = 'edges';
 const ROTATION_HELPER_NAME = '2DRotationHelper';
+const PLANE_ROTATION_HELPER = 'planeRotationHelper';
 const RESIZE_HELPER_NAME = '2DResizeHelper';
 const ROTATION_SPEED = 80;
 const FOV_DEFAULT = 1;
@@ -34,6 +35,7 @@ export default {
     CAMERA_REFERENCE,
     CUBOID_EDGE_NAME,
     ROTATION_HELPER_NAME,
+    PLANE_ROTATION_HELPER,
     RESIZE_HELPER_NAME,
     ROTATION_SPEED,
     FOV_DEFAULT,

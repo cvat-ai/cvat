@@ -70,6 +70,42 @@ export class CuboidModel {
         this.side = new THREE.Mesh(geometry, material);
         this.front = new THREE.Mesh(geometry, material);
 
+        const planeTop = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(1, 1, 1, 1),
+            new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                visible: false,
+            }),
+        );
+
+        const planeSide = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(1, 1, 1, 1),
+            new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                visible: false,
+            }),
+        );
+
+        const planeFront = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(1, 1, 1, 1),
+            new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                visible: false,
+            }),
+        );
+
+        this.top.add(planeTop);
+        planeTop.rotation.set(0, 0, 0);
+        planeTop.name = constants.PLANE_ROTATION_HELPER;
+
+        this.side.add(planeSide);
+        planeSide.rotation.set(-Math.PI / 2, 0, Math.PI);
+        planeSide.name = constants.PLANE_ROTATION_HELPER;
+
+        this.front.add(planeFront);
+        planeFront.rotation.set(0, Math.PI / 2, 0);
+        planeFront.name = constants.PLANE_ROTATION_HELPER;
+
         const camRotateHelper = new THREE.Object3D();
         camRotateHelper.translateX(-2);
         camRotateHelper.name = 'camRefRot';

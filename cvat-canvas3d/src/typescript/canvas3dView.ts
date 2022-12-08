@@ -830,7 +830,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             this.activatedElementID = +clientID;
-            // this.rotatePlane(null, null);
+            this.rotatePlane(null, null);
             this.detachCamera(null);
             this.setDefaultZoom();
         }
@@ -1744,79 +1744,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 break;
             default: {
                 const { top: objectTopView, side: objectSideView, front: objectFrontView } = this.selectedCuboid;
-                objectTopView.add(sceneTopPlane);
-                objectSideView.add(sceneSidePlane);
-                objectFrontView.add(sceneFrontPlane);
-                objectTopView.getObjectByName(Planes.TOP).rotation.set(0, 0, 0);
-                objectSideView.getObjectByName(Planes.SIDE).rotation.set(-Math.PI / 2, 0, Math.PI);
-                objectFrontView.getObjectByName(Planes.FRONT).rotation.set(0, Math.PI / 2, 0);
 
-                const quaternionSide = new THREE.Quaternion();
-                objectSideView.getObjectByName(Planes.SIDE).getWorldQuaternion(quaternionSide);
-                const rotationSide = new THREE.Euler();
-                rotationSide.setFromQuaternion(quaternionSide);
+                const quaternionSide = objectSideView.getObjectByName(CONST.PLANE_ROTATION_HELPER)
+                    .getWorldQuaternion(new THREE.Quaternion());
+                const rotationSide = new THREE.Euler().setFromQuaternion(quaternionSide);
 
-                const quaternionFront = new THREE.Quaternion();
-                objectFrontView.getObjectByName(Planes.FRONT).getWorldQuaternion(quaternionFront);
-                const rotationFront = new THREE.Euler();
-                rotationFront.setFromQuaternion(quaternionFront);
+                const quaternionFront = objectFrontView.getObjectByName(CONST.PLANE_ROTATION_HELPER)
+                    .getWorldQuaternion(new THREE.Quaternion());
+                const rotationFront = new THREE.Euler().setFromQuaternion(quaternionFront);
 
-                const quaternionTop = new THREE.Quaternion();
-                objectTopView.getObjectByName(Planes.TOP).getWorldQuaternion(quaternionTop);
-                const rotationTop = new THREE.Euler();
-                rotationTop.setFromQuaternion(quaternionTop);
-
-                objectTopView.remove(sceneTopPlane);
-                objectSideView.remove(sceneSidePlane);
-                objectFrontView.remove(sceneFrontPlane);
-
-                const canvasTopView = this.views.top.renderer.domElement;
-                const planeTop = new THREE.Mesh(
-                    new THREE.PlaneBufferGeometry(
-                        canvasTopView.offsetHeight,
-                        canvasTopView.offsetWidth,
-                        canvasTopView.offsetHeight,
-                        canvasTopView.offsetWidth,
-                    ),
-                    new THREE.MeshBasicMaterial({
-                        color: 0xff0000,
-                        visible: false,
-                    }),
-                );
-                planeTop.name = Planes.TOP;
-                (planeTop.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
-
-                const canvasSideView = this.views.side.renderer.domElement;
-                const planeSide = new THREE.Mesh(
-                    new THREE.PlaneBufferGeometry(
-                        canvasSideView.offsetHeight,
-                        canvasSideView.offsetWidth,
-                        canvasSideView.offsetHeight,
-                        canvasSideView.offsetWidth,
-                    ),
-                    new THREE.MeshBasicMaterial({
-                        color: 0x00ff00,
-                        visible: false,
-                    }),
-                );
-                planeSide.name = Planes.SIDE;
-                (planeSide.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
-
-                const canvasFrontView = this.views.front.renderer.domElement;
-                const planeFront = new THREE.Mesh(
-                    new THREE.PlaneBufferGeometry(
-                        canvasFrontView.offsetHeight,
-                        canvasFrontView.offsetWidth,
-                        canvasFrontView.offsetHeight,
-                        canvasFrontView.offsetWidth,
-                    ),
-                    new THREE.MeshBasicMaterial({
-                        color: 0x0000ff,
-                        visible: false,
-                    }),
-                );
-                planeFront.name = Planes.FRONT;
-                (planeFront.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
+                const quaternionTop = objectTopView.getObjectByName(CONST.PLANE_ROTATION_HELPER)
+                    .getWorldQuaternion(new THREE.Quaternion());
+                const rotationTop = new THREE.Euler().setFromQuaternion(quaternionTop);
 
                 const coordinates = {
                     x: objectTopView.position.x,
@@ -1824,12 +1763,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     z: objectTopView.position.z,
                 };
 
-                planeTop.rotation.set(rotationTop.x, rotationTop.y, rotationTop.z);
-                planeSide.rotation.set(rotationSide.x, rotationSide.y, rotationSide.z);
-                planeFront.rotation.set(rotationFront.x, rotationFront.y, rotationFront.z);
-                this.views.top.scene.add(planeTop);
-                this.views.side.scene.add(planeSide);
-                this.views.front.scene.add(planeFront);
+                sceneTopPlane.rotation.set(rotationTop.x, rotationTop.y, rotationTop.z);
+                sceneSidePlane.rotation.set(rotationSide.x, rotationSide.y, rotationSide.z);
+                sceneFrontPlane.rotation.set(rotationFront.x, rotationFront.y, rotationFront.z);
 
                 this.translateReferencePlane(coordinates);
             }
