@@ -1401,7 +1401,10 @@ class LimitPermission(OpenPolicyAgentPermission):
         scope_id = (type(scope), scope.scope)
         results = []
 
-        if scope_id == (TaskPermission, TaskPermission.Scopes.CREATE):
+        if scope_id in [
+            (TaskPermission, TaskPermission.Scopes.CREATE),
+            (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
+        ]:
             if getattr(scope, 'org_id') is not None:
                 results.append((
                     Limits.ORG_TASKS,
@@ -1483,7 +1486,10 @@ class LimitPermission(OpenPolicyAgentPermission):
                         UserSandboxTasksContext(user_id=project.owner.id)
                     ))
 
-        elif scope_id == (ProjectPermission, ProjectPermission.Scopes.CREATE):
+        elif scope_id in [
+            (ProjectPermission, ProjectPermission.Scopes.CREATE),
+            (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
+        ]:
             if getattr(scope, 'org_id') is not None:
                 results.append((
                     Limits.ORG_PROJECTS,

@@ -3,20 +3,20 @@
 # SPDX-License-Identifier: MIT
 
 import json
-from contextlib import ExitStack
+from contextlib import contextmanager
 from functools import partial
 from http import HTTPStatus
 from pathlib import Path
-from time import sleep
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import uuid4
 
 import boto3
 import pytest
 from cvat_sdk import Client, exceptions
-from cvat_sdk.api_client import ApiClient, apis, models
+from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.core.client import Config
-from cvat_sdk.core.proxies.tasks import ResourceType
+from cvat_sdk.core.proxies.projects import Project
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 from shared.utils.config import (
     BASE_URL,
@@ -73,17 +73,30 @@ class TestUserLimits:
 
         return user.username
 
-    @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, tmp_path: Path):
-        self.tmp_dir = tmp_path
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
 
-        self.client = Client(BASE_URL, config=Config(status_check_period=0.01))
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, tmp_path: Path, fxt_image_file: Path):
+        self.tmp_dir = tmp_path
+        self.image_file = fxt_image_file
+
+        self.client = self._make_client()
         self.user = self._create_user(self.client.api_client, email="test_user_limits@localhost")
 
-        self.client.__enter__()
-        self.client.login((self.user, USER_PASS))
+        with self.client:
+            self.client.login((self.user, USER_PASS))
 
-    _DEFAULT_TASK_LIMIT = 10
+    @pytest.fixture
+    def fxt_another_client(self) -> Client:
+        client = self._make_client()
+        user = self._create_user(self.client.api_client, email="test_user_limits2@localhost")
+
+        with client:
+            client.login((user, USER_PASS))
+            yield client
+
+    _DEFAULT_TASKS_LIMIT = 10
     _DEFAULT_PROJECT_TASKS_LIMIT = 5
     _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_ORGS_LIMIT = 1
@@ -95,72 +108,88 @@ class TestUserLimits:
     _ORGS_LIMIT_MESSAGE = "user orgs limit reached"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "user cloud storages limit reached"
 
-    def _create_task(self, data: Sequence[str], *, project: Optional[int] = None):
-        return self.client.tasks.create_from_data(
+    def _create_task(
+        self, *, project: Optional[int] = None, client: Optional[Client] = None
+    ) -> Task:
+        if client is None:
+            client = self.client
+
+        return client.tasks.create_from_data(
             spec=models.TaskWriteRequest(
                 name="test_task",
                 labels=[models.PatchedLabelRequest(name="cat")] if not project else [],
                 project_id=project,
             ),
             resource_type=ResourceType.LOCAL,
-            resources=data,
+            resources=[str(self.image_file)],
         )
 
-    def test_can_reach_tasks_limit(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
+    def _create_project(self, *, client: Optional[Client] = None) -> Project:
+        if client is None:
+            client = self.client
 
-        for _ in range(self._DEFAULT_TASK_LIMIT):
-            _create_task()
+        return client.projects.create(models.ProjectWriteRequest(name="test_project"))
+
+    def test_can_reach_tasks_limit(self):
+        for _ in range(self._DEFAULT_TASKS_LIMIT):
+            self._create_task()
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task()
+            self._create_task()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._TASK_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
 
-    def test_can_reach_tasks_limit_when_creating_in_project(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
+    def test_can_reach_tasks_limit_when_importing_backup(self):
+        for _ in range(self._DEFAULT_TASKS_LIMIT):
+            task = self._create_task()
 
-        project = self.client.projects.create(models.ProjectWriteRequest(name="test_project")).id
-
-        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project)
+        backup_filename = self.tmp_dir / "task_backup.zip"
+        task.download_backup(backup_filename)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task(project=project)
+            self.client.tasks.create_from_backup(backup_filename)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._PROJECT_TASK_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
 
-    def test_can_reach_tasks_limit_when_creating_in_different_projects(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
-
-        project1 = self.client.projects.create(models.ProjectWriteRequest(name="test_project")).id
-        project2 = self.client.projects.create(models.ProjectWriteRequest(name="test_project")).id
+    def test_can_reach_tasks_limit_when_creating_in_project(self):
+        project = self._create_project().id
 
         for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project1)
-        for _ in range(self._DEFAULT_TASK_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project2)
+            self._create_task(project=project)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task()
+            self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._TASK_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
 
-    def test_can_reach_tasks_limit_when_creating_in_filled_project(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
-
-        project = self.client.projects.create(models.ProjectWriteRequest(name="test_project1")).id
+    def test_can_reach_tasks_limit_when_creating_in_different_projects(self):
+        project1 = self._create_project().id
+        project2 = self._create_project().id
 
         for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project)
-        for _ in range(self._DEFAULT_TASK_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task()
+            self._create_task(project=project1)
+        for _ in range(self._DEFAULT_TASKS_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task(project=project2)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task(project=project)
+            self._create_task()
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+
+    def test_can_reach_tasks_limit_when_creating_in_filled_project(self):
+        project = self._create_project().id
+
+        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task(project=project)
+        for _ in range(self._DEFAULT_TASKS_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {
@@ -168,15 +197,102 @@ class TestUserLimits:
             self._PROJECT_TASK_LIMIT_MESSAGE,
         }
 
-    def test_can_reach_projects_limit(self):
-        for _ in range(self._DEFAULT_PROJECTS_LIMIT):
-            self.client.projects.create(models.ProjectWriteRequest(name="test_project"))
+    def test_can_reach_project_tasks_limit_when_moving_into_filled_project(self):
+        project = self._create_project().id
+        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task(project=project)
+
+        task = self._create_task()
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self.client.projects.create(models.ProjectWriteRequest(name="test_project"))
+            task.update(models.PatchedTaskWriteRequest(project_id=project))
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._PROJECTS_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+
+    def test_can_reach_tasks_limit_when_giving_away_to_another_user(
+        self, fxt_another_client: Client
+    ):
+        for _ in range(self._DEFAULT_TASKS_LIMIT):
+            self._create_task(client=fxt_another_client)
+
+        task = self._create_task()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            task.update(
+                models.PatchedTaskWriteRequest(
+                    owner_id=fxt_another_client.users.retrieve_current_user().id
+                )
+            )
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+
+    def test_can_reach_project_tasks_limit_when_giving_away_to_another_users_filled_project(
+        self, fxt_another_client: Client
+    ):
+        project = self._create_project().id
+
+        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task(client=fxt_another_client, project=project)
+        for _ in range(self._DEFAULT_TASKS_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task(client=fxt_another_client)
+
+        task = self._create_task()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            task.update(
+                models.PatchedTaskWriteRequest(
+                    owner_id=fxt_another_client.users.retrieve_current_user().id
+                )
+            )
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {
+            self._DEFAULT_TASKS_LIMIT,
+            self._PROJECT_TASK_LIMIT_MESSAGE,
+        }
+
+    def test_can_reach_projects_limit_when_giving_away_to_another_user(
+        self, fxt_another_client: Client
+    ):
+        for _ in range(self._DEFAULT_PROJECTS_LIMIT):
+            self._create_project(client=fxt_another_client)
+
+        project = self._create_project()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            project.update(
+                models.PatchedProjectWriteRequest(
+                    owner_id=fxt_another_client.users.retrieve_current_user().id
+                )
+            )
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+
+    def test_can_reach_projects_limit(self):
+        for _ in range(self._DEFAULT_PROJECTS_LIMIT):
+            self._create_project()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self._create_project()
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
+
+    def test_can_reach_projects_limit_when_importing_backup(self):
+        for _ in range(self._DEFAULT_PROJECTS_LIMIT):
+            project = self._create_project()
+
+        backup_filename = self.tmp_dir / (project.name + "_backup.zip")
+        project.download_backup(backup_filename)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self.client.projects.create_from_backup(backup_filename)
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
 
     def test_can_reach_orgs_limit(self):
         for i in range(self._DEFAULT_ORGS_LIMIT):
@@ -191,7 +307,7 @@ class TestUserLimits:
             )
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._ORGS_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._ORGS_LIMIT_MESSAGE}
 
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
         storage_params = get_common_storage_params()
@@ -224,7 +340,7 @@ class TestUserLimits:
         response = _add_storage(i)
 
         assert response.status_code == HTTPStatus.FORBIDDEN
-        assert response.json() == [self._CLOUD_STORAGES_LIMIT_MESSAGE]
+        assert set(response.json()) == {self._CLOUD_STORAGES_LIMIT_MESSAGE}
 
 
 class TestOrgLimits:
@@ -235,20 +351,32 @@ class TestOrgLimits:
                 models.OrganizationWriteRequest(slug="test_org_limits"), _parse_response=False
             )
 
-        return json.loads(response.data)["id"]
+        return json.loads(response.data)
+
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, tmp_path: Path, regular_user: str):
+    def setup(
+        self, restore_db_per_function, tmp_path: Path, regular_user: str, fxt_image_file: Path
+    ):
         self.tmp_dir = tmp_path
+        self.image_file = fxt_image_file
 
-        self.client = Client(BASE_URL, config=Config(status_check_period=0.01))
+        self.client = self._make_client()
         self.user = regular_user
-        self.client.__enter__()
-        self.client.login((self.user, USER_PASS))
 
-        self.org = self._create_org(self.client.api_client)
+        with self.client:
+            self.client.login((self.user, USER_PASS))
 
-    _DEFAULT_TASK_LIMIT = 10
+            org = self._create_org(self.client.api_client)
+            self.org = org["id"]
+            self.org_slug = org["slug"]
+
+            with self._patch_client_with_org(self.client):
+                yield
+
+    _DEFAULT_TASKS_LIMIT = 10
     _DEFAULT_PROJECT_TASKS_LIMIT = 5
     _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
@@ -258,106 +386,104 @@ class TestOrgLimits:
     _PROJECTS_LIMIT_MESSAGE = "org projects limit reached"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "org cloud storages limit reached"
 
-    @staticmethod
-    def _wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
-        for _ in range(1000):
-            (status, _) = api.retrieve_status(task_id)
-            if status.state.value in ["Finished", "Failed"]:
-                return status
-            sleep(0.01)
-        raise Exception("Cannot create task")
+    @contextmanager
+    def _patch_client_with_org(self, client: Optional[Client] = None):
+        if client is None:
+            client = self.client
 
-    def _create_task(self, data: Sequence[str], *, project: Optional[int] = None):
-        api_client = self.client.api_client
+        new_headers = self.client.api_client.default_headers.copy()
+        new_headers["X-Organization"] = self.org_slug
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            monkeypatch.setattr(client.api_client, "default_headers", new_headers)
+            yield client
 
-        (task, response) = api_client.tasks_api.create(
-            models.TaskWriteRequest(
+    @pytest.fixture
+    def fxt_patch_client_with_org(self):
+        with self._patch_client_with_org(self.client):
+            yield
+
+    def _create_task(
+        self, *, project: Optional[int] = None, client: Optional[Client] = None
+    ) -> Task:
+        if client is None:
+            client = self.client
+
+        return client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(
                 name="test_task",
                 labels=[models.PatchedLabelRequest(name="cat")] if not project else [],
                 project_id=project,
             ),
-            org_id=self.org,
+            resource_type=ResourceType.LOCAL,
+            resources=[str(self.image_file)],
         )
-        assert response.status == HTTPStatus.CREATED
 
-        with ExitStack() as es:
-            client_files = [es.enter_context(open(filename, "rb")) for filename in data]
-            (_, response) = api_client.tasks_api.create_data(
-                task.id,
-                data_request=models.DataRequest(client_files=client_files, image_quality=75),
-                _content_type="multipart/form-data",
-                org_id=self.org,
-            )
-            assert response.status == HTTPStatus.ACCEPTED
+    def _create_project(self, *, client: Optional[Client] = None) -> Project:
+        if client is None:
+            client = self.client
 
-        status = self._wait_until_task_is_created(api_client.tasks_api, task.id)
-        assert status.state.value == "Finished"
+        return client.projects.create(models.ProjectWriteRequest(name="test_project"))
 
-        return task.id
-
-    def _create_project(self, name: str) -> int:
-        api_client = self.client.api_client
-
-        (project, _) = api_client.projects_api.create(
-            models.ProjectWriteRequest(name=name), org_id=self.org
-        )
-        return project.id
-
-    def test_can_reach_tasks_limit(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
-
-        for _ in range(self._DEFAULT_TASK_LIMIT):
-            _create_task()
+    def test_can_reach_tasks_limit(self):
+        for _ in range(self._DEFAULT_TASKS_LIMIT):
+            self._create_task()
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task()
+            self._create_task()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._TASK_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
 
-    def test_can_reach_tasks_limit_when_creating_in_project(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
+    def test_can_reach_tasks_limit_when_importing_backup(self):
+        for _ in range(self._DEFAULT_TASKS_LIMIT):
+            task = self._create_task()
 
-        project = self._create_project("test_project")
-
-        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project)
+        backup_filename = self.tmp_dir / "task_backup.zip"
+        task.download_backup(backup_filename)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task(project=project)
+            self.client.tasks.create_from_backup(backup_filename)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._PROJECT_TASK_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
 
-    def test_can_reach_tasks_limit_when_creating_in_different_projects(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
-
-        project1 = self._create_project("test_project")
-        project2 = self._create_project("test_project")
+    def test_can_reach_tasks_limit_when_creating_in_project(self):
+        project = self._create_project().id
 
         for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project1)
-        for _ in range(self._DEFAULT_TASK_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project2)
+            self._create_task(project=project)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task()
+            self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._TASK_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
 
-    def test_can_reach_tasks_limit_when_creating_in_filled_project(self, fxt_image_file: Path):
-        _create_task = partial(self._create_task, data=[str(fxt_image_file)])
-
-        project = self._create_project("test_project1")
+    def test_can_reach_tasks_limit_when_creating_in_different_projects(self):
+        project1 = self._create_project().id
+        project2 = self._create_project().id
 
         for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task(project=project)
-        for _ in range(self._DEFAULT_TASK_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
-            _create_task()
+            self._create_task(project=project1)
+        for _ in range(self._DEFAULT_TASKS_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task(project=project2)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _create_task(project=project)
+            self._create_task()
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+
+    def test_can_reach_tasks_limit_when_creating_in_filled_project(self):
+        project = self._create_project().id
+
+        for _ in range(self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task(project=project)
+        for _ in range(self._DEFAULT_TASKS_LIMIT - self._DEFAULT_PROJECT_TASKS_LIMIT):
+            self._create_task()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {
@@ -367,13 +493,26 @@ class TestOrgLimits:
 
     def test_can_reach_projects_limit(self):
         for _ in range(self._DEFAULT_PROJECTS_LIMIT):
-            self._create_project("test_project")
+            self._create_project()
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self._create_project("test_project")
+            self._create_project()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert json.loads(capture.value.body) == [self._PROJECTS_LIMIT_MESSAGE]
+        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
+
+    def test_can_reach_projects_limit_when_importing_backup(self):
+        for _ in range(self._DEFAULT_PROJECTS_LIMIT):
+            project = self._create_project()
+
+        backup_filename = self.tmp_dir / "test_project_backup.zip"
+        project.download_backup(str(backup_filename))
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self.client.projects.create_from_backup(str(backup_filename))
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
 
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
         storage_params = get_common_storage_params()
@@ -407,4 +546,4 @@ class TestOrgLimits:
         response = _add_storage(i)
 
         assert response.status_code == HTTPStatus.FORBIDDEN
-        assert response.json() == [self._CLOUD_STORAGES_LIMIT_MESSAGE]
+        assert set(response.json()) == {self._CLOUD_STORAGES_LIMIT_MESSAGE}
