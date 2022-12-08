@@ -21,6 +21,8 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- A PyTorch dataset adapter layer in the SDK
+  (<https://github.com/opencv/cvat/pull/5417>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
