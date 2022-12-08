@@ -1,0 +1,3 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+view,Analytics,N/A,N/A,resource['visibility']=='public',GET,"/analytics",business,N/A
+view,Analytics,N/A,N/A,,GET,"/analytics",admin,N/A

@@ -1,0 +1,9 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+login,N/A,N/A,N/A,,POST,/auth/login,N/A,N/A
+logout,N/A,N/A,N/A,,"GET, POST",/auth/logout,N/A,N/A
+change:password,N/A,N/A,N/A,,"POST, OPTIONS",/auth/password/change,N/A,N/A
+reset:password,N/A,N/A,N/A,,"POST, OPTIONS","/auth/password/reset, /auth/password/reset/confirm",N/A,N/A
+register,N/A,N/A,N/A,,POST,/auth/register,N/A,N/A
+sign:url,N/A,N/A,N/A,,POST,/auth/signing,N/A,N/A
+confirm:email,N/A,N/A,N/A,,GET,/account-confirm-email/<key>,N/A,N/A
+confirm:email,N/A,N/A,N/A,,"GET, POST",register/account-email-verification-sent,N/A,N/A

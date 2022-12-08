@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os.path as osp
+import json
+import os
+import zipfile
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -110,7 +112,7 @@ class TestTaskUsecases:
 
         task_files = generate_image_files(7)
         for i, f in enumerate(task_files):
-            fname = self.tmp_path / osp.basename(f.name)
+            fname = self.tmp_path / f.name
             with fname.open("wb") as fd:
                 fd.write(f.getvalue())
                 task_files[i] = str(fname)
@@ -168,6 +170,39 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
+    def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_spec = {
+            "name": f"task with Git repo",
+            "labels": [{"name": "car"}],
+        }
+
+        repository_url = "root@gitserver:repos/repo.git [annotations/annot.zip]"
+
+        task = self.client.tasks.create_from_data(
+            spec=task_spec,
+            resource_type=ResourceType.LOCAL,
+            resources=[str(fxt_image_file)],
+            pbar=pbar,
+            dataset_repository_url=repository_url,
+        )
+
+        assert task.size == 1
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+        git_get_response = self.client.api_client.rest_client.GET(
+            self.client.api_map.git_get(task.id),
+            headers=self.client.api_client.get_common_headers(),
+        )
+
+        response_json = json.loads(git_get_response.data)
+        assert response_json["url"]["value"] == repository_url
+        assert response_json["format"] == "CVAT for images 1.1"
+        assert response_json["lfs"] is False
+
     def test_can_retrieve_task(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
 
@@ -217,17 +252,17 @@ class TestTaskUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
+        path = self.tmp_path / f"task_{task_id}-cvat.zip"
         task = self.client.tasks.retrieve(task_id)
         task.export_dataset(
             format_name="CVAT for images 1.1",
-            filename=path,
+            filename=os.fspath(path),
             pbar=pbar,
             include_images=include_images,
         )
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task: Task):
@@ -235,12 +270,12 @@ class TestTaskUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-backup.zip")
+        path = self.tmp_path / f"task_{task_id}-backup.zip"
         task = self.client.tasks.retrieve(task_id)
-        task.download_backup(filename=path, pbar=pbar)
+        task.download_backup(filename=os.fspath(path), pbar=pbar)
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
@@ -265,7 +300,19 @@ class TestTaskUsecases:
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert osp.isfile(self.tmp_path / "frame-0.jpg")
+        assert (self.tmp_path / "frame-0.jpg").is_file()
+        assert self.stdout.getvalue() == ""
+
+    @pytest.mark.parametrize("quality", ("compressed", "original"))
+    def test_can_download_chunk(self, fxt_new_task: Task, quality: str):
+        chunk_path = self.tmp_path / "chunk.zip"
+
+        with open(chunk_path, "wb") as chunk_file:
+            fxt_new_task.download_chunk(0, chunk_file, quality=quality)
+
+        with zipfile.ZipFile(chunk_path, "r") as chunk_zip:
+            assert chunk_zip.testzip() is None
+            assert len(chunk_zip.infolist()) == 1
         assert self.stdout.getvalue() == ""
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):

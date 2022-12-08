@@ -1,0 +1,19 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,Comment,Sandbox,N/A,,GET,"/issues/{id}/comments, /comments",None,N/A
+list,Comment,Organization,N/A,,GET,"/issues/{id}/comments, /comments",None,Worker
+create@issue,"Comment, Issue",Sandbox,N/A,,POST,/comments,Admin,N/A
+create@issue,"Comment, Issue",Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee",,POST,/comments,Worker,N/A
+create@issue,"Comment, Issue",Organization,N/A,,POST,/comments,User,Maintainer
+create@issue,"Comment, Issue",Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee",,POST,/comments,Worker,Worker
+view,Comment,Sandbox,N/A,,GET,/comments/{id},Admin,N/A
+view,Comment,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,GET,/comments/{id},None,N/A
+view,Comment,Organization,None,,GET,/comments/{id},User,Maintainer
+view,Comment,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,GET,/comments/{id},None,Worker
+update,Comment,Sandbox,N/A,,PATCH,/comments/{id},Admin,N/A
+update,Comment,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,PATCH,/comments/{id},Worker,N/A
+update,Comment,Organization,N/A,,PATCH,/comments/{id},User,Maintainer
+update,Comment,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,PATCH,/comments/{id},Worker,Worker
+delete,Comment,Sandbox,None,,DELETE,/comments/{id},Admin,N/A
+delete,Comment,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,DELETE,/comments/{id},Worker,N/A
+delete,Comment,Organization,None,,DELETE,/comments/{id},User,Maintainer
+delete,Comment,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,DELETE,/comments/{id},Worker,Worker

@@ -1,0 +1,6 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,N/A,N/A,N/A,,GET,/lambda/functions,None,N/A
+view,LambdaFunction,N/A,N/A,,GET,/lambda/functions/{func_id},None,N/A
+call:online,"LambdaFunction, Job",N/A,N/A,,POST,/lambda/functions/{func_id},Worker,N/A
+call:offline,"LambdaFunction, Task",N/A,N/A,,POST,/lambda/requests,Business,N/A
+call:offline,"LambdaFunction, Task",N/A,N/A,,GET,"/lambda/requests/{id}, /lambda/requests",Business,N/A

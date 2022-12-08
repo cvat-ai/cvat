@@ -441,6 +441,7 @@ export default class LabelForm extends React.Component<Props> {
                 <Input
                     ref={this.inputNameRef}
                     placeholder='Label name'
+                    className='cvat-label-name-input'
                     onKeyUp={(event): void => {
                         if (event.key === 'Escape' || event.key === 'Esc' || event.keyCode === 27) {
                             onCancel();
@@ -464,7 +465,7 @@ export default class LabelForm extends React.Component<Props> {
 
         return (
             <Form.Item name='type' initialValue={value}>
-                <Select disabled={isSkeleton} showSearch={false}>
+                <Select className='cvat-label-type-input' disabled={isSkeleton} showSearch={false}>
                     {isSkeleton && (
                         <Select.Option
                             className='cvat-label-type-option-skeleton'

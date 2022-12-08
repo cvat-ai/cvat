@@ -22,7 +22,7 @@ cvat:
         USE_ALLAUTH_SOCIAL_ACCOUNTS: false
       secret:
         create: true
-        name: cvat-server-secret
+        name: "{{ .Release.Name }}-cvat-server-secret"
         socialAccountAuthentication:
           googleClientId: ""
           googleClientSecret: ""
@@ -191,10 +191,10 @@ postgresql:
  # If not external following config will be applied by default
   global:
     postgresql:
-      existingSecret: cvat-postgres-secret
+      existingSecret: "{{ .Release.Name }}-postgres-secret"
   secret:
     create: true
-    name: postgres-secret
+    name: "{{ .Release.Name }}-postgres-secret"
     password: cvat_postgresql
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
