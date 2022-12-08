@@ -99,3 +99,30 @@ pytest ./tests/python --rebuild
    cd cvat-core
    yarn run test
    ```
+
+
+<a id="opa-tests"></a>
+## IAM and Open Policy Agent tests
+
+### Generate tests
+
+```bash
+python cvat/apps/iam/rules/tests/generate_tests.py \
+   --output-dir cvat/apps/iam/rules/
+```
+
+### Run testing
+
+- In a Docker container
+```bash
+docker run --rm -v ${PWD}/cvat/apps/iam/rules:/rules \
+   openpolicyagent/opa:0.34.2-rootless \
+   test /rules -v
+```
+
+- or execute OPA directly
+```bash
+curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+chmod +x ./opa
+./opa test cvat/apps/iam/rules
+```
