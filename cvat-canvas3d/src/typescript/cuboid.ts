@@ -97,7 +97,6 @@ export class CuboidModel {
     }
 
     public attachCameraReference(): void {
-        // Attach Cam Reference
         const topCameraReference = new THREE.Object3D();
         topCameraReference.translateZ(2);
         topCameraReference.name = constants.CAMERA_REFERENCE;
@@ -168,21 +167,18 @@ export function removeCuboidEdges(instance: THREE.Mesh): void {
 export function createResizeHelper(instance: THREE.Mesh): void {
     const sphereGeometry = new THREE.SphereGeometry(0.1);
     const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
-    const { x, y, z } = cuboidSize(instance);
-    const cornerPoints = makeCornerPointsMatrix(x / 2, y / 2, z / 2);
+    const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
 
-    const vertices = [];
-    for (const offset of cornerPoints) {
-        const scaleVector = new THREE.Vector3().fromArray(offset);
-        const vertex = instance.position.clone();
-        vertices.push(vertex.add(scaleVector));
-    }
+    for (let i = 0; i < cornerPoints.length; i++) {
+        const point = new THREE.Vector3().fromArray(cornerPoints[i]);
+        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.1));
+        instance.add(tmpSphere);
+        tmpSphere.position.copy(point);
+        const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
+        instance.remove(tmpSphere);
 
-    for (let i = 0; i < vertices.length; i++) {
         const helper = new THREE.Mesh(sphereGeometry.clone(), sphereMaterial.clone());
-        helper.position.set(vertices[i].x, vertices[i].y, vertices[i].z);
-        helper.up.set(0, 0, 1);
-        helper.rotateY(90);
+        helper.position.copy(globalPosition);
         helper.name = `${constants.RESIZE_HELPER_NAME}_${i}`;
         instance.parent.add(helper);
     }
@@ -197,33 +193,24 @@ export function removeResizeHelper(instance: THREE.Mesh): void {
 
 export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
     if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
+        // Create a temporary element to get correct position
+        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.1));
+        instance.add(tmpSphere);
+        if (viewType === ViewType.TOP) {
+            tmpSphere.translateY(constants.ROTATION_HELPER_OFFSET);
+        } else {
+            tmpSphere.translateZ(constants.ROTATION_HELPER_OFFSET);
+        }
+        const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
+        instance.remove(tmpSphere);
+
+        // Create rotation helper itself first
         const sphereGeometry = new THREE.SphereGeometry(0.1);
         const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
         const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
         rotationHelper.name = constants.ROTATION_HELPER_NAME;
         instance.parent.add(rotationHelper);
-
-        const { y, z } = cuboidSize(instance);
-
-        switch (viewType) {
-            case ViewType.TOP:
-                rotationHelper.position.set(
-                    instance.position.x,
-                    instance.position.y + (y / 2) * instance.scale.y + constants.ROTATION_HELPER_OFFSET,
-                    instance.position.z,
-                );
-                break;
-            case ViewType.SIDE:
-            case ViewType.FRONT:
-                rotationHelper.position.set(
-                    instance.position.x,
-                    instance.position.y,
-                    instance.position.z + (z / 2) * instance.scale.z + constants.ROTATION_HELPER_OFFSET,
-                );
-                break;
-            default:
-                break;
-        }
+        rotationHelper.position.copy(globalPosition);
     }
 }
 
