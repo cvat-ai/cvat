@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import io
 import mimetypes
-import os
-import os.path as osp
-from typing import List, Optional, Sequence
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from PIL import Image
 
@@ -25,6 +24,9 @@ from cvat_sdk.core.proxies.model_proxy import (
     build_model_bases,
 )
 from cvat_sdk.core.uploading import AnnotationUploader
+
+if TYPE_CHECKING:
+    from _typeshed import StrPath
 
 _JobEntityBase, _JobRepoBase = build_model_bases(
     models.JobRead, apis.JobsApi, api_member_name="jobs_api"
@@ -43,7 +45,7 @@ class Job(
     def import_annotations(
         self,
         format_name: str,
-        filename: str,
+        filename: StrPath,
         *,
         status_check_period: Optional[int] = None,
         pbar: Optional[ProgressReporter] = None,
@@ -51,6 +53,8 @@ class Job(
         """
         Upload annotations for a job in the specified format (e.g. 'YOLO ZIP 1.0').
         """
+
+        filename = Path(filename)
 
         AnnotationUploader(self._client).upload_file_and_wait(
             self.api.create_annotations_endpoint,
@@ -66,7 +70,7 @@ class Job(
     def export_dataset(
         self,
         format_name: str,
-        filename: str,
+        filename: StrPath,
         *,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
@@ -75,6 +79,9 @@ class Job(
         """
         Download annotations for a job in the specified format (e.g. 'YOLO ZIP 1.0').
         """
+
+        filename = Path(filename)
+
         if include_images:
             endpoint = self.api.retrieve_dataset_endpoint
         else:
@@ -112,7 +119,7 @@ class Job(
         self,
         frame_ids: Sequence[int],
         *,
-        outdir: str = "",
+        outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
@@ -120,7 +127,9 @@ class Job(
         Download the requested frame numbers for a job and save images as outdir/filename_pattern
         """
         # TODO: add arg descriptions in schema
-        os.makedirs(outdir, exist_ok=True)
+
+        outdir = Path(outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
 
         for frame_id in frame_ids:
             frame_bytes = self.get_frame(frame_id, quality=quality)
@@ -136,7 +145,7 @@ class Job(
                 im_ext = ".jpg"
 
             outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
-            im.save(osp.join(outdir, outfile))
+            im.save(outdir / outfile)
 
     def get_meta(self) -> models.IDataMetaRead:
         (meta, _) = self.api.retrieve_data_meta(self.id)
