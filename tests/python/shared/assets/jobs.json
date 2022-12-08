@@ -38,7 +38,7 @@
       "status": "annotation",
       "stop_frame": 24,
       "task_id": 15,
-      "updated_date": "2022-12-01T12:53:35.354431Z",
+      "updated_date": "2022-12-01T12:53:35.354000Z",
       "url": "http://localhost:8080/api/jobs/19"
     },
     {
@@ -273,7 +273,7 @@
       "status": "annotation",
       "stop_frame": 4,
       "task_id": 13,
-      "updated_date": "2022-10-17T17:09:36.571000Z",
+      "updated_date": "2022-12-05T07:47:01.633000Z",
       "url": "http://localhost:8080/api/jobs/17"
     },
     {

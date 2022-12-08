@@ -30,7 +30,7 @@ def create_git_repo(
         post_params={"path": repo_url, "lfs": use_lfs, "tid": task_id},
         headers=common_headers,
     )
-    response_json = json.loads(response)
+    response_json = json.loads(response.data)
     rq_id = response_json["rq_id"]
     client.logger.info(f"Create RQ ID: {rq_id}")
 

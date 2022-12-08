@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2022-12-01T12:53:10.425141Z",
+      "created_date": "2022-12-01T12:53:10.425000Z",
       "data": 14,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -76,7 +76,7 @@
         "id": 16,
         "location": "local"
       },
-      "updated_date": "2022-12-01T12:53:35.028385Z",
+      "updated_date": "2022-12-01T12:53:35.028000Z",
       "url": "http://localhost:8080/api/tasks/15"
     },
     {
@@ -379,7 +379,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2022-10-17T17:09:36.570000Z",
+      "updated_date": "2022-12-05T07:47:01.633000Z",
       "url": "http://localhost:8080/api/tasks/13"
     },
     {

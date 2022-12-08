@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2022-12-01T12:52:42.454308Z",
+      "created_date": "2022-12-01T12:52:42.454000Z",
       "dimension": "2d",
       "id": 8,
       "labels": [
@@ -53,7 +53,7 @@
       "tasks": [
         15
       ],
-      "updated_date": "2022-12-01T12:53:34.917451Z",
+      "updated_date": "2022-12-01T12:53:34.917000Z",
       "url": "http://localhost:8080/api/projects/8"
     },
     {
@@ -406,7 +406,7 @@
       "tasks": [
         13
       ],
-      "updated_date": "2022-10-17T17:09:36.526000Z",
+      "updated_date": "2022-12-05T07:47:01.518000Z",
       "url": "http://localhost:8080/api/projects/4"
     },
     {
