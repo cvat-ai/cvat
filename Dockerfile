@@ -159,4 +159,3 @@ RUN mkdir -p data share keys logs /tmp/supervisord static
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]
 CMD ["-c", "supervisord/all.conf"]
-HEALTHCHECK --start-period=30s CMD python3 ${HOME}/manage.py health_check
