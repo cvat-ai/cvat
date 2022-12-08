@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ObjectState } from '.';
 import { MasterImpl } from './master';
 
 export interface Size {
@@ -17,7 +18,7 @@ export interface ActiveElement {
 
 export interface GroupData {
     enabled: boolean;
-    grouped?: any[];
+    grouped: ObjectState[];
 }
 
 export interface Configuration {
@@ -102,16 +103,14 @@ export interface Canvas3dDataModel {
     imageIsDeleted: boolean;
     drawData: DrawData;
     mode: Mode;
-    objects: any[];
-    groupedObjects: any[];
-    selected: any;
+    objects: ObjectState[];
     shapeProperties: ShapeProperties;
     groupData: GroupData;
     configuration: Configuration;
     isFrameUpdating: boolean;
     nextSetupRequest: {
         frameData: any;
-        objectStates: any[];
+        objectStates: ObjectState[];
     } | null;
 }
 
@@ -121,7 +120,8 @@ export interface Canvas3dModel {
     readonly imageIsDeleted: boolean;
     readonly groupData: GroupData;
     readonly configuration: Configuration;
-    setup(frameData: any, objectStates: any[]): void;
+    readonly objects: ObjectState[];
+    setup(frameData: any, objectStates: ObjectState[]): void;
     isAbleToChangeFrame(): boolean;
     draw(drawData: DrawData): void;
     cancel(): void;
@@ -151,7 +151,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 width: 0,
             },
             objects: [],
-            groupedObjects: [],
             image: null,
             imageID: null,
             imageOffset: 0,
@@ -169,7 +168,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 enabled: false,
                 grouped: [],
             },
-            selected: null,
             shapeProperties: {
                 opacity: 40,
                 outlined: false,
@@ -201,7 +199,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         }
     }
 
-    public setup(frameData: any, objectStates: any[]): void {
+    public setup(frameData: any, objectStates: ObjectState[]): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -250,6 +248,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public get mode(): Mode {
         return this.data.mode;
+    }
+
+    public get objects(): ObjectState[] {
+        return [...this.data.objects];
     }
 
     public isAbleToChangeFrame(): boolean {
@@ -305,7 +307,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.DRAG_CANVAS);
     }
 
-    public activate(clientID: string, attributeID: number | null): void {
+    public activate(clientID: string | null, attributeID: number | null): void {
         if (this.data.activeElement.clientID === clientID && this.data.activeElement.attributeID === attributeID) {
             return;
         }

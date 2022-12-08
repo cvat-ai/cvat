@@ -135,9 +135,14 @@ export class CuboidModel {
     }
 
     public setColor(color: string): void {
+        this.setOutlineColor(color);
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             ((this as Indexable)[view].material as THREE.MeshBasicMaterial).color.set(color);
         });
+    }
+
+    public setOutlineColor(color: string): void {
+        (this.wireframe.material as THREE.MeshBasicMaterial).color.set(color);
     }
 
     public setOpacity(opacity: number): void {
