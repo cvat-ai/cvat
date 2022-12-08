@@ -166,7 +166,7 @@ export function removeCuboidEdges(instance: THREE.Mesh): void {
 
 export function createResizeHelper(instance: THREE.Mesh): void {
     const sphereGeometry = new THREE.SphereGeometry(0.1);
-    const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
+    const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#f1a121', opacity: 1 });
     const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
 
     for (let i = 0; i < cornerPoints.length; i++) {
@@ -206,7 +206,7 @@ export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): 
 
         // Create rotation helper itself first
         const sphereGeometry = new THREE.SphereGeometry(0.1);
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff', opacity: 1 });
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#33b864', opacity: 1 });
         const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
         rotationHelper.name = constants.ROTATION_HELPER_NAME;
         instance.parent.add(rotationHelper);

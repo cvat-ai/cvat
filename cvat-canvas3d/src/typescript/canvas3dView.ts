@@ -830,7 +830,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             this.activatedElementID = +clientID;
-            this.rotatePlane(null, null);
+            // this.rotatePlane(null, null);
             this.detachCamera(null);
             this.setDefaultZoom();
         }
