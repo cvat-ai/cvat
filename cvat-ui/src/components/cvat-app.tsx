@@ -10,7 +10,9 @@ import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
-import Progress, { ProgressProps } from 'antd/lib/progress';
+import Spin from 'antd/lib/spin';
+import { DisconnectOutlined } from '@ant-design/icons';
+import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import 'antd/dist/antd.css';
 
@@ -107,7 +109,6 @@ interface CVATAppProps {
 interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
-    backendHealthCheckProgress: string;
 }
 
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
@@ -117,7 +118,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.state = {
             healthIinitialized: false,
             backendIsHealthy: false,
-            backendHealthCheckProgress: '0/1',
         };
     }
     public componentDidMount(): void {
@@ -144,7 +144,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             HEALH_CHECK_RETRIES,
             HEALTH_CHECK_PERIOD,
             HEALTH_CHECK_REQUEST_TIMEOUT,
-            (progress: string): void => this.setState({ backendHealthCheckProgress: progress }),
         ).then(() => {
             this.setState({
                 healthIinitialized: true,
@@ -160,13 +159,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     title: 'Cannot connect to the server',
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
-                    okButtonProps: { disabled: true },
                     content: (
                         <Text>
-                            Cannot connect to the server.
                             Make sure the CVAT backend and all necessary services
                             (Database, Redis and Open Policy Agent) are running and avaliable.
-                            If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the
+                            If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the&nbsp;
 
                             <a
                                 target='_blank'
@@ -396,7 +393,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             isModelPluginActive,
         } = this.props;
 
-        const { healthIinitialized, backendIsHealthy, backendHealthCheckProgress } = this.state;
+        const { healthIinitialized, backendIsHealthy } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
         let readyForRender = userAgreementsInitialized && authActionsInitialized;
@@ -522,28 +519,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             );
         }
 
-        const progress = backendHealthCheckProgress.split('/').map(Number);
-        let status: ProgressProps['status'] = 'active';
-        if (healthIinitialized) {
-            if (backendIsHealthy) {
-                status = 'success';
-            } else {
-                status = 'exception';
-            }
+        if (healthIinitialized && !backendIsHealthy) {
+            return (
+                <Space align='center' direction='vertical' className='cvat-spinner'>
+                    <DisconnectOutlined className='cvat-disconnected' />
+                    Cannot connect to the server.
+                </Space>
+            );
         }
-
-        return (
-            <>
-                <Progress
-                    className='cvat-spinner'
-                    type='circle'
-                    percent={(progress[0] / progress[1]) * 100}
-                    format={() => `${backendHealthCheckProgress} Connection attempts`}
-                    status={status}
-                    width={200}
-                />
-            </>
-        );
+        return <Spin size='large' className='cvat-spinner' tip='Connecting...' />;
     }
 }
 

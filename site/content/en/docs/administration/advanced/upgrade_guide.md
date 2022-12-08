@@ -105,7 +105,7 @@ docker-compose up -d
 
 1. Import PostgreSQL dump into new DB container:
    ```shell
-   docker exec -i cvat_db psql -d postgres < cvat.db.dump
+   docker exec -i cvat_db psql -q -d postgres < cvat.db.dump
    ```
 
 1. Start CVAT:
