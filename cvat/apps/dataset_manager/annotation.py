@@ -376,8 +376,8 @@ class TrackManager(ObjectManager):
                 track_shapes[shape["frame"]] = shape
 
             if len(track.get("elements", [])):
-                element_tracks = TrackManager(track["elements"])
-                element_shapes = element_tracks.to_shapes(end_frame,
+                track_elements = TrackManager(track["elements"])
+                element_shapes = track_elements.to_shapes(end_frame,
                     end_skeleton_frame=last_frame)
 
                 for shape in element_shapes:

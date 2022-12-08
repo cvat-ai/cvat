@@ -119,8 +119,8 @@ class CvatExtractor(Extractor):
         items = OrderedDict()
 
         track = None
-        track_element = None
         track_shapes = None
+        track_elements = None
         shape = None
         shape_element = None
         tag = None
@@ -131,23 +131,17 @@ class CvatExtractor(Extractor):
         for ev, el in context:
             if ev == 'start':
                 if el.tag == 'track':
-                    if track:
-                        track_element = {
-                            'id': el.attrib['id'],
-                            'label': el.attrib.get('label'),
-                        }
-                    else:
-                        frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] \
-                            if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
-                        track = {
-                            'id': el.attrib['id'],
-                            'label': el.attrib.get('label'),
-                            'group': int(el.attrib.get('group_id', 0)),
-                            'height': frame_size[0],
-                            'width': frame_size[1],
-                        }
-                        subset = el.attrib.get('subset')
-                        track_shapes = {}
+                    frame_size = tasks_info[int(el.attrib.get('task_id'))]['frame_size'] \
+                        if el.attrib.get('task_id') else tuple(tasks_info.values())[0]['frame_size']
+                    track = {
+                        'id': el.attrib['id'],
+                        'label': el.attrib.get('label'),
+                        'group': int(el.attrib.get('group_id', 0)),
+                        'height': frame_size[0],
+                        'width': frame_size[1],
+                    }
+                    subset = el.attrib.get('subset')
+                    track_shapes = {}
                 elif el.tag == 'image':
                     image = {
                         'name': el.attrib.get('name'),
@@ -163,7 +157,10 @@ class CvatExtractor(Extractor):
                             'type': 'rectangle' if el.tag == 'box' else el.tag,
                             'attributes': element_attributes,
                         }
-                        shape_element.update(image)
+                        if track:
+                            shape_element.update(track)
+                        else:
+                            shape_element.update(image)
                     else:
                         attributes = {}
                         shape = {
@@ -171,12 +168,11 @@ class CvatExtractor(Extractor):
                             'attributes': attributes,
                         }
                         shape['elements'] = []
-                        if track_element:
-                            shape.update(track_element)
-                            shape['track_id'] = int(track_element['id'])
-                        elif track:
+                        if track:
                             shape.update(track)
                             shape['track_id'] = int(track['id'])
+                            shape['frame'] = el.attrib['frame']
+                            track_elements = []
                         if image:
                             shape.update(image)
                 elif el.tag == 'tag' and image:
@@ -240,7 +236,12 @@ class CvatExtractor(Extractor):
                     else:
                         shape_element['outside'] = (el.attrib.get('outside') == '1')
 
-                    shape['elements'].append(shape_element)
+                    if track:
+                        shape_element['keyframe'] = (el.attrib.get('keyframe') == '1')
+                        if shape_element['keyframe']:
+                            track_elements.append(shape_element)
+                    else:
+                        shape['elements'].append(shape_element)
                     shape_element = None
 
                 elif el.tag in cls._SUPPORTED_SHAPES:
@@ -267,10 +268,15 @@ class CvatExtractor(Extractor):
                         shape['points'] = []
                         for pair in el.attrib['points'].split(';'):
                             shape['points'].extend(map(float, pair.split(',')))
-                    if track_element:
-                        track_shapes[shape['frame']]['elements'].append(shape)
-                    elif track:
-                        track_shapes[shape['frame']] = shape
+
+                    if track:
+                        if shape["type"] == "skeleton" and track_elements:
+                            shape["keyframe"] = True
+                            track_shapes[shape['frame']] = shape
+                            track_shapes[shape['frame']]['elements'] = track_elements
+                            track_elements = None
+                        elif shape["type"] != "skeleton":
+                            track_shapes[shape['frame']] = shape
                     else:
                         frame_desc = items.get((subset, shape['frame']), {'annotations': []})
                         frame_desc['annotations'].append(
@@ -286,15 +292,12 @@ class CvatExtractor(Extractor):
                     items[(subset, tag['frame'])] = frame_desc
                     tag = None
                 elif el.tag == 'track':
-                    if track_element:
-                        track_element = None
-                    else:
-                        for track_shape in track_shapes.values():
-                            frame_desc = items.get((subset, track_shape['frame']), {'annotations': []})
-                            frame_desc['annotations'].append(
-                                cls._parse_shape_ann(track_shape, categories))
-                            items[(subset, track_shape['frame'])] = frame_desc
-                        track = None
+                    for track_shape in track_shapes.values():
+                        frame_desc = items.get((subset, track_shape['frame']), {'annotations': []})
+                        frame_desc['annotations'].append(
+                            cls._parse_shape_ann(track_shape, categories))
+                        items[(subset, track_shape['frame'])] = frame_desc
+                    track = None
                 elif el.tag == 'image':
                     frame_desc = items.get((subset, image['frame']), {'annotations': []})
                     frame_desc.update({
@@ -781,11 +784,6 @@ def dump_as_cvat_annotation(dumper, annotations):
                         ("xbr2", "{:.2f}".format(shape.points[14])),
                         ("ybr2", "{:.2f}".format(shape.points[15]))
                     ]))
-                elif shape.type == 'skeleton':
-                    dump_data.update(OrderedDict([
-                        ("points", ''),
-                        ("rotation", "{:.2f}".format(shape.rotation))
-                    ]))
                 elif shape.type == "mask":
                     dump_data.update(OrderedDict([
                         ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
@@ -794,7 +792,7 @@ def dump_as_cvat_annotation(dumper, annotations):
                         ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
                         ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
                     ]))
-                else:
+                elif shape.type != 'skeleton':
                     dump_data.update(OrderedDict([
                         ("points", ';'.join((
                             ','.join((
@@ -804,7 +802,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                         )),
                     ]))
 
-                dump_data['z_order'] = str(shape.z_order)
+                if not is_skeleton:
+                    dump_data['z_order'] = str(shape.z_order)
                 if shape.group:
                     dump_data['group_id'] = str(shape.group)
 
@@ -879,7 +878,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 
-    def dump_shape(shape, element_shapes={}, label=None):
+    def dump_shape(shape, element_shapes=None, label=None):
         dump_data = OrderedDict()
         if label is None:
             dump_data.update(OrderedDict([
@@ -974,17 +973,20 @@ def dump_as_cvat_interpolation(dumper, annotations):
         elif shape.type == "cuboid":
             dumper.open_cuboid(dump_data)
         elif shape.type == 'skeleton':
-            dumper.open_skeleton(dump_data)
-            for element_shape, label in element_shapes.get(shape.frame, []):
-                dump_shape(element_shape, label=label)
+            if element_shapes and element_shapes.get(shape.frame):
+                dumper.open_skeleton(dump_data)
+                for element_shape, label in element_shapes.get(shape.frame, []):
+                    dump_shape(element_shape, label=label)
         else:
             raise NotImplementedError("unknown shape type")
 
-        for attr in shape.attributes:
-            dumper.add_attribute(OrderedDict([
-                ("name", attr.name),
-                ("value", attr.value)
-            ]))
+        if shape.type == "skeleton" and element_shapes \
+                and element_shapes.get(shape.frame) or shape.type != "skeleton":
+            for attr in shape.attributes:
+                dumper.add_attribute(OrderedDict([
+                    ("name", attr.name),
+                    ("value", attr.value)
+                ]))
 
         if shape.type == "rectangle":
             dumper.close_box()
@@ -1001,7 +1003,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
         elif shape.type == "cuboid":
             dumper.close_cuboid()
         elif shape.type == "skeleton":
-            dumper.close_skeleton()
+            if element_shapes and element_shapes.get(shape.frame):
+                dumper.close_skeleton()
         else:
             raise NotImplementedError("unknown shape type")
 
@@ -1135,7 +1138,7 @@ def load_anno(file_object, annotations):
     image_is_opened = False
     attributes = None
     elem_attributes = None
-    element_tracks = None
+    track_elements = None
     for ev, el in context:
         if ev == 'start':
             if el.tag == 'track':
@@ -1163,8 +1166,8 @@ def load_anno(file_object, annotations):
                         'points': [],
                         'type': 'rectangle' if el.tag == 'box' else el.tag
                     }
-                    if track is not None and el.attrib['label'] not in element_tracks:
-                        element_tracks[el.attrib['label']] = annotations.Track(
+                    if track is not None and el.attrib['label'] not in track_elements:
+                        track_elements[el.attrib['label']] = annotations.Track(
                             label=el.attrib['label'],
                             group=0,
                             source=el.attrib.get('source', 'manual'),
@@ -1182,8 +1185,8 @@ def load_anno(file_object, annotations):
                         shape['elements'] = []
                     elif shape['type'] == 'skeleton':
                         shape['frame'] = el.attrib['frame']
-                        if element_tracks is None:
-                            element_tracks = {}
+                        if track_elements is None:
+                            track_elements = {}
             elif el.tag == 'tag' and image_is_opened:
                 attributes = []
                 tag = {
@@ -1251,7 +1254,7 @@ def load_anno(file_object, annotations):
                     shape_element["frame"] = shape['frame']
                     shape_element['keyframe'] = el.attrib['keyframe'] == "1"
                     if shape_element['keyframe']:
-                        element_tracks[el.attrib['label']].shapes.append(annotations.TrackedShape(**shape_element))
+                        track_elements[el.attrib['label']].shapes.append(annotations.TrackedShape(**shape_element))
                 shape_element = None
 
             elif el.tag in supported_shapes:
@@ -1334,9 +1337,10 @@ def load_anno(file_object, annotations):
                         'label': track.label,
                     }))
                 else:
-                    if element_tracks is not None:
-                        for element in element_tracks.values():
+                    if track_elements is not None:
+                        for element in track_elements.values():
                             track.elements.append(element)
+                        track_elements = None
                     annotations.add_track(track)
                 track = None
             elif el.tag == 'image':

@@ -1827,7 +1827,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
                                 element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool) is True
-                                element_outside = dm.util.cast(element.attributes.pop('outside', None), bool) is True
+                                element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
+                                element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 if not element_keyframe and not element_outside:
                                     continue
 
@@ -1842,7 +1843,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     instance_data.Attribute(name=n, value=str(v))
                                     for n, v in element.attributes.items()
                                 ]
-                                element_occluded = dm.util.cast(element.attributes.pop('occluded', None), bool) is True
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
