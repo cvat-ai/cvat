@@ -60,14 +60,15 @@ The action menu contains:
   or the frame onto which you want to copy the object.
   The keyboard shortcut **Ctrl** + **B**. It has two
   options:
+
   - **Propagate** (![Fw propagate](/images/propagate_fw.png)) creates a
-     copy of the object on `N` _subsequent_ frames at the same position.
+    copy of the object on `N` _subsequent_ frames at the same position.
   - **Propagate backwards** (![Back propagate](/images/propagate_back.png)) creates
     a copy of the object on `N` _previous_ frames at the same position.
 
   ![](/images/image053.jpg)
 
-- **To background** - moves the object to the background. The keyboard shortcut **-**,**_**.
+- **To background** - moves the object to the background. The keyboard shortcut **-**,**\_**.
 - **To foreground** - moves the object to the foreground. The keyboard shortcut **+**,**=**.
 - **Change instance color**- choosing a color using the color picker (available only in instance mode).
 
@@ -160,7 +161,8 @@ Change the opacity of every shape in the annotation.
 
 **Selected Fill Opacity** slider
 
-Change the opacity of the selected object's fill. It is possible to change the opacity while drawing an object in the case
+Change the opacity of the selected object's fill. It is possible
+to change the opacity while drawing an object in the case
 of rectangles, polygons, and cuboids.
 
 ![](/images/image089_detrac.jpg)
