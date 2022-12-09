@@ -61,7 +61,7 @@ The action menu contains:
   The keyboard shortcut **Ctrl** + **B**. It has two
   options:
 
-  - **Propagate** (![Fw propagate](/images/propagate_fw.png)) creates a
+  - **Propagate forwards** (![Fw propagate](/images/propagate_fw.png)) creates a
     copy of the object on `N` _subsequent_ frames at the same position.
   - **Propagate backwards** (![Back propagate](/images/propagate_back.png)) creates
     a copy of the object on `N` _previous_ frames at the same position.
