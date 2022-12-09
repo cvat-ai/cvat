@@ -21,6 +21,8 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- A PyTorch dataset adapter layer in the SDK
+  (<https://github.com/opencv/cvat/pull/5417>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
@@ -29,6 +31,9 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Adjusted initial camera position, enabled 'Reset zoom' option for 3D canvas (<https://github.com/opencv/cvat/pull/5395>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
+- Unify error handling with the cloud storage (<https://github.com/opencv/cvat/pull/5389>)
+- In the SDK, functions taking paths as strings now also accept path-like objects
+  (<https://github.com/opencv/cvat/pull/5435>)
 
 ### Deprecated
 - TDB
@@ -90,6 +95,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Fixed FBRS serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5384>)
 - Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
 - Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
+- Loss of rotation in CVAT format (<https://github.com/opencv/cvat/pull/5407>)
 - A permission problem with interactive model launches for workers in orgs (<https://github.com/opencv/cvat/issues/4996>)
 - Fix chart not being upgradable (<https://github.com/opencv/cvat/pull/5371>)
 - Broken helm chart - if using custom release name (<https://github.com/opencv/cvat/pull/5403>)
