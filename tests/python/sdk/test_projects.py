@@ -88,7 +88,9 @@ class TestProjectUsecases:
             spec=models.ProjectWriteRequest(
                 name="test_project",
                 labels=[
-                    models.PatchedLabelRequest(**filter_dict(label.to_dict(), drop=["id"]))
+                    models.PatchedLabelRequest(
+                        **filter_dict(label.to_dict(), drop=["id", "has_parent"])
+                    )
                     for label in fxt_task_with_shapes.labels
                 ],
             )

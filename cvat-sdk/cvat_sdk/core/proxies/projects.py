@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
@@ -201,6 +201,8 @@ class ProjectsRepo(
         )
 
         project_id = json.loads(response.data)["id"]
-        self._client.logger.info(f"Project has been imported sucessfully. Project ID: {project_id}")
+        self._client.logger.info(
+            f"Project has been imported successfully. Project ID: {project_id}"
+        )
 
         return self.retrieve(project_id)
