@@ -1517,8 +1517,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
+    private makePointHelper() {
+        const sphereGeometry = new THREE.SphereGeometry(0.1);
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#33b864', opacity: 1 });
+        const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        rotationHelper.name = 'helper';
+        return rotationHelper;
+    }
+
     private renderResizeAction(view: ViewType, viewType: any): void {
+        const Vector3 = THREE.Vector3;
+        const Quaternion = THREE.Quaternion;
+        console.log(Vector3, Quaternion);
         const cuboid = this.selectedCuboid;
+        const data = this.drawnObjects[this.model.data.activeElement.clientID].data;
         const intersects = viewType.rayCaster.renderer
             .intersectObjects([viewType.scene.getObjectByName(`${view}Plane`)], true);
         const { x: currentPosX, y: currentPosY } = viewType.rayCaster.mouseVector;
@@ -1532,23 +1544,70 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
 
         this.action.resize.recentMouseVector = viewType.rayCaster.mouseVector.clone();
+//         intersects[0].point.x = 3;
+    // intersects[0].point.y = 0.5;
+
         const newPosition = cuboid.perspective.position.clone();
         const newScale = cuboid.perspective.scale.clone();
         const { x, y, z } = cuboidSize(cuboid.perspective);
-        const matrix = makeCornerPointsMatrix(x / 2, y / 2, z / 2);
+        const matrix = makeCornerPointsMatrix(0.5, 0.5, 0.5);
         const index = +this.action.resize.helperElement.name.split('_')[1];
-        const oppositePoint = (new THREE.Vector3()).fromArray(matrix[index])
-            .multiply(new THREE.Vector3(-1, -1, -1)).add(cuboid.perspective.position);
+        let oppositePoint = (new THREE.Vector3()).fromArray(matrix[index])
+            .multiply(new THREE.Vector3(-1, -1, -1));
+
+        const idx = matrix
+            .findIndex(([x, y, z]): boolean => oppositePoint.x === x && oppositePoint.y === y && oppositePoint.z === z);
+        const helper = cuboid[view].getObjectByName(`${CONST.RESIZE_HELPER_NAME}_${idx}`);
+        console.log(helper);
+        // oppositePoint = viewType.scene.getObjectByName(`${'2DResizeHelper'}_${idx}`).position.clone();
+
+
+
+
+            //;.add(cuboid.perspective.position);
+        // oppositePoint = cuboid.top.localToWorld(oppositePoint.clone())
+
+        // oppositePoint = intersects[0].object.worldToLocal(oppositePoint.clone());
+        intersects[0].object.worldToLocal(cuboid.top.localToWorld(oppositePoint.clone()));
+
+
         const pointUnderCursor = intersects[0].point.clone();
-        const center = new THREE.Vector3(0, 0, 0)
+        // const pointUnderCursor = intersects[0].object.localToWorld(intersects[0].point.clone())
+
+
+        let oppositePointCopy = oppositePoint.clone().multiply(new Vector3(data.points[6], data.points[7], data.points[8]).divideScalar(2).add(new Vector3(data.points[0], data.points[1], data.points[2])))
+
+        const rotationVector = new Vector3().copy(intersects[0].object.rotation);
+        let axis = new Vector3( 0, 0, 1 );
+
+        oppositePoint = viewType.scene.getObjectByName(`${'2DResizeHelper'}_${idx}`).position.clone();
+        // oppositePoint.applyAxisAngle( axis, rotationVector.z );
+        // intersects[0].point.clone().transformDirection(intersects[0].object.matrixWorld)
+
+        // oppositePoint.clone().applyAxisAngle( axis, rotationVector.z );
+
+
+
+        let center = new THREE.Vector3(0, 0, 0)
             .add(oppositePoint)
             .add(pointUnderCursor)
             .divide(new THREE.Vector3(2, 2, 2));
 
+        // center = intersects[0].object.localToWorld(center);
+
         switch (view) {
             case ViewType.TOP: {
-                newScale.x = Math.abs(pointUnderCursor.x - oppositePoint.x);
-                newScale.y = Math.abs(pointUnderCursor.y - oppositePoint.y);
+                const pointUnderCursor1 = intersects[0].point.clone();
+                pointUnderCursor1.applyAxisAngle( axis, -rotationVector.z );
+                oppositePointCopy = oppositePoint.clone().applyAxisAngle( axis, -rotationVector.z );
+
+                newScale.x = Math.abs(pointUnderCursor1.x - oppositePointCopy.x);
+                newScale.y = Math.abs(pointUnderCursor1.y - oppositePointCopy.y);
+                // const distance = Math.sqrt((pointUnderCursor.x - oppositePoint.x) ** 2 + (pointUnderCursor.y - oppositePoint.y) ** 2)
+                // newScale.x = (distance) / Math.sqrt(2);
+                // newScale.y = (distance) / Math.sqrt(2);
+
+
                 newPosition.x = center.x;
                 newPosition.y = center.y;
                 break;
@@ -1570,9 +1629,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             default:
         }
 
+        // const v1 = intersects[0].point.clone().sub(newPosition);
+        // const v2 = pointUnderCursor.clone().sub(newPosition);
+        // v1.z = 0;
+        // v2.z = 0;
+        // const angle = v1.angleTo(v2);
+        // console.log(angle);
+        // cuboid.setRotation(0, 0, -angle);
+
+
+        console.log(center.clone().sub(newScale.clone().divide(new Vector3(2,2,2))))
+        cuboid.setPosition(newPosition.x, newPosition.y, newPosition.z);
         cuboid.setScale(newScale.x, newScale.y, newScale.z);
         this.action.resize.initPlaneIntersect = intersects[0].point;
-        this.moveObject(newPosition);
+        // this.moveObject(newPosition);
+        // cuboid.setRotation(0, 0, -angle)
         // this.adjustPerspectiveCameras();
     }
 
