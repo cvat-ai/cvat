@@ -157,12 +157,12 @@ class ProjectsRepo(
         Import a project from a backup file
         """
         if status_check_period is None:
-            status_check_period = self.config.status_check_period
+            status_check_period = self._client.config.status_check_period
 
         params = {"filename": osp.basename(filename)}
-        url = self.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
+        url = self._client.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
 
-        uploader = Uploader(self)
+        uploader = Uploader(self._client)
         response = uploader.upload_file(
             url,
             filename,
@@ -182,6 +182,8 @@ class ProjectsRepo(
         )
 
         project_id = json.loads(response.data)["id"]
-        self._client.logger.info(f"Project has been imported sucessfully. Project ID: {project_id}")
+        self._client.logger.info(
+            f"Project has been imported successfully. Project ID: {project_id}"
+        )
 
         return self.retrieve(project_id)

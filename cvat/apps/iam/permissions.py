@@ -25,6 +25,7 @@ from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager
     OrgCommonWebhooksContext,
     TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
     UserSandboxCloudStoragesContext, UserSandboxTasksContext)
+from cvat.apps.webhooks.models import WebhookTypeChoice
 
 
 class StrEnum(str, Enum):
@@ -368,6 +369,7 @@ class ServerPermission(OpenPolicyAgentPermission):
             'exception': Scopes.SEND_EXCEPTION,
             'logs': Scopes.SEND_LOGS,
             'share': Scopes.LIST_CONTENT,
+            'advanced_authentication': Scopes.VIEW,
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -473,12 +475,15 @@ class LambdaPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'function' or view.basename == 'request':
-            for scope in cls.get_scopes(request, view, obj):
+            scopes = cls.get_scopes(request, view, obj)
+            for scope in scopes:
                 self = cls.create_base_perm(request, view, scope, obj)
                 permissions.append(self)
 
-            task_id = request.data.get('task')
-            if task_id:
+            if job_id := request.data.get('job'):
+                perm = JobPermission.create_scope_view_data(request, job_id)
+                permissions.append(perm)
+            elif task_id := request.data.get('task'):
                 perm = TaskPermission.create_scope_view_data(request, task_id)
                 permissions.append(perm)
 
@@ -922,8 +927,8 @@ class TaskPermission(OpenPolicyAgentPermission):
 class WebhookPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         CREATE = 'create'
-        CREATE_IN_PROJECT = 'create_in_project'
-        CREATE_IN_ORG = 'create_in_org'
+        CREATE_IN_PROJECT = 'create@project'
+        CREATE_IN_ORG = 'create@organization'
         DELETE = 'delete'
         UPDATE = 'update'
         LIST = 'list'
@@ -969,9 +974,9 @@ class WebhookPermission(OpenPolicyAgentPermission):
         scopes = []
         if scope == Scopes.CREATE:
             webhook_type = request.data.get('type')
-            if webhook_type:
-                scope = Scopes[str(scope) + f'@{webhook_type}']
-                scopes.append(scope)
+            if webhook_type in [m.value for m in WebhookTypeChoice]:
+                scope = Scopes(str(scope) + f'@{webhook_type}')
+            scopes.append(scope)
         elif scope in [Scopes.UPDATE, Scopes.DELETE, Scopes.LIST, Scopes.VIEW]:
             scopes.append(scope)
 
@@ -1039,6 +1044,7 @@ class JobPermission(OpenPolicyAgentPermission):
         DELETE_ANNOTATIONS = 'delete:annotations'
         IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
+        EXPORT_DATASET = 'export:dataset'
         VIEW_COMMITS = 'view:commits'
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
@@ -1062,6 +1068,14 @@ class JobPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
         return permissions
+
+    @classmethod
+    def create_scope_view_data(cls, request, job_id):
+        try:
+            obj = Job.objects.get(id=job_id)
+        except Job.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+        return cls(**cls.unpack_context(request), obj=obj, scope='view:data')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1088,6 +1102,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
             ('issues', 'GET'): Scopes.VIEW,
             ('commits', 'GET'): Scopes.VIEW_COMMITS,
+            ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
         }.get((view.action, request.method))
 
         scopes = []
@@ -1374,11 +1389,20 @@ class LimitationPermission(OpenPolicyAgentPermission):
 class LimitPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
+        return [] # There are no basic (unconditional) permissions
+
+    @classmethod
+    def create_from_scopes(cls, request, view, obj, scopes: List[OpenPolicyAgentPermission]):
+        scope_to_caps = [
+            (scope_handler, cls._prepare_capability_params(scope_handler))
+            for scope_handler in scopes
+        ]
         return [
             cls.create_base_perm(request, view, str(scope_handler.scope), obj,
                 scope_handler=scope_handler, capabilities=capabilities,
             )
-            for scope_handler, capabilities in cls.get_scopes(request, view, obj)
+            for scope_handler, capabilities in scope_to_caps
+            if capabilities
         ]
 
     def __init__(self, **kwargs):
@@ -1428,7 +1452,10 @@ class LimitPermission(OpenPolicyAgentPermission):
         scope_id = (type(scope), scope.scope)
         results = []
 
-        if scope_id == (TaskPermission, TaskPermission.Scopes.CREATE):
+        if scope_id in [
+            (TaskPermission, TaskPermission.Scopes.CREATE),
+            (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
+        ]:
             if getattr(scope, 'org_id') is not None:
                 results.append((
                     Limits.ORG_TASKS,
@@ -1510,7 +1537,29 @@ class LimitPermission(OpenPolicyAgentPermission):
                         UserSandboxTasksContext(user_id=project.owner.id)
                     ))
 
-        elif scope_id == (ProjectPermission, ProjectPermission.Scopes.CREATE):
+        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_OWNER):
+            task = cast(Task, scope.obj)
+
+            class OwnerType(Enum):
+                org = auto()
+                user = auto()
+
+            if getattr(task, 'organization'):
+                old_owner = (OwnerType.org, task.organization.id)
+            else:
+                old_owner = (OwnerType.user, task.owner.id)
+
+            new_owner = getattr(scope, 'owner_id')
+            if new_owner and old_owner != (OwnerType.user, new_owner):
+                results.append((
+                    Limits.USER_SANDBOX_TASKS,
+                    UserSandboxTasksContext(user_id=new_owner)
+                ))
+
+        elif scope_id in [
+            (ProjectPermission, ProjectPermission.Scopes.CREATE),
+            (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
+        ]:
             if getattr(scope, 'org_id') is not None:
                 results.append((
                     Limits.ORG_PROJECTS,
@@ -1558,7 +1607,11 @@ class LimitPermission(OpenPolicyAgentPermission):
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
-        permissions: List[OpenPolicyAgentPermission] = []
+        # Some permissions are only needed to be checked if the action
+        # is permitted in general. To achieve this, we split checks
+        # into 2 groups, and check one after another.
+        basic_permissions: List[OpenPolicyAgentPermission] = []
+        conditional_permissions: List[OpenPolicyAgentPermission] = []
 
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
@@ -1567,8 +1620,18 @@ class PolicyEnforcer(BasePermission):
         # the condition below is enough.
         if not self.is_metadata_request(request, view):
             for perm in OpenPolicyAgentPermission.__subclasses__():
-                permissions.extend(perm.create(request, view, obj))
+                basic_permissions.extend(perm.create(request, view, obj))
 
+            conditional_permissions.extend(LimitPermission.create_from_scopes(
+                request, view, obj, basic_permissions
+            ))
+
+        allow = self._check_permissions(basic_permissions)
+        if allow:
+            allow = self._check_permissions(conditional_permissions)
+        return allow
+
+    def _check_permissions(self, permissions: List[OpenPolicyAgentPermission]) -> bool:
         allow = True
         reasons = []
         for perm in permissions:

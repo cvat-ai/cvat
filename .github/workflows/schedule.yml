@@ -7,6 +7,7 @@ on:
 env:
   SERVER_IMAGE_TEST_REPO: cvat_server
   UI_IMAGE_TEST_REPO: instrumentation_cvat_ui
+  CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
 
 jobs:
   check_updates:
@@ -220,7 +221,7 @@ jobs:
 
       - name: OPA tests
         run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
           chmod +x ./opa
           ./opa test cvat/apps/iam/rules
 
@@ -245,9 +246,9 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
           max_tries=12
-          while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
+          while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'coverage run -a manage.py test cvat/apps && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
@@ -274,7 +275,7 @@ jobs:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
                 'actions_objects', 'actions_objects2', 'actions_users',
                 'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
-                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2']
+                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
     steps:
       - uses: actions/checkout@v3
 

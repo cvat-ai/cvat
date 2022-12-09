@@ -71,7 +71,7 @@ class TestCLI:
 
     @pytest.fixture
     def fxt_new_task(self):
-        files = generate_images(str(self.tmp_path), 5)
+        files = generate_images(self.tmp_path, 5)
 
         task = self.client.tasks.create_from_data(
             spec={
@@ -79,7 +79,7 @@ class TestCLI:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=files,
+            resources=list(map(os.fspath, files)),
         )
 
         return task
@@ -100,13 +100,13 @@ class TestCLI:
         return self.stdout.getvalue()
 
     def test_can_create_task_from_local_images(self):
-        files = generate_images(str(self.tmp_path), 5)
+        files = generate_images(self.tmp_path, 5)
 
         stdout = self.run_cli(
             "create",
             "test_task",
             ResourceType.LOCAL.name,
-            *files,
+            *map(os.fspath, files),
             "--labels",
             json.dumps([{"name": "car"}, {"name": "person"}]),
             "--completion_verification_period",

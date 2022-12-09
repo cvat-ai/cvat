@@ -61,7 +61,7 @@ description: 'Installing a development environment for different operating syste
   - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
   - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
   - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
-  - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
+  - [Prettier Formatter for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
   - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
 
@@ -167,10 +167,12 @@ description: 'Installing a development environment for different operating syste
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
-- Pull and run OpenPolicyAgent Docker image (run from CVAT root dir):
+- Pull and run OpenPolicyAgent Docker image:
 
   ```bash
-  sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
+   run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
+   --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
   ```
 
 ### Run CVAT

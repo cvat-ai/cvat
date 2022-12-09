@@ -4,15 +4,21 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
+import xml.etree.ElementTree as ET
+import zipfile
 from copy import deepcopy
 from http import HTTPStatus
-from itertools import groupby, product
+from io import BytesIO
+from itertools import product
 from time import sleep
+from typing import Dict, Optional
 
 import pytest
+from cvat_sdk.api_client import ApiClient, Configuration, models
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 
 from .utils import export_dataset
 
@@ -296,39 +302,7 @@ class TestPostProjects:
         spec = {"name": f"test {username} tries to create a project"}
         self._test_create_project_201(username, spec)
 
-    def test_if_user_cannot_have_more_than_3_projects(self, projects, find_users):
-        users = find_users(privilege="user")
-
-        user_id, user_projects = next(
-            (user_id, len(list(projects)))
-            for user_id, projects in groupby(projects, lambda a: a["owner"]["id"])
-            if len(list(projects)) < 3
-        )
-        user = users[user_id]
-
-        for i in range(1, 4 - user_projects):
-            spec = {
-                "name": f'test: {user["username"]} tries to create a project number {user_projects + i}'
-            }
-            self._test_create_project_201(user["username"], spec)
-
-        spec = {"name": f'test {user["username"]} tries to create more than 3 projects'}
-        self._test_create_project_403(user["username"], spec)
-
-    @pytest.mark.parametrize("privilege", ("admin", "business"))
-    def test_if_user_can_have_more_than_3_projects(self, find_users, privilege):
-        privileged_users = find_users(privilege=privilege)
-        assert len(privileged_users)
-
-        user = privileged_users[0]
-
-        for i in range(1, 5):
-            spec = {
-                "name": f'test: {user["username"]} with privilege {privilege} tries to create a project number {i}'
-            }
-            self._test_create_project_201(user["username"], spec)
-
-    def test_if_org_worker_cannot_crate_project(self, find_users):
+    def test_if_org_worker_cannot_create_project(self, find_users):
         workers = find_users(role="worker")
 
         worker = next(u for u in workers if u["org"])
@@ -339,16 +313,68 @@ class TestPostProjects:
         self._test_create_project_403(worker["username"], spec, org_id=worker["org"])
 
     @pytest.mark.parametrize("role", ("supervisor", "maintainer", "owner"))
-    def test_if_org_role_can_create_project(self, find_users, role):
-        privileged_users = find_users(role=role)
-        assert len(privileged_users)
+    def test_if_org_role_can_create_project(self, role, admin_user):
+        # We can hit org or user limits here, so we create a new org and users
+        user = self._create_user(
+            ApiClient(configuration=Configuration(BASE_URL)), email="test_org_roles@localhost"
+        )
 
-        user = next(u for u in privileged_users if u["org"])
+        if role != "owner":
+            org = self._create_org(make_api_client(admin_user), members={user["email"]: role})
+        else:
+            org = self._create_org(make_api_client(user["username"]))
 
         spec = {
             "name": f'test: worker {user["username"]} creating a project for his organization',
         }
-        self._test_create_project_201(user["username"], spec, org_id=user["org"])
+        self._test_create_project_201(user["username"], spec, org_id=org)
+
+    @classmethod
+    def _create_user(cls, api_client: ApiClient, email: str) -> str:
+        username = email.split("@", maxsplit=1)[0]
+        with api_client:
+            (_, response) = api_client.auth_api.create_register(
+                models.RegisterSerializerExRequest(
+                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
+                )
+            )
+
+        api_client.cookies.clear()
+
+        return json.loads(response.data)
+
+    @classmethod
+    def _create_org(cls, api_client: ApiClient, members: Optional[Dict[str, str]] = None) -> str:
+        with api_client:
+            (_, response) = api_client.organizations_api.create(
+                models.OrganizationWriteRequest(slug="test_org_roles"), _parse_response=False
+            )
+            org = json.loads(response.data)["id"]
+
+            for email, role in (members or {}).items():
+                api_client.invitations_api.create(
+                    models.InvitationWriteRequest(role=role, email=email),
+                    org_id=org,
+                    _parse_response=False,
+                )
+
+        return org
+
+
+def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
+    document = ET.fromstring(content)
+    instance = list(document.find("meta"))[0]
+    assert instance.tag == "project"
+    assert instance.find("id").text == values_to_be_checked["pid"]
+    assert len(list(document.iter("task"))) == len(values_to_be_checked["tasks"])
+    tasks = document.iter("task")
+    for task_checking in values_to_be_checked["tasks"]:
+        task_meta = next(tasks)
+        assert task_meta.find("id").text == str(task_checking["id"])
+        assert task_meta.find("name").text == task_checking["name"]
+        assert task_meta.find("size").text == str(task_checking["size"])
+        assert task_meta.find("mode").text == task_checking["mode"]
+        assert task_meta.find("source").text
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -357,6 +383,12 @@ class TestImportExportDatasetProject:
         with make_api_client(username) as api_client:
             return export_dataset(
                 api_client.projects_api.retrieve_dataset_endpoint, id=pid, format=format_name
+            )
+
+    def _export_annotations(self, username, pid, format_name):
+        with make_api_client(username) as api_client:
+            return export_dataset(
+                api_client.projects_api.retrieve_annotations_endpoint, id=pid, format=format_name
             )
 
     def _test_import_project(self, username, project_id, format_name, data):
@@ -376,6 +408,14 @@ class TestImportExportDatasetProject:
                 )
                 if response.status == HTTPStatus.CREATED:
                     break
+
+    def _test_get_annotations_from_task(self, username, task_id):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_annotations(task_id)
+            assert response.status == HTTPStatus.OK
+
+            response_data = json.loads(response.data)
+        return response_data
 
     def test_can_import_dataset_in_org(self, admin_user):
         project_id = 4
@@ -458,10 +498,12 @@ class TestImportExportDatasetProject:
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-    def test_can_import_export_dataset_with_imagenet_format(self):
+    @pytest.mark.parametrize("format_name", ("Datumaro 1.0", "ImageNet 1.0", "PASCAL VOC 1.1"))
+    def test_can_import_export_dataset_with_some_format(self, format_name):
+        # https://github.com/opencv/cvat/issues/4410
         # https://github.com/opencv/cvat/issues/4850
+        # https://github.com/opencv/cvat/issues/4621
         username = "admin1"
-        format_name = "ImageNet 1.0"
         project_id = 4
 
         response = self._test_export_project(username, project_id, format_name)
@@ -474,6 +516,77 @@ class TestImportExportDatasetProject:
         }
 
         self._test_import_project(username, project_id, format_name, import_data)
+
+    @pytest.mark.parametrize("username, pid", [("admin1", 8)])
+    @pytest.mark.parametrize(
+        "anno_format, anno_file_name, check_func",
+        [
+            (
+                "CVAT for video 1.1",
+                "annotations.xml",
+                _check_cvat_for_video_project_annotations_meta,
+            ),
+        ],
+    )
+    def test_exported_project_dataset_structure(
+        self,
+        username,
+        pid,
+        anno_format,
+        anno_file_name,
+        check_func,
+        tasks,
+        projects,
+        annotations,
+    ):
+        project = projects[pid]
+
+        values_to_be_checked = {
+            "pid": str(pid),
+            "name": project["name"],
+            "tasks": [
+                {
+                    "id": tid,
+                    "name": (task := tasks[tid])["name"],
+                    "size": str(task["size"]),
+                    "mode": task["mode"],
+                }
+                for tid in project["tasks"]
+            ],
+        }
+
+        response = self._export_annotations(username, pid, anno_format)
+        assert response.data
+        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
+            content = zip_file.read(anno_file_name)
+        check_func(content, values_to_be_checked)
+
+    def test_can_import_export_annotations_with_rotation(self):
+        # https://github.com/opencv/cvat/issues/4378
+        username = "admin1"
+        project_id = 4
+
+        response = self._test_export_project(username, project_id, "CVAT for images 1.1")
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = "dataset.zip"
+
+        import_data = {
+            "dataset_file": tmp_file,
+        }
+
+        self._test_import_project(username, project_id, "CVAT 1.1", import_data)
+
+        response = get_method(username, f"/projects/{project_id}/tasks")
+        assert response.status_code == HTTPStatus.OK
+        tasks = response.json()["results"]
+
+        response_data = self._test_get_annotations_from_task(username, tasks[0]["id"])
+        task1_rotation = response_data["shapes"][0]["rotation"]
+        response_data = self._test_get_annotations_from_task(username, tasks[1]["id"])
+        task2_rotation = response_data["shapes"][0]["rotation"]
+
+        assert task1_rotation == task2_rotation
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

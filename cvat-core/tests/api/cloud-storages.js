@@ -12,7 +12,7 @@ jest.mock('../../src/server-proxy', () => {
 });
 
 // Initialize api
-window.cvat = require('../../src/api');
+window.cvat = require('../../src/api').default;
 
 const CloudStorage= require('../../src/cloud-storage').default;
 const { cloudStoragesDummyData } = require('../mocks/dummy-data.mock');

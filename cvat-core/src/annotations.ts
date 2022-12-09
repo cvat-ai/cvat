@@ -62,7 +62,7 @@ async function getAnnotationsFromServer(session) {
     }
 }
 
-export async function closeSession(session) {
+export async function clearCache(session) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -284,29 +284,70 @@ export function importDataset(
     useDefaultSettings: boolean,
     sourceStorage: Storage,
     file: File | string,
-    updateStatusCallback = () => {},
-) {
+    options: {
+        convMaskToPoly?: boolean,
+        updateStatusCallback?: (s: string, n: number) => void,
+    } = {},
+): Promise<void> {
+    const updateStatusCallback = options.updateStatusCallback || (() => {});
+    const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
+    const adjustedOptions = {
+        updateStatusCallback,
+        convMaskToPoly,
+    };
+
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
-        throw new ArgumentError('Instance should be a Project || Task || Job instance');
+        throw new ArgumentError('Instance must be a Project || Task || Job instance');
     }
     if (!(typeof updateStatusCallback === 'function')) {
-        throw new ArgumentError('Callback should be a function');
+        throw new ArgumentError('Callback must be a function');
     }
-    if (typeof file === 'string' && !file.toLowerCase().endsWith('.zip')) {
-        throw new ArgumentError('File should be file instance with ZIP extension');
+    if (!(typeof convMaskToPoly === 'boolean')) {
+        throw new ArgumentError('Option "convMaskToPoly" must be a boolean');
     }
-    if (file instanceof File && !(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
-        throw new ArgumentError('File should be file instance with ZIP extension');
+    const allowedFileExtensions = [
+        '.zip', '.xml', '.json',
+    ];
+    const allowedFileExtensionsList = allowedFileExtensions.join(', ');
+    if (typeof file === 'string' && !(allowedFileExtensions.some((ext) => file.toLowerCase().endsWith(ext)))) {
+        throw new ArgumentError(
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+        );
+    }
+    const allowedMimeTypes = [
+        'application/zip', 'application/x-zip-compressed',
+        'application/xml', 'text/xml',
+        'application/json',
+    ];
+    if (file instanceof File && !(allowedMimeTypes.includes(file.type))) {
+        throw new ArgumentError(
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+        );
     }
 
     if (instance instanceof Project) {
         return serverProxy.projects
-            .importDataset(instance.id, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
+            .importDataset(
+                instance.id,
+                format,
+                useDefaultSettings,
+                sourceStorage,
+                file,
+                adjustedOptions,
+            );
     }
 
     const instanceType = instance instanceof Task ? 'task' : 'job';
     return serverProxy.annotations
-        .uploadAnnotations(instanceType, instance.id, format, useDefaultSettings, sourceStorage, file);
+        .uploadAnnotations(
+            instanceType,
+            instance.id,
+            format,
+            useDefaultSettings,
+            sourceStorage,
+            file,
+            adjustedOptions,
+        );
 }
 
 export function getHistory(session) {
