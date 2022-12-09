@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -81,23 +80,22 @@ class TestProjectUsecases:
 
     @pytest.fixture
     def fxt_empty_project(self):
-        project = self.client.projects.create(spec={"name": "test_project"})
-
-        return project
+        return self.client.projects.create(spec={"name": "test_project"})
 
     @pytest.fixture
-    def fxt_project_with_shapes(self, fxt_empty_project: Project, fxt_task_with_shapes: Task):
-        fxt_empty_project.update(
-            models.PatchedProjectWriteRequest(
+    def fxt_project_with_shapes(self, fxt_task_with_shapes: Task):
+        project = self.client.projects.create(
+            spec=models.ProjectWriteRequest(
+                name="test_project",
                 labels=[
                     models.PatchedLabelRequest(**filter_dict(label.to_dict(), drop=["id"]))
                     for label in fxt_task_with_shapes.labels
-                ]
+                ],
             )
         )
-        fxt_task_with_shapes.update(models.PatchedTaskWriteRequest(project_id=fxt_empty_project.id))
-        fxt_empty_project.fetch()
-        return fxt_empty_project
+        fxt_task_with_shapes.update(models.PatchedTaskWriteRequest(project_id=project.id))
+        project.fetch()
+        return project
 
     @pytest.fixture
     def fxt_backup_file(self, fxt_project_with_shapes: Project):
@@ -141,11 +139,11 @@ class TestProjectUsecases:
 
         projects = self.client.projects.list()
 
-        assert any(t.id == project_id for t in projects)
+        assert any(p.id == project_id for p in projects)
         assert self.stdout.getvalue() == ""
 
     def test_can_update_project(self, fxt_new_project: Project):
-        fxt_new_project.update(models.PatchedTaskWriteRequest(name="foo"))
+        fxt_new_project.update(models.PatchedProjectWriteRequest(name="foo"))
 
         retrieved_project = self.client.projects.retrieve(fxt_new_project.id)
         assert retrieved_project.name == "foo"
@@ -174,7 +172,7 @@ class TestProjectUsecases:
 
         fxt_project_with_shapes.download_backup(str(backup_path), pbar=pbar)
 
-        assert os.stat(str(backup_path)).st_size > 0
+        assert backup_path.stat().st_size > 0
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
