@@ -2,18 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import argparse
-from abc import ABC, abstractmethod
-
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qsl
-import string
 import json
-
+import string
+from abc import ABC, abstractmethod
 from datetime import datetime
-from random import random, choice, sample
-
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from random import choice, random, sample
+from urllib.parse import parse_qsl, urlparse
 
 # GITHUB CONFIGURATIONS
 GITHUB_CODE_LENGTH = 20
