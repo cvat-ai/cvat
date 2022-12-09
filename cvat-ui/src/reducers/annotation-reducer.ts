@@ -108,10 +108,6 @@ const defaultState: AnnotationState = {
             cur: 0,
         },
     },
-    propagate: {
-        objectState: null,
-        frames: 50,
-    },
     remove: {
         objectState: null,
         force: false,
@@ -120,6 +116,9 @@ const defaultState: AnnotationState = {
         visible: false,
         collecting: false,
         data: null,
+    },
+    propagate: {
+        visible: false,
     },
     colors: [],
     sidebarCollapsed: false,
@@ -830,16 +829,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.PROPAGATE_OBJECT: {
-            const { objectState } = action.payload;
-            return {
-                ...state,
-                propagate: {
-                    ...state.propagate,
-                    objectState,
-                },
-            };
-        }
         case AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS: {
             const { history } = action.payload;
             return {
@@ -848,20 +837,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                 },
-                propagate: {
-                    ...state.propagate,
-                    objectState: null,
-                },
             };
         }
-        case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
-            const { frames } = action.payload;
-
+        case AnnotationActionTypes.SWITCH_PROPAGATE_VISIBILITY: {
+            const { visible } = action.payload;
             return {
                 ...state,
                 propagate: {
-                    ...state.propagate,
-                    frames,
+                    visible,
                 },
             };
         }

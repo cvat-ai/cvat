@@ -160,10 +160,9 @@ export enum AnnotationActionTypes {
     REMOVE_OBJECT = 'REMOVE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
-    PROPAGATE_OBJECT = 'PROPAGATE_OBJECT',
     PROPAGATE_OBJECT_SUCCESS = 'PROPAGATE_OBJECT_SUCCESS',
     PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
-    CHANGE_PROPAGATE_FRAMES = 'CHANGE_PROPAGATE_FRAMES',
+    SWITCH_PROPAGATE_VISIBILITY = 'SWITCH_PROPAGATE_VISIBILITY',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
     SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
@@ -404,9 +403,32 @@ export function showFilters(visible: boolean): AnyAction {
     };
 }
 
-export function propagateObjectAsync(sessionInstance: any, objectState: any, from: number, to: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+export function switchPropagateVisibility(visible: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_PROPAGATE_VISIBILITY,
+        payload: { visible },
+    };
+}
+
+export function propagateObjectAsync(from: number, to: number): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
+        const state = getState();
+        const {
+            job: {
+                instance: sessionInstance,
+            },
+            annotations: {
+                activatedStateID,
+                states: objectStates,
+            },
+        } = state.annotation;
+
         try {
+            const objectState = objectStates.find((_state: any) => _state.clientID === activatedStateID);
+            if (!objectState) {
+                throw new Error('There is not an activated object state to be propagated');
+            }
+
             const getCopyFromState = (_objectState: any): any => ({
                 attributes: _objectState.attributes,
                 points: _objectState.shapeType === 'skeleton' ? null : _objectState.points,
@@ -423,9 +445,10 @@ export function propagateObjectAsync(sessionInstance: any, objectState: any, fro
             });
 
             const copy = getCopyFromState(objectState);
-            await sessionInstance.logger.log(LogType.propagateObject, { count: to - from + 1 });
+            await sessionInstance.logger.log(LogType.propagateObject, { count: Math.abs(to - from) });
             const states = [];
-            for (let frame = from; frame <= to; frame++) {
+            const sign = Math.sign(to - from);
+            for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += sign) {
                 copy.frame = frame;
                 copy.elements.forEach((element: any) => { element.frame = frame; });
                 const newState = new cvat.classes.ObjectState(copy);
@@ -437,37 +460,14 @@ export function propagateObjectAsync(sessionInstance: any, objectState: any, fro
 
             dispatch({
                 type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
-                payload: {
-                    objectState,
-                    history,
-                },
+                payload: { history },
             });
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.PROPAGATE_OBJECT_FAILED,
-                payload: {
-                    error,
-                },
+                payload: { error },
             });
         }
-    };
-}
-
-export function propagateObject(objectState: any | null): AnyAction {
-    return {
-        type: AnnotationActionTypes.PROPAGATE_OBJECT,
-        payload: {
-            objectState,
-        },
-    };
-}
-
-export function changePropagateFrames(frames: number): AnyAction {
-    return {
-        type: AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES,
-        payload: {
-            frames,
-        },
     };
 }
 
@@ -661,6 +661,13 @@ export function getPredictionsAsync(): ThunkAction {
     };
 }
 
+export function confirmCanvasReady(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        payload: {},
+    };
+}
+
 export function changeFrameAsync(
     toFrame: number,
     fillBuffer?: boolean,
@@ -670,6 +677,14 @@ export function changeFrameAsync(
     return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
         const state: CombinedState = getState();
         const { instance: job } = state.annotation.job;
+        const {
+            propagate: {
+                visible: propagateVisible,
+            },
+            statistics: {
+                visible: statisticsVisible,
+            },
+        } = state.annotation;
         const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
         try {
@@ -677,9 +692,9 @@ export function changeFrameAsync(
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
-            const abortAction = (): AnyAction => {
+            const abortAction = (): void => {
                 const currentState = getState();
-                return ({
+                dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
                         number: currentState.annotation.player.frame.number,
@@ -694,6 +709,8 @@ export function changeFrameAsync(
                         curZ: currentState.annotation.annotations.zLayer.cur,
                     },
                 });
+
+                dispatch(confirmCanvasReady());
             };
 
             dispatch({
@@ -702,17 +719,17 @@ export function changeFrameAsync(
             });
 
             if (toFrame === frame && !forceUpdate) {
-                dispatch(abortAction());
+                abortAction();
                 return;
             }
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
 
-            if (!isAbleToChangeFrame()) {
+            if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
                 // while doing async actions above, canvas can become used by a user in another way
                 // so, we need an additional check and if it is used, we do not update state
-                dispatch(abortAction());
+                abortAction();
                 return;
             }
 
@@ -929,13 +946,6 @@ export function zoomCanvas(enabled: boolean): AnyAction {
 export function resetCanvas(): AnyAction {
     return {
         type: AnnotationActionTypes.RESET_CANVAS,
-        payload: {},
-    };
-}
-
-export function confirmCanvasReady(): AnyAction {
-    return {
-        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
         payload: {},
     };
 }

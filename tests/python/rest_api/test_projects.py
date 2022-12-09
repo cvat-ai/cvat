@@ -4,8 +4,12 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
+import xml.etree.ElementTree as ET
+import zipfile
 from copy import deepcopy
 from http import HTTPStatus
+from io import BytesIO
 from itertools import groupby, product
 from time import sleep
 
@@ -351,12 +355,34 @@ class TestPostProjects:
         self._test_create_project_201(user["username"], spec, org_id=user["org"])
 
 
+def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
+    document = ET.fromstring(content)
+    instance = list(document.find("meta"))[0]
+    assert instance.tag == "project"
+    assert instance.find("id").text == values_to_be_checked["pid"]
+    assert len(list(document.iter("task"))) == len(values_to_be_checked["tasks"])
+    tasks = document.iter("task")
+    for task_checking in values_to_be_checked["tasks"]:
+        task_meta = next(tasks)
+        assert task_meta.find("id").text == str(task_checking["id"])
+        assert task_meta.find("name").text == task_checking["name"]
+        assert task_meta.find("size").text == str(task_checking["size"])
+        assert task_meta.find("mode").text == task_checking["mode"]
+        assert task_meta.find("source").text
+
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestImportExportDatasetProject:
     def _test_export_project(self, username, pid, format_name):
         with make_api_client(username) as api_client:
             return export_dataset(
                 api_client.projects_api.retrieve_dataset_endpoint, id=pid, format=format_name
+            )
+
+    def _export_annotations(self, username, pid, format_name):
+        with make_api_client(username) as api_client:
+            return export_dataset(
+                api_client.projects_api.retrieve_annotations_endpoint, id=pid, format=format_name
             )
 
     def _test_import_project(self, username, project_id, format_name, data):
@@ -376,6 +402,14 @@ class TestImportExportDatasetProject:
                 )
                 if response.status == HTTPStatus.CREATED:
                     break
+
+    def _test_get_annotations_from_task(self, username, task_id):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_annotations(task_id)
+            assert response.status == HTTPStatus.OK
+
+            response_data = json.loads(response.data)
+        return response_data
 
     def test_can_import_dataset_in_org(self, admin_user):
         project_id = 4
@@ -476,6 +510,77 @@ class TestImportExportDatasetProject:
         }
 
         self._test_import_project(username, project_id, format_name, import_data)
+
+    @pytest.mark.parametrize("username, pid", [("admin1", 8)])
+    @pytest.mark.parametrize(
+        "anno_format, anno_file_name, check_func",
+        [
+            (
+                "CVAT for video 1.1",
+                "annotations.xml",
+                _check_cvat_for_video_project_annotations_meta,
+            ),
+        ],
+    )
+    def test_exported_project_dataset_structure(
+        self,
+        username,
+        pid,
+        anno_format,
+        anno_file_name,
+        check_func,
+        tasks,
+        projects,
+        annotations,
+    ):
+        project = projects[pid]
+
+        values_to_be_checked = {
+            "pid": str(pid),
+            "name": project["name"],
+            "tasks": [
+                {
+                    "id": tid,
+                    "name": (task := tasks[tid])["name"],
+                    "size": str(task["size"]),
+                    "mode": task["mode"],
+                }
+                for tid in project["tasks"]
+            ],
+        }
+
+        response = self._export_annotations(username, pid, anno_format)
+        assert response.data
+        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
+            content = zip_file.read(anno_file_name)
+        check_func(content, values_to_be_checked)
+
+    def test_can_import_export_annotations_with_rotation(self):
+        # https://github.com/opencv/cvat/issues/4378
+        username = "admin1"
+        project_id = 4
+
+        response = self._test_export_project(username, project_id, "CVAT for images 1.1")
+
+        tmp_file = io.BytesIO(response.data)
+        tmp_file.name = "dataset.zip"
+
+        import_data = {
+            "dataset_file": tmp_file,
+        }
+
+        self._test_import_project(username, project_id, "CVAT 1.1", import_data)
+
+        response = get_method(username, f"/projects/{project_id}/tasks")
+        assert response.status_code == HTTPStatus.OK
+        tasks = response.json()["results"]
+
+        response_data = self._test_get_annotations_from_task(username, tasks[0]["id"])
+        task1_rotation = response_data["shapes"][0]["rotation"]
+        response_data = self._test_get_annotations_from_task(username, tasks[1]["id"])
+        task2_rotation = response_data["shapes"][0]["rotation"]
+
+        assert task1_rotation == task2_rotation
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
