@@ -46,7 +46,7 @@ class GitHubAdapter(GitHubOAuth2Adapter):
         profile_url = GitHubOAuth2Adapter.profile_url
         emails_url = GitHubOAuth2Adapter.emails_url
     else:
-        access_token_url = "http://test-github:8084/login/oauth/access_token"
+        access_token_url = "http://test-github:8084/login/oauth/access_token" # nosec
         authorize_url = "http://localhost:8084/login/oauth/authorize"
         profile_url = "http://test-github:8084/user"
         emails_url = "http://test-github:8084/user/emails"
