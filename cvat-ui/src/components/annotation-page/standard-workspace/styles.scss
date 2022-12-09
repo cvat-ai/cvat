@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -115,6 +116,7 @@
 .cvat-draw-polyline-control,
 .cvat-draw-points-control,
 .cvat-draw-ellipse-control,
+.cvat-draw-mask-control,
 .cvat-draw-cuboid-control,
 .cvat-draw-skeleton-control,
 .cvat-setup-tag-control,
@@ -191,12 +193,21 @@
 .cvat-tools-track-button,
 .cvat-tools-interact-button {
     width: 100%;
-    margin-top: 10px;
+    margin-top: $grid-unit-size;
 }
 
 .cvat-interactors-tips-icon-container {
     text-align: center;
     font-size: 20px;
+}
+
+.cvat-interactors-setups-container {
+    margin-top: $grid-unit-size;
+    margin-bottom: $grid-unit-size;
+
+    > button {
+        margin-right: $grid-unit-size;
+    }
 }
 
 .cvat-interactor-tip-container {
@@ -323,9 +334,23 @@
 }
 
 .cvat-propagate-confirm {
-    > .ant-input-number {
-        width: 70px;
-        margin: 0 5px;
+    > .ant-row {
+        align-items: flex-start;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .ant-input-number {
+        margin-left: $grid-unit-size;
+        margin-right: $grid-unit-size;
+        width: $grid-unit-size * 7;
+    }
+
+    .cvat-propagate-slider-wrapper {
+        height: $grid-unit-size;
+    }
+
+    .cvat-propagate-up-to-wrapper > div:first-child {
+        margin-bottom: $grid-unit-size;
     }
 }
 

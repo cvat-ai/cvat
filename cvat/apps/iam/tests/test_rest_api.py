@@ -8,12 +8,13 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework.authtoken.models import Token
 from django.test import override_settings
 from cvat.apps.iam.urls import urlpatterns as iam_url_patterns
+from cvat.apps.iam.views import ConfirmEmailViewEx
 from django.urls import path, re_path
-from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
+from allauth.account.views import EmailVerificationSentView
 
 
 urlpatterns = iam_url_patterns + [
-    re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailView.as_view(),
+    re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailViewEx.as_view(),
             name='account_confirm_email'),
     path('register/account-email-verification-sent', EmailVerificationSentView.as_view(),
          name='account_email_verification_sent'),

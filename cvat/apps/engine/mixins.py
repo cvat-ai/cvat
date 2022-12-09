@@ -287,6 +287,7 @@ class AnnotationMixin:
             return self.init_tus_upload(request)
 
         use_default_location = request.query_params.get('use_default_location', True)
+        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
         use_settings = strtobool(str(use_default_location))
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
@@ -307,6 +308,7 @@ class AnnotationMixin:
                 format_name=format_name,
                 location_conf=location_conf,
                 filename=file_name,
+                conv_mask_to_poly=conv_mask_to_poly,
             )
 
         return self.upload_data(request)
@@ -325,8 +327,8 @@ class SerializeMixin:
 
 
 class CreateModelMixin(mixins.CreateModelMixin):
-    def perform_create(self, serializer):
-        super().perform_create(serializer)
+    def perform_create(self, serializer, **kwargs):
+        serializer.save(**kwargs)
         signal_create.send(self, instance=serializer.instance)
 
 class PartialUpdateModelMixin:
@@ -337,8 +339,10 @@ class PartialUpdateModelMixin:
     """
 
     def perform_update(self, serializer):
+        instance = serializer.instance
+        data = serializer.to_representation(instance)
         old_values = {
-            attr: serializer.to_representation(serializer.instance).get(attr, None)
+            attr: data[attr] if attr in data else getattr(instance, attr, None)
             for attr in self.request.data.keys()
         }
 

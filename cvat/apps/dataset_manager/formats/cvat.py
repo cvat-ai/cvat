@@ -21,7 +21,7 @@ from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
-from cvat.apps.dataset_manager.bindings import (ProjectData, TaskData,
+from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData,
                                                 get_defaulted_subset,
                                                 import_dm_annotations,
                                                 match_dm_item)
@@ -254,6 +254,7 @@ class CvatExtractor(Extractor):
                     shape['type'] = el.tag
                     shape['occluded'] = (el.attrib.get('occluded') == '1')
                     shape['z_order'] = int(el.attrib.get('z_order', 0))
+                    shape['rotation'] = float(el.attrib.get('rotation', 0))
 
                     if el.tag == 'box':
                         shape['points'] = list(map(float, [
@@ -440,6 +441,8 @@ class CvatExtractor(Extractor):
             attributes['keyframe'] = ann['keyframe']
         if 'track_id' in ann:
             attributes['track_id'] = ann['track_id']
+        if 'rotation' in ann:
+            attributes['rotation'] = ann['rotation']
 
         group = ann.get('group')
 
@@ -611,6 +614,11 @@ def create_xml_dumper(file_object):
             self.xmlgen.startElement("points", points)
             self._level += 1
 
+        def open_mask(self, points):
+            self._indent()
+            self.xmlgen.startElement("mask", points)
+            self._level += 1
+
         def open_cuboid(self, cuboid):
             self._indent()
             self.xmlgen.startElement("cuboid", cuboid)
@@ -656,6 +664,11 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("points")
+
+        def close_mask(self):
+            self._level -= 1
+            self._indent()
+            self.xmlgen.endElement("mask")
 
         def close_cuboid(self):
             self._level -= 1
@@ -775,7 +788,14 @@ def dump_as_cvat_annotation(dumper, annotations):
                         ("points", ''),
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
-
+                elif shape.type == "mask":
+                    dump_data.update(OrderedDict([
+                        ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
+                        ("left", f"{int(shape.points[-4])}"),
+                        ("top", f"{int(shape.points[-3])}"),
+                        ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
+                        ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                    ]))
                 else:
                     dump_data.update(OrderedDict([
                         ("points", ';'.join((
@@ -800,6 +820,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                     dumper.open_polyline(dump_data)
                 elif shape.type == "points":
                     dumper.open_points(dump_data)
+                elif shape.type == "mask":
+                    dumper.open_mask(dump_data)
                 elif shape.type == "cuboid":
                     dumper.open_cuboid(dump_data)
                 elif shape.type == "skeleton":
@@ -826,6 +848,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                     dumper.close_points()
                 elif shape.type == "cuboid":
                     dumper.close_cuboid()
+                elif shape.type == "mask":
+                    dumper.close_mask()
                 elif shape.type == "skeleton":
                     dumper.close_skeleton()
                 else:
@@ -907,6 +931,14 @@ def dump_as_cvat_interpolation(dumper, annotations):
                     dump_data.update(OrderedDict([
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
+            elif shape.type == "mask":
+                dump_data.update(OrderedDict([
+                    ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
+                    ("left", f"{int(shape.points[-4])}"),
+                    ("top", f"{int(shape.points[-3])}"),
+                    ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
+                    ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -944,6 +976,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.open_polyline(dump_data)
             elif shape.type == "points":
                 dumper.open_points(dump_data)
+            elif shape.type == 'mask':
+                dumper.open_mask(dump_data)
             elif shape.type == "cuboid":
                 dumper.open_cuboid(dump_data)
             elif shape.type == 'skeleton':
@@ -967,6 +1001,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.close_polyline()
             elif shape.type == "points":
                 dumper.close_points()
+            elif shape.type == 'mask':
+                dumper.close_mask()
             elif shape.type == "cuboid":
                 dumper.close_cuboid()
             elif shape.type == "skeleton":
@@ -984,11 +1020,11 @@ def dump_as_cvat_interpolation(dumper, annotations):
         counter += 1
 
     for shape in annotations.shapes:
-        frame_step = annotations.frame_step if isinstance(annotations, TaskData) else annotations.frame_step[shape.task_id]
-        if isinstance(annotations, TaskData):
-            stop_frame = int(annotations.meta['task']['stop_frame'])
+        frame_step = annotations.frame_step if not isinstance(annotations, ProjectData) else annotations.frame_step[shape.task_id]
+        if not isinstance(annotations, ProjectData):
+            stop_frame = int(annotations.meta[annotations.META_FIELD]['stop_frame'])
         else:
-            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta['project']['tasks']))[0][1]
+            task_meta = list(filter(lambda task: int(task[1]['id']) == shape.task_id, annotations.meta[annotations.META_FIELD]['tasks']))[0][1]
             stop_frame = int(task_meta['stop_frame'])
         track = {
             'label': shape.label,
@@ -1063,7 +1099,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
     dumper.close_root()
 
 def load_anno(file_object, annotations):
-    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid', 'skeleton')
+    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid', 'skeleton', 'mask')
     context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
     next(context)
@@ -1102,7 +1138,7 @@ def load_anno(file_object, annotations):
                         attributes={'frame': el.attrib['id']},
                         image=el.attrib['name']
                     ),
-                    task_data=annotations
+                    instance_data=annotations
                 ))
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
                 if shape and shape['type'] == 'skeleton':
@@ -1211,6 +1247,12 @@ def load_anno(file_object, annotations):
                     shape['points'].append(el.attrib['cy'])
                     shape['points'].append("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx'])))
                     shape['points'].append("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry'])))
+                elif el.tag == 'mask':
+                    shape['points'] = el.attrib['rle'].split(',')
+                    shape['points'].append(el.attrib['left'])
+                    shape['points'].append(el.attrib['top'])
+                    shape['points'].append("{}".format(int(el.attrib['left']) + int(el.attrib['width'])))
+                    shape['points'].append("{}".format(int(el.attrib['top']) + int(el.attrib['height'])))
                 elif el.tag == 'cuboid':
                     shape['points'].append(el.attrib['xtl1'])
                     shape['points'].append(el.attrib['ytl1'])
@@ -1249,7 +1291,23 @@ def load_anno(file_object, annotations):
                     track.elements.append(track_element)
                     track_element = None
                 else:
-                    annotations.add_track(track)
+                    if track.shapes[0].type == 'mask':
+                        # convert mask tracks to shapes
+                        # because mask track are not supported
+                        annotations.add_shape(annotations.LabeledShape(**{
+                            'attributes': track.shapes[0].attributes,
+                            'points': track.shapes[0].points,
+                            'type': track.shapes[0].type,
+                            'occluded': track.shapes[0].occluded,
+                            'frame': track.shapes[0].frame,
+                            'source': track.shapes[0].source,
+                            'rotation': track.shapes[0].rotation,
+                            'z_order': track.shapes[0].z_order,
+                            'group': track.shapes[0].group,
+                            'label': track.label,
+                        }))
+                    else:
+                        annotations.add_track(track)
                     track = None
             elif el.tag == 'image':
                 image_is_opened = False
@@ -1258,10 +1316,10 @@ def load_anno(file_object, annotations):
                 tag = None
             el.clear()
 
-def dump_task_anno(dst_file, task_data, callback):
+def dump_task_or_job_anno(dst_file, instance_data, callback):
     dumper = create_xml_dumper(dst_file)
     dumper.open_document()
-    callback(dumper, task_data)
+    callback(dumper, instance_data)
     dumper.close_document()
 
 def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callback: Callable):
@@ -1270,33 +1328,34 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
     callback(dumper, project_data)
     dumper.close_document()
 
-def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectData = None):
+def dump_media_files(instance_data: CommonData, img_dir: str, project_data: ProjectData = None):
     ext = ''
-    if task_data.meta['task']['mode'] == 'interpolation':
+    if instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation':
         ext = FrameProvider.VIDEO_FRAME_EXT
 
-    frame_provider = FrameProvider(task_data.db_task.data)
+    frame_provider = FrameProvider(instance_data.db_data)
     frames = frame_provider.get_frames(
+        instance_data.start, instance_data.stop,
         frame_provider.Quality.ORIGINAL,
         frame_provider.Type.BUFFER)
-    for frame_id, (frame_data, _) in enumerate(frames):
-        if (project_data is not None and (task_data.db_task.id, frame_id) in project_data.deleted_frames) \
-            or frame_id in task_data.deleted_frames:
+    for frame_id, (frame_data, _) in zip(instance_data.rel_range, frames):
+        if (project_data is not None and (instance_data.db_instance.id, frame_id) in project_data.deleted_frames) \
+            or frame_id in instance_data.deleted_frames:
             continue
-        frame_name = task_data.frame_info[frame_id]['path'] if project_data is None \
-            else project_data.frame_info[(task_data.db_task.id, frame_id)]['path']
+        frame_name = instance_data.frame_info[frame_id]['path'] if project_data is None \
+            else project_data.frame_info[(instance_data.db_instance.id, frame_id)]['path']
         img_path = osp.join(img_dir, frame_name + ext)
         os.makedirs(osp.dirname(img_path), exist_ok=True)
         with open(img_path, 'wb') as f:
             f.write(frame_data.getvalue())
 
-def _export_task(dst_file, task_data, anno_callback, save_images=False):
+def _export_task_or_job(dst_file, instance_data, anno_callback, save_images=False):
     with TemporaryDirectory() as temp_dir:
         with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
-            dump_task_anno(f, task_data, anno_callback)
+            dump_task_or_job_anno(f, instance_data, anno_callback)
 
         if save_images:
-            dump_media_files(task_data, osp.join(temp_dir, 'images'))
+            dump_media_files(instance_data, osp.join(temp_dir, 'images'))
 
         make_zip_archive(temp_dir, dst_file)
 
@@ -1307,7 +1366,7 @@ def _export_project(dst_file: str, project_data: ProjectData, anno_callback: Cal
 
         if save_images:
             for task_data in project_data.task_data:
-                subset = get_defaulted_subset(task_data.db_task.subset, project_data.subsets)
+                subset = get_defaulted_subset(task_data.db_instance.subset, project_data.subsets)
                 subset_dir = osp.join(temp_dir, 'images', subset)
                 os.makedirs(subset_dir, exist_ok=True)
                 dump_media_files(task_data, subset_dir, project_data)
@@ -1320,7 +1379,7 @@ def _export_video(dst_file, instance_data, save_images=False):
         _export_project(dst_file, instance_data,
             anno_callback=dump_as_cvat_interpolation, save_images=save_images)
     else:
-        _export_task(dst_file, instance_data,
+        _export_task_or_job(dst_file, instance_data,
             anno_callback=dump_as_cvat_interpolation, save_images=save_images)
 
 @exporter(name='CVAT for images', ext='ZIP', version='1.1')
@@ -1329,11 +1388,11 @@ def _export_images(dst_file, instance_data, save_images=False):
         _export_project(dst_file, instance_data,
             anno_callback=dump_as_cvat_annotation, save_images=save_images)
     else:
-        _export_task(dst_file, instance_data,
+        _export_task_or_job(dst_file, instance_data,
             anno_callback=dump_as_cvat_annotation, save_images=save_images)
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
-def _import(src_file, instance_data, load_data_callback=None):
+def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     is_zip = zipfile.is_zipfile(src_file)
     src_file.seek(0)
     if is_zip:

@@ -1,7 +1,7 @@
 ---
 title: 'Track mode (basics)'
 linkTitle: 'Track mode'
-weight: 16
+weight: 18
 description: 'Usage examples and basic operations available during annotation in track mode.'
 ---
 Usage examples:

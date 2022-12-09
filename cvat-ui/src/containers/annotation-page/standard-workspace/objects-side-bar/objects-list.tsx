@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +16,7 @@ import {
     collapseObjectItems,
     changeGroupColorAsync,
     copyShape as copyShapeAction,
-    propagateObject as propagateObjectAction,
+    switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
@@ -52,7 +53,7 @@ interface DispatchToProps {
     collapseStates(states: any[], value: boolean): void;
     removeObject: (objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
-    propagateObject: (objectState: any) => void;
+    switchPropagateVisibility: (visible: boolean) => void;
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
 }
@@ -134,8 +135,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         copyShape(objectState: ObjectState): void {
             dispatch(copyShapeAction(objectState));
         },
-        propagateObject(objectState: ObjectState): void {
-            dispatch(propagateObjectAction(objectState));
+        switchPropagateVisibility(visible: boolean): void {
+            dispatch(switchPropagateVisibilityAction(visible));
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
@@ -152,8 +153,10 @@ function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): numb
         sorted = [...objectStates].sort((a: any, b: any): number => a.clientID - b.clientID);
     } else if (ordering === StatesOrdering.ID_DESCENT) {
         sorted = [...objectStates].sort((a: any, b: any): number => b.clientID - a.clientID);
-    } else {
+    } else if (ordering === StatesOrdering.UPDATED) {
         sorted = [...objectStates].sort((a: any, b: any): number => b.updated - a.updated);
+    } else {
+        sorted = [...objectStates].sort((a: any, b: any): number => a.zOrder - b.zOrder);
     }
 
     return sorted.map((state: any) => state.clientID);
@@ -277,7 +280,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             changeGroupColor,
             removeObject,
             copyShape,
-            propagateObject,
+            switchPropagateVisibility,
             changeFrame,
         } = this.props;
         const { objectStates, sortedStatesID, statesOrdering } = this.state;
@@ -316,12 +319,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             }
         };
 
-        const activatedState = (): ObjectState | null => {
+        const activatedState = (ignoreElements = false): ObjectState | null => {
             if (activatedStateID !== null) {
                 const state = objectStates
                     .find((objectState: ObjectState): boolean => objectState.clientID === activatedStateID);
 
-                if (state && activatedElementID !== null) {
+                if (state && activatedElementID !== null && !ignoreElements) {
                     const element = state.elements
                         .find((_element: ObjectState): boolean => _element.clientID === activatedElementID);
                     return element || null;
@@ -396,7 +399,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly) {
                     removeObject(state, event ? event.shiftKey : false);
                 }
@@ -445,7 +448,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly) {
-                    propagateObject(state);
+                    switchPropagateVisibility(true);
                 }
             },
             NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {

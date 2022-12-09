@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os.path as osp
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -14,8 +13,6 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
-from shared.utils.config import USER_PASS
-
 from .util import make_pbar
 
 
@@ -23,19 +20,20 @@ class TestJobUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
         tmp_path: Path,
+        fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
-        fxt_client: Client,
         fxt_stdout: io.StringIO,
-        admin_user: str,
     ):
         self.tmp_path = tmp_path
-        _, self.logger_stream = fxt_logger
-        self.client = fxt_client
+        logger, self.logger_stream = fxt_logger
         self.stdout = fxt_stdout
-        self.user = admin_user
-        self.client.login((self.user, USER_PASS))
+        self.client, self.user = fxt_login
+        self.client.logger = logger
+
+        api_client = self.client.api_client
+        for k in api_client.configuration.logger:
+            api_client.configuration.logger[k] = logger
 
         yield
 
@@ -47,7 +45,7 @@ class TestJobUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[str(fxt_image_file)],
+            resources=[fxt_image_file],
             data_params={"image_quality": 80},
         )
 
@@ -104,7 +102,7 @@ class TestJobUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
+        path = self.tmp_path / f"task_{task_id}-cvat.zip"
         job_id = fxt_new_task.get_jobs()[0].id
         job = self.client.jobs.retrieve(job_id)
         job.export_dataset(
@@ -115,7 +113,7 @@ class TestJobUsecases:
         )
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
@@ -136,11 +134,11 @@ class TestJobUsecases:
         fxt_new_task.get_jobs()[0].download_frames(
             [0],
             quality=quality,
-            outdir=str(self.tmp_path),
+            outdir=self.tmp_path,
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert osp.isfile(self.tmp_path / "frame-0.jpg")
+        assert (self.tmp_path / "frame-0.jpg").is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
@@ -148,7 +146,7 @@ class TestJobUsecases:
         pbar = make_pbar(file=pbar_out)
 
         fxt_new_task.get_jobs()[0].import_annotations(
-            format_name="COCO 1.0", filename=str(fxt_coco_file), pbar=pbar
+            format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar
         )
 
         assert "uploaded" in self.logger_stream.getvalue()

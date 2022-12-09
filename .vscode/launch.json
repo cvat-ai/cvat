@@ -45,7 +45,10 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "env": {
-                "CVAT_SERVERLESS": "1"
+                "CVAT_SERVERLESS": "1",
+                "ALLOWED_HOSTS": "*",
+                "IAM_OPA_BUNDLE": "1"
+
             },
             "args": [
                 "runserver",
@@ -248,6 +251,21 @@
             "args": [
                 "--schema", "${workspaceFolder}/cvat-sdk/schema/schema.yml",
                 "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "sdk docs: Postprocess generated docs",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/site/process_sdk_docs.py",
+            "args": [
+                "--input-dir", "${workspaceFolder}/cvat-sdk/docs/",
+                "--site-root", "${workspaceFolder}/site/",
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"

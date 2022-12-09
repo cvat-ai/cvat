@@ -56,7 +56,7 @@ helm dependency update
      traefik:
        service:
          externalIPs:
-           - "your minikube IP (can be obtained with `minicube ip` command)"
+           - "your minikube IP (can be obtained with `minikube ip` command)"
      ```
    - Also ensure that your CVAT ingress appears on your hosts file (/etc/hosts).
      You can do this by running this command:
@@ -69,10 +69,6 @@ helm dependency update
 1. Create `values.override.yaml` file inside `helm-chart` directory.
 1. Fill `values.override.yaml` with new parameters for chart.
 1. Override [postgresql password](#postgresql-password)
-1. Create a rules.tar.gz archive containing all OPA rules inside this `helm-chart` directory.
-   ```shell
-   find ../cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | tar -czf rules.tar.gz -C ../cvat/apps/iam/rules/ -T -
-   ```
 
 ### Postgresql password?
 Put below into your `values.override.yaml`
@@ -238,3 +234,53 @@ Just create file `values.override.yaml` and place your changes here, using same 
 Then reference it in helm update/install command using `-f` flag
 ### Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
+### How to use custom domain name with k8s deployment:
+The default value `cvat.local` may be overriden with `--set ingress.hosts[0].host` option like this:
+```shell
+helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml --set ingress.hosts[0].host=YOUR_FQDN
+```
+### How to fix fail of `helm upgrade` due label field is immutable reason?
+If an error message like this:
+```shell
+Error: UPGRADE FAILED:cannot patch "cvat-backend-server" with kind Deployment: Deployment.apps "cvat-backend-server" is invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app":"cvat-app", "app.kubernetes.io/instance":"cvat", "app.kubernetes.io/managed-by":"Helm", "app.kubernetes.io/name":"cvat", "app.kubernetes.io/version":"latest", "component":"server", "helm.sh/chart":"cvat", "tier":"backend"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
+```
+To fix that, delete CVAT Deployments before upgrading
+```shell
+kubectl delete deployments --namespace=foo -l app=cvat-app
+```
+### How to use existing PersistentVolume to store CVAT data instead of default storage
+It is assumed that you have created a PersistentVolumeClaim named `my-claim-name`
+and a PersistentVolume that backing the claim.
+Claims must exist in the same namespace as the Pod using the claim.
+For details [see](https://kubernetes.io/docs/concepts/storage/persistent-volumes).
+Add these values in the `values.override.yaml`:
+```yaml
+cvat:
+  backend:
+    permissionFix:
+      enabled: false
+    defaultStorage:
+      enabled: false
+    server:
+      additionalVolumes:
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: my-claim-name
+    worker:
+      default:
+        additionalVolumes:
+          - name: cvat-backend-data
+            persistentVolumeClaim:
+              claimName: my-claim-name
+      low:
+        additionalVolumes:
+          - name: cvat-backend-data
+            persistentVolumeClaim:
+              claimName: my-claim-name
+    utils:
+      additionalVolumes:
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: my-claim-name
+
+```

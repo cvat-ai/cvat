@@ -7,9 +7,10 @@ import json
 import os
 from pathlib import Path
 
+import packaging.version as pv
 import pytest
 from cvat_cli.cli import CLI
-from cvat_sdk import make_client
+from cvat_sdk import Client, make_client
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
@@ -25,7 +26,7 @@ class TestCLI:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
+        restore_db_per_function,  # force fixture call order to allow DB setup
         fxt_stdout: io.StringIO,
         tmp_path: Path,
         admin_user: str,
@@ -64,13 +65,13 @@ class TestCLI:
         backup_path = self.tmp_path / "backup.zip"
 
         fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
-        fxt_new_task.download_backup(str(backup_path))
+        fxt_new_task.download_backup(backup_path)
 
         yield backup_path
 
     @pytest.fixture
     def fxt_new_task(self):
-        files = generate_images(str(self.tmp_path), 5)
+        files = generate_images(self.tmp_path, 5)
 
         task = self.client.tasks.create_from_data(
             spec={
@@ -99,13 +100,13 @@ class TestCLI:
         return self.stdout.getvalue()
 
     def test_can_create_task_from_local_images(self):
-        files = generate_images(str(self.tmp_path), 5)
+        files = generate_images(self.tmp_path, 5)
 
         stdout = self.run_cli(
             "create",
             "test_task",
             ResourceType.LOCAL.name,
-            *files,
+            *map(os.fspath, files),
             "--labels",
             json.dumps([{"name": "car"}, {"name": "person"}]),
             "--completion_verification_period",
@@ -189,6 +190,17 @@ class TestCLI:
         assert task_id
         assert task_id != fxt_new_task.id
         assert self.client.tasks.retrieve(task_id).size == fxt_new_task.size
+
+    def test_can_warn_on_mismatching_server_version(self, monkeypatch, caplog):
+        def mocked_version(_):
+            return pv.Version("0")
+
+        # We don't actually run a separate process in the tests here, so it works
+        monkeypatch.setattr(Client, "get_server_version", mocked_version)
+
+        self.run_cli("ls")
+
+        assert "Server version '0' is not compatible with SDK version" in caplog.text
 
     @pytest.mark.parametrize("verify", [True, False])
     def test_can_control_ssl_verification_with_arg(self, monkeypatch, verify: bool):

@@ -6,7 +6,7 @@ import * as SVG from 'svg.js';
 import consts from './consts';
 import Crosshair from './crosshair';
 import {
-    translateToSVG, PropType, stringifyPoints, translateToCanvas,
+    translateToSVG, PropType, stringifyPoints, translateToCanvas, expandChannels, imageDataToDataURL,
 } from './shared';
 
 import {
@@ -304,6 +304,33 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 .fill({ opacity: this.selectedShapeOpacity, color: 'white' })
                 .addClass('cvat_canvas_interact_intermediate_shape');
             this.selectize(true, this.drawnIntermediateShape, erroredShape);
+        } else if (shapeType === 'mask') {
+            const [left, top, right, bottom] = points.slice(-4);
+            const imageBitmap = expandChannels(255, 255, 255, points, 4);
+
+            const image = this.canvas.image().attr({
+                'color-rendering': 'optimizeQuality',
+                'shape-rendering': 'geometricprecision',
+                'pointer-events': 'none',
+                opacity: 0.5,
+            }).addClass('cvat_canvas_interact_intermediate_shape');
+            image.move(this.geometry.offset, this.geometry.offset);
+            this.drawnIntermediateShape = image;
+
+            imageDataToDataURL(
+                imageBitmap,
+                right - left + 1,
+                bottom - top + 1,
+                (dataURL: string) => new Promise((resolve, reject) => {
+                    image.loaded(() => {
+                        resolve();
+                    });
+                    image.error(() => {
+                        reject();
+                    });
+                    image.load(dataURL);
+                }),
+            );
         } else {
             throw new Error(
                 `Shape type "${shapeType}" was not implemented at interactionHandler::updateIntermediateShape`,
