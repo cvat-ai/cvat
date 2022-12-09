@@ -66,7 +66,7 @@ The script can be used from the `cvat/server` image:
 ```bash
 docker run -it --rm -u "$(id -u)":"$(id -g)" \
   -v "${PWD}":"/local" \
-  --entrypoint '/usr/bin/bash' \
+  --entrypoint python3 \
   cvat/server \
   utils/dataset_manifest/create.py --output-dir /local /local/<path/to/sources>
 ```
