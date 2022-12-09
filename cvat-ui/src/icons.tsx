@@ -54,6 +54,7 @@ import SVGCVATS3Provider from './assets/S3.svg';
 import SVGCVATGoogleCloudProvider from './assets/google-cloud.svg';
 import SVGRestoreIcon from './assets/restore-icon.svg';
 import SVGMultiPlusIcon from './assets/multi-plus-icon.svg';
+import SVGUpgradeIcon from './assets/upgrade-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -104,3 +105,4 @@ export const S3Provider = React.memo((): JSX.Element => <SVGCVATS3Provider />);
 export const GoogleCloudProvider = React.memo((): JSX.Element => <SVGCVATGoogleCloudProvider />);
 export const RestoreIcon = React.memo((): JSX.Element => <SVGRestoreIcon />);
 export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);
+export const UpgradeIcon = React.memo((): JSX.Element => <SVGUpgradeIcon />);
