@@ -38,7 +38,7 @@ yarn run cypress:run:chrome:canvas3d
 
 # REST API, SDK and CLI tests
 
-## Initial steps
+**Initial steps**
 
 1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
    `cvat-sdk` and `cvat-cli` source code
