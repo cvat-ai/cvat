@@ -11,43 +11,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from random import choice, random, sample
 from urllib.parse import parse_qsl, urlparse
 
-# GITHUB CONFIGURATIONS
-GITHUB_CODE_LENGTH = 20
-GITHUB_AUTH_TOKEN_LENGTH = 40
-
-GITHUB_USER_PROFILE = {
-    "login": (login := "test-user"),
-    "id": (github_uid := int(random() * 100)),
-    "avatar_url": f"https://avatars.example.com/u/{github_uid}",
-    "url": f"https://api.github.com/users/{login}",
-    "html_url": f"https://github.com/{login}",
-    "type": "User",
-    "site_admin": False,
-    "name": "Test User",
-    "location": "Germany, Munich",
-    "email": "github.user@test.com",
-    "hireable": None,
-    "created_at": str(datetime.now()),
-    "updated_at": str(datetime.now()),
-    "two_factor_authentication": False,
-}
-
-# GOOGLE CONFIGURATIONS
-
-GOOGLE_CODE_LENGTH = 70  # in real case 256 bytes
-GOOGLE_AUTH_TOKEN_LENGTH = 100  # in real case 2048 bytes
-
-GOOGLE_USER_PROFILE = {
-    "id": (google_uid := int(random() * 100)),
-    "email": "google.user@gmail.com",
-    "verified_email": True,
-    "name": "Test User",
-    "given_name": "Test",
-    "family_name": "User",
-    "picture": f"https://avatars.example.com/u/{google_uid}",
-    "locale": "en",
-}
-
 
 class CommonRequestHandlerClass(BaseHTTPRequestHandler, ABC):
     def _set_headers(self):
@@ -61,7 +24,6 @@ class CommonRequestHandlerClass(BaseHTTPRequestHandler, ABC):
             self.send_response(403)
             self.end_headers()
             return
-        # TODO: compare token
         self.send_response(200)
         self.end_headers()
 
@@ -69,11 +31,11 @@ class CommonRequestHandlerClass(BaseHTTPRequestHandler, ABC):
 
     @abstractmethod
     def authorize(self, query_params):
-        ...
+        pass
 
     @abstractmethod
     def generate_access_token(self):
-        ...
+        pass
 
     def check_query(self, query_params):
         supported_response_type = "code"
@@ -114,13 +76,36 @@ class GithubRequestHandlerClass(CommonRequestHandlerClass):
     AUTHORIZE_PATH = "/login/oauth/authorize"
     PROFILE_PATH = "/user"
     TOKEN_PATH = "/login/oauth/access_token"
-    PROFILE = GITHUB_USER_PROFILE
+
+    CODE_LENGTH = 20
+    AUTH_TOKEN_LENGTH = 40
+
+    LOGIN = "test-user"
+    UID = int(random() * 100)
+
+    # demo profile not including all information returned by github
+    PROFILE = {
+        "login": LOGIN,
+        "id": UID,
+        "avatar_url": f"https://avatars.github.com/u/{UID}",
+        "url": f"https://api.github.com/users/{LOGIN}",
+        "html_url": f"https://github.com/{LOGIN}",
+        "type": "User",
+        "site_admin": False,
+        "name": "Test User",
+        "location": "Germany, Munich",
+        "email": "github.user@test.com",
+        "hireable": None,
+        "created_at": str(datetime.now()),
+        "updated_at": str(datetime.now()),
+        "two_factor_authentication": False,
+    }
 
     def authorize(self, query_params):
         super().check_query(query_params)
         self.send_response(302)
         redirect_to = query_params["redirect_uri"]
-        generated_code = "".join(sample(string.ascii_lowercase + string.digits, GITHUB_CODE_LENGTH))
+        generated_code = "".join(sample(string.ascii_lowercase + string.digits, self.CODE_LENGTH))
 
         # add query params
         new_query = (
@@ -136,7 +121,7 @@ class GithubRequestHandlerClass(CommonRequestHandlerClass):
         self.send_response(200)
         self.send_header("Content-type", "application/x-www-form-urlencoded; charset=utf-8")
         generated_token = "".join(
-            sample(string.ascii_letters + string.digits, GITHUB_AUTH_TOKEN_LENGTH)
+            sample(string.ascii_letters + string.digits, self.AUTH_TOKEN_LENGTH)
         )
         scope = "read:user,user:email"
         content = f"access_token={generated_token}&scope={scope}&token_type=bearer".encode("utf-8")
@@ -148,14 +133,30 @@ class GoogleRequestHandlerClass(CommonRequestHandlerClass):
     AUTHORIZE_PATH = "/o/oauth2/auth"
     PROFILE_PATH = "/oauth2/v1/userinfo"
     TOKEN_PATH = "/o/oauth2/token"
-    PROFILE = GOOGLE_USER_PROFILE
+
+    CODE_LENGTH = 70  # in real case 256 bytes
+    AUTH_TOKEN_LENGTH = 100  # in real case 2048 bytes
+
+    UID = int(random() * 100)
+
+    # demo profile not including all information returned by google
+    PROFILE = {
+        "id": UID,
+        "email": "google.user@gmail.com",
+        "verified_email": True,
+        "name": "Test User",
+        "given_name": "Test",
+        "family_name": "User",
+        "picture": f"https://avatars.google.com/u/{UID}",
+        "locale": "en",
+    }
 
     def authorize(self, query_params):
         super().check_query(query_params)
         self.send_response(302)
         redirect_to = query_params["redirect_uri"]
         symbols = string.ascii_letters + string.digits
-        generated_code = "".join([choice(symbols) for i in range(GOOGLE_CODE_LENGTH)])
+        generated_code = "".join([choice(symbols) for i in range(self.CODE_LENGTH)])
 
         # add query params
         new_query = (
@@ -171,8 +172,8 @@ class GoogleRequestHandlerClass(CommonRequestHandlerClass):
         self.send_response(200)
         self.send_header("Content-type", "application/json; charset=utf-8")
         symbols = string.ascii_letters + string.digits + string.punctuation
-        generated_token = "".join([choice(symbols) for i in range(GOOGLE_CODE_LENGTH)])
-        id_token = "".join([choice(symbols) for i in range(GOOGLE_CODE_LENGTH)])
+        generated_token = "".join([choice(symbols) for i in range(self.AUTH_TOKEN_LENGTH)])
+        id_token = "".join([choice(symbols) for i in range(self.AUTH_TOKEN_LENGTH)])
         scope = "https://www.googleapis.com/auth/userinfo.profile openid https://www.googleapis.com/auth/userinfo.email"
         content = {
             "access_token": generated_token,
