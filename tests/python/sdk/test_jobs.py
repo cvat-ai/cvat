@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -46,7 +45,7 @@ class TestJobUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[str(fxt_image_file)],
+            resources=[fxt_image_file],
             data_params={"image_quality": 80},
         )
 
@@ -108,7 +107,7 @@ class TestJobUsecases:
         job = self.client.jobs.retrieve(job_id)
         job.export_dataset(
             format_name="CVAT for images 1.1",
-            filename=os.fspath(path),
+            filename=path,
             pbar=pbar,
             include_images=include_images,
         )
@@ -135,7 +134,7 @@ class TestJobUsecases:
         fxt_new_task.get_jobs()[0].download_frames(
             [0],
             quality=quality,
-            outdir=str(self.tmp_path),
+            outdir=self.tmp_path,
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
@@ -147,7 +146,7 @@ class TestJobUsecases:
         pbar = make_pbar(file=pbar_out)
 
         fxt_new_task.get_jobs()[0].import_annotations(
-            format_name="COCO 1.0", filename=str(fxt_coco_file), pbar=pbar
+            format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar
         )
 
         assert "uploaded" in self.logger_stream.getvalue()
