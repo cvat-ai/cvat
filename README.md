@@ -225,7 +225,7 @@ If it's a bug, please add the steps to reproduce it.
 [#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
 questions and get our support.
 
-[contact@cvat.ai](mailto:contact+github@cvat.ai) to reach out to us with feedback, comments, or inquiries.
+[contact@cvat.ai](mailto:contact+github@cvat.ai) to reach out to us if you need commercial support.
 
 ## Links
 
