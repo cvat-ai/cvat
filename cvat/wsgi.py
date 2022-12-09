@@ -44,7 +44,7 @@ if os.environ.get('CVAT_DEBUG_ENABLED') == 'yes':
 
             # The only intended use is in Docker.
             # Using 127.0.0.1 will not allow host connections
-            addr = ('0.0.0.0', port)
+            addr = ('0.0.0.0', port)  # nosec - B104:hardcoded_bind_all_interfaces
 
             try:
                 # Debugpy is a singleton
