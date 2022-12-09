@@ -1391,7 +1391,7 @@ class LimitPermission(OpenPolicyAgentPermission):
             capability: Limits, context: Optional[CapabilityContext]
         ) -> dict:
             status = limit_manager.get_status(limit=capability, context=context)
-            return { 'used': status[0], 'max': status[1] }
+            return { 'used': status.used, 'max': status.max }
 
         for capability, context in self.capabilities:
             data[self._get_capability_name(capability)] = _get_capability_status(

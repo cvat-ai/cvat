@@ -123,7 +123,7 @@ class LimitManager:
             assert context is not None
             context = cast(UserOrgsContext, context)
 
-            return (
+            return LimitStatus(
                 Organization.objects.filter(owner_id=context.user_id).count(),
                 1
             )
@@ -132,7 +132,7 @@ class LimitManager:
             assert context is not None
             context = cast(UserSandboxProjectsContext, context)
 
-            return (
+            return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(owner=context.user_id, organization=None).count(),
                 3
@@ -142,7 +142,7 @@ class LimitManager:
             assert context is not None
             context = cast(OrgProjectsContext, context)
 
-            return (
+            return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
                 3
@@ -152,7 +152,7 @@ class LimitManager:
             assert context is not None
             context = cast(UserSandboxTasksContext, context)
 
-            return (
+            return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(owner=context.user_id, organization=None).count(),
                 10
@@ -162,7 +162,7 @@ class LimitManager:
             assert context is not None
             context = cast(OrgTasksContext, context)
 
-            return (
+            return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(organization=context.org_id).count(),
                 10
@@ -172,7 +172,7 @@ class LimitManager:
             assert context is not None
             context = cast(TasksInUserSandboxProjectContext, context)
 
-            return (
+            return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
                 5
@@ -182,7 +182,7 @@ class LimitManager:
             assert context is not None
             context = cast(TasksInOrgProjectContext, context)
 
-            return (
+            return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
                 5
@@ -192,7 +192,7 @@ class LimitManager:
             assert context is not None
             context = cast(ProjectWebhooksContext, context)
 
-            return (
+            return LimitStatus(
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
                 Webhook.objects.filter(project=context.project_id).count(),
@@ -203,7 +203,7 @@ class LimitManager:
             assert context is not None
             context = cast(OrgCommonWebhooksContext, context)
 
-            return (
+            return LimitStatus(
                 Webhook.objects.filter(organization=context.org_id, project=None).count(),
                 20
             )
@@ -212,7 +212,7 @@ class LimitManager:
             assert context is not None
             context = cast(UserSandboxCloudStoragesContext, context)
 
-            return (
+            return LimitStatus(
                 CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
                 10
             )
@@ -221,7 +221,7 @@ class LimitManager:
             assert context is not None
             context = cast(OrgCloudStoragesContext, context)
 
-            return (
+            return LimitStatus(
                 CloudStorage.objects.filter(organization=context.org_id).count(),
                 10
             )
