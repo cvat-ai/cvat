@@ -746,23 +746,26 @@ class TaskPermission(OpenPolicyAgentPermission):
         if view.basename == 'task':
             project_id = request.data.get('project_id') or request.data.get('project')
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
+            owner = request.data.get('owner_id') or request.data.get('owner')
             for scope in cls.get_scopes(request, view, obj):
+                params = { 'project_id': project_id, 'assignee_id': assignee_id }
+
                 if scope == __class__.Scopes.UPDATE_ORGANIZATION:
                     org_id = request.data.get('organization')
                     if obj is not None and obj.project is not None:
                         raise ValidationError('Cannot change the organization for '
                             'a task inside a project')
                     permissions.append(TaskPermission.create_scope_create(request, org_id))
+                elif scope == __class__.Scopes.UPDATE_OWNER:
+                    params['owner_id'] = owner
 
-                self = cls.create_base_perm(request, view, scope, obj,
-                    project_id=project_id, assignee_id=assignee_id)
+                self = cls.create_base_perm(request, view, scope, obj, **params)
                 permissions.append(self)
 
             if view.action == 'jobs':
                 perm = JobPermission.create_scope_list(request)
                 permissions.append(perm)
 
-            owner = request.data.get('owner_id') or request.data.get('owner')
             if owner:
                 perm = UserPermission.create_scope_view(request, owner)
                 permissions.append(perm)
@@ -1461,12 +1464,12 @@ class LimitPermission(OpenPolicyAgentPermission):
                 org = auto()
                 user = auto()
 
-            if getattr(task, 'organization'):
+            if getattr(task, 'organization', None):
                 old_owner = (OwnerType.org, task.organization.id)
             else:
                 old_owner = (OwnerType.user, task.owner.id)
 
-            if getattr(project, 'organization') is not None:
+            if getattr(project, 'organization', None) is not None:
                 results.append((
                     Limits.TASKS_IN_ORG_PROJECT,
                     TasksInOrgProjectContext(
@@ -1502,13 +1505,13 @@ class LimitPermission(OpenPolicyAgentPermission):
                 org = auto()
                 user = auto()
 
-            if getattr(task, 'organization'):
+            if getattr(task, 'organization', None) is not None:
                 old_owner = (OwnerType.org, task.organization.id)
             else:
                 old_owner = (OwnerType.user, task.owner.id)
 
-            new_owner = getattr(scope, 'owner_id')
-            if new_owner and old_owner != (OwnerType.user, new_owner):
+            new_owner = getattr(scope, 'owner_id', None)
+            if new_owner is not None and old_owner != (OwnerType.user, new_owner):
                 results.append((
                     Limits.USER_SANDBOX_TASKS,
                     UserSandboxTasksContext(user_id=new_owner)
