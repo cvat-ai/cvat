@@ -13,9 +13,6 @@ services:
   google_auth_server:
     image: python:3.9-slim
     restart: always
-    environment:
-      - AUTH_SERVER_HOST="test-google"
-      - AUTH_SERVER_PORT=8083
     ports:
       - '8083:8083'
     command: python3 /tmp/server.py --server "google"
@@ -29,9 +26,6 @@ services:
   github_auth_server:
     image: python:3.9-slim
     restart: always
-    environment:
-      - AUTH_SERVER_HOST="test-github"
-      - AUTH_SERVER_PORT=8084
     ports:
       - '8084:8084'
     command: python3 /tmp/server.py --server "github"
