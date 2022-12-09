@@ -311,7 +311,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         if (this.data.activeElement.clientID === clientID && this.data.activeElement.attributeID === attributeID) {
             return;
         }
-        if (this.data.mode !== Mode.IDLE) {
+        if (this.data.mode !== Mode.IDLE && clientID !== null) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
         if (typeof clientID === 'number') {

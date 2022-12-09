@@ -39,6 +39,7 @@ interface Props {
     contextMenuVisibility: boolean;
     activeLabelID: number;
     activeObjectType: ObjectType;
+    activatedStateID: number | null;
     onSetupCanvas: () => void;
     onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
@@ -182,6 +183,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         frame,
         jobInstance,
         activeLabelID,
+        activatedStateID,
         resetZoom,
         activeObjectType,
         onShapeDrawn,
@@ -335,6 +337,10 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             cancelAnimationFrame(animateId.current);
         };
     }, []);
+
+    useEffect(() => {
+        canvasInstance.activate(activatedStateID);
+    }, [activatedStateID]);
 
     useEffect(() => {
         canvasInstance.configure({ resetZoom });
