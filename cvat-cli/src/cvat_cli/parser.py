@@ -313,7 +313,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         dest="status_check_period",
         default=2,
         type=float,
-        help="time interval between checks if archive proessing was finished, in seconds",
+        help="time interval between checks if archive processing was finished, in seconds",
     )
 
     return parser
