@@ -620,7 +620,6 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             'AUTH_PARAMS': {
                 'access_type': 'online',
             },
-            'TESTING': os.getenv('TESTING', False)
         },
         'github': {
             'APP': {
@@ -629,6 +628,5 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
-            'TESTING': os.getenv('TESTING', False),
         },
     }

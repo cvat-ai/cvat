@@ -29,6 +29,7 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                 .catch((exception: Error) => {
                     if (exception.message.includes('Unverified email')) {
                         history.push('/auth/email-verification-sent');
+                        return Promise.resolve();
                     }
                     history.push('/auth/login');
                     notification.error({

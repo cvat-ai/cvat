@@ -96,5 +96,27 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.url().should('include', '/auth/login');
             cy.closeNotification('.cvat-notification-notice-login-failed');
         });
+
+        it('Login with Google. Logout', () => {
+            cy.visit('auth/login');
+            let username = '';
+            cy.get('.cvat-social-authentication-google').should('be.visible').click();
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(3000);
+            cy.get('.cvat-right-header').within(() => {
+                cy.get('.cvat-header-menu-user-dropdown-user').should(($div) => {
+                    username = $div.text();
+                });
+            }).then(() => {
+                cy.logout(username);
+            });
+        });
+
+        it('Try to login with Github. Check the page with the notification that email confirmation is required', () => {
+            cy.get('.cvat-social-authentication-github').should('be.visible').click();
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(3000);
+            cy.get('#email-verification-sent-page-container').should('exist');
+        });
     });
 });

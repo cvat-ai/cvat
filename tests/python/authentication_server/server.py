@@ -57,7 +57,7 @@ class CommonRequestHandlerClass(BaseHTTPRequestHandler, ABC):
         self.send_response(406)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(f'Unsupported request. Path: {self.path} token_path: {self.TOKEN_PATH}'.encode("utf8"))
+        self.wfile.write(f'Unsupported request. Path: {self.path}'.encode("utf8"))
 
     def get_profile(self, token=None):
         if not token:
@@ -68,7 +68,7 @@ class CommonRequestHandlerClass(BaseHTTPRequestHandler, ABC):
         self.send_response(200)
         self.end_headers()
 
-        self.wfile.write(json.dumps(GOOGLE_USER_PROFILE).encode('utf-8'))
+        self.wfile.write(json.dumps(self.PROFILE).encode('utf-8'))
 
     @abstractmethod
     def authorize(self, query_params):
@@ -108,12 +108,10 @@ class CommonRequestHandlerClass(BaseHTTPRequestHandler, ABC):
             return self.generate_access_token()
         self._set_headers()
 
-
-
 class GithubRequestHandlerClass(CommonRequestHandlerClass):
     AUTHORIZE_PATH = '/login/oauth/authorize'
-    PROFILE_PATH = '/api/v3/user'
-    TOKEN_PATH = '/login/oauth/access_token/'
+    PROFILE_PATH = '/user'
+    TOKEN_PATH = '/login/oauth/access_token'
     PROFILE = GITHUB_USER_PROFILE
 
     def authorize(self, query_params):

@@ -40,7 +40,7 @@ class SocialAccountAdapterEx(DefaultSocialAccountAdapter):
         return
 
 class GitHubAdapter(GitHubOAuth2Adapter):
-    if not settings.SOCIALACCOUNT_PROVIDERS['github'].get('TESTING'):
+    if not hasattr(settings, 'SOCIALACCOUNT_PROVIDERS') or not settings.SOCIALACCOUNT_PROVIDERS['github'].get('TESTING'):
         access_token_url = GitHubOAuth2Adapter.access_token_url
         authorize_url = GitHubOAuth2Adapter.authorize_url
         profile_url = GitHubOAuth2Adapter.profile_url
@@ -55,7 +55,7 @@ class GitHubAdapter(GitHubOAuth2Adapter):
         return settings.GITHUB_CALLBACK_URL
 
 class GoogleAdapter(GoogleOAuth2Adapter):
-    if not settings.SOCIALACCOUNT_PROVIDERS['google'].get('TESTING'):
+    if not hasattr(settings, 'SOCIALACCOUNT_PROVIDERS') or not settings.SOCIALACCOUNT_PROVIDERS['google'].get('TESTING'):
         access_token_url = GoogleOAuth2Adapter.access_token_url
         authorize_url = GoogleOAuth2Adapter.authorize_url
         profile_url = GoogleOAuth2Adapter.profile_url
