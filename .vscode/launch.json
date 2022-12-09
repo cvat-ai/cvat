@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python tests: Attach server",
+            "name": "REST API tests: Attach to server",
             "type": "python",
             "request": "attach",
             "connect": {
@@ -25,7 +25,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python tests: Attach RQ low",
+            "name": "REST API tests: Attach to RQ low",
             "type": "python",
             "request": "attach",
             "connect": {
@@ -45,7 +45,7 @@
             "justMyCode": false,
         },
         {
-            "name": "Python tests: Attach RQ default",
+            "name": "REST API tests: Attach to RQ default",
             "type": "python",
             "request": "attach",
             "connect": {
