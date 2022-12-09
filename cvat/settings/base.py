@@ -249,6 +249,7 @@ IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
 IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+IAM_USER_LIMITS_ENABLED = True
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
