@@ -864,7 +864,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (
                 color !== data.color ||
                 label.id !== data.labelID ||
-                group.id !== data.groupID
+                group.id !== data.groupID ||
+                group.color !== data.groupColor
             ) {
                 const newColor = this.receiveShapeColor(state);
                 cuboid.setOriginalColor(newColor);
