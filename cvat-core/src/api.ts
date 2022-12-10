@@ -258,6 +258,26 @@ function build() {
                 return result;
             },
             /**
+             * Method allows to health check the server
+             * @method healthCheck
+             * @async
+             * @memberof module:API.cvat.server
+             * @param {number} requestTimeout
+             * @returns {Object | undefined} response data if exist
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async healthCheck(maxRetries = 1, checkPeriod = 3000, requestTimeout = 5000, progressCallback = undefined) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.healthCheck,
+                    maxRetries,
+                    checkPeriod,
+                    requestTimeout,
+                    progressCallback,
+                );
+                return result;
+            },
+            /**
              * Method allows to do requests via cvat-core with authorization headers
              * @method request
              * @async
