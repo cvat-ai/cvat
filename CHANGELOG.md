@@ -23,6 +23,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
 - A PyTorch dataset adapter layer in the SDK
   (<https://github.com/opencv/cvat/pull/5417>)
+- A way to debug the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
