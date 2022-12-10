@@ -13,6 +13,7 @@ on:
 
 env:
   WORKFLOW_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
 
 jobs:
   search_cache:
@@ -195,7 +196,7 @@ jobs:
 
       - name: Running REST API and SDK tests
         run: |
-          pip3 install --user /tmp/cvat_sdk/
+          pip3 install --user '/tmp/cvat_sdk/[pytorch]'
           pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python -s -v
@@ -242,6 +243,9 @@ jobs:
 
       - name: Running OPA tests
         run: |
+          python cvat/apps/iam/rules/tests/generate_tests.py \
+            --output-dir cvat/apps/iam/rules/
+
           curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
           chmod +x ./opa
           ./opa test cvat/apps/iam/rules

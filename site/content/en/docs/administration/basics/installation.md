@@ -137,7 +137,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
   needed.
 
-- Download and install [Docker Desktop for Windows](https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe).
+- Download and install [Docker Desktop for Windows](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe).
   Double-click `Docker for Windows Installer` to run the installer.
   More instructions can be found [here](https://docs.docker.com/docker-for-windows/install/).
   Official guide for docker WSL2 backend can be found
@@ -343,6 +343,21 @@ To download specific tag:
 curl -LO https://github.com/opencv/cvat/archive/refs/tags/v1.7.0.zip
 unzip v1.7.0.zip && mv cvat-1.7.0 cvat
 cd cvat
+```
+
+### CVAT healthcheck command
+The following command allows to test the CVAT container to make sure it works.
+```shell
+docker exec -t cvat_server python manage.py health_check
+```
+Expected output of a healthy CVAT container:
+```shell
+Cache backend: default   ... working
+DatabaseBackend          ... working
+DiskUsage                ... working
+MemoryUsage              ... working
+MigrationsHealthCheck    ... working
+OPAHealthCheck           ... working
 ```
 
 ### Deploying CVAT behind a proxy

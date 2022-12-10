@@ -53,10 +53,10 @@ except ImportError:
 def generate_ssh_keys():
     keys_dir = '{}/keys'.format(os.getcwd())
     ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
-    pidfile = os.path.join(ssh_dir, 'ssh.pid')
+    pidfile = os.path.join(keys_dir, 'ssh.pid')
 
     def add_ssh_keys():
-        IGNORE_FILES = ('README.md', 'ssh.pid')
+        IGNORE_FILES = ('README.md',)
         keys_to_add = [entry.name for entry in os.scandir(ssh_dir) if entry.name not in IGNORE_FILES]
         keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
         subprocess.run(['ssh-add {}'.format(keys_to_add)], # nosec
@@ -124,6 +124,11 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.google',
     'dj_rest_auth.registration',
+    'health_check',
+    'health_check.db',
+    'health_check.cache',
+    'health_check.contrib.migrations',
+    'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.organizations',
@@ -132,6 +137,7 @@ INSTALLED_APPS = [
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
+    'cvat.apps.health',
 ]
 
 SITE_ID = 1
@@ -246,7 +252,8 @@ IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
+IAM_OPA_HOST = 'http://opa:8181'
+IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
@@ -297,9 +304,9 @@ RQ_QUEUES = {
 NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
-    'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120),
-    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
+    'PORT': int(os.getenv('CVAT_NUCLIO_PORT', 8070)),
+    'DEFAULT_TIMEOUT': int(os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)),
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio')
 }
 
 RQ_SHOW_ADMIN_LINK = True

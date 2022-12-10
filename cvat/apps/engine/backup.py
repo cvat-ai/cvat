@@ -23,6 +23,7 @@ from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from django_sendfile import sendfile
 from distutils.util import strtobool
 
@@ -39,9 +40,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.task import _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
-from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage
-)
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
 
@@ -798,7 +797,12 @@ def export(db_instance, request):
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                         storage = db_storage_to_storage_instance(db_storage)
 
-                        export_to_cloud_storage(storage, file_path, filename)
+                        try:
+                            storage.upload_file(file_path, filename)
+                        except (ValidationError, PermissionDenied, NotFound) as ex:
+                            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                                '\n'.join([str(d) for d in ex.detail])
+                            return Response(data=msg, status=ex.status_code)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()
@@ -826,7 +830,7 @@ def export(db_instance, request):
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    data = import_from_cloud_storage(storage, key)
+    data = storage.download_fileobj(key)
     with open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 

@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import errno
 import io
 import os
 import os.path as osp
@@ -25,6 +24,9 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 
+from dj_rest_auth.models import get_token_model
+from dj_rest_auth.app_settings import create_token
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
@@ -34,19 +36,15 @@ from drf_spectacular.plumbing import build_array_type, build_basic_type
 
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
 from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.engine.cloud_provider import (
-    db_storage_to_storage_instance, import_from_cloud_storage, export_to_cloud_storage,
-    Status as CloudStorageStatus
-)
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -60,7 +58,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
+    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer, SelfUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
@@ -70,7 +68,9 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
+from cvat.apps.engine.utils import (
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
+)
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
@@ -671,53 +671,58 @@ class DataChunkGetter:
 
         frame_provider = FrameProvider(db_data, self.dimension)
 
-        if self.type == 'chunk':
-            start_chunk = frame_provider.get_chunk_number(start)
-            stop_chunk = frame_provider.get_chunk_number(stop)
-            # pylint: disable=superfluous-parens
-            if not (start_chunk <= self.number <= stop_chunk):
-                raise ValidationError('The chunk number should be in ' +
-                    f'[{start_chunk}, {stop_chunk}] range')
+        try:
+            if self.type == 'chunk':
+                start_chunk = frame_provider.get_chunk_number(start)
+                stop_chunk = frame_provider.get_chunk_number(stop)
+                # pylint: disable=superfluous-parens
+                if not (start_chunk <= self.number <= stop_chunk):
+                    raise ValidationError('The chunk number should be in ' +
+                        f'[{start_chunk}, {stop_chunk}] range')
 
-            # TODO: av.FFmpegError processing
-            if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-                buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
-                return HttpResponse(buff.getvalue(), content_type=mime_type)
+                # TODO: av.FFmpegError processing
+                if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+                    buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
+                    return HttpResponse(buff.getvalue(), content_type=mime_type)
 
-            # Follow symbol links if the chunk is a link on a real image otherwise
-            # mimetype detection inside sendfile will work incorrectly.
-            path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
-            return sendfile(request, path)
+                # Follow symbol links if the chunk is a link on a real image otherwise
+                # mimetype detection inside sendfile will work incorrectly.
+                path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
+                return sendfile(request, path)
 
-        elif self.type == 'frame':
-            if not (start <= self.number <= stop):
-                raise ValidationError('The frame number should be in ' +
-                    f'[{start}, {stop}] range')
+            elif self.type == 'frame':
+                if not (start <= self.number <= stop):
+                    raise ValidationError('The frame number should be in ' +
+                        f'[{start}, {stop}] range')
 
-            buf, mime = frame_provider.get_frame(self.number, self.quality)
-            return HttpResponse(buf.getvalue(), content_type=mime)
+                buf, mime = frame_provider.get_frame(self.number, self.quality)
+                return HttpResponse(buf.getvalue(), content_type=mime)
 
-        elif self.type == 'preview':
-            return sendfile(request, db_object.get_preview_path())
+            elif self.type == 'preview':
+                return sendfile(request, db_object.get_preview_path())
 
-        elif self.type == 'context_image':
-            if not (start <= self.number <= stop):
-                raise ValidationError('The frame number should be in ' +
-                    f'[{start}, {stop}] range')
+            elif self.type == 'context_image':
+                if not (start <= self.number <= stop):
+                    raise ValidationError('The frame number should be in ' +
+                        f'[{start}, {stop}] range')
 
-            image = Image.objects.get(data_id=db_data.id, frame=self.number)
-            for i in image.related_files.all():
-                path = os.path.realpath(str(i.path))
-                image = cv2.imread(path)
-                success, result = cv2.imencode('.JPEG', image)
-                if not success:
-                    raise Exception('Failed to encode image to ".jpeg" format')
-                return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-            return Response(data='No context image related to the frame',
-                status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(data='unknown data type {}.'.format(self.type),
-                status=status.HTTP_400_BAD_REQUEST)
+                image = Image.objects.get(data_id=db_data.id, frame=self.number)
+                for i in image.related_files.all():
+                    path = os.path.realpath(str(i.path))
+                    image = cv2.imread(path)
+                    success, result = cv2.imencode('.JPEG', image)
+                    if not success:
+                        raise Exception('Failed to encode image to ".jpeg" format')
+                    return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
+                return Response(data='No context image related to the frame',
+                    status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response(data='unknown data type {}.'.format(self.type),
+                    status=status.HTTP_400_BAD_REQUEST)
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
+            return Response(data=msg, status=ex.status_code)
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -1058,6 +1063,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             ), description='Download of file started'),
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
+            '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PUT'], summary='Method allows to upload task annotations',
@@ -1117,14 +1123,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def annotations(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
-            return self.export_annotations(
-                request=request,
-                pk=pk,
-                db_obj=self._object,
-                export_func=_export_annotations,
-                callback=dm.views.export_task_annotations,
-                get_data=dm.task.get_task_data,
-            )
+            if self._object.data:
+                return self.export_annotations(
+                    request=request,
+                    pk=pk,
+                    db_obj=self._object,
+                    export_func=_export_annotations,
+                    callback=dm.views.export_task_annotations,
+                    get_data=dm.task.get_task_data,
+                )
+            else:
+                return Response(data="Exporting annotations from a task without data is not allowed",
+                    status=status.HTTP_400_BAD_REQUEST)
         elif request.method == 'POST' or request.method == 'OPTIONS':
             return self.import_annotations(
                 request=request,
@@ -1213,10 +1223,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif job.is_queued:
             response = { "state": "Queued" }
         elif job.is_failed:
-            response = { "state": "Failed", "message": job.exc_info }
+            # FIXME: It seems that in some cases exc_info can be None.
+            # It's not really clear how it is possible, but it can
+            # lead to an error in serializing the response
+            # https://github.com/opencv/cvat/issues/5215
+            response = { "state": "Failed", "message": parse_exception_message(job.exc_info or "Unknown error") }
         else:
             response = { "state": "Started" }
-            if 'status' in job.meta:
+            if job.meta.get('status'):
                 response['message'] = job.meta['status']
             response['progress'] = job.meta.get('task_progress', 0.)
 
@@ -1287,6 +1301,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
+            '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET'], serializer_class=None,
@@ -1294,13 +1309,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def dataset_export(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
 
-        return self.export_annotations(
-            request=request,
-            pk=pk,
-            db_obj=self._object,
-            export_func=_export_annotations,
-            callback=dm.views.export_task_as_dataset
-        )
+        if self._object.data:
+            return self.export_annotations(
+                request=request,
+                pk=pk,
+                db_obj=self._object,
+                export_func=_export_annotations,
+                callback=dm.views.export_task_as_dataset)
+        else:
+            return Response(data="Exporting a dataset from a task without data is not allowed",
+                status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
@@ -1917,21 +1935,21 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return UserSerializer
 
         user = self.request.user
+        is_self = int(self.kwargs.get("pk", 0)) == user.id or \
+            self.action == "self"
         if user.is_staff:
-            return UserSerializer
+            return UserSerializer if not is_self else SelfUserSerializer
         else:
-            is_self = int(self.kwargs.get("pk", 0)) == user.id or \
-                self.action == "self"
             if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
+                return SelfUserSerializer
             else:
                 return BasicUserSerializer
 
     @extend_schema(summary='Method returns an instance of a user who is currently authorized',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(component_name='MetaSelfUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
+                    SelfUserSerializer, BasicUserSerializer,
                 ], resource_type_field_name=None),
         })
     @action(detail=False, methods=['GET'])
@@ -1939,6 +1957,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         """
         Method returns an instance of a user who is currently authorized
         """
+        token_model = get_token_model()
+        token = create_token(token_model, request.user, None)
+        request.user.key = token
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
@@ -2049,16 +2070,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
             if not db_storage.manifests.count():
-                raise Exception('There is no manifest file')
+                raise ValidationError('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
             manifest_prefix = os.path.dirname(manifest_path)
-            file_status = storage.get_file_status(manifest_path)
-            if file_status == CloudStorageStatus.NOT_FOUND:
-                raise FileNotFoundError(errno.ENOENT,
-                    "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
-            elif file_status == CloudStorageStatus.FORBIDDEN:
-                raise PermissionError(errno.EACCES,
-                    "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), manifest_path)
 
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
             if not os.path.exists(full_manifest_path) or \
@@ -2074,20 +2088,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except FileNotFoundError as ex:
-            msg = f"{ex.strerror} {ex.filename}"
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
             slogger.cloud_storage[pk].info(msg)
-            return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
+            return Response(data=msg, status=ex.status_code)
         except Exception as ex:
-            # check that cloud storage was not deleted
-            storage_status = storage.get_status() if storage else None
-            if storage_status == CloudStorageStatus.FORBIDDEN:
-                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
-            elif storage_status == CloudStorageStatus.NOT_FOUND:
-                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
-            else:
-                msg = str(ex)
-            return HttpResponseBadRequest(msg)
+            slogger.glob.error(str(ex))
+            return Response("An internal error has occurred",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Method returns a preview image from a cloud storage',
         responses={
@@ -2101,7 +2110,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if not os.path.exists(db_storage.get_preview_path()):
                 storage = db_storage_to_storage_instance(db_storage)
                 if not db_storage.manifests.count():
-                    raise Exception('Cannot get the cloud storage preview. There is no manifest file')
+                    raise ValidationError('Cannot get the cloud storage preview. There is no manifest file')
                 preview_path = None
                 for manifest_model in db_storage.manifests.all():
                     manifest_prefix = os.path.dirname(manifest_model.filename)
@@ -2126,13 +2135,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     slogger.cloud_storage[pk].info(msg)
                     return HttpResponseBadRequest(msg)
 
-                file_status = storage.get_file_status(preview_path)
-                if file_status == CloudStorageStatus.NOT_FOUND:
-                    raise FileNotFoundError(errno.ENOENT,
-                        "Not found on the cloud storage {}".format(db_storage.display_name), preview_path)
-                elif file_status == CloudStorageStatus.FORBIDDEN:
-                    raise PermissionError(errno.EACCES,
-                        "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), preview_path)
                 with NamedTemporaryFile() as temp_image:
                     storage.download_file(preview_path, temp_image.name)
                     reader = ImageListReader([temp_image.name])
@@ -2144,18 +2146,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except PermissionDenied:
-            raise
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
+            slogger.cloud_storage[pk].info(msg)
+            return Response(data=msg, status=ex.status_code)
         except Exception as ex:
-            # check that cloud storage was not deleted
-            storage_status = storage.get_status() if storage else None
-            if storage_status == CloudStorageStatus.FORBIDDEN:
-                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
-            elif storage_status == CloudStorageStatus.NOT_FOUND:
-                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
-            else:
-                msg = str(ex)
-            return HttpResponseBadRequest(msg)
+            slogger.glob.error(str(ex))
+            return Response("An internal error has occurred",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Method returns a cloud storage status',
         responses={
@@ -2167,7 +2166,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
             storage_status = storage.get_status()
-            return HttpResponse(storage_status)
+            return Response(storage_status)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
@@ -2210,7 +2209,7 @@ def rq_handler(job, exc_type, exc_value, tb):
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    data = import_from_cloud_storage(storage, key)
+    data = storage.download_fileobj(key)
     with open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
@@ -2348,7 +2347,12 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                         storage = db_storage_to_storage_instance(db_storage)
 
-                        export_to_cloud_storage(storage, file_path, filename)
+                        try:
+                            storage.upload_file(file_path, filename)
+                        except (ValidationError, PermissionDenied, NotFound) as ex:
+                            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                                '\n'.join([str(d) for d in ex.detail])
+                            return Response(data=msg, status=ex.status_code)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()

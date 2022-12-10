@@ -9,6 +9,9 @@ description: 'Instructions for upgrading CVAT deployed with docker compose'
 
 ## Upgrade guide
 
+Note: updating CVAT from version 2.2.0 to version 2.3.0 requires additional manual actions with database data due to
+upgrading PostgreSQL base image major version. See details [here](#how-to-upgrade-postgresql-database-base-image)
+
 To upgrade CVAT, follow these steps:
 
 - It is highly recommended backup all CVAT data before updating, follow the
@@ -69,3 +72,43 @@ docker pull cvat/ui:v2.1.0
 docker tag cvat/ui:v2.1.0 openvino/cvat_ui:latest
 docker-compose up -d
 ```
+## How to upgrade PostgreSQL database base image
+
+1. It is highly recommended backup all CVAT data before updating, follow the
+   [backup guide](/docs/administration/advanced/backup_guide/) and backup CVAT database volume.
+
+1. Run previosly used CVAT version as usual
+
+1. Backup current database with `pg_dumpall` tool:
+   ```shell
+   docker exec -it cvat_db pg_dumpall > cvat.db.dump
+   ```
+
+1. Stop CVAT:
+   ```shell
+   docker-compose down
+   ```
+
+1. Delete current PostrgeSQL’s volume, that's why it's important to have a backup:
+   ```shell
+   docker volume rm cvat_cvat_db
+   ```
+
+1. Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
+   Check the
+   [installation guide](/docs/administration/basics/installation/#how-to-get-cvat-source-code) for details.
+
+1. Start database container only:
+   ```shell
+   docker-compose up -d cvat_db
+   ```
+
+1. Import PostgreSQL dump into new DB container:
+   ```shell
+   docker exec -i cvat_db psql -q -d postgres < cvat.db.dump
+   ```
+
+1. Start CVAT:
+   ```shell
+   docker-compose up -d
+   ```
