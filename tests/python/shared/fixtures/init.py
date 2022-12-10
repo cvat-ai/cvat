@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import os.path as osp
 import re
 from http import HTTPStatus
+from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
 
@@ -14,12 +13,12 @@ import requests
 
 from shared.utils.config import ASSETS_DIR, get_api_url
 
-CVAT_ROOT_DIR = __file__[: __file__.rfind(osp.join("tests", ""))]
-CVAT_DB_DIR = osp.join(ASSETS_DIR, "cvat_db")
+CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
+CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = [
-    osp.join(CVAT_ROOT_DIR, dc_file)
+    CVAT_ROOT_DIR / dc_file
     for dc_file in (
         "components/analytics/docker-compose.analytics.tests.yml",
         "docker-compose.tests.yml",
@@ -27,12 +26,12 @@ CONTAINER_NAME_FILES = [
 ]
 
 DC_FILES = [
-    osp.join(CVAT_ROOT_DIR, dc_file)
+    CVAT_ROOT_DIR / dc_file
     for dc_file in (
         "docker-compose.dev.yml",
         "tests/docker-compose.file_share.yml",
         "tests/docker-compose.minio.yml",
-        "tests/docker-compose.webhook.yml",
+        "tests/docker-compose.test_servers.yml",
     )
 ] + CONTAINER_NAME_FILES
 
@@ -157,7 +156,7 @@ def running_containers():
 def dump_db():
     if "test_cvat_server_1" not in running_containers():
         pytest.exit("CVAT is not running")
-    with open(osp.join(CVAT_DB_DIR, "data.json"), "w") as f:
+    with open(CVAT_DB_DIR / "data.json", "w") as f:
         try:
             run(  # nosec
                 "docker exec test_cvat_server_1 \
@@ -173,7 +172,9 @@ def dump_db():
 
 def create_compose_files():
     for filename in CONTAINER_NAME_FILES:
-        with open(filename.replace(".tests.yml", ".yml"), "r") as dcf, open(filename, "w") as ndcf:
+        with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
+            filename, "w"
+        ) as ndcf:
             ndcf.writelines(
                 [line for line in dcf.readlines() if not re.match("^.+container_name.+$", line)]
             )
@@ -181,8 +182,7 @@ def create_compose_files():
 
 def delete_compose_files():
     for filename in CONTAINER_NAME_FILES:
-        if osp.exists(filename):
-            os.remove(filename)
+        filename.unlink(missing_ok=True)
 
 
 def wait_for_server():
@@ -195,7 +195,7 @@ def wait_for_server():
 
 def docker_restore_data_volumes():
     docker_cp(
-        osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"),
+        CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
     docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
@@ -204,7 +204,7 @@ def docker_restore_data_volumes():
 def kube_restore_data_volumes():
     pod_name = _kube_get_server_pod_name()
     kube_cp(
-        osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"),
+        CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{pod_name}:/tmp/cvat_data.tar.bz2",
     )
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
@@ -218,17 +218,24 @@ def start_services(rebuild=False):
         )
 
     _run(
-        f"docker-compose -p {PREFIX} "
-        + "--env-file "
-        + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
-        + f" -f {' -f '.join(DC_FILES)} up -d "
-        + "--build" * rebuild,
+        [
+            "docker-compose",
+            f"--project-name={PREFIX}",
+            # use compatibility mode to have fixed names for containers (with underscores)
+            # https://github.com/docker/compose#about-update-and-backward-compatibility
+            "--compatibility",
+            f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}",
+            *(f"--file={f}" for f in DC_FILES),
+            "up",
+            "-d",
+            *["--build"] * rebuild,
+        ],
         capture_output=False,
     )
 
     docker_restore_data_volumes()
-    docker_cp(osp.join(CVAT_DB_DIR, "restore.sql"), f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-    docker_cp(osp.join(CVAT_DB_DIR, "data.json"), f"{PREFIX}_cvat_server_1:/tmp/data.json")
+    docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
+    docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -258,16 +265,23 @@ def services(request):
             delete_compose_files()
             pytest.exit("All generated test files have been deleted", returncode=0)
 
-        if not all([osp.exists(f) for f in CONTAINER_NAME_FILES]) or rebuild:
+        if not all([f.exists() for f in CONTAINER_NAME_FILES]) or rebuild:
             delete_compose_files()
             create_compose_files()
 
         if stop:
             _run(
-                f"docker-compose -p {PREFIX} "
-                + "--env-file "
-                + osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env")
-                + f" -f {' -f '.join(DC_FILES)} down -v",
+                [
+                    "docker-compose",
+                    f"--project-name={PREFIX}",
+                    # use compatibility mode to have fixed names for containers (with underscores)
+                    # https://github.com/docker/compose#about-update-and-backward-compatibility
+                    "--compatibility",
+                    f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}",
+                    *(f"--file={f}" for f in DC_FILES),
+                    "down",
+                    "-v",
+                ],
                 capture_output=False,
             )
             pytest.exit("All testing containers are stopped", returncode=0)
@@ -292,8 +306,8 @@ def services(request):
         kube_restore_data_volumes()
         server_pod_name = _kube_get_server_pod_name()
         db_pod_name = _kube_get_db_pod_name()
-        kube_cp(osp.join(CVAT_DB_DIR, "restore.sql"), f"{db_pod_name}:/tmp/restore.sql")
-        kube_cp(osp.join(CVAT_DB_DIR, "data.json"), f"{server_pod_name}:/tmp/data.json")
+        kube_cp(CVAT_DB_DIR / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
+        kube_cp(CVAT_DB_DIR / "data.json", f"{server_pod_name}:/tmp/data.json")
 
         wait_for_server()
 

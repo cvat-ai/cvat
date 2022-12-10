@@ -62,7 +62,9 @@ Cypress.Commands.add('activateOrganization', (organizationShortName) => {
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
         .trigger('mouseover');
-    cy.contains('.cvat-header-menu-organization-item', organizationShortName).click();
+    cy.contains('.cvat-header-menu-organization-item', organizationShortName)
+        .should('be.visible')
+        .click();
     cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
     cy.get('.cvat-header-menu-user-dropdown-organization')
         .should('exist')

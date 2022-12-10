@@ -63,22 +63,22 @@ spec:
           - name: CVAT_POSTGRES_HOST
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-hostname
           - name: CVAT_POSTGRES_USER
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-username
           - name: CVAT_POSTGRES_DBNAME
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-database
           - name: CVAT_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-password
           {{- else }}
           - name: CVAT_POSTGRES_HOST

@@ -1,6 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/* eslint-disable cypress/no-unnecessary-waiting */
 
 /// <reference types="cypress" />
 
@@ -75,9 +78,33 @@ context('Canvas 3D functionality. Basic actions.', () => {
 
     before(() => {
         cy.openTaskJob(taskName);
+        cy.wait(2000); // Waiting for the point cloud to display
     });
 
     describe(`Testing case "${caseId}"`, () => {
+        it.skip('Check canvas can be zoomed.', () => {
+            // after some investigations it is clear that tests do not work for 3D
+            // in headless mode, need more time to investigate
+            const screenshotNameBefore = 'before_idle_zoom';
+            const screenshotNameAfter = 'after_idle_zoom';
+            cy.screenshot(screenshotNameBefore, {
+                onAfterScreenshot: () => {
+                    cy.get('.cvat-canvas3d-perspective').should('exist').and('be.visible')
+                        .within(() => {
+                            cy.get('canvas').trigger('wheel', { deltaY: -500 });
+                            cy.screenshot(screenshotNameAfter, {
+                                onAfterScreenshot: () => {
+                                    cy.compareImagesAndCheckResult(
+                                        `${screenshotsPath}/${screenshotNameBefore}.png`,
+                                        `${screenshotsPath}/${screenshotNameAfter}.png`,
+                                    );
+                                },
+                            });
+                        });
+                },
+            });
+        });
+
         it('Check existing of elements.', () => {
             cy.get('.cvat-canvas3d-perspective')
                 .should('exist')
