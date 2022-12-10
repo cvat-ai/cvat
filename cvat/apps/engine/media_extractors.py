@@ -5,7 +5,6 @@
 import os
 import tempfile
 import shutil
-from typing import List
 import zipfile
 import io
 import itertools
