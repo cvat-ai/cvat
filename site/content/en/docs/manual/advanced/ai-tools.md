@@ -42,7 +42,7 @@ When creating a polygon, you can use positive (regular) points
 or negative points (for some models):
 
 - Positive points are the points related to the object.
-- Negative points should be placed outside the boundary of the object.
+- Negative points should be placed outside the object.
 
 ![](/images/image188_detrac.jpg)
 
