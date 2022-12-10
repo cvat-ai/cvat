@@ -53,12 +53,6 @@ class UserSerializer(serializers.ModelSerializer):
             'last_login': { 'allow_null': True }
         }
 
-class SelfUserSerializer(UserSerializer):
-    key = serializers.CharField(allow_blank=True, required=False)
-
-    class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ('key',)
-
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
         child=serializers.CharField(max_length=200),

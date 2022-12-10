@@ -50,3 +50,4 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     GITHUB_CALLBACK_URL = f'{UI_URL}/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = f'{UI_URL}/api/auth/google/login/callback/'
     SOCIALACCOUNT_CALLBACK_CANCELLED_URL = f'{UI_URL}/auth/login'
+    SOCIAL_APP_LOGIN_REDIRECT_URL = f'{UI_URL}/auth/login-with-social-app'

@@ -127,6 +127,17 @@ export default function implementAPI(cvat) {
         return result;
     };
 
+    cvat.server.loginWithSocialAccount.implementation = async (
+        provider: string,
+        code: string,
+        authParams?: string,
+        process?: string,
+        scope?: string,
+    ) => {
+        const result = await serverProxy.server.loginWithSocialAccount(provider, code, authParams, process, scope);
+        return result;
+    };
+
     cvat.users.get.implementation = async (filter) => {
         checkFilter(filter, {
             id: isInteger,
