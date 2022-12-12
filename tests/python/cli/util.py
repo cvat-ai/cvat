@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 
-import os
-import os.path as osp
 import unittest
-from typing import Any, Union
+from pathlib import Path
+from typing import Any, List, Union
 
 from shared.utils.helpers import generate_image_file
 
@@ -22,12 +21,11 @@ def run_cli(test: Union[unittest.TestCase, Any], *args: str, expected_code: int 
         assert expected_code == main(args)
 
 
-def generate_images(dst_dir: str, count: int):
+def generate_images(dst_dir: Path, count: int) -> List[Path]:
     filenames = []
-    os.makedirs(dst_dir, exist_ok=True)
+    dst_dir.mkdir(parents=True, exist_ok=True)
     for i in range(count):
-        filename = osp.join(dst_dir, f"img_{i}.jpg")
-        with open(filename, "wb") as f:
-            f.write(generate_image_file().getvalue())
+        filename = dst_dir / f"img_{i}.jpg"
+        filename.write_bytes(generate_image_file().getvalue())
         filenames.append(filename)
     return filenames

@@ -345,6 +345,21 @@ unzip v1.7.0.zip && mv cvat-1.7.0 cvat
 cd cvat
 ```
 
+### CVAT healthcheck command
+The following command allows to test the CVAT container to make sure it works.
+```shell
+docker exec -t cvat_server python manage.py health_check
+```
+Expected output of a healthy CVAT container:
+```shell
+Cache backend: default   ... working
+DatabaseBackend          ... working
+DiskUsage                ... working
+MemoryUsage              ... working
+MigrationsHealthCheck    ... working
+OPAHealthCheck           ... working
+```
+
 ### Deploying CVAT behind a proxy
 
 If you deploy CVAT behind a proxy and do not plan to use any of [serverless functions](#semi-automatic-and-automatic-annotation)
