@@ -447,17 +447,16 @@ async function getSelf() {
 
 async function authorized() {
     try {
-        const response = await getSelf();
+        // In CVAT app we use two types of authentication
+        // At first we check if authentication token is present
+        // Request in getSelf will provide correct authentication cookies
         if (!store.get('token')) {
-            store.set('token', response.key);
-            Axios.defaults.headers.common.Authorization = `Token ${response.key}`;
+            await logout();
+            return false;
         }
+        await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
-            // In CVAT app we use two types of authentication,
-            // So here we are forcing user have both credential types
-            // First request will fail if session is expired, then we check
-            // for precense of token
             await logout();
             return false;
         }
@@ -466,6 +465,29 @@ async function authorized() {
     }
 
     return true;
+}
+
+async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback, attempt = 0) {
+    const { backendAPI } = config;
+    const url = `${backendAPI}/server/health/?format=json`;
+
+    if (progressCallback) {
+        progressCallback(`${attempt}/${attempt + maxRetries}`);
+    }
+
+    return Axios.get(url, {
+        proxy: config.proxy,
+        timeout: requestTimeout,
+    })
+        .then((response) => response.data)
+        .catch((errorData) => {
+            if (maxRetries > 0) {
+                return new Promise((resolve) => setTimeout(resolve, checkPeriod))
+                    .then(() => healthCheck(maxRetries - 1, checkPeriod,
+                        requestTimeout, progressCallback, attempt + 1));
+            }
+            throw generateError(errorData);
+        });
 }
 
 async function serverRequest(url, data) {
