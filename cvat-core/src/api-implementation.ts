@@ -107,6 +107,16 @@ export default function implementAPI(cvat) {
         return result;
     };
 
+    cvat.server.healthCheck.implementation = async (
+        maxRetries = 1,
+        checkPeriod = 3000,
+        requestTimeout = 5000,
+        progressCallback = undefined,
+    ) => {
+        const result = await serverProxy.server.healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback);
+        return result;
+    };
+
     cvat.server.request.implementation = async (url, data) => {
         const result = await serverProxy.server.request(url, data);
         return result;

@@ -295,8 +295,8 @@ class OAuth2CallbackViewEx(OAuth2CallbackView):
 @extend_schema(
     summary="Redirets to Github authentication page",
     description="Redirects to the Github authentication page. "
-    "After successful authentication on the provider side, "
-    "a redirect to the callback endpoint is performed",
+                "After successful authentication on the provider side, "
+                "a redirect to the callback endpoint is performed",
 )
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -412,11 +412,8 @@ class SocialLoginViewEx(SocialLoginView):
         self.serializer = self.get_serializer(data=self.request.data)
         self.serializer.is_valid(raise_exception=True)
 
-        if (
-            allauth_settings.EMAIL_VERIFICATION
-            == allauth_settings.EmailVerificationMethod.MANDATORY
-            and not has_verified_email(self.serializer.validated_data.get("user"))
-        ):
+        if allauth_settings.EMAIL_VERIFICATION == allauth_settings.EmailVerificationMethod.MANDATORY and \
+            not has_verified_email(self.serializer.validated_data.get('user')):
             return HttpResponseBadRequest("Unverified email")
 
         self.login()

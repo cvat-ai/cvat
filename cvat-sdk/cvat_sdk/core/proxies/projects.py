@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
@@ -19,6 +19,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelUpdateMixin,
     build_model_bases,
 )
+from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.uploading import DatasetUploader, Uploader
 
 if TYPE_CHECKING:
@@ -30,7 +31,10 @@ _ProjectEntityBase, _ProjectRepoBase = build_model_bases(
 
 
 class Project(
-    _ProjectEntityBase, models.IProjectRead, ModelUpdateMixin[models.IPatchedProjectWriteRequest]
+    _ProjectEntityBase,
+    models.IProjectRead,
+    ModelUpdateMixin[models.IPatchedProjectWriteRequest],
+    ModelDeleteMixin,
 ):
     _model_partial_update_arg = "patched_project_write_request"
 
@@ -117,13 +121,15 @@ class Project(
         (annotations, _) = self.api.retrieve_annotations(self.id)
         return annotations
 
+    def get_tasks(self) -> List[Task]:
+        return [Task(self._client, m) for m in self.api.list_tasks(id=self.id)[0].results]
+
 
 class ProjectsRepo(
     _ProjectRepoBase,
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
-    ModelDeleteMixin,
 ):
     _entity_type = Project
 
@@ -170,12 +176,12 @@ class ProjectsRepo(
         filename = Path(filename)
 
         if status_check_period is None:
-            status_check_period = self.config.status_check_period
+            status_check_period = self._client.config.status_check_period
 
         params = {"filename": filename.name}
-        url = self.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
+        url = self._client.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
 
-        uploader = Uploader(self)
+        uploader = Uploader(self._client)
         response = uploader.upload_file(
             url,
             filename,
@@ -195,6 +201,8 @@ class ProjectsRepo(
         )
 
         project_id = json.loads(response.data)["id"]
-        self._client.logger.info(f"Project has been imported sucessfully. Project ID: {project_id}")
+        self._client.logger.info(
+            f"Project has been imported successfully. Project ID: {project_id}"
+        )
 
         return self.retrieve(project_id)
