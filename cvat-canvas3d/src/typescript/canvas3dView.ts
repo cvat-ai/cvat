@@ -15,7 +15,7 @@ import {
 import {
     createRotationHelper, removeRotationHelper,
     createResizeHelper, removeResizeHelper,
-    createCuboidEdges, removeCuboidEdges, CuboidModel, cuboidSize, makeCornerPointsMatrix,
+    createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
 import { ObjectState } from '.';
 
@@ -112,7 +112,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid: CuboidModel;
     }>;
     private model: Canvas3dModel & Master;
-    private action: any;
+    private action: {
+        translation: any;
+        resize: {
+            status: boolean;
+            previousPosition: null | THREE.Vector3;
+            helperElement: THREE.Object3D;
+        };
+        scan: any;
+        rotation: any;
+        frameCoordinates: any;
+        detected: any;
+        initialMouseVector: any;
+        detachCam: any;
+        detachCamRef: any;
+    };
     private cameraSettings: {
         [key in ViewType]: {
             position: [number, number, number],
@@ -159,7 +173,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 up: [0, 0, 1],
             },
             side: {
-                position: [0, 8, 0],
+                position: [0, -8, 0],
                 lookAt: [0, 0, 0],
                 up: [0, 0, 1],
             },
@@ -203,10 +217,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
             resize: {
                 status: false,
-                helper: null,
                 helperElement: null,
-                recentMouseVector: new THREE.Vector2(0, 0),
-                frontBool: false,
+                previousPosition: null,
             },
         };
 
@@ -673,8 +685,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             resize: {
                 ...this.action.resize,
                 status: false,
-                helper: null,
-                recentMouseVector: new THREE.Vector2(0, 0),
+                helperElement: null,
+                previousPosition: null,
             },
         };
         this.model.mode = Mode.IDLE;
@@ -1275,7 +1287,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }),
         );
         sideScenePlane.position.set(0, 0, 0);
-        sideScenePlane.rotation.set(-Math.PI / 2, 0, Math.PI);
+        sideScenePlane.rotation.set(0, 0, 0);
         sideScenePlane.name = Planes.SIDE;
         (sideScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (sideScenePlane as any).verticesNeedUpdate = true;
@@ -1296,7 +1308,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }),
         );
         frontScenePlane.position.set(0, 0, 0);
-        frontScenePlane.rotation.set(0, Math.PI / 2, 0);
+        frontScenePlane.rotation.set(0, 0, 0);
         frontScenePlane.name = Planes.FRONT;
         (frontScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (frontScenePlane as any).verticesNeedUpdate = true;
@@ -1517,134 +1529,79 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private makePointHelper() {
-        const sphereGeometry = new THREE.SphereGeometry(0.1);
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#33b864', opacity: 1 });
-        const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
-        rotationHelper.name = 'helper';
-        return rotationHelper;
-    }
-
     private renderResizeAction(view: ViewType, viewType: any): void {
-        const Vector3 = THREE.Vector3;
-        const Quaternion = THREE.Quaternion;
-        console.log(Vector3, Quaternion);
         const cuboid = this.selectedCuboid;
-        const data = this.drawnObjects[this.model.data.activeElement.clientID].data;
         const intersects = viewType.rayCaster.renderer
             .intersectObjects([viewType.scene.getObjectByName(`${view}Plane`)], true);
-        const { x: currentPosX, y: currentPosY } = viewType.rayCaster.mouseVector;
+
         if (
-            cuboid === null ||
-            intersects.length === 0 ||
-            (this.action.resize.recentMouseVector.x === currentPosX &&
-            this.action.resize.recentMouseVector.y === currentPosY)
-        ) {
+            cuboid === null || intersects.length === 0) {
             return;
         }
 
-        this.action.resize.recentMouseVector = viewType.rayCaster.mouseVector.clone();
-//         intersects[0].point.x = 3;
-    // intersects[0].point.y = 0.5;
-
-        const newPosition = cuboid.perspective.position.clone();
-        const newScale = cuboid.perspective.scale.clone();
-        const { x, y, z } = cuboidSize(cuboid.perspective);
-        const matrix = makeCornerPointsMatrix(0.5, 0.5, 0.5);
-        const index = +this.action.resize.helperElement.name.split('_')[1];
-        let oppositePoint = (new THREE.Vector3()).fromArray(matrix[index])
-            .multiply(new THREE.Vector3(-1, -1, -1));
-
-        const idx = matrix
-            .findIndex(([x, y, z]): boolean => oppositePoint.x === x && oppositePoint.y === y && oppositePoint.z === z);
-        const helper = cuboid[view].getObjectByName(`${CONST.RESIZE_HELPER_NAME}_${idx}`);
-        console.log(helper);
-        // oppositePoint = viewType.scene.getObjectByName(`${'2DResizeHelper'}_${idx}`).position.clone();
-
-
-
-
-            //;.add(cuboid.perspective.position);
-        // oppositePoint = cuboid.top.localToWorld(oppositePoint.clone())
-
-        // oppositePoint = intersects[0].object.worldToLocal(oppositePoint.clone());
-        intersects[0].object.worldToLocal(cuboid.top.localToWorld(oppositePoint.clone()));
-
-
-        const pointUnderCursor = intersects[0].point.clone();
-        // const pointUnderCursor = intersects[0].object.localToWorld(intersects[0].point.clone())
-
-
-        let oppositePointCopy = oppositePoint.clone().multiply(new Vector3(data.points[6], data.points[7], data.points[8]).divideScalar(2).add(new Vector3(data.points[0], data.points[1], data.points[2])))
-
-        const rotationVector = new Vector3().copy(intersects[0].object.rotation);
-        let axis = new Vector3( 0, 0, 1 );
-
-        oppositePoint = viewType.scene.getObjectByName(`${'2DResizeHelper'}_${idx}`).position.clone();
-        // oppositePoint.applyAxisAngle( axis, rotationVector.z );
-        // intersects[0].point.clone().transformDirection(intersects[0].object.matrixWorld)
-
-        // oppositePoint.clone().applyAxisAngle( axis, rotationVector.z );
-
-
-
-        let center = new THREE.Vector3(0, 0, 0)
-            .add(oppositePoint)
-            .add(pointUnderCursor)
-            .divide(new THREE.Vector3(2, 2, 2));
-
-        // center = intersects[0].object.localToWorld(center);
-
-        switch (view) {
-            case ViewType.TOP: {
-                const pointUnderCursor1 = intersects[0].point.clone();
-                pointUnderCursor1.applyAxisAngle( axis, -rotationVector.z );
-                oppositePointCopy = oppositePoint.clone().applyAxisAngle( axis, -rotationVector.z );
-
-                newScale.x = Math.abs(pointUnderCursor1.x - oppositePointCopy.x);
-                newScale.y = Math.abs(pointUnderCursor1.y - oppositePointCopy.y);
-                // const distance = Math.sqrt((pointUnderCursor.x - oppositePoint.x) ** 2 + (pointUnderCursor.y - oppositePoint.y) ** 2)
-                // newScale.x = (distance) / Math.sqrt(2);
-                // newScale.y = (distance) / Math.sqrt(2);
-
-
-                newPosition.x = center.x;
-                newPosition.y = center.y;
-                break;
-            }
-            case ViewType.SIDE: {
-                newScale.x = Math.abs(pointUnderCursor.x - oppositePoint.x);
-                newScale.z = Math.abs(pointUnderCursor.z - oppositePoint.z);
-                newPosition.x = center.x;
-                newPosition.z = center.z;
-                break;
-            }
-            case ViewType.FRONT: {
-                newScale.y = Math.abs(pointUnderCursor.y - oppositePoint.y);
-                newScale.z = Math.abs(pointUnderCursor.z - oppositePoint.z);
-                newPosition.y = center.y;
-                newPosition.z = center.z;
-                break;
-            }
-            default:
+        if (!this.action.resize.previousPosition) {
+            this.action.resize.previousPosition = intersects[0].object.worldToLocal(intersects[0].point.clone());
+            return;
         }
 
-        // const v1 = intersects[0].point.clone().sub(newPosition);
-        // const v2 = pointUnderCursor.clone().sub(newPosition);
-        // v1.z = 0;
-        // v2.z = 0;
-        // const angle = v1.angleTo(v2);
-        // console.log(angle);
-        // cuboid.setRotation(0, 0, -angle);
+        if (Math.abs(this.action.resize.previousPosition.x - intersects[0].point.x) < Number.EPSILON ||
+            Math.abs(this.action.resize.previousPosition.y - intersects[0].point.y) < Number.EPSILON) {
+            return;
+        }
 
+        // first let's find the point that is used to resize
+        // and the opposite point in another corner
+        const currentPointNumber = +this.action.resize.helperElement.name.split('_')[1];
+        const cuboidNodes = makeCornerPointsMatrix(0.5, 0.5, 0.5);
+        const crosslyingPointInternalCoordonates = (new THREE.Vector3())
+            .fromArray(cuboidNodes[+currentPointNumber]).multiply(new THREE.Vector3(-1, -1, -1));
+        const crosslyingHelperIndex = cuboidNodes
+            .findIndex(([x, y, z]): boolean => (
+                Math.sign(crosslyingPointInternalCoordonates.x) === Math.sign(x) &&
+                Math.sign(crosslyingPointInternalCoordonates.y) === Math.sign(y) &&
+                Math.sign(crosslyingPointInternalCoordonates.z) === Math.sign(z)
+            ));
+        const crosslyingHelper = cuboid.perspective.getObjectByName(`cuboidNodeHelper_${crosslyingHelperIndex}`);
+        const crosslyingPointCoordinates = crosslyingHelper.getWorldPosition(new THREE.Vector3());
 
-        console.log(center.clone().sub(newScale.clone().divide(new Vector3(2,2,2))))
-        cuboid.setPosition(newPosition.x, newPosition.y, newPosition.z);
-        cuboid.setScale(newScale.x, newScale.y, newScale.z);
-        this.action.resize.initPlaneIntersect = intersects[0].point;
-        // this.moveObject(newPosition);
-        // cuboid.setRotation(0, 0, -angle)
-        // this.adjustPerspectiveCameras();
+        // after we've found two points
+        // we can get all the information from them (scale and center)
+        // but first we need to move the current point
+        // we will move point in "internal" cuboid coordinates
+        // and then using localToWorld we will receive world coordinates
+        const currentPointCoordOnPlane = intersects[0].object.worldToLocal(intersects[0].point.clone());
+        const scale = cuboid.perspective.scale.clone();
+        const currentPointInternalCoordinates = new THREE.Vector3();
+        if (view === ViewType.FRONT) {
+            const diffX = currentPointCoordOnPlane.x - this.action.resize.previousPosition.x;
+            const diffY = currentPointCoordOnPlane.y - this.action.resize.previousPosition.y;
+            currentPointInternalCoordinates
+                .fromArray(cuboidNodes[currentPointNumber]).add(new THREE.Vector3(0, diffY, -diffX).divide(scale));
+        } else if (view === ViewType.SIDE) {
+            const diffX = currentPointCoordOnPlane.x - this.action.resize.previousPosition.x;
+            const diffY = currentPointCoordOnPlane.y - this.action.resize.previousPosition.y;
+            currentPointInternalCoordinates
+                .fromArray(cuboidNodes[currentPointNumber]).add(new THREE.Vector3(-diffX, 0, diffY).divide(scale));
+        } else if (view === ViewType.TOP) {
+            const diffX = currentPointCoordOnPlane.x - this.action.resize.previousPosition.x;
+            const diffY = currentPointCoordOnPlane.y - this.action.resize.previousPosition.y;
+            currentPointInternalCoordinates
+                .fromArray(cuboidNodes[currentPointNumber]).add(new THREE.Vector3(diffX, diffY, 0).divide(scale));
+        }
+        const perspectivePosition = cuboid.perspective.localToWorld(currentPointInternalCoordinates.clone());
+
+        // finally let's compute new center and scale
+        const newPosition = crosslyingPointCoordinates.clone().add(perspectivePosition).divideScalar(2);
+        scale.x *= Math.abs(crosslyingPointInternalCoordonates.x - currentPointInternalCoordinates.x);
+        scale.y *= Math.abs(crosslyingPointInternalCoordonates.y - currentPointInternalCoordinates.y);
+        scale.z *= Math.abs(crosslyingPointInternalCoordonates.z - currentPointInternalCoordinates.z);
+
+        // and apply them
+        this.moveObject(newPosition);
+        cuboid.setScale(scale.x, scale.y, scale.z);
+        this.adjustPerspectiveCameras();
+
+        this.action.resize.previousPosition = currentPointCoordOnPlane;
     }
 
     private static isLeft(a: any, b: any, c: any): boolean {
@@ -1900,14 +1857,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         );
 
         if (intersectsHelperResize.length !== 0 && intersectsPlane.length !== 0) {
-            this.action.resize.recentMouseVector = viewType.rayCaster.mouseVector.clone();
-            this.action.resize.status = true;
             this.action.detected = true;
             this.views.top.controls.enabled = false;
             this.views.side.controls.enabled = false;
             this.views.front.controls.enabled = false;
-            this.action.resize.frontBool = false;
+            this.action.resize.status = true;
             this.action.resize.helperElement = intersectsHelperResize[0].object;
+            this.action.resize.previousPosition = null;
             return;
         }
 
@@ -1988,8 +1944,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 default:
                     break;
             }
-        } else if (key.code === 'ControlLeft') {
-            this.action.selectable = !key.ctrlKey;
         }
     }
 

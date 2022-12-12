@@ -24,18 +24,6 @@ export function makeCornerPointsMatrix(x: number, y: number, z: number): number[
     ]);
 }
 
-export function cuboidSize(cuboid: THREE.Mesh): {
-    x: number, y: number, z: number,
-} {
-    cuboid.geometry.computeBoundingBox();
-    const bbox = cuboid.geometry.boundingBox;
-    const x = (bbox.max.x - bbox.min.x) * cuboid.scale.x;
-    const y = (bbox.max.y - bbox.min.y) * cuboid.scale.y;
-    const z = (bbox.max.z - bbox.min.z) * cuboid.scale.z;
-
-    return { x, y, z };
-}
-
 export class CuboidModel {
     public perspective: THREE.Mesh;
     public top: THREE.Mesh;
@@ -96,15 +84,28 @@ export class CuboidModel {
 
         this.top.add(planeTop);
         planeTop.rotation.set(0, 0, 0);
+        planeTop.position.set(0, 0, 0.5);
         planeTop.name = constants.PLANE_ROTATION_HELPER;
 
         this.side.add(planeSide);
         planeSide.rotation.set(-Math.PI / 2, 0, Math.PI);
+        planeTop.position.set(0, 0.5, 0);
         planeSide.name = constants.PLANE_ROTATION_HELPER;
 
         this.front.add(planeFront);
         planeFront.rotation.set(0, Math.PI / 2, 0);
+        planeTop.position.set(0.5, 0, 0);
         planeFront.name = constants.PLANE_ROTATION_HELPER;
+
+        const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
+        for (let i = 0; i < cornerPoints.length; i++) {
+            const point = new THREE.Vector3().fromArray(cornerPoints[i]);
+            const helper = new THREE.Mesh(new THREE.SphereGeometry(0.1));
+            helper.visible = false;
+            helper.name = `cuboidNodeHelper_${i}`;
+            this.perspective.add(helper);
+            helper.position.copy(point);
+        }
 
         const camRotateHelper = new THREE.Object3D();
         camRotateHelper.translateX(-2);
