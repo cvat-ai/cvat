@@ -165,8 +165,8 @@ class TestTaskVisionDataset:
             target_transform=cvatpt.ExtractSingleLabelIndex(),
         )
 
-        assert dataset[5][1] == 0
-        assert dataset[6][1] == 1
+        assert torch.equal(dataset[5][1], torch.tensor(0))
+        assert torch.equal(dataset[6][1], torch.tensor(1))
 
         with pytest.raises(ValueError):
             # no tags
@@ -192,9 +192,15 @@ class TestTaskVisionDataset:
             target_transform=cvatpt.ExtractBoundingBoxes(include_shape_types={"rectangle"}),
         )
 
-        assert dataset[0][1] == {"boxes": [], "labels": []}
-        assert dataset[6][1] == {"boxes": [(1.0, 2.0, 3.0, 4.0)], "labels": [1]}
-        assert dataset[7][1] == {"boxes": [], "labels": []}  # points are filtered out
+        assert torch.equal(dataset[0][1]["boxes"], torch.tensor([]))
+        assert torch.equal(dataset[0][1]["labels"], torch.tensor([]))
+
+        assert torch.equal(dataset[6][1]["boxes"], torch.tensor([(1.0, 2.0, 3.0, 4.0)]))
+        assert torch.equal(dataset[6][1]["labels"], torch.tensor([1]))
+
+        # points are filtered out
+        assert torch.equal(dataset[7][1]["boxes"], torch.tensor([]))
+        assert torch.equal(dataset[7][1]["labels"], torch.tensor([]))
 
     def test_transforms(self):
         dataset = cvatpt.TaskVisionDataset(

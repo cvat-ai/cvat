@@ -24,6 +24,7 @@ import appdirs
 import attrs
 import attrs.validators
 import PIL.Image
+import torch
 import torchvision.datasets
 from typing_extensions import TypedDict
 
@@ -283,7 +284,7 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
 class ExtractSingleLabelIndex:
     """
     A target transform that takes a `Target` object and produces a single label index
-    based on the tag in that object.
+    based on the tag in that object, as a 0-dimensional tensor.
 
     This makes the dataset samples compatible with the image classification networks
     in torchvision.
@@ -299,12 +300,12 @@ class ExtractSingleLabelIndex:
         if len(tags) > 1:
             raise ValueError("sample has multiple tags")
 
-        return target.label_id_to_index[tags[0].label_id]
+        return torch.tensor(target.label_id_to_index[tags[0].label_id], dtype=torch.long)
 
 
 class LabeledBoxes(TypedDict):
-    boxes: Sequence[Tuple[float, float, float, float]]
-    labels: Sequence[int]
+    boxes: torch.Tensor
+    labels: torch.Tensor
 
 
 _SUPPORTED_SHAPE_TYPES = frozenset(["rectangle", "polygon", "polyline", "points", "ellipse"])
@@ -318,9 +319,9 @@ class ExtractBoundingBoxes:
 
     The dictionary contains the following entries:
 
-    "boxes": a sequence of (xmin, ymin, xmax, ymax) tuples, one for each shape
-    in the annotations.
-    "labels": a sequence of corresponding label indices.
+    "boxes": a tensor with shape [N, 4], where each row represents a bounding box of a shape
+    in the annotations in the (xmin, ymin, xmax, ymax) format.
+    "labels": a tensor with shape [N] containing corresponding label indices.
 
     Limitations:
 
@@ -356,4 +357,7 @@ class ExtractBoundingBoxes:
             boxes.append((min(x_coords), min(y_coords), max(x_coords), max(y_coords)))
             labels.append(target.label_id_to_index[shape.label_id])
 
-        return LabeledBoxes(boxes=boxes, labels=labels)
+        return LabeledBoxes(
+            boxes=torch.tensor(boxes, dtype=torch.float),
+            labels=torch.tensor(labels, dtype=torch.long),
+        )
