@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dj_rest_auth.registration.serializers import RegisterSerializer
+from dj_rest_auth.registration.serializers import RegisterSerializer, SocialLoginSerializer
 from dj_rest_auth.serializers import PasswordResetSerializer, LoginSerializer
 from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
@@ -79,3 +79,22 @@ class LoginSerializerEx(LoginSerializer):
                 raise ValidationError('Unable to login with provided credentials')
 
         return self._validate_username_email(username, email, password)
+
+
+class SocialLoginSerializerEx(SocialLoginSerializer):
+    auth_params = serializers.CharField(required=False, allow_blank=True, default='')
+    process = serializers.CharField(required=False, allow_blank=True, default='login')
+    scope = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def get_social_login(self, adapter, app, token, response):
+        request = self._get_request()
+        social_login = adapter.complete_login(request, app, token, response=response)
+        social_login.token = token
+
+        social_login.state = {
+            'process': self.initial_data.get('process'),
+            'scope': self.initial_data.get('scope'),
+            'auth_params': self.initial_data.get('auth_params'),
+        }
+
+        return social_login
