@@ -375,7 +375,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [14])
+        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -431,6 +431,21 @@ class TestPostTaskData:
             assert status.state.value == "Finished"
 
         return task.id
+
+    def _test_cannot_create_task(self, username, spec, data, **kwargs):
+        with make_api_client(username) as api_client:
+            (task, response) = api_client.tasks_api.create(spec, **kwargs)
+            assert response.status == HTTPStatus.CREATED
+
+            (_, response) = api_client.tasks_api.create_data(
+                task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
+            )
+            assert response.status == HTTPStatus.ACCEPTED
+
+            status = self._wait_until_task_is_created(api_client.tasks_api, task.id)
+            assert status.state.value == "Failed"
+
+        return status
 
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
@@ -651,7 +666,6 @@ class TestPostTaskData:
         data_spec = {
             "image_quality": 75,
             "use_cache": True,
-            "storage": "cloud_storage",
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -659,3 +673,28 @@ class TestPostTaskData:
         self._test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
+
+    @pytest.mark.parametrize(
+        "cloud_storage_id, manifest, org",
+        [(1, "manifest.jsonl", "")],  # public bucket
+    )
+    def test_cannot_create_task_with_mythical_cloud_storage_data(
+        self, cloud_storage_id, manifest, org
+    ):
+        mythical_file = "mythical.jpg"
+        cloud_storage_content = [mythical_file, manifest]
+
+        task_spec = {
+            "name": f"Task with mythical file from cloud storage {cloud_storage_id}",
+            "labels": [{"name": "car"}],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": cloud_storage_content,
+        }
+
+        status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec, org=org)
+        assert mythical_file in status.message

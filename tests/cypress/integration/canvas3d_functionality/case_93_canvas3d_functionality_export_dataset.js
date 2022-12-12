@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,7 +51,7 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 as: 'exportDatasetVCFormatRenameArchive',
                 type: 'dataset',
                 format: dumpTypeVC,
-                archiveCustomeName: 'job_export_3d_dataset_custome_name_vc_format',
+                archiveCustomName: 'job_export_3d_dataset_custome_name_vc_format',
             };
             cy.exportJob(exportDatasetVCFormatRenameArchive);
             cy.waitForDownload();

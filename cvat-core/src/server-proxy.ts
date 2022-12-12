@@ -366,6 +366,35 @@ async function login(credential, password) {
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
 }
 
+async function loginWithSocialAccount(
+    provider: string,
+    code: string,
+    authParams?: string,
+    process?: string,
+    scope?: string,
+) {
+    removeToken();
+    const data = {
+        code,
+        ...(process ? { process } : {}),
+        ...(scope ? { scope } : {}),
+        ...(authParams ? { auth_params: authParams } : {}),
+    };
+    let authenticationResponse = null;
+    try {
+        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/${provider}/login/token`, data,
+            {
+                proxy: config.proxy,
+            });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    token = authenticationResponse.data.key;
+    store.set('token', token);
+    Axios.defaults.headers.common.Authorization = `Token ${token}`;
+}
+
 async function logout() {
     try {
         await Axios.post(`${config.backendAPI}/auth/logout`, {
@@ -447,11 +476,7 @@ async function getSelf() {
 
 async function authorized() {
     try {
-        const response = await getSelf();
-        if (!store.get('token')) {
-            store.set('token', response.key);
-            Axios.defaults.headers.common.Authorization = `Token ${response.key}`;
-        }
+        await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
             // In CVAT app we use two types of authentication,
@@ -466,6 +491,29 @@ async function authorized() {
     }
 
     return true;
+}
+
+async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback, attempt = 0) {
+    const { backendAPI } = config;
+    const url = `${backendAPI}/server/health/?format=json`;
+
+    if (progressCallback) {
+        progressCallback(`${attempt}/${attempt + maxRetries}`);
+    }
+
+    return Axios.get(url, {
+        proxy: config.proxy,
+        timeout: requestTimeout,
+    })
+        .then((response) => response.data)
+        .catch((errorData) => {
+            if (maxRetries > 0) {
+                return new Promise((resolve) => setTimeout(resolve, checkPeriod))
+                    .then(() => healthCheck(maxRetries - 1, checkPeriod,
+                        requestTimeout, progressCallback, attempt + 1));
+            }
+            throw generateError(errorData);
+        });
 }
 
 async function serverRequest(url, data) {
@@ -2227,10 +2275,12 @@ export default Object.freeze({
         requestPasswordReset,
         resetPassword,
         authorized,
+        healthCheck,
         register,
         request: serverRequest,
         userAgreements,
         installedApps,
+        loginWithSocialAccount,
     }),
 
     projects: Object.freeze({

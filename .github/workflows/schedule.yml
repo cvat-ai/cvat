@@ -235,7 +235,7 @@ jobs:
           gen/generate.sh
           cd ..
 
-          pip3 install --user cvat-sdk/
+          pip3 install --user 'cvat-sdk/[pytorch]'
           pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python/
