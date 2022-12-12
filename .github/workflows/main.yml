@@ -297,7 +297,7 @@ jobs:
             -f components/serverless/docker-compose.serverless.yml \
             -f tests/docker-compose.minio.yml \
             -f tests/docker-compose.file_share.yml \
-            -f tests/docker-compose.docker-compose.auth-server.yml up -d
+            -f tests/docker-compose.auth-server.yml up -d
 
       - name: Waiting for server
         env:
