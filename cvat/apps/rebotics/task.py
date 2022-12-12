@@ -11,48 +11,14 @@ from django.contrib.auth import get_user_model
 from cvat.apps.engine import task as task_api
 from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
     S3File, Label, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
-    ModeChoice, ShapeType, SourceType, AttributeType
+    ModeChoice, ShapeType, SourceType, AttributeType, StorageMethodChoice
 from cvat.apps.engine.views import TaskViewSet
+from rebotics.s3_client import s3_client
 from utils.dataset_manifest import S3ManifestManager
 
 User = get_user_model()
 
-## Reference image data structure
-# {
-#     'image': 'url',  # save only these after annotation import
-#     'planogram_title': 'title',  # save only these after annotation import
-#     'processing_action_id': 1,  # save only these after annotation import
-#     'items': [
-#         {  # create LabeledShape of type=rectangle for each of these
-#             'lowerx': 0.0,
-#             'lowery': 0.0,
-#             'upperx': 0.0,
-#             'uppery': 0.0,
-#             'label': 'text',   # create project Labels for each value of these.
-#                                # translate this to project tag. Is not a field on a model, defaults to "All UPC"
-#             'upc': 'text',     # create AttributeSpec named "UPC" for these
-#                                # create LabeledShapeAttributeVal for each UPC.
-#                                # arbitrary text, extra text for tag.
-#             'points': 'json',  # polygon points, never comes from mgmt.
-#             'type': 'text'     # shape - rectangle, polygon, line, never comes from mgmt, rectangle by default.
-#         },
-#         ...
-#     ],
-#     'price_tags': [
-#         {  # create LabeledShape of type=rectangle for each of these
-#             'lowerx': 0.0,
-#             'lowery': 0.0,
-#             'upperx': 0.0,
-#             'uppery': 0.0,
-#             'label': 'text',  # create project Labels for each value of these.
-#                               # defaults to "All PRICE TAGS",
-#             'upc': 'text',    # never comes from mgmt for these.
-#             'points': 'json',
-#             'type': 'text'
-#         },
-#         ...
-#     ],
-# }
+# for incoming data reference see rebotics/example_import.json
 
 
 def _fix_coordinates(item, width, height):
@@ -123,7 +89,7 @@ class ShapesImporter:
         if text in specs:
             spec = specs[text]
         else:
-            spec = AttributeSpec.objects.get_or_create(
+            spec, _ = AttributeSpec.objects.get_or_create(
                 label=label,
                 name=text,
                 defaults={'mutable': True, 'input_type': AttributeType.TEXT}
@@ -161,18 +127,21 @@ class ShapesImporter:
 
     def _save(self) -> None:
         LabeledShape.objects.bulk_create(self.shapes)
+        save_vals = []
         for i, shape in enumerate(self.shapes):
-            self.vals[i].shape_id = shape.pk
-        self.vals = filter(lambda v: v is not None, self.vals)
-        LabeledShapeAttributeVal.objects.bulk_create(self.vals)
+            if self.vals[i] is not None:
+                self.vals[i].shape_id = shape.pk
+                save_vals.append(self.vals[i])
+        LabeledShapeAttributeVal.objects.bulk_create(save_vals)
 
     def _get_image_data(self) -> dict:
         manifest_manager = S3ManifestManager(self.task.data.get_s3_manifest_path())
-        return {f'{props["name"]}.{props["extension"]}': (props['width'], props['height'])
+        manifest_manager.init_index()
+        return {f'{props["name"]}{props["extension"]}': (props['width'], props['height'])
                       for _, props in manifest_manager}
 
     def _get_image_size(self, file: S3File) -> tuple:
-        file_name = _get_file_name(file.meta['url'])
+        file_name = _get_file_name(file.meta['image'])
         return self.image_data.get(file_name, (sys.maxsize, sys.maxsize))
 
     def _next_job(self, frame: int) -> None:
@@ -180,7 +149,7 @@ class ShapesImporter:
             self.job_n += 1
 
     def _reset(self) -> None:
-        self.files = self.task.data.s3_files.all().update
+        self.files = self.task.data.s3_files.all()
         self.image_data = self._get_image_data()
         self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
         self.job_n = 0
@@ -191,7 +160,7 @@ class ShapesImporter:
         for file in self.files:
             file.meta.pop('items')
             file.meta.pop('price_tags')
-        self.files.update('meta')
+        S3File.objects.bulk_update(self.files, fields=('meta',))
 
     def perform_import(self) -> None:
         self._reset()
@@ -218,11 +187,18 @@ def _create_thread(task_id, cvat_data):
 
 
 def create(data: list, retailer: User):
-    project = Project.objects.get_or_create(owner=retailer, name='Retailer import')
-    db_data = Data.objects.create(image_quality=80)
+    project, _ = Project.objects.get_or_create(owner=retailer, name='Retailer import')
+    size = len(data)
+    db_data = Data.objects.create(
+        image_quality=80,
+        storage_method=StorageMethodChoice.CACHE,
+        size=size,
+        stop_frame=size - 1
+    )
+    os.makedirs(db_data.get_upload_dirname(), exist_ok=True)
     task = Task.objects.create(
         project=project,
-        data=data,
+        data=db_data,
         name=now().strftime('Import %Y-%m-%d %H:%M:%S %Z'),
         owner=retailer,
         mode=ModeChoice.ANNOTATION,
@@ -233,7 +209,7 @@ def create(data: list, retailer: User):
     for image_data in data:
         remote_files.append(RemoteFile(
             data=db_data,
-            file=image_data['url'],
+            file=image_data['image'],
             meta=image_data,
         ))
     RemoteFile.objects.bulk_create(remote_files)
@@ -268,21 +244,28 @@ def create(data: list, retailer: User):
 
 def check(task_id):
     # TODO: get the code of _get_rq_response and implement it here.
-    #  with deleting of task and data in case of failure.
-    state = TaskViewSet._get_rq_response(f"/api/tasks/{task_id}")
+    state = TaskViewSet._get_rq_response(queue='default', job_id=f"/api/tasks/{task_id}")
     if state['state'] == 'Finished':
         try:
             task = Task.objects.get(pk=task_id)
-            preview = task.data.get_s3_preview_path()
+            preview_path = task.data.get_s3_preview_path()
+            preview_url = s3_client.get_presigned_url(preview_path)
             s3_files = task.data.s3_files.all()
             task_data = [
                 {
                     'id': f.pk,
-                    'image':  f.file,
-                    'preview': preview,
+                    'image':  f.file.url,
+                    'preview': preview_url,
                 } for f in s3_files
             ]
+            print(task_data)
             return None, task_data
         except Task.DoesNotExist:
             return None, None
+    if state['state'] == 'Failed':
+        try:
+            task = Task.objects.get(pk=task_id)
+            task.data.delete()
+        except Task.DoesNotExist:
+            pass
     return state, None

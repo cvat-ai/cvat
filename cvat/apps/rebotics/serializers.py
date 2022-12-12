@@ -43,4 +43,4 @@ class ImportSerializer(_BaseImportSerializer):
 class ImportResponseSerializer(_BaseImportSerializer):
     id = serializers.IntegerField()
     image = serializers.URLField()
-    preview = serializers.URLField()
+    preview = serializers.URLField(required=False)

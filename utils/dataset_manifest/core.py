@@ -314,6 +314,7 @@ class _S3Manifest(_Manifest):
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
 class _Index:
+    # TODO: create a temp in-memory version of it.
     FILE_NAME = 'index.json'
 
     def __init__(self, path):

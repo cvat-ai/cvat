@@ -619,7 +619,7 @@ VERSION_TRACKER_URL = os.getenv(
 
 ADMIN_URL = os.getenv(
     'ADMIN_URL',
-    'https://localhost:8002' if ENVIRONMENT == 'local' else 'https://{}-admin.rebotics.net'.format(ENVIRONMENT),
+    'http://localhost:8002' if ENVIRONMENT == 'local' else 'https://{}-admin.rebotics.net'.format(ENVIRONMENT),
 )
 
 
