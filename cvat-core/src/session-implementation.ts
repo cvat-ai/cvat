@@ -83,7 +83,7 @@ export function implementJob(Job) {
         return new Issue(result);
     };
 
-    Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
+    Job.prototype.frames.get.implementation = async function (frame, isPlaying, step, original) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
         }
@@ -103,6 +103,7 @@ export function implementJob(Job) {
             isPlaying,
             step,
             this.dimension,
+            original,
         );
         return frameData;
     };
@@ -504,7 +505,7 @@ export function implementTask(Task) {
         return result;
     };
 
-    Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
+    Task.prototype.frames.get.implementation = async function (frame, isPlaying, step, original) {
         if (!Number.isInteger(frame) || frame < 0) {
             throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
         }
@@ -525,6 +526,7 @@ export function implementTask(Task) {
             job.stopFrame,
             isPlaying,
             step,
+            original,
         );
         return result;
     };

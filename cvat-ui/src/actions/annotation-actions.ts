@@ -718,7 +718,7 @@ export function changeFrameAsync(
                 return;
             }
 
-            const data = await job.frames.get(toFrame, fillBuffer, frameStep);
+            const data = await job.frames.get(toFrame, fillBuffer, frameStep, state.settings.player.showOriginalImage);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
 
             if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
@@ -1011,7 +1011,7 @@ export function getJobAsync(
                 frameNumber = Math.max(Math.min(job.stopFrame, initialFrame || 0), job.startFrame);
             }
 
-            const frameData = await job.frames.get(frameNumber);
+            const frameData = await job.frames.get(frameNumber, null, null, state.settings.player.showOriginalImage);
             // call first getting of frame data before rendering interface
             // to load and decode first chunk
             try {

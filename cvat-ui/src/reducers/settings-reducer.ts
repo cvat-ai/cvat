@@ -50,6 +50,7 @@ const defaultState: SettingsState = {
         rotateAll: false,
         smoothImage: true,
         showDeletedFrames: false,
+        showOriginalImage: false,
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
@@ -380,6 +381,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showTagsOnFrame: action.payload.showTagsOnFrame,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOW_ORIGINAL_IMAGE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    showOriginalImage: action.payload.showOriginalImage,
                 },
             };
         }
