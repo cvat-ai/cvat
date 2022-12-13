@@ -138,24 +138,21 @@ export class CuboidModel {
         topCameraReference.translateZ(2);
         topCameraReference.name = constants.CAMERA_REFERENCE;
         this.top.add(topCameraReference);
-        this.top.userData = { ...this.top.userData, camReference: topCameraReference };
 
         const sideCameraReference = new THREE.Object3D();
         sideCameraReference.translateY(2);
         sideCameraReference.name = constants.CAMERA_REFERENCE;
         this.side.add(sideCameraReference);
-        this.side.userData = { ...this.side.userData, camReference: sideCameraReference };
 
         const frontCameraReference = new THREE.Object3D();
         frontCameraReference.translateX(2);
         frontCameraReference.name = constants.CAMERA_REFERENCE;
         this.front.add(frontCameraReference);
-        this.front.userData = { ...this.front.userData, camReference: frontCameraReference };
     }
 
     public getReferenceCoordinates(viewType: string): THREE.Vector3 {
-        const { elements } = (this as Indexable)[viewType].getObjectByName(constants.CAMERA_REFERENCE).matrixWorld;
-        return new THREE.Vector3(elements[12], elements[13], elements[14]);
+        const camRef = (this as Indexable)[viewType].getObjectByName(constants.CAMERA_REFERENCE);
+        return camRef.getWorldPosition(new THREE.Vector3());
     }
 
     public setName(clientId: any): void {

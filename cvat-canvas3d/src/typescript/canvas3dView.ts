@@ -806,7 +806,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             cuboid[view].visible = false;
         }
 
-        cuboid.perspective.userData = state;
         return cuboid;
     }
 
