@@ -15,40 +15,43 @@ moves together with the object, or movements of the object are chaotic.
 
 See:
 
-- [AI Tools](#ai-tools)
-  - [Interactors](#interactors)
+- [Interactors](#interactors)
+  - [Annotate with interactors](#annotate-with-interactors)
+  - [Deleting points](#deleting-points)
   - [Interactors Models](#interactors-models)
-  - [Detectors](#detectors)
+- [Detectors](#detectors)
+  - [Annotate with detectors](#annotate-with-detectors)
   - [Detectors models](#detectors-models)
-  - [Trackers](#trackers)
-  - [Tracker models](#tracker-models)
+- [Trackers](#trackers)
 - [OpenCV](#opencv)
   - [Intelligent scissors](#intelligent-scissors)
   - [Histogram Equalization](#histogram-equalization)
   - [TrackerMIL](#trackermil)
+  - [Tracker models](#tracker-models)
 
-## AI Tools
 
-**AI tools** are available from the [controls sidebar](/docs/manual/basics/controls-sidebar/).
-<br>Click ![Magic wand](/images/image189.jpg) to start annotate.
+## Interactors
 
-### Interactors
+Interactors are a part of **AI tools**.
 
 Use interactors, to create a polygon semi-automatically.
 
 Supported DL models are not bound to the label, you can use them to track any object.
 
-When creating a polygon, you can use positive (regular) points
+When creating a polygon, you can use positive points
 or negative points (for some models):
 
-- Positive points are the points related to the object.
-- Negative points should be placed outside the object.
+- **Positive points** are extreme points in the image,
+  which are points that are either the leftmost, rightmost, topmost,
+  or bottommost points in an object. By identifying these extreme points, the
+  algorithm locate and segment objects in the image.
+- **Negative points** are points placed outside of the object. By identifying
+  negative points, the algiorithm can locate areas that do not belong
+  to the object.
 
 ![](/images/image188_detrac.jpg)
 
-In most cases specifying positive points is enough to build a polygon.
-
-**Adding points**
+### Annotate with interactors
 
 To annotate with interactors, do the following:
 
@@ -64,10 +67,13 @@ To annotate with interactors, do the following:
    <br>Number of points you can add depends on the model.
 7. On the top menu, click **Done** (or **Shift+N**, **N**), and move to the next frame.
 
-When you place the points, the request is sent to the server immediately.
-The server processes the request and adds a polygon to the frame.
+Each model has a minimal requred amount of points for annotation.
+As soon as the required amount reached, the request is sent to the
+server automatically. The server processes the request and adds a
+polygon to the frame.
 
-If you want to postpone the request and finish adding all the points first:
+In case of the complex object, if you want to postpone the request
+and finish adding extra the points first:
 
 1. Hold down the **Ctrl** key.
    <br>On the top panel, the **Block** button will turn blue.
@@ -89,7 +95,7 @@ to change the opacity of the polygon.
 For more information, see
 [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/) section.
 
-**Deleting points**
+### Deleting points
 
 If you are not satisfied with the result, you can set additional points or remove points.
 <br>To remove a point, do the following:
@@ -102,20 +108,29 @@ If you are not satisfied with the result, you can set additional points or remov
 
 <!--lint disable maximum-line-length-->
 
-| Model                                                     | Description                                                                                                                                                                                                                                                                                                                       | Example                        |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Deep extreme <br>cut (DEXTR)                              | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU.                                                         | ![](/images/dextr_example.gif) |
-| Feature backpropagating <br>refinement <br>scheme (f-BRS) | The model allows to get a mask for an <br>object using positive points (should be <br>left-clicked on the foreground), <br>and negative points (should be right-clicked <br>on the background, if necessary). <br>It is recommended to run the model on GPU, <br>if possible.                                                     | ![](/images/fbrs_example.gif)  |
-| High Resolution <br>Net (HRNet)                           | The model allows to get a mask for <br>an object using positive points (should <br>be left-clicked on the foreground), <br> and negative points(should be <br>right-clicked on the background, <br> if necessary). <br>It is recommended to run the model on GPU, <br>if possible.                                                | ![](/images/hrnet_example.gif) |
-| Inside-Outside-Guidance<br>(IOG)                          | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. | ![](/images/iog_example.gif)   |
+| Model                                                     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Example                        |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ | ----------------------------- |
+| Deep extreme <br>cut (DEXTR)                              | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br>For more information, see: <li>[GitHub: DEXTR-PyTorch](https://github.com/scaelles/DEXTR-PyTorch) <li>[Site: DEXTR-PyTorch](https://cvlsegmentation.github.io/dextr)<li>[Paper: Deep Extreme Cut: DEXTR-PyTorch](https://arxiv.org/pdf/1711.09081.pdf)                                                                         | ![](/images/dextr_example.gif) |
+| Feature backpropagating <br>refinement <br>scheme (f-BRS) | The model allows to get a mask for an <br>object using positive points (should be <br>left-clicked on the foreground), <br>and negative points (should be right-clicked <br>on the background, if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br>For more information, see: <li>[GitHub: f-BRS](https://github.com/saic-vul/fbrs_interactive_segmentation) <li>[Paper: Deep Extreme Cut: f-BRS](https://arxiv.org/pdf/2001.10331.pdf)                                                                                                                                       | ![](/images/dextr_example.gif) | ![](/images/fbrs_example.gif) |
+| High Resolution <br>Net (HRNet)                           | The model allows to get a mask for <br>an object using positive points (should <br>be left-clicked on the foreground), <br> and negative points (should be <br>right-clicked on the background, <br> if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br>For more information, see: <li>[GitHub: HRNet](https://github.com/HRNet) <li>[Paper: HRNet](https://arxiv.org/pdf/1908.07919.pdf)                                                                                                                                                                                    | ![](/images/hrnet_example.gif) |
+| Inside-Outside-Guidance<br>(IOG)                          | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: HRNet](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![](/images/iog_example.gif)   |
 
 <!--lint enable maximum-line-length-->
 
-### Detectors
+## Detectors
 
-Use detectors to automatically annotate one frame.
+Detectors are a part of **AI tools**.
+
+Use detectors to automatically annotate one or more frames.
+
+Each model is trained on a dataset. In many cases it is COCO, Pascal VOC.
+The model supports labels that were available in the training dataset.
+Need to clarify that the list of labels can be viewed on a model page
+for each such model.
 
 Supported DL models are suitable only for certain labels.
+
+### Annotate with detectors
 
 To annotate with detectors, do the following:
 
@@ -146,12 +161,16 @@ how to make automatic annotations of all frames.
 
 | Model       | Description                                                                                                                                               |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mask RCNN   | The model generates polygons for each instance of an object in the image.                                                                                 |
-| Faster RCNN | The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. |
+| Mask RCNN   | The model generates polygons for each instance of an object in the image.  <br> For more information, see: <li>[Github: Mask RCNN](https://github.com/matterport/Mask_RCNN)  <li>[Paper: Mask RCNN](https://arxiv.org/pdf/1703.06870.pdf)                                                                        |
+| Faster RCNN | The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br> For more information, see: <li>[Github: Faster RCNN](https://github.com/rbgirshick/py-faster-rcnn)  <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf) |
+| YOLO v3 | The model generates bounding boxes for each instance of an object in the image.  <br> For more information, see: <li>[Github: YOLO v3](https://github.com/ultralytics/yolov3) <li>[Site: YOLO v3](https://docs.ultralytics.com/#yolov3) <li>[Paper: YOLO v3](https://arxiv.org/pdf/1804.02767v1.pdf) |
+| Semantic segmentation for ADAS| The model generates bounding boxes for each instance of an object in the image.  <br> For more information, see: <li>[Site: ADAS](https://docs.openvino.ai/2019_R1/_semantic_segmentation_adas_0001_description_semantic_segmentation_adas_0001.html)|
+| Text detection 4 | Text detector based on PixelLink architecture with MobileNetV2, depth_multiplier=1.4 as a backbone for indoor/outdoor scenes. The model generates bounding boxes for each instance of an object in the image.  <br> For more information, see:  <li>[Site: Text detection v4](https://docs.openvino.ai/latest/omz_models_model_text_detection_0004.html)|
+
 
 <!--lint enable maximum-line-length-->
 
-### Trackers
+## Trackers
 
 Use trackers to automatically annotate an object with the bounding box.
 <br>Supported DL models are not bound to the label, you can use them to track any object.
@@ -188,17 +207,6 @@ When tracking:
   and therefore do not require initialization. After the objects are initialized, tracking will occur.
 
   ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
-
-### Tracker models
-
-<!--lint disable maximum-line-length-->
-
-| Model                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| SiamMask                      | Fast online Object Tracking and Segmentation.<br>Tracker can track different objects in one server request. <br>Trackable object will be tracked automatically <br>if the previous frame was the latest keyframe for the object. <br>Has a tracker indication on canvas. <br>SiamMask tracker supported CUDA.                                                                                                                                                      |
-| Transformer Tracking (TransT) | Simple and efficient online object tracking and segmentation tool. <br>Able to track different objects in one server request. <br>Trackable object will be tracked automatically if the previous<br> frame was the latest keyframe for the object. <br>Has tracker indication on canvas. <br>This is a modified version of the python framework PyTracking based on Pytorch. <br>For more information, see [TransT Github](https://github.com/chenxin-dlut/TransT) |
-
-<!--lint enable maximum-line-length-->
 
 > If you plan to track simple non-overlapping objects consider using fast client-side [TrackerMIL from OpenCV](#trackermil).
 
@@ -307,3 +315,14 @@ When tracking:
 - You can follow the tracking by the messages appearing at the top.
 
   ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
+
+### Tracker models
+
+<!--lint disable maximum-line-length-->
+
+| Model                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| SiamMask                      | Fast online Object Tracking and Segmentation.<br>Tracker can track different objects in one server request. <br>Trackable object will be tracked automatically <br>if the previous frame was the latest keyframe for the object. <br>Has a tracker indication on canvas. <br>SiamMask tracker supported CUDA.                                                                                                                                                      |
+| Transformer Tracking (TransT) | Simple and efficient online object tracking and segmentation tool. <br>Able to track different objects in one server request. <br>Trackable object will be tracked automatically if the previous<br> frame was the latest keyframe for the object. <br>Has tracker indication on canvas. <br>This is a modified version of the python framework PyTracking based on Pytorch. <br>For more information, see [TransT Github](https://github.com/chenxin-dlut/TransT) |
+
+<!--lint enable maximum-line-length-->
