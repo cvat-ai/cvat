@@ -11,7 +11,8 @@ from django.contrib.auth import get_user_model
 from cvat.apps.engine import task as task_api
 from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
     S3File, Label, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
-    ModeChoice, ShapeType, SourceType, AttributeType, StorageMethodChoice
+    ModeChoice, ShapeType, SourceType, AttributeType, StorageMethodChoice, \
+    SortingMethod
 from cvat.apps.engine.views import TaskViewSet
 from rebotics.s3_client import s3_client
 from utils.dataset_manifest import S3ManifestManager
@@ -149,7 +150,7 @@ class ShapesImporter:
             self.job_n += 1
 
     def _reset(self) -> None:
-        self.files = self.task.data.s3_files.all()
+        self.files = self.task.data.s3_files.order_by('pk')
         self.image_data = self._get_image_data()
         self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
         self.job_n = 0
@@ -193,7 +194,8 @@ def create(data: list, retailer: User):
         image_quality=80,
         storage_method=StorageMethodChoice.CACHE,
         size=size,
-        stop_frame=size - 1
+        stop_frame=size - 1,
+        sorting_method=SortingMethod.PREDEFINED,
     )
     os.makedirs(db_data.get_upload_dirname(), exist_ok=True)
     task = Task.objects.create(
