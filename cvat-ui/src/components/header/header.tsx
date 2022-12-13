@@ -33,7 +33,7 @@ import Select from 'antd/lib/select';
 import { getCore } from 'cvat-core-wrapper';
 import consts from 'consts';
 
-import { CVATLogo } from 'icons';
+import { CVATLogo, UpgradeIcon } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
@@ -163,7 +163,7 @@ function HeaderContainer(props: Props): JSX.Element {
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
+        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL, CVAT_BILLING_URL,
     } = consts;
 
     const history = useHistory();
@@ -345,6 +345,18 @@ function HeaderContainer(props: Props): JSX.Element {
             >
                 Settings
             </Menu.Item>
+            {
+                CVAT_BILLING_URL && (
+                    <Menu.Item
+                        className='cvat-menu-item-highlighted'
+                        icon={<UpgradeIcon />}
+                        key='upgrade'
+                        onClick={() => window.open(`${CVAT_BILLING_URL}/?type=personal`, '_self')}
+                    >
+                        Upgrade
+                    </Menu.Item>
+                )
+            }
             <Menu.Item icon={<InfoCircleOutlined />} key='about' onClick={() => showAboutModal()}>
                 About
             </Menu.Item>
