@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os.path as osp
 from http import HTTPStatus
 from time import sleep
 
@@ -24,7 +23,7 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 
 def target_url():
     env_data = {}
-    with open(osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env"), "r") as f:
+    with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
