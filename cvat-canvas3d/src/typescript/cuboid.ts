@@ -161,12 +161,6 @@ export class CuboidModel {
         });
     }
 
-    public setOriginalColor(color: string): void {
-        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
-            ((this as Indexable)[view] as any).originalColor = color;
-        });
-    }
-
     public setColor(color: string): void {
         this.setOutlineColor(color);
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {

@@ -793,7 +793,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const color = this.receiveShapeColor(state);
 
         cuboid.setName(clientID);
-        cuboid.setOriginalColor(color);
         cuboid.setColor(color);
         cuboid.setOpacity(opacity);
         cuboid.setPosition(state.points[0], state.points[1], state.points[2]);
@@ -859,6 +858,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private updateObjects(states: ObjectState[]): void {
+        const { outlined, outlineColor } = this.model.data.shapeProperties;
         states.forEach((state: ObjectState) => {
             const {
                 clientID, points, color, label, group, occluded, outside, hidden,
@@ -879,8 +879,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 group.color !== data.groupColor
             ) {
                 const newColor = this.receiveShapeColor(state);
-                cuboid.setOriginalColor(newColor);
                 cuboid.setColor(newColor);
+                if (outlined) {
+                    cuboid.setOutlineColor(outlineColor);
+                }
             }
 
             if (outside !== data.outside || hidden !== data.hidden) {
@@ -1589,11 +1591,23 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
         const perspectivePosition = cuboid.perspective.localToWorld(currentPointInternalCoordinates.clone());
 
+        // small check to avoid case when points change their relative orientation
+        if (
+            Math.sign(crosslyingPointInternalCoordonates.x - cuboidNodes[currentPointNumber][0]) !==
+                Math.sign(crosslyingPointInternalCoordonates.x - currentPointInternalCoordinates.x) ||
+            Math.sign(crosslyingPointInternalCoordonates.y - cuboidNodes[currentPointNumber][1]) !==
+                Math.sign(crosslyingPointInternalCoordonates.y - currentPointInternalCoordinates.y) ||
+            Math.sign(crosslyingPointInternalCoordonates.z - cuboidNodes[currentPointNumber][2]) !==
+                Math.sign(crosslyingPointInternalCoordonates.z - currentPointInternalCoordinates.z)
+        ) {
+            return;
+        }
+
         // finally let's compute new center and scale
-        const newPosition = crosslyingPointCoordinates.clone().add(perspectivePosition).divideScalar(2);
         scale.x *= Math.abs(crosslyingPointInternalCoordonates.x - currentPointInternalCoordinates.x);
         scale.y *= Math.abs(crosslyingPointInternalCoordonates.y - currentPointInternalCoordinates.y);
         scale.z *= Math.abs(crosslyingPointInternalCoordonates.z - currentPointInternalCoordinates.z);
+        const newPosition = crosslyingPointCoordinates.clone().add(perspectivePosition).divideScalar(2);
 
         // and apply them
         this.moveObject(newPosition);
