@@ -21,9 +21,14 @@ context('Check behavior in case of missing authentication data', () => {
 
         it('Cookies are set correctly if only token is present', () => {
             cy.login();
-            cy.clearCookies();
-            cy.reload();
             cy.get('.cvat-tasks-page').should('exist');
+            cy.clearCookies();
+            cy.getCookies()
+                .should('have.length', 0)
+                .then(() => {
+                    cy.reload();
+                    cy.get('.cvat-tasks-page').should('exist');
+                });
         });
     });
 });
