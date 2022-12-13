@@ -54,6 +54,7 @@ class Project(
 
         DatasetUploader(self._client).upload_file_and_wait(
             self.api.create_dataset_endpoint,
+            self.api.retrieve_dataset_endpoint,
             filename,
             format_name,
             url_params={"id": self.id},
