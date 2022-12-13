@@ -14,6 +14,7 @@ from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
     ModeChoice, ShapeType, SourceType, AttributeType, StorageMethodChoice, \
     SortingMethod
 from cvat.apps.engine.views import TaskViewSet
+from cvat.apps.engine.media_extractors import sort
 from rebotics.s3_client import s3_client
 from utils.dataset_manifest import S3ManifestManager
 
@@ -142,15 +143,22 @@ class ShapesImporter:
                       for _, props in manifest_manager}
 
     def _get_image_size(self, file: S3File) -> tuple:
-        file_name = _get_file_name(file.meta['image'])
-        return self.image_data.get(file_name, (sys.maxsize, sys.maxsize))
+        return self.image_data.get(file.meta['name'], (sys.maxsize, sys.maxsize))
 
     def _next_job(self, frame: int) -> None:
         if frame > self.jobs[self.job_n].segment.stop_frame:
             self.job_n += 1
 
+    @property
+    def _sorted_files(self):
+        return sort(
+            self.files,
+            sorting_method=SortingMethod.LEXICOGRAPHICAL,
+            func=lambda f: f.meta['name'],
+        )
+
     def _reset(self) -> None:
-        self.files = self.task.data.s3_files.order_by('pk')
+        self.files = self.task.data.s3_files.all()
         self.image_data = self._get_image_data()
         self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
         self.job_n = 0
@@ -166,7 +174,7 @@ class ShapesImporter:
     def perform_import(self) -> None:
         self._reset()
 
-        for frame, file in enumerate(self.files):
+        for frame, file in enumerate(self._sorted_files):
             image_size = self._get_image_size(file)
             self._next_job(frame)
             for item in file.meta['items']:
@@ -195,7 +203,7 @@ def create(data: list, retailer: User):
         storage_method=StorageMethodChoice.CACHE,
         size=size,
         stop_frame=size - 1,
-        sorting_method=SortingMethod.PREDEFINED,
+        sorting_method=SortingMethod.LEXICOGRAPHICAL,
     )
     os.makedirs(db_data.get_upload_dirname(), exist_ok=True)
     task = Task.objects.create(
@@ -209,9 +217,11 @@ def create(data: list, retailer: User):
 
     remote_files = []
     for image_data in data:
+        url = image_data.pop('image')
+        image_data['name'] = _get_file_name(url)
         remote_files.append(RemoteFile(
             data=db_data,
-            file=image_data['image'],
+            file=url,
             meta=image_data,
         ))
     RemoteFile.objects.bulk_create(remote_files)
