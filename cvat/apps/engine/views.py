@@ -715,13 +715,13 @@ class DataChunkGetter:
                     if not success:
                         raise Exception('Failed to encode image to ".jpeg" format')
                     return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-                return Response(data='No context image related to the frame',
+                return HttpResponse('No context image related to the frame',
                     status=status.HTTP_404_NOT_FOUND)
             else:
-                return Response(data='unknown data type {}.'.format(self.type),
+                return HttpResponse('unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
         except (CVATValidationError, PermissionDenied, NotFound) as ex:
-            return Response(data=str(ex), status=ex.status_code)
+            return HttpResponse(str(ex), status=ex.status_code)
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -2090,10 +2090,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex)
             slogger.cloud_storage[pk].info(msg)
-            return Response(data=msg, status=ex.status_code)
+            return HttpResponse(msg, status=ex.status_code)
         except Exception as ex:
             slogger.glob.error(str(ex))
-            return Response("An internal error has occurred",
+            return HttpResponse("An internal error has occurred",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Method returns a preview image from a cloud storage',
@@ -2147,10 +2147,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex)
             slogger.cloud_storage[pk].info(msg)
-            return Response(data=msg, status=ex.status_code)
+            return HttpResponse(msg, status=ex.status_code)
         except Exception as ex:
             slogger.glob.error(str(ex))
-            return Response("An internal error has occurred",
+            return HttpResponse("An internal error has occurred",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Method returns a cloud storage status',
@@ -2347,7 +2347,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                         try:
                             storage.upload_file(file_path, filename)
                         except (ValidationError, PermissionDenied, NotFound) as ex:
-                            return Response(data=str(ex), status=ex.status_code)
+                            return HttpResponse(str(ex), status=ex.status_code)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()

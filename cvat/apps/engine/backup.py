@@ -26,6 +26,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from django_sendfile import sendfile
 from distutils.util import strtobool
+from django.http.response import HttpResponse
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
@@ -800,7 +801,7 @@ def export(db_instance, request):
                         try:
                             storage.upload_file(file_path, filename)
                         except (ValidationError, PermissionDenied, NotFound) as ex:
-                            return Response(data=str(ex), status=ex.status_code)
+                            return HttpResponse(str(ex), status=ex.status_code)
                         return Response(status=status.HTTP_200_OK)
                     else:
                         raise NotImplementedError()
