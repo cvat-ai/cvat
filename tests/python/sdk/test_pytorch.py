@@ -211,3 +211,16 @@ class TestTaskVisionDataset:
 
         assert isinstance(dataset[0][0], cvatpt.Target)
         assert isinstance(dataset[0][1], PIL.Image.Image)
+
+    def test_custom_label_mapping(self):
+        label_name_to_id = {label.name: label.id for label in self.task.labels}
+
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+            label_name_to_index={"person": 123, "car": 456},
+        )
+
+        _, target = dataset[5]
+        assert target.label_id_to_index[label_name_to_id["person"]] == 123
+        assert target.label_id_to_index[label_name_to_id["car"]] == 456
