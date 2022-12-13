@@ -562,11 +562,11 @@ class LambdaJob:
 
                     results.append_shape(shape)
 
-                # Accumulate data during 100 frames before sumbitting results.
-                # It is optimization to make fewer calls to our server. Also
-                # it isn't possible to keep all results in memory.
-                if frame and frame % 100 == 0:
-                    results.submit()
+            # Accumulate data during 100 frames before sumbitting results.
+            # It is optimization to make fewer calls to our server. Also
+            # it isn't possible to keep all results in memory.
+            if frame and frame % 100 == 0:
+                results.submit()
 
         results.submit()
 
