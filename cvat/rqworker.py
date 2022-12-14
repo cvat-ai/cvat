@@ -5,6 +5,8 @@
 
 from rq import Worker
 
+import cvat.utils.remote_debugger as debug
+
 
 class BaseDeathPenalty:
     def __init__(self, timeout, exception, **kwargs):
@@ -26,3 +28,20 @@ class SimpleWorker(Worker):
     def execute_job(self, *args, **kwargs):
         """Execute job in same thread/process, do not fork()"""
         return self.perform_job(*args, **kwargs)
+
+
+if debug.is_debugging_enabled():
+    class DebugWorker(SimpleWorker):
+        """
+        Support for VS code debugger
+        """
+
+        def __init__(self, *args, **kwargs):
+            self.__debugger = debug.RemoteDebugger()
+            super().__init__(*args, **kwargs)
+
+        def execute_job(self, *args, **kwargs):
+            """Execute job in same thread/process, do not fork()"""
+            self.__debugger.attach_current_thread()
+
+            return super().execute_job(*args, **kwargs)
