@@ -145,7 +145,7 @@ During the drawing process, you can remove the last point by clicking on it with
 | Inside-Outside-Guidance<br>(IOG)                          | AI Tool | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: IOG](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![](/images/iog_example.gif)                                     |
 | Intelligent scissors                                      | OpenCV  | Intelligent scissors is a CV method of creating <br>a polygon by placing points with the automatic <br>drawing of a line between them. The distance<br> between the adjacent points is limited by <br>the threshold of action, displayed as a <br>red square that is tied to the cursor.   <br><br> For more information, see: <li>[Site: Intelligent Scissors Specification](https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html)                                                                                                                                                                                                                                                                                                                    | See [OpenCV: intelligent scissors](#opencv-intelligent-scissors) |
 
-|
+
 
 <!--lint enable maximum-line-length-->
 
