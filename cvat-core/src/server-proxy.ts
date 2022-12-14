@@ -329,6 +329,18 @@ async function register(username, firstName, lastName, email, password, confirma
                 'Content-Type': 'application/json',
             },
         });
+        if (response.headers['set-cookie']) {
+            // Browser itself setup cookie and header is none
+            // In NodeJS we need do it manually
+            const cookies = response.headers['set-cookie'].join(';');
+            Axios.defaults.headers.common.Cookie = cookies;
+        }
+        // if email verification isn't required
+        if (response.data.key) {
+            token = response.data.key;
+            store.set('token', token);
+            Axios.defaults.headers.common.Authorization = `Token ${token}`;
+        }
     } catch (errorData) {
         throw generateError(errorData);
     }
