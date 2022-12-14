@@ -102,6 +102,7 @@ INSTALLED_APPS = [
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
+    'cvat.apps.rebotics',
 ]
 
 SITE_ID = 1
@@ -424,7 +425,7 @@ LOGGING = {
             'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8080),
             'version': 1,
             'message_type': 'django',
-            'database_path': LOGSTASH_DB,
+            'database_path': None,  # LOGSTASH_DB
         }
     },
     'root': {
@@ -437,12 +438,12 @@ LOGGING = {
         'cvat.server': {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': False
+            'propagate': True
         },
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': False
+            'propagate': True
         },
         'django': {
             'handlers': ['console'],
@@ -463,8 +464,8 @@ if django_log_handlers:
     LOGGING['loggers']['django']['handlers'] = django_log_handlers.split(',')
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
-    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
-    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
+    LOGGING['loggers']['cvat.server']['handlers'].insert(0, 'logstash')
+    LOGGING['loggers']['cvat.client']['handlers'].insert(0, 'logstash')
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
@@ -616,6 +617,12 @@ VERSION_TRACKER_URL = os.getenv(
     'https://versions.fyn.rocks/api/v1/track-version',
 )
 
+ADMIN_URL = os.getenv(
+    'ADMIN_URL',
+    'http://localhost:8002' if ENVIRONMENT == 'local' else 'https://{}-admin.rebotics.net'.format(ENVIRONMENT),
+)
+
+
 # Media storage settings
 # not the default, because it's used only for some file fields.
 AWS_FILE_STORAGE = 'cvat.rebotics.storage.CustomAWSMediaStorage'
@@ -659,5 +666,5 @@ AWS_S3_OBJECT_PARAMETERS = {
 USE_S3 = True
 USE_CACHE_S3 = True
 
-S3_UPLOAD_ROOT = 'data'
+S3_DATA_ROOT = 'data'
 S3_CACHE_ROOT = 'cache'

@@ -284,10 +284,12 @@ def _validate_url(url):
             raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
 
 
-def _download_data(urls, upload_dir):
+def _download_data(db_data: models.Data, upload_dir):
     job = rq.get_current_job()
     local_files = {}
-    for url in urls:
+    remote_files = db_data.remote_files.all()
+    for file in remote_files:
+        url = file.file
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
         if name in local_files:
             raise Exception("filename collision: {}".format(name))
@@ -305,7 +307,8 @@ def _download_data(urls, upload_dir):
             raise Exception("Failed to download " + url)
 
         local_files[name] = True
-
+        file.file = name
+    models.RemoteFile.objects.bulk_update(remote_files, fields=('file',))
     return list(local_files.keys())
 
 
@@ -323,38 +326,66 @@ def _move_manifest_to_s3(db_data: models.Data):
     os.remove(path)
 
 
-def _move_files_to_s3(db_data: models.Data):
-    # TODO: add some try-catch
-    client_files = db_data.client_files.all()
-    for client_file in client_files:
-        path = client_file.file.path
-        if os.path.exists(path):
-            slogger.glob.info(path)
-            name = path.rsplit('/', 1)[-1]
-            with open(path, 'rb') as f:
-                models.S3File.objects.create(
-                    file=File(f, name=name),
-                    data=db_data,
-                )
-            os.remove(path)
-    client_files.delete()
+def _move_file_to_s3(path, db_data, meta):
+    if os.path.exists(path):
+        slogger.glob.info(path)
+        name = path.rsplit('/', 1)[-1]
+        with open(path, 'rb') as f:
+            models.S3File.objects.create(
+                file=File(f, name=name),
+                data=db_data,
+                meta=meta,
+            )
+        os.remove(path)
 
 
-def _move_preview_to_s3(db_data: models.Data):
-    # TODO: add some try-catch
-    path = db_data.get_preview_path()
-    key = db_data.get_s3_preview_path()
+def _move_preview_to_s3(path, key):
     slogger.glob.info('{} -> {}'.format(path, key))
     s3_client.upload_from_path(path, key)
     os.remove(path)
 
 
-def _move_data_to_s3(db_data: models.Data):
+def _move_client_files_to_s3(db_data: models.Data):
+    client_files = db_data.client_files.all()
+    for client_file in client_files:
+        path = client_file.file.path
+        _move_file_to_s3(path, db_data, client_file.meta)
+    client_files.delete()
+
+
+def _move_remote_files_to_s3(db_data: models.Data):
+    upload_dirname = db_data.get_upload_dirname()
+    remote_files = db_data.remote_files.all()
+    for remote_file in remote_files:
+        path = os.path.join(upload_dirname, remote_file.file)
+        _move_file_to_s3(path, db_data, remote_file.meta)
+    remote_files.delete()
+
+
+def _move_task_preview_to_s3(db_data: models.Data):
+    path = db_data.get_preview_path()
+    key = db_data.get_s3_preview_path()
+    _move_preview_to_s3(path, key)
+
+
+def _move_job_previews_to_s3(db_task: models.Task, db_data: models.Data):
+    db_jobs = models.Job.objects.filter(segment__task=db_task)
+    for db_job in db_jobs:
+        path = db_job.get_preview_path()
+        key = db_job.get_s3_preview_path(data=db_data)
+        _move_preview_to_s3(path, key)
+        shutil.rmtree(db_job.get_dirname())
+
+
+def _move_data_to_s3(db_task: models.Task, db_data: models.Data):
     # This does not apply to video, cloud storages or share uploads.
     slogger.glob.info('Moving files to s3 for data {}:'.format(db_data.id))
     _move_manifest_to_s3(db_data)
-    _move_files_to_s3(db_data)
-    _move_preview_to_s3(db_data)
+    _move_client_files_to_s3(db_data)
+    _move_remote_files_to_s3(db_data)
+    _move_task_preview_to_s3(db_data)
+    _move_job_previews_to_s3(db_task, db_data)
+    shutil.rmtree(db_data.get_data_dirname())
     slogger.glob.info('Done.')
 
 
@@ -370,7 +401,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
-        data['remote_files'] = _download_data(data['remote_files'], upload_dir)
+        data['remote_files'] = _download_data(db_data, upload_dir)
 
     manifest_files = []
     media = _count_files(data, manifest_files)
@@ -701,9 +732,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         counter = itertools.count()
         generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
         for chunk_idx, chunk_data in generator:
-            # TODO: upload chunks to s3 here
-            #  when not using cache, chunks are stored locally in
-            #  original and compressed dirs as zip archives.
 
             chunk_data = list(chunk_data)
             original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
@@ -763,7 +791,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
 
-    if settings.USE_S3:
-        _move_data_to_s3(db_data)
-
     _save_task_to_db(db_task, extractor)
+
+    if settings.USE_S3:
+        _move_data_to_s3(db_task, db_data)

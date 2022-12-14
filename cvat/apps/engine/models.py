@@ -156,6 +156,19 @@ class SortingMethod(str, Enum):
     def __str__(self):
         return self.value
 
+
+class ModeChoice(str, Enum):
+    ANNOTATION = 'annotation'
+    INTERPOLATION = 'interpolation'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str(self):
+        return self.value
+
+
 class AbstractArrayField(models.TextField):
     separator = ","
     converter = lambda x: x
@@ -190,6 +203,7 @@ class FloatArrayField(AbstractArrayField):
 
 class IntArrayField(AbstractArrayField):
     converter = int
+
 
 class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
@@ -293,7 +307,7 @@ class Data(models.Model):
     ############# same paths on s3
 
     def get_s3_data_dirname(self):
-        return os.path.join(settings.S3_UPLOAD_ROOT, str(self.pk))
+        return os.path.join(settings.S3_DATA_ROOT, str(self.pk))
 
     def get_s3_cache_base_dirname(self):
         return os.path.join(settings.S3_CACHE_ROOT, str(self.pk))
@@ -471,6 +485,7 @@ def related_file_upload_path_handler(instance, filename):
 class ClientFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='client_files')
     file = models.FileField(upload_to=client_file_upload_path_handler, max_length=1024)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -480,6 +495,7 @@ class ClientFile(models.Model):
 class ServerFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='server_files')
     file = models.CharField(max_length=1024)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -488,6 +504,7 @@ class ServerFile(models.Model):
 class RemoteFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='remote_files')
     file = models.CharField(max_length=1024)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -511,6 +528,7 @@ class S3File(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name='s3_files', null=True)
     file = models.FileField(upload_to=s3_upload_path_handler, max_length=1024,
                             storage=CustomAWSMediaStorage)
+    meta = models.JSONField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -540,8 +558,15 @@ class Job(models.Model):
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
 
+    preview_file_name = 'preview.jpeg'
+
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
+
+    def get_s3_dirname(self, data: Data = None):
+        if data is None:
+            data = self.segment.task.data
+        return os.path.join(data.get_s3_data_dirname(), 'jobs', str(self.id))
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
@@ -570,7 +595,13 @@ class Job(models.Model):
         db_commit.save()
 
     def get_preview_path(self):
-        return os.path.join(self.get_dirname(), "preview.jpeg")
+        return os.path.join(self.get_dirname(), self.preview_file_name)
+
+    def get_s3_preview_path(self, data: Data = None):
+        if data is None:
+            data = self.segment.task.data
+        return os.path.join(data.get_s3_data_dirname(), 'jobs',
+                            str(self.pk), self.preview_file_name)
 
     class Meta:
         default_permissions = ()

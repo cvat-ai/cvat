@@ -1,0 +1,46 @@
+version: '3.3'
+
+services:
+  cvat_db:
+    container_name: reb_cvat_db
+    image: postgres:10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_DB: cvat
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ../.db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  cvat_redis:
+    container_name: reb_cvat_redis
+    image: redis:4.0-alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+
+  cvat_opa:
+    container_name: reb_cvat_opa
+    image: retechlabs/rebotics-cvat-opa:${VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    # TODO:
+    # volumes:
+    #   - ./cvat/apps/iam/rules:/rules
+
+  cvat_minio:
+    container_name: reb_cvat_minio
+    image: minio/minio:latest
+    restart: unless-stopped
+    entrypoint: sh
+    command: -c 'mkdir -p /data/demo-bucket && minio server /data --address 0.0.0.0:9003'
+    environment:
+      MINIO_ROOT_USER: 'minio_admin'
+      MINIO_ROOT_PASSWORD: 'minio_admin'
+    volumes:
+      - ../.s3:/data
+    ports:
+      - 9003:9003

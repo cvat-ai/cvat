@@ -7,7 +7,7 @@ import logging
 import os
 
 
-DEBUG = bool(int(os.getenv('DJANGO_DEBUG', 0)))
+DEBUG = bool(int(os.getenv('DEBUG', 0)))
 
 INSTALLED_APPS += [
     'mod_wsgi.server',

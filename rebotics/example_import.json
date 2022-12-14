@@ -1,0 +1,336 @@
+[
+    {
+        "image": "https://www.simplilearn.com/ice9/free_resources_article_thumb/what_is_image_Processing.jpg",
+        "planogram_title": "img_1",
+        "processing_action_id": 1,
+        "items": [
+            {
+                "lowerx": 0.0,
+                "lowery": 0.0,
+                "upperx": 50.0,
+                "uppery": 50.0,
+                "label": "All UPC",
+                "upc": "1 - 1",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 50.0,
+                "lowery": 50.0,
+                "upperx": 100.0,
+                "uppery": 100.0,
+                "label": "All UPC",
+                "upc": "1 - 2",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 200.0,
+                "lowery": 150.0,
+                "upperx": 100.0,
+                "uppery": 100.0,
+                "label": "All UPC",
+                "upc": "1 - 3 sp",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": -100.0,
+                "lowery": -100.0,
+                "upperx": 9999.0,
+                "uppery": 9999.0,
+                "label": "All UPC",
+                "upc": "1 - 4 oob",
+                "points": null,
+                "type": "rectangle"
+            }
+        ],
+        "price_tags": [
+            {
+                "lowerx": 200.0,
+                "lowery": 150.0,
+                "upperx": 250.0,
+                "uppery": 250.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 250.0,
+                "lowery": 350.0,
+                "upperx": 300.0,
+                "uppery": 250.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 400.0,
+                "lowery": 350.0,
+                "upperx": 300.0,
+                "uppery": 400.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 9999.0,
+                "lowery": 9999.0,
+                "upperx": -100.0,
+                "uppery": -100.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            }
+        ]
+    },
+    {
+        "image": "https://images.pexels.com/photos/268533/pexels-photo-268533.jpeg?cs=srgb&dl=pexels-pixabay-268533.jpg&fm=jpg",
+        "planogram_title": "img_1",
+        "processing_action_id": 1,
+        "items": [
+            {
+                "lowerx": 0.0,
+                "lowery": 0.0,
+                "upperx": 50.0,
+                "uppery": 50.0,
+                "label": "All UPC",
+                "upc": "2 - 1",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 50.0,
+                "lowery": 50.0,
+                "upperx": 100.0,
+                "uppery": 100.0,
+                "label": "All UPC",
+                "upc": "2 - 2",
+                "points": null,
+                "type": "rectangle"
+            }
+        ],
+        "price_tags": [
+            {
+                "lowerx": 100.0,
+                "lowery": 100.0,
+                "upperx": 150.0,
+                "uppery": 150.0,
+                "label": "All PRICE TAGS",
+                "upc": "2 - 1 pt",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 150.0,
+                "lowery": 150.0,
+                "upperx": 200.0,
+                "uppery": 200.0,
+                "label": "All PRICE TAGS",
+                "upc": "2 - 2 pt",
+                "points": null,
+                "type": "rectangle"
+            }
+        ]
+    },
+    {
+        "image": "https://images.pexels.com/photos/674010/pexels-photo-674010.jpeg?cs=srgb&dl=pexels-anjana-c-674010.jpg&fm=jpg",
+        "planogram_title": "img_1",
+        "processing_action_id": 1,
+        "items": [
+            {
+                "lowerx": 0.0,
+                "lowery": 0.0,
+                "upperx": 50.0,
+                "uppery": 50.0,
+                "label": "All UPC",
+                "upc": "3 - 1",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 50.0,
+                "lowery": 50.0,
+                "upperx": 100.0,
+                "uppery": 100.0,
+                "label": "All UPC",
+                "upc": "3 - 2",
+                "points": null,
+                "type": "rectangle"
+            }
+        ],
+        "price_tags": [
+            {
+                "lowerx": 100.0,
+                "lowery": 100.0,
+                "upperx": 150.0,
+                "uppery": 150.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 150.0,
+                "lowery": 150.0,
+                "upperx": 200.0,
+                "uppery": 200.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            }
+        ]
+    },
+    {
+        "image": "https://thumbs.dreamstime.com/b/beautiful-rain-forest-ang-ka-nature-trail-doi-inthanon-national-park-thailand-36703721.jpg",
+        "planogram_title": "img_1",
+        "processing_action_id": 1,
+        "items": [
+            {
+                "lowerx": 0.0,
+                "lowery": 0.0,
+                "upperx": 50.0,
+                "uppery": 50.0,
+                "label": "All UPC",
+                "upc": "4 - 1",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 50.0,
+                "lowery": 50.0,
+                "upperx": 100.0,
+                "uppery": 100.0,
+                "label": "All UPC",
+                "upc": "4 - 2",
+                "points": null,
+                "type": "rectangle"
+            }
+        ],
+        "price_tags": [
+            {
+                "lowerx": 100.0,
+                "lowery": 100.0,
+                "upperx": 150.0,
+                "uppery": 150.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 150.0,
+                "lowery": 150.0,
+                "upperx": 200.0,
+                "uppery": 200.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            }
+        ]
+    },
+    {
+        "image": "https://cdn.pixabay.com/photo/2014/02/27/16/10/flowers-276014__340.jpg",
+        "planogram_title": "img_1",
+        "processing_action_id": 1,
+        "items": [
+            {
+                "lowerx": 0.0,
+                "lowery": 0.0,
+                "upperx": 50.0,
+                "uppery": 50.0,
+                "label": "All UPC",
+                "upc": "5 - 1",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 50.0,
+                "lowery": 50.0,
+                "upperx": 100.0,
+                "uppery": 100.0,
+                "label": "All UPC",
+                "upc": "5 - 2",
+                "points": null,
+                "type": "rectangle"
+            }
+        ],
+        "price_tags": [
+            {
+                "lowerx": 100.0,
+                "lowery": 100.0,
+                "upperx": 150.0,
+                "uppery": 150.0,
+                "label": "All PRICE TAGS",
+                "upc": "5 - 1 pt",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 150.0,
+                "lowery": 150.0,
+                "upperx": 200.0,
+                "uppery": 200.0,
+                "label": "All PRICE TAGS",
+                "upc": "5 - 2 pt",
+                "points": null,
+                "type": "rectangle"
+            }
+        ]
+    },
+    {
+        "image": "https://media.sproutsocial.com/uploads/2017/02/10x-featured-social-media-image-size.png",
+        "planogram_title": "img_1",
+        "processing_action_id": 1,
+        "items": [
+            {
+                "lowerx": 0.0,
+                "lowery": 0.0,
+                "upperx": 50.0,
+                "uppery": 50.0,
+                "label": "All UPC",
+                "upc": "6 - 1",
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 50.0,
+                "lowery": 50.0,
+                "upperx": 100.0,
+                "uppery": 100.0,
+                "label": "All UPC",
+                "upc": "6 - 2",
+                "points": null,
+                "type": "rectangle"
+            }
+        ],
+        "price_tags": [
+            {
+                "lowerx": 100.0,
+                "lowery": 100.0,
+                "upperx": 150.0,
+                "uppery": 150.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            },
+            {
+                "lowerx": 150.0,
+                "lowery": 150.0,
+                "upperx": 200.0,
+                "uppery": 200.0,
+                "label": "All PRICE TAGS",
+                "upc": null,
+                "points": null,
+                "type": "rectangle"
+            }
+        ]
+    }
+]

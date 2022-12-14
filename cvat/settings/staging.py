@@ -5,7 +5,7 @@
 from .production import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(int(os.getenv('DJANGO_DEBUG', 1)))
+DEBUG = bool(int(os.getenv('DEBUG', 1)))
 
 INSTALLED_APPS += [
     'silk'

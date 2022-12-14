@@ -1,0 +1,2 @@
+class ImportByAPIError(Exception):
+    pass
