@@ -130,7 +130,7 @@ def _save_task_to_db(db_task, extractor):
     db_task.data.save()
     db_task.save()
 
-def _count_files(data, manifest_files=None):
+def _count_files(data):
     share_root = settings.SHARE_ROOT
     server_files = []
 
@@ -161,7 +161,7 @@ def _count_files(data, manifest_files=None):
             if mime in counter:
                 counter[mime].append(rel_path)
             elif rel_path.endswith('.jsonl'):
-                manifest_files.append(rel_path)
+                continue
             else:
                 slogger.glob.warn("Skip '{}' file (its mime type doesn't "
                     "correspond to supported MIME file type)".format(full_path))
@@ -179,6 +179,12 @@ def _count_files(data, manifest_files=None):
     )
 
     return counter
+
+def _count_manifest_files(data):
+    manifest_files = []
+    for files in ['client_files', 'server_files', 'remote_files']:
+        manifest_files.extend(list(filter(lambda x: x.endswith('.jsonl'), data[files])))
+    return manifest_files
 
 def _validate_data(counter, manifest_files=None):
     unique_entries = 0
@@ -309,16 +315,8 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    manifest_files = []
-    media = _count_files(data, manifest_files)
-    media, task_mode = _validate_data(media, manifest_files)
-
-    if data['server_files']:
-        if db_data.storage == models.StorageChoice.LOCAL:
-            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
-        elif db_data.storage == models.StorageChoice.SHARE:
-            upload_dir = settings.SHARE_ROOT
-
+    # find and validate manigfest file
+    manifest_files = _count_manifest_files(data)
     manifest_root = None
     if db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
         manifest_root = upload_dir
@@ -332,24 +330,43 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
         raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
-    if data['server_files'] and is_data_in_cloud:
+    if is_data_in_cloud:
         cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-        sorted_media = sort(media['image'], data['sorting_method'])
 
-        data_size = len(sorted_media)
-        segment_step, *_ = _get_task_segment_data(db_task, data_size)
-        for start_frame in range(0, data_size, segment_step):
-            first_sorted_media_image = sorted_media[start_frame]
-            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
-
-        # prepare task manifest file from cloud storage manifest file
-        # NOTE we should create manifest before defining chunk_size
-        # FIXME in the future when will be implemented archive support
         manifest = ImageManifestManager(db_data.get_manifest_path())
         cloud_storage_manifest = ImageManifestManager(
             os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
             db_data.cloud_storage.get_storage_dirname()
         )
+        cloud_storage_manifest.set_index()
+
+        if len(data['server_files']) == 1 and data['pattern']:
+            if data['pattern'] == '*': # or use "/" ?
+                shutil.copyfile(cloud_storage_manifest.manifest.path, manifest.manifest.path)
+                manifest.set_index()
+                data['server_files'].extend(list(cloud_storage_manifest.data))
+            else:
+                r = re.compile(data['pattern'])
+                data['server_files'].extend(list(filter(r.match, cloud_storage_manifest.data)))
+
+    media = _count_files(data)
+    media, task_mode = _validate_data(media, manifest_files)
+
+    if data['server_files']:
+        if db_data.storage == models.StorageChoice.LOCAL:
+            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
+        elif db_data.storage == models.StorageChoice.SHARE:
+            upload_dir = settings.SHARE_ROOT
+
+    if data['server_files'] and is_data_in_cloud:
+        sorted_media = sort(media['image'], data['sorting_method'])
+
+        data_size = len(sorted_media)
+        segment_step, *_ = _get_task_segment_data(db_task, data_size)
+        for preview_frame in range(0, data_size, segment_step):
+            preview = sorted_media[preview_frame]
+            cloud_storage_instance.download_file(preview, os.path.join(upload_dir, preview))
+
         cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
         cloud_storage_manifest.set_index()
         if cloud_storage_manifest_prefix:

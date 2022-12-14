@@ -377,12 +377,13 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    pattern = serializers.CharField(allow_null=True, required=False)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'pattern')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -397,11 +398,25 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError('Chunk size must be a positive integer')
         return value
 
+    def validate_pattern(self, value):
+        import string
+        supported_wildcards = set(["*", "[", "]", "."])
+        no_escapted_symbols = set(['!', '"', '%', "'", ',', '/', ':', ';', '<', '=', '>', '@', "`", "_"])
+        legal_special_chars = supported_wildcards.union(no_escapted_symbols)
+        for c in set(string.punctuation) - legal_special_chars:
+            if c in value:
+                value.replace(c, r'\\{}'.format(c))
+
+        if '*' in value and value != "*":
+            value = r'.*'.join(value.split('*'))
+        return value
+
     # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
+
         return attrs
 
     def create(self, validated_data):

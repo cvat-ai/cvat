@@ -195,8 +195,11 @@ class DatasetImagesReader:
                 image = next(sources)
                 img = Image.open(image, mode='r')
                 orientation = img.getexif().get(274, 1)
-                img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                    else os.path.basename(image)
+                if isinstance(image, str):
+                    img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
+                        else os.path.basename(image)
+                else:
+                    img_name = image.name
                 name, extension = os.path.splitext(img_name)
                 width, height = img.width, img.height
                 if orientation > 4:
