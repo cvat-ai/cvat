@@ -17,6 +17,10 @@ hr {
     transform: translate(-50%, -50%);
 }
 
+.cvat-disconnected {
+    font-size: 36px;
+}
+
 .cvat-spinner-container {
     position: absolute;
     background: $background-color-1;

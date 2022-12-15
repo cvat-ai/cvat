@@ -12,6 +12,7 @@ const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
 const GITHUB_URL = 'https://github.com/opencv/cvat';
 const GITHUB_IMAGE_URL = 'https://github.com/opencv/cvat/raw/develop/site/content/en/images/cvat.jpg';
 const GUIDE_URL = 'https://opencv.github.io/cvat/docs';
+const UPGRADE_GUIDE_URL = 'https://opencv.github.io/cvat/docs/administration/advanced/upgrade_guide';
 const SHARE_MOUNT_GUIDE_URL =
     'https://opencv.github.io/cvat/docs/administration/basics/installation/#share-path';
 const NUCLIO_GUIDE =
@@ -83,6 +84,10 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NAM4', 'US-CENTRAL1 and US-EAST1'],
 ];
 
+const HEALH_CHECK_RETRIES = 10;
+const HEALTH_CHECK_PERIOD = 3000; // ms
+const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
+
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
@@ -93,6 +98,7 @@ export default {
     GITHUB_URL,
     GITHUB_IMAGE_URL,
     GUIDE_URL,
+    UPGRADE_GUIDE_URL,
     SHARE_MOUNT_GUIDE_URL,
     CANVAS_BACKGROUND_COLORS,
     NEW_LABEL_COLOR,
@@ -105,4 +111,7 @@ export default {
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
     OUTSIDE_PIC_URL,
     DATASET_MANIFEST_GUIDE_URL,
+    HEALH_CHECK_RETRIES,
+    HEALTH_CHECK_PERIOD,
+    HEALTH_CHECK_REQUEST_TIMEOUT,
 };

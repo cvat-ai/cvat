@@ -1,6 +1,10 @@
+#!/usr/bin/env python3
+
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+
 import argparse
 import os
 import sys
@@ -89,6 +93,7 @@ def main():
             sys.exit(str(ex))
 
     print('The manifest file has been prepared')
+
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(base_dir)

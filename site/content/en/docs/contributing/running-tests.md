@@ -39,6 +39,7 @@ yarn run cypress:run:chrome:canvas3d
 # REST API, SDK and CLI tests
 
 **Initial steps**
+
 1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
@@ -72,6 +73,51 @@ If you need to rebuild your CVAT images add `--rebuild` option:
 ```
 pytest ./tests/python --rebuild
 ```
+
+**Debugging**
+
+Currently, this is only supported in docker-compose deployments, which should be
+enough to fix errors arising in REST API tests.
+
+To debug a server deployed with Docker, you need to do the following:
+
+Rebuild the images and start the test containers:
+
+```bash
+CVAT_DEBUG_ENABLED=yes pytest --rebuild --start-services tests/python
+```
+
+Now, you can use VS Code tasks to attach to the running server containers.
+To attach to a container, run one of the following tasks:
+- `REST API tests: Attach to server` for the server container
+- `REST API tests: Attach to RQ low` for the low priority queue worker
+- `REST API tests: Attach to RQ default` for the default priority queue worker
+
+> If you have a custom development environment setup, you need to adjust
+host-remote path mappings in the `.vscode/launch.json`:
+```json
+...
+"pathMappings": [
+   {
+      "localRoot": "${workspaceFolder}/my_venv",
+      "remoteRoot": "/opt/venv",
+   },
+   {
+      "localRoot": "/some/other/path",
+      "remoteRoot": "/some/container/path",
+   }
+]
+```
+
+Extra options:
+- If you want the server to wait for a debugger on startup,
+  use the `CVAT_DEBUG_WAIT_CLIENT` environment variable:
+  ```bash
+  CVAT_DEBUG_WAIT_CLIENT=yes pytest ...
+  ```
+- If you want to change the default debugging ports, check the `*_DEBUG_PORT`
+  variables in the `docker-compose.dev.yml`
+
 
 # Unit tests
 
