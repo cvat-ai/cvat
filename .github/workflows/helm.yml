@@ -98,6 +98,8 @@ jobs:
         pip3 install --user -r tests/python/requirements.txt
 
     - name: REST API and SDK tests
+      # We don't have external services in Helm tests, so we ignore corresponding cases
+      # They are still tested without Helm
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
         pytest --platform=kube \
@@ -106,4 +108,8 @@ jobs:
           --ignore=tests/python/rest_api/test_resource_import_export.py \
           --ignore=tests/python/rest_api/test_webhooks_sender.py \
           -k 'not create_task_with_cloud_storage_files' \
+          -k 'not test_can_reach_cloud_storages_limit' \
+          -k 'not test_cannot_create_task_with_mythical_cloud_storage_data' \
+          -k 'not test_cant_create_task_with_no_data' \
+          -k 'not test_can_create_task_with_git_repo' \
         tests/python
