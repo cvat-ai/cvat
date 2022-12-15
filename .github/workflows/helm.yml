@@ -115,5 +115,5 @@ jobs:
           --ignore=tests/python/rest_api/test_analytics.py \
           --ignore=tests/python/rest_api/test_resource_import_export.py \
           --ignore=tests/python/rest_api/test_webhooks_sender.py \
-          -k ${test_filter[@]} \
+          -k "${test_filter[@]}" \
           tests/python
