@@ -101,7 +101,8 @@ jobs:
       # We don't have external services in Helm tests, so we ignore corresponding cases
       # They are still tested without Helm
       run: |
-        kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+        kubectl cp tests/mounted_file_share/images \
+          $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
         pytest --platform=kube \
           --ignore=tests/python/rest_api/test_cloud_storages.py \
           --ignore=tests/python/rest_api/test_analytics.py \
@@ -112,4 +113,4 @@ jobs:
               not test_cannot_create_task_with_mythical_cloud_storage_data and \
               not test_cant_create_task_with_no_data and \
               not test_can_create_task_with_git_repo' \
-        tests/python
+          tests/python
