@@ -10,7 +10,6 @@ from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, patch_method, post_method
 
-
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
 pytestmark = [pytest.mark.with_external_services]
 
