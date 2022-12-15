@@ -8,6 +8,9 @@ from rq import Worker
 import cvat.utils.remote_debugger as debug
 
 
+DefaultWorker = Worker
+
+
 class BaseDeathPenalty:
     def __init__(self, timeout, exception, **kwargs):
         pass
@@ -20,6 +23,10 @@ class BaseDeathPenalty:
 
 
 class SimpleWorker(Worker):
+    """
+    Allows to work with at most 1 worker thread. Useful for debugging.
+    """
+
     death_penalty_class = BaseDeathPenalty
 
     def main_work_horse(self, *args, **kwargs):
@@ -31,7 +38,7 @@ class SimpleWorker(Worker):
 
 
 if debug.is_debugging_enabled():
-    class DebugWorker(SimpleWorker):
+    class RemoteDebugWorker(SimpleWorker):
         """
         Support for VS code debugger
         """
@@ -45,3 +52,5 @@ if debug.is_debugging_enabled():
             self.__debugger.attach_current_thread()
 
             return super().execute_job(*args, **kwargs)
+
+    DefaultWorker = RemoteDebugWorker
