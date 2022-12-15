@@ -178,18 +178,6 @@ function build() {
                 return result;
             },
             /**
-             * Method returns enabled advanced authentication methods
-             * @method advancedAuthentication
-             * @async
-             * @memberof module:API.cvat.server
-             * @throws {module:API.cvat.exceptions.ServerError}
-             * @throws {module:API.cvat.exceptions.PluginError}
-             */
-            async advancedAuthentication() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
-                return result;
-            },
-            /**
              * Method allows to change user password
              * @method changePassword
              * @async
@@ -258,6 +246,26 @@ function build() {
                 return result;
             },
             /**
+             * Method allows to health check the server
+             * @method healthCheck
+             * @async
+             * @memberof module:API.cvat.server
+             * @param {number} requestTimeout
+             * @returns {Object | undefined} response data if exist
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async healthCheck(maxRetries = 1, checkPeriod = 3000, requestTimeout = 5000, progressCallback = undefined) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.healthCheck,
+                    maxRetries,
+                    checkPeriod,
+                    requestTimeout,
+                    progressCallback,
+                );
+                return result;
+            },
+            /**
              * Method allows to do requests via cvat-core with authorization headers
              * @method request
              * @async
@@ -284,6 +292,18 @@ function build() {
              */
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
+                return result;
+            },
+            async loginWithSocialAccount(
+                provider: string,
+                code: string,
+                authParams?: string,
+                process?: string,
+                scope?: string,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.loginWithSocialAccount, provider, code, authParams, process, scope,
+                );
                 return result;
             },
         },
