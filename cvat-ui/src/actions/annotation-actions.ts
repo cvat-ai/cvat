@@ -1496,13 +1496,13 @@ export function pasteShapeAsync(): ThunkAction {
         if (initialState && canvasInstance) {
             const activeControl = ShapeTypeToControl[initialState.shapeType as ShapeType] || ActiveControl.CURSOR;
 
+            canvasInstance.cancel();
             dispatch({
                 type: AnnotationActionTypes.PASTE_SHAPE,
                 payload: {
                     activeControl,
                 },
             });
-            canvasInstance.cancel();
 
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({

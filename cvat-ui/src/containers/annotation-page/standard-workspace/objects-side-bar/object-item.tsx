@@ -225,7 +225,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private activate = (activeElementID?: number): void => {
         const {
-            objectState, ready, activeControl, activateObject, canvasInstance,
+            objectState, ready, activeControl, activateObject,
         } = this.props;
 
         if (ready && activeControl === ActiveControl.CURSOR) {
@@ -233,9 +233,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 objectState.clientID,
                 (Number.isInteger(activeElementID) ? activeElementID : null) as number | null,
             );
-            if (canvasInstance instanceof Canvas3d) {
-                canvasInstance.activate(objectState.clientID);
-            }
         }
     };
 

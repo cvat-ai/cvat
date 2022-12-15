@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ObjectState } from '.';
 import {
     Canvas3dModel, Mode, DrawData, ActiveElement, GroupData, Configuration,
 } from './canvas3dModel';
@@ -10,10 +11,10 @@ import {
 export interface Canvas3dController {
     readonly drawData: DrawData;
     readonly activeElement: ActiveElement;
-    readonly selected: any;
     readonly groupData: GroupData;
     readonly configuration: Configuration;
     readonly imageIsDeleted: boolean;
+    readonly objects: ObjectState[];
     mode: Mode;
     group(groupData: GroupData): void;
 }
@@ -41,10 +42,6 @@ export class Canvas3dControllerImpl implements Canvas3dController {
         return this.model.data.activeElement;
     }
 
-    public get selected(): any {
-        return this.model.data.selected;
-    }
-
     public get imageIsDeleted(): any {
         return this.model.imageIsDeleted;
     }
@@ -55,6 +52,10 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public get configuration(): Configuration {
         return this.model.configuration;
+    }
+
+    public get objects(): ObjectState[] {
+        return this.model.objects;
     }
 
     public group(groupData: GroupData): void {
