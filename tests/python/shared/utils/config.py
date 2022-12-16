@@ -14,6 +14,8 @@ USER_PASS = "!Q@W#E$R"  # nosec
 BASE_URL = "http://localhost:8080"
 API_URL = BASE_URL + "/api/"
 
+OPA_URL = BASE_URL.rsplit(":", maxsplit=1)[0] + ":8181"
+
 # MiniIO settings
 MINIO_KEY = "minio_access_key"
 MINIO_SECRET_KEY = "minio_secret_key"  # nosec
