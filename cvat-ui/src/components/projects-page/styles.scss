@@ -141,6 +141,16 @@
         cursor: pointer;
     }
 
+    .cvat-project-item-loading-preview {
+        .ant-spin {
+            position: inherit;
+        }
+
+        font-size: $grid-unit-size * 15;
+        text-align: center;
+        height: $grid-unit-size * 24;
+    }
+
     .cvat-projects-project-item-title {
         cursor: pointer;
     }

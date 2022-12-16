@@ -7,7 +7,6 @@ import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Text from 'antd/lib/typography/Text';
-import Empty from 'antd/lib/empty';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Dropdown from 'antd/lib/dropdown';
@@ -17,6 +16,7 @@ import { MoreOutlined } from '@ant-design/icons';
 import { CombinedState, Project } from 'reducers';
 import { useCardHeightHOC } from 'utils/hooks';
 import ProjectActionsMenuComponent from './actions-menu';
+import Preview from './project-preview';
 
 interface Props {
     projectInstance: Project;
@@ -31,7 +31,7 @@ const useCardHeight = useCardHeightHOC({
 
 export default function ProjectItemComponent(props: Props): JSX.Element {
     const {
-        projectInstance: { instance, preview },
+        projectInstance: { instance },
     } = props;
 
     const history = useHistory();
@@ -53,21 +53,9 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
 
     return (
         <Card
-            cover={
-                preview ? (
-                    <img
-                        className='cvat-projects-project-item-card-preview'
-                        src={preview}
-                        alt='Preview'
-                        onClick={onOpenProject}
-                        aria-hidden
-                    />
-                ) : (
-                    <div className='cvat-projects-project-item-card-preview' onClick={onOpenProject} aria-hidden>
-                        <Empty description='No tasks' />
-                    </div>
-                )
-            }
+            cover={(
+                <Preview project={{ instance }} onOpenProject={onOpenProject} />
+            )}
             size='small'
             style={style}
             className='cvat-projects-project-item-card'

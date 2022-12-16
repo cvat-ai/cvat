@@ -15,6 +15,7 @@ const defaultState: ProjectsState = {
     fetching: false,
     count: 0,
     current: [],
+    previews: {},
     gettingQuery: {
         page: 1,
         id: null,
@@ -63,10 +64,9 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 current: [],
             };
         case ProjectsActionTypes.GET_PROJECTS_SUCCESS: {
-            const combinedWithPreviews = action.payload.array.map(
-                (project: any, index: number): Project => ({
+            const projects = action.payload.array.map(
+                (project: any): Project => ({
                     instance: project,
-                    preview: action.payload.previews[index],
                 }),
             );
 
@@ -75,7 +75,7 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 initialized: true,
                 fetching: false,
                 count: action.payload.count,
-                current: combinedWithPreviews,
+                current: projects,
             };
         }
         case ProjectsActionTypes.GET_PROJECTS_FAILED: {
@@ -205,6 +205,46 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case ProjectsActionTypes.GET_PROJECT_PREVIEW: {
+            const { projectID } = action.payload;
+            const { previews } = state;
+            previews[projectID] = {
+                preview: '',
+                fetching: true,
+                initialized: false,
+            };
+            return {
+                ...state,
+                previews,
+            };
+        }
+        case ProjectsActionTypes.GET_PROJECT_PREVIEW_SUCCESS: {
+            const { projectID, preview } = action.payload;
+            const { previews } = state;
+            previews[projectID] = {
+                ...previews[projectID],
+                preview,
+                initialized: true,
+                fetching: false,
+            };
+            return {
+                ...state,
+                previews,
+            };
+        }
+        case ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED: {
+            const { projectID } = action.payload;
+            const { previews } = state;
+            previews[projectID] = {
+                ...previews[projectID],
+                initialized: true,
+                fetching: false,
+            };
+            return {
+                ...state,
+                previews,
+            };
         }
         default:
             return state;

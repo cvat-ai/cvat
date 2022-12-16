@@ -77,6 +77,7 @@ from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
+from cvat.apps.engine.cache import CacheInteraction
 
 
 @extend_schema(tags=['server'])
@@ -622,6 +623,28 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
+    @extend_schema(summary='Method returns a preview image for the project',
+        responses={
+            '200': OpenApiResponse(description='Project image preview'),
+        })
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        self._object = self.get_object() # call check_object_permissions as well
+
+        first_task = self._object.tasks.order_by('-id').first()
+        if not first_task:
+            return HttpResponseNotFound()
+
+        data_getter = DataChunkGetter(
+            data_type='preview',
+            data_quality='compressed',
+            data_num=first_task.data.start_frame,
+            task_dim=first_task.dimension
+        )
+
+        return data_getter(request, first_task.data.start_frame,
+           first_task.data.stop_frame, first_task.data)
+
     @staticmethod
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
@@ -648,21 +671,20 @@ class DataChunkGetter:
 
         if not data_type or data_type not in possible_data_type_values:
             raise ValidationError('Data type not specified or has wrong value')
-        elif data_type == 'chunk' or data_type == 'frame':
-            if not data_num:
+        elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
+            if data_num is None:
                 raise ValidationError('Number is not specified')
             elif data_quality not in possible_quality_values:
                 raise ValidationError('Wrong quality value')
 
         self.type = data_type
-        self.number = int(data_num) if data_num else None
+        self.number = int(data_num) if data_num is not None else None
         self.quality = FrameProvider.Quality.COMPRESSED \
             if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
 
         self.dimension = task_dim
 
-
-    def __call__(self, request, start, stop, db_data, db_object):
+    def __call__(self, request, start, stop, db_data):
         if not db_data:
             raise NotFound(detail='Cannot find requested data')
 
@@ -687,16 +709,22 @@ class DataChunkGetter:
                 path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
                 return sendfile(request, path)
 
-            elif self.type == 'frame':
+            elif self.type == 'frame' or self.type == 'preview':
                 if not (start <= self.number <= stop):
                     raise ValidationError('The frame number should be in ' +
                         f'[{start}, {stop}] range')
 
-                buf, mime = frame_provider.get_frame(self.number, self.quality)
-                return HttpResponse(buf.getvalue(), content_type=mime)
+                if self.type == 'preview':
+                    key = f'data_{db_data.id}_{self.number}_preview'
+                    cache = CacheInteraction(self.dimension)
+                    buf, mime = cache.get_preview(key)
+                    if not buf:
+                        buf, mime = frame_provider.get_preview(self.number)
+                        cache.save_preview(key, buf, mime)
+                else:
+                    buf, mime = frame_provider.get_frame(self.number, self.quality)
 
-            elif self.type == 'preview':
-                return sendfile(request, db_object.get_preview_path())
+                return HttpResponse(buf.getvalue(), content_type=mime)
 
             elif self.type == 'context_image':
                 if not (start <= self.number <= stop):
@@ -982,13 +1010,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
-                type=OpenApiTypes.STR, enum=['chunk', 'frame', 'preview', 'context_image'],
+                type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],
                 description='Specifies the type of the requested data'),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
-                description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
+                description="Specifies the quality level of the requested data"),
             OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
+                description="A unique number value identifying chunk or frame"),
         ],
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
@@ -1017,7 +1045,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 self._object.dimension)
 
             return data_getter(request, self._object.data.start_frame,
-                self._object.data.stop_frame, self._object.data, self._object.data)
+                self._object.data.stop_frame, self._object.data)
 
     @extend_schema(methods=['PATCH'],
         operation_id='tasks_partial_update_data_file',
@@ -1316,6 +1344,24 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return Response(data="Exporting a dataset from a task without data is not allowed",
                 status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(summary='Method returns a preview image for the task',
+        responses={
+            '200': OpenApiResponse(description='Task image preview'),
+        })
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        self._object = self.get_object() # call check_object_permissions as well
+
+        data_getter = DataChunkGetter(
+            data_type='preview',
+            data_quality='compressed',
+            data_num=self._object.data.start_frame,
+            task_dim=self._object.dimension
+        )
+
+        return data_getter(request, self._object.data.start_frame,
+            self._object.data.stop_frame, self._object.data)
 
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
@@ -1625,12 +1671,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
                 location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.STR,
-                enum=['chunk', 'frame', 'preview', 'context_image']),
+                enum=['chunk', 'frame', 'context_image']),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
-                description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
+                description="Specifies the quality level of the requested data"),
             OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
+                description="A unique number value identifying chunk or frame"),
             ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
@@ -1646,7 +1692,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_job.segment.task.dimension)
 
         return data_getter(request, db_job.segment.start_frame,
-            db_job.segment.stop_frame, db_job.segment.task.data, db_job)
+            db_job.segment.stop_frame, db_job.segment.task.data)
 
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
@@ -1736,6 +1782,24 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         serializer = JobCommitSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
+
+    @extend_schema(summary='Method returns a preview image for the job',
+        responses={
+            '200': OpenApiResponse(description='Job image preview'),
+        })
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        self._object = self.get_object() # call check_object_permissions as well
+
+        data_getter = DataChunkGetter(
+            data_type='preview',
+            data_quality='compressed',
+            data_num=self._object.segment.start_frame,
+            task_dim=self._object.segment.task.dimension
+        )
+
+        return data_getter(request, self._object.segment.start_frame,
+           self._object.segment.stop_frame, self._object.segment.task.data)
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(
@@ -2101,7 +2165,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         storage = None
         try:
             db_storage = self.get_object()
-            if not os.path.exists(db_storage.get_preview_path()):
+            cache = CacheInteraction()
+            key = f'cloudstorage_{db_storage.id}_preview'
+            preview, mime = cache.get_preview(key)
+            if not preview:
                 storage = db_storage_to_storage_instance(db_storage)
                 if not db_storage.manifests.count():
                     raise ValidationError('Cannot get the cloud storage preview. There is no manifest file')
@@ -2129,13 +2196,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     slogger.cloud_storage[pk].info(msg)
                     return HttpResponseBadRequest(msg)
 
-                with NamedTemporaryFile() as temp_image:
-                    storage.download_file(preview_path, temp_image.name)
-                    reader = ImageListReader([temp_image.name])
-                    preview = reader.get_preview(frame=0)
-                    preview.save(db_storage.get_preview_path())
-            content_type = mimetypes.guess_type(db_storage.get_preview_path())[0]
-            return HttpResponse(open(db_storage.get_preview_path(), 'rb').read(), content_type)
+                preview = storage.download_fileobj(preview_path)
+                mime = mimetypes.guess_type(preview_path)[0]
+                cache.save_preview(key, preview, mime)
+            return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)

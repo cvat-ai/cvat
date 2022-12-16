@@ -91,6 +91,16 @@
     &:hover {
         border: 1px solid $border-color-hover;
     }
+
+    .cvat-task-item-loading-preview,
+    .cvat-task-item-empty-preview {
+        .ant-spin {
+            position: inherit;
+        }
+
+        font-size: $grid-unit-size * 6;
+        text-align: center;
+    }
 }
 
 .cvat-task-item-preview-wrapper {

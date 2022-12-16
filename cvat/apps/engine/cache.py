@@ -25,15 +25,24 @@ class CacheInteraction:
     def __del__(self):
         self._cache.close()
 
-    def get_buff_mime(self, chunk_number, quality, db_data):
-        chunk, tag = self._cache.get('{}_{}_{}'.format(db_data.id, chunk_number, quality), tag=True)
+    def get_chunk_mime(self, chunk_number, quality, db_data):
+        cache_key = f'{db_data.id}_{chunk_number}_{quality}'
+        chunk, tag = self._cache.get(cache_key, tag=True)
 
         if not chunk:
-            chunk, tag = self.prepare_chunk_buff(db_data, quality, chunk_number)
-            self.save_chunk(db_data.id, chunk_number, quality, chunk, tag)
+            chunk, tag = self._prepare_chunk_buff(db_data, quality, chunk_number)
+            self._cache.set(cache_key, chunk, tag=tag)
+
         return chunk, tag
 
-    def prepare_chunk_buff(self, db_data, quality, chunk_number):
+    def get_preview(self, key):
+        # cache_key = f'{frame_provider.data_id}_{image_number}_preview'
+        return self._cache.get(key, tag=True)
+
+    def save_preview(self, key, image, mime):
+        self._cache.set(key, image, tag=mime)
+
+    def _prepare_chunk_buff(self, db_data, quality, chunk_number):
         from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
         writer_classes = {
             FrameProvider.Quality.COMPRESSED : Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter,
@@ -107,6 +116,3 @@ class CacheInteraction:
             for image_path in images:
                 os.remove(image_path)
         return buff, mime_type
-
-    def save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):
-        self._cache.set('{}_{}_{}'.format(db_data_id, chunk_number, quality), buff, tag=mime_type)

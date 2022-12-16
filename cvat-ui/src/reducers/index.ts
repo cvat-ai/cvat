@@ -48,6 +48,11 @@ export interface ProjectsQuery {
 
 export interface Project {
     instance: any;
+}
+
+interface ProjectPreview {
+    fetching: boolean;
+    initialized: boolean;
     preview: string;
 }
 
@@ -56,6 +61,9 @@ export interface ProjectsState {
     fetching: boolean;
     count: number;
     current: Project[];
+    previews: {
+        [index: number]: ProjectPreview;
+    };
     gettingQuery: ProjectsQuery;
     tasksGettingQuery: TasksQuery & { ordering: string };
     activities: {
@@ -80,7 +88,6 @@ export interface TasksQuery {
 
 export interface Task {
     instance: any; // cvat-core instance
-    preview: string;
 }
 
 export interface JobsQuery {
@@ -90,12 +97,28 @@ export interface JobsQuery {
     filter: string | null;
 }
 
+export type Job = any;
+
+interface JobPreview {
+    fetching: boolean;
+    initialized: boolean;
+    preview: string;
+}
+
 export interface JobsState {
     query: JobsQuery;
     fetching: boolean;
     count: number;
-    current: any[];
-    previews: string[];
+    current: Job[];
+    previews: {
+        [index: number]: JobPreview;
+    };
+}
+
+interface TaskPreview {
+    fetching: boolean;
+    initialized: boolean;
+    preview: string;
 }
 
 export interface TasksState {
@@ -110,6 +133,9 @@ export interface TasksState {
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
+    previews: {
+        [index: number]: TaskPreview;
+    };
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)

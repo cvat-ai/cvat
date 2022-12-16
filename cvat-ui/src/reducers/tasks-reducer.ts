@@ -23,6 +23,7 @@ const defaultState: TasksState = {
     },
     count: 0,
     current: [],
+    previews: {},
     gettingQuery: {
         page: 1,
         id: null,
@@ -56,10 +57,9 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 } : state.gettingQuery,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
-            const combinedWithPreviews = action.payload.array.map(
-                (task: any, index: number): Task => ({
+            const tasks = action.payload.array.map(
+                (task: any): Task => ({
                     instance: task,
-                    preview: action.payload.previews[index],
                 }),
             );
 
@@ -69,7 +69,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
                 updating: false,
                 count: action.payload.count,
-                current: combinedWithPreviews,
+                current: tasks,
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -235,6 +235,46 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case TasksActionTypes.GET_TASK_PREVIEW: {
+            const { taskID } = action.payload;
+            const { previews } = state;
+            previews[taskID] = {
+                preview: '',
+                fetching: true,
+                initialized: false,
+            };
+            return {
+                ...state,
+                previews,
+            };
+        }
+        case TasksActionTypes.GET_TASK_PREVIEW_SUCCESS: {
+            const { taskID, preview } = action.payload;
+            const { previews } = state;
+            previews[taskID] = {
+                ...previews[taskID],
+                preview,
+                initialized: true,
+                fetching: false,
+            };
+            return {
+                ...state,
+                previews,
+            };
+        }
+        case TasksActionTypes.GET_TASK_PREVIEW_FAILED: {
+            const { taskID } = action.payload;
+            const { previews } = state;
+            previews[taskID] = {
+                ...previews[taskID],
+                initialized: true,
+                fetching: false,
+            };
+            return {
+                ...state,
+                previews,
+            };
         }
         default:
             return state;

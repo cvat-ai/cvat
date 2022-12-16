@@ -16,10 +16,10 @@ import moment from 'moment';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
+import Preview from './task-preview';
 
 export interface TaskItemProps {
     taskInstance: any;
-    previewImage: string;
     deleted: boolean;
     hidden: boolean;
     activeInference: ActiveInference | null;
@@ -28,12 +28,13 @@ export interface TaskItemProps {
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
     private renderPreview(): JSX.Element {
-        const { previewImage } = this.props;
+        const { taskInstance } = this.props;
         return (
             <Col span={4}>
-                <div className='cvat-task-item-preview-wrapper'>
+                <Preview taskInstance={taskInstance} />
+                {/* <div className='cvat-task-item-preview-wrapper'>
                     <img alt='Preview' className='cvat-task-item-preview' src={previewImage} />
-                </div>
+                </div> */}
             </Col>
         );
     }

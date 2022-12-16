@@ -110,6 +110,12 @@
     background-color: $background-color-2;
 }
 
+.cvat-task-item-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .cvat-task-parameters {
     margin-top: $grid-unit-size * 2;
 }

@@ -64,7 +64,6 @@ function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JS
         <DetailsComponent
             dumpers={dumpers}
             user={user}
-            previewImage={task.preview}
             taskInstance={task.instance}
             installedGit={installedGit}
             activeInference={activeInference}

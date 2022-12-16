@@ -3296,7 +3296,9 @@ class TaskDataAPITestCase(APITestCase):
             return self.client.get(url)
 
     def _get_preview(self, tid, user):
-        return self._run_api_v2_task_id_data_get(tid, user, "preview")
+        url = '/api/tasks/{}/preview'.format(tid)
+        with ForceLogin(user, self.client):
+            return self.client.get(url)
 
     def _get_compressed_chunk(self, tid, user, number):
         return self._run_api_v2_task_id_data_get(tid, user, "chunk", "compressed", number)

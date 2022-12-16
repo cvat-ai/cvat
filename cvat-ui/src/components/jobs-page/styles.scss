@@ -72,6 +72,17 @@
             cursor: pointer;
         }
 
+        .cvat-job-item-loading-preview,
+        .cvat-job-item-empty-preview {
+            .ant-spin {
+                position: inherit;
+            }
+
+            font-size: $grid-unit-size * 15;
+            text-align: center;
+            height: $grid-unit-size * 24;
+        }
+
         .cvat-job-page-list-item-dimension {
             position: absolute;
             top: 0;
