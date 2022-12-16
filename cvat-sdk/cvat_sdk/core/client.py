@@ -43,9 +43,6 @@ class Config:
     verify_ssl: Optional[bool] = None
     """Whether to verify host SSL certificate or not"""
 
-    max_status_checks: Optional[int] = None
-    """Allows to control default maximum number of retries in status checks"""
-
 
 class Client:
     """
