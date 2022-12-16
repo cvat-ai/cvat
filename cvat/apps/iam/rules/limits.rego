@@ -17,6 +17,7 @@ CAP_ORG_PROJECTS = "ORG_PROJECTS"
 CAP_TASKS_IN_ORG_PROJECT = "TASKS_IN_ORG_PROJECT"
 CAP_ORG_CLOUD_STORAGES = "ORG_CLOUD_STORAGES"
 CAP_ORG_COMMON_WEBHOOKS = "ORG_COMMON_WEBHOOKS"
+CAP_ORG_MEMBERS = "ORG_MEMBERS"
 CAP_PROJECT_WEBHOOKS = "PROJECT_WEBHOOKS"
 
 
@@ -101,6 +102,13 @@ problems contains "org cloud storages limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].used,
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].max
+    )
+}
+
+problems contains "org members limit reached" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_ORG_MEMBERS].used,
+        input.resource.limits[CAP_ORG_MEMBERS].max
     )
 }
 
