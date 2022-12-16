@@ -251,14 +251,13 @@ def start_services(rebuild=False):
     docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
 
 
-@pytest.fixture(autouse=True, scope="session")
-def services(request):
-    stop = request.config.getoption("--stop-services")
-    start = request.config.getoption("--start-services")
-    rebuild = request.config.getoption("--rebuild")
-    cleanup = request.config.getoption("--cleanup")
-    dumpdb = request.config.getoption("--dumpdb")
-    platform = request.config.getoption("--platform")
+def pytest_sessionstart(session):
+    stop = session.config.getoption("--stop-services")
+    start = session.config.getoption("--start-services")
+    rebuild = session.config.getoption("--rebuild")
+    cleanup = session.config.getoption("--cleanup")
+    dumpdb = session.config.getoption("--dumpdb")
+    platform = session.config.getoption("--platform")
 
     if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
         raise Exception(
@@ -310,11 +309,6 @@ def services(request):
         if start:
             pytest.exit("All necessary containers have been created and started.", returncode=0)
 
-        yield
-
-        docker_restore_db()
-        docker_exec_cvat_db("dropdb test_db")
-
     elif platform == "kube":
         kube_restore_data_volumes()
         server_pod_name = _kube_get_server_pod_name()
@@ -334,7 +328,13 @@ def services(request):
             ]
         )
 
-        yield
+
+def pytest_sessionfinish(session, exitstatus):
+    platform = session.config.getoption("--platform")
+
+    if platform == "local":
+        docker_restore_db()
+        docker_exec_cvat_db("dropdb test_db")
 
 
 @pytest.fixture(scope="function")
