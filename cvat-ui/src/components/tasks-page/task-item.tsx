@@ -32,9 +32,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         return (
             <Col span={4}>
                 <Preview taskInstance={taskInstance} />
-                {/* <div className='cvat-task-item-preview-wrapper'>
-                    <img alt='Preview' className='cvat-task-item-preview' src={previewImage} />
-                </div> */}
             </Col>
         );
     }
