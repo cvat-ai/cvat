@@ -178,7 +178,7 @@ class Client:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
-        positive_statuses = set(positive_statuses or []) | {success_status}
+        positive_statuses = set(positive_statuses) | {success_status}
 
         while True:
             sleep(status_check_period)

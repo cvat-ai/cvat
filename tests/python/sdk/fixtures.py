@@ -23,13 +23,7 @@ def fxt_client(fxt_logger):
     api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
-
-    # Max waiting time is the product of these values
-    # We don't expect any test to be waiting for long, in general.
-    # For the most requests, we should wait for 2s maximum.
-    # If a long waiting happens, something is wrong.
     client.config.status_check_period = 0.01
-    client.config.max_status_checks = 1000
 
     with client:
         yield client
