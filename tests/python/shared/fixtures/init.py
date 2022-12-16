@@ -188,13 +188,13 @@ def delete_compose_files():
 
 
 def wait_for_server():
-    for i in range(75):
+    for i in range(300):
         logging.getLogger(__package__).debug(f"waiting for the server to appear ... ({i})")
         response = requests.get(get_api_url("users/self"))
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             logging.getLogger(__package__).debug("the server has been found!")
             return
-        sleep(2)
+        sleep(1)
 
     raise Exception(
         textwrap.dedent(
