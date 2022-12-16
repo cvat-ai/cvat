@@ -178,18 +178,6 @@ function build() {
                 return result;
             },
             /**
-             * Method returns enabled advanced authentication methods
-             * @method advancedAuthentication
-             * @async
-             * @memberof module:API.cvat.server
-             * @throws {module:API.cvat.exceptions.ServerError}
-             * @throws {module:API.cvat.exceptions.PluginError}
-             */
-            async advancedAuthentication() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
-                return result;
-            },
-            /**
              * Method allows to change user password
              * @method changePassword
              * @async
@@ -304,6 +292,18 @@ function build() {
              */
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
+                return result;
+            },
+            async loginWithSocialAccount(
+                provider: string,
+                code: string,
+                authParams?: string,
+                process?: string,
+                scope?: string,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.loginWithSocialAccount, provider, code, authParams, process, scope,
+                );
                 return result;
             },
         },
