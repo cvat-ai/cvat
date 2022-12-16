@@ -179,7 +179,7 @@ class FrameProvider:
         preview.thumbnail(PREVIEW_SIZE)
 
         output_buf = BytesIO()
-        preview.save(output_buf, format="JPEG")
+        preview.convert('RGB').save(output_buf, format="JPEG")
 
         return output_buf, PREVIEW_MIME
 
