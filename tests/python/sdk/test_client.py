@@ -6,17 +6,12 @@ import io
 from contextlib import ExitStack
 from logging import Logger
 from typing import Tuple
-from unittest import mock
 
 import packaging.version as pv
 import pytest
-import urllib3
 from cvat_sdk import Client
 from cvat_sdk.core.client import Config, make_client
-from cvat_sdk.core.exceptions import (
-    IncompatibleVersionException,
-    InvalidHostException,
-)
+from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
 
 from shared.utils.config import BASE_URL, USER_PASS
