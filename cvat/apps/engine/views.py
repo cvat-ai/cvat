@@ -11,7 +11,7 @@ import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp, NamedTemporaryFile
+from tempfile import mkstemp
 
 import cv2
 from django.db.models.query import Prefetch
@@ -45,7 +45,6 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
