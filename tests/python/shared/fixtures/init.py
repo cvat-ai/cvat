@@ -37,7 +37,6 @@ DC_FILES = [
     )
 ] + CONTAINER_NAME_FILES
 
-
 def pytest_addoption(parser):
     group = parser.getgroup("CVAT REST API testing options")
     group._addoption(
