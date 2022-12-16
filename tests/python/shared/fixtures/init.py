@@ -4,10 +4,10 @@
 
 import logging
 import re
+import textwrap
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
-import textwrap
 from time import sleep
 
 import pytest
@@ -196,10 +196,14 @@ def wait_for_server():
             return
         sleep(2)
 
-    raise Exception(textwrap.dedent("""\
+    raise Exception(
+        textwrap.dedent(
+            """\
         Failed to reach the server during the specified period.
         Please check the configuration.
-    """))
+    """
+        )
+    )
 
 
 def docker_restore_data_volumes():
