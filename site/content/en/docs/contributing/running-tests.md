@@ -76,8 +76,8 @@ pytest ./tests/python --rebuild
 
 **Debugging**
 
-Currently, this is only supported in docker-compose deployments, which should be
-enough to fix errors arising in REST API tests.
+Currently, this is only supported in `docker-compose`-based deployments,
+which should be enough to fix errors arising in REST API tests.
 
 To debug a server deployed with Docker, you need to do the following:
 
