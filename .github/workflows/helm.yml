@@ -20,13 +20,14 @@ jobs:
           PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-          for FILE in $PR_FILES; do
-              if [[ $FILE == helm-chart/* ]] ; then
-                echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
-                break
-              fi
-          done
+          echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
+          # PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          # for FILE in $PR_FILES; do
+          #     if [[ $FILE == helm-chart/* ]] ; then
+          #       echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
+          #       break
+          #     fi
+          # done
 
   testing:
     needs: check_changes
@@ -100,5 +101,5 @@ jobs:
     - name: REST API and SDK tests
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
-        pytest --platform=kube -m "not with_external_services" \
-          tests/python
+        pytest --co --platform=kube -m "not with_external_services" tests/python
+        pytest --platform=kube -m "not with_external_services" tests/python
