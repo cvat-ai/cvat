@@ -102,4 +102,4 @@ jobs:
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
         pytest --co --platform=kube -m "not with_external_services" tests/python
-        pytest --platform=kube -m "not with_external_services" tests/python
+        pytest --platform=kube -m "not with_external_services" --log-level-cli debug tests/python

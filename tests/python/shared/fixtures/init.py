@@ -2,10 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import re
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
+import textwrap
 from time import sleep
 
 import pytest
@@ -186,11 +188,18 @@ def delete_compose_files():
 
 
 def wait_for_server():
-    for _ in range(30):
+    for i in range(75):
+        logging.getLogger(__package__).debug(f"waiting for the server to appear ... ({i})")
         response = requests.get(get_api_url("users/self"))
         if response.status_code == HTTPStatus.UNAUTHORIZED:
-            break
-        sleep(5)
+            logging.getLogger(__package__).debug("the server has been found!")
+            return
+        sleep(2)
+
+    raise Exception(textwrap.dedent("""\
+        Failed to reach the server during the specified period.
+        Please check the configuration.
+    """))
 
 
 def docker_restore_data_volumes():
