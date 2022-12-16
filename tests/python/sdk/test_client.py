@@ -6,12 +6,18 @@ import io
 from contextlib import ExitStack
 from logging import Logger
 from typing import Tuple
+from unittest import mock
 
 import packaging.version as pv
 import pytest
+import urllib3
 from cvat_sdk import Client
 from cvat_sdk.core.client import Config, make_client
-from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
+from cvat_sdk.core.exceptions import (
+    IncompatibleVersionException,
+    InvalidHostException,
+    TimedOutException,
+)
 from cvat_sdk.exceptions import ApiException
 
 from shared.utils.config import BASE_URL, USER_PASS
@@ -56,6 +62,40 @@ class TestClientUsecases:
         version = self.client.get_server_version()
 
         assert (version.major, version.minor) >= (2, 0)
+
+    @pytest.mark.parametrize("limit_type", ["arg", "config"])
+    def test_can_time_out_during_waiting(self, limit_type: str, monkeypatch: pytest.MonkeyPatch):
+        limit = None
+        if limit_type == "arg":
+            limit = 2
+        elif limit_type == "config":
+            monkeypatch.setattr(self.client.config, "max_status_checks", 2)
+        else:
+            assert False
+
+        response_mock = mock.Mock(spec=urllib3.HTTPResponse, status=42)
+        request_cb_mock = mock.MagicMock(return_value=response_mock)
+
+        with ExitStack() as es:
+            es.enter_context(
+                mock.patch.object(
+                    self.client.api_client.rest_client,
+                    "request",
+                    new=request_cb_mock,
+                )
+            )
+            capture = es.enter_context(pytest.raises(TimedOutException))
+
+            self.client.wait_for_completion(
+                "/api/endpoint",
+                success_status=200,
+                positive_statuses=[42],
+                status_check_period=0.01,
+                max_attempts=limit,
+            )
+
+        assert request_cb_mock.call_count == 2
+        assert "Max operation status retries reached" in str(capture.value)
 
 
 def test_can_strip_trailing_slash_in_hostname_in_make_client(admin_user: str):

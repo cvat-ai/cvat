@@ -13,3 +13,7 @@ class InvalidHostException(CvatSdkException):
 
 class IncompatibleVersionException(CvatSdkException):
     """Indicates server and SDK version mismatch"""
+
+
+class TimedOutException(CvatSdkException):
+    """Indicates an operation took too much time"""

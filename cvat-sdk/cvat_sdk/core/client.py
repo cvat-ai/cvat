@@ -17,7 +17,11 @@ import urllib3
 import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
-from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
+from cvat_sdk.core.exceptions import (
+    IncompatibleVersionException,
+    InvalidHostException,
+    TimedOutException,
+)
 from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
@@ -42,6 +46,9 @@ class Config:
 
     verify_ssl: Optional[bool] = None
     """Whether to verify host SSL certificate or not"""
+
+    max_status_checks: Optional[int] = None
+    """Allows to control default maximum number of retries in status checks"""
 
 
 class Client:
@@ -174,13 +181,20 @@ class Client:
         post_params: Optional[Dict[str, Any]] = None,
         method: str = "POST",
         positive_statuses: Optional[Sequence[int]] = None,
+        max_attempts: Optional[int] = None,
     ) -> urllib3.HTTPResponse:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
+        if max_attempts is None:
+            max_attempts = self.config.max_status_checks
 
-        positive_statuses = set(positive_statuses) | {success_status}
+        positive_statuses = set(positive_statuses or []) | {success_status}
 
+        attempt = 0
         while True:
+            if max_attempts and max_attempts <= attempt:
+                raise TimedOutException(f"Max operation status retries reached ({max_attempts})")
+
             sleep(status_check_period)
 
             response = self.api_client.rest_client.request(
@@ -195,6 +209,8 @@ class Client:
             expect_status(positive_statuses, response)
             if response.status == success_status:
                 break
+
+            attempt += 1
 
         return response
 
