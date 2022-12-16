@@ -639,6 +639,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             SAVE_JOB: keyMap.SAVE_JOB,
             UNDO: keyMap.UNDO,
             REDO: keyMap.REDO,
+            DELETE_FRAME: keyMap.DELETE_FRAME,
             NEXT_FRAME: keyMap.NEXT_FRAME,
             PREV_FRAME: keyMap.PREV_FRAME,
             FORWARD_FRAME: keyMap.FORWARD_FRAME,
@@ -666,6 +667,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 if (!saving) {
                     this.onSaveAnnotation();
+                }
+            },
+            DELETE_FRAME: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                if (canvasIsReady) {
+                    this.onDeleteFrame();
                 }
             },
             NEXT_FRAME: (event: KeyboardEvent | undefined) => {
@@ -760,6 +767,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     // this shortcut is handled in interactionHandler.ts separatelly
                     switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
+                    deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}
                     nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
                     previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
                     forwardShortcut={normalizedKeyMap.FORWARD_FRAME}

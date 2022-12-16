@@ -21,6 +21,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
 - A PyTorch dataset adapter layer in the SDK
   (<https://github.com/opencv/cvat/pull/5417>)
 - A way to debug the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
