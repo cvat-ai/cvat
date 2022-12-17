@@ -4,15 +4,13 @@
 
 import logging
 import re
-from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
 
 import pytest
-import requests
 
-from shared.utils.config import ASSETS_DIR, OPA_URL, get_api_url
+from shared.utils.config import ASSETS_DIR
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
