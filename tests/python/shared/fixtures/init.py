@@ -188,35 +188,23 @@ def delete_compose_files():
 
 def wait_for_services():
     wait_for_server()
-    wait_for_opa()
 
 
 def wait_for_server():
     for i in range(300):
         logging.getLogger(__package__).debug(f"waiting for the server to appear ... ({i})")
-        response = requests.get(get_api_url("users/self"))
-        if response.status_code == HTTPStatus.UNAUTHORIZED:
+        try:
+            docker_exec_cvat("python manage.py health_check")
             logging.getLogger(__package__).debug("the server has been found!")
             return
+        except Exception as e:
+            logging.getLogger(__package__).debug(f"Server status check failed: \n{e}")
+            if "health_check.exceptions.HealthCheckException" not in str(e):
+                raise
         sleep(1)
 
     raise Exception(
-        "Failed to reach the server during the specified period." "Please check the configuration."
-    )
-
-
-def wait_for_opa():
-    for i in range(300):
-        logging.getLogger(__package__).debug(f"waiting for the opa to load ... ({i})")
-        response = requests.get(OPA_URL + "/health?bundles")
-        if response.status_code == HTTPStatus.OK:
-            logging.getLogger(__package__).debug("the rules have been loaded!")
-            return
-        sleep(1)
-
-    raise Exception(
-        "The OPA service hasn't loaded during the specified period."
-        "Please check the configuration."
+        "Failed to reach the server during the specified period. Please check the configuration."
     )
 
 
