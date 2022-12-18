@@ -196,7 +196,7 @@ jobs:
 
       - name: Running REST API and SDK tests
         run: |
-          pip3 install --user /tmp/cvat_sdk/
+          pip3 install --user '/tmp/cvat_sdk/[pytorch]'
           pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python -s -v

@@ -65,7 +65,7 @@ class TestCLI:
         backup_path = self.tmp_path / "backup.zip"
 
         fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
-        fxt_new_task.download_backup(str(backup_path))
+        fxt_new_task.download_backup(backup_path)
 
         yield backup_path
 
@@ -79,7 +79,7 @@ class TestCLI:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=list(map(os.fspath, files)),
+            resources=files,
         )
 
         return task

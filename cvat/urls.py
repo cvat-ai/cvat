@@ -48,3 +48,6 @@ if apps.is_installed('cvat.apps.limit_manager'):
 
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
+
+if apps.is_installed('health_check'):
+    urlpatterns.append(path('api/server/health/', include('health_check.urls')))

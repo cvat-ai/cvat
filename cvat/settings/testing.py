@@ -64,6 +64,11 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
 
+# Most of the tests don't suppose user limitations
+# When needed, this can be enabled with a decorator
+# and tested specifically
+IAM_USER_LIMITS_ENABLED = False
+
 # When you run ./manage.py test, Django looks at the TEST_RUNNER setting to
 # determine what to do. By default, TEST_RUNNER points to
 # 'django.test.runner.DiscoverRunner'. This class defines the default Django
