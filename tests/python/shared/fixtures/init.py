@@ -9,8 +9,9 @@ from subprocess import PIPE, CalledProcessError, run
 from time import sleep
 
 import pytest
+import requests
 
-from shared.utils.config import ASSETS_DIR
+from shared.utils.config import ASSETS_DIR, get_server_url
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
@@ -191,14 +192,18 @@ def wait_for_services():
 def wait_for_server():
     for i in range(300):
         logging.getLogger(__package__).debug(f"waiting for the server to appear ... ({i})")
+        response = requests.get(get_server_url("api/server/health/", format="json"))
         try:
-            docker_exec_cvat("python manage.py health_check")
-            logging.getLogger(__package__).debug("the server has been found!")
-            return
+            statuses = response.json()
+            if all(v == "working" for v in statuses.values()):
+                logging.getLogger(__package__).debug("the server has finished loading!")
+                return
+            else:
+                logging.getLogger(__package__).debug(f"server status: \n{statuses}")
         except Exception as e:
-            logging.getLogger(__package__).debug(f"Server status check failed: \n{e}")
-            if "health_check.exceptions.HealthCheckException" not in str(e):
-                raise
+            logging.getLogger(__package__).debug(
+                f"an error occurred during the server status checking: {e}"
+            )
         sleep(1)
 
     raise Exception(
@@ -218,7 +223,7 @@ def kube_restore_data_volumes():
     pod_name = _kube_get_server_pod_name()
     kube_cp(
         CVAT_DB_DIR / "cvat_data.tar.bz2",
-        f"{pod_name}:/tmp/cvat_data.tar.bz2",
+        f"{pod_name}:/tifmp/cvat_data.tar.bz2",
     )
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
