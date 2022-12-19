@@ -186,12 +186,8 @@ def delete_compose_files():
 
 
 def wait_for_services():
-    wait_for_server()
-
-
-def wait_for_server():
     for i in range(300):
-        logging.getLogger(__package__).debug(f"waiting for the server to appear ... ({i})")
+        logging.getLogger(__package__).debug(f"waiting for the server to load ... ({i})")
         response = requests.get(get_server_url("api/server/health/", format="json"))
         try:
             statuses = response.json()
