@@ -6,6 +6,7 @@ from enum import Enum, auto
 from typing import Optional, cast
 
 from attrs import define
+from django.conf import settings
 
 from cvat.apps.engine.models import CloudStorage, Project, Task
 from cvat.apps.organizations.models import Organization
@@ -125,7 +126,7 @@ class LimitManager:
 
             return LimitStatus(
                 Organization.objects.filter(owner_id=context.user_id).count(),
-                1
+                settings.DEFAULT_LIMITS["USER_OWNED_ORGS"],
             )
 
         elif limit == Limits.USER_SANDBOX_PROJECTS:
@@ -135,7 +136,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(owner=context.user_id, organization=None).count(),
-                3
+                settings.DEFAULT_LIMITS["USER_SANDBOX_PROJECTS"],
             )
 
         elif limit == Limits.ORG_PROJECTS:
@@ -145,7 +146,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
-                3
+                settings.DEFAULT_LIMITS["ORG_PROJECTS"],
             )
 
         elif limit == Limits.USER_SANDBOX_TASKS:
@@ -155,7 +156,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(owner=context.user_id, organization=None).count(),
-                10
+                settings.DEFAULT_LIMITS["USER_SANDBOX_TASKS"],
             )
 
         elif limit == Limits.ORG_TASKS:
@@ -165,7 +166,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(organization=context.org_id).count(),
-                10
+                settings.DEFAULT_LIMITS["ORG_TASKS"],
             )
 
         elif limit == Limits.TASKS_IN_USER_SANDBOX_PROJECT:
@@ -175,7 +176,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                5
+                settings.DEFAULT_LIMITS["TASKS_IN_USER_SANDBOX_PROJECT"]
             )
 
         elif limit == Limits.TASKS_IN_ORG_PROJECT:
@@ -185,7 +186,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                5
+                settings.DEFAULT_LIMITS["TASKS_IN_ORG_PROJECT"]
             )
 
         elif limit == Limits.PROJECT_WEBHOOKS:
@@ -196,7 +197,7 @@ class LimitManager:
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
                 Webhook.objects.filter(project=context.project_id).count(),
-                10
+                settings.DEFAULT_LIMITS["PROJECT_WEBHOOKS"]
             )
 
         elif limit == Limits.ORG_COMMON_WEBHOOKS:
@@ -205,7 +206,7 @@ class LimitManager:
 
             return LimitStatus(
                 Webhook.objects.filter(organization=context.org_id, project=None).count(),
-                20
+                settings.DEFAULT_LIMITS["ORG_COMMON_WEBHOOKS"]
             )
 
         elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
@@ -214,7 +215,7 @@ class LimitManager:
 
             return LimitStatus(
                 CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
-                10
+                settings.DEFAULT_LIMITS["USER_SANDBOX_CLOUD_STORAGES"]
             )
 
         elif limit == Limits.ORG_CLOUD_STORAGES:
@@ -223,7 +224,7 @@ class LimitManager:
 
             return LimitStatus(
                 CloudStorage.objects.filter(organization=context.org_id).count(),
-                10
+                settings.DEFAULT_LIMITS["ORG_CLOUD_STORAGES"]
             )
 
         raise NotImplementedError(f"Unknown capability {limit.name}")
