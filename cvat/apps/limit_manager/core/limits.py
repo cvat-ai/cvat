@@ -50,14 +50,14 @@ class Limits(Enum):
     TASKS_IN_USER_SANDBOX_PROJECT = auto()
     USER_OWNED_ORGS = auto()
     USER_SANDBOX_CLOUD_STORAGES = auto()
+    USER_SANDBOX_PROJECT_WEBHOOKS = auto()
 
     ORG_TASKS = auto()
     ORG_PROJECTS = auto()
     TASKS_IN_ORG_PROJECT = auto()
     ORG_CLOUD_STORAGES = auto()
     ORG_COMMON_WEBHOOKS = auto()
-
-    PROJECT_WEBHOOKS = auto()
+    ORG_PROJECT_WEBHOOKS = auto()
 
 
 class CapabilityContext:
@@ -120,7 +120,12 @@ class UserOrgsContext(UserCapabilityContext):
 
 
 @define(kw_only=True)
-class ProjectWebhooksContext(CapabilityContext):
+class UserSandboxProjectWebhooksContext(UserCapabilityContext):
+    project_id: int
+
+
+@define(kw_only=True)
+class OrgProjectWebhooksContext(OrgCapabilityContext):
     project_id: int
 
 
@@ -237,9 +242,10 @@ class LimitManager:
                 limitation.tasks_per_project,
             )
 
-        elif limit == Limits.PROJECT_WEBHOOKS:
-            assert context is not None
-            context = cast(ProjectWebhooksContext, context)
+        elif limit in [Limits.USER_SANDBOX_PROJECT_WEBHOOKS, Limits.ORG_PROJECT_WEBHOOKS]:
+            assert isinstance(context,
+                (UserSandboxProjectWebhooksContext, OrgProjectWebhooksContext)
+            )
 
             return LimitStatus(
                 # We only limit webhooks per project, not per user
