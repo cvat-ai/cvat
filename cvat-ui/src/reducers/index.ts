@@ -46,9 +46,7 @@ export interface ProjectsQuery {
     sort: string | null;
 }
 
-export interface Project {
-    instance: any;
-}
+export type Project = any;
 
 interface ProjectPreview {
     fetching: boolean;
@@ -86,9 +84,7 @@ export interface TasksQuery {
     projectId: number | null;
 }
 
-export interface Task {
-    instance: any; // cvat-core instance
-}
+export type Task = any; // cvat-core instance
 
 export interface JobsQuery {
     page: number;

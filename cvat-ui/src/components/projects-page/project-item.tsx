@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,8 +16,8 @@ import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState, Project } from 'reducers';
 import { useCardHeightHOC } from 'utils/hooks';
+import Preview from 'components/common/preview';
 import ProjectActionsMenuComponent from './actions-menu';
-import Preview from './project-preview';
 
 interface Props {
     projectInstance: Project;
@@ -31,7 +32,7 @@ const useCardHeight = useCardHeightHOC({
 
 export default function ProjectItemComponent(props: Props): JSX.Element {
     const {
-        projectInstance: { instance },
+        projectInstance: instance,
     } = props;
 
     const history = useHistory();
@@ -54,7 +55,14 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     return (
         <Card
             cover={(
-                <Preview project={{ instance }} onOpenProject={onOpenProject} />
+                <Preview
+                    project={instance}
+                    loadingClassName='cvat-project-item-loading-preview'
+                    emptyPreviewClassName='cvat-project-item-empty-preview'
+                    previewWrapperClassName='cvat-projects-project-item-card-preview-wrapper'
+                    previewClassName='cvat-projects-project-item-card-preview'
+                    onClick={onOpenProject}
+                />
             )}
             size='small'
             style={style}

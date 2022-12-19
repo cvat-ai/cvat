@@ -57,19 +57,13 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 } : state.gettingQuery,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
-            const tasks = action.payload.array.map(
-                (task: any): Task => ({
-                    instance: task,
-                }),
-            );
-
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 updating: false,
                 count: action.payload.count,
-                current: tasks,
+                current: action.payload.array,
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -140,7 +134,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 return {
                     ...state,
                     updating: false,
-                    current: state.current.filter((_task: Task): boolean => _task.instance.id !== taskID),
+                    current: state.current.filter((_task: Task): boolean => _task.id !== taskID),
                 };
             }
 
@@ -149,11 +143,8 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 updating: false,
                 current: state.current.map(
                     (_task): Task => {
-                        if (_task.instance.id === task.id) {
-                            return {
-                                ..._task,
-                                instance: task,
-                            };
+                        if (_task.id === task.id) {
+                            return task;
                         }
 
                         return _task;
@@ -167,11 +158,8 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 updating: false,
                 current: state.current.map(
                     (task): Task => {
-                        if (task.instance.id === action.payload.task.id) {
-                            return {
-                                ...task,
-                                instance: action.payload.task,
-                            };
+                        if (task.id === action.payload.task.id) {
+                            return action.payload.task;
                         }
 
                         return task;
@@ -239,41 +227,46 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case TasksActionTypes.GET_TASK_PREVIEW: {
             const { taskID } = action.payload;
             const { previews } = state;
-            previews[taskID] = {
-                preview: '',
-                fetching: true,
-                initialized: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [taskID]: {
+                        preview: '',
+                        fetching: true,
+                        initialized: false,
+                    },
+                },
             };
         }
         case TasksActionTypes.GET_TASK_PREVIEW_SUCCESS: {
             const { taskID, preview } = action.payload;
             const { previews } = state;
-            previews[taskID] = {
-                ...previews[taskID],
-                preview,
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [taskID]: {
+                        preview,
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         case TasksActionTypes.GET_TASK_PREVIEW_FAILED: {
             const { taskID } = action.payload;
             const { previews } = state;
-            previews[taskID] = {
-                ...previews[taskID],
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [taskID]: {
+                        ...previews[taskID],
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         default:

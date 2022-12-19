@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,13 +19,13 @@ import { getCore } from 'cvat-core-wrapper';
 import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import Preview from 'components/common/preview';
 import Descriptions from 'antd/lib/descriptions';
 import Space from 'antd/lib/space';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
-import Preview from './task-preview';
 
 const { Option } = Select;
 
@@ -388,8 +389,12 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     <Col md={8} lg={7} xl={7} xxl={6}>
                         <Row justify='start' align='middle'>
                             <Col span={24}>
-                                <Preview taskInstance={taskInstance} />
-                                {' '}
+                                <Preview
+                                    task={taskInstance}
+                                    loadingClassName='cvat-task-item-loading-preview'
+                                    emptyPreviewClassName='cvat-task-item-empty-preview'
+                                    previewClassName='cvat-task-item-preview'
+                                />
                             </Col>
                         </Row>
                         <Row>

@@ -64,18 +64,12 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 current: [],
             };
         case ProjectsActionTypes.GET_PROJECTS_SUCCESS: {
-            const projects = action.payload.array.map(
-                (project: any): Project => ({
-                    instance: project,
-                }),
-            );
-
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 count: action.payload.count,
-                current: projects,
+                current: action.payload.array,
             };
         }
         case ProjectsActionTypes.GET_PROJECTS_FAILED: {
@@ -130,13 +124,11 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => ({
-                        ...project,
-                        instance:
-                            project.instance.id === action.payload.project.id ?
-                                action.payload.project :
-                                project.instance,
-                    }),
+                    (project): Project => (
+                        project.id === action.payload.project.id ?
+                            action.payload.project :
+                            project
+                    ),
                 ),
             };
         }
@@ -144,13 +136,9 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => ({
-                        ...project,
-                        instance:
-                            project.instance.id === action.payload.project.id ?
-                                action.payload.project :
-                                project.instance,
-                    }),
+                    (project): Project => (project.id === action.payload.project.id ?
+                        action.payload.project :
+                        project),
                 ),
             };
         }
@@ -209,41 +197,46 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case ProjectsActionTypes.GET_PROJECT_PREVIEW: {
             const { projectID } = action.payload;
             const { previews } = state;
-            previews[projectID] = {
-                preview: '',
-                fetching: true,
-                initialized: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [projectID]: {
+                        preview: '',
+                        fetching: true,
+                        initialized: false,
+                    },
+                },
             };
         }
         case ProjectsActionTypes.GET_PROJECT_PREVIEW_SUCCESS: {
             const { projectID, preview } = action.payload;
             const { previews } = state;
-            previews[projectID] = {
-                ...previews[projectID],
-                preview,
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [projectID]: {
+                        preview,
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         case ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED: {
             const { projectID } = action.payload;
             const { previews } = state;
-            previews[projectID] = {
-                ...previews[projectID],
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [projectID]: {
+                        ...previews[projectID],
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         default:

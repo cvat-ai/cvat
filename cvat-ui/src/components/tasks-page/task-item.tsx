@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,9 +15,9 @@ import Progress from 'antd/lib/progress';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
+import Preview from 'components/common/preview';
 import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
-import Preview from './task-preview';
 
 export interface TaskItemProps {
     taskInstance: any;
@@ -31,7 +32,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { taskInstance } = this.props;
         return (
             <Col span={4}>
-                <Preview taskInstance={taskInstance} />
+                <Preview
+                    task={taskInstance}
+                    loadingClassName='cvat-task-item-loading-preview'
+                    emptyPreviewClassName='cvat-task-item-empty-preview'
+                    previewWrapperClassName='cvat-task-item-preview-wrapper'
+                    previewClassName='cvat-task-item-preview'
+                />
             </Col>
         );
     }

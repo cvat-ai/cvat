@@ -47,41 +47,46 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
         case JobsActionTypes.GET_JOB_PREVIEW: {
             const { jobID } = action.payload;
             const { previews } = state;
-            previews[jobID] = {
-                preview: '',
-                fetching: true,
-                initialized: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [jobID]: {
+                        preview: '',
+                        fetching: true,
+                        initialized: false,
+                    },
+                },
             };
         }
         case JobsActionTypes.GET_JOB_PREVIEW_SUCCESS: {
             const { jobID, preview } = action.payload;
             const { previews } = state;
-            previews[jobID] = {
-                ...previews[jobID],
-                preview,
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [jobID]: {
+                        preview,
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         case JobsActionTypes.GET_JOB_PREVIEW_FAILED: {
             const { jobID } = action.payload;
             const { previews } = state;
-            previews[jobID] = {
-                ...previews[jobID],
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [jobID]: {
+                        ...previews[jobID],
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         default: {

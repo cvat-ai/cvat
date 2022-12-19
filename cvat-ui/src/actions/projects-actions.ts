@@ -37,8 +37,8 @@ export enum ProjectsActionTypes {
 // prettier-ignore
 const projectActions = {
     getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
-    getProjectsSuccess: (array: any[], previews: string[], count: number) => (
-        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, previews, count })
+    getProjectsSuccess: (array: any[], count: number) => (
+        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
     ),
     getProjectsFailed: (error: any) => createAction(ProjectsActionTypes.GET_PROJECTS_FAILED, { error }),
     updateProjectsGettingQuery: (query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {}) => (
@@ -121,8 +121,7 @@ export function getProjectsAsync(
 
         const array = Array.from(result);
 
-        const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
-        dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
+        dispatch(projectActions.getProjectsSuccess(array, result.count));
 
         // Appropriate tasks fetching proccess needs with retrieving only a single project
         if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {

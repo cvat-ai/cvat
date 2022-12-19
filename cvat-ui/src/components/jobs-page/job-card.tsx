@@ -15,7 +15,7 @@ import Menu from 'antd/lib/menu';
 import { MenuInfo } from 'rc-menu/lib/interface';
 import { useCardHeightHOC } from 'utils/hooks';
 import { exportActions } from 'actions/export-actions';
-import Preview from './job-preview';
+import Preview from 'components/common/preview';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
@@ -34,6 +34,15 @@ function JobCardComponent(props: Props): JSX.Element {
     const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
     const height = useCardHeight();
+    const onClick = (event: React.MouseEvent): void => {
+        const url = `/tasks/${job.taskId}/jobs/${job.id}`;
+        if (event.ctrlKey) {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            window.open(url, '_blank', 'noopener noreferrer');
+        } else {
+            history.push(url);
+        }
+    };
 
     return (
         <Card
@@ -43,7 +52,14 @@ function JobCardComponent(props: Props): JSX.Element {
             className='cvat-job-page-list-item'
             cover={(
                 <>
-                    <Preview job={job} />
+                    <Preview
+                        job={job}
+                        onClick={onClick}
+                        loadingClassName='cvat-job-item-loading-preview'
+                        emptyPreviewClassName='cvat-job-item-empty-preview'
+                        previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
+                        previewClassName='cvat-jobs-page-job-item-card-preview'
+                    />
                     <div className='cvat-job-page-list-item-id'>
                         ID:
                         {` ${job.id}`}
