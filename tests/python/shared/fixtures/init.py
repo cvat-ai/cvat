@@ -223,7 +223,7 @@ def kube_restore_data_volumes():
     pod_name = _kube_get_server_pod_name()
     kube_cp(
         CVAT_DB_DIR / "cvat_data.tar.bz2",
-        f"{pod_name}:/tifmp/cvat_data.tar.bz2",
+        f"{pod_name}:/tmp/cvat_data.tar.bz2",
     )
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
