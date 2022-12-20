@@ -21,6 +21,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
 - A PyTorch dataset adapter layer in the SDK
   (<https://github.com/opencv/cvat/pull/5417>)
 - A way to debug the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
@@ -103,6 +104,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 - Creating a task with a Git repository via the SDK
   (<https://github.com/opencv/cvat/issues/4365>)
+- `Project.import_dataset` not waiting for completion correctly
+  (<https://github.com/opencv/cvat/pull/5459>)
 
 ### Security
 - TDB
