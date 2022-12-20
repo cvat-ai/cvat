@@ -4,9 +4,13 @@
 
 import logging
 import sys
+import os.path as osp
 from typing import Dict
+from contextlib import contextmanager
 
 from attr import define, field
+from django.conf import settings
+
 from cvat.settings.base import LOGGING
 from .models import Job, Task, Project, CloudStorage
 
@@ -175,3 +179,25 @@ def close_all():
 
     for logger in _opened_loggers.values():
         _close_logger(logger)
+
+@contextmanager
+def get_migration_logger(migration_name):
+    migration_log_file = '{}.log'.format(migration_name)
+    stdout = sys.stdout
+    stderr = sys.stderr
+    # redirect all stdout to the file
+    log_file_object = open(osp.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
+    sys.stdout = log_file_object
+    sys.stderr = log_file_object
+
+    log = logging.getLogger(migration_name)
+    log.addHandler(logging.StreamHandler(stdout))
+    log.addHandler(logging.StreamHandler(log_file_object))
+    log.setLevel(logging.INFO)
+
+    try:
+        yield log
+    finally:
+        log_file_object.close()
+        sys.stdout = stdout
+        sys.stderr = stderr
