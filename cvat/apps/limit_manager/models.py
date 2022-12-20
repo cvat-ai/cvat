@@ -26,7 +26,7 @@ class Limitation(models.Model):
     # List of limitations:
     #   - null means unlimited
     #   - blank means that certain limit not applicable
-    memberships = models.PositiveIntegerField(default=2, null=True, blank=True)
+    memberships = models.PositiveIntegerField(default=3, null=True, blank=True)
 
     organizations = models.PositiveIntegerField(default=1, null=True, blank=True)
     tasks = models.PositiveIntegerField(default=10, null=True)

@@ -8,7 +8,7 @@ from typing import Optional, cast
 from attrs import define
 
 from cvat.apps.engine.models import CloudStorage, Project, Task
-from cvat.apps.organizations.models import Organization
+from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.webhooks.models import Webhook
 
 from cvat.apps.limit_manager.models import Limitation
@@ -56,6 +56,7 @@ class Limits(Enum):
     ORG_PROJECTS = auto()
     TASKS_IN_ORG_PROJECT = auto()
     ORG_CLOUD_STORAGES = auto()
+    ORG_MEMBERS = auto()
     ORG_COMMON_WEBHOOKS = auto()
     ORG_LAMBDA_CALL_OFFLINE = auto()
 
@@ -124,6 +125,11 @@ class UserOrgsContext(UserCapabilityContext):
 @define(kw_only=True)
 class ProjectWebhooksContext(CapabilityContext):
     project_id: int
+
+
+@define(kw_only=True)
+class OrgMembersContext(OrgCapabilityContext):
+    pass
 
 
 @define(kw_only=True)
@@ -260,8 +266,10 @@ class LimitManager:
             context = cast(OrgCommonWebhooksContext, context)
 
             return LimitStatus(
-                Webhook.objects.filter(organization=context.org_id, project=None).count(),
-                limitation.webhooks_per_organization
+                Webhook.objects.filter(
+                    organization=context.org_id, project=None
+                ).count(),
+                limitation.webhooks_per_organization,
             )
 
         elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
@@ -269,8 +277,10 @@ class LimitManager:
             context = cast(UserSandboxCloudStoragesContext, context)
 
             return LimitStatus(
-                CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
-                limitation.cloud_storages
+                CloudStorage.objects.filter(
+                    owner=context.user_id, organization=None
+                ).count(),
+                limitation.cloud_storages,
             )
 
         elif limit == Limits.ORG_CLOUD_STORAGES:
@@ -280,6 +290,15 @@ class LimitManager:
             return LimitStatus(
                 CloudStorage.objects.filter(organization=context.org_id).count(),
                 limitation.cloud_storages,
+            )
+
+        elif limit == Limits.ORG_MEMBERS:
+            assert context is not None
+            context = cast(OrgMembersContext, context)
+
+            return LimitStatus(
+                Membership.objects.filter(organization=context.org_id).count(),
+                limitation.memberships,
             )
 
         elif limit == Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE:
