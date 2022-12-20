@@ -21,6 +21,10 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
+- A PyTorch dataset adapter layer in the SDK
+  (<https://github.com/opencv/cvat/pull/5417>)
+- A way to debug the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
@@ -29,6 +33,9 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Adjusted initial camera position, enabled 'Reset zoom' option for 3D canvas (<https://github.com/opencv/cvat/pull/5395>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
+- Unify error handling with the cloud storage (<https://github.com/opencv/cvat/pull/5389>)
+- In the SDK, functions taking paths as strings now also accept path-like objects
+  (<https://github.com/opencv/cvat/pull/5435>)
 
 ### Deprecated
 - TDB
@@ -97,6 +104,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 - Creating a task with a Git repository via the SDK
   (<https://github.com/opencv/cvat/issues/4365>)
+- `Project.import_dataset` not waiting for completion correctly
+  (<https://github.com/opencv/cvat/pull/5459>)
 
 ### Security
 - TDB

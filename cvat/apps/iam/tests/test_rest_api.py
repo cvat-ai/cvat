@@ -146,10 +146,8 @@ class TestIamApi(APITestCase):
     def test_can_report_denial_reason(self):
         expected_reasons = ["hello", "world"]
 
-        with (
-            self._mock_permissions((False, expected_reasons)),
-            ForceLogin(user=self.user, client=self.client),
-        ):
+        with self._mock_permissions((False, expected_reasons)), \
+                ForceLogin(user=self.user, client=self.client):
             response = self.client.get(self.ENDPOINT_WITH_AUTH)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
             self.assertEqual(response.json(), expected_reasons)
@@ -157,10 +155,8 @@ class TestIamApi(APITestCase):
     def test_can_report_merged_denial_reasons(self):
         expected_reasons = [["hello", "world"], ["hi", "there"]]
 
-        with (
-            self._mock_permissions(*zip(repeat(False), expected_reasons)),
-            ForceLogin(user=self.user, client=self.client),
-        ):
+        with self._mock_permissions(*zip(repeat(False), expected_reasons)), \
+                ForceLogin(user=self.user, client=self.client):
             response = self.client.get(self.ENDPOINT_WITH_AUTH)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
             self.assertEqual(response.json(), list(itertools.chain.from_iterable(expected_reasons)))
@@ -171,20 +167,16 @@ class TestIamApi(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_can_allow_if_permissions_allow(self):
-        with (
-            self._mock_permissions((True, [])),
-            ForceLogin(user=self.user, client=self.client),
-        ):
+        with self._mock_permissions((True, [])), \
+                ForceLogin(user=self.user, client=self.client):
             response = self.client.get(self.ENDPOINT_WITH_AUTH)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_can_deny_if_some_permissions_deny(self):
         expected_reasons = ["hello"]
 
-        with (
-            self._mock_permissions((True, []), (False, expected_reasons)),
-            ForceLogin(user=self.user, client=self.client),
-        ):
+        with self._mock_permissions((True, []), (False, expected_reasons)), \
+                ForceLogin(user=self.user, client=self.client):
             response = self.client.get(self.ENDPOINT_WITH_AUTH)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
             self.assertEqual(response.json(), expected_reasons)
