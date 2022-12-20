@@ -46,13 +46,13 @@ export interface ProjectsQuery {
     sort: string | null;
 }
 
-export type Project = any;
-
-interface ProjectPreview {
+interface Preview {
     fetching: boolean;
     initialized: boolean;
     preview: string;
 }
+
+export type Project = any;
 
 export interface ProjectsState {
     initialized: boolean;
@@ -60,7 +60,7 @@ export interface ProjectsState {
     count: number;
     current: Project[];
     previews: {
-        [index: number]: ProjectPreview;
+        [index: number]: Preview;
     };
     gettingQuery: ProjectsQuery;
     tasksGettingQuery: TasksQuery & { ordering: string };
@@ -95,26 +95,14 @@ export interface JobsQuery {
 
 export type Job = any;
 
-interface JobPreview {
-    fetching: boolean;
-    initialized: boolean;
-    preview: string;
-}
-
 export interface JobsState {
     query: JobsQuery;
     fetching: boolean;
     count: number;
     current: Job[];
     previews: {
-        [index: number]: JobPreview;
+        [index: number]: Preview;
     };
-}
-
-interface TaskPreview {
-    fetching: boolean;
-    initialized: boolean;
-    preview: string;
 }
 
 export interface TasksState {
@@ -130,7 +118,7 @@ export interface TasksState {
     count: number;
     current: Task[];
     previews: {
-        [index: number]: TaskPreview;
+        [index: number]: Preview;
     };
     activities: {
         deletes: {
@@ -236,14 +224,11 @@ export interface CloudStoragesQuery {
     filter: string | null;
 }
 
-interface CloudStorageAdditional {
+interface CloudStorageStatus {
     fetching: boolean;
     initialized: boolean;
     status: string | null;
-    preview: string;
 }
-type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'status'>;
-type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'preview'>;
 
 export type CloudStorage = any;
 
@@ -256,7 +241,7 @@ export interface CloudStoragesState {
         [index: number]: CloudStorageStatus;
     };
     previews: {
-        [index: number]: CloudStoragePreview;
+        [index: number]: Preview;
     };
     gettingQuery: CloudStoragesQuery;
     activities: {
