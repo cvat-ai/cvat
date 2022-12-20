@@ -4,6 +4,7 @@
 
 import logging
 import re
+from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
@@ -12,6 +13,8 @@ import pytest
 import requests
 
 from shared.utils.config import ASSETS_DIR, get_server_url
+
+logger = logging.getLogger(__name__)
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
@@ -187,19 +190,17 @@ def delete_compose_files():
 
 def wait_for_services():
     for i in range(300):
-        logging.getLogger(__package__).debug(f"waiting for the server to load ... ({i})")
+        logger.debug(f"waiting for the server to load ... ({i})")
         response = requests.get(get_server_url("api/server/health/", format="json"))
-        try:
-            statuses = response.json()
-            if all(v == "working" for v in statuses.values()):
-                logging.getLogger(__package__).debug("the server has finished loading!")
-                return
-            else:
-                logging.getLogger(__package__).debug(f"server status: \n{statuses}")
-        except Exception as e:
-            logging.getLogger(__package__).debug(
-                f"an error occurred during the server status checking: {e}"
-            )
+        if response.status_code == HTTPStatus.OK:
+            logger.debug("the server has finished loading!")
+            return
+        else:
+            try:
+                statuses = response.json()
+                logger.debug(f"server status: \n{statuses}")
+            except Exception as e:
+                logger.debug(f"an error occurred during the server status checking: {e}")
         sleep(1)
 
     raise Exception(
