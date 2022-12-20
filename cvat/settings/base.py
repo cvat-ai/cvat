@@ -137,6 +137,7 @@ INSTALLED_APPS = [
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
+    'cvat.apps.limit_manager',
     'cvat.apps.health',
 ]
 
@@ -256,6 +257,7 @@ IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+IAM_USER_LIMITS_ENABLED = True
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'

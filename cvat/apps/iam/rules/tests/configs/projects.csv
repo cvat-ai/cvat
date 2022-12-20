@@ -1,10 +1,10 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
-create,Project,Sandbox,N/A,resource['user']['num_resources'] < 3,POST,/projects,User,N/A
-create,Project,Organization,N/A,resource['user']['num_resources'] < 3,POST,/projects,User,Supervisor
+create,Project,Sandbox,N/A,,POST,/projects,User,N/A
+create,Project,Organization,N/A,,POST,/projects,User,Supervisor
 create,Project,Sandbox,N/A,,POST,/projects,Business,N/A
 create,Project,Organization,N/A,,POST,/projects,Business,Supervisor
-import:backup,Project,Sandbox,N/A,resource['user']['num_resources'] < 3,POST,/projects/backup,User,N/A
-import:backup,Project,Organization,N/A,resource['user']['num_resources'] < 3,POST,/projects/backup,User,Supervisor
+import:backup,Project,Sandbox,N/A,,POST,/projects/backup,User,N/A
+import:backup,Project,Organization,N/A,,POST,/projects/backup,User,Supervisor
 import:backup,Project,Sandbox,N/A,,POST,/projects/backup,Business,N/A
 import:backup,Project,Organization,N/A,,POST,/projects/backup,Business,Supervisor
 list,N/A,Sandbox,N/A,,GET,/projects,None,N/A

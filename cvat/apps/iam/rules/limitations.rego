@@ -1,39 +1,34 @@
-package lambda
+package limitations
 import data.utils
+import data.organizations
 
-# input: {
-#     "scope": <"list"|"view"|"call:online"|"call:offline"> or null,
+# input : {
+#     "scope": <"update" | "list"> or null,
 #     "auth": {
 #         "user": {
-#             "id": <num>,
+#             "id": <num>
 #             "privilege": <"admin"|"business"|"user"|"worker"> or null
-#         },
+#         }
 #         "organization": {
 #             "id": <num>,
-#             "owner": {
+#             "owner":
 #                 "id": <num>
 #             },
 #             "user": {
 #                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #             }
 #         } or null,
+#     },
+#     "resource": {
+#         "id": <num>,
+#         "user": { "id": <num> },
+#         "organization": { "id": <num> } or null,
 #     }
 # }
+#
 
 default allow = false
+
 allow {
     utils.is_admin
-}
-
-allow {
-    input.scope == utils.LIST
-}
-
-allow {
-    input.scope == utils.VIEW
-}
-
-allow {
-    {utils.CALL_ONLINE, utils.CALL_OFFLINE}[input.scope]
-    utils.has_perm(utils.WORKER)
 }

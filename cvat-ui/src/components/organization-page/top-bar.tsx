@@ -18,6 +18,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Menu from 'antd/lib/menu';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
+import consts from 'consts';
 
 import {
     EditTwoTone, EnvironmentOutlined,
@@ -40,6 +41,7 @@ export interface Props {
 
 export enum MenuActions {
     SET_WEBHOOKS = 'SET_WEBHOOKS',
+    UPGRADE = 'UPGRADE',
     REMOVE_ORGANIZATION = 'REMOVE_ORGANIZATION',
 }
 
@@ -55,6 +57,8 @@ function OrganizationTopBar(props: Props): JSX.Element {
     const [editingDescription, setEditingDescription] = useState<boolean>(false);
     const dispatch = useDispatch();
 
+    const { CVAT_BILLING_URL } = consts;
+
     useEffect(() => {
         const listener = (event: MouseEvent): void => {
             const divElement = descriptionEditingRef.current;
@@ -68,6 +72,39 @@ function OrganizationTopBar(props: Props): JSX.Element {
             window.removeEventListener('mousedown', listener);
         };
     });
+
+    const onRemove = (): void => {
+        const modal = Modal.confirm({
+            onOk: () => {
+                dispatch(removeOrganizationAsync(organizationInstance));
+            },
+            content: (
+                <div className='cvat-remove-organization-submit'>
+                    <Text type='warning'>
+                        To remove the organization,
+                        enter its short name below
+                    </Text>
+                    <Input
+                        onChange={
+                            (event: React.ChangeEvent<HTMLInputElement>) => {
+                                modal.update({
+                                    okButtonProps: {
+                                        disabled: event.target.value !== organizationInstance.slug,
+                                        danger: true,
+                                    },
+                                });
+                            }
+                        }
+                    />
+                </div>
+            ),
+            okButtonProps: {
+                disabled: true,
+                danger: true,
+            },
+            okText: 'Remove',
+        });
+    };
 
     let organizationName = name;
     let organizationDescription = description;
@@ -102,40 +139,24 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                                 Setup webhooks
                                             </a>
                                         </Menu.Item>
+                                        {
+                                            CVAT_BILLING_URL && (
+                                                <Menu.Item
+                                                    className='cvat-menu-item-highlighted'
+                                                    key={MenuActions.UPGRADE}
+                                                    onClick={() => {
+                                                        window.open(`${CVAT_BILLING_URL}/?type=organization&orgId=${organizationInstance.id}`, '_self');
+                                                    }}
+                                                >
+                                                    Upgrade
+                                                </Menu.Item>
+                                            )
+                                        }
+
                                         {owner && userID === owner.id ? (
                                             <Menu.Item
                                                 key={MenuActions.REMOVE_ORGANIZATION}
-                                                onClick={() => {
-                                                    const modal = Modal.confirm({
-                                                        onOk: () => {
-                                                            dispatch(removeOrganizationAsync(organizationInstance));
-                                                        },
-                                                        content: (
-                                                            <div className='cvat-remove-organization-submit'>
-                                                                <Text type='warning'>
-                                                                    To remove the organization,
-                                                                    enter its short name below
-                                                                </Text>
-                                                                <Input
-                                                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                                                                        modal.update({
-                                                                            okButtonProps: {
-                                                                                disabled:
-                                                                    event.target.value !== organizationInstance.slug,
-                                                                                danger: true,
-                                                                            },
-                                                                        });
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        ),
-                                                        okButtonProps: {
-                                                            disabled: true,
-                                                            danger: true,
-                                                        },
-                                                        okText: 'Remove',
-                                                    });
-                                                }}
+                                                onClick={onRemove}
                                             >
                                                 Remove organization
                                             </Menu.Item>
