@@ -24,7 +24,9 @@ from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager
     Limits, OrgCloudStoragesContext, OrgProjectWebhooksContext, OrgTasksContext,
     OrgCommonWebhooksContext,
     TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
-    UserSandboxCloudStoragesContext, UserSandboxProjectWebhooksContext, UserSandboxTasksContext)
+    UserSandboxCloudStoragesContext, UserSandboxProjectWebhooksContext,
+    UserSandboxTasksContext,
+    OrgLambdaCallOfflineContext, UserSandboxLambdaCallOfflineContext)
 from cvat.apps.webhooks.models import WebhookTypeChoice
 
 
@@ -1614,6 +1616,19 @@ class LimitPermission(OpenPolicyAgentPermission):
                         project_id=scope.project_id, user_id=scope.user_id
                     ),
                 ))
+
+        elif scope_id == (LambdaPermission, LambdaPermission.Scopes.CALL_OFFLINE):
+            if getattr(scope, 'org_id') is not None:
+                results.append((
+                    Limits.ORG_LAMBDA_CALL_OFFLINE,
+                    OrgLambdaCallOfflineContext(org_id=scope.org_id)
+                ))
+            else:
+                results.append((
+                    Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE,
+                    UserSandboxLambdaCallOfflineContext(user_id=scope.user_id)
+                ))
+
 
         return results
 

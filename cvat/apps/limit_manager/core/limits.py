@@ -51,6 +51,7 @@ class Limits(Enum):
     USER_OWNED_ORGS = auto()
     USER_SANDBOX_CLOUD_STORAGES = auto()
     USER_SANDBOX_PROJECT_WEBHOOKS = auto()
+    USER_SANDBOX_LAMBDA_CALL_OFFLINE = auto()
 
     ORG_TASKS = auto()
     ORG_PROJECTS = auto()
@@ -58,6 +59,7 @@ class Limits(Enum):
     ORG_CLOUD_STORAGES = auto()
     ORG_COMMON_WEBHOOKS = auto()
     ORG_PROJECT_WEBHOOKS = auto()
+    ORG_LAMBDA_CALL_OFFLINE = auto()
 
 
 class CapabilityContext:
@@ -133,6 +135,13 @@ class OrgProjectWebhooksContext(OrgCapabilityContext):
 class OrgCommonWebhooksContext(OrgCapabilityContext):
     pass
 
+@define(kw_only=True)
+class UserSandboxLambdaCallOfflineContext(UserCapabilityContext):
+    pass
+
+@define(kw_only=True)
+class OrgLambdaCallOfflineContext(OrgCapabilityContext):
+    pass
 
 @define(frozen=True)
 class LimitStatus:
@@ -164,13 +173,11 @@ class LimitManager:
         context: Optional[CapabilityContext] = None,
     ) -> LimitStatus:
 
-        # TO-DO: remove this duplication
         org_id = getattr(context, "org_id", None)
         user_id = getattr(context, "user_id", None)
-
         assert org_id is not None or user_id is not None
-        limitation = self._get_or_create_limitation(user_id=user_id, org_id=org_id)
 
+        limitation = self._get_or_create_limitation(user_id=user_id, org_id=org_id)
         assert limitation is not None
 
         if limit == Limits.USER_OWNED_ORGS:
@@ -280,5 +287,24 @@ class LimitManager:
                 CloudStorage.objects.filter(organization=context.org_id).count(),
                 limitation.cloud_storages,
             )
+
+        elif limit == Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE:
+            assert context is not None
+            context = cast(UserSandboxLambdaCallOfflineContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.lambda_requests
+            )
+
+        elif limit == Limits.ORG_LAMBDA_CALL_OFFLINE:
+            assert context is not None
+            context = cast(OrgLambdaCallOfflineContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.lambda_requests
+            )
+
 
         raise NotImplementedError(f"Unknown capability {limit.name}")
