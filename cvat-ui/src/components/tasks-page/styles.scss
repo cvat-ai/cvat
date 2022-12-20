@@ -107,7 +107,7 @@
         display: flex;
         justify-content: center;
         overflow: hidden;
-        margin: 20px;
+        margin: $grid-unit-size * 3;
         margin-top: 0;
 
         > .cvat-task-item-preview {

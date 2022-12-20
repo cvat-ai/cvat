@@ -47,13 +47,13 @@
             height: $grid-unit-size * 18;
             font-size: $grid-unit-size * 10;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: $grid-unit-size * 3;
         }
 
         .cvat-task-item-preview {
             width: 100%;
             object-fit: cover;
-            margin-bottom: 20px;
+            margin-bottom: $grid-unit-size * 3;
             height: $grid-unit-size * 18;
         }
     }
