@@ -23,13 +23,13 @@ from cvat.apps.engine.log import get_migration_logger
 MIGRATION_THREAD_COUNT = 2
 
 def fix_path(path):
-        ind = path.find('.upload')
-        if ind != -1:
-            path = path[ind + len('.upload') + 1:]
-        return path
+    ind = path.find('.upload')
+    if ind != -1:
+        path = path[ind + len('.upload') + 1:]
+    return path
 
 def get_frame_step(frame_filter):
-    match = re.search("step\s*=\s*([1-9]\d*)", frame_filter)
+    match = re.search(r"step\s*=\s*([1-9]\d*)", frame_filter)
     return int(match.group(1)) if match else 1
 
 def get_task_on_disk():
