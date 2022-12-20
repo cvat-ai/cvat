@@ -19,8 +19,9 @@ class TestCreateInvitations:
         response.raise_for_status()
 
         limitation = response.json()[0]
-        response = patch_method(admin_user, f"limitations/{limitation['id']}",
-            data={"memberships": 100}, org_id=org_id)
+        response = patch_method(
+            admin_user, f"limitations/{limitation['id']}", data={"memberships": 100}, org_id=org_id
+        )
         response.raise_for_status()
 
     @pytest.fixture(autouse=True)
@@ -40,7 +41,7 @@ class TestCreateInvitations:
     def _test_post_invitation_403(self, user, data, **kwargs):
         response = post_method(user, "invitations", data, **kwargs)
         assert response.status_code == HTTPStatus.FORBIDDEN, response.content
-        assert response.json() == {'detail': 'not authorized'} # check for the correct reason
+        assert response.json() == {"detail": "not authorized"}  # check for the correct reason
 
     @staticmethod
     def get_non_member_users(memberships, users):
