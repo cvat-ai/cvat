@@ -343,8 +343,8 @@ export default (
                     ...previews,
                     [cloudStorageID]: {
                         ...previews[cloudStorageID],
-                        fetching: true,
-                        initialized: false,
+                        fetching: false,
+                        initialized: true,
                     },
                 },
             };
