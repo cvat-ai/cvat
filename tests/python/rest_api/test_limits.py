@@ -356,6 +356,20 @@ class TestUserLimits:
 
 class TestOrgLimits:
     @classmethod
+    def _create_user(cls, api_client: ApiClient, email: str) -> str:
+        username = email.split("@", maxsplit=1)[0]
+        with api_client:
+            (user, _) = api_client.auth_api.create_register(
+                models.RegisterSerializerExRequest(
+                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
+                )
+            )
+
+        api_client.cookies.clear()
+
+        return user.username
+
+    @classmethod
     def _create_org(cls, api_client: ApiClient) -> str:
         with api_client:
             (_, response) = api_client.organizations_api.create(
@@ -393,6 +407,7 @@ class TestOrgLimits:
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
     _DEFAULT_PROJECT_WEBHOOKS_LIMIT = 10
     _DEFAULT_COMMON_WEBHOOKS_LIMIT = 10
+    _DEFAULT_MEMBERS_LIMIT = 3
 
     _TASK_LIMIT_MESSAGE = "org tasks limit reached"
     _PROJECT_TASK_LIMIT_MESSAGE = "org project tasks limit reached"
@@ -400,6 +415,7 @@ class TestOrgLimits:
     _CLOUD_STORAGES_LIMIT_MESSAGE = "org cloud storages limit reached"
     _PROJECT_WEBHOOKS_LIMIT_MESSAGE = "org project webhooks limit reached"
     _COMMON_WEBHOOKS_LIMIT_MESSAGE = "org webhooks limit reached"
+    _MEMBERS_LIMIT_MESSAGE = "org members limit reached"
 
     @contextmanager
     def _patch_client_with_org(self, client: Optional[Client] = None):
@@ -617,3 +633,21 @@ class TestOrgLimits:
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._COMMON_WEBHOOKS_LIMIT_MESSAGE}
+
+    def test_can_reach_members_limit(self):
+        def _add_member(i: int):
+            extra_user_email = f"test.org.member{i}@localhost"
+            self._create_user(self.client.api_client, email=extra_user_email)
+            return self.client.api_client.invitations_api.create(
+                models.InvitationWriteRequest(role="worker", email=extra_user_email),
+                _parse_response=False,
+            )
+
+        for i in range(self._DEFAULT_MEMBERS_LIMIT - 1):  # 1 is for the owner
+            _add_member(i)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _add_member(i + 1)
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._MEMBERS_LIMIT_MESSAGE}

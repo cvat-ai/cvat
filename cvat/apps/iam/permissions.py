@@ -21,7 +21,7 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
 from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
-    Limits, OrgCloudStoragesContext, OrgProjectWebhooksContext, OrgTasksContext,
+    Limits, OrgCloudStoragesContext, OrgMembersContext, OrgTasksContext, OrgProjectWebhooksContext,
     OrgCommonWebhooksContext,
     TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
     UserSandboxCloudStoragesContext, UserSandboxProjectWebhooksContext,
@@ -1616,6 +1616,12 @@ class LimitPermission(OpenPolicyAgentPermission):
                         project_id=scope.project_id, user_id=scope.user_id
                     ),
                 ))
+
+        elif scope_id == (InvitationPermission, InvitationPermission.Scopes.CREATE):
+            results.append((
+                Limits.ORG_MEMBERS,
+                OrgMembersContext(org_id=scope.org_id)
+            ))
 
         elif scope_id == (LambdaPermission, LambdaPermission.Scopes.CALL_OFFLINE):
             if getattr(scope, 'org_id') is not None:

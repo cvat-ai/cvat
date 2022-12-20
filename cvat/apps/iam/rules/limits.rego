@@ -21,6 +21,7 @@ CAP_ORG_CLOUD_STORAGES = "ORG_CLOUD_STORAGES"
 CAP_ORG_COMMON_WEBHOOKS = "ORG_COMMON_WEBHOOKS"
 CAP_ORG_PROJECT_WEBHOOKS = "ORG_PROJECT_WEBHOOKS"
 CAP_ORG_LAMBDA_CALL_OFFLINE = "ORG_LAMBDA_CALL_OFFLINE"
+CAP_ORG_MEMBERS = "ORG_MEMBERS"
 
 
 check_limit_exceeded(current, max) {
@@ -123,6 +124,13 @@ problems contains "org cloud storages limit reached" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].used,
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].max
+    )
+}
+
+problems contains "org members limit reached" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_ORG_MEMBERS].used,
+        input.resource.limits[CAP_ORG_MEMBERS].max
     )
 }
 
