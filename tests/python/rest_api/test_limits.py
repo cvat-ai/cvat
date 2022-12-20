@@ -101,12 +101,14 @@ class TestUserLimits:
     _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_ORGS_LIMIT = 1
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
+    _DEFAULT_PROJECT_WEBHOOKS_LIMIT = 10
 
     _TASK_LIMIT_MESSAGE = "user tasks limit reached"
     _PROJECT_TASK_LIMIT_MESSAGE = "user project tasks limit reached"
     _PROJECTS_LIMIT_MESSAGE = "user projects limit reached"
     _ORGS_LIMIT_MESSAGE = "user orgs limit reached"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "user cloud storages limit reached"
+    _PROJECT_WEBHOOKS_LIMIT_MESSAGE = "user project webhooks limit reached"
 
     def _create_task(
         self, *, project: Optional[int] = None, client: Optional[Client] = None
@@ -389,11 +391,15 @@ class TestOrgLimits:
     _DEFAULT_PROJECT_TASKS_LIMIT = 5
     _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
+    _DEFAULT_PROJECT_WEBHOOKS_LIMIT = 10
+    _DEFAULT_COMMON_WEBHOOKS_LIMIT = 10
 
     _TASK_LIMIT_MESSAGE = "org tasks limit reached"
     _PROJECT_TASK_LIMIT_MESSAGE = "org project tasks limit reached"
     _PROJECTS_LIMIT_MESSAGE = "org projects limit reached"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "org cloud storages limit reached"
+    _PROJECT_WEBHOOKS_LIMIT_MESSAGE = "org project webhooks limit reached"
+    _COMMON_WEBHOOKS_LIMIT_MESSAGE = "org webhooks limit reached"
 
     @contextmanager
     def _patch_client_with_org(self, client: Optional[Client] = None):
@@ -556,3 +562,58 @@ class TestOrgLimits:
 
         assert response.status_code == HTTPStatus.FORBIDDEN
         assert set(response.json()) == {self._CLOUD_STORAGES_LIMIT_MESSAGE}
+
+    def test_can_reach_project_webhooks_limit(self):
+        def _create_webhook():
+            self.client.api_client.webhooks_api.create(
+                models.WebhookWriteRequest(
+                    **{
+                        "description": "webhook description",
+                        "content_type": "application/json",
+                        "enable_ssl": False,
+                        "events": ["create:task", "delete:task"],
+                        "is_active": True,
+                        "project_id": project.id,
+                        "secret": "secret",
+                        "target_url": "http://localhost",
+                        "type": "project",
+                    }
+                )
+            )
+
+        project = self._create_project()
+
+        for _ in range(self._DEFAULT_PROJECT_WEBHOOKS_LIMIT):
+            _create_webhook()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _create_webhook()
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._PROJECT_WEBHOOKS_LIMIT_MESSAGE}
+
+    def test_can_reach_org_common_webhooks_limit(self):
+        def _create_webhook():
+            self.client.api_client.webhooks_api.create(
+                models.WebhookWriteRequest(
+                    **{
+                        "description": "webhook description",
+                        "content_type": "application/json",
+                        "enable_ssl": False,
+                        "events": ["create:task", "delete:task"],
+                        "is_active": True,
+                        "secret": "secret",
+                        "target_url": "http://localhost",
+                        "type": "organization",
+                    }
+                )
+            )
+
+        for _ in range(self._DEFAULT_COMMON_WEBHOOKS_LIMIT):
+            _create_webhook()
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _create_webhook()
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+        assert set(json.loads(capture.value.body)) == {self._COMMON_WEBHOOKS_LIMIT_MESSAGE}
