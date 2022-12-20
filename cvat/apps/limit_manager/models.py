@@ -39,5 +39,4 @@ class Limitation(models.Model):
         default=10, null=True, blank=True
     )
 
-    view_analytics = models.BooleanField(default=False)
-    lambda_requests = models.BooleanField(default=False)
+    lambda_requests = models.PositiveIntegerField(default=0, null=True)

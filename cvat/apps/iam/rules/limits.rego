@@ -9,6 +9,8 @@ import data.utils
 
 CAP_USER_SANDBOX_TASKS = "USER_SANDBOX_TASKS"
 CAP_USER_SANDBOX_PROJECTS = "USER_SANDBOX_PROJECTS"
+CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE = "USER_SANDBOX_LAMBDA_CALL_OFFLINE"
+CAP_ORG_LAMBDA_CALL_OFFLINE = "ORG_LAMBDA_CALL_OFFLINE"
 CAP_TASKS_IN_USER_SANDBOX_PROJECT = "TASKS_IN_USER_SANDBOX_PROJECT"
 CAP_USER_OWNED_ORGS = "USER_OWNED_ORGS"
 CAP_USER_SANDBOX_CLOUD_STORAGES = "USER_SANDBOX_CLOUD_STORAGES"
@@ -26,7 +28,19 @@ check_limit_exceeded(current, max) {
     current >= max
 }
 
+problems contains "performing lambda requests not available for you" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE].used,
+        input.resource.limits[CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE].max
+    )
+}
 
+problems contains "performing lambda requests not available for your organization" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_ORG_LAMBDA_CALL_OFFLINE].used,
+        input.resource.limits[CAP_ORG_LAMBDA_CALL_OFFLINE].max
+    )
+}
 
 problems contains "user tasks limit reached" if {
     check_limit_exceeded(

@@ -11,7 +11,6 @@ general_limitation_fields = (
     "tasks",
     "projects",
     "cloud_storages",
-    "view_analytics",
     "lambda_requests",
     "webhooks_per_project",
     "tasks_per_project",
