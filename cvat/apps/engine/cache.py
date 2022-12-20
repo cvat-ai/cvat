@@ -4,10 +4,13 @@
 
 import os
 from io import BytesIO
+from datetime import datetime
+from tempfile import NamedTemporaryFile
+import pytz
 
 from diskcache import Cache
 from django.conf import settings
-from tempfile import NamedTemporaryFile
+from rest_framework.exceptions import ValidationError, NotFound
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
@@ -17,6 +20,11 @@ from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.models import DimensionType
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.engine.utils import md5_hash
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.mime_types import mimetypes
+from utils.dataset_manifest import ImageManifestManager
+
+
 class CacheInteraction:
     def __init__(self, dimension=DimensionType.DIM_2D):
         self._cache = Cache(settings.CACHE_ROOT)
@@ -25,7 +33,7 @@ class CacheInteraction:
     def __del__(self):
         self._cache.close()
 
-    def get_chunk_mime(self, chunk_number, quality, db_data):
+    def get_buf_chunk_with_mime(self, chunk_number, quality, db_data):
         cache_key = f'{db_data.id}_{chunk_number}_{quality}'
         chunk, tag = self._cache.get(cache_key, tag=True)
 
@@ -35,15 +43,34 @@ class CacheInteraction:
 
         return chunk, tag
 
-    def get_preview(self, key):
-        # cache_key = f'{frame_provider.data_id}_{image_number}_preview'
-        return self._cache.get(key, tag=True)
+    def get_local_preview_with_mime(self, frame_number, db_data):
+        key = f'data_{db_data.id}_{frame_number}_preview'
+        buf, mime = self._cache.get(key, tag=True)
+        if not buf:
+            buf, mime = self._prepare_local_preview(frame_number, db_data)
+            self._cache.set(key, buf, tag=mime)
 
-    def save_preview(self, key, image, mime):
-        self._cache.set(key, image, tag=mime)
+        return buf, mime
+
+    def get_cloud_preview_with_mime(self, db_storage):
+        key = f'cloudstorage_{db_storage.id}_preview'
+        preview, mime = self._cache.get(key, tag=True)
+
+        if not preview:
+            preview, mime = self._prepare_cloud_preview(db_storage)
+            self._cache.set(key, preview, tag=mime)
+
+        return preview, mime
+
+    @staticmethod
+    def _get_frame_provider():
+        from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
+        return FrameProvider
 
     def _prepare_chunk_buff(self, db_data, quality, chunk_number):
-        from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
+
+        FrameProvider = self._get_frame_provider()
+
         writer_classes = {
             FrameProvider.Quality.COMPRESSED : Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter,
             FrameProvider.Quality.ORIGINAL : Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter,
@@ -116,3 +143,43 @@ class CacheInteraction:
             for image_path in images:
                 os.remove(image_path)
         return buff, mime_type
+
+    def _prepare_local_preview(self, frame_number, db_data):
+        FrameProvider = self._get_frame_provider()
+        frame_provider = FrameProvider(db_data, self._dimension)
+        buf, mime = frame_provider.get_preview(frame_number)
+
+        return buf, mime
+
+    def _prepare_cloud_preview(self, db_storage):
+        storage = db_storage_to_storage_instance(db_storage)
+        if not db_storage.manifests.count():
+            raise ValidationError('Cannot get the cloud storage preview. There is no manifest file')
+        preview_path = None
+        for manifest_model in db_storage.manifests.all():
+            manifest_prefix = os.path.dirname(manifest_model.filename)
+            full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
+                storage.download_file(manifest_model.filename, full_manifest_path)
+            manifest = ImageManifestManager(
+                os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
+                db_storage.get_storage_dirname()
+            )
+            # need to update index
+            manifest.set_index()
+            if not len(manifest):
+                continue
+            preview_info = manifest[0]
+            preview_filename = ''.join([preview_info['name'], preview_info['extension']])
+            preview_path = os.path.join(manifest_prefix, preview_filename)
+            break
+        if not preview_path:
+            msg = 'Cloud storage {} does not contain any images'.format(db_storage.pk)
+            slogger.cloud_storage[db_storage.pk].info(msg)
+            raise NotFound(msg)
+
+        preview = storage.download_fileobj(preview_path)
+        mime = mimetypes.guess_type(preview_path)[0]
+
+        return preview, mime

@@ -43,13 +43,13 @@ export default function Preview(props: Props): JSX.Element {
     } = props;
 
     const preview = useSelector((state: CombinedState) => {
-        if (job) {
+        if (job !== undefined) {
             return state.jobs.previews[job.id];
-        } if (project) {
+        } if (project !== undefined) {
             return state.projects.previews[project.id];
-        } if (task) {
+        } if (task !== undefined) {
             return state.tasks.previews[task.id];
-        } if (cloudStorage) {
+        } if (cloudStorage !== undefined) {
             return state.cloudStorages.previews[cloudStorage.id];
         }
         return '';
@@ -57,13 +57,13 @@ export default function Preview(props: Props): JSX.Element {
 
     useEffect(() => {
         if (preview === undefined) {
-            if (job) {
+            if (job !== undefined) {
                 dispatch(getJobPreviewAsync(job));
-            } else if (project) {
+            } else if (project !== undefined) {
                 dispatch(getProjectsPreviewAsync(project));
-            } else if (task) {
+            } else if (task !== undefined) {
                 dispatch(getTaskPreviewAsync(task));
-            } else if (cloudStorage) {
+            } else if (cloudStorage !== undefined) {
                 dispatch(getCloudStoragePreviewAsync(cloudStorage));
             }
         }
@@ -93,7 +93,6 @@ export default function Preview(props: Props): JSX.Element {
                 onClick={onClick}
                 alt='Preview image'
                 aria-hidden
-                onLoad={() => setLoaded(true)}
             />
         </div>
     );

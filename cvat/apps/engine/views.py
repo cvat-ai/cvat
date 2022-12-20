@@ -45,7 +45,6 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
@@ -714,12 +713,8 @@ class DataChunkGetter:
                         f'[{start}, {stop}] range')
 
                 if self.type == 'preview':
-                    key = f'data_{db_data.id}_{self.number}_preview'
                     cache = CacheInteraction(self.dimension)
-                    buf, mime = cache.get_preview(key)
-                    if not buf:
-                        buf, mime = frame_provider.get_preview(self.number)
-                        cache.save_preview(key, buf, mime)
+                    buf, mime = cache.get_local_preview_with_mime(self.number, db_data)
                 else:
                     buf, mime = frame_provider.get_frame(self.number, self.quality)
 
@@ -2161,43 +2156,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
-        storage = None
         try:
             db_storage = self.get_object()
             cache = CacheInteraction()
-            key = f'cloudstorage_{db_storage.id}_preview'
-            preview, mime = cache.get_preview(key)
-            if not preview:
-                storage = db_storage_to_storage_instance(db_storage)
-                if not db_storage.manifests.count():
-                    raise ValidationError('Cannot get the cloud storage preview. There is no manifest file')
-                preview_path = None
-                for manifest_model in db_storage.manifests.all():
-                    manifest_prefix = os.path.dirname(manifest_model.filename)
-                    full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
-                    if not os.path.exists(full_manifest_path) or \
-                            datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
-                        storage.download_file(manifest_model.filename, full_manifest_path)
-                    manifest = ImageManifestManager(
-                        os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
-                        db_storage.get_storage_dirname()
-                    )
-                    # need to update index
-                    manifest.set_index()
-                    if not len(manifest):
-                        continue
-                    preview_info = manifest[0]
-                    preview_filename = ''.join([preview_info['name'], preview_info['extension']])
-                    preview_path = os.path.join(manifest_prefix, preview_filename)
-                    break
-                if not preview_path:
-                    msg = 'Cloud storage {} does not contain any images'.format(pk)
-                    slogger.cloud_storage[pk].info(msg)
-                    return HttpResponseBadRequest(msg)
-
-                preview = storage.download_fileobj(preview_path)
-                mime = mimetypes.guess_type(preview_path)[0]
-                cache.save_preview(key, preview, mime)
+            preview, mime = cache.get_cloud_preview_with_mime(db_storage)
             return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
