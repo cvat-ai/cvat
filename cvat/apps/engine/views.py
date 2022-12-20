@@ -624,6 +624,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(summary='Method returns a preview image for the project',
         responses={
             '200': OpenApiResponse(description='Project image preview'),
+            '404': OpenApiResponse(description='Project image preview not found'),
+
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
@@ -631,7 +633,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         first_task = self._object.tasks.order_by('-id').first()
         if not first_task:
-            return HttpResponseNotFound()
+            return HttpResponseNotFound('Project image preview not found')
 
         data_getter = DataChunkGetter(
             data_type='preview',
@@ -1342,10 +1344,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(summary='Method returns a preview image for the task',
         responses={
             '200': OpenApiResponse(description='Task image preview'),
+            '404': OpenApiResponse(description='Task image preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
+
+        if not self._object.data:
+            return HttpResponseNotFound('Task image preview not found')
 
         data_getter = DataChunkGetter(
             data_type='preview',
@@ -2153,6 +2159,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(summary='Method returns a preview image from a cloud storage',
         responses={
             '200': OpenApiResponse(description='Cloud Storage preview'),
+            '400': OpenApiResponse(description='Failed to get cloud storage preview'),
+            '404': OpenApiResponse(description='Cloud Storage preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
