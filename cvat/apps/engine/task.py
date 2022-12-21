@@ -354,6 +354,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             content = list(map(_add_prefix, raw_content))
         else:
             sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+        if not content:
+            raise ValidationError('There is no intersection of the files specified'
+                                  'in the request with the contents of the bucket')
         sorted_content = (i[1] for i in sorted(zip(sequence, content)))
         manifest.create(sorted_content)
 
