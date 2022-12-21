@@ -632,6 +632,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
+            ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
         scopes = []
@@ -814,6 +815,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
         scopes = []
@@ -1106,6 +1108,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('issues', 'GET'): Scopes.VIEW,
             ('commits', 'GET'): Scopes.VIEW_COMMITS,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
 
         scopes = []
