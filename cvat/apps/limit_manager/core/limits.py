@@ -6,6 +6,7 @@ from enum import Enum, auto
 from typing import Optional, cast
 
 from attrs import define
+from django.conf import settings
 
 from cvat.apps.engine.models import CloudStorage, Project, Task
 from cvat.apps.organizations.models import Membership, Organization
@@ -187,7 +188,7 @@ class LimitManager:
 
             return LimitStatus(
                 Organization.objects.filter(owner_id=context.user_id).count(),
-                limitation.organizations,
+                settings.DEFAULT_LIMITS["USER_OWNED_ORGS"],
             )
 
         elif limit == Limits.USER_SANDBOX_PROJECTS:
@@ -197,7 +198,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(owner=context.user_id, organization=None).count(),
-                limitation.projects
+                settings.DEFAULT_LIMITS["USER_SANDBOX_PROJECTS"],
             )
 
         elif limit == Limits.ORG_PROJECTS:
@@ -207,7 +208,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
-                limitation.projects
+                settings.DEFAULT_LIMITS["ORG_PROJECTS"],
             )
 
         elif limit == Limits.USER_SANDBOX_TASKS:
@@ -217,7 +218,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(owner=context.user_id, organization=None).count(),
-                limitation.tasks,
+                settings.DEFAULT_LIMITS["USER_SANDBOX_TASKS"],
             )
 
         elif limit == Limits.ORG_TASKS:
@@ -227,7 +228,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(organization=context.org_id).count(),
-                limitation.tasks,
+                settings.DEFAULT_LIMITS["ORG_TASKS"],
             )
 
         elif limit == Limits.TASKS_IN_USER_SANDBOX_PROJECT:
@@ -237,7 +238,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                limitation.tasks_per_project,
+                settings.DEFAULT_LIMITS["TASKS_IN_USER_SANDBOX_PROJECT"]
             )
 
         elif limit == Limits.TASKS_IN_ORG_PROJECT:
@@ -247,7 +248,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                limitation.tasks_per_project,
+                settings.DEFAULT_LIMITS["TASKS_IN_ORG_PROJECT"]
             )
 
         elif limit == Limits.PROJECT_WEBHOOKS:
@@ -258,7 +259,7 @@ class LimitManager:
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
                 Webhook.objects.filter(project=context.project_id).count(),
-                limitation.webhooks_per_project,
+                settings.DEFAULT_LIMITS["PROJECT_WEBHOOKS"]
             )
 
         elif limit == Limits.ORG_COMMON_WEBHOOKS:
@@ -266,10 +267,8 @@ class LimitManager:
             context = cast(OrgCommonWebhooksContext, context)
 
             return LimitStatus(
-                Webhook.objects.filter(
-                    organization=context.org_id, project=None
-                ).count(),
-                limitation.webhooks_per_organization,
+                Webhook.objects.filter(organization=context.org_id, project=None).count(),
+                settings.DEFAULT_LIMITS["ORG_COMMON_WEBHOOKS"]
             )
 
         elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
@@ -277,10 +276,8 @@ class LimitManager:
             context = cast(UserSandboxCloudStoragesContext, context)
 
             return LimitStatus(
-                CloudStorage.objects.filter(
-                    owner=context.user_id, organization=None
-                ).count(),
-                limitation.cloud_storages,
+                CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
+                settings.DEFAULT_LIMITS["USER_SANDBOX_CLOUD_STORAGES"]
             )
 
         elif limit == Limits.ORG_CLOUD_STORAGES:
@@ -289,16 +286,7 @@ class LimitManager:
 
             return LimitStatus(
                 CloudStorage.objects.filter(organization=context.org_id).count(),
-                limitation.cloud_storages,
-            )
-
-        elif limit == Limits.ORG_MEMBERS:
-            assert context is not None
-            context = cast(OrgMembersContext, context)
-
-            return LimitStatus(
-                Membership.objects.filter(organization=context.org_id).count(),
-                limitation.memberships,
+                settings.DEFAULT_LIMITS["ORG_CLOUD_STORAGES"]
             )
 
         elif limit == Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE:

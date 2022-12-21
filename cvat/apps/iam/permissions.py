@@ -1397,9 +1397,6 @@ class LimitPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create_from_scopes(cls, request, view, obj, scopes: List[OpenPolicyAgentPermission]):
-        if not settings.IAM_USER_LIMITS_ENABLED:
-            return []
-
         scope_to_caps = [
             (scope_handler, cls._prepare_capability_params(scope_handler))
             for scope_handler in scopes
