@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
+import sys
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
@@ -17,7 +19,16 @@ from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 from shared.utils.s3 import make_client
 
+from tempfile import NamedTemporaryFile
 from .utils import export_dataset
+
+
+sys.path.append(
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))).split("tests")[0], "utils"
+    )
+)
+from dataset_manifest import ImageManifestManager
 
 
 def get_cloud_storage_content(username, cloud_storage_id, manifest):
@@ -27,7 +38,7 @@ def get_cloud_storage_content(username, cloud_storage_id, manifest):
         )
         return data
 
-@pytest.mark.skip()
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths="", **kwargs):
@@ -142,7 +153,7 @@ class TestGetTasks:
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org["slug"])
 
-@pytest.mark.skip()
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
@@ -264,7 +275,7 @@ class TestPostTasks:
 
         self._test_create_task_201(username, spec)
 
-@pytest.mark.skip()
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
     _USERNAME = "user1"
@@ -285,7 +296,7 @@ class TestGetData:
             assert response.status == HTTPStatus.OK
             assert response.headers["Content-Type"] == content_type
 
-@pytest.mark.skip()
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
@@ -392,7 +403,6 @@ class TestPatchTaskAnnotations:
         self._test_check_response(is_allow, response, data)
 
 
-@pytest.mark.skip()
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
     def _test_export_task(self, username, tid, **kwargs):
@@ -449,7 +459,6 @@ class TestPostTaskData:
 
         return status
 
-    @pytest.mark.skip()
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with defined start and stop frames",
@@ -486,7 +495,6 @@ class TestPostTaskData:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
-    @pytest.mark.skip()
     def test_can_get_annotations_from_new_task_with_skeletons(self):
         spec = {
             "name": f"test admin1 to create a task with skeleton",
@@ -640,7 +648,6 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.skip()
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, use_bucket_content, org",
         [
@@ -682,31 +689,44 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",
         [
-            (1, "manifest.jsonl", ""),  # public bucket
+            (1, "test/sub/manifest.jsonl", ""),  # public bucket
         ],
     )
-    @pytest.mark.parametrize("pattern", ["test/*"]) # "test/sub*1.jpg", "*image*.jpg"
+    @pytest.mark.parametrize(
+        "pattern, task_size",
+        [
+            ("*", 3),
+            ("test/*", 3),
+            ("test/sub*1.jpeg", 1),
+            ("*image*.jpeg", 3),
+            ("wrong_pattern", 0),
+        ],
+    )
     def test_create_task_with_file_pattern(
-        self, cloud_storage_id, manifest, pattern, org, cloud_storages
+        self, cloud_storage_id, manifest, pattern, task_size, org, cloud_storages
     ):
         # prepare dataset on the bucket
-        images = generate_image_files(3, 'test_image')
+        images = generate_image_files(3, "test_image")
         s3_client = make_client()
 
         cloud_storage = cloud_storages[cloud_storage_id]
         for image in images:
-            s3_client.create_file(data=image, bucket=cloud_storage["resource"], filename=f'test/sub/{image.name}')
+            s3_client.create_file(
+                data=image, bucket=cloud_storage["resource"], filename=f"test/sub/{image.name}"
+            )
 
-        from utils.dataset_manifest import ImageManifestManager
-        from io import BytesIO
-
-        from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='wb', suffix='manifest.jsonl') as tmp_file:
+        with NamedTemporaryFile(mode="wb", suffix="manifest.jsonl", delete=False) as tmp_file:
             tmp_name = tmp_file.name
-            manifest = ImageManifestManager(manifest_path=tmp_name)
-            manifest.link(sources=images)
-            manifest.create()
-            s3_client.create_file(data=self._manifest.path, bucket=cloud_storage["resource"], filename=f'test/sub/{image.name}')
+            tmp_manifest = ImageManifestManager(manifest_path=tmp_name)
+            tmp_manifest.link(sources=images)
+            tmp_manifest.create()
+        with open(tmp_name, "rb") as tmp_file:
+            s3_client.create_file(
+                data=tmp_file.read(),
+                bucket=cloud_storage["resource"],
+                filename=manifest,
+            )
+        os.remove(tmp_name)
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -725,16 +745,18 @@ class TestPostTaskData:
             "pattern": pattern,
         }
 
-        task_id = self._test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        if task_size:
+            task_id = self._test_create_task(
+                self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            )
 
-        with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
-            assert response.status == HTTPStatus.OK
-            assert task.size
+            with make_api_client(self._USERNAME) as api_client:
+                (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+                assert response.status == HTTPStatus.OK
+                assert task.size == task_size
+        else:
+            self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
 
-    @pytest.mark.skip()
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",
         [(1, "manifest.jsonl", "")],  # public bucket

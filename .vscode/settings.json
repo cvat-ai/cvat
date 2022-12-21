@@ -39,5 +39,8 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.testing.pytestPath": "${workspaceFolder}/.env/bin/pytest",
-    "python.testing.cwd": "${workspaceFolder}/tests"
+    "python.testing.cwd": "${workspaceFolder}/tests",
+    "python.analysis.extraPaths": [
+        "./utils"
+    ]
 }
