@@ -70,6 +70,8 @@ class Task(
         *,
         pbar: Optional[ProgressReporter] = None,
         params: Optional[Dict[str, Any]] = None,
+        wait_for_completion: bool = True,
+        status_check_period: Optional[int] = None,
     ) -> None:
         """
         Add local, remote, or shared files to an existing task.
@@ -118,6 +120,33 @@ class Task(
             DataUploader(self._client).upload_files(
                 url, list(map(Path, resources)), pbar=pbar, **data
             )
+
+        if wait_for_completion:
+            if status_check_period is None:
+                status_check_period = self._client.config.status_check_period
+
+            self._client.logger.info("Awaiting for task %s creation...", self.id)
+            status: models.RqStatus = None
+            while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
+                sleep(status_check_period)
+                (status, response) = self.api.retrieve_status(self.id)
+
+                self._client.logger.info(
+                    "Task %s creation status=%s, message=%s",
+                    self.id,
+                    status.state.value,
+                    status.message,
+                )
+
+                if (
+                    status.state.value
+                    == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]
+                ):
+                    raise exceptions.ApiException(
+                        status=status.state.value, reason=status.message, http_resp=response
+                    )
+
+                status = status.state.value
 
     def import_annotations(
         self,
@@ -311,9 +340,6 @@ class TasksRepo(
 
         Returns: id of the created task
         """
-        if status_check_period is None:
-            status_check_period = self._client.config.status_check_period
-
         if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
             raise exceptions.ApiValueError(
                 "Can't set labels to a task inside a project. "
@@ -324,27 +350,14 @@ class TasksRepo(
         task = self.create(spec=spec)
         self._client.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
 
-        task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
-
-        self._client.logger.info("Awaiting for task %s creation...", task.id)
-        status: models.RqStatus = None
-        while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
-            sleep(status_check_period)
-            (status, response) = self.api.retrieve_status(task.id)
-
-            self._client.logger.info(
-                "Task %s creation status=%s, message=%s",
-                task.id,
-                status.state.value,
-                status.message,
-            )
-
-            if status.state.value == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
-                raise exceptions.ApiException(
-                    status=status.state.value, reason=status.message, http_resp=response
+        task.upload_data(
+            resource_type=resource_type,
+            resources=resources,
+            pbar=pbar,
+            params=data_params,
+            wait_for_completion=True,
+            status_check_period=status_check_period,
                 )
-
-            status = status.state.value
 
         if annotation_path:
             task.import_annotations(annotation_format, annotation_path, pbar=pbar)
