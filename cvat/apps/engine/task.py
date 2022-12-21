@@ -334,7 +334,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    # find and validate manigfest file
+    # find and validate manifest file
     manifest_files = _count_manifest_files(data)
     manifest_root = None
 

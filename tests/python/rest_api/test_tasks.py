@@ -686,46 +686,46 @@ class TestPostTaskData:
         )
 
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, org",
+        "cloud_storage_id, manifest, pattern, sub_dir, task_size, org",
         [
-            (1, "test/sub/manifest.jsonl", ""),  # public bucket
-        ],
-    )
-    @pytest.mark.parametrize(
-        "pattern, task_size",
-        [
-            ("*", 3),
-            ("test/*", 3),
-            ("test/sub*1.jpeg", 1),
-            ("*image*.jpeg", 3),
-            ("wrong_pattern", 0),
+            (1, "manifest.jsonl", "*", True, 3, ""),  # public bucket
+            (1, "manifest.jsonl", "test/*", True, 3, ""),
+            (1, "manifest.jsonl", "test/sub*1.jpeg", True, 1, ""),
+            (1, "manifest.jsonl", "*image*.jpeg", True, 3, ""),
+            (1, "manifest.jsonl", "wrong_pattern", True, 0, ""),
+            (1, "abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
+            (1, "abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
+            (1, "abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, ""),
         ],
     )
     def test_create_task_with_file_pattern(
-        self, cloud_storage_id, manifest, pattern, task_size, org, cloud_storages
+        self, cloud_storage_id, manifest, pattern, sub_dir, task_size, org, cloud_storages
     ):
         # prepare dataset on the bucket
-        images = generate_image_files(3, "test_image")
+        prefixes = ("test_image_",) * 3 if sub_dir else ("a_", "b_", "d_")
+        images = generate_image_files(3, prefixes=prefixes)
         s3_client = make_client()
 
         cloud_storage = cloud_storages[cloud_storage_id]
+
         for image in images:
             s3_client.create_file(
-                data=image, bucket=cloud_storage["resource"], filename=f"test/sub/{image.name}"
+                data=image,
+                bucket=cloud_storage["resource"],
+                filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
             )
 
-        with NamedTemporaryFile(mode="wb", suffix="manifest.jsonl", delete=False) as tmp_file:
+        with NamedTemporaryFile(mode="wb+", suffix="manifest.jsonl") as tmp_file:
             tmp_name = tmp_file.name
             tmp_manifest = ImageManifestManager(manifest_path=tmp_name)
             tmp_manifest.link(sources=images)
             tmp_manifest.create()
-        with open(tmp_name, "rb") as tmp_file:
+            tmp_file.seek(0)
             s3_client.create_file(
                 data=tmp_file.read(),
                 bucket=cloud_storage["resource"],
-                filename=manifest,
+                filename=f"test/sub/{manifest}" if sub_dir else manifest,
             )
-        os.remove(tmp_name)
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -740,7 +740,7 @@ class TestPostTaskData:
             "image_quality": 75,
             "use_cache": True,
             "cloud_storage_id": cloud_storage_id,
-            "server_files": [manifest],
+            "server_files": [f"test/sub/{manifest}" if sub_dir else manifest],
             "pattern": pattern,
         }
 

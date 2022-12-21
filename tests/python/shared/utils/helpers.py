@@ -18,10 +18,10 @@ def generate_image_file(filename="image.png", size=(50, 50), color=(0, 0, 0)):
     return f
 
 
-def generate_image_files(count, filename="") -> List[BytesIO]:
+def generate_image_files(count, prefixes=None) -> List[BytesIO]:
     images = []
     for i in range(count):
-        image = generate_image_file(f"{filename}{i}.jpeg", color=(i, i, i))
+        image = generate_image_file(f"{prefixes[i] if prefixes else ''}{i}.jpeg", color=(i, i, i))
         images.append(image)
 
     return images
