@@ -20,14 +20,13 @@ jobs:
           PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
-          # PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-          # for FILE in $PR_FILES; do
-          #     if [[ $FILE == helm-chart/* ]] ; then
-          #       echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
-          #       break
-          #     fi
-          # done
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          for FILE in $PR_FILES; do
+              if [[ $FILE == helm-chart/* ]] ; then
+                echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
+                break
+              fi
+          done
 
   testing:
     needs: check_changes
