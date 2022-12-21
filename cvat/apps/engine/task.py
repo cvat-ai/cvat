@@ -330,14 +330,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
     if data['server_files'] and is_data_in_cloud:
-        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
         sorted_media = sort(media['image'], data['sorting_method'])
-
-        data_size = len(sorted_media)
-        segment_step, *_ = _get_task_segment_data(db_task, data_size)
-        for start_frame in range(0, data_size, segment_step):
-            first_sorted_media_image = sorted_media[start_frame]
-            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
 
         # prepare task manifest file from cloud storage manifest file
         # NOTE we should create manifest before defining chunk_size
