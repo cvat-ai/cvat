@@ -72,8 +72,8 @@ class TestTaskVisionDataset:
                     models.PatchedLabelRequest(name="car"),
                 ],
             ),
-            ResourceType.LOCAL,
-            list(map(os.fspath, image_paths)),
+            resource_type=ResourceType.LOCAL,
+            resources=list(map(os.fspath, image_paths)),
             data_params={"chunk_size": 3},
         )
 
