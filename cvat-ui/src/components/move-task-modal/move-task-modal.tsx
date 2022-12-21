@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,8 +24,8 @@ const core = getCore();
 export default function MoveTaskModal(): JSX.Element {
     const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
     const task = useSelector((state: CombinedState) => {
-        const [taskInstance] = state.tasks.current.filter((_task) => _task.instance.id === state.tasks.moveTask.taskId);
-        return taskInstance?.instance;
+        const [taskInstance] = state.tasks.current.filter((_task) => _task.id === state.tasks.moveTask.taskId);
+        return taskInstance;
     });
     const taskUpdating = useSelector((state: CombinedState) => state.tasks.updating);
     const dispatch = useDispatch();

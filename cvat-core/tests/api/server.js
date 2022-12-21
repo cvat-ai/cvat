@@ -12,7 +12,7 @@ jest.mock('../../src/server-proxy', () => {
 });
 
 // Initialize api
-window.cvat = require('../../src/api');
+window.cvat = require('../../src/api').default;
 const { AnnotationFormats, Loader, Dumper } = require('../../src/annotation-formats');
 
 // Test cases

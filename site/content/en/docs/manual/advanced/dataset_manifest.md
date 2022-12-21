@@ -83,10 +83,10 @@ The script can be used from the `cvat/server` image:
 
 ```bash
 docker run -it --rm -u "$(id -u)":"$(id -g)" \
-    -v "${PWD}":"/local" \
-    --entrypoint '/usr/bin/bash' \
-    cvat/server \
-    utils/dataset_manifest/create.py --output-dir /local /local/<path/to/sources>
+  -v "${PWD}":"/local" \
+  --entrypoint python3 \
+  cvat/server \
+  utils/dataset_manifest/create.py --output-dir /local /local/<path/to/sources>
 ```
 
 Make sure to adapt the command to your file locations.
@@ -128,32 +128,35 @@ using the Docker-based version of the tool is recommended.
 Create a dataset manifest in the current directory with video which contains enough keyframes:
 
 ```bash
-python create.py ~/Documents/video.mp4
+python utils/dataset_manifest/create.py ~/Documents/video.mp4
 ```
 
 Create a dataset manifest with video which does not contain enough keyframes:
 
 ```bash
-python create.py --force --output-dir ~/Documents ~/Documents/video.mp4
+python utils/dataset_manifest/create.py --force --output-dir ~/Documents ~/Documents/video.mp4
 ```
 
 Create a dataset manifest with images:
 
 ```bash
-python create.py --output-dir ~/Documents ~/Documents/images/
+python utils/dataset_manifest/create.py --output-dir ~/Documents ~/Documents/images/
 ```
 
 Create a dataset manifest with pattern (may be used `*`, `?`, `[]`):
 
 ```bash
-python create.py --output-dir ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
+python utils/dataset_manifest/create.py --output-dir ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
 ```
 
-Create a dataset manifest with `cvat/server`:
+Create a dataset manifest using Docker image:
 
 ```bash
-docker run -it --entrypoint python3 -v ~/Documents/data/:${HOME}/manifest/:rw cvat/server
-utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
+docker run -it --rm -u "$(id -u)":"$(id -g)" \
+  -v ~/Documents/data/:${HOME}/manifest/:rw \
+  --entrypoint '/usr/bin/bash' \
+  cvat/server \
+  utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 ```
 
 ### File format
@@ -186,7 +189,7 @@ The file describes a single video.
 } (repeatable)
 ```
 
-#### Dataset manifest for images
+#### Dataset manifest for images and other data types
 
 The file describes an ordered set of images and 3d point clouds.
 

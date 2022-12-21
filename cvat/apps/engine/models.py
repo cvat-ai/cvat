@@ -249,9 +249,6 @@ class Data(models.Model):
         return os.path.join(self.get_compressed_cache_dirname(),
             self._get_compressed_chunk_name(chunk_number))
 
-    def get_preview_path(self):
-        return os.path.join(self.get_data_dirname(), 'preview.jpeg')
-
     def get_manifest_path(self):
         return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
 
@@ -364,6 +361,10 @@ class Task(models.Model):
     class Meta:
         default_permissions = ()
 
+    def get_labels(self):
+        project = self.project
+        return project.label_set if project else self.label_set
+
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
 
@@ -443,6 +444,9 @@ class Segment(models.Model):
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
 
+    def contains_frame(self, idx: int) -> bool:
+        return self.start_frame <= idx and idx <= self.stop_frame
+
     class Meta:
         default_permissions = ()
 
@@ -469,6 +473,11 @@ class Job(models.Model):
         project = self.segment.task.project
         return project.id if project else None
 
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_task_id(self):
+        task = self.segment.task
+        return task.id if task else None
+
     def get_organization_id(self):
         return self.segment.task.organization
 
@@ -489,9 +498,6 @@ class Job(models.Model):
                 'stage': self.stage, 'state': self.state, 'assignee': self.assignee
             })
         db_commit.save()
-
-    def get_preview_path(self):
-        return os.path.join(self.get_dirname(), "preview.jpeg")
 
     class Meta:
         default_permissions = ()
@@ -798,9 +804,6 @@ class CloudStorage(models.Model):
 
     def get_log_path(self):
         return os.path.join(self.get_storage_logs_dirname(), "storage.log")
-
-    def get_preview_path(self):
-        return os.path.join(self.get_storage_dirname(), 'preview.jpeg')
 
     def get_specific_attributes(self):
         return parse_specific_attributes(self.specific_attributes)

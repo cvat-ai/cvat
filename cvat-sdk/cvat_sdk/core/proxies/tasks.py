@@ -7,11 +7,11 @@ from __future__ import annotations
 import io
 import json
 import mimetypes
-import os
-import os.path as osp
+import shutil
 from enum import Enum
+from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from PIL import Image
 
@@ -31,6 +31,9 @@ from cvat_sdk.core.proxies.model_proxy import (
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
+
+if TYPE_CHECKING:
+    from _typeshed import StrPath, SupportsWrite
 
 
 class ResourceType(Enum):
@@ -62,9 +65,9 @@ class Task(
 
     def upload_data(
         self,
-        resources: Sequence[str],
+        resource_type: ResourceType,
+        resources: Sequence[StrPath],
         *,
-        resource_type: ResourceType = ResourceType.LOCAL,
         pbar: Optional[ProgressReporter] = None,
         params: Optional[Dict[str, Any]] = None,
         wait_for_completion: bool = True,
@@ -75,15 +78,8 @@ class Task(
         """
         params = params or {}
 
-        data = {}
-        if resource_type is ResourceType.LOCAL:
-            pass  # handled later
-        elif resource_type is ResourceType.REMOTE:
-            data["remote_files"] = resources
-        elif resource_type is ResourceType.SHARE:
-            data["server_files"] = resources
+        data = {"image_quality": 70}
 
-        data["image_quality"] = 70
         data.update(
             filter_dict(
                 params,
@@ -103,6 +99,15 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
+            for resource in resources:
+                if not isinstance(resource, str):
+                    raise TypeError(f"resources: expected instances of str, got {type(resource)}")
+
+            if resource_type is ResourceType.REMOTE:
+                data["remote_files"] = resources
+            elif resource_type is ResourceType.SHARE:
+                data["server_files"] = resources
+
             self.api.create_data(
                 self.id,
                 data_request=models.DataRequest(**data),
@@ -112,7 +117,9 @@ class Task(
                 self.api.create_data_endpoint.path, kwsub={"id": self.id}
             )
 
-            DataUploader(self._client).upload_files(url, resources, pbar=pbar, **data)
+            DataUploader(self._client).upload_files(
+                url, list(map(Path, resources)), pbar=pbar, **data
+            )
 
         if wait_for_completion:
             if status_check_period is None:
@@ -144,7 +151,7 @@ class Task(
     def import_annotations(
         self,
         format_name: str,
-        filename: str,
+        filename: StrPath,
         *,
         status_check_period: Optional[int] = None,
         pbar: Optional[ProgressReporter] = None,
@@ -152,6 +159,8 @@ class Task(
         """
         Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
+
+        filename = Path(filename)
 
         AnnotationUploader(self._client).upload_file_and_wait(
             self.api.create_annotations_endpoint,
@@ -179,14 +188,31 @@ class Task(
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(self.id, type="preview")
+        (_, response) = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
+
+    def download_chunk(
+        self,
+        chunk_id: int,
+        output_file: SupportsWrite[bytes],
+        *,
+        quality: Optional[str] = None,
+    ) -> None:
+        params = {}
+        if quality:
+            params["quality"] = quality
+        (_, response) = self.api.retrieve_data(
+            self.id, number=chunk_id, **params, type="chunk", _parse_response=False
+        )
+
+        with response:
+            shutil.copyfileobj(response, output_file)
 
     def download_frames(
         self,
         frame_ids: Sequence[int],
         *,
-        outdir: str = "",
+        outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
@@ -194,7 +220,9 @@ class Task(
         Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
         # TODO: add arg descriptions in schema
-        os.makedirs(outdir, exist_ok=True)
+
+        outdir = Path(outdir)
+        outdir.mkdir(exist_ok=True)
 
         for frame_id in frame_ids:
             frame_bytes = self.get_frame(frame_id, quality=quality)
@@ -210,12 +238,12 @@ class Task(
                 im_ext = ".jpg"
 
             outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
-            im.save(osp.join(outdir, outfile))
+            im.save(outdir / outfile)
 
     def export_dataset(
         self,
         format_name: str,
-        filename: str,
+        filename: StrPath,
         *,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
@@ -224,6 +252,9 @@ class Task(
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
+
+        filename = Path(filename)
+
         if include_images:
             endpoint = self.api.retrieve_dataset_endpoint
         else:
@@ -242,7 +273,7 @@ class Task(
 
     def download_backup(
         self,
-        filename: str,
+        filename: StrPath,
         *,
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
@@ -250,6 +281,8 @@ class Task(
         """
         Download a task backup
         """
+
+        filename = Path(filename)
 
         Downloader(self._client).prepare_and_download_file_from_endpoint(
             self.api.retrieve_backup_endpoint,
@@ -331,7 +364,7 @@ class TasksRepo(
 
         if dataset_repository_url:
             git.create_git_repo(
-                self,
+                self._client,
                 task_id=task.id,
                 repo_url=dataset_repository_url,
                 status_check_period=status_check_period,
@@ -362,7 +395,7 @@ class TasksRepo(
 
     def create_from_backup(
         self,
-        filename: str,
+        filename: StrPath,
         *,
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
@@ -370,10 +403,13 @@ class TasksRepo(
         """
         Import a task from a backup file
         """
+
+        filename = Path(filename)
+
         if status_check_period is None:
             status_check_period = self._client.config.status_check_period
 
-        params = {"filename": osp.basename(filename)}
+        params = {"filename": filename.name}
         url = self._client.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
         uploader = Uploader(self._client)
         response = uploader.upload_file(

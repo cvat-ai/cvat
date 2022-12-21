@@ -60,6 +60,9 @@ class TqdmProgressReporter(ProgressReporter):
     def advance(self, delta: int):
         self.tqdm.update(delta)
 
+    def finish(self):
+        self.tqdm.refresh()
+
 
 class StreamWithProgress:
     def __init__(self, stream: io.RawIOBase, pbar: ProgressReporter, length: Optional[int] = None):
@@ -87,6 +90,12 @@ class StreamWithProgress:
 
     def tell(self):
         return self.stream.tell()
+
+    def __enter__(self) -> StreamWithProgress:
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
+        self.pbar.finish()
 
 
 def expect_status(codes: Union[int, Iterable[int]], response: urllib3.HTTPResponse) -> None:

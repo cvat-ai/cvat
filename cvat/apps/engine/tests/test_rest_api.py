@@ -18,6 +18,7 @@ from glob import glob
 from io import BytesIO, IOBase
 from unittest import mock
 import logging
+import copy
 
 import av
 import numpy as np
@@ -2992,10 +2993,19 @@ def generate_manifest_file(data_type, manifest_path, sources, *,
     manifest.link(**kwargs)
     manifest.create()
 
+
 def get_manifest_images_list(manifest_path):
     return list(ImageManifestManager(manifest_path, create_index=False).data)
 
+
 class TaskDataAPITestCase(ApiTestBase):
+    _share_image_sizes = {}
+    _client_images = {}
+    _client_mp4_video = {}
+    _client_archive = {}
+    _client_pdf = {}
+    _client_mxf_video = {}
+
     class ChunkType(str, Enum):
         IMAGESET = 'imageset'
         VIDEO = 'video'
@@ -3011,7 +3021,7 @@ class TaskDataAPITestCase(ApiTestBase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls._image_sizes = {}
+        cls._share_image_sizes = {}
         cls._share_files = []
 
         for filename in [
@@ -3023,7 +3033,7 @@ class TaskDataAPITestCase(ApiTestBase):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as image:
                 image.write(data.read())
-            cls._image_sizes[filename] = img_size
+            cls._share_image_sizes[filename] = img_size
             cls._share_files.append(filename)
 
         filename = "test_video_1.mp4"
@@ -3031,7 +3041,7 @@ class TaskDataAPITestCase(ApiTestBase):
         img_sizes, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
             video.write(data.read())
-        cls._image_sizes[filename] = img_sizes
+        cls._share_image_sizes[filename] = img_sizes
         cls._share_files.append(filename)
 
         filename = "test_rotated_90_video.mp4"
@@ -3042,7 +3052,7 @@ class TaskDataAPITestCase(ApiTestBase):
             img_sizes = [(frame.height, frame.width)] * container.streams.video[0].frames
             break
         container.close()
-        cls._image_sizes[filename] = img_sizes
+        cls._share_image_sizes[filename] = img_sizes
 
         filename = os.path.join("videos", "test_video_1.mp4")
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -3050,7 +3060,7 @@ class TaskDataAPITestCase(ApiTestBase):
         img_sizes, data = generate_video_file(filename, width=1280, height=720)
         with open(path, "wb") as video:
             video.write(data.read())
-        cls._image_sizes[filename] = img_sizes
+        cls._share_image_sizes[filename] = img_sizes
         cls._share_files.append(filename)
 
         filename = os.path.join("test_archive_1.zip")
@@ -3058,7 +3068,7 @@ class TaskDataAPITestCase(ApiTestBase):
         img_sizes, data = generate_zip_archive_file(filename, count=5)
         with open(path, "wb") as zip_archive:
             zip_archive.write(data.read())
-        cls._image_sizes[filename] = img_sizes
+        cls._share_image_sizes[filename] = img_sizes
         cls._share_files.append(filename)
 
         filename = "test_pointcloud_pcd.zip"
@@ -3071,7 +3081,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 with zip_file.open(info, "r") as file:
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
-        cls._image_sizes[filename] = image_sizes
+        cls._share_image_sizes[filename] = image_sizes
 
         filename = "test_velodyne_points.zip"
         path = os.path.join(os.path.dirname(__file__), 'assets', filename)
@@ -3101,14 +3111,14 @@ class TaskDataAPITestCase(ApiTestBase):
         root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
         shutil.rmtree(root_path, ignore_errors=True)
 
-        cls._image_sizes[filename] = image_sizes
+        cls._share_image_sizes[filename] = image_sizes
 
         filename = 'test_1.pdf'
         path = os.path.join(settings.SHARE_ROOT, filename)
         img_sizes, data = generate_pdf_file(filename, page_count=5)
         with open(path, "wb") as pdf_file:
             pdf_file.write(data.read())
-        cls._image_sizes[filename] = img_sizes
+        cls._share_image_sizes[filename] = img_sizes
         cls._share_files.append(filename)
 
         filename = 'videos/manifest.jsonl'
@@ -3147,6 +3157,37 @@ class TaskDataAPITestCase(ApiTestBase):
             for fn in sorted(image_files):
                 f.write(os.path.join(settings.SHARE_ROOT, fn), fn)
         cls._share_files.append(filename)
+
+        image_sizes, images = generate_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
+        cls._client_images = {
+            'images': images,
+            'image_sizes': image_sizes,
+        }
+
+        image_sizes, video = generate_video_file(filename="test_video_1.mp4", width=1280, height=720)
+        cls._client_mp4_video = {
+            'video': video,
+            'image_sizes': image_sizes,
+        }
+
+        image_sizes, archive = generate_zip_archive_file("test_archive_2.zip", 7)
+        cls._client_archive = {
+            'archive': archive,
+            'image_sizes': image_sizes
+        }
+
+        image_sizes, document = generate_pdf_file("test_pdf_1.pdf", 5)
+        cls._client_pdf = {
+            'pdf': document,
+            'image_sizes': image_sizes
+        }
+
+        image_sizes, video = generate_video_file(filename="test_video_1.mxf",
+            width=1280, height=720, codec_name='mpeg2video')
+        cls._client_mxf_video = {
+            'video': video,
+            'image_sizes': image_sizes,
+        }
 
     @classmethod
     def tearDownClass(cls):
@@ -3188,7 +3229,9 @@ class TaskDataAPITestCase(ApiTestBase):
             return self.client.get(url)
 
     def _get_preview(self, tid, user):
-        return self._run_api_v2_task_id_data_get(tid, user, "preview")
+        url = '/api/tasks/{}/preview'.format(tid)
+        with ForceLogin(user, self.client):
+            return self.client.get(url)
 
     def _get_compressed_chunk(self, tid, user, number):
         return self._run_api_v2_task_id_data_get(tid, user, "chunk", "compressed", number)
@@ -3278,7 +3321,7 @@ class TaskDataAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, expected_status_code)
         if expected_status_code == status.HTTP_200_OK:
             if dimension == DimensionType.DIM_2D:
-                preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
+                preview = Image.open(io.BytesIO(response.content))
                 self.assertLessEqual(preview.size, expected_image_sizes[0])
 
         # check compressed chunk
@@ -3401,7 +3444,8 @@ class TaskDataAPITestCase(ApiTestBase):
             ]
         }
 
-        image_sizes, images = generate_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
+        images = copy.deepcopy(self._client_images['images'])
+        image_sizes = self._client_images['image_sizes']
         task_data = {
             "client_files[0]": images[0],
             "client_files[1]": images[1],
@@ -3430,10 +3474,10 @@ class TaskDataAPITestCase(ApiTestBase):
             "image_quality": 75,
         }
         image_sizes = [
-            self._image_sizes[task_data["server_files[3]"]],
-            self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[1]"]],
-            self._image_sizes[task_data["server_files[2]"]],
+            self._share_image_sizes[task_data["server_files[3]"]],
+            self._share_image_sizes[task_data["server_files[0]"]],
+            self._share_image_sizes[task_data["server_files[1]"]],
+            self._share_image_sizes[task_data["server_files[2]"]],
         ]
 
         with self.subTest(current_function_name() + " no copy"):
@@ -3456,7 +3500,8 @@ class TaskDataAPITestCase(ApiTestBase):
                 {"name": "person"},
             ]
         }
-        image_sizes, video = generate_video_file(filename="test_video_1.mp4", width=1280, height=720)
+        video = copy.deepcopy(self._client_mp4_video['video'])
+        image_sizes = self._client_mp4_video['image_sizes']
         task_data = {
             "client_files[0]": video,
             "image_quality": 43,
@@ -3479,7 +3524,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "server_files[0]": "test_video_1.mp4",
             "image_quality": 57,
         }
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
         with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
@@ -3505,7 +3550,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "server_files[0]": os.path.join("videos", "test_video_1.mp4"),
             "image_quality": 57,
         }
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
         with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
@@ -3533,7 +3578,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "image_quality": 12,
             "use_zip_chunks": True,
         }
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
         with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO, image_sizes,
@@ -3559,7 +3604,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "server_files[0]": "test_archive_1.zip",
             "image_quality": 88,
         }
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
         with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
@@ -3581,7 +3626,8 @@ class TaskDataAPITestCase(ApiTestBase):
                 {"name": "person"},
             ]
         }
-        image_sizes, archive = generate_zip_archive_file("test_archive_2.zip", 7)
+        archive = copy.deepcopy(self._client_archive['archive'])
+        image_sizes = self._client_archive['image_sizes']
         task_data = {
             "client_files[0]": archive,
             "image_quality": 100,
@@ -3606,7 +3652,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "use_cache": True,
         }
 
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
         with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
@@ -3637,9 +3683,9 @@ class TaskDataAPITestCase(ApiTestBase):
             "use_cache": True,
         }
         image_sizes = [
-            self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[2]"]],
-            self._image_sizes[task_data["server_files[1]"]],
+            self._share_image_sizes[task_data["server_files[0]"]],
+            self._share_image_sizes[task_data["server_files[2]"]],
+            self._share_image_sizes[task_data["server_files[1]"]],
         ]
 
         with self.subTest(current_function_name() + " no copy"):
@@ -3669,7 +3715,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "use_cache": True
         }
 
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
         with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
@@ -3692,7 +3738,8 @@ class TaskDataAPITestCase(ApiTestBase):
             ]
         }
 
-        image_sizes, document = generate_pdf_file("test_pdf_1.pdf", 5)
+        document = copy.deepcopy(self._client_pdf['pdf'])
+        image_sizes = self._client_pdf['image_sizes']
 
         task_data = {
             "client_files[0]": document,
@@ -3715,8 +3762,7 @@ class TaskDataAPITestCase(ApiTestBase):
             ]
         }
 
-        image_sizes, document = generate_pdf_file("test_pdf_2.pdf", 4)
-
+        document = copy.deepcopy(self._client_pdf['pdf'])
         task_data = {
             "client_files[0]": document,
             "image_quality": 70,
@@ -3741,7 +3787,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "image_quality": 70,
             "use_cache": True
         }
-        image_sizes = self._image_sizes[task_data['server_files[0]']]
+        image_sizes = self._share_image_sizes[task_data['server_files[0]']]
 
         with self.subTest(current_function_name() + " no copy"):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
@@ -3771,7 +3817,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "use_zip_chunks": True
         }
 
-        image_sizes = self._image_sizes['test_rotated_90_video.mp4']
+        image_sizes = self._share_image_sizes['test_rotated_90_video.mp4']
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.FILE_SYSTEM)
 
@@ -3793,7 +3839,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "use_zip_chunks": True
         }
 
-        image_sizes = self._image_sizes['test_rotated_90_video.mp4']
+        image_sizes = self._share_image_sizes['test_rotated_90_video.mp4']
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
@@ -3807,7 +3853,8 @@ class TaskDataAPITestCase(ApiTestBase):
             ],
         }
 
-        image_sizes, video = generate_video_file(filename="test_video_1.mxf", width=1280, height=720, codec_name='mpeg2video')
+        video = copy.deepcopy(self._client_mxf_video['video'])
+        image_sizes = self._client_mxf_video['image_sizes']
         task_data = {
             "client_files[0]": video,
             "image_quality": 51,
@@ -3830,7 +3877,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "client_files[0]": open(os.path.join(os.path.dirname(__file__), 'assets', 'test_pointcloud_pcd.zip'), 'rb'),
             "image_quality": 100,
         }
-        image_sizes = self._image_sizes["test_pointcloud_pcd.zip"]
+        image_sizes = self._share_image_sizes["test_pointcloud_pcd.zip"]
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
@@ -3851,7 +3898,7 @@ class TaskDataAPITestCase(ApiTestBase):
                                     'rb'),
             "image_quality": 100,
         }
-        image_sizes = self._image_sizes["test_velodyne_points.zip"]
+        image_sizes = self._share_image_sizes["test_velodyne_points.zip"]
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
@@ -3874,7 +3921,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         manifest_name = "images_manifest_with_meta_sorted.jsonl"
         images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
-        image_sizes = [self._image_sizes[fn] for fn in images]
+        image_sizes = [self._share_image_sizes[fn] for fn in images]
         task_data.update({
             f"server_files[{i}]": fn
             for i, fn in enumerate(images + [manifest_name])
@@ -3974,7 +4021,7 @@ class TaskDataAPITestCase(ApiTestBase):
                         for i, f in enumerate(images)
                     )
 
-                image_sizes = [self._image_sizes[v] for v in images]
+                image_sizes = [self._share_image_sizes[v] for v in images]
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
@@ -4199,9 +4246,9 @@ class TaskDataAPITestCase(ApiTestBase):
             "sorting_method": SortingMethod.NATURAL
         }
         image_sizes = [
-            self._image_sizes[task_data["server_files[2]"]],
-            self._image_sizes[task_data["server_files[1]"]],
-            self._image_sizes[task_data["server_files[0]"]],
+            self._share_image_sizes[task_data["server_files[2]"]],
+            self._share_image_sizes[task_data["server_files[1]"]],
+            self._share_image_sizes[task_data["server_files[0]"]],
         ]
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
@@ -4224,7 +4271,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "copy_data": False,
             "use_cache": True,
         }
-        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)

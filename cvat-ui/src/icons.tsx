@@ -6,6 +6,7 @@
 import React from 'react';
 
 import SVGCVATLogo from './assets/cvat-logo.svg';
+import SVGCVATMinimalisticLogo from './assets/cvat-minimalistic-logo.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
 import SVGMoveIcon from './assets/move-icon.svg';
 import SVGRotateIcon from './assets/rotate-icon.svg';
@@ -58,10 +59,16 @@ import SVGEraserIcon from './assets/eraser-icon.svg';
 import SVGPolygonPlusIcon from './assets/polygon-plus.svg';
 import SVGPolygonMinusIcon from './assets/polygon-minus.svg';
 import SVGMultiPlusIcon from './assets/multi-plus-icon.svg';
+import SVGBackArrowIcon from './assets/back-arrow-icon.svg';
+import SVGClearIcon from './assets/clear-icon.svg';
+import SVGShowPasswordIcon from './assets/show-password.svg';
+import SVGSocialGithubLogo from './assets/social-github-logo.svg';
+import SVGSocialGoogleLogo from './assets/social-google-logo.svg';
 import SVGPlusIcon from './assets/plus-icon.svg';
 import SVGCheckIcon from './assets/check-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
+export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
 export const RotateIcon = React.memo((): JSX.Element => <SVGRotateIcon />);
@@ -114,5 +121,10 @@ export const EraserIcon = React.memo((): JSX.Element => <SVGEraserIcon />);
 export const PolygonPlusIcon = React.memo((): JSX.Element => <SVGPolygonPlusIcon />);
 export const PolygonMinusIcon = React.memo((): JSX.Element => <SVGPolygonMinusIcon />);
 export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);
+export const BackArrowIcon = React.memo((): JSX.Element => <SVGBackArrowIcon />);
+export const ClearIcon = React.memo((): JSX.Element => <SVGClearIcon />);
+export const ShowPasswordIcon = React.memo((): JSX.Element => <SVGShowPasswordIcon />);
+export const SocialGithubLogo = React.memo((): JSX.Element => <SVGSocialGithubLogo />);
+export const SocialGoogleLogo = React.memo((): JSX.Element => <SVGSocialGoogleLogo />);
 export const PlusIcon = React.memo((): JSX.Element => <SVGPlusIcon />);
 export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);

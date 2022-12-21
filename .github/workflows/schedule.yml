@@ -7,6 +7,7 @@ on:
 env:
   SERVER_IMAGE_TEST_REPO: cvat_server
   UI_IMAGE_TEST_REPO: instrumentation_cvat_ui
+  CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
 
 jobs:
   check_updates:
@@ -234,7 +235,7 @@ jobs:
           gen/generate.sh
           cd ..
 
-          pip3 install --user cvat-sdk/
+          pip3 install --user 'cvat-sdk/[pytorch]'
           pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
           pytest tests/python/
@@ -274,7 +275,7 @@ jobs:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
                 'actions_objects', 'actions_objects2', 'actions_users',
                 'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
-                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2']
+                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
     steps:
       - uses: actions/checkout@v3
 

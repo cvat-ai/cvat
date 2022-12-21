@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +40,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
     function checkCounTasksInXML(projectParams, expectedCount) {
         cy.exportProject(projectParams);
         cy.waitForDownload();
-        cy.unpackZipArchive(`cypress/fixtures/${projectParams.archiveCustomeName}.zip`);
+        cy.unpackZipArchive(`cypress/fixtures/${projectParams.archiveCustomName}.zip`);
         cy.readFile('cypress/fixtures/annotations.xml').should('exist').then((xml) => {
             const tasks = Cypress.$(Cypress.$.parseXML(xml)).find('task').find('name');
             expect(tasks.length).to.be.eq(expectedCount);
@@ -120,7 +121,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 dumpType: 'CVAT for images',
-                archiveCustomeName: 'export_project_annotation',
+                archiveCustomName: 'export_project_annotation',
             };
             // Check issue 3810
             checkCounTasksInXML(exportAnnotationsRenameArchive, 2);

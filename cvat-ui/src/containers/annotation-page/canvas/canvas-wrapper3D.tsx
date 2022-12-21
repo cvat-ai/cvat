@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,60 +21,34 @@ import {
 } from 'actions/annotation-actions';
 
 import {
-    ActiveControl,
     ColorBy,
     CombinedState,
     ContextMenuType,
-    GridColor,
     ObjectType,
     Workspace,
 } from 'reducers';
 
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { KeyMap } from '../../../utils/mousetrap-react';
 
 interface StateToProps {
-    canvasInstance: Canvas3d | Canvas;
-    jobInstance: any;
-    frameData: any;
-    curZLayer: number;
-    annotations: any[];
-    sidebarCollapsed: boolean;
-    activatedStateID: number | null;
-    activatedAttributeID: number | null;
-    frameIssues: any[] | null;
-    frameAngle: number;
-    frameFetching: boolean;
-    frame: number;
     opacity: number;
-    colorBy: ColorBy;
     selectedOpacity: number;
     outlined: boolean;
     outlineColor: string;
-    showBitmap: boolean;
-    showProjections: boolean;
-    grid: boolean;
-    gridSize: number;
-    gridColor: GridColor;
-    gridOpacity: number;
-    activeLabelID: number;
-    activeObjectType: ObjectType;
-    brightnessLevel: number;
-    contrastLevel: number;
-    saturationLevel: number;
-    resetZoom: boolean;
-    aamZoomMargin: number;
+    colorBy: ColorBy;
+    frameFetching: boolean;
+    canvasInstance: Canvas3d | Canvas;
+    jobInstance: any;
+    frameData: any;
+    annotations: any[];
     contextMenuVisibility: boolean;
-    showObjectsTextAlways: boolean;
-    showAllInterpolationTracks: boolean;
+    activeLabelID: number;
+    activatedStateID: number | null;
+    activeObjectType: ObjectType;
     workspace: Workspace;
-    minZLayer: number;
-    maxZLayer: number;
-    automaticBordering: boolean;
-    switchableAutomaticBordering: boolean;
-    keyMap: KeyMap;
-    canvasBackgroundColor: string;
+    frame: number;
+    resetZoom: boolean;
 }
 
 interface DispatchToProps {
@@ -94,7 +69,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: {
-                activeControl,
                 instance: canvasInstance,
                 contextMenu: { visible: contextMenuVisibility },
             },
@@ -102,85 +76,41 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance },
             player: {
                 frame: { data: frameData, number: frame, fetching: frameFetching },
-                frameAngles,
             },
             annotations: {
                 states: annotations,
                 activatedStateID,
-                activatedAttributeID,
-                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
-            sidebarCollapsed,
             workspace,
         },
         settings: {
             player: {
-                canvasBackgroundColor,
-                grid,
-                gridSize,
-                gridColor,
-                gridOpacity,
-                brightnessLevel,
-                contrastLevel,
-                saturationLevel,
                 resetZoom,
             },
-            workspace: {
-                aamZoomMargin, showObjectsTextAlways, showAllInterpolationTracks, automaticBordering,
-            },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor,
             },
         },
-        review: { frameIssues, issuesHidden },
-        shortcuts: { keyMap },
     } = state;
 
     return {
         canvasInstance,
         jobInstance,
         frameData,
-        curZLayer,
         contextMenuVisibility,
         annotations,
-        sidebarCollapsed,
-        frameIssues:
-            issuesHidden || ![Workspace.REVIEW_WORKSPACE, Workspace.STANDARD].includes(workspace) ? null : frameIssues,
-        frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,
         frame,
-        activatedStateID,
-        activatedAttributeID,
         opacity,
         colorBy,
         selectedOpacity,
         outlined,
         outlineColor,
-        showBitmap,
-        showProjections,
-        grid,
-        gridSize,
-        gridColor,
-        gridOpacity,
         activeLabelID,
+        activatedStateID,
         activeObjectType,
-        brightnessLevel,
-        contrastLevel,
-        saturationLevel,
         resetZoom,
-        aamZoomMargin,
-        showObjectsTextAlways,
-        showAllInterpolationTracks,
-        minZLayer,
-        maxZLayer,
-        automaticBordering,
         workspace,
-        keyMap,
-        canvasBackgroundColor,
-        switchableAutomaticBordering:
-            activeControl === ActiveControl.DRAW_POLYGON ||
-            activeControl === ActiveControl.DRAW_POLYLINE ||
-            activeControl === ActiveControl.EDIT,
     };
 }
 
@@ -212,7 +142,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                 dispatch(updateCanvasContextMenu(false, 0, 0));
             }
 
-            dispatch(activateObject(activatedStateID, null));
+            dispatch(activateObject(activatedStateID, null, null));
         },
         onEditShape(enabled: boolean): void {
             dispatch(editShape(enabled));
