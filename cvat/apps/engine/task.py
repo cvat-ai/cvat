@@ -368,8 +368,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
             else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
         if data['pattern'] == '*':
-            shutil.copyfile(cloud_storage_manifest.manifest.path, manifest.manifest.path)
-            manifest.set_index()
             server_files = cloud_storage_manifest_data
         else:
             r = re.compile(data['pattern'])
