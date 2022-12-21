@@ -507,6 +507,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('import_backup', 'POST'): 'import:backup',
             ('append_backup_chunk', 'PATCH'): 'import:backup',
             ('append_backup_chunk', 'HEAD'): 'import:backup',
+            ('preview', 'GET'): 'view',
         }.get((view.action, request.method))
 
         scopes = []
@@ -669,6 +670,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): 'import:backup',
             ('append_backup_chunk', 'HEAD'): 'import:backup',
             ('export_backup', 'GET'): 'export:backup',
+            ('preview', 'GET'): 'view',
         }.get((view.action, request.method))
 
         scopes = []
@@ -914,7 +916,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','GET'): 'view:metadata',
             ('metadata','PATCH'): 'update:metadata',
             ('issues', 'GET'): 'view',
-            ('commits', 'GET'): 'view:commits'
+            ('commits', 'GET'): 'view:commits',
+            ('preview', 'GET'): 'view',
         }.get((view.action, request.method))
 
         scopes = []
