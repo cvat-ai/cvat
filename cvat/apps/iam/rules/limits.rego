@@ -9,18 +9,19 @@ import data.utils
 
 CAP_USER_SANDBOX_TASKS = "USER_SANDBOX_TASKS"
 CAP_USER_SANDBOX_PROJECTS = "USER_SANDBOX_PROJECTS"
-CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE = "USER_SANDBOX_LAMBDA_CALL_OFFLINE"
-CAP_ORG_LAMBDA_CALL_OFFLINE = "ORG_LAMBDA_CALL_OFFLINE"
 CAP_TASKS_IN_USER_SANDBOX_PROJECT = "TASKS_IN_USER_SANDBOX_PROJECT"
 CAP_USER_OWNED_ORGS = "USER_OWNED_ORGS"
 CAP_USER_SANDBOX_CLOUD_STORAGES = "USER_SANDBOX_CLOUD_STORAGES"
+CAP_USER_SANDBOX_PROJECT_WEBHOOKS = "USER_SANDBOX_PROJECT_WEBHOOKS"
+CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE = "USER_SANDBOX_LAMBDA_CALL_OFFLINE"
 CAP_ORG_TASKS = "ORG_TASKS"
 CAP_ORG_PROJECTS = "ORG_PROJECTS"
 CAP_TASKS_IN_ORG_PROJECT = "TASKS_IN_ORG_PROJECT"
 CAP_ORG_CLOUD_STORAGES = "ORG_CLOUD_STORAGES"
 CAP_ORG_COMMON_WEBHOOKS = "ORG_COMMON_WEBHOOKS"
+CAP_ORG_PROJECT_WEBHOOKS = "ORG_PROJECT_WEBHOOKS"
+CAP_ORG_LAMBDA_CALL_OFFLINE = "ORG_LAMBDA_CALL_OFFLINE"
 CAP_ORG_MEMBERS = "ORG_MEMBERS"
-CAP_PROJECT_WEBHOOKS = "PROJECT_WEBHOOKS"
 
 
 check_limit_exceeded(current, max) {
@@ -84,10 +85,17 @@ problems contains "org project tasks limit reached" if {
     )
 }
 
-problems contains "project webhooks limit reached" if {
+problems contains "org project webhooks limit reached" if {
     check_limit_exceeded(
-        input.resource.limits[CAP_PROJECT_WEBHOOKS].used,
-        input.resource.limits[CAP_PROJECT_WEBHOOKS].max
+        input.resource.limits[CAP_ORG_PROJECT_WEBHOOKS].used,
+        input.resource.limits[CAP_ORG_PROJECT_WEBHOOKS].max
+    )
+}
+
+problems contains "user project webhooks limit reached" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_USER_SANDBOX_PROJECT_WEBHOOKS].used,
+        input.resource.limits[CAP_USER_SANDBOX_PROJECT_WEBHOOKS].max
     )
 }
 
