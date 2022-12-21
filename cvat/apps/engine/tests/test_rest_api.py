@@ -3763,6 +3763,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         document = copy.deepcopy(self._client_pdf['pdf'])
+        image_sizes = self._client_pdf['image_sizes']
         task_data = {
             "client_files[0]": document,
             "image_quality": 70,
@@ -4139,7 +4140,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 )
                 images = get_manifest_images_list(
                     os.path.join(settings.SHARE_ROOT, manifest_name))
-                image_sizes = [self._image_sizes[v] for v in images]
+                image_sizes = [self._share_image_sizes[v] for v in images]
 
                 if manifest:
                     task_data["server_files[1]"] = manifest_name
