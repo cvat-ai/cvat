@@ -216,10 +216,10 @@ def _validate_data(counter, manifest_files=None):
 
     return counter, task_modes[0]
 
-def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
+def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_storage_method):
     if manifests:
         if len(manifests) != 1:
-            raise Exception('Only one manifest file can be attached with data')
+            raise ValidationError('Only one manifest file can be attached with data')
         manifest_file = manifests[0]
         full_manifest_path = os.path.join(root_dir, manifests[0])
         if is_in_cloud:
@@ -230,8 +230,10 @@ def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
                     < cloud_storage_instance.get_file_last_modified(manifest_file):
                 cloud_storage_instance.download_file(manifest_file, full_manifest_path)
         if is_manifest(full_manifest_path):
+            if not (settings.USE_CACHE or data_storage_method != models.StorageMethodChoice.CACHE):
+                raise ValidationError("Manifest file can be uploaded only if 'Use cache' option is also selected")
             return manifest_file
-        raise Exception('Invalid manifest was uploaded')
+        raise ValidationError('Invalid manifest was uploaded')
     return None
 
 def _validate_url(url):
@@ -300,6 +302,26 @@ def _download_data(urls, upload_dir):
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
+def _create_task_manifest_based_on_cloud_storage_manifest(
+    sorted_media,
+    cloud_storage_manifest_prefix,
+    cloud_storage_manifest,
+    manifest
+):
+    if cloud_storage_manifest_prefix:
+        sorted_media_without_manifest_prefix = [
+            os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+        ]
+        sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
+        def _add_prefix(properties):
+            file_name = properties['name']
+            properties['name'] = os.path.join(cloud_storage_manifest_prefix, file_name)
+            return properties
+        content = list(map(_add_prefix, raw_content))
+    else:
+        sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+    sorted_content = (i[1] for i in sorted(zip(sequence, content)))
+    manifest.create(sorted_content)
 
 @transaction.atomic
 def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
@@ -318,6 +340,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     # find and validate manigfest file
     manifest_files = _count_manifest_files(data)
     manifest_root = None
+
     if db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
         manifest_root = upload_dir
     elif is_data_in_cloud:
@@ -325,10 +348,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     manifest_file = _validate_manifest(
         manifest_files, manifest_root,
-        is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None
+        is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None,
+        db_data.storage_method,
     )
-    if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
-        raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
     if is_data_in_cloud:
         cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
@@ -339,16 +361,25 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             db_data.cloud_storage.get_storage_dirname()
         )
         cloud_storage_manifest.set_index()
+        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
 
-        if len(data['server_files']) == 1 and data['pattern']:
-            if data['pattern'] == '*': # or use "/" ?
-                shutil.copyfile(cloud_storage_manifest.manifest.path, manifest.manifest.path)
-                manifest.set_index()
-                data['server_files'].extend(list(cloud_storage_manifest.data))
-            else:
-                r = re.compile(data['pattern'])
-                data['server_files'].extend(list(filter(r.match, cloud_storage_manifest.data)))
+    # update list with server files if task creation approach with pattern and manifest file is used
+    if is_data_in_cloud and data['pattern']:
+        if 1 != len(data['server_files']):
+            raise ValidationError('Using a pattern is only supported with a manifest, but others files were found')
 
+        cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
+            else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
+        if data['pattern'] == '*':
+            shutil.copyfile(cloud_storage_manifest.manifest.path, manifest.manifest.path)
+            manifest.set_index()
+            server_files = cloud_storage_manifest_data
+        else:
+            r = re.compile(data['pattern'])
+            server_files = list(filter(r.match, cloud_storage_manifest_data))
+        data['server_files'].extend(server_files)
+
+    # count and validate uploaded files
     media = _count_files(data)
     media, task_mode = _validate_data(media, manifest_files)
 
@@ -357,32 +388,20 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
         elif db_data.storage == models.StorageChoice.SHARE:
             upload_dir = settings.SHARE_ROOT
+        elif is_data_in_cloud:
+            sorted_media = sort(media['image'], data['sorting_method'])
 
-    if data['server_files'] and is_data_in_cloud:
-        sorted_media = sort(media['image'], data['sorting_method'])
+            # download previews from cloud storage
+            data_size = len(sorted_media)
+            segment_step, *_ = _get_task_segment_data(db_task, data_size)
+            for preview_frame in range(0, data_size, segment_step):
+                preview = sorted_media[preview_frame]
+                cloud_storage_instance.download_file(preview, os.path.join(upload_dir, preview))
 
-        data_size = len(sorted_media)
-        segment_step, *_ = _get_task_segment_data(db_task, data_size)
-        for preview_frame in range(0, data_size, segment_step):
-            preview = sorted_media[preview_frame]
-            cloud_storage_instance.download_file(preview, os.path.join(upload_dir, preview))
-
-        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-        cloud_storage_manifest.set_index()
-        if cloud_storage_manifest_prefix:
-            sorted_media_without_manifest_prefix = [
-                os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
-            ]
-            sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
-            def _add_prefix(properties):
-                file_name = properties['name']
-                properties['name'] = os.path.join(cloud_storage_manifest_prefix, file_name)
-                return properties
-            content = list(map(_add_prefix, raw_content))
-        else:
-            sequence, content = cloud_storage_manifest.get_subset(sorted_media)
-        sorted_content = (i[1] for i in sorted(zip(sequence, content)))
-        manifest.create(sorted_content)
+            # Define task manifest content based on cloud storage manifest content and uploaded files
+            _create_task_manifest_based_on_cloud_storage_manifest(
+                sorted_media, cloud_storage_manifest_prefix,
+                cloud_storage_manifest, manifest)
 
     av_scan_paths(upload_dir)
 
