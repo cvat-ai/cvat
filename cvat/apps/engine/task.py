@@ -328,7 +328,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     slogger.glob.info("create task #{}".format(db_task.id))
 
     db_data = db_task.data
-    upload_dir = db_data.get_upload_dirname()
+    upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
@@ -338,7 +338,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     manifest_files = _count_manifest_files(data)
     manifest_root = None
 
-    if db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
+    # we sould also handle this case because files from the share source have not been downloaded yet
+    if data['copy_data']:
+        manifest_root = settings.SHARE_ROOT
+    elif db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
         manifest_root = upload_dir
     elif is_data_in_cloud:
         manifest_root = db_data.cloud_storage.get_storage_dirname()
@@ -381,8 +384,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
             _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
-        elif db_data.storage == models.StorageChoice.SHARE:
-            upload_dir = settings.SHARE_ROOT
         elif is_data_in_cloud:
             sorted_media = sort(media['image'], data['sorting_method'])
 
