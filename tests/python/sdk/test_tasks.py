@@ -204,10 +204,12 @@ class TestTaskUsecases:
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        task = self.client.tasks.create({
-            "name": f"test task",
-            "labels": [ { "name": "car" } ],
-        })
+        task = self.client.tasks.create(
+            {
+                "name": f"test task",
+                "labels": [{"name": "car"}],
+            }
+        )
 
         data_params = {
             "image_quality": 75,
