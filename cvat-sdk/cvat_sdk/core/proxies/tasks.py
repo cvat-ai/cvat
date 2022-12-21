@@ -65,9 +65,9 @@ class Task(
 
     def upload_data(
         self,
-        resource_type: ResourceType,
         resources: Sequence[StrPath],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         pbar: Optional[ProgressReporter] = None,
         params: Optional[Dict[str, Any]] = None,
         wait_for_completion: bool = True,
@@ -323,9 +323,9 @@ class TasksRepo(
     def create_from_data(
         self,
         spec: models.ITaskWriteRequest,
-        resource_type: ResourceType,
         resources: Sequence[str],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         data_params: Optional[Dict[str, Any]] = None,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
@@ -357,7 +357,7 @@ class TasksRepo(
             params=data_params,
             wait_for_completion=True,
             status_check_period=status_check_period,
-                )
+        )
 
         if annotation_path:
             task.import_annotations(annotation_format, annotation_path, pbar=pbar)
