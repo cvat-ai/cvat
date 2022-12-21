@@ -104,13 +104,13 @@ class UploadMixin:
     b.1. An Upload-Start request
     b.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
     b.2.b. Upload-Multiple requests
-    b.3. An Upload-Finished request
+    b.3. An Upload-Finish request
 
     Requests:
     - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers
     - Upload-Start - POST, has an 'Upload-Start' header
-    - Upload-Length - HEAD, has an 'Upload-Length' header (read the TUS protocol)
-    - Chunk - PATCH (read the TUS protocol)
+    - Upload-Length - POST, has an 'Upload-Length' header (read the TUS protocol)
+    - Chunk - HEAD/PATCH (read the TUS protocol)
     - Upload-Finish - POST, has an 'Upload-Finish' header
     - Upload-Multiple - POST, has a 'Upload-Multiple' header
     """
@@ -267,7 +267,7 @@ class UploadMixin:
                 filename = client_file['file'].name
                 if not self.validate_uploaded_file_name(filename):
                     return Response(status=status.HTTP_400_BAD_REQUEST,
-                        data=f"File name {filename} is not allowed")
+                        data=f"File name {filename} is not allowed", content_type="text/plain")
 
                 with open(osp.join(upload_dir, filename), 'ab+') as destination:
                     destination.write(client_file['file'].read())

@@ -1007,11 +1007,11 @@ class TusUploadingMetaSerializer(serializers.Serializer):
 
     To state that the input files are sent in the correct order,
     pass an empty list of files in the 'files' field. A list of
-    strings is expected to be a list file names in the required order.
+    strings is expected to be a list of file names in the required order.
     """
 
     files = serializers.ListField(
-        child=serializers.CharField(max_length=1024), default=[], allow_empty=True)
+        child=serializers.CharField(max_length=1024), default=list, allow_empty=True)
     """Allows to specify the list of files for the uploading."""
 
 class DatasetFileSerializer(serializers.Serializer):
