@@ -200,7 +200,7 @@ class GoogleAuthServer(AuthServer):
 
 
 class GithubAuthServer(AuthServer):
-    SERVER_PORT = 8084
+    SERVER_PORT = 4321
     REQUEST_HANDLER_CLASS = GithubRequestHandlerClass
 
 

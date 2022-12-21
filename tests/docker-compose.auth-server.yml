@@ -27,7 +27,7 @@ services:
     image: python:3.9-slim
     restart: always
     ports:
-      - '8084:8084'
+      - '4321:4321'
     command: python3 /tmp/server.py --server "github"
     volumes:
       - ./tests/python/authentication_server:/tmp

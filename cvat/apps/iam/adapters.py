@@ -50,10 +50,10 @@ class GoogleAdapter(GoogleOAuth2Adapter):
         return settings.GOOGLE_CALLBACK_URL
 
 class TestGitHubAdapter(GitHubAdapter):
-    access_token_url = "http://test-github:8084/login/oauth/access_token" # nosec
-    authorize_url = "http://localhost:8084/login/oauth/authorize"
-    profile_url = "http://test-github:8084/user"
-    emails_url = "http://test-github:8084/user/emails"
+    access_token_url = "http://test-github:4321/login/oauth/access_token" # nosec
+    authorize_url = "http://localhost:4321/login/oauth/authorize"
+    profile_url = "http://test-github:4321/user"
+    emails_url = "http://test-github:4321/user/emails"
 
 class TestGoogleAdapter(GoogleAdapter):
     access_token_url = f"http://test-google:8083/o/oauth2/token"
