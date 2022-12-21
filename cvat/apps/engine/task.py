@@ -124,9 +124,6 @@ def _save_task_to_db(db_task, extractor):
             shutil.rmtree(job_path)
         os.makedirs(job_path)
 
-        preview = extractor.get_preview(frame=start_frame)
-        preview.save(db_job.get_preview_path())
-
     db_task.data.save()
     db_task.save()
 
@@ -723,9 +720,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         # validate stop_frame
         db_data.stop_frame = min(db_data.stop_frame, \
             db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
-
-    task_preview = extractor.get_preview(frame=0)
-    task_preview.save(db_data.get_preview_path())
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task, extractor)

@@ -325,7 +325,8 @@ class AnnotationUploader(Uploader):
 class DatasetUploader(Uploader):
     def upload_file_and_wait(
         self,
-        endpoint: Endpoint,
+        upload_endpoint: Endpoint,
+        retrieve_endpoint: Endpoint,
         filename: Path,
         format_name: str,
         *,
@@ -333,12 +334,14 @@ class DatasetUploader(Uploader):
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
     ):
-        url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
+        url = self._client.api_map.make_endpoint_url(upload_endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
         self.upload_file(
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
 
+        url = self._client.api_map.make_endpoint_url(retrieve_endpoint.path, kwsub=url_params)
+        params = {"action": "import_status"}
         self._wait_for_completion(
             url,
             success_status=201,
