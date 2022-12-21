@@ -229,31 +229,33 @@ You can use <https://github.com/databus23/helm-diff#install> for that
 ### I want to use my own postgresql with your chart.
 Just set `postgresql.enabled` to `false` in the override file, then put the parameters of your database
 instance in the `external` field.
-You may also need to configure postgresqlUsername, postgresqlDatabase and password to connect to your own database:
+You may also need to configure `username`, `database` and `password` fields
+to connect to your own database:
 ```yml
 postgresql:
   enabled: false
   external:
-    host: postgresql.hostname.local
+    host: postgresql.default.svc.cluster.local
     port: 5432
+  auth:
+    username: cvat
+    database: cvat
   secret:
     password: cvat_postgresql
-  postgresqlDatabase: cvat
-  postgresqlUsername: cvat
 ```
-In example above corresponding secret will be created automatically, but if you want to use existing secret
-change `secret.create` to `false` and set `name` of existing secret:
+In example above corresponding secret will be created automatically, but if you want to use existing secret change `secret.create` to `false` and set `name` of existing secret:
 ```yml
 postgresql:
   enabled: false
   external:
-    host: postgresql.hostname.local
+    host: postgresql.default.svc.cluster.local
     port: 5432
   secret:
     create: false
     name: "my-postgresql-secret"
 ```
-The secret must contain the `postgresql-database`, `postgresql-username` and `postgresql-password` fields to access to the database
+The secret must contain the `database`, `username` and `password`
+keys to access to the database
 like:
 ```yml
 apiVersion: v1
@@ -263,9 +265,44 @@ metadata:
   namespace: default
 type: generic
 stringData:
-  postgresql-database: cvat
-  postgresql-username: cvat
-  postgresql-password: secretpassword
+  database: cvat
+  username: cvat
+  password: secretpassword
+```
+
+### I want to use my own redis with your chart.
+Just set `redis.enabled` to `false` in the override file, then put the parameters of your Redis
+instance in the `external` field.
+You may also need to configure `password` field to connect to your own Redis:
+```yml
+redis:
+  enabled: false
+  external:
+    host: redis.hostname.local
+  secret:
+    password: cvat_redis
+```
+In the above example the corresponding secret will be created automatically, but if you want to use an existing secret
+change `secret.create` to `false` and set `name` of the existing secret:
+```yml
+redis:
+  enabled: false
+  external:
+    host: redis.hostname.local
+  secret:
+    create: false
+    name: "my-redis-secret"
+```
+The secret must contain the `redis-password` key like:
+```yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "my-redis-secret"
+  namespace: default
+type: generic
+stringData:
+  redis-password: secretpassword
 ```
 
 ### I want to override some settings in values.yaml.

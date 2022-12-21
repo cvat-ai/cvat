@@ -59,11 +59,16 @@ spec:
           - name: CVAT_REDIS_HOST
             value: "{{ .Values.redis.external.host }}"
           {{- end }}
+          - name: CVAT_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.redis.secret.name) . }}"
+                key: redis-password
           {{- if .Values.postgresql.enabled }}
           - name: CVAT_POSTGRES_HOST
             value: "{{ .Release.Name }}-postgresql"
           - name: CVAT_POSTGRES_PORT
-            value: "{{ .Values.postgresql.service.port }}"
+            value: "{{ .Values.postgresql.service.ports.postgresql }}"
           {{- else }}
           - name: CVAT_POSTGRES_HOST
             value: "{{ .Values.postgresql.external.host }}"
@@ -74,17 +79,17 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
-                key: postgresql-username
+                key: username
           - name: CVAT_POSTGRES_DBNAME
             valueFrom:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
-                key: postgresql-database
+                key: database
           - name: CVAT_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
-                key: postgresql-password
+                key: password
           {{- with .Values.cvat.backend.worker.webhooks.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

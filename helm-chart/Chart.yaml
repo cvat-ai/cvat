@@ -26,12 +26,12 @@ appVersion: latest
 
 dependencies:
   - name: redis
-    version: "16.13.*"
+    version: "17.3.*"
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
 
   - name: postgresql
-    version: "10.16.*"
+    version: "12.1.*"
     repository: https://charts.bitnami.com/bitnami
     condition: postgresql.enabled
 
