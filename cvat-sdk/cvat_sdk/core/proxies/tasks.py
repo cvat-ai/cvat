@@ -148,6 +148,8 @@ class Task(
 
                 status = status.state.value
 
+            self.fetch()
+
     def import_annotations(
         self,
         format_name: str,
