@@ -8,6 +8,7 @@ import os
 import sys
 from copy import deepcopy
 from http import HTTPStatus
+from tempfile import NamedTemporaryFile
 from time import sleep
 
 import pytest
@@ -19,9 +20,7 @@ from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 from shared.utils.s3 import make_client
 
-from tempfile import NamedTemporaryFile
 from .utils import export_dataset
-
 
 sys.path.append(
     os.path.join(
