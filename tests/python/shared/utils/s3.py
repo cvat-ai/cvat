@@ -47,6 +47,7 @@ class S3Client:
         self.client.download_fileobj(Bucket=bucket, Key=key, Fileobj=data)
         return data.getvalue()
 
+
 def make_client() -> S3Client:
     return S3Client(
         endpoint_url=MINIO_ENDPOINT_URL, access_key=MINIO_KEY, secret_key=MINIO_SECRET_KEY
