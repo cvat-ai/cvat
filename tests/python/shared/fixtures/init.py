@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import re
 from http import HTTPStatus
 from pathlib import Path
@@ -11,7 +12,9 @@ from time import sleep
 import pytest
 import requests
 
-from shared.utils.config import ASSETS_DIR, get_api_url
+from shared.utils.config import ASSETS_DIR, get_server_url
+
+logger = logging.getLogger(__name__)
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
@@ -185,12 +188,24 @@ def delete_compose_files():
         filename.unlink(missing_ok=True)
 
 
-def wait_for_server():
-    for _ in range(30):
-        response = requests.get(get_api_url("users/self"))
-        if response.status_code == HTTPStatus.UNAUTHORIZED:
-            break
-        sleep(5)
+def wait_for_services():
+    for i in range(300):
+        logger.debug(f"waiting for the server to load ... ({i})")
+        response = requests.get(get_server_url("api/server/health/", format="json"))
+        if response.status_code == HTTPStatus.OK:
+            logger.debug("the server has finished loading!")
+            return
+        else:
+            try:
+                statuses = response.json()
+                logger.debug(f"server status: \n{statuses}")
+            except Exception as e:
+                logger.debug(f"an error occurred during the server status checking: {e}")
+        sleep(1)
+
+    raise Exception(
+        "Failed to reach the server during the specified period. Please check the configuration."
+    )
 
 
 def docker_restore_data_volumes():
@@ -286,7 +301,7 @@ def pytest_sessionstart(session):
             pytest.exit("All testing containers are stopped", returncode=0)
 
         start_services(rebuild)
-        wait_for_server()
+        wait_for_services()
 
         docker_exec_cvat("python manage.py loaddata /tmp/data.json")
         docker_exec_cvat_db(
@@ -303,7 +318,7 @@ def pytest_sessionstart(session):
         kube_cp(CVAT_DB_DIR / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
         kube_cp(CVAT_DB_DIR / "data.json", f"{server_pod_name}:/tmp/data.json")
 
-        wait_for_server()
+        wait_for_services()
 
         kube_exec_cvat("python manage.py loaddata /tmp/data.json")
 

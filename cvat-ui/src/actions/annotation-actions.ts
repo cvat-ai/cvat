@@ -996,8 +996,7 @@ export function getJobAsync(
             // Check if the task was already downloaded to the state
             let job: any | null = null;
             const [task] = state.tasks.current
-                .filter((_task: Task) => _task.instance.id === tid)
-                .map((_task: Task) => _task.instance);
+                .filter((_task: Task) => _task.id === tid);
             if (task) {
                 [job] = task.jobs.filter((_job: any) => _job.id === jid);
                 if (!job) {
