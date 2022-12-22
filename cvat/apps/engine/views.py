@@ -320,8 +320,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
-        # TODO: fix separation into read and write serializers for requests and responses
-        # probably with drf-rw-serializers
         if self.request.path.endswith('tasks'):
             return TaskReadSerializer
         else:
