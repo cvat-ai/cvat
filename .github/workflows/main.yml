@@ -12,6 +12,7 @@ on:
 
 env:
   CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
+  CVAT_VERSION: "local"
 
 jobs:
   search_cache:
@@ -127,7 +128,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      CVAT_VERSION: "dev"
+      CVAT_VERSION: ${{ env.CVAT_VERSION }}
     steps:
       - uses: actions/checkout@v3
 
@@ -192,7 +193,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      CVAT_VERSION: "dev"
+      CVAT_VERSION: ${{ env.CVAT_VERSION }}
     steps:
       - uses: actions/checkout@v3
 
@@ -257,7 +258,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      CVAT_VERSION: "dev"
+      CVAT_VERSION: ${{ env.CVAT_VERSION }}
     strategy:
       fail-fast: false
       matrix:
