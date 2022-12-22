@@ -338,7 +338,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     manifest_files = _find_manifest_files(data)
     manifest_root = None
 
-    # we sould also handle this case because files from the share source have not been downloaded yet
+    # we should also handle this case because files from the share source have not been downloaded yet
     if data['copy_data']:
         manifest_root = settings.SHARE_ROOT
     elif db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
