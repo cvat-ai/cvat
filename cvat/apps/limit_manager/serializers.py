@@ -68,15 +68,3 @@ class OrgLimitationWriteSerializer(ModelSerializer):
     def create(self, validated_data):
         org_limitation = Limitation.objects.create(**validated_data)
         return org_limitation
-
-
-class DefaultOrgLimitationSerializer(ModelSerializer):
-    class Meta:
-        model = Limitation
-        fields = org_limitation_fields
-
-
-class DefaultUserLimitationSerializer(ModelSerializer):
-    class Meta:
-        model = Limitation
-        fields = user_limitation_fields

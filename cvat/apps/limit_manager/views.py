@@ -3,15 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from .core.limits import LimitManager
+from .core.limits import LimitationManager, OrgCapabilityContext, UserCapabilityContext
 from .models import Limitation
 from .serializers import (
     OrgLimitationReadSerializer,
     OrgLimitationWriteSerializer,
     UserLimitationReadSerializer,
     UserLimitationWriteSerializer,
-    DefaultUserLimitationSerializer,
-    DefaultOrgLimitationSerializer
 )
 
 
@@ -38,11 +36,9 @@ class LimitationViewSet(viewsets.GenericViewSet):
 
         self.check_object_permissions(self.request, instance)
 
-        serializer = self.get_serializer_class(instance.org)(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        data = LimitationManager.from_instance(instance).update(request.data)
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         user_id = self.request.query_params.get("user_id")
@@ -57,9 +53,11 @@ class LimitationViewSet(viewsets.GenericViewSet):
         if user_id and not user_id.isnumeric():
             raise exceptions.ParseError("Parameter 'user_id' must be integer")
 
+        context = OrgCapabilityContext(org_id=org_id) if org_id else UserCapabilityContext(user_id=user_id)
+
         queryset = Limitation.objects.filter(user_id=user_id, org_id=org_id)
         if queryset.count() == 0:
-            queryset = [LimitManager()._get_or_create_limitation(user_id=user_id, org_id=org_id)]
+            queryset = [LimitationManager(context).get_or_create()]
 
         return queryset
 
@@ -72,10 +70,6 @@ class LimitationViewSet(viewsets.GenericViewSet):
 
     @action(methods=["GET"], detail=False)
     def default(self, request):
-        serializer = (
-            DefaultUserLimitationSerializer()
-            if "org" not in request.query_params
-            else DefaultOrgLimitationSerializer()
-        )
-        data = serializer.to_representation(instance=Limitation())
+        context = OrgCapabilityContext(org_id=1) if "org" in request.query_params else UserCapabilityContext(user_id=1)
+        data = LimitationManager(context)._default_limits
         return Response(data, status=status.HTTP_200_OK)

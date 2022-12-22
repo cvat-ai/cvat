@@ -16,17 +16,15 @@ class Limitation(models.Model):
     # List of limitations:
     #   - null means unlimited
     #   - blank means that certain limit not applicable
-    memberships = models.PositiveIntegerField(default=3, null=True, blank=True)
+    memberships = models.PositiveIntegerField(null=True, blank=True)
 
-    organizations = models.PositiveIntegerField(default=1, null=True, blank=True)
-    tasks = models.PositiveIntegerField(default=10, null=True)
-    projects = models.PositiveIntegerField(default=3, null=True)
-    cloud_storages = models.PositiveIntegerField(default=10, null=True)
+    organizations = models.PositiveIntegerField(null=True, blank=True)
+    tasks = models.PositiveIntegerField(null=True)
+    projects = models.PositiveIntegerField(null=True)
+    cloud_storages = models.PositiveIntegerField(null=True)
 
-    tasks_per_project = models.PositiveIntegerField(default=5, null=True)
-    webhooks_per_project = models.PositiveIntegerField(default=10, null=True)
-    webhooks_per_organization = models.PositiveIntegerField(
-        default=10, null=True, blank=True
-    )
+    tasks_per_project = models.PositiveIntegerField(null=True)
+    webhooks_per_project = models.PositiveIntegerField(null=True)
+    webhooks_per_organization = models.PositiveIntegerField(null=True, blank=True)
 
-    lambda_requests = models.PositiveIntegerField(default=0, null=True)
+    lambda_requests = models.PositiveIntegerField(null=True)

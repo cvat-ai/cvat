@@ -4,6 +4,7 @@
 
 from enum import Enum, auto
 from typing import Optional, cast
+from rest_framework import exceptions
 
 from attrs import define
 from django.conf import settings
@@ -151,23 +152,77 @@ class LimitStatus:
     max: Optional[int]
 
 
-class LimitManager:
-    def _get_or_create_limitation(
-        self, user_id: Optional[int] = None, org_id: Optional[int] = None
-    ) -> Limitation:
-        limitation = Limitation.objects.filter(user_id=user_id, org_id=org_id).first()
+class LimitationManager:
+    def __init__(self, context: CapabilityContext, instance: Optional[Limitation] = None) -> None:
+        assert isinstance(context, CapabilityContext)
 
-        if limitation is not None:
-            return limitation
+        org_id = getattr(context, "org_id", None)
+        user_id = getattr(context, "user_id", None)
+        assert (org_id is not None) ^ (user_id is not None)
+
+        if instance is not None:
+            assert instance.user_id == user_id
+            assert instance.org_id == org_id
 
         if org_id:
-            serializer = OrgLimitationWriteSerializer(data={"org": org_id})
-        elif user_id:
-            serializer = UserLimitationWriteSerializer(data={"user": user_id})
+            self._owner = {"org_id": org_id}
+            self._serializer_class = OrgLimitationWriteSerializer
+            mapping = settings.ORG_LIMITS_MAPPING
+        else:
+            self._owner = {"user_id": user_id}
+            self._serializer_class = UserLimitationWriteSerializer
+            mapping = settings.USER_LIMITS_MAPPING
 
+        self._instance = instance
+        self._default_limits = {
+            display_limit_name: settings.DEFAULT_LIMITS[limit_name]
+            for limit_name, display_limit_name in mapping.items()
+        }
+
+    @staticmethod
+    def from_instance(instance: Limitation):
+        context = UserCapabilityContext(user_id=instance.user_id)
+        if instance.org_id is not None:
+            context = OrgCapabilityContext(org_id=instance.org_id)
+        return LimitationManager(context, instance=instance)
+
+    def _create(self, limits: Optional[dict] = None) -> Limitation:
+        if limits is None:
+            limits = self._default_limits
+
+        serializer = self._serializer_class(data={**self._owner, **limits})
         serializer.is_valid(raise_exception=True)
-        return serializer.save()
+        self._instance = serializer.save()
 
+        return self._instance
+
+    def _get(self) -> Limitation:
+        if self._instance is not None:
+            return self._instance
+        try:
+            self._instance = Limitation.objects.get(**self._owner)
+        except Limitation.DoesNotExist:
+            raise exceptions.NotFound(f"Cannot find limitations with provided data: {self._owner}")
+
+        return self._instance
+
+    def update(self, data) -> dict:
+        instance = self.get_or_create()
+        serializer = self._serializer_class(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
+
+    def get_or_create(self) -> Limitation:
+        try:
+            self._get()
+        except exceptions.NotFound:
+            self._create()
+
+        return self._instance
+
+
+class LimitManager:
     def get_status(
         self,
         limit: Limits,
@@ -175,12 +230,7 @@ class LimitManager:
         context: Optional[CapabilityContext] = None,
     ) -> LimitStatus:
 
-        org_id = getattr(context, "org_id", None)
-        user_id = getattr(context, "user_id", None)
-        assert org_id is not None or user_id is not None
-
-        limitation = self._get_or_create_limitation(user_id=user_id, org_id=org_id)
-        assert limitation is not None
+        limitation = LimitationManager(context).get_or_create()
 
         if limit == Limits.USER_OWNED_ORGS:
             assert context is not None
@@ -188,7 +238,7 @@ class LimitManager:
 
             return LimitStatus(
                 Organization.objects.filter(owner_id=context.user_id).count(),
-                settings.DEFAULT_LIMITS["USER_OWNED_ORGS"],
+                limitation.organizations,
             )
 
         elif limit == Limits.USER_SANDBOX_PROJECTS:
@@ -198,7 +248,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(owner=context.user_id, organization=None).count(),
-                settings.DEFAULT_LIMITS["USER_SANDBOX_PROJECTS"],
+                limitation.projects
             )
 
         elif limit == Limits.ORG_PROJECTS:
@@ -208,7 +258,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
-                settings.DEFAULT_LIMITS["ORG_PROJECTS"],
+                limitation.projects
             )
 
         elif limit == Limits.USER_SANDBOX_TASKS:
@@ -218,7 +268,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(owner=context.user_id, organization=None).count(),
-                settings.DEFAULT_LIMITS["USER_SANDBOX_TASKS"],
+                limitation.tasks
             )
 
         elif limit == Limits.ORG_TASKS:
@@ -228,7 +278,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(organization=context.org_id).count(),
-                settings.DEFAULT_LIMITS["ORG_TASKS"],
+                limitation.tasks
             )
 
         elif limit == Limits.TASKS_IN_USER_SANDBOX_PROJECT:
@@ -238,7 +288,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                settings.DEFAULT_LIMITS["TASKS_IN_USER_SANDBOX_PROJECT"]
+                limitation.tasks_per_project
             )
 
         elif limit == Limits.TASKS_IN_ORG_PROJECT:
@@ -248,7 +298,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-                settings.DEFAULT_LIMITS["TASKS_IN_ORG_PROJECT"]
+                limitation.tasks_per_project
             )
 
         elif limit == Limits.PROJECT_WEBHOOKS:
@@ -259,7 +309,7 @@ class LimitManager:
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
                 Webhook.objects.filter(project=context.project_id).count(),
-                settings.DEFAULT_LIMITS["PROJECT_WEBHOOKS"]
+                limitation.webhooks_per_project
             )
 
         elif limit == Limits.ORG_COMMON_WEBHOOKS:
@@ -268,7 +318,7 @@ class LimitManager:
 
             return LimitStatus(
                 Webhook.objects.filter(organization=context.org_id, project=None).count(),
-                settings.DEFAULT_LIMITS["ORG_COMMON_WEBHOOKS"]
+                limitation.webhooks_per_organization
             )
 
         elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
@@ -277,7 +327,7 @@ class LimitManager:
 
             return LimitStatus(
                 CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
-                settings.DEFAULT_LIMITS["USER_SANDBOX_CLOUD_STORAGES"]
+                limitation.cloud_storages
             )
 
         elif limit == Limits.ORG_CLOUD_STORAGES:
@@ -286,7 +336,16 @@ class LimitManager:
 
             return LimitStatus(
                 CloudStorage.objects.filter(organization=context.org_id).count(),
-                settings.DEFAULT_LIMITS["ORG_CLOUD_STORAGES"]
+                limitation.cloud_storages
+            )
+
+        elif limit == Limits.ORG_MEMBERS:
+            assert context is not None
+            context = cast(OrgMembersContext, context)
+
+            return LimitStatus(
+                Membership.objects.filter(organization=context.org_id).count(),
+                limitation.memberships,
             )
 
         elif limit == Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE:
