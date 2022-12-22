@@ -170,11 +170,11 @@ class LimitationManager:
             assert instance.org_id == org_id
 
         if org_id:
-            self._owner = {"org_id": org_id}
+            self._owner = {"org": org_id}
             self._serializer_class = OrgLimitationWriteSerializer
             mapping = settings.ORG_LIMITS_MAPPING
         else:
-            self._owner = {"user_id": user_id}
+            self._owner = {"user": user_id}
             self._serializer_class = UserLimitationWriteSerializer
             mapping = settings.USER_LIMITS_MAPPING
 
