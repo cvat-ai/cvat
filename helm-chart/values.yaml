@@ -74,7 +74,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: v2.3.0
+    tag: dev
     imagepullploicy: IfNotPresent
     permissionFix:
       enabled: true
@@ -94,7 +94,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.3.0
+    tag: dev
     imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
