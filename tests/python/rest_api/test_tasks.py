@@ -4,11 +4,12 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os
-import sys
+import os.path as osp
+import subprocess
+from contextlib import ExitStack
 from copy import deepcopy
 from http import HTTPStatus
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 from time import sleep
 
 import pytest
@@ -16,18 +17,11 @@ from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
+import shared.utils.s3 as s3
 from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
-from shared.utils.s3 import make_client
 
 from .utils import export_dataset
-
-sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))).split("tests")[0], "utils"
-    )
-)
-from dataset_manifest import ImageManifestManager
 
 
 def get_cloud_storage_content(username, cloud_storage_id, manifest):
@@ -686,7 +680,7 @@ class TestPostTaskData:
         )
 
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, pattern, sub_dir, task_size, org",
+        "cloud_storage_id, manifest, filename_pattern, sub_dir, task_size, org",
         [
             (1, "manifest.jsonl", "*", True, 3, ""),  # public bucket
             (1, "manifest.jsonl", "test/*", True, 3, ""),
@@ -699,12 +693,12 @@ class TestPostTaskData:
         ],
     )
     def test_create_task_with_file_pattern(
-        self, cloud_storage_id, manifest, pattern, sub_dir, task_size, org, cloud_storages
+        self, cloud_storage_id, manifest, filename_pattern, sub_dir, task_size, org, cloud_storages
     ):
         # prepare dataset on the bucket
         prefixes = ("test_image_",) * 3 if sub_dir else ("a_", "b_", "d_")
         images = generate_image_files(3, prefixes=prefixes)
-        s3_client = make_client()
+        s3_client = s3.make_client()
 
         cloud_storage = cloud_storages[cloud_storage_id]
 
@@ -715,17 +709,35 @@ class TestPostTaskData:
                 filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
             )
 
-        with NamedTemporaryFile(mode="wb+", suffix="manifest.jsonl") as tmp_file:
-            tmp_name = tmp_file.name
-            tmp_manifest = ImageManifestManager(manifest_path=tmp_name)
-            tmp_manifest.link(sources=images)
-            tmp_manifest.create()
-            tmp_file.seek(0)
-            s3_client.create_file(
-                data=tmp_file.read(),
-                bucket=cloud_storage["resource"],
-                filename=f"test/sub/{manifest}" if sub_dir else manifest,
-            )
+        with TemporaryDirectory() as tmp_dir:
+            for image in images:
+                with open(osp.join(tmp_dir, image.name), "wb") as f:
+                    f.write(image.getvalue())
+
+            command = [
+                "docker",
+                "run",
+                "-it",
+                "--rm",
+                "-u",
+                "django:django",
+                "-v",
+                f"{tmp_dir}:/local",
+                "--entrypoint",
+                "python3",
+                "cvat/server:dev",
+                "utils/dataset_manifest/create.py",
+                "--output-dir",
+                "/local",
+                "/local",
+            ]
+            subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+            with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
+                s3_client.create_file(
+                    data=m_file.read(),
+                    bucket=cloud_storage["resource"],
+                    filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                )
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -741,7 +753,7 @@ class TestPostTaskData:
             "use_cache": True,
             "cloud_storage_id": cloud_storage_id,
             "server_files": [f"test/sub/{manifest}" if sub_dir else manifest],
-            "pattern": pattern,
+            "filename_pattern": filename_pattern,
         }
 
         if task_size:
@@ -754,7 +766,19 @@ class TestPostTaskData:
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
-            self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in status.message
+
+        with ExitStack() as stack:
+            files = [f"{'test/sub/' if sub_dir else ''}{image.name}" for image in images] + [
+                f"test/sub/{manifest}" if sub_dir else manifest
+            ]
+            for f in files:
+                stack.callback(
+                    s3_client.remove_file,
+                    bucket=cloud_storage["resource"],
+                    filename=f,
+                )
 
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",

@@ -177,7 +177,7 @@ def _count_files(data):
 
     return counter
 
-def _count_manifest_files(data):
+def _find_manifest_files(data):
     manifest_files = []
     for files in ['client_files', 'server_files', 'remote_files']:
         manifest_files.extend(list(filter(lambda x: x.endswith('.jsonl'), data[files])))
@@ -216,7 +216,7 @@ def _validate_data(counter, manifest_files=None):
 def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_storage_method):
     if manifests:
         if len(manifests) != 1:
-            raise ValidationError('Only one manifest file can be attached with data')
+            raise ValidationError('Only one manifest file can be attached to data')
         manifest_file = manifests[0]
         full_manifest_path = os.path.join(root_dir, manifests[0])
         if is_in_cloud:
@@ -335,7 +335,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     # find and validate manifest file
-    manifest_files = _count_manifest_files(data)
+    manifest_files = _find_manifest_files(data)
     manifest_root = None
 
     # we sould also handle this case because files from the share source have not been downloaded yet
@@ -364,16 +364,21 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
 
     # update list with server files if task creation approach with pattern and manifest file is used
-    if is_data_in_cloud and data['pattern']:
+    if is_data_in_cloud and data['filename_pattern']:
         if 1 != len(data['server_files']):
-            raise ValidationError('Using a pattern is only supported with a manifest, but others files were found')
+            l = len(data['server_files']) - 1
+            raise ValidationError(
+                'Using a filename_pattern is only supported with a manifest file, '
+                f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
+                'Please remove extra files and keep only manifest file in server_files field.'
+            )
 
         cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
             else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
-        if data['pattern'] == '*':
+        if data['filename_pattern'] == '*':
             server_files = cloud_storage_manifest_data
         else:
-            r = re.compile(data['pattern'])
+            r = re.compile(data['filename_pattern'])
             server_files = list(filter(r.match, cloud_storage_manifest_data))
         data['server_files'].extend(server_files)
 
