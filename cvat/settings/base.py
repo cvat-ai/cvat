@@ -264,14 +264,33 @@ DEFAULT_LIMITS = {
     "TASKS_IN_USER_SANDBOX_PROJECT": 5,
     "USER_OWNED_ORGS": 1,
     "USER_SANDBOX_CLOUD_STORAGES": 10,
+    "USER_SANDBOX_PROJECT_WEBHOOKS": 10,
 
     "ORG_TASKS": 10,
     "ORG_PROJECTS": 3,
     "TASKS_IN_ORG_PROJECT": 5,
     "ORG_CLOUD_STORAGES": 10,
     "ORG_COMMON_WEBHOOKS": 20,
+    "ORG_PROJECT_WEBHOOKS": 10,
+}
 
-    "PROJECT_WEBHOOKS": 10,
+ORG_LIMITS_MAPPING = {
+    "ORG_TASKS": "tasks",
+    "ORG_PROJECTS": "projects",
+    "ORG_MEMBERS": "memberships",
+    "TASKS_IN_ORG_PROJECT": "tasks_per_project",
+    "ORG_CLOUD_STORAGES": "cloud_storages",
+    "ORG_COMMON_WEBHOOKS": "webhooks_per_organization",
+    "ORG_PROJECT_WEBHOOKS": "webhooks_per_project",
+}
+
+USER_LIMITS_MAPPING = {
+    "USER_SANDBOX_TASKS": "tasks",
+    "USER_SANDBOX_PROJECTS": "projects",
+    "TASKS_IN_USER_SANDBOX_PROJECT": "tasks_per_project",
+    "USER_OWNED_ORGS": "organizations",
+    "USER_SANDBOX_CLOUD_STORAGES": "cloud_storages",
+    "USER_SANDBOX_PROJECT_WEBHOOKS": "webhooks_per_project",
 }
 
 # ORG settings
