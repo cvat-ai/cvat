@@ -395,9 +395,9 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def validate_pattern(self, value):
         import string
         supported_wildcards = set(["*", "[", "]", "."])
-        no_escapted_symbols = set(['!', '"', '%', "'", ',', '/', ':', ';', '<', '=', '>', '@', "`", "_"])
-        legal_special_chars = supported_wildcards.union(no_escapted_symbols)
-        for c in set(string.punctuation) - legal_special_chars:
+        non_escaped_symbols = set(['!', '"', '%', "'", ',', '/', ':', ';', '<', '=', '>', '@', "`", "_"])
+        allowed_special_chars = supported_wildcards.union(non_escaped_symbols)
+        for c in set(string.punctuation) - allowed_special_chars:
             if c in value:
                 value.replace(c, r'\\{}'.format(c))
 
