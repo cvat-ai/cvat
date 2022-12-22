@@ -21,10 +21,11 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
 from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
-    Limits, OrgCloudStoragesContext, OrgMembersContext, OrgTasksContext, ProjectWebhooksContext,
+    Limits, OrgCloudStoragesContext, OrgMembersContext, OrgTasksContext, OrgProjectWebhooksContext,
     OrgCommonWebhooksContext,
     TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
-    UserSandboxCloudStoragesContext, UserSandboxTasksContext,
+    UserSandboxCloudStoragesContext, UserSandboxProjectWebhooksContext,
+    UserSandboxTasksContext,
     OrgLambdaCallOfflineContext, UserSandboxLambdaCallOfflineContext)
 from cvat.apps.webhooks.models import WebhookTypeChoice
 
@@ -1600,10 +1601,18 @@ class LimitPermission(OpenPolicyAgentPermission):
             ))
 
         elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_PROJECT):
-            results.append((
-                Limits.PROJECT_WEBHOOKS,
-                ProjectWebhooksContext(project_id=scope.project_id)
-            ))
+            if getattr(scope, 'org_id') is not None:
+                results.append((
+                    Limits.ORG_PROJECT_WEBHOOKS,
+                    OrgProjectWebhooksContext(project_id=scope.project_id, org_id=scope.org_id),
+                ))
+            else:
+                results.append((
+                    Limits.USER_SANDBOX_PROJECT_WEBHOOKS,
+                    UserSandboxProjectWebhooksContext(
+                        project_id=scope.project_id, user_id=scope.user_id
+                    ),
+                ))
 
         elif scope_id == (InvitationPermission, InvitationPermission.Scopes.CREATE):
             results.append((
