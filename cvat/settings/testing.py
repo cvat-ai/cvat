@@ -72,14 +72,15 @@ DEFAULT_LIMITS = {
     "TASKS_IN_USER_SANDBOX_PROJECT": None,
     "USER_OWNED_ORGS": None,
     "USER_SANDBOX_CLOUD_STORAGES": None,
+    "USER_SANDBOX_PROJECT_WEBHOOKS": None,
 
     "ORG_TASKS": None,
     "ORG_PROJECTS": None,
+    "ORG_MEMBERS": None,
     "TASKS_IN_ORG_PROJECT": None,
     "ORG_CLOUD_STORAGES": None,
     "ORG_COMMON_WEBHOOKS": None,
-
-    "PROJECT_WEBHOOKS": None,
+    "ORG_PROJECT_WEBHOOKS": None,
 }
 
 # When you run ./manage.py test, Django looks at the TEST_RUNNER setting to
