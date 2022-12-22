@@ -127,8 +127,6 @@ jobs:
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
-    env:
-      CVAT_VERSION: env.CVAT_VERSION
     steps:
       - uses: actions/checkout@v3
 
@@ -192,8 +190,6 @@ jobs:
   unit_testing:
     needs: build
     runs-on: ubuntu-latest
-    env:
-      CVAT_VERSION: env.CVAT_VERSION
     steps:
       - uses: actions/checkout@v3
 
@@ -257,8 +253,6 @@ jobs:
   e2e_testing:
     needs: build
     runs-on: ubuntu-latest
-    env:
-      CVAT_VERSION: env.CVAT_VERSION
     strategy:
       fail-fast: false
       matrix:
